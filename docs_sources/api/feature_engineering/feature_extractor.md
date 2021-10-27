@@ -5,7 +5,7 @@
 <em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureExtractor</strong>(features=["day", "month", "year"],
 fmt=None, encoding_type="ordinal", drop_columns=True, verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L49">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L48">[source]</a>
 </span>
 </div>
 
@@ -247,7 +247,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L115">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L114">[source]</a>
 </span>
 </div>
 Extract the new features.

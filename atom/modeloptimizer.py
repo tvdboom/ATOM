@@ -16,11 +16,11 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from copy import deepcopy
+from typing import Optional
 from inspect import signature
 from datetime import datetime
-from typing import Optional, Union
-from joblib import Parallel, delayed
 from typeguard import typechecked
+from joblib import Parallel, delayed
 from mlflow.tracking import MlflowClient
 
 # Sklearn
@@ -32,16 +32,20 @@ from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 
 # Others
 from skopt.utils import use_named_args
-from skopt.optimizer import base_minimize, gp_minimize, forest_minimize, gbrt_minimize
+from skopt.optimizer import (
+    base_minimize,
+    gp_minimize,
+    forest_minimize,
+    gbrt_minimize,
+)
 
 # Own modules
 from .basemodel import BaseModel
 from .pipeline import Pipeline
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    SEQUENCE_TYPES, flt, lst, arr, time_to_str, get_best_score,
-    get_scorer, composed, crash, method_to_log, score_decorator,
-    Table,
+    flt, lst, arr, time_to_str, get_best_score, get_scorer, composed,
+    crash, method_to_log, score_decorator, Table,
 )
 
 

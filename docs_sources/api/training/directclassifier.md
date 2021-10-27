@@ -466,7 +466,7 @@ Columns include:
 <em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1,
 ncols=2, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L466">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L465">[source]</a>
 </span>
 </div>
 This `@contextmanager` allows you to draw many plots in one figure.
@@ -621,7 +621,7 @@ Minimum verbosity level to print the message.
 <a name="reset-aesthetics"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L212">[source]</a>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.

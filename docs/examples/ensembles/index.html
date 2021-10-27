@@ -3278,7 +3278,7 @@ all of MD as it is not optimized for dense, information rich UIs.
         
         <div class="CodeMirror cm-s-jupyter">
     <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Load the data</span>
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 
         </div>
@@ -3326,21 +3326,21 @@ all of MD as it is not optimized for dense, information rich UIs.
 <pre>&lt;&lt; ================== ATOM ================== &gt;&gt;
 Algorithm task: binary classification.
 
-Dataset stats ====================== &gt;&gt;
+Dataset stats ==================== &gt;&gt;
 Shape: (569, 31)
 Scaled: False
 Outlier values: 174 (1.2%)
----------------------------------------
+-------------------------------------
 Train set size: 456
 Test set size: 113
----------------------------------------
-|    | dataset   | train     | test     |
-|---:|:----------|:----------|:---------|
-|  0 | 212 (1.0) | 167 (1.0) | 45 (1.0) |
-|  1 | 357 (1.7) | 289 (1.7) | 68 (1.5) |
+-------------------------------------
+|    |     dataset |       train |        test |
+| -- | ----------- | ----------- | ----------- |
+| 0  |   212 (1.0) |   167 (1.0) |    45 (1.0) |
+| 1  |   357 (1.7) |   289 (1.7) |    68 (1.5) |
 
 
-Training ===================================== &gt;&gt;
+Training ========================= &gt;&gt;
 Models: LR, Tree, LGB
 Metric: accuracy
 
@@ -3349,32 +3349,32 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; accuracy: 0.9912
 Test evaluation --&gt; accuracy: 0.9646
-Time elapsed: 0.031s
+Time elapsed: 0.023s
 -------------------------------------------------
-Total time: 0.031s
+Total time: 0.024s
 
 
 Results for Decision Tree:         
 Fit ---------------------------------------------
 Train evaluation --&gt; accuracy: 1.0
 Test evaluation --&gt; accuracy: 0.9469
-Time elapsed: 0.000s
+Time elapsed: 0.011s
 -------------------------------------------------
-Total time: 0.000s
+Total time: 0.011s
 
 
 Results for LightGBM:         
 Fit ---------------------------------------------
 Train evaluation --&gt; accuracy: 1.0
 Test evaluation --&gt; accuracy: 0.9735
-Time elapsed: 0.145s
+Time elapsed: 0.143s
 -------------------------------------------------
-Total time: 0.146s
+Total time: 0.143s
 
 
-Final results ========================= &gt;&gt;
+Final results ==================== &gt;&gt;
 Duration: 0.178s
-------------------------------------------
+-------------------------------------
 Logistic Regression --&gt; accuracy: 0.9646
 Decision Tree       --&gt; accuracy: 0.9469
 LightGBM            --&gt; accuracy: 0.9735 !
@@ -3783,7 +3783,7 @@ LightGBM            --&gt; accuracy: 0.9735 !
       <th>predict_proba_LR</th>
       <th>predict_proba_Tree</th>
       <th>predict_proba_LGB</th>
-      <th>Target</th>
+      <th>target</th>
     </tr>
   </thead>
   <tbody>

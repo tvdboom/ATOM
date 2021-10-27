@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(model=None,
 show_params=True, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4138">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4137">[source]</a>
 </span>
 </div>
 

@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_successive_halving</strong>(models=None,
 metric=0, title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3358">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3357">[source]</a>
 </span>
 </div>
 

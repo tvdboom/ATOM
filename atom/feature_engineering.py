@@ -16,7 +16,6 @@ from typing import Optional, Union
 
 # Other packages
 import featuretools as ft
-from woodwork.logical_types import Double
 from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator

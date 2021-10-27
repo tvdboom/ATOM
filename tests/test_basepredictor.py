@@ -262,9 +262,9 @@ def test_get_model_name_multiple_models():
 
 def test_get_model_name_digits():
     """Assert that a list of models is returned if using digits."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.successive_halving(["LR", "ET", "RF", "LGB"])
-    assert atom._get_model_name("2") == ["LR2", "ET2"]
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.successive_halving(["OLS", "ET", "RF", "LGB"])
+    assert atom._get_model_name("2") == ["OLS2", "ET2"]
 
 
 def test_get_model_name_invalid():

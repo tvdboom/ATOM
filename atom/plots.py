@@ -8,7 +8,6 @@ Description: Module containing the plotting classes.
 """
 
 # Standard packages
-import os
 import numpy as np
 import pandas as pd
 from scipy import stats

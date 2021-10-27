@@ -4486,13 +4486,13 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.5691
 Test evaluation --&gt; f2: 0.5651
-Time elapsed: 0.190s
+Time elapsed: 0.211s
 -------------------------------------------------
-Total time: 0.190s
+Total time: 0.211s
 
 
 Final results ==================== &gt;&gt;
-Duration: 0.190s
+Duration: 0.211s
 -------------------------------------
 Logistic Regression --&gt; f2: 0.5651
 </pre>
@@ -4549,13 +4549,13 @@ Results for AdaBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.5564
 Test evaluation --&gt; f2: 0.5467
-Time elapsed: 2.316s
+Time elapsed: 2.739s
 -------------------------------------------------
-Total time: 2.316s
+Total time: 2.739s
 
 
 Final results ==================== &gt;&gt;
-Duration: 2.316s
+Duration: 2.739s
 -------------------------------------
 AdaBoost --&gt; f2: 0.5467
 </pre>
@@ -4623,9 +4623,7 @@ AdaBoost --&gt; f2: 0.5467
     <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;gini&quot;</span><span class="p">,</span>
         <span class="s2">&quot;splitter&quot;</span><span class="p">:</span> <span class="s2">&quot;best&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
         <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">&quot;ccp_alpha&quot;</span><span class="p">:</span> <span class="mf">0.035</span><span class="p">,</span>
     <span class="p">},</span>
     <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
@@ -4657,34 +4655,35 @@ Metric: f2
 
 
 Running BO for Decision Tree...
-| Call             | max_depth |      f2 | best_f2 | time iteration | total time |
-| ---------------- | --------- | ------- | ------- | -------------- | ---------- |
-| Initial point 1  |         9 |  0.4977 |  0.4977 |         1.357s |     1.373s |
-| Initial point 2  |         8 |  0.4922 |  0.4977 |         1.216s |     2.720s |
-| Initial point 3  |         1 |  0.4922 |  0.4977 |         0.258s |     3.011s |
-| Iteration 4      |         9 |  0.4946 |  0.4977 |         1.374s |     4.509s |
-| Iteration 5      |         9 |  0.4922 |  0.4977 |         1.397s |     6.037s |
-| Iteration 6      |         5 |  0.4904 |  0.4977 |         0.806s |     6.979s |
-| Iteration 7      |         1 |  0.4922 |  0.4977 |         0.267s |     7.382s |
-| Iteration 8      |         4 |  0.4991 |  0.4991 |         0.684s |     8.202s |
-| Iteration 9      |         7 |  0.4948 |  0.4991 |         1.089s |     9.419s |
-| Iteration 10     |         4 |  0.4939 |  0.4991 |         0.667s |    10.235s |
+| call             | max_depth | min_samples_split | max_features |      f2 | best_f2 |    time | total_time |
+| ---------------- | --------- | ----------------- | ------------ | ------- | ------- | ------- | ---------- |
+| Initial point 1  |         9 |                19 |          0.5 |  0.4977 |  0.4977 |  0.779s |     0.797s |
+| Initial point 2  |         9 |                 6 |          0.6 |  0.4922 |  0.4977 |  0.919s |     1.899s |
+| Initial point 3  |         3 |                14 |          0.9 |  0.4922 |  0.4977 |  0.511s |     2.464s |
+| Iteration 4      |         9 |                19 |          0.5 |  0.4977 |  0.4977 |  0.001s |     2.689s |
+| Iteration 5      |      None |                19 |          0.9 |  0.4922 |  0.4977 |  2.056s |     4.975s |
+| Iteration 6      |         3 |                 6 |          0.7 |  0.4904 |  0.4977 |  0.457s |     5.676s |
+| Iteration 7      |         1 |                 8 |          0.8 |  0.4922 |  0.4977 |  0.282s |     6.224s |
+| Iteration 8      |         9 |                20 |         None |  0.4991 |  0.4991 |  1.410s |     7.916s |
+| Iteration 9      |         4 |                19 |          0.5 |  0.4948 |  0.4991 |  0.427s |     8.587s |
+| Iteration 10     |      None |                 3 |         None |  0.4939 |  0.4991 |  2.450s |    11.327s |
 
 Results for Decision Tree:         
 Bayesian Optimization ---------------------------
-Best parameters --&gt; {&#39;max_depth&#39;: 4}
+Best call --&gt; Iteration 8
+Best parameters --&gt; {&#39;max_depth&#39;: 9, &#39;min_samples_split&#39;: 20, &#39;max_features&#39;: None}
 Best evaluation --&gt; f2: 0.4991
-Time elapsed: 10.390s
+Time elapsed: 11.605s
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.4922
 Test evaluation --&gt; f2: 0.4934
-Time elapsed: 0.174s
+Time elapsed: 0.368s
 -------------------------------------------------
-Total time: 10.566s
+Total time: 11.974s
 
 
 Final results ==================== &gt;&gt;
-Duration: 10.566s
+Duration: 11.974s
 -------------------------------------
 Decision Tree --&gt; f2: 0.4934
 </pre>
@@ -5090,8 +5089,8 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.56908</td>
       <td>0.565051</td>
-      <td>0.190s</td>
-      <td>0.190s</td>
+      <td>0.211s</td>
+      <td>0.211s</td>
     </tr>
     <tr>
       <th>AdaB</th>
@@ -5099,17 +5098,17 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.55639</td>
       <td>0.546745</td>
-      <td>2.316s</td>
-      <td>2.316s</td>
+      <td>2.739s</td>
+      <td>2.739s</td>
     </tr>
     <tr>
       <th>Tree</th>
       <td>0.49907</td>
-      <td>10.390s</td>
+      <td>11.605s</td>
       <td>0.49224</td>
       <td>0.493427</td>
-      <td>0.174s</td>
-      <td>10.566s</td>
+      <td>0.368s</td>
+      <td>11.974s</td>
     </tr>
     <tr>
       <th>LGB</th>
@@ -5117,8 +5116,8 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.65179</td>
       <td>0.592639</td>
-      <td>1.150s</td>
-      <td>1.150s</td>
+      <td>1.247s</td>
+      <td>1.247s</td>
     </tr>
   </tbody>
 </table>

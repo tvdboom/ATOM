@@ -300,7 +300,7 @@ The remaining utility methods can be found hereunder.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L589">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L644">[source]</a>
 </span>
 </div>
 Applies probability calibration on the estimator. The
@@ -328,7 +328,7 @@ for testing.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L676">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L685">[source]</a>
 </span>
 </div>
 Evaluate the model using cross-validation. This method cross-validates the
@@ -360,7 +360,7 @@ function.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L377">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L317">[source]</a>
 </span>
 </div>
 Delete the model from the trainer. If it's the winning model, the next
@@ -376,7 +376,7 @@ removed from any active mlflow experiment.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L630">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L749">[source]</a>
 </span>
 </div>
 Export the model's pipeline to a sklearn-like object. If the model
@@ -424,7 +424,7 @@ Current branch as a sklearn-like Pipeline object.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">full_train</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L777">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L782">[source]</a>
 </span>
 </div>
 Get the estimator trained on the complete dataset. In some cases it
@@ -447,7 +447,7 @@ Model estimator trained on the full dataset.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L740">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L810">[source]</a>
 </span>
 </div>
 Change the model's tag. The acronym always stays at the beginning
@@ -467,7 +467,7 @@ New tag for the model. If None, the tag is removed.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L270">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L210">[source]</a>
 </span>
 </div>
 Clear the [prediction attributes](../../../user_guide/predicting) from all models.
@@ -480,7 +480,7 @@ Use this method to free some memory before saving the trainer.
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>
 (metric=None, dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L382">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L322">[source]</a>
 </span>
 </div>
 Get the model's score for the provided metrics.
@@ -527,7 +527,7 @@ Model's score for the selected metric.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L805">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L847">[source]</a>
 </span>
 </div>
 Save the estimator to a pickle file.

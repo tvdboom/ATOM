@@ -6,7 +6,7 @@
 n_features=None, generations=20, population=500, operators=None,
 n_jobs=1, verbose=0, logger=None, random_state=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L232">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L231">[source]</a>
 </span>
 </div>
 
@@ -162,7 +162,7 @@ strategy. Columns include:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L330">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L329">[source]</a>
 </span>
 </div>
 Fit to data.
@@ -329,7 +329,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L471">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L470">[source]</a>
 </span>
 </div>
 Generate new features.

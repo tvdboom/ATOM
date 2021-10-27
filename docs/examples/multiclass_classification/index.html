@@ -3462,134 +3462,107 @@ all of MD as it is not optimized for dense, information rich UIs.
 Algorithm task: multiclass classification.
 Parallel processing with 16 cores.
 
-Dataset stats ====================== &gt;&gt;
+Dataset stats ==================== &gt;&gt;
 Shape: (178, 14)
 Scaled: False
 Outlier values: 10 (0.5%)
----------------------------------------
+-------------------------------------
 Train set size: 143
 Test set size: 35
----------------------------------------
-|    | dataset   | train    | test     |
-|---:|:----------|:---------|:---------|
-|  0 | 59 (1.2)  | 50 (1.4) | 9 (1.0)  |
-|  1 | 71 (1.5)  | 58 (1.7) | 13 (1.4) |
-|  2 | 48 (1.0)  | 35 (1.0) | 13 (1.4) |
+-------------------------------------
+|    |    dataset |      train |       test |
+| -- | ---------- | ---------- | ---------- |
+| 0  |   59 (1.2) |   50 (1.4) |    9 (1.0) |
+| 1  |   71 (1.5) |   58 (1.7) |   13 (1.4) |
+| 2  |   48 (1.0) |   35 (1.0) |   13 (1.4) |
 
 
-Training ===================================== &gt;&gt;
+Training ========================= &gt;&gt;
 Models: LR, LDA, RF
 Metric: roc_auc_ovr
 
 
 Running BO for Logistic Regression...
-Initial point 1 ---------------------------------
-Parameters --&gt; {&#39;penalty&#39;: &#39;l2&#39;, &#39;C&#39;: 46.003, &#39;solver&#39;: &#39;lbfgs&#39;, &#39;max_iter&#39;: 745}
-Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 6.715s   Total time: 6.720s
-Initial point 2 ---------------------------------
-Parameters --&gt; {&#39;penalty&#39;: &#39;none&#39;, &#39;solver&#39;: &#39;newton-cg&#39;, &#39;max_iter&#39;: 490}
-Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 6.565s   Total time: 13.517s
-Initial point 3 ---------------------------------
-Parameters --&gt; {&#39;penalty&#39;: &#39;l2&#39;, &#39;C&#39;: 0.037, &#39;solver&#39;: &#39;liblinear&#39;, &#39;max_iter&#39;: 352}
-Evaluation --&gt; roc_auc_ovr: 0.9993  Best roc_auc_ovr: 1.0000
-Time iteration: 6.620s   Total time: 20.163s
-Iteration 4 -------------------------------------
-Parameters --&gt; {&#39;penalty&#39;: &#39;none&#39;, &#39;solver&#39;: &#39;newton-cg&#39;, &#39;max_iter&#39;: 378}
-Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 5.306s   Total time: 25.703s
+| call             | penalty |       C |  solver | max_iter | l1_ratio | roc_auc_ovr | best_roc_auc_ovr |    time | total_time |
+| ---------------- | ------- | ------- | ------- | -------- | -------- | ----------- | ---------------- | ------- | ---------- |
+| Initial point 1  |      l2 |  46.003 |   lbfgs |      745 |      --- |         1.0 |              1.0 |  6.734s |     6.739s |
+| Initial point 2  |    none |     --- | newto.. |      490 |      --- |         1.0 |              1.0 |  6.312s |    13.223s |
+| Initial point 3  |      l2 |   0.037 | libli.. |      352 |      --- |      0.9993 |              1.0 |  6.721s |    20.007s |
+| Iteration 4      |    none |     --- | newto.. |      378 |      --- |         1.0 |              1.0 |  5.140s |    25.410s |
 
 Results for Logistic Regression:         
 Bayesian Optimization ---------------------------
+Best call --&gt; Initial point 1
 Best parameters --&gt; {&#39;penalty&#39;: &#39;l2&#39;, &#39;C&#39;: 46.003, &#39;solver&#39;: &#39;lbfgs&#39;, &#39;max_iter&#39;: 745}
 Best evaluation --&gt; roc_auc_ovr: 1.0
-Time elapsed: 25.962s
+Time elapsed: 25.666s
 Fit ---------------------------------------------
 Train evaluation --&gt; roc_auc_ovr: 1.0
 Test evaluation --&gt; roc_auc_ovr: 0.9965
-Time elapsed: 0.037s
+Time elapsed: 0.025s
 Bootstrap ---------------------------------------
-Evaluation --&gt; roc_auc_ovr: 0.9942 ± 0.0026
-Time elapsed: 0.100s
+Evaluation --&gt; roc_auc_ovr: 0.9953 ± 0.0007
+Time elapsed: 0.093s
 -------------------------------------------------
-Total time: 26.099s
+Total time: 25.785s
 
 
 Running BO for Linear Discriminant Analysis...
-Initial point 1 ---------------------------------
-Parameters --&gt; {&#39;solver&#39;: &#39;eigen&#39;, &#39;shrinkage&#39;: 1.0}
-Evaluation --&gt; roc_auc_ovr: 0.8975  Best roc_auc_ovr: 0.8975
-Time iteration: 0.016s   Total time: 0.031s
-Initial point 2 ---------------------------------
-Parameters --&gt; {&#39;solver&#39;: &#39;svd&#39;}
-Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 0.030s   Total time: 0.092s
-Initial point 3 ---------------------------------
-Parameters --&gt; {&#39;solver&#39;: &#39;svd&#39;}
-Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 0.031s   Total time: 0.140s
-Iteration 4 -------------------------------------
-Parameters --&gt; {&#39;solver&#39;: &#39;lsqr&#39;, &#39;shrinkage&#39;: 0.7}
-Evaluation --&gt; roc_auc_ovr: 0.8996  Best roc_auc_ovr: 1.0000
-Time iteration: 0.034s   Total time: 0.383s
+| call             |  solver | shrinkage | roc_auc_ovr | best_roc_auc_ovr |    time | total_time |
+| ---------------- | ------- | --------- | ----------- | ---------------- | ------- | ---------- |
+| Initial point 1  |   eigen |       1.0 |      0.8975 |           0.8975 |  0.021s |     0.023s |
+| Initial point 2  |     svd |       --- |         1.0 |              1.0 |  0.022s |     0.092s |
+| Initial point 3  |     svd |       --- |         1.0 |              1.0 |  0.000s |     0.141s |
+| Iteration 4      |    lsqr |       0.7 |      0.8996 |              1.0 |  0.022s |     0.389s |
 
 Results for Linear Discriminant Analysis:         
 Bayesian Optimization ---------------------------
+Best call --&gt; Initial point 2
 Best parameters --&gt; {&#39;solver&#39;: &#39;svd&#39;}
 Best evaluation --&gt; roc_auc_ovr: 1.0
-Time elapsed: 0.604s
+Time elapsed: 0.620s
 Fit ---------------------------------------------
 Train evaluation --&gt; roc_auc_ovr: 1.0
 Test evaluation --&gt; roc_auc_ovr: 1.0
-Time elapsed: 0.001s
+Time elapsed: 0.009s
 Bootstrap ---------------------------------------
-Evaluation --&gt; roc_auc_ovr: 0.9998 ± 0.0005
-Time elapsed: 0.031s
+Evaluation --&gt; roc_auc_ovr: 0.9966 ± 0.0024
+Time elapsed: 0.027s
 -------------------------------------------------
-Total time: 0.636s
+Total time: 0.657s
 
 
 Running BO for Random Forest...
-Initial point 1 ---------------------------------
-Parameters --&gt; {&#39;n_estimators&#39;: 245, &#39;criterion&#39;: &#39;entropy&#39;, &#39;max_depth&#39;: None, &#39;min_samples_split&#39;: 13, &#39;min_samples_leaf&#39;: 6, &#39;max_features&#39;: None, &#39;bootstrap&#39;: True, &#39;ccp_alpha&#39;: 0.007, &#39;max_samples&#39;: 0.6}
-Evaluation --&gt; roc_auc_ovr: 0.9921  Best roc_auc_ovr: 0.9921
-Time iteration: 0.398s   Total time: 0.398s
-Initial point 2 ---------------------------------
-Parameters --&gt; {&#39;n_estimators&#39;: 400, &#39;criterion&#39;: &#39;entropy&#39;, &#39;max_depth&#39;: 8, &#39;min_samples_split&#39;: 7, &#39;min_samples_leaf&#39;: 19, &#39;max_features&#39;: 0.7, &#39;bootstrap&#39;: True, &#39;ccp_alpha&#39;: 0.008, &#39;max_samples&#39;: 0.7}
-Evaluation --&gt; roc_auc_ovr: 0.9927  Best roc_auc_ovr: 0.9927
-Time iteration: 0.569s   Total time: 1.004s
-Initial point 3 ---------------------------------
-Parameters --&gt; {&#39;n_estimators&#39;: 78, &#39;criterion&#39;: &#39;gini&#39;, &#39;max_depth&#39;: 5, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 14, &#39;max_features&#39;: 0.8, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.003}
-Evaluation --&gt; roc_auc_ovr: 0.9851  Best roc_auc_ovr: 0.9927
-Time iteration: 0.125s   Total time: 1.160s
-Iteration 4 -------------------------------------
-Parameters --&gt; {&#39;n_estimators&#39;: 394, &#39;criterion&#39;: &#39;entropy&#39;, &#39;max_depth&#39;: 3, &#39;min_samples_split&#39;: 19, &#39;min_samples_leaf&#39;: 14, &#39;max_features&#39;: 0.8, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.015}
-Evaluation --&gt; roc_auc_ovr: 0.9897  Best roc_auc_ovr: 0.9927
-Time iteration: 0.476s   Total time: 1.965s
+| call             | n_estimators | criterion | max_depth | min_samples_split | min_samples_leaf | max_features | bootstrap | ccp_alpha | max_samples | roc_auc_ovr | best_roc_auc_ovr |    time | total_time |
+| ---------------- | ------------ | --------- | --------- | ----------------- | ---------------- | ------------ | --------- | --------- | ----------- | ----------- | ---------------- | ------- | ---------- |
+| Initial point 1  |          245 |   entropy |      None |                13 |                6 |         None |      True |     0.007 |         0.6 |      0.9921 |           0.9921 |  0.587s |     0.594s |
+| Initial point 2  |          400 |   entropy |         8 |                 7 |               19 |          0.7 |      True |     0.008 |         0.7 |      0.9927 |           0.9927 |  0.617s |     1.270s |
+| Initial point 3  |           78 |      gini |         5 |                 2 |               14 |          0.8 |     False |     0.003 |         --- |      0.9851 |           0.9927 |  0.126s |     1.451s |
+| Iteration 4      |          394 |   entropy |         3 |                19 |               14 |          0.8 |     False |     0.015 |         --- |      0.9897 |           0.9927 |  0.474s |     2.273s |
 
 Results for Random Forest:         
 Bayesian Optimization ---------------------------
+Best call --&gt; Initial point 2
 Best parameters --&gt; {&#39;n_estimators&#39;: 400, &#39;criterion&#39;: &#39;entropy&#39;, &#39;max_depth&#39;: 8, &#39;min_samples_split&#39;: 7, &#39;min_samples_leaf&#39;: 19, &#39;max_features&#39;: 0.7, &#39;bootstrap&#39;: True, &#39;ccp_alpha&#39;: 0.008, &#39;max_samples&#39;: 0.7}
 Best evaluation --&gt; roc_auc_ovr: 0.9927
-Time elapsed: 2.290s
+Time elapsed: 2.616s
 Fit ---------------------------------------------
 Train evaluation --&gt; roc_auc_ovr: 0.9997
 Test evaluation --&gt; roc_auc_ovr: 0.9802
-Time elapsed: 0.575s
+Time elapsed: 0.547s
 Bootstrap ---------------------------------------
-Evaluation --&gt; roc_auc_ovr: 0.974 ± 0.0074
-Time elapsed: 2.658s
+Evaluation --&gt; roc_auc_ovr: 0.963 ± 0.0183
+Time elapsed: 2.427s
 -------------------------------------------------
-Total time: 5.524s
+Total time: 5.591s
 
 
-Final results ========================= &gt;&gt;
-Duration: 32.259s
-------------------------------------------
-Logistic Regression          --&gt; roc_auc_ovr: 0.9942 ± 0.0026
-Linear Discriminant Analysis --&gt; roc_auc_ovr: 0.9998 ± 0.0005 !
-Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
+Final results ==================== &gt;&gt;
+Duration: 32.034s
+-------------------------------------
+Logistic Regression          --&gt; roc_auc_ovr: 0.9953 ± 0.0007
+Linear Discriminant Analysis --&gt; roc_auc_ovr: 0.9966 ± 0.0024 !
+Random Forest                --&gt; roc_auc_ovr: 0.963 ± 0.0183
 </pre>
 </div>
 </div>
@@ -3666,38 +3639,38 @@ Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
     <tr>
       <th>LR</th>
       <td>1.000000</td>
-      <td>25.962s</td>
+      <td>25.666s</td>
       <td>1.000000</td>
       <td>0.996503</td>
-      <td>0.037s</td>
-      <td>0.994172</td>
-      <td>0.002553</td>
-      <td>0.100s</td>
-      <td>26.099s</td>
+      <td>0.025s</td>
+      <td>0.995338</td>
+      <td>0.000737</td>
+      <td>0.093s</td>
+      <td>25.785s</td>
     </tr>
     <tr>
       <th>LDA</th>
       <td>1.000000</td>
-      <td>0.604s</td>
+      <td>0.620s</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>0.001s</td>
-      <td>0.999767</td>
-      <td>0.000466</td>
-      <td>0.031s</td>
-      <td>0.636s</td>
+      <td>0.009s</td>
+      <td>0.996633</td>
+      <td>0.002441</td>
+      <td>0.027s</td>
+      <td>0.657s</td>
     </tr>
     <tr>
       <th>RF</th>
       <td>0.992716</td>
-      <td>2.290s</td>
+      <td>2.616s</td>
       <td>0.999654</td>
       <td>0.980186</td>
-      <td>0.575s</td>
-      <td>0.974022</td>
-      <td>0.007351</td>
-      <td>2.658s</td>
-      <td>5.524s</td>
+      <td>0.547s</td>
+      <td>0.963041</td>
+      <td>0.018283</td>
+      <td>2.427s</td>
+      <td>5.591s</td>
     </tr>
   </tbody>
 </table>
@@ -3759,17 +3732,17 @@ Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>jaccard_weighted</th>
       <th>precision_macro</th>
       <th>recall_macro</th>
+      <th>jaccard_weighted</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>LR</th>
+      <td>0.948718</td>
+      <td>0.948718</td>
       <td>0.893878</td>
-      <td>0.948718</td>
-      <td>0.948718</td>
     </tr>
     <tr>
       <th>LDA</th>
@@ -3779,9 +3752,9 @@ Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
     </tr>
     <tr>
       <th>RF</th>
-      <td>0.842857</td>
       <td>0.919048</td>
       <td>0.923077</td>
+      <td>0.842857</td>
     </tr>
   </tbody>
 </table>

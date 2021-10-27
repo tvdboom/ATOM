@@ -265,6 +265,7 @@ def test_cross_validate():
     """Assert that the cross_validate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
+    assert isinstance(atom.lr.cross_validate(), dict)
     assert isinstance(atom.lr.cross_validate(scoring="AP"), dict)
 
 
