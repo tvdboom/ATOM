@@ -22,9 +22,9 @@ from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
 from .basemodel import BaseModel
 from .utils import (
-    SEQUENCE, OPTIONAL_PACKAGES, lst, dct, time_to_str, get_acronym,
-    get_scorer, get_best_score, check_scaling, delete, PlotCallback,
-    CustomDict,
+    SEQUENCE, OPTIONAL_PACKAGES, lst, dct, time_to_str, check_multidim,
+    get_acronym, get_scorer, get_best_score, check_scaling, delete,
+    PlotCallback, CustomDict,
 )
 
 
@@ -213,7 +213,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # BO attributes
         self._base_estimator = None
-        self._cv = 5
+        self._cv = 1
         self._callbacks = []
         self._bo_kwargs = {}
 
@@ -238,6 +238,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             for m in self._models:
                 if isinstance(m, str):
                     acronym = get_acronym(m, must_be_equal=False)
+
+                    if check_multidim(self.X):
+                        raise ValueError(
+                            "Multidimensional datasets are not supported by ATOM's "
+                            "predefined models. Refer to the documentation for the "
+                            "use of custom models."
+                        )
 
                     # Check if packages for non-sklearn models are available
                     if acronym in OPTIONAL_PACKAGES:
@@ -491,9 +498,16 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         delete(self, to_remove)  # Remove faulty models
 
-        # Raise an exception if all models failed
+        # If there's only one model and it failed, raise that exception
+        # If multiple models and all failed, raise RuntimeError
         if not self._models:
-            raise RuntimeError("It appears all models failed to run...")
+            if len(self.errors) == 1:
+                raise self.errors[0]
+            else:
+                raise RuntimeError(
+                    "All models failed to run. Use the `errors` attribute "
+                    "or the logging file to investigate the exceptions."
+                )
 
         self.log("\n\nFinal results " + "=" * 20 + " >>", 1)
         self.log(f"Duration: {time_to_str(t_init)}\n" + "-" * 37, 1)

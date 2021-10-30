@@ -18,7 +18,9 @@ from skopt.callbacks import TimerCallback
 # Own modules
 from atom.training import DirectClassifier, DirectRegressor
 from atom.utils import CUSTOM_SCORERS, PlotCallback
-from .utils import bin_train, bin_test, class_train, class_test, reg_train, reg_test
+from .utils import (
+    bin_train, bin_test, class_train, class_test, reg_train, reg_test, mnist
+)
 
 
 # Test _check_parameters =========================================== >>
@@ -69,6 +71,13 @@ def test_multiple_same_models():
     trainer = DirectClassifier(["lr", "lr2", "lr_3"], random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.models == ["LR", "LR2", "LR_3"]
+
+
+def test_multim_predefined_model():
+    """Assert that an error is raised for multidim datasets with predefined models."""
+    trainer = DirectClassifier("OLS", random_state=1)
+    with pytest.raises(ValueError, match=r".*Multidimensional datasets are.*"):
+        trainer.run(*mnist)
 
 
 def test_only_task_models():
@@ -397,7 +406,13 @@ def test_close_plot_after_error():
     assert PlotCallback.c == 1  # First model is 0, after error passes to 1
 
 
+def test_one_model_failed():
+    """Assert that the model error is raised when it fails."""
+    trainer = DirectClassifier("LR", n_calls=4, random_state=1)
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
 def test_all_models_failed():
     """Assert that an error is raised when all models failed."""
-    trainer = DirectClassifier("LR", n_calls=4, n_initial_points=5, random_state=1)
+    trainer = DirectClassifier(["LR", "RF"], n_calls=4, random_state=1)
     pytest.raises(RuntimeError, trainer.run, bin_train, bin_test)

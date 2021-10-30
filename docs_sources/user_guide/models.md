@@ -131,6 +131,11 @@ methods are unavailable when this is the case.
 See in this [example](../../examples/deep_learning) how to use ATOM to train
 and validate a Convolutional Neural Network implemented with Keras.
 
+!!! warning
+    Keras' models can only use [custom hyperparameter tuning](../training/#hyperparameter-tuning)
+    when `n_jobs=1` or `bo_params={"cv": 1}`. Using n_jobs > 1 and
+    cv > 1 raises a PicklingError due to incompatibilities of the APIs.
+
 <br>
 
 
