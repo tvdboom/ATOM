@@ -520,9 +520,9 @@ pipeline. If the transformer is a sklearn Pipeline, every transformer
 is merged independently with atom.
 
 !!! warning
-    The transformer's fit/transform methods should have arguments `X` (accepting
-    a 2d array-like object of shape=(n_samples, n_features)) and/or `y` (accepting
-    a sequence of shape=(n_samples,)).
+    The transformer should have fit and/or transform methods with arguments
+    `X` (accepting a 2d array-like object of shape=(n_samples, n_features))
+    and/or `y` (accepting a sequence of shape=(n_samples,)).
 
 !!! note
     If the transformer doesn't return a dataframe,  the column naming happens as
