@@ -3750,18 +3750,18 @@ Metric: neg_mean_squared_error
 Running BO for Decision Tree...
 | call             | criterion | splitter | max_depth | min_samples_split | min_samples_leaf | max_features | ccp_alpha | neg_mean_squared_error | best_neg_mean_squared_error |    time | total_time |
 | ---------------- | --------- | -------- | --------- | ----------------- | ---------------- | ------------ | --------- | ---------------------- | --------------------------- | ------- | ---------- |
-| Initial point 1  | absolut.. |   random |         7 |                 8 |               19 |         None |     0.016 |                -8.3677 |                     -8.3677 |  0.044s |     0.052s |
-| Initial point 2  | absolut.. |     best |         6 |                 3 |               12 |          0.9 |       0.0 |                -8.2055 |                     -8.2055 |  0.169s |     0.393s |
-| Iteration 3      | friedma.. |     best |         6 |                 5 |                9 |          0.6 |     0.005 |                -5.8265 |                     -5.8265 |  0.009s |     0.566s |
-| Iteration 4      | friedma.. |     best |         7 |                14 |                2 |          0.6 |     0.024 |                -6.9812 |                     -5.8265 |  0.009s |     0.736s |
-| Iteration 5      | friedma.. |     best |         6 |                 2 |                7 |          0.6 |     0.011 |                -6.8228 |                     -5.8265 |  0.008s |     0.913s |
+| Initial point 1  | absolut.. |   random |         7 |                 8 |               19 |         None |     0.016 |                -8.3677 |                     -8.3677 |  0.040s |     0.047s |
+| Initial point 2  | absolut.. |     best |         6 |                 3 |               12 |          0.9 |       0.0 |                -8.2055 |                     -8.2055 |  0.164s |     0.378s |
+| Iteration 3      | friedma.. |     best |         6 |                 5 |                9 |          0.6 |     0.005 |                -5.8265 |                     -5.8265 |  0.009s |     0.553s |
+| Iteration 4      | friedma.. |     best |         7 |                14 |                2 |          0.6 |     0.024 |                -6.9812 |                     -5.8265 |  0.009s |     0.725s |
+| Iteration 5      | friedma.. |     best |         6 |                 2 |                7 |          0.6 |     0.011 |                -6.8228 |                     -5.8265 |  0.009s |     0.906s |
 
 Results for Decision Tree:         
 Bayesian Optimization ---------------------------
 Best call --&gt; Iteration 3
 Best parameters --&gt; {&#39;criterion&#39;: &#39;friedman_mse&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;max_depth&#39;: 6, &#39;min_samples_split&#39;: 5, &#39;min_samples_leaf&#39;: 9, &#39;max_features&#39;: 0.6, &#39;ccp_alpha&#39;: 0.005}
 Best evaluation --&gt; neg_mean_squared_error: -5.8265
-Time elapsed: 1.098s
+Time elapsed: 1.080s
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_squared_error: -5.8691
 Test evaluation --&gt; neg_mean_squared_error: -5.4025
@@ -3770,63 +3770,63 @@ Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_squared_error: -5.717 ± 0.2087
 Time elapsed: 0.047s
 -------------------------------------------------
-Total time: 1.157s
+Total time: 1.139s
 
 
 Running BO for Bagging Regressor...
 | call             | n_estimators | max_samples | max_features | bootstrap | bootstrap_features | neg_mean_squared_error | best_neg_mean_squared_error |    time | total_time |
 | ---------------- | ------------ | ----------- | ------------ | --------- | ------------------ | ---------------------- | --------------------------- | ------- | ---------- |
-| Initial point 1  |          112 |         0.9 |          0.6 |     False |              False |                 -5.768 |                      -5.768 |  0.868s |     0.872s |
-| Initial point 2  |          131 |         0.5 |          0.5 |     False |              False |                -6.8254 |                      -5.768 |  0.571s |     1.495s |
-| Iteration 3      |           50 |         0.9 |          0.6 |     False |               True |                -5.4895 |                     -5.4895 |  0.381s |     2.032s |
-| Iteration 4      |           74 |         0.5 |          0.5 |     False |               True |                -6.0363 |                     -5.4895 |  0.348s |     2.699s |
-| Iteration 5      |           36 |         0.9 |          0.6 |      True |              False |                -6.0037 |                     -5.4895 |  0.189s |     3.049s |
+| Initial point 1  |          112 |         0.9 |          0.6 |     False |              False |                 -5.768 |                      -5.768 |  0.873s |     0.877s |
+| Initial point 2  |          131 |         0.5 |          0.5 |     False |              False |                -6.8254 |                      -5.768 |  0.576s |     1.505s |
+| Iteration 3      |           50 |         0.9 |          0.6 |     False |               True |                -5.4895 |                     -5.4895 |  0.386s |     2.045s |
+| Iteration 4      |           74 |         0.5 |          0.5 |     False |               True |                -6.0363 |                     -5.4895 |  0.329s |     2.677s |
+| Iteration 5      |           36 |         0.9 |          0.6 |      True |              False |                -6.0037 |                     -5.4895 |  0.231s |     3.061s |
 
 Results for Bagging Regressor:         
 Bayesian Optimization ---------------------------
 Best call --&gt; Iteration 3
 Best parameters --&gt; {&#39;n_estimators&#39;: 50, &#39;max_samples&#39;: 0.9, &#39;max_features&#39;: 0.6, &#39;bootstrap&#39;: False, &#39;bootstrap_features&#39;: True}
 Best evaluation --&gt; neg_mean_squared_error: -5.4895
-Time elapsed: 3.217s
+Time elapsed: 3.249s
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_squared_error: -0.0867
 Test evaluation --&gt; neg_mean_squared_error: -4.9533
-Time elapsed: 0.509s
+Time elapsed: 0.583s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_squared_error: -5.1436 ± 0.0702
-Time elapsed: 2.148s
+Time elapsed: 2.162s
 -------------------------------------------------
-Total time: 5.877s
+Total time: 5.997s
 
 
 Running BO for Extra-Trees...
 | call             | n_estimators | criterion | max_depth | min_samples_split | min_samples_leaf | max_features | bootstrap | ccp_alpha | max_samples | neg_mean_squared_error | best_neg_mean_squared_error |    time | total_time |
 | ---------------- | ------------ | --------- | --------- | ----------------- | ---------------- | ------------ | --------- | --------- | ----------- | ---------------------- | --------------------------- | ------- | ---------- |
-| Initial point 1  |          112 | absolut.. |         1 |                 9 |                7 |          0.6 |      True |     0.016 |         0.6 |               -10.2607 |                    -10.2607 |  0.341s |     0.348s |
-| Initial point 2  |          369 | absolut.. |      None |                 3 |               12 |          0.9 |      True |     0.035 |         0.8 |                -9.4727 |                     -9.4727 |  4.629s |     5.040s |
-| Iteration 3      |          385 | squared.. |      None |                 6 |               18 |          0.9 |     False |      0.02 |         --- |                -5.5174 |                     -5.5174 |  0.494s |     5.714s |
-| Iteration 4      |          425 | squared.. |         1 |                20 |               19 |          0.7 |     False |     0.016 |         --- |                 -9.198 |                     -5.5174 |  0.290s |     6.182s |
-| Iteration 5      |          445 | squared.. |      None |                 7 |               20 |          0.6 |     False |     0.004 |         --- |                -6.9959 |                     -5.5174 |  0.410s |     6.781s |
+| Initial point 1  |          112 | absolut.. |         1 |                 9 |                7 |          0.6 |      True |     0.016 |         0.6 |               -10.2607 |                    -10.2607 |  0.351s |     0.358s |
+| Initial point 2  |          369 | absolut.. |      None |                 3 |               12 |          0.9 |      True |     0.035 |         0.8 |                -9.4727 |                     -9.4727 |  4.779s |     5.190s |
+| Iteration 3      |          385 | squared.. |      None |                 6 |               18 |          0.9 |     False |      0.02 |         --- |                -5.5174 |                     -5.5174 |  0.493s |     5.861s |
+| Iteration 4      |          425 | squared.. |         1 |                20 |               19 |          0.7 |     False |     0.016 |         --- |                 -9.198 |                     -5.5174 |  0.289s |     6.331s |
+| Iteration 5      |          445 | squared.. |      None |                 7 |               20 |          0.6 |     False |     0.004 |         --- |                -6.9959 |                     -5.5174 |  0.402s |     6.921s |
 
 Results for Extra-Trees:         
 Bayesian Optimization ---------------------------
 Best call --&gt; Iteration 3
 Best parameters --&gt; {&#39;n_estimators&#39;: 385, &#39;criterion&#39;: &#39;squared_error&#39;, &#39;max_depth&#39;: None, &#39;min_samples_split&#39;: 6, &#39;min_samples_leaf&#39;: 18, &#39;max_features&#39;: 0.9, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.02}
 Best evaluation --&gt; neg_mean_squared_error: -5.5174
-Time elapsed: 6.969s
+Time elapsed: 7.113s
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_squared_error: -6.1021
 Test evaluation --&gt; neg_mean_squared_error: -5.0002
-Time elapsed: 0.639s
+Time elapsed: 0.640s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_squared_error: -4.9113 ± 0.0278
-Time elapsed: 3.034s
+Time elapsed: 3.016s
 -------------------------------------------------
-Total time: 10.643s
+Total time: 10.770s
 
 
 Final results ==================== &gt;&gt;
-Duration: 17.677s
+Duration: 17.906s
 -------------------------------------
 Decision Tree     --&gt; neg_mean_squared_error: -5.717 ± 0.2087 ~
 Bagging Regressor --&gt; neg_mean_squared_error: -5.1436 ± 0.0702 ~

@@ -24,10 +24,10 @@ with open("requirements-test.txt") as f:
 
 setuptools.setup(
     name="atom-ml",
-    version="4.9.0",
+    version="4.9.1",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url=f"https://github.com/tvdboom/ATOM/archive/v4.9.0.tar.gz",
+    download_url=f"https://github.com/tvdboom/ATOM/archive/v4.9.1.tar.gz",
     url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",

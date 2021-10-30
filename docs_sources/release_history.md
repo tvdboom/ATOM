@@ -1,6 +1,17 @@
 # Release history
 -----------------
 
+<a name="v491"></a>
+### Version 4.9.1
+
+* Changed the default cross-validation for [hyperparameter tuning](../user_guide/training/#hyperparameter-tuning)
+  from 5 to 1 to avoid errors with [deep learning models](../user_guide/models/#deep-learning).
+* Added clearer exception messages when a model's run failed.
+* Fixed a bug where custom dimensions didn't show during
+  [hyperparameter tuning](../user_guide/training/#hyperparameter-tuning).
+* Documentation improvements.
+
+
 <a name="v490"></a>
 ### Version 4.9.0
 

@@ -3336,9 +3336,9 @@ pipeline. If the transformer is a sklearn Pipeline, every transformer
 is merged independently with atom.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The transformer's fit/transform methods should have arguments <code>X</code> (accepting
-a 2d array-like object of shape=(n_samples, n_features)) and/or <code>y</code> (accepting
-a sequence of shape=(n_samples,)).</p>
+<p>The transformer should have fit and/or transform methods with arguments
+<code>X</code> (accepting a 2d array-like object of shape=(n_samples, n_features))
+and/or <code>y</code> (accepting a sequence of shape=(n_samples,)).</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>

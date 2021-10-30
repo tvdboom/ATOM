@@ -3348,7 +3348,7 @@ Test set size: 113
     <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;ap&quot;</span><span class="p">,</span>
     <span class="n">n_calls</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
     <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-    <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;early_stopping&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;cv&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;early_stopping&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
 
@@ -3379,30 +3379,30 @@ Metric: average_precision
 Running BO for LightGBM...
 | call             | n_estimators | learning_rate | max_depth | num_leaves | min_child_weight | min_child_samples | subsample | colsample_bytree | reg_alpha | reg_lambda | average_precision | best_average_precision | early_stopping |    time | total_time |
 | ---------------- | ------------ | ------------- | --------- | ---------- | ---------------- | ----------------- | --------- | ---------------- | --------- | ---------- | ----------------- | ---------------------- | -------------- | ------- | ---------- |
-| Initial point 1  |          499 |          0.73 |         1 |         40 |                5 |                18 |       0.7 |              0.8 |     100.0 |       10.0 |            0.6304 |                 0.6304 |         50/499 |  0.033s |     0.055s |
-| Initial point 2  |          170 |          0.11 |         4 |         25 |               11 |                28 |       0.7 |              0.6 |     100.0 |       10.0 |            0.6304 |                 0.6304 |         18/170 |  0.021s |     0.226s |
-| Initial point 3  |          364 |           0.4 |         1 |         30 |               17 |                27 |       0.9 |              0.5 |       0.0 |        1.0 |            0.9774 |                 0.9774 |         42/364 |  0.021s |     0.295s |
-| Iteration 4      |          238 |          0.49 |         2 |         29 |               18 |                25 |       0.9 |              0.4 |       0.0 |       10.0 |            0.9911 |                 0.9911 |         30/238 |  0.021s |     1.560s |
-| Iteration 5      |           31 |          0.07 |         5 |         21 |               18 |                28 |       0.8 |              0.5 |       0.0 |      100.0 |             0.992 |                  0.992 |          31/31 |  0.023s |     1.980s |
-| Iteration 6      |           42 |          0.55 |         3 |         39 |               11 |                12 |       0.8 |              0.4 |      0.01 |      100.0 |            0.9991 |                 0.9991 |          42/42 |  0.023s |     2.413s |
-| Iteration 7      |          238 |           1.0 |         2 |         40 |                1 |                10 |       0.8 |              0.3 |     100.0 |      100.0 |            0.6304 |                 0.9991 |         24/238 |  0.020s |     2.935s |
+| Initial point 1  |          499 |          0.73 |         1 |         40 |                5 |                18 |       0.7 |              0.8 |     100.0 |       10.0 |            0.6304 |                 0.6304 |         50/499 |  0.034s |     0.057s |
+| Initial point 2  |          170 |          0.11 |         4 |         25 |               11 |                28 |       0.7 |              0.6 |     100.0 |       10.0 |            0.6304 |                 0.6304 |         18/170 |  0.025s |     0.236s |
+| Initial point 3  |          364 |           0.4 |         1 |         30 |               17 |                27 |       0.9 |              0.5 |       0.0 |        1.0 |            0.9774 |                 0.9774 |         42/364 |  0.022s |     0.311s |
+| Iteration 4      |          238 |          0.49 |         2 |         29 |               18 |                25 |       0.9 |              0.4 |       0.0 |       10.0 |            0.9911 |                 0.9911 |         30/238 |  0.059s |     3.278s |
+| Iteration 5      |           31 |          0.07 |         5 |         21 |               18 |                28 |       0.8 |              0.5 |       0.0 |      100.0 |             0.992 |                  0.992 |          31/31 |  0.063s |     4.270s |
+| Iteration 6      |           42 |          0.55 |         3 |         39 |               11 |                12 |       0.8 |              0.4 |      0.01 |      100.0 |            0.9991 |                 0.9991 |          42/42 |  0.077s |     5.281s |
+| Iteration 7      |          238 |           1.0 |         2 |         40 |                1 |                10 |       0.8 |              0.3 |     100.0 |      100.0 |            0.6304 |                 0.9991 |         24/238 |  0.059s |     6.491s |
 
 Results for LightGBM:         
 Bayesian Optimization ---------------------------
 Best call --&gt; Iteration 6
 Best parameters --&gt; {&#39;n_estimators&#39;: 42, &#39;learning_rate&#39;: 0.55, &#39;max_depth&#39;: 3, &#39;num_leaves&#39;: 39, &#39;min_child_weight&#39;: 11, &#39;min_child_samples&#39;: 12, &#39;subsample&#39;: 0.8, &#39;colsample_bytree&#39;: 0.4, &#39;reg_alpha&#39;: 0.01, &#39;reg_lambda&#39;: 100.0}
 Best evaluation --&gt; average_precision: 0.9991
-Time elapsed: 3.457s
+Time elapsed: 7.616s
 Fit ---------------------------------------------
 Train evaluation --&gt; average_precision: 0.9975
 Test evaluation --&gt; average_precision: 0.9885
-Time elapsed: 0.032s
+Time elapsed: 0.067s
 -------------------------------------------------
-Total time: 3.491s
+Total time: 7.690s
 
 
 Final results ==================== &gt;&gt;
-Duration: 3.491s
+Duration: 7.690s
 -------------------------------------
 LightGBM --&gt; average_precision: 0.9885
 </pre>

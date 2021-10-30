@@ -2920,8 +2920,9 @@ Choose from:
 <li><b>max_time: int, optional (default=np.inf)</b><br>Stop the optimization after <code>max_time</code> seconds.</li>
 <li><b>delta_x: int or float, optional (default=0)</b><br>Stop the optimization when <code>|x1 - x2| < delta_x</code>.</li>
 <li><b>delta_y: int or float, optional (default=0)</b><br>Stop the optimization if the 5 minima are within <code>delta_y</code> (the function is always minimized).</li>
-<li><b>cv: int, optional (default=5)</b><br>Number of folds for the cross-validation. If 1, the
-training set is randomly split in a subtrain and validation set.</li>
+<li><b>cv: int, optional (default=1)</b><br>Number of folds for
+the cross-validation. If 1, the training set is randomly split
+in a subtrain and validation set.</li>
 <li><b>early stopping: int, float or None, optional (default=None)</b><br>Training
 will stop if the model didn't improve in last <code>early_stopping</code> rounds. If <1,
 fraction of rounds from the total. If None, no early stopping is performed. Only

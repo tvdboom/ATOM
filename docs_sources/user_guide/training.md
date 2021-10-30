@@ -274,6 +274,12 @@ atom.run(
 )
 ```
 
+!!! warning
+    Keras' models can only use hyperparameter tuning when `n_jobs=1` or
+    `bo_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises a PicklingError
+    due to incompatibilities of the APIs. Read [here](../models/#deep-learning)
+    more about deep learning models.
+
 The majority of skopt's callbacks to stop the optimizer early can be
 accessed through `bo_params`. Other callbacks can be included through
 the `callbacks` key.
@@ -286,8 +292,8 @@ atom.run(
 )
 ```
 
-It's also possible to include additional parameters for the optimizer as
-key-value pairs.
+It's also possible to include additional parameters for skopt's optimizer
+as key-value pairs.
 
 ```python
 atom.run("LR", n_calls=10, bo_params={"acq_func": "EI"})

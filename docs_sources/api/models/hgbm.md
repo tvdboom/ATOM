@@ -338,7 +338,7 @@ or `atom.hgbm.predict(X)`. The remaining utility methods can be found hereunder.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L644">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L651">[source]</a>
 </span>
 </div>
 Applies probability calibration on the estimator. The
@@ -367,7 +367,7 @@ for testing.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L685">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L692">[source]</a>
 </span>
 </div>
 Evaluate the model using cross-validation. This method cross-validates the
@@ -415,7 +415,7 @@ removed from any active mlflow experiment.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L749">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L756">[source]</a>
 </span>
 </div>
 Export the model's pipeline to a sklearn-like object. If the model
@@ -463,7 +463,7 @@ Current branch as a sklearn-like Pipeline object.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">full_train</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L782">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L789">[source]</a>
 </span>
 </div>
 Get the estimator trained on the complete dataset. In some cases it
@@ -486,7 +486,7 @@ Model estimator trained on the full dataset.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L810">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L817">[source]</a>
 </span>
 </div>
 Change the model's tag. The acronym always stays at the beginning
@@ -552,7 +552,7 @@ Scores of the model.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L847">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L854">[source]</a>
 </span>
 </div>
 Save the estimator to a pickle file.

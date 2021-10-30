@@ -19,6 +19,7 @@ from copy import deepcopy
 from typing import Optional
 from inspect import signature
 from datetime import datetime
+from pickle import PickleError
 from typeguard import typechecked
 from joblib import Parallel, delayed
 from mlflow.tracking import MlflowClient
@@ -267,13 +268,19 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     else:
                         k_fold = KFold(**kwargs)
 
-                    # Parallel loop over fit_model
-                    jobs = Parallel(self.T.n_jobs)(
-                        delayed(fit_model)(i, j)
-                        for i, j in k_fold.split(self.X_train, self.y_train)
-                    )
-                    score = list(np.mean(jobs, axis=0))
-
+                    try:
+                        # Parallel loop over fit_model
+                        jobs = Parallel(self.T.n_jobs)(
+                            delayed(fit_model)(i, j)
+                            for i, j in k_fold.split(self.X_train, self.y_train)
+                        )
+                        score = list(np.mean(jobs, axis=0))
+                    except PickleError:
+                        raise PickleError(
+                            f"Could not pickle the {self.acronym} model to send "
+                            "it to the workers. Try using one of the predefined "
+                            "models or use n_jobs=1 or bo_params={'cv': 1}."
+                        )
             else:
                 # Get same score as previous evaluation
                 score = lst(self.bo.loc[self.bo["params"] == params, "score"].values[0])
@@ -370,7 +377,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             return
 
         # Start with the table output
-        sequence = [("call", "left")] + [p for p in self.params]
+        sequence = [("call", "left")] + [dim.name for dim in dimensions]
         for m in self.T._metric:
             sequence.extend([m.name, "best_" + m.name])
         if self._early_stopping and self.T._cv == 1:

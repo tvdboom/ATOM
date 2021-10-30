@@ -4486,13 +4486,13 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.5691
 Test evaluation --&gt; f2: 0.5651
-Time elapsed: 0.211s
+Time elapsed: 0.203s
 -------------------------------------------------
-Total time: 0.211s
+Total time: 0.203s
 
 
 Final results ==================== &gt;&gt;
-Duration: 0.211s
+Duration: 0.203s
 -------------------------------------
 Logistic Regression --&gt; f2: 0.5651
 </pre>
@@ -4549,13 +4549,13 @@ Results for AdaBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.5564
 Test evaluation --&gt; f2: 0.5467
-Time elapsed: 2.739s
+Time elapsed: 2.600s
 -------------------------------------------------
-Total time: 2.739s
+Total time: 2.600s
 
 
 Final results ==================== &gt;&gt;
-Duration: 2.739s
+Duration: 2.601s
 -------------------------------------
 AdaBoost --&gt; f2: 0.5467
 </pre>
@@ -4657,33 +4657,33 @@ Metric: f2
 Running BO for Decision Tree...
 | call             | max_depth | min_samples_split | max_features |      f2 | best_f2 |    time | total_time |
 | ---------------- | --------- | ----------------- | ------------ | ------- | ------- | ------- | ---------- |
-| Initial point 1  |         9 |                19 |          0.5 |  0.4977 |  0.4977 |  0.779s |     0.797s |
-| Initial point 2  |         9 |                 6 |          0.6 |  0.4922 |  0.4977 |  0.919s |     1.899s |
-| Initial point 3  |         3 |                14 |          0.9 |  0.4922 |  0.4977 |  0.511s |     2.464s |
-| Iteration 4      |         9 |                19 |          0.5 |  0.4977 |  0.4977 |  0.001s |     2.689s |
-| Iteration 5      |      None |                19 |          0.9 |  0.4922 |  0.4977 |  2.056s |     4.975s |
-| Iteration 6      |         3 |                 6 |          0.7 |  0.4904 |  0.4977 |  0.457s |     5.676s |
-| Iteration 7      |         1 |                 8 |          0.8 |  0.4922 |  0.4977 |  0.282s |     6.224s |
-| Iteration 8      |         9 |                20 |         None |  0.4991 |  0.4991 |  1.410s |     7.916s |
-| Iteration 9      |         4 |                19 |          0.5 |  0.4948 |  0.4991 |  0.427s |     8.587s |
-| Iteration 10     |      None |                 3 |         None |  0.4939 |  0.4991 |  2.450s |    11.327s |
+| Initial point 1  |         9 |                19 |          0.5 |  0.4996 |  0.4996 |  0.180s |     0.197s |
+| Initial point 2  |         9 |                 6 |          0.6 |   0.505 |   0.505 |  0.202s |     0.562s |
+| Initial point 3  |         3 |                14 |          0.9 |  0.5269 |  0.5269 |  0.119s |     0.735s |
+| Iteration 4      |         9 |                20 |          0.9 |   0.542 |   0.542 |  0.267s |     1.237s |
+| Iteration 5      |         9 |                 2 |          0.8 |  0.5025 |   0.542 |  0.243s |     1.734s |
+| Iteration 6      |      None |                20 |          0.8 |  0.5002 |   0.542 |  0.386s |     2.373s |
+| Iteration 7      |         4 |                14 |          0.7 |  0.5038 |   0.542 |  0.122s |     2.758s |
+| Iteration 8      |         9 |                 3 |          0.9 |  0.4748 |   0.542 |  0.285s |     3.307s |
+| Iteration 9      |         4 |                20 |         None |  0.5145 |   0.542 |  0.159s |     3.755s |
+| Iteration 10     |         4 |                 8 |         None |  0.4861 |   0.542 |  0.154s |     4.229s |
 
 Results for Decision Tree:         
 Bayesian Optimization ---------------------------
-Best call --&gt; Iteration 8
-Best parameters --&gt; {&#39;max_depth&#39;: 9, &#39;min_samples_split&#39;: 20, &#39;max_features&#39;: None}
-Best evaluation --&gt; f2: 0.4991
-Time elapsed: 11.605s
+Best call --&gt; Iteration 4
+Best parameters --&gt; {&#39;max_depth&#39;: 9, &#39;min_samples_split&#39;: 20, &#39;max_features&#39;: 0.9}
+Best evaluation --&gt; f2: 0.542
+Time elapsed: 4.559s
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.4922
 Test evaluation --&gt; f2: 0.4934
-Time elapsed: 0.368s
+Time elapsed: 0.314s
 -------------------------------------------------
-Total time: 11.974s
+Total time: 4.874s
 
 
 Final results ==================== &gt;&gt;
-Duration: 11.974s
+Duration: 4.875s
 -------------------------------------
 Decision Tree --&gt; f2: 0.4934
 </pre>
@@ -5089,8 +5089,8 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.56908</td>
       <td>0.565051</td>
-      <td>0.211s</td>
-      <td>0.211s</td>
+      <td>0.203s</td>
+      <td>0.203s</td>
     </tr>
     <tr>
       <th>AdaB</th>
@@ -5098,17 +5098,17 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.55639</td>
       <td>0.546745</td>
-      <td>2.739s</td>
-      <td>2.739s</td>
+      <td>2.600s</td>
+      <td>2.600s</td>
     </tr>
     <tr>
       <th>Tree</th>
-      <td>0.49907</td>
-      <td>11.605s</td>
+      <td>0.542042</td>
+      <td>4.559s</td>
       <td>0.49224</td>
       <td>0.493427</td>
-      <td>0.368s</td>
-      <td>11.974s</td>
+      <td>0.314s</td>
+      <td>4.874s</td>
     </tr>
     <tr>
       <th>LGB</th>
@@ -5116,8 +5116,8 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.65179</td>
       <td>0.592639</td>
-      <td>1.247s</td>
-      <td>1.247s</td>
+      <td>1.163s</td>
+      <td>1.163s</td>
     </tr>
   </tbody>
 </table>
