@@ -62,14 +62,18 @@ class BasePredictor:
 
     def __delattr__(self, item):
         """Call appropriate methods for model and branch deletion."""
-        # To delete branches, call the appropriate method
         if item == "branch":
             self.branch.delete()
+        elif item in self._branches:
+            self._branches[item].delete()
+        elif item == "winner" or item in self._models:
+            self.delete(item)
+        elif item in self.__dict__:
+            del self.__dict__[item]
         else:
-            try:
-                self.delete(item)
-            except ValueError:
-                del self.__dict__[item]
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{item}'."
+            )
 
     # Tracking properties ========================================== >>
 
@@ -181,7 +185,7 @@ class BasePredictor:
     def reset_predictions(self):
         """Clear the prediction attributes from all models."""
         for m in self._models:
-            m._pred_attrs = [None] * 10
+            m._pred = [None] * 15
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
@@ -250,7 +254,7 @@ class BasePredictor:
         else:
             raise ValueError(
                 f"Model {model} not found in the pipeline! The "
-                f"available models are: {', '.join(self.models)}."
+                f"available models are: {', '.join(self._models.keys())}."
             )
 
     def _get_models(self, models=None):
@@ -320,8 +324,16 @@ class BasePredictor:
 
         """
         models = self._get_models(models)
-        delete(self, models)
-        self.log(f"Model{'' if len(models) == 1 else 's'} deleted successfully!", 1)
+        if not models:
+            self.log(f"No models to delete.", 1)
+        else:
+            delete(self, models)
+            if len(models) == 1:
+                self.log(f"Model {models[0]} successfully deleted.", 1)
+            else:
+                self.log(f"Deleting {len(models)} models...", 1)
+                for m in models:
+                    self.log(f" --> Model {m} successfully deleted.", 1)
 
     @composed(crash, typechecked)
     def evaluate(
@@ -339,7 +351,7 @@ class BasePredictor:
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train" or "test".
+            "train", "test" or "holdout".
 
         Returns
         -------
@@ -367,7 +379,7 @@ class BasePredictor:
         Parameters
         ----------
         dataset: str, optional (default="train")
-            Data set from which to get the weights. Choose between
+            Data set from which to get the weights. Choose from
             "train", "test" or "dataset".
 
         Returns
@@ -384,7 +396,7 @@ class BasePredictor:
         if dataset not in ("train", "test", "dataset"):
             raise ValueError(
                 "Invalid value for the dataset parameter. "
-                "Choose between 'train', 'test' or 'dataset'."
+                "Choose from: train, test or dataset."
             )
 
         y = self.classes[dataset]
@@ -427,19 +439,14 @@ class BasePredictor:
         """
         check_is_fitted(self, attributes="_models")
 
-        if not models:
-            models = self.branch._get_depending_models()
-        if not estimator:
-            estimator = "LR" if self.goal == "class" else "Ridge"
-
         self._models["stack"] = Stacking(
             self,
-            models=self._get_models(models),
-            estimator=estimator,
+            models=self._get_models(models or self.branch._get_depending_models()),
+            estimator=estimator or "LR" if self.goal == "class" else "Ridge",
             stack_method=stack_method,
             passthrough=passthrough,
         )
-        self.log(f"{self.stack.fullname} added to the models!", 1)
+        self.log(f"{self.stack.fullname} added to the models.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def voting(
@@ -464,12 +471,9 @@ class BasePredictor:
         """
         check_is_fitted(self, attributes="_models")
 
-        if not models:
-            models = self.branch._get_depending_models()
-
         self._models["vote"] = Voting(
             self,
-            models=self._get_models(models),
+            models=self._get_models(models or self.branch._get_depending_models()),
             weights=weights,
         )
-        self.log(f"{self.vote.fullname} added to the models!", 1)
+        self.log(f"{self.vote.fullname} added to the models.", 1)

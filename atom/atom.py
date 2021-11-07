@@ -74,10 +74,11 @@ class ATOM(BasePredictor, ATOMPlotter):
     """
 
     @composed(crash, method_to_log)
-    def __init__(self, arrays, y, shuffle, n_rows, test_size):
+    def __init__(self, arrays, y, shuffle, n_rows, test_size, holdout_size):
         self.shuffle = shuffle
         self.n_rows = n_rows
         self.test_size = test_size
+        self.holdout_size = holdout_size
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
         # Branching attributes
@@ -95,14 +96,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("<< ================== ATOM ================== >>", 1)
 
         # Prepare the provided data
-        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays, y=y)
+        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays, y=y)
 
         # Attach the data to the original branch
         self.og.data = self.branch.data.copy(deep=True)
         self.og.idx = self.branch.idx.copy()
 
         # Save the test_size fraction for use during training
-        self._test_size = self.branch.idx[1] / len(self.dataset)
+        self._test_size = self.branch.idx[1] / self.shape[0]
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
@@ -167,9 +168,12 @@ class ATOM(BasePredictor, ATOMPlotter):
     @BasePredictor.branch.setter
     @typechecked
     def branch(self, name: str):
-        if name in [b for b in self._branches.keys() if b != "og"]:
-            self._current = self._branches[name].name
-            self.log(f"Switched to branch {self._current}.", 1)
+        if name in self._branches and name.lower() != "og":
+            if self.branch is self._branches[name]:
+                self.log(f"Already on branch {self.branch.name}.", 1)
+            else:
+                self._current = self._branches[name].name
+                self.log(f"Switched to branch {self._current}.", 1)
         else:
             # Branch can be created from current or another
             if "_from_" in name:
@@ -183,14 +187,14 @@ class ATOM(BasePredictor, ATOMPlotter):
             elif new_branch.lower() in map(str.lower, MODEL_LIST.keys()):
                 raise ValueError(
                     f"Invalid name for the branch. {new_branch} is the "
-                    f"acronym of model {MODEL_LIST[new_branch].fullname}. "
+                    f"acronym of model {MODEL_LIST[new_branch](self).fullname}."
                 )
             elif new_branch.lower() in ("og", "vote", "stack"):
                 raise ValueError(
                     "This name is reserved for internal purposes. "
-                    "Choose a different name for the branch."
+                    "Choose a different name for the new branch."
                 )
-            elif new_branch in self._branches:
+            elif new_branch in self._branches:  # Can happen when using _from_
                 raise ValueError(
                     f"Branch {self._branches[new_branch].name} already exists!"
                 )
@@ -204,7 +208,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             self._branches[new_branch] = Branch(self, new_branch, parent=from_branch)
             self._current = new_branch
-            self.log(f"New branch {self._current} successfully created!", 1)
+            self.log(f"New branch {self._current} successfully created.", 1)
 
     @property
     def scaled(self):
@@ -279,18 +283,14 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def classes(self):
         """Distribution of target classes per data set."""
-        return (
-            pd.DataFrame(
-                {
-                    "dataset": self.y.value_counts(sort=False, dropna=False),
-                    "train": self.y_train.value_counts(sort=False, dropna=False),
-                    "test": self.y_test.value_counts(sort=False, dropna=False),
-                },
-                index=self.mapping.values(),
-            )
-            .fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
-            .astype(int)
-        )
+        return pd.DataFrame(
+            {
+                "dataset": self.y.value_counts(sort=False, dropna=False),
+                "train": self.y_train.value_counts(sort=False, dropna=False),
+                "test": self.y_test.value_counts(sort=False, dropna=False),
+            },
+            index=self.mapping.values(),
+        ).fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
     def n_classes(self):
@@ -463,6 +463,14 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         if model:
             model = getattr(self, self._get_model_name(model)[0])
+
+            if self.branch is not model.branch:
+                raise ValueError(
+                    "The model to export is not fitted on the current "
+                    f"branch. Change to the {model.branch.name} branch "
+                    "or use the model's export_pipeline method."
+                )
+
             if model.scaler:
                 steps.append(("scaler", deepcopy(model.scaler)))
 
@@ -590,7 +598,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             if not filename.endswith(".html"):
                 filename = filename + ".html"
             profile.to_file(filename)
-            self.log("Report saved successfully!", 1)
+            self.log("Report successfully saved.", 1)
 
         return profile
 
@@ -611,7 +619,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._branches["master"] = Branch(self, "master", parent="og")
         self._current = "master"
 
-        self.log("The instance is successfully reset!", 1)
+        self.log("The instance is successfully reset.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = "auto", dataset: str = "dataset"):
@@ -632,7 +640,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             filename += ".csv"
 
         getattr(self, dataset).to_csv(filename, index=False)
-        self.log("Data set saved successfully!", 1)
+        self.log("Data set successfully saved.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def shrink(
@@ -708,7 +716,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 new_dtypes[c] = new_t
 
         self.branch.data = self.branch.data.astype(new_dtypes)
-        self.log("The column dtypes are converted successfully!", 1)
+        self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
     def stats(self, _vb: int = -2):
@@ -746,12 +754,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("-" * 37, _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
         self.log(f"Test set size: {len(self.test)}", _vb)
+        if self.holdout is not None:
+            self.log(f"Holdout set size: {len(self.holdout)}", _vb)
         self.log("-" * 37, _vb)
 
         # Print count and balance of classes
         if self.task != "regression":
             cls = self.classes
-            spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * 3)
+            spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * len(cls.columns))
             func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
 
             table = Table([("", "left"), *cls.columns], spaces)
@@ -844,8 +854,15 @@ class ATOM(BasePredictor, ATOMPlotter):
             method.
 
         """
+        if self.branch._get_depending_models():
+            raise PermissionError(
+                "It's not allowed to add transformers to the branch "
+                "after it has been used to train models. Create a "
+                "new branch to continue the pipeline."
+            )
+
         if not hasattr(estimator, "transform"):
-            raise ValueError("Added transformers should have a transform method!")
+            raise AttributeError("Added transformers should have a transform method!")
 
         # Add BaseTransformer params to the estimator if left to default
         if all(hasattr(estimator, attr) for attr in ("get_params", "set_params")):

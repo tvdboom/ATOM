@@ -106,23 +106,32 @@ class Branch:
     def delete(self, name: Optional[str] = None):
         """Delete the branch and all the models in it."""
         if name is None:
-            name = self.T._current
+            name = self.name
+
+        if name == "og":
+            raise PermissionError(
+                "The og branch is an internal branch and can not be deleted!"
+            )
         elif name not in self.T._branches:
             raise ValueError(f"Branch {name} not found in {self.T.__class__.__name__}!")
-
-        if len(self.T._branches) <= 2:
+        elif len(self.T._branches) <= 2:
             raise PermissionError(
                 f"Can't delete the last branch in {self.T.__class__.__name__}!"
             )
         else:
-            # Delete all depending models
-            for model in self.T._branches[name]._get_depending_models():
-                self.T.delete(model)
+            branch = self.T._branches[name]
 
-            self.T._branches.pop(name)
-            if name == self.T._current:  # Reset the current branch
+            # Delete all depending models
+            depending_models = branch._get_depending_models()
+            if depending_models:
+                self.T.delete(depending_models)
+
+            # Reset the current branch
+            if branch.name == self.T._current:
                 self.T._current = list(self.T._branches.keys())[1]  # 0 is og
-            self.T.log(f"Branch {name} successfully deleted!", 1)
+
+            self.T._branches.pop(branch.name)
+            self.T.log(f"Branch {branch.name} successfully deleted.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def rename(self, name: str):
@@ -183,6 +192,13 @@ class Branch:
                     return name.replace("train", "test")
                 if "test" in name:
                     return name.replace("test", "train")
+
+        if self._get_depending_models():
+            raise PermissionError(
+                "It's not allowed to change the data in the branch "
+                "after it has been used to train models. Create a "
+                "new branch to continue the pipeline."
+            )
 
         # Define the data attrs side and under
         side_name = counter(name, "side")
@@ -245,8 +261,8 @@ class Branch:
 
     @dataset.setter
     @typechecked
-    def dataset(self, value: Optional[X_TYPES]):
-        self.data = self._check_setter("dataset", value)
+    def dataset(self, value: X_TYPES):
+        self.data = value
 
     @property
     def train(self):
@@ -296,7 +312,7 @@ class Branch:
 
     @property
     def X_train(self):
-        """Feature set of the training set."""
+        """Features of the training set."""
         return self.train.drop(self.target, axis=1)
 
     @X_train.setter
@@ -307,7 +323,7 @@ class Branch:
 
     @property
     def X_test(self):
-        """Feature set of the test set."""
+        """Features of the test set."""
         return self.test.drop(self.target, axis=1)
 
     @X_test.setter

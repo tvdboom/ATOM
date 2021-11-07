@@ -135,7 +135,7 @@ def ATOMLoader(
             )
 
         # Prepare the provided data
-        data, idx = cls._get_data_and_idx(data, use_n_rows=transform_data)
+        data, idx, cls.holdout = cls._get_data(data, use_n_rows=transform_data)
 
         # Apply transformations per branch
         step = {}  # Current step in the pipeline per branch
@@ -162,7 +162,7 @@ def ATOMLoader(
                                 cls._branches[b2].idx = copy(branch.idx)
                                 step[b2] = i
 
-    cls.log(f"{cls.__class__.__name__} loaded successfully!", 1)
+    cls.log(f"{cls.__class__.__name__} successfully loaded.", 1)
 
     return cls
 
@@ -204,14 +204,25 @@ class ATOMClassifier(BaseTransformer, ATOM):
         an unequal distribution of the target classes over the sets.
 
     n_rows: int or float, optional (default=1)
-        - If <=1: Fraction of the dataset to use.
-        - If >1: Number of rows to use (only if input is X, y).
+        Random subsample of the provided dataset to use. The default
+        value selects all the rows.
+        - If <=1: Select this fraction of the dataset.
+        - If >1: Select this exact number of rows. Only if the input
+                 doesn't already specify the data sets (i.e. X or X, y).
 
-    test_size: int, float, optional (default=0.2)
+    test_size: int or float, optional (default=0.2)
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
-        This parameter is ignored if the train and test set are provided
+        This parameter is ignored if the data sets are provided
+        through `arrays`.
+
+    holdout_size: int, float or None, optional (default=None)
+        - If None: No holdout_size data set is set apart.
+        - If <=1: Fraction of the dataset to include in the holdout_size set.
+        - If >1: Number of rows to include in the holdout_size set.
+
+        This parameter is ignored if the data sets are provided
         through `arrays`.
 
     n_jobs: int, optional (default=1)
@@ -258,7 +269,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
         y: Y_TYPES = -1,
         shuffle: bool = True,
         n_rows: SCALAR = 1,
-        test_size: float = 0.2,
+        test_size: SCALAR = 0.2,
+        holdout_size: Optional[SCALAR] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -276,7 +288,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         )
 
         self.goal = "class"
-        ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size)
+        ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size, holdout_size)
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
@@ -312,14 +324,25 @@ class ATOMRegressor(BaseTransformer, ATOM):
         an unequal distribution of the target classes over the sets.
 
     n_rows: int or float, optional (default=1)
-        - If <=1: Fraction of the dataset to use.
-        - If >1: Number of rows to use (only if input is X, y).
+        Random subsample of the provided dataset to use. The default
+        value selects all the rows.
+        - If <=1: Select this fraction of the dataset.
+        - If >1: Select this exact number of rows. Only if the input
+                 doesn't already specify the data sets (i.e. X or X, y).
 
-    test_size: int, float, optional (default=0.2)
+    test_size: int or float, optional (default=0.2)
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
         Is ignored if the train and test set are provided.
+
+    holdout_size: int, float or None, optional (default=None)
+        - If None: No holdout_size data set is set apart.
+        - If <=1: Fraction of the dataset to include in the holdout_size set.
+        - If >1: Number of rows to include in the holdout_size set.
+
+        This parameter is ignored if the data sets are provided
+        through `arrays`.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -365,7 +388,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
         y: Y_TYPES = -1,
         shuffle: bool = True,
         n_rows: SCALAR = 1,
-        test_size: float = 0.2,
+        test_size: SCALAR = 0.2,
+        holdout_size: Optional[SCALAR] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -383,4 +407,4 @@ class ATOMRegressor(BaseTransformer, ATOM):
         )
 
         self.goal = "reg"
-        ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size)
+        ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size, holdout_size)

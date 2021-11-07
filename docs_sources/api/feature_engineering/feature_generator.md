@@ -43,7 +43,7 @@ Number of programs in each generation. Only for the genetic strategy.
 <p>
 <strong>operators: str, list, tuple or None, optional (default=None)</strong><br>
 Name of the operators to be used on the features. None to use all.
-Choose from: "add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan".
+Choose from: add, sub, mul, div, sqrt, log, sin, cos, tan.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.

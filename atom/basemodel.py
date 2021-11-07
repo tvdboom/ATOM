@@ -33,7 +33,8 @@ class BaseModel(BaseModelPlotter):
         self.explainer = None  # Explainer object for shap plots
         self._run = None  # mlflow run (if experiment is active)
         self._group = self.name  # sh and ts models belong to the same group
-        self._pred_attrs = [None] * 10
+        self._holdout = None
+        self._pred = [None] * 15
 
         # Skip if called from FeatureSelector
         if hasattr(self.T, "_branches"):
@@ -209,67 +210,97 @@ class BaseModel(BaseModelPlotter):
     @composed(crash, method_to_log)
     def reset_predictions(self):
         """Clear all the prediction attributes."""
-        self._pred_attrs = [None] * 10
+        self._pred = [None] * 15
 
     @property
     def predict_train(self):
-        if self._pred_attrs[0] is None:
-            self._pred_attrs[0] = self.estimator.predict(arr(self.X_train))
-        return self._pred_attrs[0]
+        if self._pred[0] is None:
+            self._pred[0] = self.estimator.predict(arr(self.X_train))
+        return self._pred[0]
 
     @property
     def predict_test(self):
-        if self._pred_attrs[1] is None:
-            self._pred_attrs[1] = self.estimator.predict(arr(self.X_test))
-        return self._pred_attrs[1]
+        if self._pred[1] is None:
+            self._pred[1] = self.estimator.predict(arr(self.X_test))
+        return self._pred[1]
+
+    @property
+    def predict_holdout(self):
+        if self.T.holdout is not None and self._pred[2] is None:
+            self._pred[2] = self.estimator.predict(arr(self.X_holdout))
+        return self._pred[2]
 
     @property
     def predict_proba_train(self):
-        if self._pred_attrs[2] is None:
-            self._pred_attrs[2] = self.estimator.predict_proba(arr(self.X_train))
-        return self._pred_attrs[2]
+        if self._pred[3] is None:
+            self._pred[3] = self.estimator.predict_proba(arr(self.X_train))
+        return self._pred[3]
 
     @property
     def predict_proba_test(self):
-        if self._pred_attrs[3] is None:
-            self._pred_attrs[3] = self.estimator.predict_proba(arr(self.X_test))
-        return self._pred_attrs[3]
+        if self._pred[4] is None:
+            self._pred[4] = self.estimator.predict_proba(arr(self.X_test))
+        return self._pred[4]
+
+    @property
+    def predict_proba_holdout(self):
+        if self.T.holdout is not None and self._pred[5] is None:
+            self._pred[5] = self.estimator.predict_proba(arr(self.X_holdout))
+        return self._pred[5]
 
     @property
     def predict_log_proba_train(self):
-        if self._pred_attrs[4] is None:
-            self._pred_attrs[4] = self.estimator.predict_log_proba(arr(self.X_train))
-        return self._pred_attrs[4]
+        if self._pred[6] is None:
+            self._pred[6] = self.estimator.predict_log_proba(arr(self.X_train))
+        return self._pred[6]
 
     @property
     def predict_log_proba_test(self):
-        if self._pred_attrs[5] is None:
-            self._pred_attrs[5] = self.estimator.predict_log_proba(arr(self.X_test))
-        return self._pred_attrs[5]
+        if self._pred[7] is None:
+            self._pred[7] = self.estimator.predict_log_proba(arr(self.X_test))
+        return self._pred[7]
+
+    @property
+    def predict_log_proba_holdout(self):
+        if self.T.holdout is not None and self._pred[8] is None:
+            self._pred[8] = self.estimator.predict_log_proba(arr(self.X_holdout))
+        return self._pred[8]
 
     @property
     def decision_function_train(self):
-        if self._pred_attrs[6] is None:
-            self._pred_attrs[6] = self.estimator.decision_function(arr(self.X_train))
-        return self._pred_attrs[6]
+        if self._pred[9] is None:
+            self._pred[9] = self.estimator.decision_function(arr(self.X_train))
+        return self._pred[9]
 
     @property
     def decision_function_test(self):
-        if self._pred_attrs[7] is None:
-            self._pred_attrs[7] = self.estimator.decision_function(arr(self.X_test))
-        return self._pred_attrs[7]
+        if self._pred[10] is None:
+            self._pred[10] = self.estimator.decision_function(arr(self.X_test))
+        return self._pred[10]
+
+    @property
+    def decision_function_holdout(self):
+        if self.T.holdout is not None and self._pred[11] is None:
+            self._pred[11] = self.estimator.decision_function(arr(self.X_holdout))
+        return self._pred[11]
 
     @property
     def score_train(self):
-        if self._pred_attrs[8] is None:
-            self._pred_attrs[8] = self.estimator.score(arr(self.X_train), self.y_train)
-        return self._pred_attrs[8]
+        if self._pred[12] is None:
+            self._pred[12] = self.estimator.score(arr(self.X_train), self.y_train)
+        return self._pred[12]
 
     @property
     def score_test(self):
-        if self._pred_attrs[9] is None:
-            self._pred_attrs[9] = self.estimator.score(arr(self.X_test), self.y_test)
-        return self._pred_attrs[9]
+        if self._pred[13] is None:
+            self._pred[13] = self.estimator.score(arr(self.X_test), self.y_test)
+        return self._pred[13]
+
+    @property
+    def score_holdout(self):
+        if self.T.holdout is not None and self._pred[14] is None:
+            self._pred[14] = self.estimator.score(arr(self.X_holdout), self.y_holdout)
+        return self._pred[14]
 
     # Data Properties ============================================== >>
 
@@ -284,6 +315,20 @@ class BaseModel(BaseModelPlotter):
     @property
     def test(self):
         return merge(self.X_test, self.y_test)
+
+    @property
+    def holdout(self):
+        if self.T.holdout is not None:
+            if self._holdout is None:
+                self._holdout = merge(
+                    *self.transform(
+                        X=self.T.holdout.iloc[:, :-1],
+                        y=self.T.holdout.iloc[:, -1],
+                        verbose=0,
+                    )
+                )
+
+            return self._holdout
 
     @property
     def X(self):
@@ -308,8 +353,18 @@ class BaseModel(BaseModelPlotter):
             return self.branch.X_test
 
     @property
+    def X_holdout(self):
+        if self.T.holdout is not None:
+            return self.holdout.iloc[:, :-1]
+
+    @property
     def y_train(self):
         return self.branch.y_train[:self._train_idx]
+
+    @property
+    def y_holdout(self):
+        if self.T.holdout is not None:
+            return self.holdout.iloc[:, -1]
 
     # Utility methods ============================================== >>
 
@@ -334,7 +389,7 @@ class BaseModel(BaseModelPlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train" or "test".
+            "train", "test" or "holdout".
 
         Returns
         -------
@@ -343,10 +398,15 @@ class BaseModel(BaseModelPlotter):
 
         """
         dataset = dataset.lower()
-        if dataset not in ("train", "test"):
+        if dataset not in ("train", "test", "holdout"):
             raise ValueError(
                 "Unknown value for the dataset parameter. "
-                "Choose between 'train' or 'test'."
+                "Choose from: train, test or holdout."
+            )
+        if dataset == "holdout" and self.T.holdout is None:
+            raise ValueError(
+                "Invalid value for the dataset parameter. No holdout "
+                "data set was specified when initializing the trainer."
             )
 
         # Predefined metrics to show
@@ -404,7 +464,7 @@ class BaseModel(BaseModelPlotter):
             if self._run:  # Log metric to mlflow run
                 MlflowClient().log_metric(
                     run_id=self._run.info.run_id,
-                    key=scorer.name,
+                    key=f"{scorer.name}_{dataset}",
                     value=it(scores[scorer.name]),
                 )
 

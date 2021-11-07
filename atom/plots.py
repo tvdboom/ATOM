@@ -151,7 +151,7 @@ class BasePlotter:
         if value not in styles:
             raise ValueError(
                 "Invalid value for the style parameter, got "
-                f"{value}. Choose from {', '.join(styles)}."
+                f"{value}. Choose from: {', '.join(styles)}."
             )
         sns.set_style(value)
         self._aesthetics["style"] = value
@@ -273,32 +273,31 @@ class BasePlotter:
             f"or name of a metric used to run the pipeline, got {metric}."
         )
 
-    @staticmethod
-    def _get_set(dataset):
+    def _get_set(self, dataset, allow_holdout=True):
         """Check and return the provided parameter metric."""
-        if dataset.lower() == "both":
+        dataset = dataset.lower()
+        if dataset == "both":
             return ["train", "test"]
-        elif dataset.lower() in ("train", "test"):
-            return [dataset.lower()]
+        elif dataset in ("train", "test"):
+            return [dataset]
+        elif allow_holdout:
+            if dataset == "holdout":
+                if self.holdout is None:
+                    raise ValueError(
+                        "Invalid value for the dataset parameter. No holdout "
+                        "data set was specified when initializing the trainer."
+                    )
+                return [dataset]
+            else:
+                raise ValueError(
+                    "Invalid value for the dataset parameter. "
+                    "Choose from: train, test, both or holdout."
+                )
         else:
             raise ValueError(
                 "Invalid value for the dataset parameter. "
-                "Choose between 'train', 'test' or 'both'."
+                "Choose from: train, test or both."
             )
-
-    @staticmethod
-    def _get_show(show, model):
-        """Check and return the provided parameter show."""
-        max_fxs = max([m.n_features for m in lst(model)])
-        if show is None or show > max_fxs:
-            return max_fxs
-        elif show < 1:
-            raise ValueError(
-                "Invalid value for the show parameter."
-                f"Value should be >0, got {show}."
-            )
-
-        return show
 
     def _get_index(self, index, model=None, return_test=True):
         """Check and return the provided parameter index."""
@@ -340,6 +339,20 @@ class BasePlotter:
             )
 
         return target
+
+    @staticmethod
+    def _get_show(show, model):
+        """Check and return the provided parameter show."""
+        max_fxs = max([m.n_features for m in lst(model)])
+        if show is None or show > max_fxs:
+            return max_fxs
+        elif show < 1:
+            raise ValueError(
+                "Invalid value for the show parameter."
+                f"Value should be >0, got {show}."
+            )
+
+        return show
 
     @staticmethod
     def _get_shap(model, index, target):
@@ -1027,7 +1040,7 @@ class BaseModelPlotter(BasePlotter):
         check_method(self, "plot_evals")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        dataset = self._get_set(dataset)
+        dataset = self._get_set(dataset, allow_holdout=False)
 
         # Check that the model had in-training evaluation
         if not hasattr(m, "evals"):
@@ -1078,12 +1091,12 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train", "test" or "both".
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10,6))
+        figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
@@ -1161,7 +1174,7 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train", "test" or "both".
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -1244,7 +1257,7 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train", "test" or "both".
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -1322,8 +1335,8 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the gains. Options are
-            "train", "test" or "both".
+            Data set on which to calculate the metric. Options are
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -1417,7 +1430,7 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train", "test" or "both".
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -1513,8 +1526,8 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the errors. Options are
-            "train", "test" or "both".
+            Data set on which to calculate the metric. Options are
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -1618,7 +1631,7 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train", "test" or "both".
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -2224,7 +2237,7 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the confusion matrix.
-            Options are "train" or "test".
+            Options are "train", "test" or "holdout".
 
         normalize: bool, optional (default=False)
            Whether to normalize the matrix.
@@ -2255,12 +2268,16 @@ class BaseModelPlotter(BasePlotter):
         models = self._get_subclass(models)
 
         dataset = dataset.lower()
-        if dataset not in ("train", "test"):
+        if dataset not in ("train", "test", "holdout"):
             raise ValueError(
                 "Unknown value for the dataset parameter. "
-                "Choose between 'train' or 'test'."
+                "Choose from: train, test or holdout."
             )
-
+        if dataset == "holdout" and self.holdout is None:
+            raise ValueError(
+                "Invalid value for the dataset parameter. No holdout "
+                "data set was specified when initializing the trainer."
+            )
         if self.task.startswith("multi") and len(models) > 1:
             raise NotImplementedError(
                 "The plot_confusion_matrix method does not support the comparison"
@@ -2385,7 +2402,7 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train", "test" or "both".
+            "train", "test", "both" (train and test) or "holdout".
 
         steps: int, optional (default=100)
             Number of thresholds measured.
@@ -2478,7 +2495,7 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
-            "train", "test" or "both".
+            "train", "test", "both" (train and test) or "holdout".
 
         target: int or str, optional (default=1)
             Probability of being that class in the target column
@@ -3333,8 +3350,12 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        # TODO: Fix when shap updates -> show=False
-        shap.plots.waterfall(shap_values, max_display=show, show=True)
+        # TODO: Change to only show=False when shap updates
+        shap.plots.waterfall(
+            shap_values,
+            max_display=show,
+            show=True if shap.__version__ == "0.40.0" else False,
+        )
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
@@ -3557,8 +3578,8 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             columns are ignored.
 
         method: str, optional (default="pearson")
-            Method of correlation. Choose from "pearson", "kendall"
-            or "spearman".
+            Method of correlation. Choose from: pearson, kendall or
+            spearman.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.

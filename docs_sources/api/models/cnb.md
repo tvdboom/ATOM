@@ -275,7 +275,7 @@ The remaining utility methods can be found hereunder.
 
 <tr>
 <td><a href="#full-train">full_train</a></td>
-<td>Get the estimator trained on the complete dataset.</td>
+<td>Train the estimator on the complete dataset.</td>
 </tr>
 
 <tr>
@@ -296,6 +296,11 @@ The remaining utility methods can be found hereunder.
 <tr>
 <td><a href="#save-estimator">save_estimator</a></td>
 <td>Save the estimator to a pickle file.</td>
+</tr>
+
+<tr>
+<td><a href="#transform">transform</a></td>
+<td>Transform new data through the model's branch.</td>
 </tr>
 </table>
 <br>
@@ -491,7 +496,8 @@ or one of the following custom metrics:
 </ul>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train" or "test".
+Data set on which to calculate the metric. Options are "train",
+"test" or "holdout".
 </p>
 </td>
 </tr>
@@ -520,6 +526,54 @@ Save the estimator to a pickle file.
 <td width="80%" class="td_params">
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L895">[source]</a>
+</span>
+</div>
+Transform new data through the model's branch. Transformers that
+are only applied on the training set are skipped. If the model
+used feature scaling, the data is also scaled.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+Features to transform, with shape=(n_samples, n_features).
+</p>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored in the transformers.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
+</ul>
+<p>
+<strong>verbose: int or None, optional (default=None)</strong><br>
+Verbosity level of the output. If None, it uses the transformer's own verbosity.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: pd.DataFrame</strong><br>
+Transformed feature set.
+</p>
+<p>
+<strong>y: pd.Series</strong><br>
+Transformed target column. Only returned if provided.
+</p>
 </td>
 </tr>
 </table>

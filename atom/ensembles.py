@@ -80,7 +80,7 @@ class Voting(BaseModel, BaseEnsemble):
 
         self.models = models
         self.weights = weights
-        self._pred_attrs = [None] * 12  # With score_train and score_test
+        self._pred = [None] * 12  # With score_train and score_test
         self._models = CustomDict(
             {k: v for k, v in self.T._models.items() if v.name in self.models}
         )
@@ -222,95 +222,95 @@ class Voting(BaseModel, BaseEnsemble):
 
     @property
     def metric_train(self):
-        if self._pred_attrs[0] is None:
+        if self._pred[0] is None:
             pred = np.array([m.metric_train for m in self._models])
-            self._pred_attrs[0] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[0]
+            self._pred[0] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[0]
 
     @property
     def metric_test(self):
-        if self._pred_attrs[1] is None:
+        if self._pred[1] is None:
             pred = np.array([m.metric_test for m in self._models])
-            self._pred_attrs[1] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[1]
+            self._pred[1] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[1]
 
     @property
     def predict_train(self):
-        if self._pred_attrs[2] is None:
+        if self._pred[2] is None:
             pred = np.array([m.predict_train for m in self._models])
-            self._pred_attrs[2] = np.apply_along_axis(
+            self._pred[2] = np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
                 axis=0,
                 arr=pred.astype("int"),
             )
-        return self._pred_attrs[2]
+        return self._pred[2]
 
     @property
     def predict_test(self):
-        if self._pred_attrs[3] is None:
+        if self._pred[3] is None:
             pred = np.array([m.predict_test for m in self._models])
-            self._pred_attrs[3] = np.apply_along_axis(
+            self._pred[3] = np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
                 axis=0,
                 arr=pred.astype("int"),
             )
-        return self._pred_attrs[3]
+        return self._pred[3]
 
     @property
     def predict_proba_train(self):
-        if self._pred_attrs[4] is None:
+        if self._pred[4] is None:
             pred = np.array([m.predict_proba_train for m in self._models])
-            self._pred_attrs[4] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[4]
+            self._pred[4] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[4]
 
     @property
     def predict_proba_test(self):
-        if self._pred_attrs[5] is None:
+        if self._pred[5] is None:
             pred = np.array([m.predict_proba_test for m in self._models])
-            self._pred_attrs[5] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[5]
+            self._pred[5] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[5]
 
     @property
     def predict_log_proba_train(self):
-        if self._pred_attrs[6] is None:
+        if self._pred[6] is None:
             pred = np.array([m.predict_log_proba_train for m in self._models])
-            self._pred_attrs[6] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[6]
+            self._pred[6] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[6]
 
     @property
     def predict_log_proba_test(self):
-        if self._pred_attrs[7] is None:
+        if self._pred[7] is None:
             pred = np.array([m.predict_log_proba_test for m in self._models])
-            self._pred_attrs[7] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[7]
+            self._pred[7] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[7]
 
     @property
     def decision_function_train(self):
-        if self._pred_attrs[8] is None:
+        if self._pred[8] is None:
             pred = np.array([m.decision_function_train for m in self._models])
-            self._pred_attrs[8] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[8]
+            self._pred[8] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[8]
 
     @property
     def decision_function_test(self):
-        if self._pred_attrs[9] is None:
+        if self._pred[9] is None:
             pred = np.array([m.decision_function_test for m in self._models])
-            self._pred_attrs[9] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[9]
+            self._pred[9] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[9]
 
     @property
     def score_train(self):
-        if self._pred_attrs[10] is None:
+        if self._pred[10] is None:
             pred = np.array([m.score_train for m in self._models])
-            self._pred_attrs[10] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[10]
+            self._pred[10] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[10]
 
     @property
     def score_test(self):
-        if self._pred_attrs[11] is None:
+        if self._pred[11] is None:
             pred = np.array([m.score_test for m in self._models])
-            self._pred_attrs[11] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[11]
+            self._pred[11] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred[11]
 
 
 class Stacking(BaseModel, BaseEnsemble):

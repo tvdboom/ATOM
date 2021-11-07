@@ -123,8 +123,8 @@ of the initializer.
 <strong>bo_params: dict, optional (default=None)</strong><br>
 Additional parameters to for the BO. These can include:
 <ul style="line-height:1.2em;margin-top:5px">
-<li><b>base_estimator: str, optional (default="GP")</b><br>Base estimator to use in the BO.
-Choose from:
+<li><b>base_estimator: str, optional (default="GP")</b><br>
+Base estimator to use in the BO. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"GP" for Gaussian Process</li>
 <li>"RF" for Random Forest</li>
@@ -551,7 +551,7 @@ inversely proportional to the class frequencies in the selected data set.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <strong>dataset: str, optional (default="train")</strong><br>
-Data set from which to get the weights. Choose between "train", "test" or "dataset".
+Data set from which to get the weights. Choose from: train, test or dataset.
 </tr>
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
@@ -715,7 +715,8 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train" or "test".
+Data set on which to calculate the metric. Options are "train",
+"test" or "holdout".
 </p>
 </td>
 </tr>

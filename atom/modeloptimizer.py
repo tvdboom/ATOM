@@ -9,7 +9,7 @@ Description: Module containing the ModelOptimizer class.
 
 # Standard packages
 import os
-import pickle
+import dill
 import mlflow
 import contextlib
 import numpy as np
@@ -45,8 +45,9 @@ from .basemodel import BaseModel
 from .pipeline import Pipeline
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    flt, lst, arr, time_to_str, get_best_score, get_scorer, composed,
-    crash, method_to_log, score_decorator, Table,
+    X_TYPES, Y_TYPES, flt, lst, arr, time_to_str, get_best_score,
+    get_scorer, variable_return, get_pl_name, custom_transform,
+    composed, crash, method_to_log, score_decorator, Table,
 )
 
 
@@ -526,7 +527,8 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 mlflow.log_params(self.estimator.get_params())
 
             for i, m in enumerate(self.T._metric.keys()):
-                mlflow.log_metric(m, lst(self.metric_test)[i])
+                mlflow.log_metric(f"{m}_train", lst(self.metric_train)[i])
+                mlflow.log_metric(f"{m}_test", lst(self.metric_test)[i])
 
             # Save evals for models with in-training evaluation
             if hasattr(self, "evals"):
@@ -651,12 +653,12 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
     def calibrate(self, **kwargs):
         """Calibrate the model.
 
-        Applies probability calibration on the winning model. The
-        estimator is trained via cross-validation on a subset of the
-        training data, using the rest to fit the calibrator. The new
-        classifier will replace the `estimator` attribute and is
-        logged to any active mlflow experiment. Since the estimator
-        changed, all the model's prediction attributes are reset.
+        Applies probability calibration on the model. The estimator
+        is trained via cross-validation on a subset of the training
+        data, using the rest to fit the calibrator. The new classifier
+        will replace the `estimator` attribute and is logged to any
+        active mlflow experiment. Since the estimator changed, all the
+        model's prediction attributes are reset.
 
         Parameters
         ----------
@@ -683,10 +685,9 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             with mlflow.start_run(self._run.info.run_id):
                 mlflow.sklearn.log_model(self.estimator, "CalibratedClassifierCV")
 
-        self.T.log(f"Model {self.name} successfully calibrated!", 1)
+        self._pred = [None] * 15  # Reset all prediction attrs
 
-        # Reset all prediction attrs since the model's estimator changed
-        self._pred_attrs = [None] * 10
+        self.T.log(f"Model {self.name} successfully calibrated.", 1)
 
     @composed(crash, method_to_log)
     def cross_validate(self, **kwargs):
@@ -772,46 +773,70 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Current branch as a sklearn-like Pipeline object.
 
         """
-        if hasattr(self.T, "export_pipeline"):
-            return self.T.export_pipeline(self.name, verbose)
-        else:
-            steps = []
-            if self.scaler:
-                steps.append(("scaler", deepcopy(self.scaler)))
+        steps = []
+        for transformer in self.pipeline:
+            est = deepcopy(transformer)  # Not clone to keep fitted
 
-            # Redirect stdout to avoid annoying prints
-            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-                steps.append((self.name, deepcopy(self.estimator)))
+            # Set the new verbosity (if possible)
+            if verbose is not None and hasattr(est, "verbose"):
+                est.verbose = verbose
 
-            return Pipeline(steps)
+            steps.append((get_pl_name(est.__class__.__name__, steps), est))
 
-    @crash
-    def full_train(self):
-        """Get the estimator trained on the complete dataset.
+        if self.scaler:
+            steps.append(("scaler", deepcopy(self.scaler)))
 
-        In some cases it might be desirable to use all the available
-        data to train a final model after the right hyperparameters
-        are found. Note that this means that the model can not be
-        evaluated.
+        # Redirect stdout to avoid annoying prints
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+            steps.append((self.name, deepcopy(self.estimator)))
 
-        Returns
-        -------
-        est: estimator
-            Model estimator trained on the full dataset.
+        return Pipeline(steps)  # ATOM's pipeline, not sklearn
+
+    @composed(crash, method_to_log, typechecked)
+    def full_train(self, include_holdout: bool = False):
+        """Train the estimator on the complete dataset.
+
+        In some cases it might be desirable to use all available
+        data to train a final model. Note that doing this means
+        that the estimator can no longer be evaluated on the test
+        set. The newly retrained estimator will replace the
+        `estimator` attribute and is logged to any active mlflow
+        experiment. Since the estimator changed, all the model's
+        prediction attributes are reset.
+
+        Parameters
+        ----------
+        include_holdout: bool, optional (default=False)
+            Whether to include the holdout set (if available) in the
+            training of the estimator. It's discouraged to use this
+            option since it means the model can no longer be evaluated
+            on any set.
 
         """
-        estimator = clone(self.estimator)  # Clone to not overwrite when fitting
+        if include_holdout and self.T.holdout is not None:
+            X = pd.concat([self.X, self.X_holdout])
+            y = pd.concat([self.y, self.y_holdout])
+        else:
+            X, y = self.X, self.y
 
         if hasattr(self, "custom_fit"):
             self.custom_fit(
-                est=estimator,
-                train=(self.X, self.y),
+                est=self.estimator,
+                train=(X, y),
                 params=self._est_params_fit,
             )
         else:
-            estimator.fit(arr(self.X), self.y, **self._est_params_fit)
+            self.estimator.fit(arr(X), y, **self._est_params_fit)
 
-        return estimator
+        # Log the new estimator to the model's mlflow run
+        if self._run and self.T.log_model:
+            with mlflow.start_run(self._run.info.run_id):
+                name = f"full_train_{self.estimator.__class__.__name__}"
+                mlflow.sklearn.log_model(self.estimator, name)
+
+        self._pred = [None] * 15  # Reset all prediction attrs
+
+        self.T.log(f"Model {self.name} successfully retrained.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def rename(self, name: Optional[str] = None):
@@ -844,7 +869,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Replace the model in the _models attribute
         self.T._models.insert(self.name, name, self)
         self.T._models.pop(self.name)
-        self.T.log(f"Model {self.name} successfully renamed to {name}!", 1)
+        self.T.log(f"Model {self.name} successfully renamed to {name}.", 1)
         self.name = name
 
         if self._run:  # Change name in mlflow's run
@@ -864,6 +889,48 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             filename = filename.replace("auto", self.estimator.__class__.__name__)
 
         with open(filename, "wb") as f:
-            pickle.dump(self.estimator, f)
+            dill.dump(self.estimator, f)
 
-        self.T.log(f"{self.fullname} estimator saved successfully!", 1)
+        self.T.log(f"{self.fullname} estimator successfully saved.", 1)
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Y_TYPES = None, verbose: Optional[int] = None):
+        """Transform new data through the model's branch.
+
+        Transformers that are only applied on the training set are
+        skipped. If the model used feature scaling, the data is also
+        scaled.
+
+        Parameters
+        ----------
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored in the transformers.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
+
+            Feature set with shape=(n_samples, n_features).
+
+        verbose: int or None, optional (default=None)
+            Verbosity level for the transformers. If None, it uses the
+            estimator's own verbosity.
+
+        Returns
+        -------
+        X: pd.DataFrame
+            Transformed feature set.
+
+        y: pd.Series
+            Transformed target column. Only returned if provided.
+
+        """
+        for est in [est for est in self.pipeline if not est._train_only]:
+            X, y = custom_transform(self, est, self.branch, (X, y), verbose)
+
+        if self.scaler:
+            X = self.scaler.transform(X)
+
+        return variable_return(X, y)

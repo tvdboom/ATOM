@@ -124,13 +124,20 @@ def test_getitem():
 
 # Test utility properties =========================================== >>
 
+def test_branch_same():
+    """Assert that we can stay on the same branch."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    atom.branch = "master"
+    assert atom.branch.name == "master"
+
+
 def test_branch_change():
     """Assert that we can change to another branch."""
     atom = ATOMClassifier(X10, y10, random_state=1)
     atom.branch = "branch_2"
     atom.clean()
     atom.branch = "master"
-    assert atom.pipeline.empty  # Has no clean estimator
+    assert atom.pipeline.empty  # Has no Cleaner
 
 
 def test_branch_empty():
@@ -157,8 +164,9 @@ def test_branch_restricted_name():
 def test_branch_existing_name():
     """Assert that an error is raised when the name already exists."""
     atom = ATOMClassifier(X10, y10, random_state=1)
+    atom.branch = "branch_2"
     with pytest.raises(ValueError, match=r".*already exists.*"):
-        atom.branch = "master_from_og"
+        atom.branch = "branch_2_from_master"
 
 
 def test_branch_unknown_parent():
@@ -276,6 +284,7 @@ def test_automl_classification(cls):
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="accuracy")
+    atom.branch = "automl"  # Change branch since new pipeline
     atom.automl()
     cls.assert_called_with(
         n_jobs=1,
@@ -528,24 +537,19 @@ def test_custom_params_to_method():
     assert atom.pipeline[0].verbose == 2
 
 
-def test_add_pipeline():
-    """Assert that adding a pipeline adds every individual step."""
-    pipeline = Pipeline(
-        steps=[
-            ("scaler", StandardScaler()),
-            ("sfm", SelectFromModel(RandomForestClassifier())),
-        ]
-    )
+def test_add_depending_models():
+    """Assert that an error is raised when the branch has depending models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.add(pipeline)
-    assert isinstance(atom.pipeline[0], StandardScaler)
-    assert isinstance(atom.pipeline[1], SelectFromModel)
+    atom.run("LR")
+    with pytest.raises(PermissionError, match=r".*allowed to add transformers.*"):
+        atom.clean()
 
 
 def test_add_no_transformer():
     """Assert that an error is raised if the estimator has no estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.add, RandomForestClassifier())
+    with pytest.raises(AttributeError, match=r".*should have a transform method.*"):
+        atom.add(RandomForestClassifier())
 
 
 def test_add_basetransformer_params_are_attached():
@@ -658,6 +662,20 @@ def test_add_params_to_method():
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.scale()
     assert atom.pipeline[0].verbose == 1
+
+
+def test_add_pipeline():
+    """Assert that adding a pipeline adds every individual step."""
+    pipeline = Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("sfm", SelectFromModel(RandomForestClassifier())),
+        ]
+    )
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.add(pipeline)
+    assert isinstance(atom.pipeline[0], StandardScaler)
+    assert isinstance(atom.pipeline[1], SelectFromModel)
 
 
 def test_apply_not_callable():
@@ -848,6 +866,7 @@ def test_winner_solver_after_run():
     """Assert that the solver is the winning model after run."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("LR")
+    atom.branch = "fs_branch"
     atom.feature_selection(strategy="SFM", solver=None, n_features=8)
     assert atom.pipeline[0]._solver is atom.winner.estimator
 
@@ -870,6 +889,7 @@ def test_default_scoring(cls):
     """Assert that the scoring is atom's metric when exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="recall")
+    atom.branch = "fs_branch"
     atom.feature_selection(strategy="sfs", solver="lgb", n_features=25)
     assert atom.pipeline[0].kwargs["scoring"].name == "recall"
 

@@ -256,8 +256,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     operators: str, sequence or None, optional (default=None)
         Mathematical operators to apply on the features. None for all.
-        Choose from: "add", "sub", "mul", "div", "sqrt", "log", "inv",
-        "sin", "cos", "tan".
+        Choose from: add, sub, mul, div, sqrt, log, inv, sin, cos, tan.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -532,7 +531,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             if len(descript) == 0:
                 self.log(
                     " --> WARNING! The genetic algorithm couldn't "
-                    "find any improving non-linear features!", 1
+                    "find any improving non-linear features.", 1
                 )
                 return X
 

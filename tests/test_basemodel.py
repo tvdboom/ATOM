@@ -122,25 +122,22 @@ def test_reset_predictions():
     """Assert that reset_predictions removes the made predictions."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    print(atom.mnb.score_test)
+    atom.plot_roc()
+    assert isinstance(atom.mnb._pred[4], np.ndarray)  # Predictions are made
     atom.mnb.reset_predictions()
-    assert atom.mnb._pred_attrs[9] is None
+    assert atom.mnb._pred[4] is None  # Predictions are reset
 
 
-def test_all_prediction_properties():
-    """Assert that all prediction properties are saved as attributes when called."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+@pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
+def test_all_prediction_properties(dataset):
+    """Assert that all prediction properties can be called."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run(["LR", "SGD"])
-    assert isinstance(atom.lr.predict_train, np.ndarray)
-    assert isinstance(atom.lr.predict_test, np.ndarray)
-    assert isinstance(atom.lr.predict_proba_train, np.ndarray)
-    assert isinstance(atom.lr.predict_proba_test, np.ndarray)
-    assert isinstance(atom.lr.predict_log_proba_train, np.ndarray)
-    assert isinstance(atom.lr.predict_log_proba_test, np.ndarray)
-    assert isinstance(atom.lr.decision_function_train, np.ndarray)
-    assert isinstance(atom.lr.decision_function_test, np.ndarray)
-    assert isinstance(atom.lr.score_train, np.float64)
-    assert isinstance(atom.lr.score_test, np.float64)
+    assert isinstance(getattr(atom.lr, f"predict_{dataset}"), np.ndarray)
+    assert isinstance(getattr(atom.lr, f"predict_proba_{dataset}"), np.ndarray)
+    assert isinstance(getattr(atom.lr, f"predict_log_proba_{dataset}"), np.ndarray)
+    assert isinstance(getattr(atom.lr, f"decision_function_{dataset}"), np.ndarray)
+    assert isinstance(getattr(atom.lr, f"score_{dataset}"), np.float64)
 
 
 def test_dataset_property():
@@ -165,6 +162,15 @@ def test_test_property():
     atom.run(["MNB", "LR"])
     assert atom.test.equals(atom.mnb.test)
     assert check_scaling(atom.lr.test)
+
+
+def test_holdout_property():
+    """Assert that the holdout property is calculated."""
+    atom = ATOMClassifier(X10_str, y10, holdout_size=0.1, random_state=1)
+    atom.encode()
+    atom.run("MNB")
+    assert not atom.holdout.equals(atom.mnb.holdout)
+    assert len(atom.mnb.holdout.columns) > 3  # Holdout is transformed
 
 
 def test_X_property():
@@ -199,12 +205,26 @@ def test_X_test_property():
     assert check_scaling(atom.lr.X_test)
 
 
+def test_X_holdout_property():
+    """Assert that the X_holdout property is calculated."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("MNB")
+    assert atom.mnb.X_holdout.equals(atom.mnb.holdout.iloc[:, :-1])
+
+
 def test_y_train_property():
     """Assert that the y_train property is returned unchanged."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
     assert atom.y_train.equals(atom.mnb.y_train)
     assert atom.y_train.equals(atom.lr.y_train)
+
+
+def test_y_holdout_property():
+    """Assert that the y_holdout property is calculated."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("MNB")
+    assert atom.mnb.y_holdout.equals(atom.mnb.holdout.iloc[:, -1])
 
 
 # Test utility methods ============================================= >>
@@ -222,24 +242,34 @@ def test_evaluate_invalid_dataset():
     """Assert that an error is raised when the dataset is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    pytest.raises(ValueError, atom.mnb.evaluate, dataset="invalid")
+    with pytest.raises(ValueError, match=r".*Unknown value for the dataset.*"):
+        atom.mnb.evaluate(dataset="invalid")
 
 
-def test_evaluate_metric_None():
-    """Assert that the evaluate method works when metric is empty."""
+def test_evaluate_no_holdout():
+    """Assert that an error is raised when there's no holdout set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    scores = atom.mnb.evaluate()
+    with pytest.raises(ValueError, match=r".*No holdout data set.*"):
+        atom.mnb.evaluate(dataset="holdout")
+
+
+@pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
+def test_evaluate_metric_None(dataset):
+    """Assert that the evaluate method works when metric is empty."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("MNB")
+    scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 9
 
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom = ATOMClassifier(X_class, y_class, holdout_size=0.1, random_state=1)
     atom.run("MNB")
-    scores = atom.mnb.evaluate()
+    scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 6
 
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("OLS")
-    scores = atom.ols.evaluate()
+    scores = atom.ols.evaluate(dataset=dataset)
     assert len(scores) == 7
 
 
@@ -249,4 +279,4 @@ def test_rename_to_mlflow(mlflow):
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
     atom.evaluate()
-    assert mlflow.call_count == 10  # 9 from evaluate + 1 from training
+    assert mlflow.call_count == 11  # 9 from evaluate + 2 from training

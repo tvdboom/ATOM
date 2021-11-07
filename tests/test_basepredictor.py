@@ -76,20 +76,25 @@ def test_setattr_normal():
     assert atom.attr == "test"
 
 
-def test_delattr_models():
-    """Assert that models can be deleted through del."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR"])
-    del atom.lr
-    assert not atom.models
-
-
 def test_delattr_branch():
     """Assert that branches can be deleted through del."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
+    atom.branch = "branch_3"
     del atom.branch
+    assert list(atom._branches.keys()) == ["og", "master", "branch_2"]
+    del atom.branch_2
     assert list(atom._branches.keys()) == ["og", "master"]
+
+
+def test_delattr_models():
+    """Assert that models can be deleted through del."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["MNB", "LR"])
+    del atom.winner
+    assert atom.models == "MNB"
+    del atom.winner
+    assert not atom.models
 
 
 def test_delattr_normal():
@@ -97,6 +102,13 @@ def test_delattr_normal():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     del atom._models
     assert not hasattr(atom, "_models")
+
+
+def test_delattr_invalid():
+    """Assert that an error is raised when there is no such attribute."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(AttributeError, match=r".*object has no attribute.*"):
+        del atom.invalid
 
 
 # Test utility properties ========================================== >>
@@ -186,7 +198,7 @@ def test_reset_predictions():
     print(atom.lr.predict_proba_train)
     print(atom.lgb.predict_test)
     atom.reset_predictions()
-    assert atom.lr._pred_attrs == [None] * 10
+    assert atom.lr._pred == [None] * 15
 
 
 def test_predict():
@@ -312,10 +324,11 @@ def test_available_models():
 
 
 def test_delete_default():
-    """Assert that the whole pipeline is deleted as default."""
+    """Assert that all models in branch are deleted as default."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.delete()  # No models
     atom.run(["LR", "LDA"])
-    atom.delete()
+    atom.delete()  # All models
     assert not (atom.models or atom.metric)
     assert atom.results.empty
 

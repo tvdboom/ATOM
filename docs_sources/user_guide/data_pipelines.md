@@ -17,10 +17,11 @@ accessed through the `branch` attribute. A branch contains a copy of
 the dataset, and all transformers and models that are fitted on that
 specific dataset. Transformers and models called from atom use the
 dataset in the current branch, as well as data attributes such as
-`atom.dataset`. Also  Use the branch's \__repr__ to get an overview
-of the transformers in the branch. Don't change the data in a branch
-after fitting a model, this can cause unexpected model behaviour.
-Instead, create a new branch for every unique pipeline.
+`atom.dataset`. Use the branch's \__repr__ to get an overview of the
+transformers in the branch. It's not allowed to change the data in a
+branch after fitting a model with it. Doing this would cause unexpected
+model behaviour and break down the plotting methods. Instead, create a
+new branch for every unique pipeline.
 
 By default, atom starts with one branch called "master". To start a new
 branch, set a new name to the property, e.g. `atom.branch = "undersample"`.
@@ -39,7 +40,7 @@ branching use cases.
 
 !!! warning
     Always create a new branch if you want to change the dataset after fitting
-    a model! Not doing so can cause unexpected model behaviour.
+    a model! Not doing so raises an exception.
 
 <br>
 

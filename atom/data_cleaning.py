@@ -29,8 +29,8 @@ from .basetransformer import BaseTransformer
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS,
     ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS, lst, it,
-    variable_return, to_df, to_series, merge, get_columns,
-    check_is_fitted, composed, crash, method_to_log,
+    variable_return, to_series, merge, get_columns, check_is_fitted,
+    composed, crash, method_to_log,
 )
 
 
@@ -1292,7 +1292,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.method.lower() not in ("drop", "min_max"):
                 raise ValueError(
                     "Invalid value for the method parameter."
-                    "Choose from: 'drop', 'min_max'."
+                    "Choose from: drop, min_max."
                 )
 
         if self.max_sigma <= 0:
@@ -1512,11 +1512,6 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             estimator = self.strategy
 
-        # Save index and columns to re-convert to pandas
-        index = X.index
-        columns = X.columns
-        name = y.name
-
         # Create dict of class counts in y
         counts = {}
         if not self.mapping:
@@ -1547,10 +1542,6 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             if diff > 0:
                 self.log(f" --> Removing {diff} samples from class: {key}.", 2)
             elif diff < 0:
-                # Add new indices to the total index
-                index = list(index) + list(np.arange(len(index) + diff))
                 self.log(f" --> Adding {-diff} samples to class: {key}.", 2)
 
-        X = to_df(X, index=index, columns=columns)
-        y = to_series(y, index=index, name=name)
         return X, y

@@ -59,11 +59,14 @@ test set. Be aware that not shuffling the dataset can cause
 an unequal distribution of the target classes over the sets.
 </p>
 <strong>n_rows: int or float, optional (default=1)</strong><br>
+Random subsample of the provided dataset to use. The default
+value selects all the rows.
 <ul style="line-height:1.2em;margin-top:5px">
-<li>If <=1: Fraction of the dataset to use.</li>
-<li>If >1: Number of rows to use (only if input is X, y).</li>
+<li>If <=1: Select this fraction of the dataset.</li>
+<li>If >1: Select this exact number of rows. Only if the input
+doesn't already specify the data sets (i.e. X or X, y).</li>
 </ul>
-<strong>test_size: int, float, optional (default=0.2)</strong><br>
+<strong>test_size: int or float, optional (default=0.2)</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If <=1: Fraction of the dataset to include in the test set.</li>
 <li>If >1: Number of rows to include in the test set.</li>
@@ -815,7 +818,8 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train" or "test".
+Data set on which to calculate the metric. Options are "train",
+"test" or "holdout".
 </p>
 </td>
 </tr>
@@ -899,7 +903,7 @@ inversely proportional to the class frequencies in the selected data set.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <strong>dataset: str, optional (default="train")</strong><br>
-Data set from which to get the weights. Choose between "train", "test" or "dataset".
+Data set from which to get the weights. Choose from: train, test or dataset.
 </tr>
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>

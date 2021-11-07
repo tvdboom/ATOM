@@ -244,6 +244,7 @@ def test_plot_rfecv(scoring):
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(PermissionError, atom.plot_rfecv)
     atom.run("lr", metric="precision")
+    atom.branch = "fs_branch"
     atom.feature_selection(strategy="RFECV", n_features=10, scoring=scoring)
     atom.plot_rfecv(display=False)
 
@@ -310,22 +311,27 @@ def test_plot_evals():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"], metric="f1")
     pytest.raises(ValueError, atom.plot_evals)  # More than 1 model
-    pytest.raises(AttributeError, atom.LR.plot_evals)  # LR has no in-training eval
+    pytest.raises(AttributeError, atom.lr.plot_evals)  # LR has no in-training eval
+    pytest.raises(ValueError, atom.lgb.plot_evals, "holdout")  # No holdout allowed
     atom.plot_evals(models="LGB", display=False)
     atom.lgb.plot_evals(display=False)
 
 
-@pytest.mark.parametrize("dataset", ["train", "test", "both"])
+@pytest.mark.parametrize("dataset", ["train", "test", "both", "holdout"])
 def test_plot_roc(dataset):
     """Assert that the plot_roc method work as intended."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("LGB")
     pytest.raises(PermissionError, atom.plot_roc)  # Task is not binary
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_roc)
+    atom.run("LGB")
+    pytest.raises(ValueError, atom.lgb.plot_roc, dataset="holdout")  # No holdout set
+    pytest.raises(ValueError, atom.lgb.plot_roc, dataset="invalid")  # Invalid dataset
+
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run(["LGB", "kSVM"], metric="f1")
-    pytest.raises(ValueError, atom.lgb.plot_roc, dataset="invalid")
     atom.plot_roc(dataset=dataset, display=False)
     atom.lgb.plot_roc(dataset=dataset, display=False)
 
@@ -466,13 +472,14 @@ def test_plot_confusion_matrix():
     """Assert that the plot_confusion_matrix method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(["Ridge"])
-    pytest.raises(PermissionError, atom.plot_confusion_matrix)  # Task is not classif
+    pytest.raises(PermissionError, atom.plot_confusion_matrix)  # Not classification
 
     # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_confusion_matrix)
     atom.run(["RF", "LGB"])
     pytest.raises(ValueError, atom.plot_confusion_matrix, dataset="invalid")
+    pytest.raises(ValueError, atom.plot_confusion_matrix, dataset="holdout")
     atom.plot_confusion_matrix(display=False)
     atom.lgb.plot_confusion_matrix(normalize=True, display=False)
 

@@ -59,7 +59,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
+        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
@@ -116,7 +116,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
+        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
@@ -142,7 +142,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             # Create the new set of models for the run
             for m in self._models:
                 m.name += str(len(self._models))
-                m._pred_attrs = [None] * 10  # Avoid shallow copy
+                m._pred = [None] * 15  # Avoid shallow copy
                 m._train_idx = len(self.train) // len(self._models)
 
             # Print stats for this subset of the data
@@ -218,7 +218,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
+        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
@@ -243,7 +243,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
             for m in self._models:
                 m.name += str(frac).replace(".", "")  # Add frac to the name
-                m._pred_attrs = [None] * 10  # Avoid shallow copy
+                m._pred = [None] * 15  # Avoid shallow copy
                 m._train_idx = train_idx
 
             # Print stats for this subset of the data

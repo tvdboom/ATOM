@@ -2917,7 +2917,7 @@ an unequal distribution of the target classes over the sets.
 <li>If <=1: Fraction of the dataset to use.</li>
 <li>If >1: Number of rows to use (only if input is X, y).</li>
 </ul>
-<strong>test_size: int, float, optional (default=0.2)</strong><br>
+<strong>test_size: int or float, optional (default=0.2)</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If <=1: Fraction of the dataset to include in the test set.</li>
 <li>If >1: Number of rows to include in the test set.</li>
@@ -3617,7 +3617,8 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train" or "test".
+Data set on which to calculate the metric. Options are "train",
+"test" or "holdout".
 </p>
 </td>
 </tr>

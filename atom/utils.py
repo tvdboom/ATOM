@@ -616,7 +616,7 @@ def get_acronym(model, must_be_equal=True):
             return name
 
     raise ValueError(
-        f"Unknown model: {model}! Choose from: {', '.join(MODEL_LIST.keys())}."
+        f"Unknown model: {model}. Choose from: {', '.join(MODEL_LIST.keys())}."
     )
 
 
@@ -972,9 +972,10 @@ def reorder_cols(df, original_df, col_names):
         elif col not in col_names:
             temp_df[col] = original_df[col]
 
-        # Derivative cols are added after original
+        # Derivative cols are added after original (e.g. for one-hot encoding)
         for col_derivative in df.columns:
-            if col_derivative.startswith(col):
+            # Exclude cols with default naming (Feature 1 -> Feature 10, etc...)
+            if col_derivative.startswith(col) and not col.startswith("Feature"):
                 temp_df[col_derivative] = df[col_derivative]
 
     return temp_df
@@ -1495,7 +1496,7 @@ class CustomDict(MutableMapping):
         - It has ordered entries.
         - It allows getting an item from an index position.
         - It can insert key value pairs at a specific position.
-        - Key requests are case insensitive.
+        - Key requests are case-insensitive.
         - If iterated over, it iterates over its values, not the keys!
 
     """

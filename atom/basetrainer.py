@@ -203,6 +203,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.n_bootstrap = n_bootstrap
 
         # Branching attributes
+        self.holdout = None
         self._current = "master"  # Current (and only) branch
         self._branches = CustomDict({self._current: Branch(self, self._current)})
 

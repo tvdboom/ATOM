@@ -52,11 +52,26 @@ def test_branch_delete_current():
     assert "branch_2" not in atom._branches
 
 
-def test_branch_delete_invalid_name():
-    """Assert that an error is raised when the name is invalid."""
+def test_branch_delete_og():
+    """Assert that an error is raised when og is deleted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(PermissionError, match=r".*can not be deleted.*"):
+        atom.branch.delete("og")
+
+
+def test_branch_delete_not_existing_branch():
+    """Assert that an error is raised when the branch doesn't exist."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
-    pytest.raises(ValueError, atom.branch.delete, "invalid")
+    with pytest.raises(ValueError, match=r".*not found in.*"):
+        atom.branch.delete("invalid")
+
+
+def test_branch_delete_last_branch():
+    """Assert that an error is raised when the last branch is deleted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(PermissionError, match=r".*last branch in.*"):
+        atom.branch.delete()
 
 
 def test_branch_delete_not_current():
@@ -74,12 +89,6 @@ def test_branch_delete_depending_models():
     atom.run("LR")
     atom.delete()
     assert "LR" not in atom.models
-
-
-def test_branch_delete_last_branch():
-    """Assert that an error is raised when the last branch is deleted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(PermissionError, atom.branch.delete)
 
 
 # Test rename ====================================================== >>
@@ -234,6 +243,14 @@ def test_target_property():
 
 
 # Test property setters ============================================ >>
+
+def test_setter_with_models():
+    """Assert that an error is raised when there are models."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    with pytest.raises(PermissionError, match=r".*not allowed to change the data.*"):
+        atom.X = X_class
+
 
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""

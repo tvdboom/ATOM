@@ -1,11 +1,11 @@
+<div align="center">
 <p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" height="170" width="600"/>
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" height="142" width="600"/>
 </p>
-
-<br>
 
 # Automated Tool for Optimized Modelling
 ### A Python package for fast exploration of machine learning pipelines
+</div>
 
 <br><br>
 

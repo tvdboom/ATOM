@@ -3044,7 +3044,7 @@ or <code>atom.br.predict(X)</code>. The remaining utility methods can be found h
 
 <tr>
 <td><a href="#full-train">full_train</a></td>
-<td>Get the estimator trained on the complete dataset.</td>
+<td>Train the estimator on the complete dataset.</td>
 </tr>
 
 <tr>
@@ -3066,6 +3066,13 @@ or <code>atom.br.predict(X)</code>. The remaining utility methods can be found h
 <td><a href="#save-estimator">save_estimator</a></td>
 <td>Save the estimator to a pickle file.</td>
 </tr>
+
+<tr>
+<td><a href="#transform">transform</a></td>
+<td>Transform new data through the model's branch.</td>
+</tr>
+</table>
+<br>
 </table>
 <p><br></p>
 <p><a name="cross-validate"></a></p>
@@ -3226,7 +3233,8 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train" or "test".
+Data set on which to calculate the metric. Options are "train",
+"test" or "holdout".
 </p>
 </td>
 </tr>

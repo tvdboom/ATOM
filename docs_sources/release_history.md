@@ -1,6 +1,23 @@
 # Release history
 -----------------
 
+<a name="v4100"></a>
+### Version 4.10.0
+
+* Added the `holdout` data set to have an extra way of assessing a
+  model's performance on a completely independent dataset. Read more
+  in the [user_guide](../user_guide/data-management/#holdout-set).
+* Added the [transform](../API/models/gnb/#transform) method for models.
+* Refactor of the model's [full_train](../API/models/gnb/#full-train) method.
+* Train scores are now also saved to the mlflow run.
+* Trying to change the data in a branch after fitting a model with it now
+  raises an exception.
+* Fixed a bug where the columns of array inputs were not ordered correctly.
+* Fixed a bug where branches did not correctly act case-insensitive.
+* Fixed a bug where the [export_pipeline](../API/models/gnb/#export-pipeline)
+  method for models would not export the transformers in the correct branch.
+
+
 <a name="v491"></a>
 ### Version 4.9.1
 

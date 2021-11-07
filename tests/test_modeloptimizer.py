@@ -20,7 +20,11 @@ from skopt.learning import GaussianProcessRegressor
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.training import DirectClassifier
-from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg, bin_train, bin_test
+from atom.utils import check_scaling
+from .utils import (
+    FILE_DIR, X_bin, y_bin, X_reg, y_reg, bin_train, bin_test,
+    X10_str, y10,
+)
 
 
 # Test utilities =================================================== >>
@@ -166,7 +170,7 @@ def test_run_log_metric_to_mlflow(mlflow):
     """Assert that metrics are logged to mlflow."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB", metric=["f1", "recall", "accuracy"])
-    assert mlflow.call_count == 3
+    assert mlflow.call_count == 6
 
 
 @patch("mlflow.log_metric")
@@ -245,11 +249,11 @@ def test_calibrate_prefit():
 
 
 def test_calibrate_reset_predictions():
-    """Assert that the prediction attributes are reset after calibrating."""
+    """Assert that the prediction attributes are reset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     atom.mnb.calibrate()
-    assert atom.mnb._pred_attrs[9] is None
+    assert atom.mnb._pred == [None] * 15
 
 
 @patch("mlflow.sklearn.log_model")
@@ -269,26 +273,45 @@ def test_cross_validate():
     assert isinstance(atom.lr.cross_validate(scoring="AP"), dict)
 
 
-def test_export_pipeline_atom():
+def test_export_pipeline():
     """Assert that the pipeline can be retrieved from the model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
     atom.run("LR")
-    assert len(atom.lr.export_pipeline()) == 2
-
-
-def test_export_pipeline_trainer():
-    """Assert that the pipeline can be retrieved from the model."""
-    trainer = DirectClassifier("LR", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert len(trainer.lr.export_pipeline()) == 2
+    assert len(atom.lr.export_pipeline(verbose=2)) == 3
 
 
 def test_full_train():
-    """Assert that the full_train method returns a fitted estimator."""
+    """Assert that the full_train method trains on the test set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["Tree", "LGB"])
-    assert isinstance(atom.tree.full_train(), DecisionTreeClassifier)
-    assert atom.lgb.full_train() is not atom.lgb.estimator
+    atom.tree.full_train()
+    assert atom.tree.score_test == 1.0  # Perfect score on test
+
+
+def test_full_train_holdout():
+    """Assert that the full_train method trains on the holdout set."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.2, random_state=1)
+    atom.run(["Tree", "LGB"])
+    atom.tree.full_train(include_holdout=True)
+    assert atom.tree.score_holdout == 1.0  # Perfect score on holdout
+
+
+def test_full_train_reset_predictions():
+    """Assert that the prediction attributes are reset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    atom.mnb.full_train()
+    assert atom.mnb._pred == [None] * 15
+
+
+@patch("mlflow.sklearn.log_model")
+def test_full_train_to_mlflow(mlflow):
+    """Assert that the full trained estimator is logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    atom.gnb.full_train()
+    mlflow.assert_called_with(atom.gnb.estimator, "full_train_GaussianNB")
 
 
 def test_rename():
@@ -317,3 +340,13 @@ def test_save_estimator():
     atom.run("MNB")
     atom.mnb.save_estimator(FILE_DIR + "auto")
     assert glob.glob(FILE_DIR + "MultinomialNB")
+
+
+def test_transform():
+    """Assert that new data can be transformed by the model's pipeline."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom.encode()
+    atom.run("LR")
+    X = atom.lr.transform(X10_str)
+    assert len(X.columns) > 3  # Data is one-hot encoded
+    assert check_scaling(X)  # Data is scaled

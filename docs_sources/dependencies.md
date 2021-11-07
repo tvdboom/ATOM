@@ -22,7 +22,7 @@ packages to use machine learning estimators not provided by sklearn.
 
 * **[numpy](https://numpy.org/)** (>=1.19.5)
 * **[scipy](https://www.scipy.org/)** (>=1.4.1)
-* **[pandas](https://pandas.pydata.org/)** (>=1.1.0)
+* **[pandas](https://pandas.pydata.org/)** (>=1.3.0)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=2.3.0)
 * **[mlflow](https://mlflow.org/)** (>=1.15.0)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.3)
@@ -34,7 +34,7 @@ packages to use machine learning estimators not provided by sklearn.
 * **[nltk](https://www.nltk.org/)** (>=3.6.2)
 * **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.1.0)
-* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.8.0)
+* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.8.1)
 * **[woodwork](https://github.com/alteryx/woodwork/)** (>=0.8.2)
 * **[featuretools](https://www.featuretools.com/)** (>=1.0.0)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
