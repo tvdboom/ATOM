@@ -296,8 +296,11 @@ class BaseTransformer:
                         f"got {self.holdout_size}."
                     )
 
+                holdout = data.iloc[-holdout_size:, :]
+                data = data.iloc[:-holdout_size, :]
                 idx = [len(data) - test_size - holdout_size, test_size]
-                return data.iloc[:-holdout_size, :], idx, data.iloc[-holdout_size:, :]
+
+                return data, idx, holdout.reset_index(drop=True)
 
             else:
                 return data, [len(data) - test_size, test_size], None
@@ -332,6 +335,17 @@ class BaseTransformer:
                         "Invalid value for the n_rows parameter. Value has "
                         "to be <1 when a train and test set are provided."
                     )
+
+            if not train.columns.equals(test.columns):
+                raise ValueError("The train and test set do not have the same columns.")
+
+            if holdout is not None:
+                if not train.columns.equals(holdout.columns):
+                    raise ValueError(
+                        "The holdout set does not have the "
+                        "same columns as the train and test set."
+                    )
+                holdout = holdout.reset_index(drop=True)
 
             data = pd.concat([train, test]).reset_index(drop=True)
             idx = [len(train), len(test)]
@@ -391,10 +405,10 @@ class BaseTransformer:
             data, idx, holdout = _has_data_sets(train, test)
 
         elif len(arrays) == 6:
-            # arrays=(X_train, X_test, y_train, y_test, X_holdout, y_holdout)
-            train = merge(*self._prepare_input(arrays[0], arrays[2]))
-            test = merge(*self._prepare_input(arrays[1], arrays[3]))
-            holdout = merge(*self._prepare_input(arrays[4], arrays[5]))
+            # arrays=(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
+            train = merge(*self._prepare_input(arrays[0], arrays[3]))
+            test = merge(*self._prepare_input(arrays[1], arrays[4]))
+            holdout = merge(*self._prepare_input(arrays[2], arrays[5]))
             data, idx, holdout = _has_data_sets(train, test, holdout)
 
         else:

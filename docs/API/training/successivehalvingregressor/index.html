@@ -486,8 +486,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -2528,6 +2528,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2910,8 +2924,8 @@ of the initializer.
 <strong>bo_params: dict, optional (default=None)</strong><br>
 Additional parameters to for the BO. These can include:
 <ul style="line-height:1.2em;margin-top:5px">
-<li><b>base_estimator: str, optional (default="GP")</b><br>Base estimator to use in the BO.
-Choose from:
+<li><b>base_estimator: str, optional (default="GP")</b><br>
+Base estimator to use in the BO. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"GP" for Gaussian Process</li>
 <li>"RF" for Random Forest</li>
@@ -3401,11 +3415,14 @@ Use this method to free some memory before saving the trainer.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <strong>*arrays: sequence of indexables</strong><br>
-Training set and test set. Allowed input formats are:
+Training and test set (and optionally a holdout set). Allowed formats are:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>train, test</li>
+<li>train, test, holdout</li>
 <li>X_train, X_test, y_train, y_test</li>
+<li>X_train, X_test, X_holdout, y_train, y_test, y_holdout</li>
 <li>(X_train, y_train), (X_test, y_test)</li>
+<li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
 </td>
 </tr>
@@ -3458,7 +3475,7 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train",
+Data set on which to calculate the metric. Choose from: "train",
 "test" or "holdout".
 </p>
 </td>

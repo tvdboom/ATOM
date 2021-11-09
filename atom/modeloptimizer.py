@@ -200,10 +200,18 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     Score of the fitted model on the validation set.
 
                 """
-                X_subtrain = self.X_train.loc[train_idx]
-                y_subtrain = self.y_train.loc[train_idx]
-                X_val = self.X_train.loc[val_idx]
-                y_val = self.y_train.loc[val_idx]
+                # Select subsets from original dataset since train
+                # set could be already transformed by pipeline
+                X_subtrain, y_subtrain = self.transform(
+                    self.T.og.dataset.iloc[train_idx, :-1],
+                    self.T.og.dataset.iloc[train_idx, -1],
+                    verbose=0,
+                )
+                X_val, y_val = self.transform(
+                    self.T.og.dataset.iloc[val_idx, :-1],
+                    self.T.og.dataset.iloc[val_idx, -1],
+                    verbose=0,
+                )
 
                 # Match the sample_weights with the length of the subtrain set
                 # Make copy of est_params to not alter the mutable variable

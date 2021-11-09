@@ -210,7 +210,7 @@
 
 * Possibility to [add](../API/ATOM/atomclassifier/#add) custom transformers to the pipeline.
 * The [export_pipeline](../API/ATOM/atomclassifier/#export-pipeline) utility method exports atom's current pipeline to a sklearn object.
-* Use [AutoML](../user_guide/data_pipelines/#automl) to automate the search for an optimized pipeline.
+* Use [AutoML](../user_guide/data_management/#automl) to automate the search for an optimized pipeline.
 * New magic methods makes atom behave similarly to sklearn's [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html).
 * All [training approaches](../user_guide/training) can now be combined in the same atom instance.
 * New [plot_scatter_matrix](../API/plots/plot_scatter_matrix), [plot_distribution](../API/plots/plot_distribution) and [plot_qq](../API/plots/plot_qq) plots for data inspection.
@@ -246,7 +246,7 @@
 
 * Possibility to add custom models to the pipeline using [ATOMModel](../API/ATOM/atommodel).
 * Compatibility with [deep learning](../user_guide/models/#deep-learning) models.
-* New branch system for different data pipelines. Read more in the [user guide](../user_guide/data_pipelines/#branches).
+* New branch system for different data pipelines. Read more in the [user guide](../user_guide/data_management/#branches).
 * Use the [canvas](../API/ATOM/atomclassifier/#canvas) contextmanager to draw multiple plots in one figure.
 * New [voting](../user_guide/models/#voting) and [stacking](../user_guide/models/#stacking) ensemble techniques.
 * New [get_class_weight](../API/ATOM/atomclassifier/#get-class-weight) utility method.

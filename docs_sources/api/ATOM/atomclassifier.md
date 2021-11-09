@@ -3,8 +3,8 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.api.<strong style="color:#008AB8">ATOMClassifier</strong>(*arrays,
-y=-1, shuffle=True, n_rows=1, test_size=0.2, n_jobs=1, verbose=0,
-warnings=True, logger=None, experiment=None, random_state=None)
+y=-1, shuffle=True, n_rows=1, test_size=0.2, holdout_size=None, n_jobs=1,
+verbose=0, warnings=True, logger=None, experiment=None, random_state=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L172">[source]</a>
 </span>
@@ -28,10 +28,14 @@ and call any [model](../../../user_guide/models) from atom. Read more in the
 <strong>*arrays: sequence of indexables</strong><br>
 Dataset containing features and target. Allowed formats are:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>X or X, y</li>
+<li>X</li>
+<li>X, y</li>
 <li>train, test</li>
+<li>train, test, holdout</li>
 <li>X_train, X_test, y_train, y_test</li>
+<li>X_train, X_test, X_holdout, y_train, y_test, y_holdout</li>
 <li>(X_train, y_train), (X_test, y_test)</li>
+<li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
 X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame<br>
 <p style="margin-top:0;margin-left:15px">
@@ -72,8 +76,17 @@ doesn't already specify the data sets (i.e. X or X, y).</li>
 <li>If >1: Number of rows to include in the test set.</li>
 </ul>
 <p style="margin-top:5px">
-This parameter is ignored if the train and test set are provided
-through <code>arrays</code>.</p>
+This parameter is ignored if the test set is provided through
+<code>arrays</code>.</p>
+<strong>holdout_size: int, float or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
+<li>If None: No holdout data set is kept apart.</li>
+<li>If <=1: Fraction of the dataset to include in the holdout set.</li>
+<li>If >1: Number of rows to include in the holdout set.</li>
+</ul>
+<p style="margin-top:5px">
+This parameter is ignored if the holdout set is provided through
+<code>arrays</code>.</p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
@@ -626,7 +639,7 @@ Uses the [TPOT](http://epistasislab.github.io/tpot/) package to perform
 an automated search of transformers and a final estimator that maximizes
 a metric on the dataset. The resulting transformations and estimator are
 merged with atom's pipeline. The tpot instance can be accessed through the
-`tpot` attribute. Read more in the [user guide](../../../user_guide/data_pipelines/#automl).
+`tpot` attribute. Read more in the [user guide](../../../user_guide/data_management/#automl).
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -818,7 +831,7 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train",
+Data set on which to calculate the metric. Choose from: "train",
 "test" or "holdout".
 </p>
 </td>

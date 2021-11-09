@@ -22,7 +22,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train", "test" or "both".
+Data set on which to calculate the metric. Choose from:
+"train", "test", "both" (train and test) or "holdout".
 </p>
 <p>
 <strong>target: int or str, optional (default=1)</strong><br>

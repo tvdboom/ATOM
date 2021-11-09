@@ -53,7 +53,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
         Parameters
         ----------
         *arrays: sequence of indexables
-            Training set and test set. Allowed input formats are:
+            Training set and test set. Allowed formats are:
                 - train, test
                 - X_train, X_test, y_train, y_test
                 - (X_train, y_train), (X_test, y_test)
@@ -110,7 +110,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         Parameters
         ----------
         *arrays: sequence of indexables
-            Training set and test set. Allowed input formats are:
+            Training set and test set. Allowed formats are:
                 - train, test
                 - X_train, X_test, y_train, y_test
                 - (X_train, y_train), (X_test, y_test)
@@ -212,7 +212,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         Parameters
         ----------
         *arrays: sequence of indexables
-            Training set and test set. Allowed input formats are:
+            Training set and test set. Allowed formats are:
                 - train, test
                 - X_train, X_test, y_train, y_test
                 - (X_train, y_train), (X_test, y_test)

@@ -25,7 +25,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the confusion matrix. Options are "train" or "test".
+Data set on which to calculate the confusion matrix. Choose from:
+"train", "test" or "holdout".
 </p>
 <p>
 <strong>normalize: bool, optional (default=False)</strong><br>

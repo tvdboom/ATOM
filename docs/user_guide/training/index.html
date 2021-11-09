@@ -488,8 +488,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -2527,6 +2527,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2980,17 +2994,19 @@ ignored by the bayesian optimization! </p>
 estimator's hyperparameters before training it. ATOM provides
 <a href="https://en.wikipedia.org/wiki/Hyperparameter_optimization">hyperparameter tuning</a>
 using a <a href="https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.">bayesian optimization</a>
-(BO) approach implemented with <a href="https://scikit-optimize.github.io/stable/">skopt</a>.
+(BO) approach implemented with <a href="https://scikit-optimize.github.io/stable/">scikit-optimize</a>.
 The BO is optimized on the first metric provided with the <code>metric</code>
 parameter. Each step is either computed by cross-validation on the
 complete training set or by randomly splitting the training set every
-iteration into a (sub) training set and a validation set. This process
-can create some minimum data leakage towards specific parameters, but
-it ensures maximal use of the provided data. However, the leakage is
-not present in the independent test set, thus the final score of every
-model is unbiased. Note that, if the dataset is relatively small, the
-BO's best score can consistently be lower than the final score on the
-test set due to the considerable fewer instances on which it is trained.</p>
+iteration into a (sub) training and validation set. This process can
+create some minimum data leakage towards specific parameters (since
+the estimator is evaluated on data that is used to train the next
+estimator), but it ensures maximal use of the provided data. However,
+the leakage is not present in the independent test set, thus the final
+score of every model is unbiased. Note that, if the dataset is relatively
+small, the BO's best score can consistently be lower than the final score
+on the test set due to the considerable fewer instances on which it is
+trained.</p>
 <p>There are many possibilities to tune the BO to your liking. Use
 <code>n_calls</code> and <code>n_initial_points</code> to determine the number of iterations
 that are performed randomly at the start (exploration) and the number

@@ -486,8 +486,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -2487,6 +2487,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2729,7 +2743,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the confusion matrix. Options are "train" or "test".
+Data set on which to calculate the confusion matrix. Choose from:
+"train", "test" or "holdout".
 </p>
 <p>
 <strong>normalize: bool, optional (default=False)</strong><br>

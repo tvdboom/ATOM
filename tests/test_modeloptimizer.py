@@ -138,8 +138,8 @@ def test_nested_runs_to_mlflow(mlflow):
 
 def test_verbose_is_1():
     """Assert that the pipeline works for verbose=1."""
-    atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
-    atom.run("LR", n_calls=5)
+    atom = ATOMRegressor(X_reg, y_reg, verbose=1, random_state=1)
+    atom.run("RF", n_calls=5)
     assert not atom.errors
 
 
@@ -284,15 +284,15 @@ def test_export_pipeline():
 def test_full_train():
     """Assert that the full_train method trains on the test set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LGB"])
-    atom.tree.full_train()
-    assert atom.tree.score_test == 1.0  # Perfect score on test
+    atom.run("LGB")
+    atom.lgb.full_train()
+    assert atom.lgb.score_test == 1.0  # Perfect score on test
 
 
 def test_full_train_holdout():
     """Assert that the full_train method trains on the holdout set."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.2, random_state=1)
-    atom.run(["Tree", "LGB"])
+    atom.run("Tree")
     atom.tree.full_train(include_holdout=True)
     assert atom.tree.score_holdout == 1.0  # Perfect score on holdout
 

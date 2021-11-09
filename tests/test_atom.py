@@ -353,6 +353,14 @@ def test_export_pipeline_same_transformer():
     assert list(pl.named_steps.keys()) == ["cleaner", "cleaner2", "cleaner3"]
 
 
+def test_export_pipeline_invalid_model():
+    """Assert that an error is raised when model is from other branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("GNB")
+    atom.branch = "branch_2"
+    pytest.raises(ValueError, atom.export_pipeline, model="gnb")
+
+
 def test_export_pipeline_scaler():
     """Assert that a scaler is included in the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

@@ -14,7 +14,7 @@ Refers to this package.
 
 **branch**<br>
 Collection of transformers fitted to a specific dataset. See
-the [branches](../data_pipelines/#branches) section.
+the [branches](../data_management/#branches) section.
 
 
 **BO**<br>

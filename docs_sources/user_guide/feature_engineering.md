@@ -89,7 +89,7 @@ features in the dataset. For example, if the operator is "log",
 it will create the new feature `LOG(old_feature)` and if the
 operator is "mul", it will create the new feature `old_feature_1 x old_feature_2`.
 The operators can be chosen through the `operators` parameter.
-Available options are:
+Choose from:
 <ul>
 <li><b>add: </b>Sum two features together.</li>
 <li><b>sub: </b>Subtract two features from each other.</li>

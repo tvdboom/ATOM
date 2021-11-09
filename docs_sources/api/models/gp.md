@@ -484,7 +484,7 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train",
+Data set on which to calculate the metric. Choose from: "train",
 "test" or "holdout".
 </p>
 </td>

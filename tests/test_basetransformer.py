@@ -344,7 +344,7 @@ def test_input_is_3_tuples():
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
     assert trainer.dataset.equals(dataset)
-    assert trainer.holdout.equals(bin_test)
+    assert trainer.holdout.equals(bin_test.reset_index(drop=True))
 
 
 def test_input_is_train_test_holdout():
@@ -354,7 +354,7 @@ def test_input_is_train_test_holdout():
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test, bin_test)
     assert trainer.dataset.equals(dataset)
-    assert trainer.holdout.equals(bin_test)
+    assert trainer.holdout.equals(bin_test.reset_index(drop=True))
 
 
 def test_4_data_provided():
@@ -381,15 +381,15 @@ def test_6_data_provided():
     y_holdout = bin_test.iloc[:, -1]
 
     trainer = DirectClassifier("LR", random_state=1)
-    trainer.run(X_train, X_test, y_train, y_test, X_holdout, y_holdout)
+    trainer.run(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
     assert trainer.dataset.equals(dataset)
-    assert trainer.holdout.equals(bin_test)
+    assert trainer.holdout.equals(bin_test.reset_index(drop=True))
 
 
 def test_invalid_input():
     """Assert that an error is raised when input arrays are invalid."""
     trainer = DirectClassifier("LR", random_state=1)
-    pytest.raises(ValueError, trainer.run, X_bin, bin_train, bin_test)
+    pytest.raises(ValueError, trainer.run, X_bin, (bin_train, bin_test))
 
 
 def test_n_rows_train_test_frac():
@@ -417,10 +417,29 @@ def test_dataset_is_shuffled():
     assert not X_bin.equals(atom.X)
 
 
+def test_holdout_is_shuffled():
+    """Assert that the holdout set is shuffled."""
+    atom = ATOMClassifier(bin_train, bin_test, bin_test, shuffle=True, random_state=1)
+    assert not bin_test.equals(atom.holdout)
+
+
 def test_reset_index():
-    """Assert that the indices are reset for the whole dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert list(atom.dataset.index) == list(range(len(X_bin)))
+    """Assert that the indices are reset for the all data sets."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    assert list(atom.dataset.index) == list(range(len(atom.dataset)))
+    assert list(atom.holdout.index) == list(range(len(atom.holdout)))
+
+
+def test_unequal_columns_train_test():
+    """Assert that an error is raised when train and test have different columns."""
+    with pytest.raises(ValueError, match=r".*train and test set do not have.*"):
+        ATOMClassifier(X10, bin_test, random_state=1)
+
+
+def test_unequal_columns_holdout():
+    """Assert that an error is raised when holdout has different columns."""
+    with pytest.raises(ValueError, match=r".*holdout set does not have.*"):
+        ATOMClassifier(bin_train, bin_test, X10, random_state=1)
 
 
 def test_merger_to_dataset():

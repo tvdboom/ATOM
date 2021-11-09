@@ -215,17 +215,19 @@ In order to achieve maximum performance, it's important to tune an
 estimator's hyperparameters before training it. ATOM provides
 [hyperparameter tuning](https://en.wikipedia.org/wiki/Hyperparameter_optimization)
 using a [bayesian optimization](https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.)
-(BO) approach implemented with [skopt](https://scikit-optimize.github.io/stable/).
+(BO) approach implemented with [scikit-optimize](https://scikit-optimize.github.io/stable/).
 The BO is optimized on the first metric provided with the `metric`
 parameter. Each step is either computed by cross-validation on the
 complete training set or by randomly splitting the training set every
-iteration into a (sub) training set and a validation set. This process
-can create some minimum data leakage towards specific parameters, but
-it ensures maximal use of the provided data. However, the leakage is
-not present in the independent test set, thus the final score of every
-model is unbiased. Note that, if the dataset is relatively small, the
-BO's best score can consistently be lower than the final score on the
-test set due to the considerable fewer instances on which it is trained.
+iteration into a (sub) training and validation set. This process can
+create some minimum data leakage towards specific parameters (since
+the estimator is evaluated on data that is used to train the next
+estimator), but it ensures maximal use of the provided data. However,
+the leakage is not present in the independent test set, thus the final
+score of every model is unbiased. Note that, if the dataset is relatively
+small, the BO's best score can consistently be lower than the final score
+on the test set due to the considerable fewer instances on which it is
+trained.
 
 There are many possibilities to tune the BO to your liking. Use
 `n_calls` and `n_initial_points` to determine the number of iterations

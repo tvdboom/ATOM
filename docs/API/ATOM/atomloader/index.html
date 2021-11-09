@@ -486,8 +486,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -2487,6 +2487,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2731,10 +2745,14 @@ Tuple containing the features and target data. Only use this parameter
 if the file is a trainer that was saved using <code>save_data=False</code> (see
 the <a href="../atomclassifier/#save">save</a> method). Allowed formats are:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>X or X, y</li>
+<li>X</li>
+<li>X, y</li>
 <li>train, test</li>
+<li>train, test, holdout</li>
 <li>X_train, X_test, y_train, y_test</li>
+<li>X_train, X_test, X_holdout, y_train, y_test, y_holdout</li>
 <li>(X_train, y_train), (X_test, y_test)</li>
+<li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
 X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame<br>
 <p style="margin-top:0;margin-left:15px">

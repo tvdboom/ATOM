@@ -123,7 +123,7 @@ class Voting(BaseModel, BaseEnsemble):
             common metrics per task are used.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train" or "test".
 
         Returns

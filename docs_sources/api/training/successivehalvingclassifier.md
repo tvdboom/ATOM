@@ -659,11 +659,14 @@ Fit and evaluate the models.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <strong>*arrays: sequence of indexables</strong><br>
-Training set and test set. Allowed input formats are:
+Training and test set (and optionally a holdout set). Allowed formats are:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>train, test</li>
+<li>train, test, holdout</li>
 <li>X_train, X_test, y_train, y_test</li>
+<li>X_train, X_test, X_holdout, y_train, y_test, y_holdout</li>
 <li>(X_train, y_train), (X_test, y_test)</li>
+<li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
 </td>
 </tr>
@@ -720,7 +723,7 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train",
+Data set on which to calculate the metric. Choose from: "train",
 "test" or "holdout".
 </p>
 </td>

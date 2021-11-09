@@ -11,13 +11,13 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/data_pipelines/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/data_management/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
     
     
-  <title>Data pipelines - ATOM</title>
+  <title>Data management - ATOM</title>
 
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#data-pipelines" class="md-skip">
+        <a href="#data-management" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Data pipelines
+              Data management
             
           </span>
         </div>
@@ -498,12 +498,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Data pipelines
+          Data management
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Data pipelines
+        Data management
       </a>
       
         
@@ -519,6 +519,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data-sets" class="md-nav__link">
+    Data sets
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#branches" class="md-nav__link">
@@ -2506,6 +2513,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2704,6 +2725,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#data-sets" class="md-nav__link">
+    Data sets
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#branches" class="md-nav__link">
     Branches
   </a>
@@ -2744,25 +2772,80 @@
               
                 
                 
-                <h1 id="data-pipelines">Data pipelines</h1>
+                <h1 id="data-management">Data management</h1>
 <hr />
-<p>During the exploration phase, you might want to compare how a model
-performs on a dataset processed using different transformers. For
-example, on one dataset balanced with an undersampling strategy and
-the other with an oversampling strategy. For this, atom has the
-branching system.</p>
+<h2 id="data-sets">Data sets</h2>
+<p>ATOM is designed to work around one single dataset: the one with which
+atom is initialized. This is the dataset you want to explore, transform,
+and use for model training and validation. ATOM differentiates three
+different data sets:</p>
+<ul>
+<li>The <strong>training set</strong> is usually the largest of the data sets. As the
+  name suggests, this set is used to train the pipeline. During
+  <a href="../training/#hyperparameter-tuning">hyperparameter tuning</a>, only the
+  training set is used to fit and evaluate the estimator in every call.
+  The training set in the current <a href="#branches">branch</a> can be accessed
+  through the <code>train</code> attribute. It's features and target can be
+  accessed through <code>X_train</code> and <code>y_train</code> respectively.</li>
+<li>The <strong>test set</strong> is used to evaluate the models in the pipeline. The
+  model scores on this set give an indication on how the model performs
+  on new data. The test set can be accessed through the <code>test</code> attribute.
+  It's features and target can be accessed through <code>X_test</code> and <code>y_test</code>
+  respectively.</li>
+<li>The <strong>holdout set</strong> is an optional, separate set that should only be
+  used to evaluate the final model's performance. Create this set when
+  you are going to use the test set for an intermediate validation step.
+  The holdout set is immediately set apart during initialization and is
+  not considered part of atom's dataset (the <code>dataset</code> attribute only
+  returns the train and test sets). The holdout set is left untouched
+  until predictions are made on it, i.e. it does not undergo any pipeline
+  transformations. This also means that the holdout set is independent
+  of the branches. The holdout set is stored in the trainer's <code>holdout</code>
+  attribute. It's features and target can not be accessed separately.
+  See <a href="../../examples/holdout_set">here</a> an example that shows how to
+  use the holdout data set.</li>
+</ul>
+<p>The data can be provided in different formats. If the data sets are not
+specified beforehand, you can input the features and target separately
+or together:</p>
+<ul>
+<li>X</li>
+<li>X, y</li>
+</ul>
+<p>Remember to use the <code>y</code> parameter to indicate the target column in X when
+using the first option. If not specified, the last column in X is used as
+target. In both these cases, the size of the sets are defined using the
+<code>test_size</code> and <code>holdout_size</code> parameters. Note that the splits are made
+after the subsample of the dataset with the <code>n_rows</code> parameter (when not
+left to its default value).</p>
+<p>If you already have the separate data sets, provide them using one of the
+following formats:</p>
+<ul>
+<li>train, test</li>
+<li>train, test, holdout</li>
+<li>X_train, X_test, y_train, y_test</li>
+<li>X_train, X_test, X_holdout, y_train, y_test, y_holdout</li>
+<li>(X_train, y_train), (X_test, y_test)</li>
+<li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
+</ul>
 <p><br></p>
 <h2 id="branches">Branches</h2>
-<p>The branching system helps manage multiple pipelines within the same
-atom instance. Every pipeline is stored in a branch, which can be
-accessed through the <code>branch</code> attribute. A branch contains a copy of
+<p>You might want to compare how a model performs on a dataset transformed
+through multiple pipelines, each using different transformers. For
+example, on one pipeline with an undersampling strategy and the other
+with an oversampling strategy. To be able to do this, ATOM has the
+branching system.</p>
+<p>The branching system helps the user to manage multiple pipelines within
+the same atom instance. Every pipeline is stored in a branch, which can
+be accessed through the <code>branch</code> property. A branch contains a copy of
 the dataset, and all transformers and models that are fitted on that
 specific dataset. Transformers and models called from atom use the
 dataset in the current branch, as well as data attributes such as
-<code>atom.dataset</code>. Also  Use the branch's __repr__ to get an overview
-of the transformers in the branch. Don't change the data in a branch
-after fitting a model, this can cause unexpected model behaviour.
-Instead, create a new branch for every unique pipeline.</p>
+<code>atom.dataset</code>. Use the branch's __repr__ to get an overview of the
+transformers in the branch. It's not allowed to change the data in a
+branch after fitting a model with it. Doing this would cause unexpected
+model behaviour and break down the plotting methods. Instead, create a
+new branch for every unique pipeline.</p>
 <p>By default, atom starts with one branch called "master". To start a new
 branch, set a new name to the property, e.g. <code>atom.branch = "undersample"</code>.
 This will create a new branch from the current one. To create a branch
@@ -2779,7 +2862,7 @@ branching use cases.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Always create a new branch if you want to change the dataset after fitting
-a model! Not doing so can cause unexpected model behaviour.</p>
+a model!</p>
 </div>
 <p><br></p>
 <div align="center">
@@ -2850,15 +2933,12 @@ logger.
 are always at least two branches in the instance: master (or another
 user defined branch) and one additional branch that stores the
 dataframe with which the class was initialized. This internal branch
-is called <code>og</code> (original) and is used for the <a href="../../API/ATOM/atomclassifier/#reset">reset</a>
-and <a href="../../API/ATOM/atomclassifier/#cross-validate">cross_validate</a>
-methods, as well as to be able to create new branches from the original
-dataframe, even after having applied transformations.</p>
+is called <code>og</code> (original) and can not be accessed by the user.</p>
 <p>Apart from the dataset itself, the model's <a href="./predicting">predictions</a>
 are also stored as attributes of the model (e.g. <code>predict_proba_train</code>)
 and can occupy considerable memory for large datasets. You can delete
 these attributes using the <a href="../../API/ATOM/atomclassifier/#reset-predictions">reset_predictions</a>
-method to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
+method in order to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
 the class.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -2868,29 +2948,31 @@ in memory.</p>
 </div>
 <p><br></p>
 <h2 id="data-transformations">Data transformations</h2>
-<p>Performing data transformations is a common requirement of many datasets
-before they are ready to be ingested by a model. ATOM provides various
-classes to apply <a href="../data_cleaning">data cleaning</a> and
-<a href="../feature_engineering">feature engineering</a> transformations to the data.
-This tooling should be able to help you apply most of the typically needed
-transformations to get the data ready for modelling. For further
-fine-tuning, it's also possible to transform the data using
-custom transformers (see the <a href="../../API/ATOM/atomclassifier/#add">add</a> method)
-or through a function (see the <a href="../../API/ATOM/atomclassifier/#apply">apply</a>
-method). Remember that all transformations are only applied to the dataset
-in the current branch.</p>
+<p>Performing data transformations is a common requirement of many
+datasets before they are ready to be ingested by a model. ATOM
+provides various classes to apply <a href="../data_cleaning">data cleaning</a>
+and <a href="../feature_engineering">feature engineering</a> transformations
+to the data. This tooling should be able to help you apply most
+of the typically needed transformations to get the data ready for
+modelling. For further fine-tuning, it's also possible to transform
+the data using custom transformers (see the <a href="../../API/ATOM/atomclassifier/#add">add</a>
+method) or through a function (see the <a href="../../API/ATOM/atomclassifier/#apply">apply</a>
+method). Remember that all transformations are only applied to the
+dataset in the current branch.</p>
 <p><br></p>
 <h2 id="automl">AutoML</h2>
-<p>Automated machine learning (AutoML) automates the selection, composition
-and parameterization of machine learning pipelines. Automating the machine
-learning process makes it more user-friendly and often provides faster, more
-accurate outputs than hand-coded algorithms. ATOM uses the <a href="http://epistasislab.github.io/tpot/">TPOT</a>
-package for AutoML optimization. TPOT uses a genetic algorithm to intelligently
-explore thousands of possible pipelines in order to find the best one for your
-data. Such an algorithm can be started through the <a href="../../API/ATOM/atomclassifier/#automl">automl</a>
-method. The resulting data transformers and final estimator are merged with atom's
-pipeline (check the <code>pipeline</code> and <code>models</code> attributes after the method
-finishes running).</p>
+<p>Automated machine learning (AutoML) automates the selection,
+composition and parameterization of machine learning pipelines.
+Automating the machine learning process makes it more user-friendly
+and often provides faster, more accurate outputs than hand-coded
+algorithms. ATOM uses the <a href="http://epistasislab.github.io/tpot/">TPOT</a>
+package for AutoML optimization. TPOT uses a genetic algorithm to
+intelligently explore thousands of possible pipelines in order to
+find the best one for your data. Such an algorithm can be started
+through the <a href="../../API/ATOM/atomclassifier/#automl">automl</a> method.
+The resulting data transformers and final estimator are merged with
+atom's pipeline (check the <code>pipeline</code> and <code>models</code> attributes after
+the method finishes running).</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>AutoML algorithms aren't intended to run for only a few minutes. If left

@@ -1576,7 +1576,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         try:
             trainer._tracking_params = self._tracking_params
-            trainer._branches = {self._current: self.branch}
+            trainer._branches = {"og": self.og, self._current: self.branch}
             trainer._current = self._current
             trainer.scaled = self.scaled
             trainer.run()

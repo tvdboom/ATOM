@@ -1015,7 +1015,8 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="both")
             Data set on which to calculate the evaluation curves.
-            Options are "train", "test" or "both".
+            Choose from:
+"train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -1090,7 +1091,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
@@ -1173,7 +1174,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
@@ -1256,7 +1257,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
@@ -1335,7 +1336,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
@@ -1429,7 +1430,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
@@ -1526,7 +1527,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
@@ -1630,7 +1631,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, optional (default=None)
@@ -2237,7 +2238,7 @@ class BaseModelPlotter(BasePlotter):
 
         dataset: str, optional (default="test")
             Data set on which to calculate the confusion matrix.
-            Options are "train", "test" or "holdout".
+            Choose from:` "train", "test" or "holdout".
 
         normalize: bool, optional (default=False)
            Whether to normalize the matrix.
@@ -2401,7 +2402,7 @@ class BaseModelPlotter(BasePlotter):
             to run the pipeline is plotted.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         steps: int, optional (default=100)
@@ -2494,7 +2495,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
+            Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
         target: int or str, optional (default=1)

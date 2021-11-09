@@ -204,7 +204,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Branching attributes
         self.holdout = None
-        self._current = "master"  # Current (and only) branch
+        self._current = "og"  # Current (and only) branch
         self._branches = CustomDict({self._current: Branch(self, self._current)})
 
         # Training attributes

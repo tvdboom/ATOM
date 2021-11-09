@@ -89,10 +89,14 @@ def ATOMLoader(
         Tuple containing the dataset. Only use this parameter if the
         file is a trainer that was saved using`save_data=False`.
         Allowed formats are:
-            - X or X, y
+            - X
+            - X, y
             - train, test
+            - train, test, holdout
             - X_train, X_test, y_train, y_test
+            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
             - (X_train, y_train), (X_test, y_test)
+            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
         X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If no
@@ -179,8 +183,11 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - X
             - X, y
             - train, test
+            - train, test, holdout
             - X_train, X_test, y_train, y_test
+            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
             - (X_train, y_train), (X_test, y_test)
+            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
         X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
@@ -214,15 +221,15 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
-        This parameter is ignored if the data sets are provided
+        This parameter is ignored if the test set is provided
         through `arrays`.
 
     holdout_size: int, float or None, optional (default=None)
-        - If None: No holdout_size data set is set apart.
-        - If <=1: Fraction of the dataset to include in the holdout_size set.
-        - If >1: Number of rows to include in the holdout_size set.
+        - If None: No holdout data set is kept apart.
+        - If <=1: Fraction of the dataset to include in the holdout set.
+        - If >1: Number of rows to include in the holdout set.
 
-        This parameter is ignored if the data sets are provided
+        This parameter is ignored if the holdout set is provided
         through `arrays`.
 
     n_jobs: int, optional (default=1)
@@ -301,8 +308,11 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - X
             - X, y
             - train, test
+            - train, test, holdout
             - X_train, X_test, y_train, y_test
+            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
             - (X_train, y_train), (X_test, y_test)
+            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
         X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
@@ -334,14 +344,15 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
-        Is ignored if the train and test set are provided.
+        This parameter is ignored if the test set is provided
+        through `arrays`.
 
     holdout_size: int, float or None, optional (default=None)
-        - If None: No holdout_size data set is set apart.
-        - If <=1: Fraction of the dataset to include in the holdout_size set.
-        - If >1: Number of rows to include in the holdout_size set.
+        - If None: No holdout data set is kept apart.
+        - If <=1: Fraction of the dataset to include in the holdout set.
+        - If >1: Number of rows to include in the holdout set.
 
-        This parameter is ignored if the data sets are provided
+        This parameter is ignored if the holdout set is provided
         through `arrays`.
 
     n_jobs: int, optional (default=1)

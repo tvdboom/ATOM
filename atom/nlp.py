@@ -583,8 +583,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     Parameters
     ----------
     strategy: str, optional (default="BOW")
-        Strategy with which to vectorize the text. Available
-        options are:
+        Strategy with which to vectorize the text. Choose from:
             - "BOW": Uses a Bag of Words algorithm.
             - "TF-IDF": Uses a TF-IDF algorithm.
             - "Hashing": Uses a hashing algorithm.
