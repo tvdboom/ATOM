@@ -143,13 +143,16 @@ and validate a Convolutional Neural Network implemented with Keras.
 
 Ensemble models use multiple estimators to obtain better predictive
 performance than could be obtained from any of the constituent learning
-algorithms alone. ATOM implements two ensemble techniques: voting and stacking.
+algorithms alone. ATOM implements two ensemble techniques: voting and
+stacking. If an [mlflow experiment](../../logging/#tracking) is active,
+the ensemble models start their own run just like the "regular" models
+do. Click [here](../../examples/ensembles) for an example that uses
+ensemble models.
 
 !!! warning
-    Although it is possible to include models from different branches
-    in the same ensemble, this is highly discouraged. Data sets from
-    different branches with unequal shape can result in unexpected
-    errors for plots and prediction methods.
+    Combining models trained on different branches into the ensemble is
+    not allowed and will raise an exception.
+
 
 ### Voting
 
@@ -176,7 +179,6 @@ have the specified method. The `predict` method returns the majority
 vote (hard voting). The `evaluate` method also returns the average
 score for the selected metric over the models.
 
-Click [here](../../examples/ensembles) for a voting example.
 
 <br>
 
@@ -195,5 +197,3 @@ specified. Plots that require a data set will use the one in the
 current branch. The prediction methods, the evaluate method and the
 plot methods that require an estimator object will use the stacking's
 final estimator, under the `estimator` attribute.
-
-Click [here](../../examples/ensembles) for a stacking example.

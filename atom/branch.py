@@ -16,10 +16,10 @@ from typing import Optional
 
 # Own modules
 from .basetransformer import BaseTransformer
-from .models import MODEL_LIST
+from .models import MODELS_ENSEMBLES
 from .utils import (
     X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
-    check_multidim, composed, crash, method_to_log,
+    is_multidim, composed, crash, method_to_log,
 )
 
 
@@ -100,7 +100,7 @@ class Branch:
 
     def _get_depending_models(self):
         """Return the models that are dependent on this branch."""
-        return [m.name for m in self.T._models if m.branch is self]
+        return [m.name for m in self.T._models.values() if m.branch is self]
 
     @composed(crash, method_to_log, typechecked)
     def delete(self, name: Optional[str] = None):
@@ -128,7 +128,7 @@ class Branch:
 
             # Reset the current branch
             if branch.name == self.T._current:
-                self.T._current = list(self.T._branches.keys())[1]  # 0 is og
+                self.T._current = list(self.T._branches)[1]  # 0 is og
 
             self.T._branches.pop(branch.name)
             self.T.log(f"Branch {branch.name} successfully deleted.", 1)
@@ -138,23 +138,21 @@ class Branch:
         """Change the name of the branch."""
         if not name:
             raise ValueError("A branch can't have an empty name!")
-        elif name.lower() in map(str.lower, MODEL_LIST.keys()):
-            raise ValueError(
-                f"Invalid name for the branch. {name} is the "
-                f"acronym of model {MODEL_LIST[name].fullname}. "
-            )
-        elif name.lower() in ("og", "vote", "stack"):
-            raise ValueError(
-                "This name is reserved for internal purposes. "
-                "Choose a different name for the branch."
-            )
         elif name in self.T._branches:
             raise ValueError(f"Branch {self.T._branches[name].name} already exists!")
+        else:
+            for model in MODELS_ENSEMBLES.values():
+                if name.lower().startswith(model.acronym.lower()):
+                    raise ValueError(
+                        "Invalid name for the branch. The name of a branch may "
+                        f"not begin with a model's acronym, and {model.acronym} "
+                        f"is the acronym of the {model.fullname} model."
+                    )
 
         self.name = name
         self.pipeline.name = name
         self.T._branches[name] = self.T._branches.pop(self.T._current)
-        self.T.log(f"Branch {self.T._current} was renamed to {name}.", 1)
+        self.T.log(f"Branch {self.T._current} is renamed to {name}.", 1)
         self.T._current = name
 
     @composed(crash, method_to_log)
@@ -357,7 +355,7 @@ class Branch:
     @property
     def shape(self):
         """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             return self.data.shape
         else:
             return len(self.data), self.X.iloc[0, 0].shape, 2

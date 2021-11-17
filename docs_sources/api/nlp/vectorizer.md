@@ -41,7 +41,7 @@ Verbosity level of the class. Possible values are:
 </ul>
 <p>
 <strong>**kwargs</strong><br>
-Additional keyword arguments passed to the <code>strategy</code> estimator.
+Additional keyword arguments for the <code>strategy</code> estimator.
 </p>
 </td>
 </tr>

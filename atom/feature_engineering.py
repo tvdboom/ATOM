@@ -34,7 +34,7 @@ from sklearn.feature_selection import (
 )
 
 # Own modules
-from .models import MODEL_LIST
+from .models import MODELS
 from .basetransformer import BaseTransformer
 from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
@@ -816,7 +816,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                         self._solver = self.solver
 
                     # Set to right acronym and get the model's estimator
-                    model = MODEL_LIST[get_acronym(self._solver)](self)
+                    model = MODELS[get_acronym(self._solver)](self)
                     self._solver = model.get_estimator()
                 else:
                     self._solver = self.solver

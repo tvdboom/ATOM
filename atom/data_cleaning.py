@@ -954,7 +954,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         - Else: Python `logging.Logger` instance.
 
     **kwargs
-        Additional keyword arguments passed to the `strategy` estimator.
+        Additional keyword arguments for the `strategy` estimator.
 
     """
 
@@ -1434,7 +1434,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         number generator is the `RandomState` used by `numpy.random`.
 
     **kwargs
-        Additional keyword arguments passed to the `strategy` estimator.
+        Additional keyword arguments for the `strategy` estimator.
 
     Attributes
     ----------
@@ -1468,7 +1468,6 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
         self.mapping = {}
-        self._cols = None
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Y_TYPES = -1):

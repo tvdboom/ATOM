@@ -10,8 +10,9 @@ metric=0, title=None, figsize=(10, 6), filename=None, display=True)
 </div>
 
 Plot the model's learning curve: score vs number of training
-samples. Only available for [non-ensemble](../../../user_guide/models/#ensembles)
-models that were fitted using [train sizing](../../../user_guide/training/#train-sizing).
+samples. Only use with models fitted using [train sizing](../../../user_guide/training/#train-sizing).
+[Ensemble](../../../user_guide/models/#ensembles) models are
+ignored.
 
 <table style="font-size:16px">
 <tr>

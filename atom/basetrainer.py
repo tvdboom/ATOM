@@ -17,12 +17,12 @@ from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
 
 # Own modules
 from .branch import Branch
-from .models import MODEL_LIST, CustomModel
+from .models import MODELS, CustomModel
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
 from .basemodel import BaseModel
 from .utils import (
-    SEQUENCE, OPTIONAL_PACKAGES, lst, dct, time_to_str, check_multidim,
+    SEQUENCE, OPTIONAL_PACKAGES, lst, time_to_str, is_multidim,
     get_acronym, get_scorer, get_best_score, check_scaling, delete,
     PlotCallback, CustomDict,
 )
@@ -114,7 +114,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 Number of folds for the cross-validation. If 1, the
                 training set is randomly split in a (sub)train and
                 validation set.
-            - callbacks: callable or sequence, optional (default=None)
+            - callback: callable or list of callables, optional (default=None)
                 Callbacks for the BO.
             - dimensions: dict, sequence or None, optional (default=None)
                 Custom hyperparameter space for the BO. Can be an
@@ -188,35 +188,27 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         )
 
         # Parameter attributes
-        self._models = CustomDict({model: model for model in lst(models)})
-        if not isinstance(metric, CustomDict):
-            self._metric = CustomDict({metric: metric for metric in lst(metric)})
-        else:
-            self._metric = metric
+        self._models = CustomDict({m: m for m in lst(models) if m is not None})
+        self._metric = CustomDict({m: m for m in lst(metric) if m is not None})
         self.greater_is_better = greater_is_better
         self.needs_proba = needs_proba
         self.needs_threshold = needs_threshold
         self.n_calls = n_calls
         self.n_initial_points = n_initial_points
-        self.est_params = dct(est_params)
-        self.bo_params = dct(bo_params)
+        self.est_params = est_params
+        self.bo_params = bo_params
         self.n_bootstrap = n_bootstrap
 
         # Branching attributes
         self.holdout = None
-        self._current = "og"  # Current (and only) branch
+        self._current = "og"
         self._branches = CustomDict({self._current: Branch(self, self._current)})
 
         # Training attributes
         self.task = None
         self.scaled = None
+        self._bo = {"base_estimator": "GP", "cv": 1, "callback": [], "kwargs": {}}
         self._errors = CustomDict()
-
-        # BO attributes
-        self._base_estimator = None
-        self._cv = 1
-        self._callbacks = []
-        self._bo_kwargs = {}
 
     def _check_parameters(self):
         """Check the validity of the input parameters."""
@@ -229,18 +221,18 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Create model subclasses ================================== >>
 
         # If left to default, select all predefined models per task
-        if None in self._models:
+        if not self._models:
             if self.goal == "class":
-                models = [m(self) for m in MODEL_LIST if m.task in ("class", "both")]
+                models = [m(self) for m in MODELS.values() if m.task != "reg"]
             else:
-                models = [m(self) for m in MODEL_LIST if m.task in ("reg", "both")]
+                models = [m(self) for m in MODELS.values() if m.task != "class"]
         else:
             models = []
-            for m in self._models:
+            for m in self._models.values():
                 if isinstance(m, str):
                     acronym = get_acronym(m, must_be_equal=False)
 
-                    if check_multidim(self.X):
+                    if is_multidim(self.X):
                         raise ValueError(
                             "Multidimensional datasets are not supported by ATOM's "
                             "predefined models. Refer to the documentation for the "
@@ -257,7 +249,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                                 "package. Make sure it is installed."
                             )
 
-                    models.append(MODEL_LIST[acronym](self, acronym + m[len(acronym):]))
+                    models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 
                     # Check for regression/classification-only models
                     if self.goal == "class" and models[-1].task == "reg":
@@ -280,7 +272,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Define scorer ============================================ >>
 
         # Assign default scorer
-        if None in self._metric:
+        if not self._metric:
             if self.task.startswith("bin"):
                 self._metric = CustomDict(f1=get_scorer("f1"))
             elif self.task.startswith("multi"):
@@ -289,7 +281,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 self._metric = CustomDict(r2=get_scorer("r2"))
 
         # Ignore if it's the same scorer as previous call
-        elif not all([hasattr(m, "name") for m in self._metric]):
+        elif not all([hasattr(m, "name") for m in self._metric.values()]):
             self._metric = self._prepare_metric(
                 metric=self._metric,
                 greater_is_better=self.greater_is_better,
@@ -308,107 +300,25 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     f"(models)={len(self._models)} and len({param})={len(p)}."
                 )
 
-            for i, model in enumerate(self._models):
-                if param in ("n_calls", "bootstrap") and p[i % len(p)] < 0:
+            for i, model in enumerate(self._models.values()):
+                value = p[i % len(p)]
+                if param == "n_calls" and value == 1 or value < 0:
                     raise ValueError(
                         f"Invalid value for the {param} parameter. "
-                        f"Value should be >=0, got {p[i % len(p)]}."
+                        f"Value should be >=2, got {value}."
                     )
-                elif param == "n_initial_points" and p[i % len(p)] <= 0:
+                elif param == "n_initial_points" and value <= 0:
                     raise ValueError(
                         f"Invalid value for the {param} parameter. "
-                        f"Value should be >0, got {p[i % len(p)]}."
+                        f"Value should be >=1, got {value}."
+                    )
+                elif param == "n_bootstrap" and value < 0:
+                    raise ValueError(
+                        f"Invalid value for the {param} parameter. "
+                        f"Value should be >=0, got {value}."
                     )
 
-                setattr(model, "_" + param, p[i % len(p)])
-
-        # Prepare bo parameters ===================================== >>
-
-        # Choose a base estimator (GP is chosen as default)
-        self._base_estimator = self.bo_params.get("base_estimator", "GP")
-        if isinstance(self._base_estimator, str):
-            if self._base_estimator.lower() not in ("gp", "et", "rf", "gbrt"):
-                raise ValueError(
-                    f"Invalid value for the base_estimator parameter, got "
-                    f"{self._base_estimator}. Value should be one of: 'GP', "
-                    f"'ET', 'RF', 'GBRT'."
-                )
-
-        if self.bo_params.get("callbacks"):
-            self._callbacks = lst(self.bo_params["callbacks"])
-
-        if "max_time" in self.bo_params:
-            if self.bo_params["max_time"] <= 0:
-                raise ValueError(
-                    "Invalid value for the max_time parameter. "
-                    f"Value should be >0, got {self.bo_params['max_time']}."
-                )
-            self._callbacks.append(DeadlineStopper(self.bo_params["max_time"]))
-
-        if "delta_x" in self.bo_params:
-            if self.bo_params["delta_x"] < 0:
-                raise ValueError(
-                    "Invalid value for the delta_x parameter. "
-                    f"Value should be >=0, got {self.bo_params['delta_x']}."
-                )
-            self._callbacks.append(DeltaXStopper(self.bo_params["delta_x"]))
-
-        if "delta_y" in self.bo_params:
-            if self.bo_params["delta_y"] < 0:
-                raise ValueError(
-                    "Invalid value for the delta_y parameter. "
-                    f"Value should be >=0, got {self.bo_params['delta_y']}."
-                )
-            self._callbacks.append(DeltaYStopper(self.bo_params["delta_y"], n_best=5))
-
-        if self.bo_params.get("plot"):
-            self._callbacks.append(PlotCallback(self))
-
-        if "cv" in self.bo_params:
-            if self.bo_params["cv"] <= 0:
-                raise ValueError(
-                    "Invalid value for the max_time parameter. "
-                    f"Value should be >=0, got {self.bo_params['cv']}."
-                )
-            self._cv = self.bo_params["cv"]
-
-        if "early_stopping" in self.bo_params:
-            if self.bo_params["early_stopping"] <= 0:
-                raise ValueError(
-                    "Invalid value for the early_stopping parameter. "
-                    f"Value should be >=0, got {self.bo_params['early_stopping']}."
-                )
-            for model in [m for m in self._models if hasattr(m, "custom_fit")]:
-                model._early_stopping = self.bo_params["early_stopping"]
-
-        # Add custom dimensions to every model subclass
-        if self.bo_params.get("dimensions"):
-            for name, model in self._models.items():
-                # If not dict, the dimensions are for all models
-                if not isinstance(self.bo_params["dimensions"], dict):
-                    model._dimensions = self.bo_params["dimensions"]
-                else:
-                    # Dimensions for every specific model
-                    for key, value in self.bo_params["dimensions"].items():
-                        # Parameters for this model only
-                        if key.lower() == name.lower():
-                            model._dimensions = value
-                            break
-
-        kwargs = [
-            "base_estimator",
-            "max_time",
-            "delta_x",
-            "delta_y",
-            "early_stopping",
-            "cv",
-            "callbacks",
-            "dimensions",
-            "plot",
-        ]
-
-        # The remaining bo_params are added as kwargs to the optimizer
-        self._bo_kwargs = {k: v for k, v in self.bo_params.items() if k not in kwargs}
+                setattr(model, "_" + param, value)
 
         # Prepare est_params ======================================= >>
 
@@ -428,6 +338,92 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                         model._est_params_fit[key[:-4]] = value
                     else:
                         model._est_params[key] = value
+
+        # Prepare bo params ======================================== >>
+
+        base_estimators = ["GP", "RF", "ET", "GBRT"]
+        exc = ["max_time", "delta_x", "delta_y", "plot", "early_stopping", "dimensions"]
+
+        if self.bo_params:
+            if self.bo_params.get("base_estimator"):
+                self._bo["base_estimator"] = self.bo_params["base_estimator"]
+                if isinstance(self._bo["base_estimator"], str):
+                    if self._bo["base_estimator"].upper() not in base_estimators:
+                        raise ValueError(
+                            "Invalid value for the base_estimator parameter, "
+                            f"got {self.bo_params['base_estimator']}. Choose "
+                            f"from: {', '.join(base_estimators)}."
+                        )
+
+            if self.bo_params.get("callback"):
+                self._bo["callback"].extend(lst(self.bo_params["callback"]))
+
+            if "max_time" in self.bo_params:
+                if self.bo_params["max_time"] <= 0:
+                    raise ValueError(
+                        "Invalid value for the max_time parameter. Value "
+                        f"should be >0, got {self.bo_params['max_time']}."
+                    )
+                max_time_callback = DeadlineStopper(self.bo_params["max_time"])
+                self._bo["callback"].append(max_time_callback)
+
+            if "delta_x" in self.bo_params:
+                if self.bo_params["delta_x"] < 0:
+                    raise ValueError(
+                        "Invalid value for the delta_x parameter. "
+                        f"Value should be >=0, got {self.bo_params['delta_x']}."
+                    )
+                delta_x_callback = DeltaXStopper(self.bo_params["delta_x"])
+                self._bo["callback"].append(delta_x_callback)
+
+            if "delta_y" in self.bo_params:
+                if self.bo_params["delta_y"] < 0:
+                    raise ValueError(
+                        "Invalid value for the delta_y parameter. Value "
+                        f"should be >=0, got {self.bo_params['delta_y']}."
+                    )
+                delta_y_callback = DeltaYStopper(self.bo_params["delta_y"], n_best=5)
+                self._bo["callback"].append(delta_y_callback)
+
+            if self.bo_params.get("plot"):
+                self._bo["callback"].append(PlotCallback(self))
+
+            if "cv" in self.bo_params:
+                if self.bo_params["cv"] <= 0:
+                    raise ValueError(
+                        "Invalid value for the cv parameter. Value "
+                        f"should be >=0, got {self.bo_params['cv']}."
+                    )
+                self._bo["cv"] = self.bo_params["cv"]
+
+            if "early_stopping" in self.bo_params:
+                if self.bo_params["early_stopping"] <= 0:
+                    raise ValueError(
+                        "Invalid value for the early_stopping parameter. Value "
+                        f"should be >=0, got {self.bo_params['early_stopping']}."
+                    )
+                for model in self._models.values():
+                    if hasattr(m, "custom_fit"):
+                        model._early_stopping = self.bo_params["early_stopping"]
+
+            # Add custom dimensions to every model subclass
+            if self.bo_params.get("dimensions"):
+                for name, model in self._models.items():
+                    # If not dict, the dimensions are for all models
+                    if not isinstance(self.bo_params["dimensions"], dict):
+                        model._dimensions = self.bo_params["dimensions"]
+                    else:
+                        # Dimensions for every specific model
+                        for key, value in self.bo_params["dimensions"].items():
+                            # Parameters for this model only
+                            if key.lower() == name.lower():
+                                model._dimensions = value
+                                break
+
+            # The remaining bo_params are added as kwargs to the optimizer
+            self._bo["kwargs"] = {
+                k: v for k, v in self.bo_params.items() if k not in list(self._bo) + exc
+            }
 
     @staticmethod
     def _prepare_metric(metric, **kwargs):
@@ -455,8 +451,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         """Fit and evaluate the models in the pipeline."""
         t_init = datetime.now()  # Measure the time the whole pipeline takes
 
+        self.log("\nTraining " + "=" * 25 + " >>", 1)
+        if not self.__class__.__name__.startswith("SuccessiveHalving"):
+            self.log(f"Models: {', '.join(lst(self.models))}", 1)
+        self.log(f"Metric: {', '.join(lst(self.metric))}\n", 1)
+
         to_remove = []
-        for i, m in enumerate(self._models):
+        for i, m in enumerate(self._models.values()):
             model_time = datetime.now()
 
             try:  # If an error occurs, skip the model
@@ -474,7 +475,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
                 # Get the total time spend on this model
                 setattr(m, "time", time_to_str(model_time))
-                self.log("-" * 49 + f"\nTotal time: {m.time}", 1)
+                self.log("-" * 49 + f"\nTotal time: {m.time}\n\n", 1)
 
             except Exception as ex:
                 self.log(
@@ -491,7 +492,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 # Cannot remove immediately to maintain the iteration order
                 to_remove.append(m.name)
 
-                if self.bo_params.get("plot"):
+                if self.bo_params and self.bo_params.get("plot"):
                     PlotCallback.c += 1  # Next model
                     plt.close()  # Close the crashed plot
             finally:
@@ -506,20 +507,20 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 raise self.errors[0]
             else:
                 raise RuntimeError(
-                    "All models failed to run. Use the `errors` attribute "
+                    "All models failed to run. Use the errors attribute "
                     "or the logging file to investigate the exceptions."
                 )
 
-        self.log("\n\nFinal results " + "=" * 20 + " >>", 1)
-        self.log(f"Duration: {time_to_str(t_init)}\n" + "-" * 37, 1)
+        self.log(f"Final results {'=' * 20} >>", 1)
+        self.log(f"Duration: {time_to_str(t_init)}\n{'-' * 37}", 1)
 
         # Get max length of the model names
-        maxlen = max([len(m.fullname) for m in self._models])
+        maxlen = max([len(m.fullname) for m in self._models.values()])
 
         # Get best score of all the models
-        best_score = max([get_best_score(m) for m in self._models])
+        best_score = max([get_best_score(m) for m in self._models.values()])
 
-        for m in self._models:
+        for m in self._models.values():
             out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"
             if get_best_score(m) == best_score and len(self._models) > 1:
                 out += " !"

@@ -206,7 +206,20 @@ generator is the <code>RandomState</code> instance used by <code>numpy.random</c
 </td>
 </tr>
 </table>
-<br><br>
+<br>
+
+
+
+## Magic methods
+
+The class contains some magic methods to help you access some of its
+elements faster.
+
+* **\__len__:** Returns the length of the dataset.
+* **\__contains__:** Checks if the provided item is a column in the dataset.
+* **\__getitem__:** Access a model, a column or a subset of the dataset.
+
+<br>
 
 
 
@@ -454,7 +467,7 @@ Information about the predefined models available for the current task.
 Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>acronym:</b> Model's acronym (used to call the model).</li>
-<li><b>name:</b> Full name of the model.</li>
+<li><b>fullname:</b> Complete name of the model.</li>
 <li><b>estimator:</b> The model's underlying estimator.</li>
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>

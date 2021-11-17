@@ -135,6 +135,7 @@ generator is the <code>RandomState</code> instance used by <code>numpy.random</c
 <br>
 
 
+
 ## Magic methods
 
 The class contains some magic methods to help you access some of its
@@ -142,13 +143,14 @@ elements faster. Note that methods that apply on the pipeline can return
 different results per branch.
 
 * **\__repr__:** Prints an overview of atom's branches, models, metric and errors.
-* **\__len__:** Returns the length of the pipeline.
+* **\__len__:** Returns the length of the dataset.
 * **\__iter__:** Iterate over the pipeline's transformers.
 * **\__contains__:** Checks if the provided item is a column in the dataset.
 * **\__getitem__:** If int, return the i-th transformer in the pipeline.
-  If str, access a branch or a column in the dataset.
+  If str, access a branch, a model, a column or a subset of the dataset.
 
 <br>
+
 
 
 ## Attributes
@@ -536,17 +538,22 @@ pipeline. If the transformer is a sklearn Pipeline, every transformer
 is merged independently with atom.
 
 !!! warning
-    The transformer should have fit and/or transform methods with arguments
-    `X` (accepting a 2d array-like object of shape=(n_samples, n_features))
-    and/or `y` (accepting a sequence of shape=(n_samples,)).
+
+    * The transformer should have fit and/or transform methods with arguments
+      `X` (accepting a 2d array-like object of shape=(n_samples, n_features))
+      and/or `y` (accepting a sequence of shape=(n_samples,)).
+    * The transform method should return a feature set as a 2d array-like
+      object of shape=(n_samples, n_features) and/or a target column as a
+      sequence of shape=(n_samples,).
 
 !!! note
-    If the transformer doesn't return a dataframe,  the column naming happens as
-    follows. If the transformer returns the same number of columns, the names are
-    kept equal. If the number of columns change, old columns will keep their name
-    (as long as the column is unchanged) and new columns will receive the name
-    `Feature n`, where n stands for the n-th feature. This means that a transformer
-    should only transform, add or drop columns, not combinations of these.
+    If the transform method doesn't return a dataframe as feature set, the
+    column naming happens as follows. If the transformer returns the same
+    number of columns, the names are kept equal. If the number of columns
+    change, old columns will keep their name (as long as the column is
+    unchanged) and new columns will receive the name `Feature n`, where n
+    stands for the n-th feature. This means that a transformer should only
+    transform, add or drop columns, not combinations of these.
 
 !!! note
     If the transformer has a `n_jobs` and/or `random_state` parameter that
@@ -565,7 +572,8 @@ Transformer to add to the pipeline. Should implement a <code>transform</code> me
 Names, indices or dtypes of the columns in the dataset to transform.
 If None, transform all columns. Add <code>!</code> in front of a name
 or dtype to exclude that column, e.g. <code>atom.add(Transformer(), columns="!Location")</code>
-transforms all columns except <code>Location</code>.
+transforms all columns except <code>Location</code>. You can either
+include or exclude columns, not combinations of these.
 </p>
 <p>
 <strong>train_only: bool, optional (default=False)</strong><br>
@@ -575,7 +583,7 @@ is skipped when making predictions on unseen data.
 </p>
 <p>
 <strong>**fit_params</strong><br>
-Additional keyword arguments passed to the fit method of the transformer.
+Additional keyword arguments for the fit method of the transformer.
 </p>
 </td>
 </tr>
@@ -616,11 +624,11 @@ Name or index of the column in the dataset to create or transform.
 </p>
 <p>
 <strong>args: tuple, optional (default=())</strong><br>
-Positional arguments passed to func after the dataset.
+Positional arguments for the function (after the dataset).
 </p>
 <p>
 <strong>**kwargs</strong><br>
-Additional keyword arguments passed to func.
+Additional keyword arguments for the function.
 </p>
 </td>
 </tr>
@@ -669,7 +677,7 @@ Information about the predefined models available for the current task.
 Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>acronym:</b> Model's acronym (used to call the model).</li>
-<li><b>name:</b> Full name of the model.</li>
+<li><b>fullname:</b> Complete name of the model.</li>
 <li><b>estimator:</b> The model's underlying estimator.</li>
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>

@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/training/directclassifier/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
   <title>DirectClassifier - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.a57b2b03.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -1094,6 +1094,8 @@
       </a>
       
         
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -1106,6 +1108,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#magic-methods" class="md-nav__link">
+    Magic methods
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#attributes" class="md-nav__link">
@@ -2726,6 +2735,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2738,6 +2749,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#magic-methods" class="md-nav__link">
+    Magic methods
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#attributes" class="md-nav__link">
@@ -2998,7 +3016,16 @@ generator is the <code>RandomState</code> instance used by <code>numpy.random</c
 </td>
 </tr>
 </table>
-<p><br><br></p>
+<p><br></p>
+<h2 id="magic-methods">Magic methods</h2>
+<p>The class contains some magic methods to help you access some of its
+elements faster.</p>
+<ul>
+<li><strong>__len__:</strong> Returns the length of the dataset.</li>
+<li><strong>__contains__:</strong> Checks if the provided item is a column in the dataset.</li>
+<li><strong>__getitem__:</strong> Access a model, a column or a subset of the dataset.</li>
+</ul>
+<p><br></p>
 <h2 id="attributes">Attributes</h2>
 <h3 id="data-attributes">Data attributes</h3>
 <p>The dataset can be accessed at any time through multiple attributes,
@@ -3232,7 +3259,7 @@ Information about the predefined models available for the current task.
 Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>acronym:</b> Model's acronym (used to call the model).</li>
-<li><b>name:</b> Full name of the model.</li>
+<li><b>fullname:</b> Complete name of the model.</li>
 <li><b>estimator:</b> The model's underlying estimator.</li>
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
@@ -3707,10 +3734,10 @@ Uses uniform weights if None.
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.b1047164.min.js"></script>
       
         <script src="../../../stylesheets/extra.js"></script>
       

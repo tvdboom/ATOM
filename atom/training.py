@@ -17,7 +17,7 @@ from sklearn.base import BaseEstimator
 
 # Own modules
 from .basetrainer import BaseTrainer
-from .plots import BaseModelPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter
+from .plots import BaseModelPlotter
 from .utils import (
     SEQUENCE_TYPES, lst, get_best_score, infer_task, composed,
     method_to_log, crash, CustomDict,
@@ -63,14 +63,10 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        self.log(f"Models: {', '.join(lst(self.models))}", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
-
         self._core_iteration()
 
 
-class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
+class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
     """Successive halving training approach.
 
     The successive halving technique is a bandit-based algorithm that
@@ -132,15 +128,12 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
                 f"and skip_runs={self.skip_runs}."
             )
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
-
         run = 0
         models = CustomDict()
         og_models = {k: copy(v) for k, v in self._models.items()}
         while len(self._models) > 2 ** self.skip_runs - 1:
             # Create the new set of models for the run
-            for m in self._models:
+            for m in self._models.values():
                 m.name += str(len(self._models))
                 m._pred = [None] * 15  # Avoid shallow copy
                 m._train_idx = len(self.train) // len(self._models)
@@ -153,16 +146,16 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             self._core_iteration()
-            models.update({m.name: m for m in self._models})
+            models.update({m.name: m for m in self._models.values()})
 
             # Select next models for halving
             best = pd.Series(
-                data=[get_best_score(m) for m in self._models],
-                index=[m.name for m in self._models],
+                data=[get_best_score(m) for m in self._models.values()],
+                index=[m.name for m in self._models.values()],
             ).nlargest(n=len(self._models) // 2, keep="first")
-            acronyms = [m.acronym for m in self._models if m.name in best.index]
+            names = [m.acronym for m in self._models.values() if m.name in best.index]
             self._models = CustomDict(
-                {k: copy(v) for k, v in og_models.items() if v.acronym in acronyms}
+                {k: copy(v) for k, v in og_models.items() if v.acronym in names}
             )
 
             run += 1
@@ -170,7 +163,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         self._models = models  # Restore all models
 
 
-class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
+class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
     """Train Sizing training approach.
 
     When training models, there is usually a trade-off between model
@@ -222,10 +215,6 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        self.log(f"Models: {', '.join(lst(self.models))}", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
-
         # Convert integer train_sizes to sequence
         if isinstance(self.train_sizes, int):
             self.train_sizes = np.linspace(1 / self.train_sizes, 1.0, self.train_sizes)
@@ -241,7 +230,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
                 frac = round(size / self.branch.idx[0], 2)
                 train_idx = size
 
-            for m in self._models:
+            for m in self._models.values():
                 m.name += str(frac).replace(".", "")  # Add frac to the name
                 m._pred = [None] * 15  # Avoid shallow copy
                 m._train_idx = train_idx
@@ -253,7 +242,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             self._core_iteration()
-            models.update({m.name.lower(): m for m in self._models})
+            models.update({m.name.lower(): m for m in self._models.values()})
 
             # Create next models for sizing
             self._models = CustomDict({k: copy(v) for k, v in og_models.items()})

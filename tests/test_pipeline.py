@@ -26,7 +26,7 @@ def pipeline():
     atom.clean()
     atom.impute()
     atom.prune()
-    atom.add(StandardScaler())
+    atom.add(StandardScaler(), columns=0)
     atom.run("LR")
 
     def get_pipeline(model):
@@ -41,6 +41,14 @@ def test_fit(pipeline):
     assert pl.fit(X_bin, y_bin)
     pl.steps.insert(1, ("passthrough", None))
     assert pl.fit(X_bin, y_bin)
+
+
+def test_internal_attrs_are_saved(pipeline):
+    """Assert that cols and train_only attrs are stored after clone."""
+    pl = pipeline(model=False)
+    pl.fit(X_bin, y_bin)
+    assert pl.steps[-1][1]._cols == [["mean radius"], []]
+    assert pl.steps[-2][1]._train_only is True
 
 
 def test_transform_only_y(pipeline):

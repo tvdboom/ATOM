@@ -65,7 +65,7 @@ Verbosity level of the class. Possible values are:
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 <strong>**kwargs</strong><br>
-Additional keyword arguments passed to the <code>strategy</code>
+Additional keyword arguments for the <code>strategy</code>
 estimator. If sequence of strategies, the params should be provided
 in a dict with the strategy's name as key.
 </td>

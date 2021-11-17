@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/ATOM/atomregressor/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
   <title>ATOMRegressor - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.a57b2b03.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -724,6 +724,8 @@
       </a>
       
         
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2761,6 +2763,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -3007,11 +3011,11 @@ elements faster. Note that methods that apply on the pipeline can return
 different results per branch.</p>
 <ul>
 <li><strong>__repr__:</strong> Prints an overview of atom's branches, models, metric and errors.</li>
-<li><strong>__len__:</strong> Returns the length of the pipeline.</li>
+<li><strong>__len__:</strong> Returns the length of the dataset.</li>
 <li><strong>__iter__:</strong> Iterate over the pipeline's transformers.</li>
 <li><strong>__contains__:</strong> Checks if the provided item is a column in the dataset.</li>
 <li><strong>__getitem__:</strong> If int, return the i-th transformer in the pipeline.
-  If str, access a branch or a column in the dataset.</li>
+  If str, access a branch, a model, a column or a subset of the dataset.</li>
 </ul>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
@@ -3366,18 +3370,24 @@ pipeline. If the transformer is a sklearn Pipeline, every transformer
 is merged independently with atom.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The transformer should have fit and/or transform methods with arguments
-<code>X</code> (accepting a 2d array-like object of shape=(n_samples, n_features))
-and/or <code>y</code> (accepting a sequence of shape=(n_samples,)).</p>
+<ul>
+<li>The transformer should have fit and/or transform methods with arguments
+  <code>X</code> (accepting a 2d array-like object of shape=(n_samples, n_features))
+  and/or <code>y</code> (accepting a sequence of shape=(n_samples,)).</li>
+<li>The transform method should return a feature set as a 2d array-like
+  object of shape=(n_samples, n_features) and/or a target column as a
+  sequence of shape=(n_samples,).</li>
+</ul>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>If the transformer doesn't return a dataframe,  the column naming happens as
-follows. If the transformer returns the same number of columns, the names are
-kept equal. If the number of columns change, old columns will keep their name
-(as long as the column is unchanged) and new columns will receive the name
-<code>Feature n</code>, where n stands for the n-th feature. This means that a transformer
-should only transform, add or drop columns, not combinations of these.</p>
+<p>If the transform method doesn't return a dataframe as feature set, the
+column naming happens as follows. If the transformer returns the same
+number of columns, the names are kept equal. If the number of columns
+change, old columns will keep their name (as long as the column is
+unchanged) and new columns will receive the name <code>Feature n</code>, where n
+stands for the n-th feature. This means that a transformer should only
+transform, add or drop columns, not combinations of these.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3397,7 +3407,8 @@ Transformer to add to the pipeline. Should implement a <code>transform</code> me
 Names, indices or dtypes of the columns in the dataset to transform.
 If None, transform all columns. Add <code>!</code> in front of a name
 or dtype to exclude that column, e.g. <code>atom.add(Transformer(), columns="!Location")</code>
-transforms all columns except <code>Location</code>.
+transforms all columns except <code>Location</code>. You can either
+include or exclude columns, not combinations of these.
 </p>
 <p>
 <strong>train_only: bool, optional (default=False)</strong><br>
@@ -3407,7 +3418,7 @@ is skipped when making predictions on unseen data.
 </p>
 <p>
 <strong>**fit_params</strong><br>
-Additional keyword arguments passed to the fit method of the transformer.
+Additional keyword arguments for the fit method of the transformer.
 </p>
 </td>
 </tr>
@@ -3446,11 +3457,11 @@ Name or index of the column in the dataset to create or transform.
 </p>
 <p>
 <strong>args: tuple, optional (default=())</strong><br>
-Positional arguments passed to func after the dataset.
+Positional arguments for the function (after the dataset).
 </p>
 <p>
 <strong>**kwargs</strong><br>
-Additional keyword arguments passed to func.
+Additional keyword arguments for the function.
 </p>
 </td>
 </tr>
@@ -3495,7 +3506,7 @@ Information about the predefined models available for the current task.
 Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>acronym:</b> Model's acronym (used to call the model).</li>
-<li><b>name:</b> Full name of the model.</li>
+<li><b>fullname:</b> Complete name of the model.</li>
 <li><b>estimator:</b> The model's underlying estimator.</li>
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
@@ -4559,10 +4570,10 @@ description of the parameters.
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.b1047164.min.js"></script>
       
         <script src="../../../stylesheets/extra.js"></script>
       

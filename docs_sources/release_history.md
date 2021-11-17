@@ -7,9 +7,11 @@
 * Added the `holdout` data set to have an extra way of assessing a
   model's performance on a completely independent dataset. Read more
   in the [user_guide](../user_guide/data-management/#holdout-set).
+* Complete rework of the [ensemble](../user_guide/models/#ensembles) models.
 * Added the [transform](../API/models/gnb/#transform) method for models.
 * Refactor of the model's [full_train](../API/models/gnb/#full-train) method.
-* Train scores are now also saved to the mlflow run.
+* Improvements in the trainer's pipeline.
+* Training scores are now also saved to the mlflow run.
 * Trying to change the data in a branch after fitting a model with it now
   raises an exception.
 * Fixed a bug where the columns of array inputs were not ordered correctly.

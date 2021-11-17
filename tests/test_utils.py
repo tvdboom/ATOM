@@ -100,8 +100,9 @@ def test_custom_dict_initialization():
 
 def test_custom_dict_key_request():
     """Assert that the custom dictionary key request works."""
-    cd = CustomDict({"A": 0, "B": 1})
+    cd = CustomDict({"A": 0, "B": 1, "C": 2})
     assert cd["a"] == cd["A"] == cd[0] == 0
+    assert cd[["a", "b"]] == CustomDict({"A": 0, "B": 1})
     with pytest.raises(KeyError):
         print(cd[10])
 

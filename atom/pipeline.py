@@ -82,6 +82,11 @@ class Pipeline(pipeline.Pipeline):
                 else:
                     cloned = clone(transformer)
 
+                    # Attach internal attrs otherwise wiped by clone
+                    for attr in ("_cols", "_train_only"):
+                        if hasattr(transformer, attr):
+                            setattr(cloned, attr, getattr(transformer, attr))
+
                 # Fit or load the current estimator from cache
                 X, y, fitted_transformer = memory(
                     transformer=cloned,

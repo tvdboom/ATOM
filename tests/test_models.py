@@ -21,15 +21,21 @@ from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.models import MODEL_LIST
+from atom.models import MODELS
 from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
 
 
 # Variables ======================================================== >>
 
-binary = [m for m in MODEL_LIST if m.task != "reg" and m.acronym != "CatNB"]
-multi = [m for m in MODEL_LIST if m.task != "reg" and not m.acronym.startswith("Cat")]
-regression = [m for m in MODEL_LIST if m.task != "class"]
+binary, multiclass, regression = [], [], []
+for m in MODELS.values():
+    if m.task != "reg":
+        if m.acronym != "CatNB":
+            binary.append(m.acronym)
+        if not m.acronym.startswith("Cat"):
+            multiclass.append(m.acronym)
+    if m.task != "class":
+        regression.append(m.acronym)
 
 
 # Functions ======================================================= >>
@@ -92,29 +98,29 @@ def test_models_binary(model):
     """Assert that all models work with binary classification."""
     atom = ATOMClassifier(X_bin, y_bin, test_size=0.24, random_state=1)
     atom.run(
-        models=model.acronym,
+        models=model,
         metric="auc",
         n_calls=2,
         n_initial_points=1,
         bo_params={"base_estimator": "rf", "cv": 1},
     )
     assert not atom.errors
-    assert hasattr(atom, model.acronym)
+    assert hasattr(atom, model)
 
 
-@pytest.mark.parametrize("model", multi)
+@pytest.mark.parametrize("model", multiclass)
 def test_models_multiclass(model):
     """Assert that all models work with multiclass classification."""
     atom = ATOMClassifier(X_class2, y_class2, test_size=0.24, random_state=1)
     atom.run(
-        models=model.acronym,
+        models=model,
         metric="f1_micro",
         n_calls=2,
         n_initial_points=1,
         bo_params={"base_estimator": "rf", "cv": 1},
     )
     assert not atom.errors
-    assert hasattr(atom, model.acronym)
+    assert hasattr(atom, model)
 
 
 @pytest.mark.parametrize("model", regression)
@@ -122,14 +128,14 @@ def test_models_regression(model):
     """Assert that all models work with regression."""
     atom = ATOMRegressor(X_reg, y_reg, test_size=0.24, random_state=1)
     atom.run(
-        models=model.acronym,
+        models=model,
         metric="neg_mean_absolute_error",
         n_calls=2,
         n_initial_points=1,
         bo_params={"base_estimator": "gbrt", "cv": 1},
     )
     assert not atom.errors
-    assert hasattr(atom, model.acronym)
+    assert hasattr(atom, model)
 
 
 def test_CatNB():

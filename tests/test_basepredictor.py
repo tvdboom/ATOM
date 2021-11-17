@@ -17,7 +17,7 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError
-from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train
+from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train, bin_test
 
 
 # Test magic methods =============================================== >>
@@ -25,8 +25,8 @@ from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train
 def test_getattr_branch():
     """Assert that branches can be called from the trainer."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "branch_2"
-    assert atom.branch_2 is atom._branches["branch_2"]
+    atom.branch = "b2"
+    assert atom.b2 is atom._branches["b2"]
 
 
 def test_getattr_attr_from_branch():
@@ -79,12 +79,12 @@ def test_setattr_normal():
 def test_delattr_branch():
     """Assert that branches can be deleted through del."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "branch_2"
-    atom.branch = "branch_3"
+    atom.branch = "b2"
+    atom.branch = "b3"
     del atom.branch
-    assert list(atom._branches.keys()) == ["og", "master", "branch_2"]
-    del atom.branch_2
-    assert list(atom._branches.keys()) == ["og", "master"]
+    assert list(atom._branches) == ["og", "master", "b2"]
+    del atom.b2
+    assert list(atom._branches) == ["og", "master"]
 
 
 def test_delattr_models():
@@ -109,6 +109,34 @@ def test_delattr_invalid():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(AttributeError, match=r".*object has no attribute.*"):
         del atom.invalid
+
+
+def test_contains():
+    """Assert that we can test if a trainer contains a column."""
+    trainer = DirectClassifier(models="LR", random_state=1)
+    assert "mean radius" not in trainer
+    trainer.run(bin_train, bin_test)
+    assert "mean radius" in trainer
+
+
+def test_len():
+    """Assert that the length of a trainer is the length of the dataset."""
+    trainer = DirectClassifier(models="LR", random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert len(trainer) == len(X_bin)
+
+
+def test_getitem():
+    """Assert that atom is subscriptable."""
+    trainer = DirectClassifier(models="LR", random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer["LR"] is trainer["lr"] is trainer.lr
+    assert trainer["mean radius"] is trainer.dataset["mean radius"]
+    assert isinstance(trainer[["mean radius", "mean texture"]], pd.DataFrame)
+    with pytest.raises(ValueError, match=r".*has no model or column.*"):
+        print(trainer["invalid"])
+    with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
+        print(trainer[2.3])
 
 
 # Test utility properties ========================================== >>
@@ -411,59 +439,55 @@ def test_get_class_weights(dataset):
     """Assert that the get_class_weight method returns a dict of the classes."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     class_weight = atom.get_class_weight(dataset)
-    assert list(class_weight.keys()) == [0, 1, 2]
+    assert list(class_weight) == [0, 1, 2]
 
 
 def test_stacking():
     """Assert that the stacking method creates a Stack model."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     pytest.raises(NotFittedError, atom.stacking)
     atom.run(["LR", "LGB"])
     atom.stacking()
-    assert hasattr(atom, "Stack") and hasattr(atom, "stack")
+    assert hasattr(atom, "stack")
     assert "Stack" in atom.models
+    assert atom.stack._run
+
+
+def test_stacking_custom_models():
+    """Assert that stacking can be created selecting the models."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.stacking)
+    atom.run(["LR", "LDA", "LGB"])
+    atom.stacking(models=["LDA", "LGB"])
+    assert list(atom.stack._models) == ["LDA", "LGB"]
 
 
 def test_stacking_models_from_branch():
     """Assert that only the models from the current branch are passed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"])
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     atom.balance()
     atom.run(["RF", "ET"])
     atom.stacking()
-    assert atom.stack.models == ["RF", "ET"]
+    assert list(atom.stack._models) == ["RF", "ET"]
 
 
-def test_stacking_default_estimator():
+def test_stacking_different_name():
     """Assert that a default estimator is provided per goal."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"])
-    atom.stacking()
-    assert atom.stack.estimator.__class__.__name__ == "LogisticRegression"
-
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["Tree", "LGB"])
-    atom.stacking()
-    assert atom.stack.estimator.__class__.__name__ == "Ridge"
+    atom.stacking(name="stack_1")
+    atom.stacking(name="_2")
+    assert hasattr(atom, "Stack_1") and hasattr(atom, "Stack_2")
 
 
 def test_voting():
     """Assert that the voting method creates a Vote model."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     pytest.raises(NotFittedError, atom.voting)
     atom.run(["LR", "LGB"])
-    atom.voting()
-    assert hasattr(atom, "Vote") and hasattr(atom, "vote")
-    assert "Vote" in atom.models
-
-
-def test_voting_models_from_branch():
-    """Assert that only the models from the current branch are passed."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    atom.branch = "branch_2"
-    atom.balance()
-    atom.run(["RF", "ET"])
-    atom.voting()
-    assert atom.vote.models == ["RF", "ET"]
+    atom.voting(name="Vote2")
+    assert hasattr(atom, "Vote2")
+    assert "Vote2" in atom.models
+    assert atom.vote2._run

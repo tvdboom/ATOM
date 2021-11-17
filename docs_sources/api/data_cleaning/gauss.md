@@ -45,7 +45,7 @@ Seed used by the quantile strategy. If None, the random number generator
 is the <code>RandomState</code> used by <code>numpy.random</code>.
 <p>
 <strong>**kwargs</strong><br>
-Additional keyword arguments passed to the <code>strategy</code> estimator.
+Additional keyword arguments for the <code>strategy</code> estimator.
 </p>
 </td>
 </tr>

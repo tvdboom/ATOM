@@ -233,17 +233,18 @@ BALANCING_STRATS = dict(
 
 def flt(item):
     """Utility to reduce sequences with just one item."""
-    return item[0] if isinstance(item, SEQUENCE) and len(item) == 1 else item
+    if isinstance(item, SEQUENCE) and len(item) == 1:
+        return item[0]
+    else:
+        return item
 
 
 def lst(item):
     """Utility used to make sure an item is iterable."""
-    return [item] if not isinstance(item, SEQUENCE) else item
-
-
-def dct(item):
-    """Utility used to handle mutable arguments."""
-    return {} if item is None else item
+    if isinstance(item, (dict, CustomDict, *SEQUENCE)):
+        return item
+    else:
+        return [item]
 
 
 def it(item):
@@ -276,14 +277,14 @@ def variable_return(X, y):
         return X, y
 
 
-def check_multidim(df):
+def is_multidim(df):
     """Check if the dataframe contains a multidimensional column."""
     return df.columns[0] == "Multidimensional feature" and len(df.columns) <= 2
 
 
-def check_method(cls, method):
+def check_dim(cls, method):
     """Raise an error if the dataset has more than two dimensions."""
-    if check_multidim(cls.X):
+    if is_multidim(cls.X):
         raise PermissionError(
             f"The {method} method is not available for "
             f"datasets with more than two dimensions!"
@@ -478,7 +479,7 @@ def arr(df):
         Stacked dataframe.
 
     """
-    if check_multidim(df):
+    if is_multidim(df):
         return np.stack(df["Multidimensional feature"].values)
     else:
         return df
@@ -603,20 +604,20 @@ def get_acronym(model, must_be_equal=True):
     Returns
     -------
     name: str
-        Correct model name acronym as present in MODEL_LIST.
+        Correct model name acronym as present in MODELS.
 
     """
     # Not imported on top of file because of module interconnection
-    from .models import MODEL_LIST
+    from .models import MODELS
 
-    for name in MODEL_LIST.keys():
+    for name in MODELS:
         cond_1 = must_be_equal and model.lower() == name.lower()
         cond_2 = not must_be_equal and model.lower().startswith(name.lower())
         if cond_1 or cond_2:
             return name
 
     raise ValueError(
-        f"Unknown model: {model}. Choose from: {', '.join(MODEL_LIST.keys())}."
+        f"Unknown model: {model}. Choose from: {', '.join(MODELS)}."
     )
 
 
@@ -637,10 +638,10 @@ def create_acronym(fullname):
         Created acronym.
 
     """
-    from .models import MODEL_LIST
+    from .models import MODELS
 
     acronym = "".join([c for c in fullname if c.isupper()])
-    if len(acronym) < 2 or acronym.lower() in MODEL_LIST:
+    if len(acronym) < 2 or acronym.lower() in MODELS:
         return fullname
     else:
         return acronym
@@ -666,10 +667,10 @@ def names_from_estimator(cls, estimator):
         Model's complete name.
 
     """
-    from .models import MODEL_LIST
+    from .models import MODELS
 
     get_name = lambda est: est.__class__.__name__
-    for key, value in MODEL_LIST.items():
+    for key, value in MODELS.items():
         model = value(cls)
         if get_name(model.get_estimator()) == get_name(estimator):
             return model.acronym, model.fullname
@@ -827,7 +828,7 @@ def partial_dependence(estimator, X, features):
     return avg_pred, pred, values
 
 
-def get_columns(df, columns, only_numerical=False):
+def get_columns(df, columns, return_inc_exc=False, only_numerical=False):
     """Get a subset of the columns.
 
     Select columns in the dataset by name, index or dtype. Duplicate
@@ -842,28 +843,33 @@ def get_columns(df, columns, only_numerical=False):
         Names, indices or dtypes of the columns to get. If None,
         it returns all columns in the dataframe.
 
+    return_inc_exc: bool, optional (default=False)
+        Whether to return only included columns or the tuple
+        (included, excluded).
+
     only_numerical: bool, optional (default=False)
         Whether to return only numerical columns.
 
     Returns
     -------
-    columns: list
-        Names of the selected columns in the dataframe.
+    inc: list or tuple
+        Names of the included columns or if return_inc_exc=True,
+        a tuple of (included, excluded) columns.
 
     """
+    inc, exc = [], []
     if columns is None:
         if only_numerical:
-            select = list(df.select_dtypes(include=["number"]).columns)
+            return list(df.select_dtypes(include=["number"]).columns)
         else:
-            select = df.columns
+            return df.columns
     elif isinstance(columns, slice):
-        select = df.columns[columns]
+        inc = list(df.columns[columns])
     else:
-        cols, exc = [], []
         for col in lst(columns):
             if isinstance(col, int):
                 try:
-                    cols.append(df.columns[col])
+                    inc.append(df.columns[col])
                 except IndexError:
                     raise ValueError(
                         f"Invalid value for the columns parameter, got {col} "
@@ -885,28 +891,33 @@ def get_columns(df, columns, only_numerical=False):
                                 )
                     else:
                         try:
-                            cols.extend(list(df.select_dtypes(include=col).columns))
+                            inc.extend(list(df.select_dtypes(include=col).columns))
                         except TypeError:
                             raise ValueError(
                                 "Invalid value for the columns parameter. "
                                 f"Column {col} not found in the dataset."
                             )
                 else:
-                    cols.append(col)
+                    inc.append(col)
 
-        # If columns were excluded with `!`, select all but those
-        if exc:
-            select = list(dict.fromkeys([col for col in df.columns if col not in exc]))
-        else:
-            select = list(dict.fromkeys(cols))  # Avoid duplicates
-
-    if len(select) == 0:
+    if len(inc) + len(exc) == 0:
         raise ValueError(
             "Invalid value for the columns parameter, got "
-            f"{select}. At least one column has to be selected."
+            f"{columns}. At least one column has to be selected."
         )
+    elif inc and exc:
+        raise ValueError(
+            "Invalid value for the columns parameter. You can either "
+            "include or exclude columns, not combinations of these."
+        )
+    elif return_inc_exc:
+        return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
 
-    return select
+    if exc:
+        # If columns were excluded with `!`, select all but those
+        inc = [col for col in df.columns if col not in exc]
+
+    return list(dict.fromkeys(inc))  # Avoid duplicates
 
 
 # Pipeline functions =============================================== >>
@@ -965,12 +976,19 @@ def reorder_cols(df, original_df, col_names):
         Names of the columns used in the transformer.
 
     """
-    temp_df = pd.DataFrame()
+    temp_df = pd.DataFrame(index=df.index)
     for col in dict.fromkeys(list(original_df.columns) + list(df.columns)):
         if col in df.columns:
             temp_df[col] = df[col]
         elif col not in col_names:
-            temp_df[col] = original_df[col]
+            if len(df) != len(original_df):
+                raise ValueError(
+                    f"Length of values ({len(df)}) does not match length of index "
+                    f"({len(original_df)}). This might happen when transformations "
+                    "that drop rows aren't applied on all the columns."
+                )
+
+            temp_df[col] = original_df[col].tolist()  # Make list to adopt to index
 
         # Derivative cols are added after original (e.g. for one-hot encoding)
         for col_derivative in df.columns:
@@ -989,7 +1007,8 @@ def fit_one(transformer, X=None, y=None, message=None, **fit_params):
         if hasattr(transformer, "fit"):
             args = []
             if "X" in signature(transformer.fit).parameters:
-                args.append(X[getattr(transformer, "_cols", X.columns)])
+                inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
+                args.append(X[inc or [c for c in X.columns if c not in exc]])
             if "y" in signature(transformer.fit).parameters:
                 args.append(y)
             transformer.fit(*args, **fit_params)
@@ -997,39 +1016,42 @@ def fit_one(transformer, X=None, y=None, message=None, **fit_params):
 
 def transform_one(transformer, X=None, y=None):
     """Transform the data using one estimator."""
+
+    def prepare_df(out):
+        """Convert to df and set correct column names and order."""
+        use_cols = inc or [c for c in X.columns if c not in exc]
+
+        # Convert to pandas and assign proper column names
+        if not isinstance(out, pd.DataFrame):
+            if sparse.issparse(out):
+                out = out.toarray()
+
+            out = to_df(out, columns=name_cols(out, X, use_cols))
+
+        # Reorder columns in case only a subset was used
+        return reorder_cols(out, X, use_cols)
+
     X, y = to_df(X), to_series(y)
 
     args = []
     if "X" in signature(transformer.transform).parameters:
-        args.append(X[getattr(transformer, "_cols", X.columns)])
+        inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
+        args.append(X[inc or [c for c in X.columns if c not in exc]])
     if "y" in signature(transformer.transform).parameters:
         args.append(y)
     output = transformer.transform(*args)
 
     # Transform can return X, y or both
     if isinstance(output, tuple):
-        new_X, new_y = output[0], output[1]
+        new_X = prepare_df(output[0])
+        new_y = to_series(output[1], name=y.name)
     else:
         if len(output.shape) > 1:
-            new_X, new_y = output, y
+            new_X = prepare_df(output)
+            new_y = y if y is None else y.set_axis(new_X.index)
         else:
-            new_X, new_y = X, output
-
-    if new_X is not None:
-        use_cols = getattr(transformer, "_cols", X.columns)
-
-        # Convert to pandas and assign proper column names
-        if not isinstance(new_X, pd.DataFrame):
-            if sparse.issparse(new_X):
-                new_X = new_X.toarray()
-
-            new_X = to_df(new_X, columns=name_cols(new_X, X, use_cols))
-
-        # Reorder columns in case only a subset was used
-        new_X = reorder_cols(new_X, X, use_cols)
-
-    if new_y is not None:
-        new_y = to_series(new_y, name=y.name)
+            new_y = to_series(output, name=y.name)
+            new_X = X if X is None else X.set_index(new_y.index)
 
     return new_X, new_y
 
@@ -1497,7 +1519,7 @@ class CustomDict(MutableMapping):
         - It allows getting an item from an index position.
         - It can insert key value pairs at a specific position.
         - Key requests are case-insensitive.
-        - If iterated over, it iterates over its values, not the keys!
+        - Returns a subset of itself using getitem with a list of keys.
 
     """
 
@@ -1506,7 +1528,9 @@ class CustomDict(MutableMapping):
         return key.lower() if isinstance(key, str) else key
 
     def _get_key(self, key):
-        return [k for k in self.__keys if self._conv(k) == self._conv(key)][0]
+        for k in self.__keys:
+            if self._conv(k) == self._conv(key):
+                return k
 
     def __init__(self, iterable_or_mapping=None, **kwargs):
         """Class initializer.
@@ -1534,6 +1558,11 @@ class CustomDict(MutableMapping):
             self.__data[self._conv(key)] = value
 
     def __getitem__(self, key):
+        if isinstance(key, list):
+            return self.__class__(
+                {self._get_key(k): self[k] for k in key if self._get_key(k)}
+            )
+
         try:
             return self.__data[self._conv(key)]  # From key
         except KeyError as e:
@@ -1551,17 +1580,16 @@ class CustomDict(MutableMapping):
         self.__keys.remove(self._get_key(key))
 
     def __iter__(self):
-        yield from self.values()
+        yield from self.keys()
 
     def __len__(self):
         return len(self.__keys)
 
     def __contains__(self, key):
-        try:
-            self._get_key(key)
-            return True
-        except (AttributeError, IndexError):
+        if self._get_key(key) is None:
             return False
+        else:
+            return True
 
     def __repr__(self):
         return str(dict(self))
@@ -1580,7 +1608,7 @@ class CustomDict(MutableMapping):
     def insert(self, pos, new_key, value):
         try:
             self.__keys.insert(self.__keys.index(self._get_key(pos)), new_key)
-        except (IndexError, KeyError):
+        except (ValueError, KeyError):
             self.__keys.insert(pos, new_key)
         finally:
             self.__data[self._conv(new_key)] = value
@@ -1636,5 +1664,5 @@ class CustomDict(MutableMapping):
     def index(self, key):
         try:
             return self.__keys.index(self._get_key(key))
-        except IndexError:
+        except ValueError:
             raise KeyError(key)

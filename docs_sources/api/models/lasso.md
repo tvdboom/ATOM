@@ -282,7 +282,7 @@ or `atom.lasso.predict(X)`. The remaining utility methods can be found hereunder
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L692">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L692">[source]</a>
 </span>
 </div>
 Evaluate the model using cross-validation. This method cross-validates the
@@ -330,7 +330,7 @@ removed from any active mlflow experiment.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L756">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L756">[source]</a>
 </span>
 </div>
 Export the model's pipeline to a sklearn-like object. If the model
@@ -378,7 +378,7 @@ Current branch as a sklearn-like Pipeline object.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">full_train</strong>(include_holdout=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L789">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L789">[source]</a>
 </span>
 </div>
 Train the estimator on the complete dataset. In some cases it
@@ -406,7 +406,7 @@ can't be evaluated.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L817">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L817">[source]</a>
 </span>
 </div>
 Change the model's tag. The acronym always stays at the beginning
@@ -473,7 +473,7 @@ Scores of the model.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L854">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L854">[source]</a>
 </span>
 </div>
 Save the estimator to a pickle file.
@@ -493,7 +493,7 @@ Name of the file. Use "auto" for automatic naming.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L895">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L895">[source]</a>
 </span>
 </div>
 Transform new data through the model's branch. Transformers that

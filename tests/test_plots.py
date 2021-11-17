@@ -416,7 +416,7 @@ def test_plot_partial_dependence(features):
         atom.plot_partial_dependence(features=[120, 2], display=False)
 
     # Different features for multiple models
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     atom.feature_selection(strategy="pca", n_features=5)
     atom.run(["tree2"])
     with pytest.raises(ValueError, match=r".*models use the same features.*"):

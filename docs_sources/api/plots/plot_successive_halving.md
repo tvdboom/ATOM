@@ -10,8 +10,9 @@ metric=0, title=None, figsize=(10, 6), filename=None, display=True)
 </div>
 
 Plot of the models' scores per iteration of the successive
-halving. Only available for [non-ensemble](../../../user_guide/models/#ensembles)
-models that were fitted using [successive halving](../../../user_guide/training/#successive-halving).
+halving. Only use with models fitted using [successive halving](../../../user_guide/training/#successive-halving).
+[Ensemble](../../../user_guide/models/#ensembles) models are
+ignored.
 
 <table style="font-size:16px">
 <tr>

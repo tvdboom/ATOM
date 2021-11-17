@@ -4,6 +4,9 @@
 This documentation consistently uses terms to refer to certain concepts
 related to this package. The most frequent terms are described hereunder.
 
+**array-like**<br>
+Object of type `np.ndarray` or `pd.DataFrame`.
+
 **atom**<br>
 Instance of the [ATOMClassifier](../../API/ATOM/atomclassifier) or
  [ATOMRegressor](../../API/ATOM/atomregressor) classes (note that the

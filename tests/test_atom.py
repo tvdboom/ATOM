@@ -9,6 +9,8 @@ Description: Unit tests for atom.py
 
 # Standard packages
 import glob
+
+import pandas as pd
 import pytest
 import numpy as np
 from unittest.mock import patch
@@ -83,8 +85,8 @@ def test_repr():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
     assert "Branches: master" in str(atom)
-    atom.branch = "branch_2"
-    assert "Branches:\n   >>> master\n   >>> branch_2 !" in str(atom)
+    atom.branch = "b2"
+    assert "Branches:\n   >>> master\n   >>> b2 !" in str(atom)
 
 
 def test_iter():
@@ -95,28 +97,18 @@ def test_iter():
     assert [item for item in atom][1] == atom.pipeline[1]
 
 
-def test_contains():
-    """Assert that we can test if atom contains a column."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert "mean radius" in atom
-
-
-def test_len():
-    """Assert that the length of atom is the length of the pipeline."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    assert len(atom) == 1
-
-
 def test_getitem():
     """Assert that atom is subscriptable."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     atom.impute()
+    atom.run("LDA")
     assert atom[1].__class__.__name__ == "Imputer"
     assert atom["og"] is atom.og
+    assert atom["LDA"] is atom["lda"] is atom.lda
     assert atom["mean radius"] is atom.dataset["mean radius"]
-    with pytest.raises(ValueError, match=r".*has no branch nor column.*"):
+    assert isinstance(atom[["mean radius", "mean texture"]], pd.DataFrame)
+    with pytest.raises(ValueError, match=r".*has no branch, model or column.*"):
         print(atom["invalid"])
     with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
         print(atom[2.3])
@@ -134,7 +126,7 @@ def test_branch_same():
 def test_branch_change():
     """Assert that we can change to another branch."""
     atom = ATOMClassifier(X10, y10, random_state=1)
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     atom.clean()
     atom.branch = "master"
     assert atom.pipeline.empty  # Has no Cleaner
@@ -147,50 +139,43 @@ def test_branch_empty():
         atom.branch = ""
 
 
-def test_branch_model_acronym():
-    """Assert that an error is raised when the name is a models' acronym."""
-    atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=r".*acronym of model.*"):
-        atom.branch = "Lda"
-
-
-def test_branch_restricted_name():
-    """Assert that an error is raised when the name is restricted."""
-    atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=r".*This name is reserved.*"):
-        atom.branch = "og"
-
-
 def test_branch_existing_name():
     """Assert that an error is raised when the name already exists."""
     atom = ATOMClassifier(X10, y10, random_state=1)
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     with pytest.raises(ValueError, match=r".*already exists.*"):
-        atom.branch = "branch_2_from_master"
+        atom.branch = "b2_from_master"
+
+
+def test_branch_model_acronym():
+    """Assert that an error is raised when the name is a models' acronym."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    with pytest.raises(ValueError, match=r".*model's acronym.*"):
+        atom.branch = "Lda"
 
 
 def test_branch_unknown_parent():
     """Assert that an error is raised when the parent doesn't exist."""
     atom = ATOMClassifier(X10, y10, random_state=1)
     with pytest.raises(ValueError, match=r".*does not exist.*"):
-        atom.branch = "branch_2_from_invalid"
+        atom.branch = "b2_from_invalid"
 
 
 def test_branch_new():
     """Assert that we can create a new branch."""
     atom = ATOMClassifier(X10, y10, random_state=1)
     atom.clean()
-    atom.branch = "branch_2"
-    assert list(atom._branches.keys()) == ["og", "master", "branch_2"]
+    atom.branch = "b2"
+    assert list(atom._branches) == ["og", "master", "b2"]
 
 
 def test_branch_from_valid():
     """Assert that we can create a new branch, not from the current one."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     atom.impute()
-    atom.branch = "branch_3_from_master"
-    assert atom.branch.name == "branch_3"
+    atom.branch = "b3_from_master"
+    assert atom.branch.name == "b3"
     assert atom.n_nans > 0
 
 
@@ -292,7 +277,7 @@ def test_automl_classification(cls):
         scoring=atom._metric[0],  # Called using atom's metric
         verbosity=0,
     )
-    assert len(atom) == 2
+    assert len(atom.pipeline) == 2
     assert atom.models == ["Tree", "MLP"]
 
 
@@ -350,14 +335,14 @@ def test_export_pipeline_same_transformer():
     atom.clean()
     atom.clean()
     pl = atom.export_pipeline()
-    assert list(pl.named_steps.keys()) == ["cleaner", "cleaner2", "cleaner3"]
+    assert list(pl.named_steps) == ["cleaner", "cleaner2", "cleaner3"]
 
 
 def test_export_pipeline_invalid_model():
     """Assert that an error is raised when model is from other branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("GNB")
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     pytest.raises(ValueError, atom.export_pipeline, model="gnb")
 
 
@@ -367,6 +352,15 @@ def test_export_pipeline_scaler():
     atom.run(["GNB", "LGB"])
     assert not isinstance(atom.export_pipeline("GNB")[0], Scaler)
     assert isinstance(atom.export_pipeline("LGB")[0], Scaler)
+
+
+@patch("tempfile.gettempdir")
+def test_export_pipeline_memory(func):
+    """Assert that memory is True triggers a temp dir."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.scale()
+    atom.export_pipeline(memory=True)
+    func.assert_called_once()
 
 
 def test_merge_invalid_class():
@@ -407,11 +401,11 @@ def test_merge():
     atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_1.run("Tree")
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom_2.branch.rename("branch_2")
+    atom_2.branch.rename("b2")
     atom_2.missing = ["missing"]
     atom_2.run("LR")
     atom_1.merge(atom_2)
-    assert list(atom_1._branches.keys()) == ["og", "master", "branch_2"]
+    assert list(atom_1._branches) == ["og", "master", "b2"]
     assert atom_1.models == ["Tree", "LR"]
     assert atom_1.missing[-1] == "missing"
 
@@ -423,9 +417,9 @@ def test_merge_with_suffix():
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_2.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
     atom_1.merge(atom_2)
-    assert list(atom_1._branches.keys()) == ["og", "master", "master2"]
+    assert list(atom_1._branches) == ["og", "master", "master2"]
     assert atom_1.models == ["Tree", "Tree2"]
-    assert list(atom_1._errors.keys()) == ["LGB", "LGB2"]
+    assert list(atom_1._errors) == ["LGB", "LGB2"]
 
 
 @patch("pandas_profiling.ProfileReport")
@@ -624,8 +618,9 @@ def test_add_subset_columns():
     """Assert that you can use a subset of the columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
-    # Invalid length
-    pytest.raises(ValueError, atom.scale, columns="datetime")
+    # No columns are selected
+    with pytest.raises(ValueError, match=r".*At least one column.*"):
+        atom.scale(columns="datetime")
 
     # Column indices
     cols = atom.columns.copy()
@@ -643,11 +638,25 @@ def test_add_subset_columns():
     assert check_scaling(atom.dataset.iloc[:, [10, 11]])
 
 
+def test_raise_length_mismatch():
+    """Assert that an error is raised when there's a mismatch in row length."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*does not match length.*"):
+        atom.prune(columns=[2, 4])
+
+
 def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode()
     assert atom.columns[2].startswith("Feature 3")
+
+
+def test_add_include_or_exclude():
+    """Assert that an error is raised when cols are included and excluded."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*either include or exclude columns.*"):
+        atom.add(StandardScaler(), columns=["mean radius", "!mean texture"])
 
 
 def test_add_duplicate_columns_are_ignored():
@@ -933,7 +942,7 @@ def test_errors_are_updated():
 
     # Produce an error on one model (when n_initial_points > n_calls)
     atom.run(["Tree", "LGB"], n_calls=(3, 2), n_initial_points=(2, 5))
-    assert list(atom.errors.keys()) == ["LGB"]
+    assert list(atom.errors) == ["LGB"]
 
     # Subsequent runs should remove the original model
     atom.run(["Tree", "LGB"], n_calls=(5, 3), n_initial_points=(7, 1))

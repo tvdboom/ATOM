@@ -124,9 +124,10 @@ def test_sequence_parameters_invalid_length():
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
-def test_sequence_parameters_under_zero():
-    """Assert that an error is raised for values <0."""
-    trainer = DirectClassifier("LR", n_calls=-2, random_state=1)
+@pytest.mark.parametrize("n_calls", [-2, 1])
+def test_n_calls_parameter_is_invalid(n_calls):
+    """Assert that an error is raised when n_calls=1 or <0."""
+    trainer = DirectClassifier("LR", n_calls=n_calls, random_state=1)
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
@@ -136,11 +137,17 @@ def test_n_initial_points_parameter_is_zero():
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
+def test_n_bootstrap_parameter_is_below_zero():
+    """Assert that an error is raised when n_bootstrap<0."""
+    trainer = DirectClassifier("LR", n_calls=2, n_initial_points=0, random_state=1)
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
 def test_base_estimator_default():
     """Assert that GP is the default base estimator."""
     trainer = DirectClassifier("LR", n_calls=5, random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer._base_estimator == "GP"
+    assert trainer._bo["base_estimator"] == "GP"
 
 
 def test_base_estimator_invalid():
@@ -149,21 +156,21 @@ def test_base_estimator_invalid():
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
-@pytest.mark.parametrize("callbacks", [TimerCallback(), [TimerCallback()]])
-def test_callbacks(callbacks):
+@pytest.mark.parametrize("callback", [TimerCallback(), [TimerCallback()]])
+def test_callback(callback):
     """Assert that custom callbacks are accepted."""
     trainer = DirectClassifier(
         models="LR",
         n_calls=2,
         n_initial_points=2,
-        bo_params={"callbacks": callbacks},
+        bo_params={"callback": callback},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
 
 
 def test_all_callbacks():
-    """Assert that all callbacks predefined callbacks work as intended."""
+    """Assert that all predefined callbacks work as intended."""
     trainer = DirectClassifier(
         models="LR",
         n_calls=2,
@@ -226,8 +233,8 @@ def test_custom_dimensions_all_models():
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert list(trainer.lr1.best_params.keys()) == ["max_iter"]
-    assert list(trainer.lr2.best_params.keys()) == ["max_iter"]
+    assert list(trainer.lr1.best_params) == ["max_iter"]
+    assert list(trainer.lr2.best_params) == ["max_iter"]
 
 
 def test_custom_dimensions_per_model():
@@ -259,7 +266,7 @@ def test_optimizer_kwargs():
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert trainer._bo_kwargs.get("acq_func") == "EI"
+    assert trainer._bo["kwargs"].get("acq_func") == "EI"
 
 
 def test_est_params_all_models():
