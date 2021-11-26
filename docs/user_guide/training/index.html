@@ -2980,8 +2980,10 @@ scaled if it has one of the following prerequisites:</p>
 </ul>
 <p>The scaling is applied using a <a href="../../API/data_cleaning/scaler">Scaler</a>
 with default parameters. It can be accessed from the model through the
-<code>scaler</code> attribute. Use the <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
-method to see which models require feature scaling.</p>
+<code>scaler</code> attribute. The scaled dataset can be examined through the
+model's <a href="../../API/models/gnb/#data-attributes">data attributes</a>. Use
+the <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
+method to see which models require feature scaling. </p>
 <p><br></p>
 <h2 id="parameter-customization">Parameter customization</h2>
 <p>By default, the parameters every estimator uses are the same default

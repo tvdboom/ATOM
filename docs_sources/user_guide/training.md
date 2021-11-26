@@ -171,8 +171,10 @@ scaled if it has one of the following prerequisites:
 
 The scaling is applied using a [Scaler](../../API/data_cleaning/scaler)
 with default parameters. It can be accessed from the model through the
-`scaler` attribute. Use the [available_models](../../API/ATOM/atomclassifier/#available-models)
-method to see which models require feature scaling.
+`scaler` attribute. The scaled dataset can be examined through the
+model's [data attributes](../../API/models/gnb/#data-attributes). Use
+the [available_models](../../API/ATOM/atomclassifier/#available-models)
+method to see which models require feature scaling. 
 
 <br>
 

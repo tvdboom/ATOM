@@ -9,6 +9,8 @@
   in the [user_guide](../user_guide/data-management/#holdout-set).
 * Complete rework of the [ensemble](../user_guide/models/#ensembles) models.
 * Added the [transform](../API/models/gnb/#transform) method for models.
+* Added the `threshold` parameter to the [evaluate](../API/ATOM/atomclassifier/#evaluate)
+  method.
 * Refactor of the model's [full_train](../API/models/gnb/#full-train) method.
 * Improvements in the trainer's pipeline.
 * Training scores are now also saved to the mlflow run.

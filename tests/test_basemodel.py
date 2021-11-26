@@ -524,6 +524,22 @@ def test_evaluate_metric_None(dataset):
     assert len(scores) == 7
 
 
+def test_evaluate_custom_metric():
+    """Assert that custom metrics are accepted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    assert isinstance(atom.mnb.evaluate(metric="roc_auc_ovo"), pd.DataFrame)
+
+
+def test_evaluate_threshold():
+    """Assert that the threshold parameter changes the predictions."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    pred_1 = atom.mnb.evaluate(threshold=0.0001)
+    pred_2 = atom.mnb.evaluate(threshold=0.9999)
+    assert not pred_1.equals(pred_2)
+
+
 def test_export_pipeline():
     """Assert that the pipeline can be retrieved from the model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

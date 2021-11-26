@@ -373,6 +373,7 @@ class BasePredictor:
     def evaluate(
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        threshold: Optional[float] = None,
         dataset: str = "test",
     ):
         """Get all models' scores for the provided metrics.
@@ -382,6 +383,12 @@ class BasePredictor:
         metric: str, func, scorer, sequence or None, optional (default=None)
             Metric to calculate. If None, it returns an overview of
             the most common metrics per task.
+
+        threshold: float or None, optional (default=None)
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only for metrics (and models) that make use
+            of the `predict_proba` method. If None or not a binary
+            classification task, ignore this parameter.
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Choose from:
@@ -397,7 +404,7 @@ class BasePredictor:
 
         scores = pd.DataFrame()
         for m in self._models.values():
-            scores = scores.append(m.evaluate(metric, dataset=dataset))
+            scores = scores.append(m.evaluate(metric, threshold, dataset))
 
         return scores
 

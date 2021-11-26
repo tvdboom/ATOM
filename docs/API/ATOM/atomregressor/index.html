@@ -3281,7 +3281,7 @@ manage the pipeline.</p>
 
 <tr>
 <td><a href="#evaluate">evaluate</a></td>
-<td>Get all the models evaluation for provided metrics.</td>
+<td>Get all models' scores for the provided metrics.</td>
 </tr>
 
 <tr>
@@ -3641,12 +3641,13 @@ Names or indices of the columns to drop.
 <p><br /></p>
 <p><a name="evaluate"></a></p>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None, dataset="test")
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
+threshold=None, dataset="test")
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L327">[source]</a>
 </span>
 </div>
-<p>Get all the models evaluation for provided metrics.</p>
+<p>Get all the models' scores for the provided metrics.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -3655,6 +3656,13 @@ Names or indices of the columns to drop.
 <strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
 Metrics to calculate. If None, a selection of the most common
 metrics per task are used.
+</p>
+<p>
+<strong>threshold: float or None, optional (default=None)</strong><br>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only for metrics (and models) that make use
+of the <code>predict_proba</code> method. If None or not a
+binary classification task, ignore this parameter.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>

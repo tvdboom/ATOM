@@ -698,13 +698,6 @@ class BaseModel(BaseModelPlotter):
 
     # Prediction methods =========================================== >>
 
-    def _check_method(self, method):
-        """Raise an error if the estimator doesn't have a method."""
-        if not hasattr(self.estimator, method):
-            raise AttributeError(
-                f"{self.estimator.__class__.__name__} doesn't have a {method} method!"
-            )
-
     def _prediction(
         self,
         X,
@@ -752,7 +745,10 @@ class BaseModel(BaseModelPlotter):
             Return of the attribute.
 
         """
-        self._check_method(method)
+        if not hasattr(self.estimator, method):
+            raise AttributeError(
+                f"{self.estimator.__class__.__name__} doesn't have a {method} method!"
+            )
 
         # When there is a pipeline, apply transformations first
         for est in self.pipeline:
@@ -828,105 +824,90 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def predict_train(self):
-        self._check_method("predict")
         if self._pred[0] is None:
             self._pred[0] = self.estimator.predict(arr(self.X_train))
         return self._pred[0]
 
     @property
     def predict_test(self):
-        self._check_method("predict")
         if self._pred[1] is None:
             self._pred[1] = self.estimator.predict(arr(self.X_test))
         return self._pred[1]
 
     @property
     def predict_holdout(self):
-        self._check_method("predict")
         if self.T.holdout is not None and self._pred[2] is None:
             self._pred[2] = self.estimator.predict(arr(self.X_holdout))
         return self._pred[2]
 
     @property
     def predict_proba_train(self):
-        self._check_method("predict_proba")
         if self._pred[3] is None:
             self._pred[3] = self.estimator.predict_proba(arr(self.X_train))
         return self._pred[3]
 
     @property
     def predict_proba_test(self):
-        self._check_method("predict_proba")
         if self._pred[4] is None:
             self._pred[4] = self.estimator.predict_proba(arr(self.X_test))
         return self._pred[4]
 
     @property
     def predict_proba_holdout(self):
-        self._check_method("predict_proba")
         if self.T.holdout is not None and self._pred[5] is None:
             self._pred[5] = self.estimator.predict_proba(arr(self.X_holdout))
         return self._pred[5]
 
     @property
     def predict_log_proba_train(self):
-        self._check_method("predict_log_proba")
         if self._pred[6] is None:
             self._pred[6] = self.estimator.predict_log_proba(arr(self.X_train))
         return self._pred[6]
 
     @property
     def predict_log_proba_test(self):
-        self._check_method("predict_log_proba")
         if self._pred[7] is None:
             self._pred[7] = self.estimator.predict_log_proba(arr(self.X_test))
         return self._pred[7]
 
     @property
     def predict_log_proba_holdout(self):
-        self._check_method("predict_log_proba")
         if self.T.holdout is not None and self._pred[8] is None:
             self._pred[8] = self.estimator.predict_log_proba(arr(self.X_holdout))
         return self._pred[8]
 
     @property
     def decision_function_train(self):
-        self._check_method("decision_function")
         if self._pred[9] is None:
             self._pred[9] = self.estimator.decision_function(arr(self.X_train))
         return self._pred[9]
 
     @property
     def decision_function_test(self):
-        self._check_method("decision_function")
         if self._pred[10] is None:
             self._pred[10] = self.estimator.decision_function(arr(self.X_test))
         return self._pred[10]
 
     @property
     def decision_function_holdout(self):
-        self._check_method("decision_function")
         if self.T.holdout is not None and self._pred[11] is None:
             self._pred[11] = self.estimator.decision_function(arr(self.X_holdout))
         return self._pred[11]
 
     @property
     def score_train(self):
-        self._check_method("score")
         if self._pred[12] is None:
             self._pred[12] = self.estimator.score(arr(self.X_train), self.y_train)
         return self._pred[12]
 
     @property
     def score_test(self):
-        self._check_method("score")
         if self._pred[13] is None:
             self._pred[13] = self.estimator.score(arr(self.X_test), self.y_test)
         return self._pred[13]
 
     @property
     def score_holdout(self):
-        self._check_method("score")
         if self.T.holdout is not None and self._pred[14] is None:
             self._pred[14] = self.estimator.score(arr(self.X_holdout), self.y_holdout)
         return self._pred[14]
@@ -1139,6 +1120,7 @@ class BaseModel(BaseModelPlotter):
     def evaluate(
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        threshold: Optional[float] = None,
         dataset: str = "test",
     ):
         """Get the model's scores for the provided metrics.
@@ -1148,6 +1130,12 @@ class BaseModel(BaseModelPlotter):
         metric: str, func, scorer, sequence or None, optional (default=None)
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
+
+        threshold: float or None, optional (default=None)
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only for metrics (and models) that make use
+            of the `predict_proba` method. If None or not a binary
+            classification task, ignore this parameter.
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Choose from:
@@ -1159,6 +1147,12 @@ class BaseModel(BaseModelPlotter):
             Scores of the model.
 
         """
+        if threshold and not 0 < threshold < 1:
+            raise ValueError(
+                "Invalid value for the threshold parameter. Value "
+                f"should lie between 0 and 1, got {threshold}."
+            )
+
         dataset = dataset.lower()
         if dataset not in ("train", "test", "holdout"):
             raise ValueError(
@@ -1201,21 +1195,25 @@ class BaseModel(BaseModelPlotter):
         for met in lst(metric):
             scorer = get_scorer(met)
             if scorer.__class__.__name__ == "_ThresholdScorer":
-                if hasattr(self.estimator, "decision_function"):
-                    y_pred = getattr(self, f"decision_function_{dataset}")
+                if threshold and hasattr(self.estimator, "predict_proba"):
+                    attr = "predict_proba"  # Prioritize predict_proba for threshold
+                elif hasattr(self.estimator, "decision_function"):
+                    attr = "decision_function"
                 else:
-                    y_pred = getattr(self, f"predict_proba_{dataset}")
-                    if self.T.task.startswith("bin"):
-                        y_pred = y_pred[:, 1]
+                    attr = "predict_proba"
             elif scorer.__class__.__name__ == "_ProbaScorer":
                 if hasattr(self.estimator, "predict_proba"):
-                    y_pred = getattr(self, f"predict_proba_{dataset}")
-                    if self.T.task.startswith("bin"):
-                        y_pred = y_pred[:, 1]
+                    attr = "predict_proba"
                 else:
-                    y_pred = getattr(self, f"decision_function_{dataset}")
+                    attr = "decision_function"
             else:
-                y_pred = getattr(self, f"predict_{dataset}")
+                attr = "predict"
+
+            y_pred = getattr(self, f"{attr}_{dataset}")
+            if attr == "predict_proba" and self.T.task.startswith("bin"):
+                y_pred = y_pred[:, 1]
+                if threshold:
+                    y_pred = (y_pred >= threshold).astype("int")
 
             scores[scorer.name] = scorer._sign * float(
                 scorer._score_func(
