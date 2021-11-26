@@ -15,7 +15,10 @@ from sklearn.utils.validation import check_memory
 from sklearn.utils.metaestimators import available_if
 
 # Own modules
-from .utils import variable_return, fit_one, transform_one, fit_transform_one
+from .utils import (
+    variable_return, fit_one, transform_one, fit_transform_one,
+    check_is_fitted,
+)
 
 
 def _final_estimator_has(attr):
@@ -43,11 +46,18 @@ class Pipeline(pipeline.Pipeline):
         - Always outputs pandas objects.
         - Uses transformers that are only applied on the training set
           to fit the pipeline, not to make predictions on unseen data.
-
-    Partially from https://github.com/scikit-learn-contrib/imbalanced
-    -learn/blob/master/imblearn/pipeline.py.
+        - The instance is considered fitted at initialization if all
+          the underlying transformers/estimator in the pipeline are.
 
     """
+
+    def __init__(self, steps, *, memory=None, verbose=False):
+        super().__init__(steps, memory=memory, verbose=verbose)
+
+        # If all estimators are fitted, Pipeline is fitted
+        self._is_fitted = False
+        if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
+            self._is_fitted = True
 
     def _iter(self, with_final=True, filter_passthrough=True, filter_train_only=True):
         """Generate (idx, (name, trans)) tuples from self.steps.
@@ -133,6 +143,7 @@ class Pipeline(pipeline.Pipeline):
                 fit_params_last_step = fit_params_steps[self.steps[-1][0]]
                 fit_one(self._final_estimator, X, y, **fit_params_last_step)
 
+        self._is_fitted = True
         return self
 
     def fit_transform(self, X=None, y=None, **fit_params):

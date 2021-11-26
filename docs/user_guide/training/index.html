@@ -614,6 +614,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#automated-feature-scaling" class="md-nav__link">
+    Automated feature scaling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#parameter-customization" class="md-nav__link">
     Parameter customization
   </a>
@@ -2750,6 +2757,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#automated-feature-scaling" class="md-nav__link">
+    Automated feature scaling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#parameter-customization" class="md-nav__link">
     Parameter customization
   </a>
@@ -2862,10 +2876,6 @@ parameters or on different data sets. See the
 <a href="../../examples/imbalanced_datasets">Imbalanced datasets</a> example.</p>
 <p>Additional things to take into account:</p>
 <ul>
-<li>Models that require feature scaling will automatically do so
-  before training (if the data is not already scaled). Use the
-  <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
-  method to see for which models this is the case.</li>
 <li>If an exception is encountered while fitting an estimator, the
   pipeline will automatically jump to the next model. The exceptions are
   stored in the <code>errors</code> attribute. Note that when a model is skipped,
@@ -2957,6 +2967,21 @@ the bayesian optimization and to select the winning model.</p>
 <p>Some plots let you choose which of the metrics to show using the
 <code>metric</code> parameter.</p>
 </div>
+<p><br></p>
+<h2 id="automated-feature-scaling">Automated feature scaling</h2>
+<p>Models that require feature scaling will automatically do so before
+training, if the data is not already scaled. The data is considered
+scaled if it has one of the following prerequisites:</p>
+<ul>
+<li>The mean value over the mean of all columns is &lt;0.05 and the mean of
+  the standard deviation over all columns lies between 0.93 and 1.07.</li>
+<li>There is a transformer in the pipeline whose __name__ contains the
+  word <code>scaler</code>.</li>
+</ul>
+<p>The scaling is applied using a <a href="../../API/data_cleaning/scaler">Scaler</a>
+with default parameters. It can be accessed from the model through the
+<code>scaler</code> attribute. Use the <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
+method to see which models require feature scaling.</p>
 <p><br></p>
 <h2 id="parameter-customization">Parameter customization</h2>
 <p>By default, the parameters every estimator uses are the same default

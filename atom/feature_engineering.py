@@ -40,8 +40,8 @@ from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
     SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df,
-    get_scorer, check_scaling, check_is_fitted, get_acronym, composed,
-    crash, method_to_log,
+    get_scorer, check_scaling, check_is_fitted, composed, crash,
+    method_to_log,
 )
 
 
@@ -815,9 +815,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     else:
                         self._solver = self.solver
 
-                    # Set to right acronym and get the model's estimator
-                    model = MODELS[get_acronym(self._solver)](self)
-                    self._solver = model.get_estimator()
+                    # Get estimator from predefined models
+                    if self._solver not in MODELS:
+                        raise ValueError(
+                            "Invalid value for the solver parameter. Unknown "
+                            f"model: {self._solver}. Choose from: {', '.join(MODELS)}."
+                        )
+                    else:
+                        self._solver = MODELS[self._solver](self).get_estimator()
                 else:
                     self._solver = self.solver
 

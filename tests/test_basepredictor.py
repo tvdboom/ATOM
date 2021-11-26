@@ -11,6 +11,7 @@ Description: Unit tests for basepredictor.py
 import pytest
 import numpy as np
 import pandas as pd
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
@@ -453,6 +454,14 @@ def test_stacking():
     assert atom.stack._run
 
 
+def test_stacking_invalid_models():
+    """Assert that an error is raised when <2 models."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    with pytest.raises(ValueError, match=r".*contain at least two.*"):
+        atom.stacking()
+
+
 def test_stacking_custom_models():
     """Assert that stacking can be created selecting the models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -474,7 +483,7 @@ def test_stacking_models_from_branch():
 
 
 def test_stacking_different_name():
-    """Assert that a default estimator is provided per goal."""
+    """Assert that the acronym is added in front of the new name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"])
     atom.stacking(name="stack_1")
@@ -482,12 +491,44 @@ def test_stacking_different_name():
     assert hasattr(atom, "Stack_1") and hasattr(atom, "Stack_2")
 
 
+def test_stacking_unknown_predefined_final_estimator():
+    """Assert that an error is raised when the final estimator is unknown."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    with pytest.raises(ValueError, match=r".*Unknown model.*"):
+        atom.stacking(final_estimator="invalid")
+
+
+def test_stacking_invalid_predefined_final_estimator():
+    """Assert that an error is raised when the final estimator is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    with pytest.raises(ValueError, match=r".*can not perform.*"):
+        atom.stacking(final_estimator="OLS")
+
+
+def test_stacking_predefined_final_estimator():
+    """Assert that the final estimator accepts predefined models."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.stacking(final_estimator="LDA")
+    assert isinstance(atom.stack.estimator.final_estimator_, LDA)
+
+
 def test_voting():
     """Assert that the voting method creates a Vote model."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     pytest.raises(NotFittedError, atom.voting)
     atom.run(["LR", "LGB"])
-    atom.voting(name="Vote2")
+    atom.voting(name="2")
     assert hasattr(atom, "Vote2")
     assert "Vote2" in atom.models
     assert atom.vote2._run
+
+
+def test_voting_invalid_models():
+    """Assert that an error is raised when <2 models."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    with pytest.raises(ValueError, match=r".*contain at least two.*"):
+        atom.voting()

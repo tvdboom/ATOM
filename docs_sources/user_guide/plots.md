@@ -95,6 +95,12 @@ plots are: [bar_plot](../../API/plots/bar_plot), [beeswarm_plot](../../API/plots
 [heatmap_plot](../../API/plots/heatmap_plot), [scatter_plot](../../API/plots/scatter_plot)
 and [waterfall_plot](../../API/plots/waterfall_plot).
 
+Calculating the Shapley values is computationally expensive, especially
+for model agnostic explainers like [Permutation](https://shap.readthedocs.io/en/latest/generated/shap.explainers.Permutation.html).
+To avoid having to recalculate the values for every plot, ATOM stores
+the shapley values internally after the first calculation, and access
+them when needed.
+
 Since the plots are not made by ATOM, we can't draw multiple models in
 the same figure. Selecting more than one model will raise an exception.
 To avoid this, call the plot directly from a model, e.g. `atom.xgb.force_plot()`.
@@ -123,13 +129,13 @@ depend on the task at hand.
 </tr>
 
 <tr>
-<td><a href="../../API/plots/plot_qq">plot_qq</a></td>
-<td>Plot a quantile-quantile plot.</td>
+<td><a href="../../API/plots/plot_distribution">plot_distribution</a></td>
+<td>Plot column distributions.</td>
 </tr>
 
 <tr>
-<td><a href="../../API/plots/plot_distribution">plot_distribution</a></td>
-<td>Plot column distributions.</td>
+<td><a href="../../API/plots/plot_qq">plot_qq</a></td>
+<td>Plot a quantile-quantile plot.</td>
 </tr>
 
 <tr>

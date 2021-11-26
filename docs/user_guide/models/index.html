@@ -2934,13 +2934,15 @@ cv &gt; 1 raises a PicklingError due to incompatibilities of the APIs.</p>
 <p>Ensemble models use multiple estimators to obtain better predictive
 performance than could be obtained from any of the constituent learning
 algorithms alone. ATOM implements two ensemble techniques: voting and
-stacking. If an <a href="../../logging/#tracking">mlflow experiment</a> is active,
-the ensemble models start their own run just like the "regular" models
-do. Click <a href="../../examples/ensembles">here</a> for an example that uses
+stacking. Click <a href="../../examples/ensembles">here</a> to see an example that uses
 ensemble models.</p>
+<p>If the ensemble's underlying estimator is a model that used <a href="../training/#automated-feature-scaling">automated feature scaling</a>,
+it's added as a Pipeline containing the <code>scaler</code> and estimator. If an
+<a href="../logging/#tracking">mlflow experiment</a> is active, the ensembles start
+their own run, just like the <a href="#predefined-models">predefined  models</a> do.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Combining models trained on different branches into the ensemble is
+<p>Combining models trained on different branches into one ensemble is
 not allowed and will raise an exception.</p>
 </div>
 <h3 id="voting">Voting</h3>
@@ -2950,20 +2952,26 @@ useful for a set of equally well performing models in order to balance
 out their individual weaknesses. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier">documentation</a>.</p>
 <p>A voting model is created from a trainer through the <a href="../../API/ATOM/atomclassifier/#voting">voting</a>
 method. The voting model is added automatically to the list of
-models in the pipeline, under the <code>Vote</code> acronym. Although similar,
-this model is different from the VotingClassifier and VotingRegressor
-estimators from sklearn. Remember that the model is added to the
-plots if the <code>models</code> parameter is not specified. Plots that require
-a data set will use the one in the current branch. Plots that require
-an estimator object will raise an exception.</p>
-<p>The <code>Vote</code> model has the same prediction attributes and prediction
-methods as other models. The <code>predict_proba</code>, <code>predict_log_proba</code>,
-<code>decision_function</code> and <code>score</code> methods return the average predictions
-(soft voting) over the models in the instance. Note that these methods
-will raise an exception if not all estimators in the voting instance
-have the specified method. The <code>predict</code> method returns the majority
-vote (hard voting). The <code>evaluate</code> method also returns the average
-score for the selected metric over the models.</p>
+models in the pipeline, under the <code>Vote</code> acronym. The underlying
+estimator is a custom adaptation of <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html">VotingClassifier</a>
+or <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html">VotingRegressor</a>
+depending on the task. The differences between ATOM's and sklearn's
+implementation are:</p>
+<ul>
+<li>ATOM's implementation doesn't fit estimators if they're already fitted.</li>
+<li>ATOM's instance is considered fitted at initialization when all underlying
+  estimators are.</li>
+<li>ATOM's VotingClassifier doesn't implement a LabelEncoder to encode the
+  target column.</li>
+</ul>
+<p>The two estimators are customized in this way to save time and computational
+resources, since the classes are always initialized with fitted estimators.
+As a consequence of this, the VotingClassifier can not use sklearn's build-in
+LabelEncoder for the target column since it can't be fitted when initializing
+the class. For the vast majority of use cases, the changes will have no effect.
+If you want to export the estimator and retrain it on different data, just make
+sure to <a href="https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html">clone</a>
+the underlying estimators first.</p>
 <p><br></p>
 <h3 id="stacking">Stacking</h3>
 <p>Stacking is a method for combining estimators to reduce their biases.
@@ -2972,12 +2980,17 @@ stacked together and used as input to a final estimator to compute the
 prediction. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#stacked-generalization">documentation</a>.</p>
 <p>A stacking model is created from a trainer through the <a href="../../API/ATOM/atomclassifier/#stacking">stacking</a>
 method. The stacking model is added automatically to the list of
-models in the pipeline, under the <code>Stack</code> acronym. Remember that the
-model is added to the plots if the <code>models</code> parameter is not
-specified. Plots that require a data set will use the one in the
-current branch. The prediction methods, the evaluate method and the
-plot methods that require an estimator object will use the stacking's
-final estimator, under the <code>estimator</code> attribute.</p>
+models in the pipeline, under the <code>Stack</code> acronym. The underlying
+estimator is a custom adaptation of <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html">StackingClassifier</a>
+or <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html">StackingRegressor</a>
+depending on the task. The only difference between ATOM's and sklearn's
+implementation is that ATOM's implementation doesn't fit estimators if
+they're already fitted. The two estimators are customized in this way to
+save time and computational resources, since the classes are always
+initialized with fitted estimators. For the vast majority of use cases,
+the changes will have no effect. If you want to export the estimator and
+retrain it on different data, just make sure to <a href="https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html">clone</a>
+the underlying estimators first.</p>
                 
               
               

@@ -13,6 +13,7 @@ import logging
 import numpy as np
 import pandas as pd
 from typing import Union
+from shap import Explainer
 from functools import wraps
 from collections import deque
 from datetime import datetime
@@ -318,11 +319,10 @@ def check_predict_proba(models, method):
 
 
 def get_proba_attr(model):
-    """Get predict_proba or decision_function method."""
-    if hasattr(model.estimator, "predict_proba"):
-        return "predict_proba"
-    elif hasattr(model.estimator, "decision_function"):
-        return "decision_function"
+    """Get the predict_proba, decision_function or predict method."""
+    for attr in ("predict_proba", "decision_function", "predict"):
+        if hasattr(model.estimator, attr):
+            return attr
 
 
 def check_scaling(X):
@@ -539,7 +539,7 @@ def check_is_fitted(estimator, exception=True, attributes=None):
     Checks if the estimator is fitted by verifying the presence of
     fitted attributes (not None or empty). Otherwise it raises a
     NotFittedError. Extension on sklearn's function that accounts
-    for empty dataframes and series.
+    for empty dataframes and series and returns a boolean.
 
     Parameters
     ----------
@@ -554,6 +554,11 @@ def check_is_fitted(estimator, exception=True, attributes=None):
         Attribute(s) to check. If None, the estimator is considered
         fitted if there exist an attribute that ends with a underscore
         and does not start with double underscore.
+
+    Returns
+    -------
+    is_fitted: bool
+        Whether the estimator is fitted.
 
     """
 
@@ -587,38 +592,6 @@ def check_is_fitted(estimator, exception=True, attributes=None):
             return False
 
     return True
-
-
-def get_acronym(model, must_be_equal=True):
-    """Get the right model acronym.
-
-    Parameters
-    ----------
-    model: str
-        Acronym of the model, case-insensitive.
-
-    must_be_equal: bool, optional (default=True)
-        Whether the model name must be exactly equal or start
-        with the acronym.
-
-    Returns
-    -------
-    name: str
-        Correct model name acronym as present in MODELS.
-
-    """
-    # Not imported on top of file because of module interconnection
-    from .models import MODELS
-
-    for name in MODELS:
-        cond_1 = must_be_equal and model.lower() == name.lower()
-        cond_2 = not must_be_equal and model.lower().startswith(name.lower())
-        if cond_1 or cond_2:
-            return name
-
-    raise ValueError(
-        f"Unknown model: {model}. Choose from: {', '.join(MODELS)}."
-    )
 
 
 def create_acronym(fullname):
@@ -1001,7 +974,8 @@ def reorder_cols(df, original_df, col_names):
 
 def fit_one(transformer, X=None, y=None, message=None, **fit_params):
     """Fit the data using one estimator."""
-    X, y = to_df(X), to_series(y)
+    X = to_df(X, index=getattr(y, "index", None))
+    y = to_series(y, index=getattr(X, "index", None))
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
@@ -1031,7 +1005,8 @@ def transform_one(transformer, X=None, y=None):
         # Reorder columns in case only a subset was used
         return reorder_cols(out, X, use_cols)
 
-    X, y = to_df(X), to_series(y)
+    X = to_df(X, index=getattr(y, "index", None))
+    y = to_series(y, index=getattr(X, "index", None))
 
     args = []
     if "X" in signature(transformer.transform).parameters:
@@ -1323,8 +1298,12 @@ CUSTOM_SCORERS = dict(
 # Classes ========================================================== >>
 
 class NotFittedError(ValueError, AttributeError):
-    """Exception called when the instance is not yet fitted."""
-    pass
+    """Exception called when the instance is not yet fitted.
+
+    This class inherits from both ValueError and AttributeError to
+    help with exception handling and backward compatibility.
+
+    """
 
 
 class Table:
@@ -1507,6 +1486,116 @@ class PlotCallback:
 
         # Pause the data so the figure/axis can catch up
         plt.pause(0.05)
+
+
+class ShapExplanation:
+    """SHAP Explanation wrapper to avoid recalculating shap values.
+
+    Calculating shap values can take much time and computational
+    resources. This class 'remembers' all calculated shap values
+    and reuses them when appropriate.
+
+    Parameters
+    ----------
+    T: model subclass
+        Model from which the instance is created.
+
+    """
+
+    def __init__(self, *args):
+        self.T = args[0]
+
+        self._explainer = None
+        self._explanation = None
+        self._shap_values = pd.Series()
+        self._expected_value = None
+
+    @property
+    def explainer(self):
+        """Get shap's explainer."""
+        if self._explainer is None:
+            try:  # Fails when model does not fit standard explainers (e.g. ensembles)
+                self._explainer = Explainer(self.T.estimator, self.T.X_train)
+            except Exception:
+                # Prediction attr to use (predict_proba > decision_function > predict)
+                attr = getattr(self.T.estimator, get_proba_attr(self.T))
+                self._explainer = Explainer(attr, self.T.X_train)
+
+        return self._explainer
+
+    def get_explanation(self, df, target, feature=None):
+        """Get an Explanation object.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Data set to look at (subset of the complete dataset).
+
+        target: int
+            Index of the class in the target column to look at.
+            Only for multi-class classification tasks.
+
+        feature: int or str
+            Index or name of the feature to look at.
+
+        Returns
+        -------
+        explanation: shap.Explanation
+            Object containing all information (values, base_values, data).
+
+        """
+        # Get rows that still need to be calculated
+        calculate = df.loc[[i for i in df.index if i not in self._shap_values.index], :]
+        if not calculate.empty:
+            # Calculate the new shap values
+            self._explanation = self.explainer(calculate)
+
+            # Remember shap values in the _shap_values attribute
+            for i, idx in enumerate(calculate.index):
+                self._shap_values.loc[idx] = self._explanation.values[i]
+
+        # Get the values for this data set
+        shap_values = self._shap_values.loc[df.index].values
+        base_values = self._explanation.base_values[0]
+
+        # Update the explanation object
+        self._explanation.values = np.stack(shap_values)
+        self._explanation.base_values = np.tile(base_values, (len(df), 1))
+        self._explanation.data = self.T.X.loc[df.index, :].to_numpy()
+
+        # Select the target values from the array
+        if self._explanation.values.ndim > 2:
+            self._explanation = self._explanation[:, :, target]
+        if self._explanation.shape[0] == 1:  # Rows is a df with one row only
+            self._explanation = self._explanation[0]
+
+        if feature is None:
+            return self._explanation
+        else:
+            return self._explanation[:, feature]
+
+    def get_shap_values(self, df, target, feature=None):
+        """Get shap values from the Explanation object."""
+        return self.get_explanation(df, target, feature).values
+
+    def get_expected_value(self, target):
+        """Get the expected value of the training set."""
+        if self._expected_value is None:
+            # Some explainers like Permutation don't have expected_value attr
+            if hasattr(self.explainer, "expected_value"):
+                self._expected_value = self.explainer.expected_value
+            else:
+                # The expected value is the average of the model output
+                self._expected_value = np.mean(
+                    getattr(self.T, f"{get_proba_attr(self.T)}_train")
+                )
+
+        # Select the target expected value or return all
+        if isinstance(self._expected_value, (list, np.ndarray)):
+            if len(self._expected_value) == self.T.y.nunique():
+                return self._expected_value[target]
+
+        return self._expected_value
 
 
 class CustomDict(MutableMapping):

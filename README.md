@@ -1,6 +1,6 @@
 <div align="center">
 <p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" height="142" width="600"/>
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" height="130" width="500"/>
 </p>
 
 # Automated Tool for Optimized Modelling

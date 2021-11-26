@@ -362,15 +362,56 @@ def test_plot_det():
     atom.lgb.plot_det(display=False)
 
 
-def test_plot_permutation_importance():
-    """Assert that the plot_permutation_importance method work as intended."""
+def test_plot_gains():
+    """Assert that the plot_gains method work as intended."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("Ridge")
+    pytest.raises(PermissionError, atom.plot_gains)  # Task is not binary
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_permutation_importance)
-    atom.run(["Tree", "LGB"], metric="f1")
-    pytest.raises(ValueError, atom.plot_permutation_importance, show=0)
-    pytest.raises(ValueError, atom.plot_permutation_importance, n_repeats=0)
-    atom.plot_permutation_importance(display=False)
-    atom.lgb.plot_permutation_importance(display=False)
+    pytest.raises(NotFittedError, atom.plot_gains)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_gains(display=False)
+    atom.lgb.plot_gains(display=False)
+
+
+def test_plot_lift():
+    """Assert that the plot_lift method work as intended."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("Ridge")
+    pytest.raises(PermissionError, atom.plot_lift)  # Task is not binary
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_lift)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_lift(display=False)
+    atom.lgb.plot_lift(display=False)
+
+
+def test_plot_errors():
+    """Assert that the plot_errors method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    pytest.raises(PermissionError, atom.plot_errors)  # Task is not regression
+
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_errors)
+    atom.run(["Tree", "Bag"], metric="MSE")
+    atom.plot_errors(display=False)
+    atom.tree.plot_errors(display=False)
+
+
+def test_plot_residuals():
+    """Assert that the plot_residuals method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    pytest.raises(PermissionError, atom.plot_residuals)  # Task is not regression
+
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_residuals)
+    atom.run(["Tree", "Bag"], metric="MSE")
+    atom.plot_residuals(title="plot", display=False)
+    atom.tree.plot_residuals(display=False)
 
 
 def test_plot_feature_importance():
@@ -381,6 +422,17 @@ def test_plot_feature_importance():
     pytest.raises(PermissionError, atom.knn.plot_feature_importance)
     atom.plot_feature_importance(models=["Tree", "Bag"], display=False)
     atom.tree.plot_feature_importance(display=False)
+
+
+def test_plot_permutation_importance():
+    """Assert that the plot_permutation_importance method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_permutation_importance)
+    atom.run(["Tree", "LGB"], metric="f1")
+    pytest.raises(ValueError, atom.plot_permutation_importance, show=0)
+    pytest.raises(ValueError, atom.plot_permutation_importance, n_repeats=0)
+    atom.plot_permutation_importance(display=False)
+    atom.lgb.plot_permutation_importance(display=False)
 
 
 @pytest.mark.parametrize("features", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
@@ -440,32 +492,6 @@ def test_plot_partial_dependence(features):
         atom.plot_partial_dependence(target="Yes", display=False)
 
     atom.lgb.plot_partial_dependence(features, target=2, title="title", display=False)
-
-
-def test_plot_errors():
-    """Assert that the plot_errors method work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    pytest.raises(PermissionError, atom.plot_errors)  # Task is not regression
-
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_errors)
-    atom.run(["Tree", "Bag"], metric="MSE")
-    atom.plot_errors(display=False)
-    atom.tree.plot_errors(display=False)
-
-
-def test_plot_residuals():
-    """Assert that the plot_residuals method work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    pytest.raises(PermissionError, atom.plot_residuals)  # Task is not regression
-
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_residuals)
-    atom.run(["Tree", "Bag"], metric="MSE")
-    atom.plot_residuals(title="plot", display=False)
-    atom.tree.plot_residuals(display=False)
 
 
 def test_plot_confusion_matrix():
@@ -536,32 +562,6 @@ def test_plot_calibration():
     atom.tree.plot_calibration(display=False)
 
 
-def test_plot_gains():
-    """Assert that the plot_gains method work as intended."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Ridge")
-    pytest.raises(PermissionError, atom.plot_gains)  # Task is not binary
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_gains)
-    atom.run(["LGB", "kSVM"], metric="f1")
-    atom.plot_gains(display=False)
-    atom.lgb.plot_gains(display=False)
-
-
-def test_plot_lift():
-    """Assert that the plot_lift method work as intended."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Ridge")
-    pytest.raises(PermissionError, atom.plot_lift)  # Task is not binary
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_lift)
-    atom.run(["LGB", "kSVM"], metric="f1")
-    atom.plot_lift(display=False)
-    atom.lgb.plot_lift(display=False)
-
-
 @pytest.mark.parametrize("index", [None, 100, -10, (100, 200), slice(100, 200)])
 def test_bar_plot(index):
     """Assert that the bar_plot method work as intended."""
@@ -592,11 +592,17 @@ def test_force_plot():
     """Assert that the force_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.force_plot)
-    atom.run("LR", metric="MSE")
+    atom.run(["LR", "MLP"], metric="MSE")
     with atom.canvas(display=False):
         pytest.raises(PermissionError, atom.force_plot, matplotlib=True)
-    atom.force_plot(index=100, matplotlib=True, display=False)
-    atom.force_plot(matplotlib=False, filename=FILE_DIR + "force", display=True)
+
+    # Expected value from Explainer
+    atom.lr.force_plot(index=100, matplotlib=True, display=False)
+
+    # Own calculation of expected value
+    atom.mlp.force_plot(index=100, matplotlib=True, display=False)
+
+    atom.lr.force_plot(matplotlib=False, filename=FILE_DIR + "force", display=True)
     assert glob.glob(FILE_DIR + "force.html")
 
 

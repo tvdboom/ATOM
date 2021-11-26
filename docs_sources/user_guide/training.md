@@ -57,10 +57,6 @@ parameters or on different data sets. See the
 
 Additional things to take into account:
 
-* Models that require feature scaling will automatically do so
-  before training (if the data is not already scaled). Use the
-  [available_models](../../API/ATOM/atomclassifier/#available-models)
-  method to see for which models this is the case.
 * If an exception is encountered while fitting an estimator, the
   pipeline will automatically jump to the next model. The exceptions are
   stored in the `errors` attribute. Note that when a model is skipped,
@@ -159,6 +155,24 @@ the bayesian optimization and to select the winning model.
 !!! info
     Some plots let you choose which of the metrics to show using the
     `metric` parameter.
+
+<br>
+
+## Automated feature scaling
+
+Models that require feature scaling will automatically do so before
+training, if the data is not already scaled. The data is considered
+scaled if it has one of the following prerequisites:
+
+* The mean value over the mean of all columns is <0.05 and the mean of
+  the standard deviation over all columns lies between 0.93 and 1.07.
+* There is a transformer in the pipeline whose \__name__ contains the
+  word `scaler`.
+
+The scaling is applied using a [Scaler](../../API/data_cleaning/scaler)
+with default parameters. It can be accessed from the model through the
+`scaler` attribute. Use the [available_models](../../API/ATOM/atomclassifier/#available-models)
+method to see which models require feature scaling.
 
 <br>
 

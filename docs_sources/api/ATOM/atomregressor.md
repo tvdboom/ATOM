@@ -869,13 +869,16 @@ on the training set.
 <p>
 <strong>model: str or None, optional (default=None)</strong><br>
 Name of the model to add as a final estimator to the pipeline. If the
-model used feature scaling, the <a href="../../data_cleaning/scaler">Scaler</a>
-is added before the model. If None, only the transformers are added.
+model used <a href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
+the <code>scaler</code> is added to the pipeline. If None, only the
+transformers are added.
 </p>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
-Verbosity level of the transformers in the pipeline.
-If None, it leaves them to their original verbosity.
+Verbosity level of the transformers in the pipeline. If None, it leaves
+them to their original verbosity. Note that this is not the pipeline's
+own verbose parameter. To change that, use the <code>set_params</code>
+method.
 </p>
 </td>
 </tr>
@@ -1117,43 +1120,32 @@ strictly positive.
 
 <a name="stacking"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None,
-estimator=None, stack_method="auto", passthrough=False)
+<em>method</em> <strong style="color:#008AB8">stacking</strong>(name="Stack",
+models=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L394">[source]</a>
 </span>
 </div>
-Add a [Stacking](../../../user_guide/models/#stacking) instance to the models in the pipeline.
+Add a [Stacking](../../../user_guide/models/#stacking) model to the pipeline.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
+<strong>name: str, optional (default="Stack")</strong><br>
+Name of the model. The name is always presided with the
+model's acronym: <code>Stack</code>.
+</p>
+<p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
-Models that feed the stacking. If None, it selects all models
-depending on the current branch.
+Models that feed the stacking estimator. If None, it selects
+all models trained on the current branch.
 </p>
 <p>
-<strong>estimator: str, callable or None, optional (default=None)</strong><br>
-The final estimator, which is used to combine the base
-estimators. If str, choose from ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
-If None, <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge</a> is selected.
-</p>
-<p>
-<strong>stack_method: str, optional (default="auto")</strong><br>
-Methods called for each base estimator. If "auto", it will try to 
-invoke <code>predict_proba</code>, <code>decision_function</code>
-or <code>predict</code> in that order.
-</p>
-<p>
-<strong>passthrough: bool, optional (default=False)</strong>
-When False, only the predictions of estimators are used
-as training data for the final estimator. When True, the
-estimator is trained on the predictions as well as the
-original training data. The passed dataset is scaled
-if any of the models require scaled features and they are
-not already.
-</p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html">StackingRegressor</a>
+instance. The <a href="../../../user_guide/models/#predefined-models">predefined model's</a>
+acronyms can be used for the <code>final_estimator</code> parameter.
 </td>
 </tr>
 </table>
@@ -1186,28 +1178,31 @@ saves it to the logger.
 
 <a name="voting"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
+<em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
+models=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L445">[source]</a>
 </span>
 </div>
-Add a [Voting](../../../user_guide/models/#voting) instance to the models in the pipeline.
+Add a [Voting](../../../user_guide/models/#voting) model to the pipeline.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>models: sequence or None, optional (default=None)</strong><br>
-Models that feed the voting. If None, it selects all models
-depending on the current branch.
+<strong>name: str, optional (default="Vote")</strong><br>
+Name of the model. The name is always presided with the
+model's acronym: <code>Vote</code>.
 </p>
 <p>
-<strong>weights: sequence or None, optional (default=None)</strong><br>
-Sequence of weights (int or float) to weight the
-occurrences of predicted class labels (hard voting)
-or class probabilities before averaging (soft voting).
-Uses uniform weights if None.
+<strong>models: sequence or None, optional (default=None)</strong><br>
+Models that feed the stacking estimator. If None, it selects
+all models trained on the current branch.
 </p>
+<p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html">VotingRegressor</a>
+instance.
 </td>
 </tr>
 </table>

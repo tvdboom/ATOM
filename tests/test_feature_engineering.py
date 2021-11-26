@@ -336,7 +336,8 @@ def test_SFM_prefit_invalid_estimator():
         n_features=8,
         random_state=1,
     )
-    pytest.raises(ValueError, selector.fit, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*different columns than X.*"):
+        selector.fit(X_bin, y_bin)
 
 
 def test_SFM_strategy_not_threshold():
@@ -354,7 +355,8 @@ def test_SFM_strategy_not_threshold():
 def test_SFM_invalid_solver():
     """Assert that an error is raised when solver is invalid."""
     selector = FeatureSelector(strategy="SFM", solver="invalid", n_features=5)
-    pytest.raises(ValueError, selector.fit_transform, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*Unknown model.*"):
+        selector.fit_transform(X_bin, y_bin)
 
 
 def test_SFM_strategy_fitted_solver():

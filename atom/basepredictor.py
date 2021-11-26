@@ -291,7 +291,10 @@ class BasePredictor:
     def _get_models(self, models=None):
         """Return models in the pipeline. Duplicate inputs are ignored."""
         if not models:
-            return lst(self.models).copy()
+            if self.models:
+                return lst(self.models).copy()
+            else:
+                return self.models
         elif isinstance(models, str):
             return self._get_model_name(models.lower())
         else:
@@ -322,7 +325,7 @@ class BasePredictor:
         for model in MODELS.values():
             m = model(self)
             est = m.get_estimator()
-            if m.task[:3] == self.goal[:3] or m.task == "both":
+            if m.goal[:3] == self.goal[:3] or m.goal == "both":
                 overview = overview.append(
                     {
                         "acronym": m.acronym,
@@ -445,22 +448,46 @@ class BasePredictor:
         Parameters
         ----------
         name: str, optional (default="Stack")
-            Name of the Stacking model. The name is always presided with
-            the model's acronym: `stack`.
+            Name of the model. The name is always presided with the
+            model's acronym: `stack`.
 
         models: sequence or None, optional (default=None)
-            Models that feed the stacking. If None, it selects all
-            models depending on the current branch.
+            Models that feed the voting estimator. If None, it selects
+            all models trained on the current branch.
 
         **kwargs
-            Additional keyword arguments for sklearn's Stacking instance.
+            Additional keyword arguments for sklearn's stacking instance.
+            The model's acronyms can be used for the `final_estimator`
+            parameter.
 
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_models(models or self.branch._get_depending_models())
 
+        if len(models) < 2:
+            raise ValueError(
+                "Invalid value for the models parameter. A Stacking model should "
+                f"contain at least two underlying estimators, got {models}."
+            )
+
         if not name.lower().startswith("stack"):
             name = f"Stack{name}"
+
+        if isinstance(kwargs.get("final_estimator"), str):
+            if kwargs["final_estimator"] not in MODELS:
+                raise ValueError(
+                    "Invalid value for the final_estimator parameter. Unknown model: "
+                    f"{kwargs['final_estimator']}. Choose from: {', '.join(MODELS)}."
+                )
+            else:
+                model = MODELS[kwargs["final_estimator"]](self)
+                if model.goal not in (self.goal, "both"):
+                    raise ValueError(
+                        "Invalid value for the final_estimator parameter. Model "
+                        f"{model.fullname} can not perform {self.task} tasks."
+                    )
+
+                kwargs["final_estimator"] = model.get_estimator()
 
         self._models[name] = Stacking(self, name, models=self._models[models], **kwargs)
 
@@ -481,19 +508,25 @@ class BasePredictor:
         Parameters
         ----------
         name: str, optional (default="Vote")
-            Name of the Stacking model. The name is always presided with
-            the model's acronym: `vote`.
+            Name of the model. The name is always presided with the
+            model's acronym: `vote`.
 
         models: sequence or None, optional (default=None)
-            Models that feed the voting. If None, it selects all models
-            depending on the current branch.
+            Models that feed the voting estimator. If None, it selects
+            all models trained on the current branch.
 
         **kwargs
-            Additional keyword arguments for sklearn's Voting instance.
+            Additional keyword arguments for sklearn's voting instance.
 
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_models(models or self.branch._get_depending_models())
+
+        if len(models) < 2:
+            raise ValueError(
+                "Invalid value for the models parameter. A Voting model should "
+                f"contain at least two underlying estimators, got {models}."
+            )
 
         if not name.lower().startswith("vote"):
             name = f"Vote{name}"

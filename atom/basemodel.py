@@ -12,7 +12,6 @@ import os
 import dill
 import mlflow
 import tempfile
-import contextlib
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -50,7 +49,7 @@ from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst, it, arr,
     merge, time_to_str, get_best_score, get_scorer, get_pl_name,
     variable_return, custom_transform, composed, crash, method_to_log,
-    score_decorator, Table,
+    score_decorator, Table, ShapExplanation,
 )
 
 
@@ -62,11 +61,11 @@ class BaseModel(BaseModelPlotter):
         self.name = self.acronym if len(args) == 1 else args[1]
         self.scaler = None
         self.estimator = None
-        self.explainer = None  # Explainer object for shap plots
         self._run = None  # mlflow run (if experiment is active)
         self._group = self.name  # sh and ts models belong to the same group
         self._holdout = None
         self._pred = [None] * 15
+        self._shap = ShapExplanation(self)
 
         # BO attributes
         self.params = {}
@@ -100,7 +99,7 @@ class BaseModel(BaseModelPlotter):
 
         # Skip if called from FeatureSelector
         if hasattr(self.T, "_branches"):
-            self.branch = self.T._branches[self.T._current]
+            self.branch = self.T.branch
             self._train_idx = self.branch.idx[0]  # Can change for sh and ts
             if getattr(self, "needs_scaling", None) and not self.T.scaled:
                 self.scaler = Scaler().fit(self.X_train)
@@ -139,8 +138,8 @@ class BaseModel(BaseModelPlotter):
 
     def _check_est_params(self):
         """Make sure the parameters are valid keyword argument for the estimator."""
-        signature_init = signature(self.get_estimator().__init__).parameters
-        signature_fit = signature(self.get_estimator().fit).parameters
+        signature_init = signature(self.est_class.__init__).parameters
+        signature_fit = signature(self.est_class.fit).parameters
 
         # The parameter is always accepted if the estimator accepts kwargs
         for param in self._est_params:
@@ -577,9 +576,11 @@ class BaseModel(BaseModelPlotter):
                 }
             )
 
-            # Can only save params for children of BaseEstimator
+            # Only save params for children of BaseEstimator
             if hasattr(self, "get_params"):
-                mlflow.log_params(self.estimator.get_params())
+                # Mlflow only accepts params with char length <250
+                pars = self.estimator.get_params()
+                mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
 
             for i, m in enumerate(self.T._metric):
                 mlflow.log_metric(f"{m}_train", lst(self.metric_train)[i])
@@ -1060,8 +1061,8 @@ class BaseModel(BaseModelPlotter):
                 mlflow.sklearn.log_model(self.estimator, "CalibratedClassifierCV")
 
         # Reset attrs dependent on estimator
-        self.explainer = None
         self._pred = [None] * 15
+        self._shap = ShapExplanation(self)
 
         self.T.log(f"Model {self.name} successfully calibrated.", 1)
 
@@ -1254,8 +1255,8 @@ class BaseModel(BaseModelPlotter):
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
             None, it leaves them to their original verbosity. Note
-            that this is not the pipeline's verbose parameter. To
-            change that, use the set_params method.
+            that this is not the pipeline's own verbose parameter.
+            To change that, use the `set_params` method.
 
         Returns
         -------
@@ -1328,8 +1329,8 @@ class BaseModel(BaseModelPlotter):
                 mlflow.sklearn.log_model(self.estimator, name)
 
         # Reset attrs dependent on estimator
-        self.explainer = None
         self._pred = [None] * 15
+        self._shap = ShapExplanation(self)
 
         self.T.log(f"Model {self.name} successfully retrained.", 1)
 

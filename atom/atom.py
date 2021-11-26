@@ -9,7 +9,6 @@ Description: Module containing the ATOM class.
 
 # Standard packages
 import tempfile
-import contextlib
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -50,7 +49,7 @@ from .training import (
     TrainSizingClassifier,
     TrainSizingRegressor,
 )
-from .models import CustomModel, MODELS, MODELS_ENSEMBLES
+from .models import CustomModel, MODELS_ENSEMBLES
 from .plots import ATOMPlotter
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt, lst,
@@ -445,8 +444,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
             None, it leaves them to their original verbosity. Note
-            that this is not the pipeline's verbose parameter. To
-            change that, use the set_params method.
+            that this is not the pipeline's own verbose parameter.
+            To change that, use the `set_params` method.
 
         Returns
         -------

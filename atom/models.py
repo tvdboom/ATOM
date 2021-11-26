@@ -10,6 +10,7 @@ Description: Module containing all available models. All classes must
         ----
         Name of the model's class in camel case format.
 
+
         Class attributes
         ----------------
         acronym: str
@@ -20,12 +21,13 @@ Description: Module containing all available models. All classes must
             __name__ is used.
 
         needs_scaling: bool
-            Whether the model needs scaled features. Can not be True
-            for datasets with more than two dimensions.
+            Whether the model needs scaled features. Can not be
+            True for datasets with more than two dimensions.
 
-        task: str
-            If the model is only for classification tasks ("class"),
-            regression tasks ("reg") or both ("both").
+        goal: str
+            If the model is only for classification ("class"),
+            regression ("reg") or both ("both").
+
 
         Instance attributes
         -------------------
@@ -45,6 +47,13 @@ Description: Module containing all available models. All classes must
             All the estimator's parameters for the BO. The values
             should be a list with two elements, the parameter's
             default value and the number of decimals.
+
+
+        Properties
+        ----------
+        est_class: estimator's base class
+            Base class (not instance) of the underlying estimator.
+
 
         Methods
         -------
@@ -172,10 +181,6 @@ from sklearn.ensemble import (
     GradientBoostingRegressor,
     HistGradientBoostingClassifier,
     HistGradientBoostingRegressor,
-    StackingClassifier,
-    StackingRegressor,
-    VotingClassifier,
-    VotingRegressor,
 )
 from sklearn.svm import LinearSVC, LinearSVR, SVC, SVR
 from sklearn.linear_model import (
@@ -188,6 +193,13 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # Own modules
 from .basemodel import BaseModel
+from .pipeline import Pipeline
+from .ensembles import (
+    VotingClassifier,
+    VotingRegressor,
+    StackingClassifier,
+    StackingRegressor,
+)
 from .utils import create_acronym, CustomDict
 
 
@@ -214,8 +226,16 @@ class CustomModel(BaseModel):
         self.needs_scaling = getattr(self.est, "needs_scaling", False)
         super().__init__(*args)
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if callable(self.est):
+            return self.est
+        else:
+            return self.est.__class__
+
     def get_estimator(self, params=None):
-        """Call the estimator object."""
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
         sign = signature(self.est.__init__).parameters
 
@@ -246,7 +266,7 @@ class Dummy(BaseModel):
 
     acronym = "Dummy"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -258,16 +278,24 @@ class Dummy(BaseModel):
             self.fullname = "Dummy Regression"
             self.params = {"strategy": ["mean", 0], "quantile": [0.5, 2]}
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return DummyClassifier
+        else:
+            return DummyRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
         if self.T.goal == "class":
-            return DummyClassifier(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
         else:
-            return DummyRegressor(**params)
+            return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -288,22 +316,30 @@ class GaussianProcess(BaseModel):
     acronym = "GP"
     fullname = "Gaussian Process"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return GaussianProcessClassifier
+        else:
+            return GaussianProcessRegressor
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
         if self.T.goal == "class":
-            return GaussianProcessClassifier(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return GaussianProcessRegressor(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
@@ -315,16 +351,20 @@ class GaussianNaiveBayes(BaseModel):
     acronym = "GNB"
     fullname = "Gaussian Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return GaussianNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return GaussianNB(**params)
+        return self.est_class(**params)
 
 
 class MultinomialNaiveBayes(BaseModel):
@@ -333,17 +373,21 @@ class MultinomialNaiveBayes(BaseModel):
     acronym = "MNB"
     fullname = "Multinomial Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return MultinomialNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return MultinomialNB(**params)
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -360,17 +404,21 @@ class BernoulliNaiveBayes(BaseModel):
     acronym = "BNB"
     fullname = "Bernoulli Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return BernoulliNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return BernoulliNB(**params)
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -387,17 +435,21 @@ class CategoricalNaiveBayes(BaseModel):
     acronym = "CatNB"
     fullname = "Categorical Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return CategoricalNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return CategoricalNB(**params)
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -414,17 +466,21 @@ class ComplementNaiveBayes(BaseModel):
     acronym = "CNB"
     fullname = "Complement Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0], "norm": [False, 0]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return ComplementNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return ComplementNB(**params)
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -442,15 +498,20 @@ class OrdinaryLeastSquares(BaseModel):
     acronym = "OLS"
     fullname = "Ordinary Least Squares"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return LinearRegression
+
     def get_estimator(self, params=None):
-        """Call the estimator object."""
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return LinearRegression(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
+        return self.est_class(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
 
 
 class Ridge(BaseModel):
@@ -458,7 +519,7 @@ class Ridge(BaseModel):
 
     acronym = "Ridge"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -469,19 +530,21 @@ class Ridge(BaseModel):
         else:
             self.fullname = "Ridge Regression"
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return RidgeClassifier
+        else:
+            return RidgeRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return RidgeClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return RidgeRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -499,16 +562,21 @@ class Lasso(BaseModel):
     acronym = "Lasso"
     fullname = "Lasso Regression"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "selection": ["cyclic", 0]}
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return LassoRegressor
+
     def get_estimator(self, params=None):
-        """Call the estimator object."""
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return LassoRegressor(
+        return self.est_class(
             random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
@@ -528,7 +596,7 @@ class ElasticNet(BaseModel):
     acronym = "EN"
     fullname = "ElasticNet Regression"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -538,10 +606,15 @@ class ElasticNet(BaseModel):
             "selection": ["cyclic", 0],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return ElasticNetRegressor
+
     def get_estimator(self, params=None):
-        """Call the estimator object."""
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return ElasticNetRegressor(
+        return self.est_class(
             random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
@@ -562,7 +635,7 @@ class BayesianRidge(BaseModel):
     acronym = "BR"
     fullname = "Bayesian Ridge"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -574,11 +647,15 @@ class BayesianRidge(BaseModel):
             "lambda_2": [1e-6, 8],
         }
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return BayesianRidgeRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return BayesianRidgeRegressor(**params)
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -598,7 +675,7 @@ class AutomaticRelevanceDetermination(BaseModel):
     acronym = "ARD"
     fullname = "Automatic Relevant Determination"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -610,11 +687,15 @@ class AutomaticRelevanceDetermination(BaseModel):
             "lambda_2": [1e-6, 8],
         }
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return ARDRegression
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return ARDRegression(**params)
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -634,7 +715,7 @@ class LogisticRegression(BaseModel):
     acronym = "LR"
     fullname = "Logistic Regression"
     needs_scaling = True
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -645,6 +726,11 @@ class LogisticRegression(BaseModel):
             "max_iter": [100, 0],
             "l1_ratio": [0.5, 1],
         }
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return LR
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -667,9 +753,9 @@ class LogisticRegression(BaseModel):
         return params
 
     def get_estimator(self, params=None):
-        """Call the estimator object."""
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return LR(
+        return self.est_class(
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             random_state=params.pop("random_state", self.T.random_state),
             **params,
@@ -694,11 +780,16 @@ class LinearDiscriminantAnalysis(BaseModel):
     acronym = "LDA"
     fullname = "Linear Discriminant Analysis"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"solver": ["svd", 0], "shrinkage": [0, 1]}
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return LDA
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -709,11 +800,10 @@ class LinearDiscriminantAnalysis(BaseModel):
 
         return params
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return LDA(**params)
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -730,17 +820,21 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     acronym = "QDA"
     fullname = "Quadratic Discriminant Analysis"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"reg_param": [0, 1]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return QDA
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        return QDA(**params)
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -754,7 +848,7 @@ class KNearestNeighbors(BaseModel):
     acronym = "KNN"
     fullname = "K-Nearest Neighbors"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -766,19 +860,21 @@ class KNearestNeighbors(BaseModel):
             "p": [2, 0],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return KNeighborsClassifier
+        else:
+            return KNeighborsRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return KNeighborsClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return KNeighborsRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -798,7 +894,7 @@ class RadiusNearestNeighbors(BaseModel):
     acronym = "RNN"
     fullname = "Radius Nearest Neighbors"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         self._distances = None
@@ -811,10 +907,6 @@ class RadiusNearestNeighbors(BaseModel):
             "p": [2, 0],
         }
 
-    def get_init_values(self):
-        """Custom method to return a valid radius."""
-        return [np.mean(self.distances)] + super().get_init_values()[1:]
-
     @property
     def distances(self):
         """Return distances between a random subsample of rows."""
@@ -826,18 +918,30 @@ class RadiusNearestNeighbors(BaseModel):
 
         return self._distances
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return RadiusNeighborsClassifier
+        else:
+            return RadiusNeighborsRegressor
+
+    def get_init_values(self):
+        """Custom method to return a valid radius."""
+        return [np.mean(self.distances)] + super().get_init_values()[1:]
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
         if self.T.goal == "class":
-            return RadiusNeighborsClassifier(
-                outlier_label="most_frequent",
+            return self.est_class(
+                outlier_label=params.pop("outlier_label", "most_frequent"),
                 radius=params.pop("radius", np.mean(self.distances)),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return RadiusNeighborsRegressor(
+            return self.est_class(
                 radius=params.pop("radius", np.mean(self.distances)),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
@@ -863,7 +967,7 @@ class DecisionTree(BaseModel):
     acronym = "Tree"
     fullname = "Decision Tree"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -877,19 +981,21 @@ class DecisionTree(BaseModel):
             "ccp_alpha": [0, 3],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return DecisionTreeClassifier
+        else:
+            return DecisionTreeRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return DecisionTreeClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return DecisionTreeRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -915,7 +1021,7 @@ class Bagging(BaseModel):
 
     acronym = "Bag"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -932,21 +1038,22 @@ class Bagging(BaseModel):
         else:
             self.fullname = "Bagging Regressor"
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return BaggingClassifier
+        else:
+            return BaggingRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return BaggingClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return BaggingRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -966,7 +1073,7 @@ class ExtraTrees(BaseModel):
     acronym = "ET"
     fullname = "Extra-Trees"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -982,6 +1089,14 @@ class ExtraTrees(BaseModel):
             "max_samples": [0.9, 1],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return ExtraTreesClassifier
+        else:
+            return ExtraTreesRegressor
+
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_params(x)
@@ -994,18 +1109,11 @@ class ExtraTrees(BaseModel):
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return ExtraTreesClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return ExtraTreesRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1034,7 +1142,7 @@ class RandomForest(BaseModel):
     acronym = "RF"
     fullname = "Random Forest"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1050,6 +1158,14 @@ class RandomForest(BaseModel):
             "max_samples": [0.9, 1],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return RandomForestClassifier
+        else:
+            return RandomForestRegressor
+
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_params(x)
@@ -1062,18 +1178,11 @@ class RandomForest(BaseModel):
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return RandomForestClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return RandomForestRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1102,7 +1211,7 @@ class AdaBoost(BaseModel):
     acronym = "AdaB"
     fullname = "AdaBoost"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1114,19 +1223,21 @@ class AdaBoost(BaseModel):
         else:
             self.params["loss"] = ["linear", 0]
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return AdaBoostClassifier
+        else:
+            return AdaBoostRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return AdaBoostClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return AdaBoostRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1145,7 +1256,7 @@ class GradientBoostingMachine(BaseModel):
     acronym = "GBM"
     fullname = "Gradient Boosting Machine"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1169,6 +1280,14 @@ class GradientBoostingMachine(BaseModel):
         if self.T.task.startswith("multi"):
             self.params.pop("loss")
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return GradientBoostingClassifier
+        else:
+            return GradientBoostingRegressor
+
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_params(x)
@@ -1182,16 +1301,10 @@ class GradientBoostingMachine(BaseModel):
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return GradientBoostingClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return GradientBoostingRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1222,7 +1335,7 @@ class HistGBM(BaseModel):
     acronym = "hGBM"
     fullname = "HistGBM"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1239,19 +1352,21 @@ class HistGBM(BaseModel):
         if self.T.goal == "class":
             self.params.pop("loss")
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return HistGradientBoostingClassifier
+        else:
+            return HistGradientBoostingRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return HistGradientBoostingClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return HistGradientBoostingRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1273,7 +1388,7 @@ class XGBoost(BaseModel):
     acronym = "XGB"
     fullname = "XGBoost"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1290,31 +1405,30 @@ class XGBoost(BaseModel):
             "reg_lambda": [1, 0],
         }
 
-    def get_estimator(self, params=None):
-        """Return the model's estimator with unpacked parameters."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
         from xgboost import XGBClassifier, XGBRegressor
 
+        if self.T.goal == "class":
+            return XGBClassifier
+        else:
+            return XGBRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
         if self.T.random_state is None:  # XGBoost can't handle random_state to be None
             random_state = params.pop("random_state", randint(0, 1e5))
         else:
             random_state = params.pop("random_state", self.T.random_state)
-        if self.T.goal == "class":
-            return XGBClassifier(
-                use_label_encoder=False,
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=random_state,
-                verbosity=0,
-                **params,
-            )
-        else:
-            return XGBRegressor(
-                use_label_encoder=False,
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=random_state,
-                verbosity=0,
-                **params,
-            )
+        return self.est_class(
+            use_label_encoder=params.pop("use_label_encoder", False),
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=random_state,
+            verbosity=params.pop("verbosity", 0),
+            **params,
+        )
 
     def custom_fit(self, est, train, validation=None, params=None):
         """Fit the model using early stopping and update evals attr."""
@@ -1369,7 +1483,7 @@ class LightGBM(BaseModel):
     acronym = "LGB"
     fullname = "LightGBM"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1387,23 +1501,24 @@ class LightGBM(BaseModel):
             "reg_lambda": [0, 0],
         }
 
-    def get_estimator(self, params=None):
-        """Return the model's estimator with unpacked parameters."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
 
-        params = copy(params or {})
         if self.T.goal == "class":
-            return LGBMClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+            return LGBMClassifier
         else:
-            return LGBMRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+            return LGBMRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def custom_fit(self, est, train, validation=None, params=None):
         """Fit the model using early stopping and update evals attr."""
@@ -1458,7 +1573,7 @@ class CatBoost(BaseModel):
     acronym = "CatB"
     fullname = "CatBoost"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1472,31 +1587,28 @@ class CatBoost(BaseModel):
             "reg_lambda": [0, 0],
         }
 
-    def get_estimator(self, params=None):
-        """Return the model's estimator with unpacked parameters."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
         from catboost import CatBoostClassifier, CatBoostRegressor
 
-        params = copy(params or {})
         if self.T.goal == "class":
-            return CatBoostClassifier(
-                bootstrap_type="Bernoulli",  # subsample only works with Bernoulli
-                train_dir="",
-                allow_writing_files=False,
-                thread_count=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                verbose=False,
-                **params,
-            )
+            return CatBoostClassifier
         else:
-            return CatBoostRegressor(
-                bootstrap_type="Bernoulli",
-                train_dir="",
-                allow_writing_files=False,
-                thread_count=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                verbose=False,
-                **params,
-            )
+            return CatBoostRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(
+            bootstrap_type=params.pop("bootstrap_type", "Bernoulli"),  # For subsample
+            train_dir=params.pop("train_dir", ""),
+            allow_writing_files=params.pop("allow_writing_files", False),
+            thread_count=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            verbose=params.pop("verbose", False),
+            **params,
+        )
 
     def custom_fit(self, est, train, validation=None, params=None):
         """Fit the model using early stopping and update evals attr."""
@@ -1542,7 +1654,7 @@ class LinearSVM(BaseModel):
     acronym = "lSVM"
     fullname = "Linear-SVM"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1557,6 +1669,14 @@ class LinearSVM(BaseModel):
         if self.T.goal == "reg":
             self.params["loss"] = ["epsilon_insensitive", 0]
             self.params.pop("penalty")
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return LinearSVC
+        else:
+            return LinearSVR
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1580,16 +1700,10 @@ class LinearSVM(BaseModel):
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return LinearSVC(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return LinearSVR(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1613,7 +1727,7 @@ class KernelSVM(BaseModel):
     acronym = "kSVM"
     fullname = "Kernel-SVM"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1625,6 +1739,14 @@ class KernelSVM(BaseModel):
             "coef0": [0, 2],
             "shrinking": [True, 0],
         }
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return SVC
+        else:
+            return SVR
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1644,12 +1766,12 @@ class KernelSVM(BaseModel):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
         if self.T.goal == "class":
-            return SVC(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
         else:
-            return SVR(**params)
+            return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1670,7 +1792,7 @@ class PassiveAggressive(BaseModel):
     acronym = "PA"
     fullname = "Passive Aggressive"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1680,16 +1802,24 @@ class PassiveAggressive(BaseModel):
             "average": [False, 0],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return PassiveAggressiveClassifier
+        else:
+            return PassiveAggressiveRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
         if self.T.goal == "class":
-            return PassiveAggressiveClassifier(
+            return self.est_class(
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return PassiveAggressiveRegressor(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
@@ -1715,7 +1845,7 @@ class StochasticGradientDescent(BaseModel):
     acronym = "SGD"
     fullname = "Stochastic Gradient Descent"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1730,6 +1860,14 @@ class StochasticGradientDescent(BaseModel):
             "power_t": [0.5, 1],
             "average": [False, 0],
         }
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return SGDClassifier
+        else:
+            return SGDRegressor
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1747,13 +1885,13 @@ class StochasticGradientDescent(BaseModel):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
         if self.T.goal == "class":
-            return SGDClassifier(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return SGDRegressor(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
@@ -1793,7 +1931,7 @@ class MultilayerPerceptron(BaseModel):
     acronym = "MLP"
     fullname = "Multi-layer Perceptron"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1808,6 +1946,14 @@ class MultilayerPerceptron(BaseModel):
             "power_t": [0.5, 1],
             "max_iter": [200, 0],
         }
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return MLPClassifier
+        else:
+            return MLPRegressor
 
     def get_init_values(self):
         """Custom method to return the correct hidden_layer_sizes."""
@@ -1855,16 +2001,10 @@ class MultilayerPerceptron(BaseModel):
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
-        if self.T.goal == "class":
-            return MLPClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return MLPRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1886,93 +2026,107 @@ class MultilayerPerceptron(BaseModel):
 
 # Ensembles ======================================================== >>
 
-class Voting(BaseModel):
-    """Class for voting with the models in the pipeline."""
-
-    acronym = "Vote"
-    fullname = "Voting"
-    needs_scaling = False
-    task = "both"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self._models = kwargs.pop("models")
-        self._est_params = kwargs
-
-        if len(self._models) < 2:
-            raise ValueError(
-                "Invalid value for the models parameter. A Voting "
-                "model should contain at least two underlying estimators."
-            )
-
-        if len(set([m.branch for m in self._models.values()])) > 1:
-            raise ValueError(
-                "Invalid value for the models parameter. "
-                "All models must use the same branch."
-            )
-
-    def get_estimator(self, params=None):
-        """Return the model's estimator with unpacked parameters."""
-        params = copy(params or {})
-        if self.T.goal == "class":
-            return VotingClassifier(
-                estimators=[(m.name, m.estimator) for m in self._models.values()],
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return VotingRegressor(
-                estimators=[(m.name, m.estimator) for m in self._models.values()],
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-
-
 class Stacking(BaseModel):
     """Class for stacking the models in the pipeline."""
 
     acronym = "Stack"
     fullname = "Stacking"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
         self._models = kwargs.pop("models")
         self._est_params = kwargs
 
-        if len(self._models) < 2:
+        if any(m.branch is not self.branch for m in self._models.values()):
             raise ValueError(
-                "Invalid value for the models parameter. A Stacking "
-                "model should contain at least two underlying estimators."
+                "Invalid value for the models parameter. All "
+                "models must have been fitted on the current branch."
             )
 
-        if len(set([m.branch for m in self._models.values()])) > 1:
-            raise ValueError(
-                "Invalid value for the models parameter. "
-                "All models must use the same branch."
-            )
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return StackingClassifier
+        else:
+            return StackingRegressor
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
         params = copy(params or {})
+
+        estimators = []
+        for m in self._models.values():
+            if m.scaler:
+                name = f"pipeline_{m.name}"
+                est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
+            else:
+                name = m.name
+                est = m.estimator
+
+            estimators.append((name, est))
+
+        return self.est_class(
+            estimators=estimators,
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            **params,
+        )
+
+
+class Voting(BaseModel):
+    """Soft Voting/Majority Rule voting."""
+
+    acronym = "Vote"
+    fullname = "Voting"
+    needs_scaling = False
+    goal = "both"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
+        self._models = kwargs.pop("models")
+        self._est_params = kwargs
+
+        if any(m.branch is not self.branch for m in self._models.values()):
+            raise ValueError(
+                "Invalid value for the models parameter. All "
+                "models must have been fitted on the current branch."
+            )
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
         if self.T.goal == "class":
-            return StackingClassifier(
-                estimators=[(m.name, m.estimator) for m in self._models.values()],
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
+            return VotingClassifier
         else:
-            return StackingRegressor(
-                estimators=[(m.name, m.estimator) for m in self._models.values()],
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
+            return VotingRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+
+        estimators = []
+        for m in self._models.values():
+            if m.scaler:
+                name = f"pipeline_{m.name}"
+                est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
+            else:
+                name = m.name
+                est = m.estimator
+
+            estimators.append((name, est))
+
+        return self.est_class(
+            estimators=estimators,
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            **params,
+        )
 
 
 # Variables ======================================================== >>
 
-# List of all the available models
+# List of available models
 MODELS = CustomDict(
     Dummy=Dummy,
     GP=GaussianProcess,
@@ -2009,5 +2163,8 @@ MODELS = CustomDict(
     MLP=MultilayerPerceptron,
 )
 
+# List of available ensembles
+ENSEMBLES = CustomDict(Stack=Stacking, Vote=Voting)
+
 # List of all models + ensembles
-MODELS_ENSEMBLES = CustomDict(**MODELS, Stack=Stacking, Vote=Voting)
+MODELS_ENSEMBLES = CustomDict(**MODELS, **ENSEMBLES)

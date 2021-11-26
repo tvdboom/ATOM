@@ -401,9 +401,10 @@ removed from any active mlflow experiment.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L756">[source]</a>
 </span>
 </div>
-Export the model's pipeline to a sklearn-like object. If the model
-used feature scaling, the Scaler is added before the model. The
-returned pipeline is already fitted on the training set.
+Export the model's pipeline to a sklearn-like Pipeline object. If the
+model used [automated feature scaling](../../../user_guide/training/#automated-feature-scaling),
+the `scaler` is added to the pipeline. The returned pipeline is already
+fitted on the training set.
 
 !!! info
     ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
@@ -426,8 +427,10 @@ returned pipeline is already fitted on the training set.
 <td width="80%" class="td_params">
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
-Verbosity level of the transformers in the pipeline.
-If None, it leaves them to their original verbosity.
+Verbosity level of the transformers in the pipeline. If None, it leaves
+them to their original verbosity. Note that this is not the pipeline's
+own verbose parameter. To change that, use the <code>set_params</code>
+method.
 </p>
 </td>
 </tr>

@@ -298,7 +298,7 @@ class BaseTransformer:
 
                 holdout = data.iloc[-holdout_size:, :]
                 data = data.iloc[:-holdout_size, :]
-                idx = [len(data) - test_size - holdout_size, test_size]
+                idx = [len(data) - test_size, test_size]
 
                 return data, idx, holdout.reset_index(drop=True)
 

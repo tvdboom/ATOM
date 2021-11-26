@@ -35,14 +35,11 @@ def test_n_jobs_maximum_cores():
     assert base.n_jobs == multiprocessing.cpu_count()
 
 
-def test_n_jobs_is_zero():
-    """Assert that an error is raised when n_jobs=0."""
-    pytest.raises(ValueError, BaseTransformer, n_jobs=0)
-
-
-def test_too_far_negative_n_jobs():
-    """Assert that an error is raised when value too far negative."""
-    pytest.raises(ValueError, BaseTransformer, n_jobs=-1000)
+@pytest.mark.parametrize("n_jobs", [0, -1000])
+def test_n_jobs_invalid(n_jobs):
+    """Assert that an error is raised when n_jobs is invalid."""
+    with pytest.raises(ValueError, match=r".*n_jobs parameter.*"):
+        BaseTransformer(n_jobs=n_jobs)
 
 
 def test_negative_n_jobs():
@@ -57,7 +54,8 @@ def test_negative_n_jobs():
 @pytest.mark.parametrize("verbose", [-2, 3])
 def test_verbose_parameter(verbose):
     """Assert that the verbose parameter is in correct range."""
-    pytest.raises(ValueError, BaseTransformer, verbose=verbose)
+    with pytest.raises(ValueError, match=r".*verbose parameter.*"):
+        BaseTransformer(verbose=verbose)
 
 
 def test_warnings_parameter_bool():
@@ -71,7 +69,8 @@ def test_warnings_parameter_bool():
 
 def test_warnings_parameter_invalid_str():
     """Assert that an error is raised for an invalid string for warnings."""
-    pytest.raises(ValueError, BaseTransformer, warnings="test")
+    with pytest.raises(ValueError, match=r".*warnings parameter.*"):
+        BaseTransformer(warnings="test")
 
 
 def test_warnings_parameter_str():
@@ -108,7 +107,8 @@ def test_experiment_creation(mlflow):
 
 def test_random_state_setter():
     """Assert that an error is raised for a negative random_state."""
-    pytest.raises(ValueError, BaseTransformer, random_state=-1)
+    with pytest.raises(ValueError, match=r".*random_state parameter.*"):
+        BaseTransformer(random_state=-1)
 
 
 # Test _prepare_input ============================================== >>
@@ -231,7 +231,8 @@ def test_input_is_X_with_parameter_y():
 
 def test_input_invalid_holdout():
     """Assert that an error is raised when holdout is invalid."""
-    pytest.raises(ValueError, ATOMClassifier, X_bin, test_size=0.3, holdout_size=0.8)
+    with pytest.raises(ValueError, match=r".*holdout_size parameter.*"):
+        ATOMClassifier(X_bin, test_size=0.3, holdout_size=0.8)
 
 
 @pytest.mark.parametrize("holdout_size", [0.1, 40])
@@ -263,7 +264,8 @@ def test_n_rows_X_y_int():
 
 def test_n_rows_too_large():
     """Assert that an error is raised when n_rows>len(data)."""
-    pytest.raises(ValueError, ATOMClassifier, X_bin, y_bin, n_rows=1e6, random_state=1)
+    with pytest.raises(ValueError, match=r".*n_rows parameter.*"):
+        ATOMClassifier(X_bin, y_bin, n_rows=1e6, random_state=1)
 
 
 def test_no_shuffle_X_y():
@@ -274,13 +276,15 @@ def test_no_shuffle_X_y():
 
 def test_length_dataset():
     """Assert that the dataset is always len>=2."""
-    pytest.raises(ValueError, ATOMClassifier, X10, y10, n_rows=0.01, random_state=1)
+    with pytest.raises(ValueError, match=r".*n_rows parameter.*"):
+        ATOMClassifier(X10, y10, n_rows=0.01, random_state=1)
 
 
-@pytest.mark.parametrize("ts", [-2, 0, 1000])
-def test_test_size_parameter(ts):
+@pytest.mark.parametrize("test_size", [-2, 0, 1000])
+def test_test_size_parameter(test_size):
     """Assert that the test_size parameter is in correct range."""
-    pytest.raises(ValueError, ATOMClassifier, X_bin, test_size=ts, random_state=1)
+    with pytest.raises(ValueError, match=r".*test_size parameter.*"):
+        ATOMClassifier(X_bin, test_size=test_size, random_state=1)
 
 
 def test_test_size_fraction():
@@ -389,7 +393,8 @@ def test_6_data_provided():
 def test_invalid_input():
     """Assert that an error is raised when input arrays are invalid."""
     trainer = DirectClassifier("LR", random_state=1)
-    pytest.raises(ValueError, trainer.run, X_bin, (bin_train, bin_test))
+    with pytest.raises(ValueError, match=r".*Invalid data arrays.*"):
+        trainer.run(X_bin, y_bin, X_bin, y_bin, y_bin, X_bin, X_bin)
 
 
 def test_n_rows_train_test_frac():

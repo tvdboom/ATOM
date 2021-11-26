@@ -506,6 +506,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.mapping = {}
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
+        self._is_fitted = True
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
@@ -1249,6 +1250,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.include_target = include_target
         self.kwargs = kwargs
 
+        self._is_fitted = True
+
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply the outlier strategy on the data.
@@ -1468,6 +1471,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.kwargs = kwargs
 
         self.mapping = {}
+        self._is_fitted = True
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Y_TYPES = -1):

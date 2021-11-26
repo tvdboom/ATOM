@@ -138,8 +138,8 @@ def test_sample_weights_fit():
 def test_early_stopping(model):
     """Assert than early stopping works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(model, n_calls=5, bo_params={"early_stopping": 0.1, "cv": 1})
-    assert getattr(atom, model).evals
+    atom.run(model, n_calls=5, bo_params={"early_stopping": 0.1})
+    assert getattr(atom, model)._stopped != ("---", "---")
 
 
 @pytest.mark.parametrize("model", ["XGB", "LGB", "CatB"])
@@ -166,10 +166,11 @@ def test_nested_runs_to_mlflow(mlflow):
     assert mlflow.call_count == 5  # Only called at iterations
 
 
-def test_verbose_is_1():
+@pytest.mark.parametrize("cv", [1, 3])
+def test_verbose_is_1(cv):
     """Assert that the pipeline works for verbose=1."""
     atom = ATOMRegressor(X_reg, y_reg, verbose=1, random_state=1)
-    atom.run("RF", n_calls=5)
+    atom.run("RF", n_calls=5, bo_params={"cv": cv})
     assert not atom.errors
 
 
@@ -275,9 +276,8 @@ def test_transformations_first():
     """Assert that the transformations are applied before predicting."""
     atom = ATOMClassifier(X10_str, y10, verbose=2, random_state=1)
     atom.encode(max_onehot=None)
-    atom.prune(max_sigma=1.7)
     atom.run("Tree")
-    assert not atom.errors
+    assert isinstance(atom.tree.predict(X10_str), np.ndarray)
 
 
 def test_data_is_scaled():
@@ -291,8 +291,8 @@ def test_score_metric_is_None():
     """Assert that the score returns accuracy for classification tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
-    accuracy = accuracy_score(y_bin, atom.predict(X_bin))
-    assert atom.tree.score(X_bin, y_bin) == accuracy
+    accuracy = atom.tree.score(X_bin, y_bin)
+    assert accuracy == accuracy_score(y_bin, atom.predict(X_bin))
 
 
 def test_score_regression():

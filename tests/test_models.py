@@ -22,6 +22,7 @@ from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.models import MODELS
+from atom.pipeline import Pipeline
 from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
 
 
@@ -29,12 +30,12 @@ from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
 
 binary, multiclass, regression = [], [], []
 for m in MODELS.values():
-    if m.task != "reg":
+    if m.goal != "reg":
         if m.acronym != "CatNB":
             binary.append(m.acronym)
         if not m.acronym.startswith("Cat"):
             multiclass.append(m.acronym)
-    if m.task != "class":
+    if m.goal != "class":
         regression.append(m.acronym)
 
 
@@ -147,3 +148,42 @@ def test_CatNB():
     atom.run(models="CatNB", n_calls=2, n_initial_points=1)
     assert not atom.errors
     assert hasattr(atom, "CatNB")
+
+
+# Test ensembles =================================================== >>
+
+def test_stacking():
+    """Assert that the Stacking model works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(models=["OLS", "RF"])
+    atom.stacking()
+    assert isinstance(atom.stack.estimator.estimators_[0], Pipeline)
+    assert isinstance(atom.stack.estimator.estimators_[1], RandomForestRegressor)
+
+
+def test_stacking_multiple_branches():
+    """Assert that an error is raised when branches are different."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    atom.branch = "2"
+    atom.run("LDA")
+    with pytest.raises(ValueError, match=r".*on the current branch.*"):
+        atom.stacking(models=["LR", "LDA"])
+
+
+def test_voting():
+    """Assert that the Voting model works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(models=["OLS", "RF"])
+    atom.voting()
+    assert isinstance(atom.vote.estimator.estimators_[0], Pipeline)
+    assert isinstance(atom.vote.estimator.estimators_[1], RandomForestRegressor)
+
+
+def test_voting_multiple_branches():
+    """Assert that an error is raised when branches are different."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LDA"])
+    atom.branch = "2"
+    with pytest.raises(ValueError, match=r".*on the current branch.*"):
+        atom.voting(models=["LR", "LDA"])

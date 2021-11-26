@@ -246,9 +246,9 @@ class BasePlotter:
 
         """
         models = self._get_models(models)
+        ensembles = () if ensembles else ("Vote", "Stack")
 
         model_subclasses = []
-        ensembles = () if ensembles else ("Vote", "Stack")
         for m in self._models.values():
             if m.name in models and m.acronym not in ensembles:
                 model_subclasses.append(m)
@@ -353,46 +353,6 @@ class BasePlotter:
             )
 
         return show
-
-    @staticmethod
-    def _get_shap(model, index, target):
-        """Get the SHAP information of a model.
-
-        Parameters
-        ----------
-        model: class
-         Model subclass.
-
-        index: pd.DataFrame
-            Rows on which to calculate the shap values.
-
-        target: int
-            Index of the class to look at in the target column.
-
-        Returns
-        -------
-        shap_values: np.array
-            SHAP values for the target class.
-
-        expected_value: float or list
-            Difference between the model output for that sample and
-            the expected value of the model output.
-
-        """
-        # Create the explainer if not invoked before
-        if not model.explainer:
-            model.explainer = shap.Explainer(model.estimator, model.X_train)
-
-        # Get the shap values on the specified rows
-        shap_values = model.explainer(index)
-
-        # Select the target values from the array
-        if shap_values.values.ndim > 2:
-            shap_values = shap_values[:, :, target]
-        if shap_values.shape[0] == 1:  # Rows is a df with one row only
-            shap_values = shap_values[0]
-
-        return shap_values
 
     def _plot(self, fig=None, ax=None, **kwargs):
         """Make the plot.
@@ -2920,11 +2880,11 @@ class BaseModelPlotter(BasePlotter):
         index = self._get_index(index, m)
         show = self._get_show(show, m)
         target = self._get_target(target)
-        shap_values = self._get_shap(m, index, target)
+        explanation = m._shap.get_explanation(index, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots.bar(shap_values, max_display=show, show=False, **kwargs)
+        shap.plots.bar(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
@@ -3009,11 +2969,11 @@ class BaseModelPlotter(BasePlotter):
         index = self._get_index(index, m)
         show = self._get_show(show, m)
         target = self._get_target(target)
-        shap_values = self._get_shap(m, index, target)
+        explanation = m._shap.get_explanation(index, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots.beeswarm(shap_values, max_display=show, show=False, **kwargs)
+        shap.plots.beeswarm(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
@@ -3103,27 +3063,11 @@ class BaseModelPlotter(BasePlotter):
         show = self._get_show(show, m)
         target = self._get_target(target)
 
-        # Get shap information from old API
-        if not m.explainer:
-            m.explainer = shap.Explainer(m.estimator, m.X_train)
-
-        shap_values = m.explainer.shap_values(index)
-        expected_value = m.explainer.expected_value
-
-        # Select the values corresponding to the target
-        if not np.array(shap_values).shape == (len(index), m.X.shape[1]):
-            shap_values = shap_values[target]
-
-        # Select the target expected value or return all
-        if isinstance(expected_value, (list, np.ndarray)):
-            if len(expected_value) == len(m.y.unique()):
-                expected_value = expected_value[target]
-
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         shap.decision_plot(
-            base_value=expected_value,
-            shap_values=shap_values,
+            base_value=m._shap.get_expected_value(target),
+            shap_values=m._shap.get_shap_values(index, target),
             features=index,
             feature_display_range=slice(-1, -show - 1, -1),
             auto_size_plot=False,
@@ -3216,33 +3160,18 @@ class BaseModelPlotter(BasePlotter):
         index = self._get_index(index, m)
         target = self._get_target(target)
 
-        # Get shap information from old API
-        if not m.explainer:
-            m.explainer = shap.Explainer(m.estimator, m.X_train)
-
-        shap_values = m.explainer.shap_values(index)
-        expected_value = m.explainer.expected_value
-
-        # Select the values corresponding to the target
-        if not np.array(shap_values).shape == (len(index), m.X.shape[1]):
-            shap_values = shap_values[target]
-
-        # Select the target expected value or return all
-        if isinstance(expected_value, (list, np.ndarray)):
-            if len(expected_value) == len(m.y.unique()):
-                expected_value = expected_value[target]
-
+        self._get_figure()  # To initialize BasePlotter._fig
         sns.set_style("white")  # Only for this plot
         plot = shap.force_plot(
-            base_value=expected_value,
-            shap_values=shap_values,
+            base_value=m._shap.get_expected_value(target),
+            shap_values=m._shap.get_shap_values(index, target),
             features=index,
             figsize=figsize,
             show=False,
             **kwargs,
         )
 
-        sns.set_style(self.style)
+        sns.set_style(self.style)  # Reset style
         if kwargs.get("matplotlib"):
             BasePlotter._fig._used_models.append(m)
             return self._plot(
@@ -3337,11 +3266,11 @@ class BaseModelPlotter(BasePlotter):
         index = self._get_index(index, m)
         show = self._get_show(show, m)
         target = self._get_target(target)
-        shap_values = self._get_shap(m, index, target)
+        explanation = m._shap.get_explanation(index, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots.heatmap(shap_values, max_display=show, show=False, **kwargs)
+        shap.plots.heatmap(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
@@ -3427,13 +3356,11 @@ class BaseModelPlotter(BasePlotter):
         m = self._get_subclass(models, max_one=True)
         index = self._get_index(index, m)
         target = self._get_target(target)
-        shap_values = self._get_shap(m, index, target)
+        explanation = m._shap.get_explanation(index, target, feature)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots.scatter(
-            shap_values[:, feature], color=shap_values, ax=ax, show=False, **kwargs
-        )
+        shap.plots.scatter(explanation, color=explanation, ax=ax, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
         ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
@@ -3524,13 +3451,12 @@ class BaseModelPlotter(BasePlotter):
         index = m.X_test.iloc[[0]] if index is None else self._get_index(index, m)
         show = self._get_show(show, m)
         target = self._get_target(target)
-        shap_values = self._get_shap(m, index, target)
+        explanation = m._shap.get_explanation(index, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        # TODO: Change to only show=False when shap updates
         shap.plots.waterfall(
-            shap_values,
+            explanation,
             max_display=show,
             show=True if shap.__version__ == "0.40.0" else False,
         )

@@ -2856,6 +2856,11 @@ plots are: <a href="../../API/plots/bar_plot">bar_plot</a>, <a href="../../API/p
 <a href="../../API/plots/decision_plot">decision_plot</a>, <a href="../../API/plots/force_plot">force_plot</a>,
 <a href="../../API/plots/heatmap_plot">heatmap_plot</a>, <a href="../../API/plots/scatter_plot">scatter_plot</a>
 and <a href="../../API/plots/waterfall_plot">waterfall_plot</a>.</p>
+<p>Calculating the Shapley values is computationally expensive, especially
+for model agnostic explainers like <a href="https://shap.readthedocs.io/en/latest/generated/shap.explainers.Permutation.html">Permutation</a>.
+To avoid having to recalculate the values for every plot, ATOM stores
+the shapley values internally after the first calculation, and access
+them when needed.</p>
 <p>Since the plots are not made by ATOM, we can't draw multiple models in
 the same figure. Selecting more than one model will raise an exception.
 To avoid this, call the plot directly from a model, e.g. <code>atom.xgb.force_plot()</code>.</p>
@@ -2881,13 +2886,13 @@ depend on the task at hand.</p>
 </tr>
 
 <tr>
-<td><a href="../../API/plots/plot_qq">plot_qq</a></td>
-<td>Plot a quantile-quantile plot.</td>
+<td><a href="../../API/plots/plot_distribution">plot_distribution</a></td>
+<td>Plot column distributions.</td>
 </tr>
 
 <tr>
-<td><a href="../../API/plots/plot_distribution">plot_distribution</a></td>
-<td>Plot column distributions.</td>
+<td><a href="../../API/plots/plot_qq">plot_qq</a></td>
+<td>Plot a quantile-quantile plot.</td>
 </tr>
 
 <tr>

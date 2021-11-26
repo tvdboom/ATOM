@@ -23,8 +23,8 @@ from .data_cleaning import BaseTransformer
 from .basemodel import BaseModel
 from .utils import (
     SEQUENCE, OPTIONAL_PACKAGES, lst, time_to_str, is_multidim,
-    get_acronym, get_scorer, get_best_score, check_scaling, delete,
-    PlotCallback, CustomDict,
+    get_scorer, get_best_score, check_scaling, delete, PlotCallback,
+    CustomDict,
 )
 
 
@@ -223,21 +223,28 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # If left to default, select all predefined models per task
         if not self._models:
             if self.goal == "class":
-                models = [m(self) for m in MODELS.values() if m.task != "reg"]
+                models = [m(self) for m in MODELS.values() if m.goal != "reg"]
             else:
-                models = [m(self) for m in MODELS.values() if m.task != "class"]
+                models = [m(self) for m in MODELS.values() if m.goal != "class"]
         else:
             models = []
             for m in self._models.values():
                 if isinstance(m, str):
-                    acronym = get_acronym(m, must_be_equal=False)
-
                     if is_multidim(self.X):
                         raise ValueError(
                             "Multidimensional datasets are not supported by ATOM's "
                             "predefined models. Refer to the documentation for the "
                             "use of custom models."
                         )
+
+                    # Get the acronym from the called model
+                    names = [n for n in MODELS if m.lower().startswith(n.lower())]
+                    if not names:
+                        raise ValueError(
+                            f"Unknown model: {m}. Choose from: {', '.join(MODELS)}."
+                        )
+                    else:
+                        acronym = names[0]
 
                     # Check if packages for non-sklearn models are available
                     if acronym in OPTIONAL_PACKAGES:
@@ -252,11 +259,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 
                     # Check for regression/classification-only models
-                    if self.goal == "class" and models[-1].task == "reg":
+                    if self.goal == "class" and models[-1].goal == "reg":
                         raise ValueError(
                             f"The {acronym} model can't perform classification tasks!"
                         )
-                    elif self.goal == "reg" and models[-1].task == "class":
+                    elif self.goal == "reg" and models[-1].goal == "class":
                         raise ValueError(
                             f"The {acronym} model can't perform regression tasks!"
                         )
@@ -302,7 +309,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             for i, model in enumerate(self._models.values()):
                 value = p[i % len(p)]
-                if param == "n_calls" and value == 1 or value < 0:
+                if param == "n_calls" and (value == 1 or value < 0):
                     raise ValueError(
                         f"Invalid value for the {param} parameter. "
                         f"Value should be >=2, got {value}."
@@ -403,7 +410,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                         f"should be >=0, got {self.bo_params['early_stopping']}."
                     )
                 for model in self._models.values():
-                    if hasattr(m, "custom_fit"):
+                    if hasattr(model, "custom_fit"):
                         model._early_stopping = self.bo_params["early_stopping"]
 
             # Add custom dimensions to every model subclass
@@ -482,7 +489,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     "\nException encountered while running the "
                     f"{m.name} model. Removing model from pipeline. ", 1
                 )
-                self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 5)
+                self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
                 self.log(f"{type(ex).__name__}: {ex}", 1)
 
                 # Append exception to errors dictionary
