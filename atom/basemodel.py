@@ -1120,8 +1120,8 @@ class BaseModel(BaseModelPlotter):
     def evaluate(
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        threshold: Optional[float] = None,
         dataset: str = "test",
+        threshold: float = 0.5,
     ):
         """Get the model's scores for the provided metrics.
 
@@ -1131,15 +1131,16 @@ class BaseModel(BaseModelPlotter):
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        threshold: float or None, optional (default=None)
-            Threshold between 0 and 1 to convert predicted probabilities
-            to class labels. Only for metrics (and models) that make use
-            of the `predict_proba` method. If None or not a binary
-            classification task, ignore this parameter.
-
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
+
+        threshold: float, optional (default=0.5)
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only used when:
+                - The task is binary classification.
+                - The model has a `predict_proba` method.
+                - The metric evaluates predicted target values.
 
         Returns
         -------
@@ -1147,7 +1148,7 @@ class BaseModel(BaseModelPlotter):
             Scores of the model.
 
         """
-        if threshold and not 0 < threshold < 1:
+        if not 0 < threshold < 1:
             raise ValueError(
                 "Invalid value for the threshold parameter. Value "
                 f"should lie between 0 and 1, got {threshold}."
@@ -1194,25 +1195,25 @@ class BaseModel(BaseModelPlotter):
         scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):
             scorer = get_scorer(met)
+            has_pred_proba = hasattr(self.estimator, "predict_proba")
+            has_dec_func = hasattr(self.estimator, "decision_function")
+
+            # Select method to use for predictions
             if scorer.__class__.__name__ == "_ThresholdScorer":
-                if threshold and hasattr(self.estimator, "predict_proba"):
-                    attr = "predict_proba"  # Prioritize predict_proba for threshold
-                elif hasattr(self.estimator, "decision_function"):
-                    attr = "decision_function"
-                else:
-                    attr = "predict_proba"
+                attr = "decision_function" if has_dec_func else "predict_proba"
             elif scorer.__class__.__name__ == "_ProbaScorer":
-                if hasattr(self.estimator, "predict_proba"):
-                    attr = "predict_proba"
-                else:
-                    attr = "decision_function"
+                attr = "predict_proba" if has_pred_proba else "decision_function"
+            elif self.T.task.startswith("bin") and has_pred_proba:
+                attr = "predict_proba"  # Needed to use threshold parameter
             else:
                 attr = "predict"
 
             y_pred = getattr(self, f"{attr}_{dataset}")
-            if attr == "predict_proba" and self.T.task.startswith("bin"):
+            if self.T.task.startswith("bin") and attr == "predict_proba":
                 y_pred = y_pred[:, 1]
-                if threshold:
+
+                # Exclude metrics that use probability estimates (e.g. ap, auc)
+                if scorer.__class__.__name__ == "_PredictScorer":
                     y_pred = (y_pred >= threshold).astype("int")
 
             scores[scorer.name] = scorer._sign * float(

@@ -88,6 +88,7 @@ atom = ATOMRegressor(X, y)
 atom.run("RF")
 atom.decision_plot()  # For multiple samples
 ```
+
 <div align="center">
     <img src="../../../img/plots/decision_plot_1.png" alt="decision_plot_1" width="700" height="700"/>
 </div>
@@ -95,6 +96,7 @@ atom.decision_plot()  # For multiple samples
 ```python
 atom.decision_plot(index=120)  # For a single sample
 ```
+
 <div align="center">
     <img src="../../../img/plots/decision_plot_2.png" alt="decision_plot_2" width="700" height="700"/>
 </div>

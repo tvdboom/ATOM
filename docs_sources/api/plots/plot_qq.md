@@ -63,6 +63,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.plot_qq(columns=[0, 1], distribution="triang")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_qq.png" alt="plot_qq" width="720" height="460"/>
 </div>

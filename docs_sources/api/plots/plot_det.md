@@ -65,6 +65,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["LR", "RF", "LGB"], metric="fpr")
 atom.plot_det()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_det.png" alt="plot_det" width="700" height="420"/>
 </div>

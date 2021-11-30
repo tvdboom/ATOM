@@ -85,6 +85,7 @@ atom = ATOMRegressor(X, y)
 atom.run("RF")
 atom.bar_plot()  # For multiple samples
 ```
+
 <div align="center">
     <img src="../../../img/plots/bar_plot_1.png" alt="bar_plot_1" width="700" height="700"/>
 </div>
@@ -92,6 +93,7 @@ atom.bar_plot()  # For multiple samples
 ```python
 atom.bar_plot(index=120)  # For a single sample
 ```
+
 <div align="center">
     <img src="../../../img/plots/bar_plot_2.png" alt="bar_plot_2" width="700" height="700"/>
 </div>

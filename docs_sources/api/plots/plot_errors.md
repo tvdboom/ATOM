@@ -68,6 +68,7 @@ atom = ATOMRegressor(X, y)
 atom.run(["OLS", "LGB"], metric="MAE")
 atom.plot_errors()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_errors.png" alt="plot_errors" width="700" height="420"/>
 </div>

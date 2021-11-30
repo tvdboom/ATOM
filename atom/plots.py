@@ -52,10 +52,10 @@ from sklearn.metrics import (
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE_TYPES, SCALAR, lst, check_is_fitted, check_dim,
-    check_goal, check_binary_task, check_predict_proba, get_proba_attr,
-    get_corpus, get_scorer, get_best_score, partial_dependence,
-    get_columns, composed, crash, plot_from_model,
+    SEQUENCE_TYPES, SCALAR, lst, check_is_fitted, check_dim, check_goal,
+    check_binary_task, check_predict_proba, get_proba_attr, get_corpus,
+    get_scorer, get_best_score, partial_dependence, get_columns,
+    get_feature_importance, composed, crash, plot_from_model,
 )
 
 
@@ -219,6 +219,20 @@ class BasePlotter:
         )
 
     # Methods ====================================================== >>
+
+    @staticmethod
+    def _draw_line(ax, x):
+        """Draw a line across the axis."""
+        ax.plot(
+            [0, 1],
+            [0, 1] if x == "diagonal" else [x, x],
+            color="black",
+            linestyle="--",
+            linewidth=2,
+            alpha=0.6,
+            zorder=-2,
+            transform=ax.transAxes,
+        )
 
     @staticmethod
     def _get_figure():
@@ -1099,6 +1113,7 @@ class BaseModelPlotter(BasePlotter):
                 # Draw bullets on all markers except the maximum
                 markers = [i for i in range(len(m.bo))]
                 markers.remove(int(np.argmax(y)))
+
                 ax1.plot(range(1, len(y) + 1), y, "-o", markevery=markers, label=label)
                 ax2.plot(range(2, len(y) + 1), np.abs(np.diff(y)), "-o")
                 ax1.scatter(np.argmax(y) + 1, max(y), zorder=10, s=100, marker="*")
@@ -1273,7 +1288,7 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
                 ax.plot(fpr, tpr, lw=2, label=label)
 
-        ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7, zorder=-2)
+        self._draw_line(ax=ax, x="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1357,7 +1372,7 @@ class BaseModelPlotter(BasePlotter):
                 plt.plot(rec, prec, lw=2, label=label)
 
         dum = len(m.y_test[m.y_test == m.mapping[list(m.mapping)[1]]]) / len(m.y_test)
-        ax.plot([0, 1], [dum, dum], "k--", lw=2, alpha=0.7, zorder=-2)
+        self._draw_line(ax=ax, x=dum)
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1503,7 +1518,6 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7, zorder=-2)
         for m in models:
             attr = get_proba_attr(m)
             for set_ in dataset:
@@ -1528,6 +1542,8 @@ class BaseModelPlotter(BasePlotter):
                 x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
                 ax.plot(x, gains, lw=2, label=label)
+
+        self._draw_line(ax=ax, x="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1597,7 +1613,6 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        ax.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7, zorder=-2)
         for m in models:
             attr = get_proba_attr(m)
             for set_ in dataset:
@@ -1623,6 +1638,8 @@ class BaseModelPlotter(BasePlotter):
                 lift = f" (Lift={round(m.evaluate('lift', set_)['lift'], 3)})"
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + lift
                 ax.plot(x, gains / x, lw=2, label=label)
+
+        self._draw_line(ax=ax, x=1)
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1718,11 +1735,7 @@ class BaseModelPlotter(BasePlotter):
                 x = np.linspace(*ax.get_xlim(), 100)
                 ax.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
 
-        # Get limits before drawing the identity line
-        xlim, ylim = ax.get_xlim(), ax.get_ylim()
-
-        # Draw identity line
-        ax.plot(xlim, ylim, "k--", lw=2, alpha=0.7, zorder=-2)
+        self._draw_line(ax=ax, x="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1732,8 +1745,6 @@ class BaseModelPlotter(BasePlotter):
             legend=("best", len(models)),
             xlabel="True value",
             ylabel="Predicted value",
-            xlim=xlim,
-            ylim=ylim,
             figsize=figsize,
             plotname="plot_errors",
             filename=filename,
@@ -1812,11 +1823,8 @@ class BaseModelPlotter(BasePlotter):
                 ax1.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
                 ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
 
-        # Get limits before drawing the identity line
-        xlim, ylim = ax1.get_xlim(), ax1.get_ylim()
-        ax1.hlines(0, *xlim, color="k", ls="--", lw=2, alpha=0.7, zorder=-2)
-
         ax2.set_yticklabels([])
+        self._draw_line(ax=ax2, x=0)
         self._plot(ax=ax2, xlabel="Distribution")
 
         if title:
@@ -1832,8 +1840,6 @@ class BaseModelPlotter(BasePlotter):
             legend=("lower right", len(models)),
             ylabel="Residuals",
             xlabel="True value",
-            xlim=xlim,
-            ylim=ylim,
             figsize=figsize,
             plotname="plot_residuals",
             filename=filename,
@@ -1850,13 +1856,13 @@ class BaseModelPlotter(BasePlotter):
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot a tree-based model's feature importance.
+        """Plot a model's feature importance.
 
-        Plot a model's feature importance. The importances are
-        normalized in order to be able to compare them between
-        models. The `feature_importance` attribute is updated
-        with the extracted importance ranking. Only for models
-        whose estimator has a `feature_importances_` attribute.
+        The feature importance values are normalized in order to be
+        able to compare them between models. Only for models whose
+        estimator has a `feature_importances_` or `coef` attribute.
+        The trainer's `feature_importance` attribute is updated with
+        the extracted importance ranking.
 
         Parameters
         ----------
@@ -1898,25 +1904,17 @@ class BaseModelPlotter(BasePlotter):
         df = pd.DataFrame()
 
         for m in models:
-            # Bagging is a special case where we use the feature_importance per est
-            if not hasattr(m.estimator, "feature_importances_") and m.acronym != "Bag":
-                raise PermissionError(
-                    "The plot_feature_importance method is only available for "
-                    f"models with a feature_importances_ attribute, got {m.name}."
+            fi = get_feature_importance(m.estimator)
+            if fi is None:
+                raise ValueError(
+                    f"Invalid value for the models parameter. The {m.fullname}'s "
+                    f"estimator {m.estimator.__class__.__name__} has no "
+                    f"feature_importances_ nor coef_ attribute."
                 )
 
-            # Bagging has no direct feature importance implementation
-            if m.acronym == "Bag":
-                feature_importances = np.mean(
-                    [fi.feature_importances_ for fi in m.estimator.estimators_], axis=0
-                )
-            else:
-                feature_importances = m.estimator.feature_importances_
-
-            # Normalize for plotting values adjacent to bar
-            max_feature_importance = max(feature_importances)
-            for col, fx in zip(m.features, feature_importances):
-                df.at[col, m.name] = fx / max_feature_importance
+            # Normalize to be able to compare different models
+            for col, fx in zip(m.features, fi):
+                df.at[col, m.name] = fx / max(fi)
 
         # Save the best feature order
         best_fxs = df.fillna(0).sort_values(by=df.columns[-1], ascending=False)
@@ -1969,8 +1967,8 @@ class BaseModelPlotter(BasePlotter):
         are stored under the `permutations` attribute. If the plot
         is called again for the same model with the same `n_repeats`,
         it will use the stored values, making the method considerably
-        faster. The `feature_importance` attribute is updated with
-        the extracted importance ranking.
+        faster. The trainer's `feature_importance` attribute is updated
+        with the extracted importance ranking.
 
         Parameters
         ----------
@@ -2345,6 +2343,189 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             figsize=figsize,
             plotname="plot_partial_dependence",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_parshap(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        features: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        target: Union[int, str] = 1,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the partial correlation of shap values.
+
+        Plots the train and test correlation between the shap value of
+        every feature with its target value, after removing the effect
+        of all other features (partial correlation). This plot is
+        useful to identify the features that are contributing most to
+        overfitting. Features that lie below the bisector (diagonal
+        line) performed worse on the test set than on the training set.
+        If the estimator has a `feature_importances_` or `coef_`
+        attribute, its normalized values are shown in a color map.
+
+        Idea from: https://towardsdatascience.com/which-of-your-features
+        -are-overfitting-c46d0762e769
+
+        Code snippets from: https://github.com/raphaelvallat/pingouin/
+        blob/master/pingouin/correlation.py
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        features: int, str, sequence or None, optional (default=None)
+            Names or indices of the features to plot. None to show all.
+
+        target: int or str, optional (default=1)
+            Index or name of the class in the target column to look at.
+            Only for multi-class classification tasks.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_dim(self, "plot_parshap")
+        check_is_fitted(self, attributes="_models")
+        models = self._get_subclass(models)
+        target = self._get_target(target)
+
+        fxs_importance = {}
+        markers = cycle(["o", "^", "s", "p", "D", "H", "p", "*"])
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        for m in models:
+            fxs = get_columns(m.X, features)
+            marker = next(markers)
+
+            parshap = {}
+            for set_ in ("train", "test"):
+                X, y = getattr(m, f"X_{set_}"), getattr(m, f"y_{set_}")
+                data = pd.concat([X, y], axis=1)
+
+                # Calculating shap values is computationally expensive,
+                # therefore select a random subsample for large data sets
+                if len(data) > 500:
+                    data = data.sample(500, random_state=self.random_state)
+
+                # Replace data with the calculated shap values
+                data.iloc[:, :-1] = m._shap.get_shap_values(data.iloc[:, :-1], target)
+
+                parshap[set_] = pd.Series(index=data.columns[:-1], dtype=float)
+                for fx in fxs:
+                    # All other features are covariates
+                    covariates = [f for f in data.columns[:-1] if f != fx]
+                    cols = [fx, data.columns[-1], *covariates]
+
+                    # Compute covariance
+                    V = data[cols].cov()
+
+                    # Inverse covariance matrix
+                    Vi = np.linalg.pinv(V, hermitian=True)
+                    diag = Vi.diagonal()
+
+                    D = np.diag(np.sqrt(1 / diag))
+
+                    # Partial correlation matrix
+                    partial_corr = -1 * (D @ Vi @ D)  # @ is matrix multiplication
+
+                    # Semi-partial correlation matrix
+                    with np.errstate(divide="ignore"):
+                        V_sqrt = np.sqrt(np.diag(V))[..., None]
+                        Vi_sqrt = np.sqrt(np.abs(diag - Vi ** 2 / diag[..., None])).T
+                        semi_partial_correlation = partial_corr / V_sqrt / Vi_sqrt
+
+                    # X covariates are removed
+                    parshap[set_][fx] = semi_partial_correlation[1, 0]
+
+            # Get the feature importance or coefficients
+            fi = get_feature_importance(m.estimator)
+            if fi is not None:
+                fi = pd.Series(fi, index=m.features, dtype=float)
+                fxs_importance[m.name] = fi.sort_values()[fxs]
+
+            sns.scatterplot(
+                x=parshap["train"],
+                y=parshap["test"],
+                marker=marker,
+                s=50,
+                hue=fxs_importance.get(m.name, None),
+                palette="Reds",
+                legend=False,
+                ax=ax,
+            )
+
+            # Add hidden point for nice legend
+            if len(models) > 1:
+                ax.scatter(
+                    x=parshap["train"][0],
+                    y=parshap["test"][0],
+                    marker=marker,
+                    s=20,
+                    zorder=-2,
+                    color="k",
+                    label=m.name,
+                )
+
+            # Calculate offset for feature names (5% of height)
+            offset = .05 * (ax.get_ylim()[1] - ax.get_ylim()[0])
+
+            # Add feature names above the markers
+            for txt in parshap["train"].index:
+                xy = (parshap["train"][txt], parshap["test"][txt] + offset / 2)
+                ax.annotate(txt, xy, ha="center", va="bottom")
+
+        # Draw color bar if feature importances are defined
+        if fxs_importance:
+            cbar = plt.colorbar(
+                mappable=plt.cm.ScalarMappable(plt.Normalize(0, 1), cmap="Reds"),
+                ax=ax,
+            )
+            cbar.set_label(
+                label=f"Normalized feature importance",
+                labelpad=15,
+                fontsize=self.label_fontsize,
+                rotation=270,
+            )
+            cbar.ax.tick_params(labelsize=self.tick_fontsize)
+
+        self._draw_line(ax=ax, x="diagonal")
+
+        BasePlotter._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)) if len(models) > 1 else None,
+            xlabel="Training set",
+            ylabel="Test set",
+            figsize=figsize,
+            plotname="plot_parshap",
             filename=filename,
             display=display,
         )
@@ -2771,7 +2952,6 @@ class BaseModelPlotter(BasePlotter):
         gs = GridSpecFromSubplotSpec(4, 1, BasePlotter._fig.grid, hspace=0.05)
         ax1 = fig.add_subplot(gs[:3, 0])
         ax2 = fig.add_subplot(gs[3:4, 0], sharex=ax1)
-        ax1.plot([0, 1], [0, 1], color="k", ls="--")
         for m in models:
             if hasattr(m.estimator, "decision_function"):
                 prob = m.decision_function_test
@@ -2786,6 +2966,7 @@ class BaseModelPlotter(BasePlotter):
             ax2.hist(prob, n_bins, range=(0, 1), label=m.name, histtype="step", lw=2)
 
         plt.setp(ax1.get_xticklabels(), visible=False)
+        self._draw_line(ax=ax1, x="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         self._plot(

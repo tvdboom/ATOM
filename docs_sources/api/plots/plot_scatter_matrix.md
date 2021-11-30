@@ -65,6 +65,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.plot_scatter_matrix(columns=slice(0, 5))
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_scatter_matrix.png" alt="plot_scatter_matrix" width="720" height="720"/>
 </div>

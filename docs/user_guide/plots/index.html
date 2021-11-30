@@ -2222,6 +2222,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2860,7 +2874,7 @@ and <a href="../../API/plots/waterfall_plot">waterfall_plot</a>.</p>
 for model agnostic explainers like <a href="https://shap.readthedocs.io/en/latest/generated/shap.explainers.Permutation.html">Permutation</a>.
 To avoid having to recalculate the values for every plot, ATOM stores
 the shapley values internally after the first calculation, and access
-them when needed.</p>
+them when needed again.</p>
 <p>Since the plots are not made by ATOM, we can't draw multiple models in
 the same figure. Selecting more than one model will raise an exception.
 To avoid this, call the plot directly from a model, e.g. <code>atom.xgb.force_plot()</code>.</p>
@@ -2998,6 +3012,11 @@ depend on the task at hand.</p>
 <tr>
 <td><a href="../../API/plots/plot_partial_dependence">plot_partial_dependence</a></td>
 <td>Plot the partial dependence of features.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_parshap">plot_parshap</a></td>
+<td>Plot the partial correlation of shap values.</td>
 </tr>
 
 <tr>

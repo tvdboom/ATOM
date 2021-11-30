@@ -12,7 +12,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
-from typing import Union, Optional
+from typing import Union, Optional, Any
 
 # Own modules
 from .branch import Branch
@@ -373,8 +373,8 @@ class BasePredictor:
     def evaluate(
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        threshold: Optional[float] = None,
         dataset: str = "test",
+        threshold: float = 0.5,
     ):
         """Get all models' scores for the provided metrics.
 
@@ -384,11 +384,12 @@ class BasePredictor:
             Metric to calculate. If None, it returns an overview of
             the most common metrics per task.
 
-        threshold: float or None, optional (default=None)
+        threshold: float, optional (default=0.5)
             Threshold between 0 and 1 to convert predicted probabilities
-            to class labels. Only for metrics (and models) that make use
-            of the `predict_proba` method. If None or not a binary
-            classification task, ignore this parameter.
+            to class labels. Only used when:
+                - The task is binary classification.
+                - The model has a `predict_proba` method.
+                - The metric evaluates predicted target values.
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Choose from:
@@ -404,7 +405,7 @@ class BasePredictor:
 
         scores = pd.DataFrame()
         for m in self._models.values():
-            scores = scores.append(m.evaluate(metric, threshold, dataset))
+            scores = scores.append(m.evaluate(metric, dataset, threshold))
 
         return scores
 
@@ -442,6 +443,74 @@ class BasePredictor:
 
         y = self.classes[dataset]
         return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
+
+    @composed(crash, method_to_log, typechecked)
+    def merge(self, other: Any, suffix: str = "2"):
+        """Merge another trainer into this one.
+
+        Branches, models, metrics and attributes of the other trainer
+        are merged into this one. If there are branches and/or models
+        with the same name, they are merged adding the `suffix`
+        parameter to their name. The errors and missing attributes are
+        extended with those of the other instance. It's only possible
+        to merge two instances if they are initialized with the same
+        dataset and trained with the same metric.
+
+        Parameters
+        ----------
+        other: trainer
+            Trainer instance with which to merge.
+
+        suffix: str, optional (default="2")
+            Conflicting branches and models are merged adding `suffix`
+            to the end of their names.
+
+        """
+        if not hasattr(other, "_branches"):
+            raise TypeError(
+                "Invalid type for the other parameter. Expecting a "
+                f"trainer instance, got {other.__class__.__name__}."
+            )
+
+        # Check that both instances have the same original dataset
+        if not self._branches["og"].data.equals(other._branches["og"].data):
+            raise ValueError(
+                "Invalid value for the other parameter. The provided trainer "
+                "was initialized with a different dataset than this one."
+            )
+
+        # Check that both instances have the same metric
+        if not self._metric:
+            self._metric = other._metric
+        elif other.metric and self.metric != other.metric:
+            raise ValueError(
+                "Invalid value for the other parameter. The provided trainer uses "
+                f"a different metric ({other.metric}) than this one ({self.metric})."
+            )
+
+        self.log("Merging instances...", 1)
+        for name, branch in other._branches.items():
+            if name != "og":  # Original dataset is the same
+                self.log(f" --> Merging branch {name}.", 1)
+                if name in self._branches:
+                    name = f"{name}{suffix}"
+                branch.name = name
+                self._branches[name] = branch
+
+        for name, model in other._models.items():
+            self.log(f" --> Merging model {name}.", 1)
+            if name in self._models:
+                name = f"{name}{suffix}"
+            model.name = name
+            self._models[name] = model
+
+        self.log(" --> Merging attributes.", 1)
+        if hasattr(self, "missing"):
+            self.missing.extend([x for x in other.missing if x not in self.missing])
+        for name, error in other._errors.items():
+            if name in self._errors:
+                name = f"{name}{suffix}"
+            self._errors[name] = error
 
     @composed(crash, method_to_log, typechecked)
     def stacking(

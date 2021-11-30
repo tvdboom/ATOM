@@ -604,7 +604,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <strategy>: sklearn estimator
+    <strategy>: sklearn transformer
         Estimator instance (lowercase strategy) used to vectorize the
         corpus, e.g. `vectorizer.tfidf` for the TF-IDF strategy.
 

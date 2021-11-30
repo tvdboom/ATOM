@@ -87,6 +87,7 @@ atom = ATOMRegressor(X, y)
 atom.run("RF")
 atom.scatter_plot(feature="bmi")
 ```
+
 <div align="center">
     <img src="../../../img/plots/scatter_plot.png" alt="scatter_plot" width="700" height="420"/>
 </div>

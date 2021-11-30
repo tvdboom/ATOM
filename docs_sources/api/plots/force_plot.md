@@ -81,6 +81,7 @@ atom = ATOMClassifier(X, y)
 atom.run("lr")
 atom.force_plot(index=120, matplotlib=True, filename="force_plot")
 ```
+
 <div align="center">
     <img src="../../../img/plots/force_plot.png" alt="force_plot" width="1000" height="420"/>
 </div>

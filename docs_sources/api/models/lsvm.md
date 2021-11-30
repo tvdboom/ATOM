@@ -138,64 +138,62 @@ Name of the target column.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
-<strong>bo: pd.DataFrame</strong>
-<blockquote>
-Dataframe containing the information of every step taken by the BO. Columns include:
-<ul>
-<li>"params": Parameters used in the model.</li>
-<li>"estimator": Estimator used for this iteration (fitted on last cross-validation).</li>
-<li>"score": Score of the chosen metric. List of scores for multi-metric.</li>
-<li>"time_iteration": Time spent on this iteration.</li>
-<li>"time": Total time spent since the start of the BO.</li>
+<strong>bo: pd.DataFrame</strong><br>
+Information of every step taken by the BO. Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
+<li><b>call</b>: Name of the call.</li>
+<li><b>params</b>: Parameters used in the model.</li>
+<li><b>estimator</b>: Estimator used for this iteration (fitted on last cross-validation).</li>
+<li><b>score</b>: Score of the chosen metric. List of scores for multi-metric.</li>
+<li><b>time</b>: Time spent on this iteration.</li>
+<li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
-</blockquote>
-<strong>best_params: dict</strong>
-<blockquote>
+<p>
+<strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
-</blockquote>
-<strong>estimator: class</strong>
-<blockquote>
+</p>
+<p>
+<strong>estimator: class</strong><br>
 Estimator instance with the best combination of hyperparameters fitted
 on the complete training set.
-</blockquote>
-<strong>time_bo: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>time_bo: str</strong><br>
 Time it took to run the bayesian optimization algorithm.
-</blockquote>
-<strong>metric_bo: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_bo: float or list</strong><br>
 Best metric score(s) on the BO.
-</blockquote>
-<strong>time_fit: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>time_fit: str</strong><br>
 Time it took to train the model on the complete training set and
 calculate the metric(s) on the test set.
-</blockquote>
-<strong>metric_train: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_train: float or list</strong><br>
 Metric score(s) on the training set.
-</blockquote>
-<strong>metric_test: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_test: float or list</strong><br>
 Metric score(s) on the test set.
-</blockquote>
-<strong>metric_bootstrap: list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_bootstrap: np.ndarray</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
-</blockquote>
-<strong>mean_bootstrap: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>mean_bootstrap: float or list</strong><br>
 Mean of the bootstrap results. List of values for multi-metric runs.
-</blockquote>
-<strong>std_bootstrap: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>std_bootstrap: float or list</strong><br>
 Standard deviation of the bootstrap results. List of values for multi-metric runs.
-</blockquote>
-<strong>results: pd.Series</strong>
-<blockquote>
-Series of the training results. Columns include:
-<ul>
+</p>
+<strong>results: pd.Series</strong><br>
+Training results. Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
 <li><b>metric_train:</b> Metric score on the training set.</li>
@@ -206,7 +204,6 @@ Series of the training results. Columns include:
 <li><b>time_bootstrap:</b> Time spent on the bootstrap algorithm.</li>
 <li><b>time:</b> Total time spent on the whole run.</li>
 </ul>
-</blockquote>
 </td>
 </tr>
 </table>
@@ -277,6 +274,11 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#evaluate">evaluate</a></td>
+<td>Get the model's scores for the provided metrics.</td>
+</tr>
+
+<tr>
 <td><a href="#export-pipeline">export_pipeline</a></td>
 <td>Export the model's pipeline to a sklearn-like Pipeline object.</td>
 </tr>
@@ -294,11 +296,6 @@ The remaining utility methods can be found hereunder.
 <tr>
 <td><a href="#reset-predictions">reset_predictions</a></td>
 <td>Clear all the prediction attributes.</td>
-</tr>
-
-<tr>
-<td><a href="#evaluate">evaluate</a></td>
-<td>Get the score for a specific metric.</td>
 </tr>
 
 <tr>
@@ -391,6 +388,50 @@ removed from any active mlflow experiment.
 <br /><br /><br />
 
 
+<a name="evaluate"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
+dataset="test", threshold=0.5)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1120">[source]</a>
+</span>
+</div>
+Get the model's scores for the provided metrics.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+Metrics to calculate. If None, a selection of the most common
+metrics per task are used.
+</p>
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
+Data set on which to calculate the metric. Choose from: "train",
+"test" or "holdout".
+</p>
+<strong>threshold: float, optional (default=0.5)</strong><br>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only used when:
+<ul style="line-height:1.2em;margin-top:5px">
+<li>The task is binary classification.</li>
+<li>The model has a <code>predict_proba</code> method.</li>
+<li>The metric evaluates predicted target values.</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>score: pd.Series</strong><br>
+Scores of the model.
+</td>
+</tr>
+</table>
+<br />
+
+
 <a name="export-pipeline"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
@@ -406,7 +447,7 @@ fitted on the training set.
 !!! info
     ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
     and additionally:
-    <ul>
+    <ul style="line-height:1.2em;margin-top:5px">
     <li>Accepts transformers that change the target column.</li>
     <li>Accepts transformers that drop rows.</li>
     <li>Accepts transformers that only are fitted on a subset of the

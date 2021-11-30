@@ -74,6 +74,7 @@ atom = ATOMClassifier(X_text, y_text)
 atom.textclean()
 atom.plot_ngrams("bigrams")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_ngrams.png" alt="plot_ngrams" width="700" height="700"/>
 </div>

@@ -2244,6 +2244,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -3199,6 +3213,11 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 
 <tr>
+<td><a href="#merge">merge</a></td>
+<td>Merge another trainer into this one.</td>
+</tr>
+
+<tr>
 <td><a href="#reset-aesthetics">reset_aesthetics</a></td>
 <td>Reset the plot aesthetics to their default values.</td>
 </tr>
@@ -3216,11 +3235,6 @@ Fontsize for the ticks along the plot's axes.
 <tr>
 <td><a href="#save">save</a></td>
 <td>Save the instance to a pickle file.</td>
-</tr>
-
-<tr>
-<td><a href="#evaluate">eval</a></td>
-<td>Get all models'scores for the provided metrics.</td>
 </tr>
 
 <tr>
@@ -3337,7 +3351,7 @@ Models to delete. If None, delete them all.
 <p><a name="evaluate"></a></p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
-threshold=None, dataset="test")
+dataset="test")
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L327">[source]</a>
 </span>
@@ -3351,13 +3365,6 @@ threshold=None, dataset="test")
 <strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
 Metrics to calculate. If None, a selection of the most common
 metrics per task are used.
-</p>
-<p>
-<strong>threshold: float or None, optional (default=None)</strong><br>
-Threshold between 0 and 1 to convert predicted probabilities
-to class labels. Only for metrics (and models) that make use
-of the <code>predict_proba</code> method. If None or not a
-binary classification task, ignore this parameter.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
@@ -3448,6 +3455,37 @@ Message to write to the logger and print to stdout.
 <p>
 <strong>level: int, optional (default=0)</strong><br>
 Minimum verbosity level to print the message.
+</p>
+</td>
+</tr>
+</table>
+<p><br /></p>
+<p><a name="merge"></a></p>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L448">[source]</a>
+</span>
+</div>
+<p>Merge another trainer into this one. Branches, models, metrics and
+attributes of the other trainer are merged into this one. If there
+are branches and/or models with the same name, they are merged
+adding the <code>suffix</code> parameter to their name. The errors and missing
+attributes are extended with those of the other instance. It's only
+possible to merge two instances if they are initialized with the same
+dataset and trained with the same metric.</p>
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>other: trainer</strong><br>
+Trainer instance with which to merge.
+</p>
+<p>
+<strong>suffix: str, optional (default="2")</strong><br>
+Conflicting branches and models are merged adding <code>suffix</code>
+to the end of their names.
 </p>
 </td>
 </tr>

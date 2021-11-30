@@ -91,6 +91,7 @@ atom.feature_selection(strategy="PCA", n_features=6)
 atom.run(["Tree", "Bag"], metric="precision")
 atom.plot_partial_dependence()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_partial_dependence_1.png" alt="plot_partial_dependence_1" width="700" height="420"/>
 </div>
@@ -98,6 +99,7 @@ atom.plot_partial_dependence()
 ```python
 atom.tree.plot_partial_dependence(features=(4, (3, 4)))
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_partial_dependence_2.png" alt="plot_partial_dependence_2" width="700" height="420"/>
 </div>

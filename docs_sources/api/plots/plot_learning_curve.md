@@ -71,6 +71,7 @@ atom.train_sizing(
 )
 atom.plot_learning_curve()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_learning_curve.png" alt="plot_learning_curve" width="700" height="420"/>
 </div>

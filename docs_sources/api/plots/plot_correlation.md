@@ -64,6 +64,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.plot_correlation()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_correlation.png" alt="plot_correlation" width="560" height="480"/>
 </div>

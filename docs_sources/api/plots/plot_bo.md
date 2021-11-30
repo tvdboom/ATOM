@@ -68,6 +68,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["LDA", "LGB"], metric="f1", n_calls=24, n_initial_points=10)
 atom.plot_bo()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_bo.png" alt="plot_bo" width="700" height="560"/>
 </div>

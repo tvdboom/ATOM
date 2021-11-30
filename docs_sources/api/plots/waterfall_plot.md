@@ -89,6 +89,7 @@ atom = ATOMClassifier(X, y)
 atom.run("Tree")
 atom.tree.waterfall_plot(index=120)
 ```
+
 <div align="center">
     <img src="../../../img/plots/waterfall_plot.png" alt="waterfall_plot" width="700" height="700"/>
 </div>

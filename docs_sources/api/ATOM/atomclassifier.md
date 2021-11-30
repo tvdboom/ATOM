@@ -442,7 +442,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#evaluate">evaluate</a></td>
-<td>Get all the models evaluation for provided metrics.</td>
+<td>Get all models' scores for the provided metrics.</td>
 </tr>
 
 <tr>
@@ -462,7 +462,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#merge">merge</a></td>
-<td>Merge another atom instance into this one.</td>
+<td>Merge another trainer into this one.</td>
 </tr>
 
 <tr>
@@ -822,7 +822,8 @@ Names or indices of the columns to drop.
 
 <a name="evaluate"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None, dataset="test")
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
+dataset="test", threshold=0.5)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L327">[source]</a>
 </span>
@@ -842,6 +843,14 @@ metrics per task are used.
 Data set on which to calculate the metric. Choose from: "train",
 "test" or "holdout".
 </p>
+<strong>threshold: float, optional (default=0.5)</strong><br>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only used when:
+<ul style="line-height:1.2em;margin-top:5px">
+<li>The task is binary classification.</li>
+<li>The model has a <code>predict_proba</code> method.</li>
+<li>The metric evaluates predicted target values.</li>
+</ul>
 </td>
 </tr>
 <tr>
@@ -869,7 +878,7 @@ on the training set.
 !!! info
     ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
     and additionally:
-    <ul>
+    <ul style="line-height:1.2em;margin-top:5px">
     <li>Accepts transformers that change the target column.</li>
     <li>Accepts transformers that drop rows.</li>
     <li>Accepts transformers that only are fitted on a subset of the
@@ -968,25 +977,25 @@ Minimum verbosity level to print the message.
 
 <a name="merge"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">merge</strong>(atom, suffix="2")
+<em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L476">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L448">[source]</a>
 </span>
 </div>
-Merge another atom instance into this one. Branches, models, metrics
-and attributes of the other atom instance are merged into this one.
-If there are branches and/or models with the same name, they are
-merged adding the `suffix` parameter to their name. The errors and
-missing attributes are extended with those of the other instance.
-It's only possible to merge two instances if they are initialized
-using the same dataset and trained using the same metric.
+Merge another trainer into this one. Branches, models, metrics and
+attributes of the other trainer are merged into this one. If there
+are branches and/or models with the same name, they are merged
+adding the `suffix` parameter to their name. The errors and missing
+attributes are extended with those of the other instance. It's only
+possible to merge two instances if they are initialized with the same
+dataset and trained with the same metric.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>atom: <a href="./">ATOMClassifier</a></strong><br>
-Other atom instance with which to merge.
+<strong>other: trainer</strong><br>
+Trainer instance with which to merge.
 </p>
 <p>
 <strong>suffix: str, optional (default="2")</strong><br>

@@ -71,6 +71,7 @@ atom = ATOMRegressor(X, y)
 atom.run(["Bag", "LGB"])
 atom.lgb.plot_evals()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_evals.png" alt="plot_evals" width="700" height="420"/>
 </div>

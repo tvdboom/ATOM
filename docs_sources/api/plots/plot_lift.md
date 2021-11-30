@@ -64,6 +64,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["GNB", "RF", "LGB"], metric="roc_auc")
 atom.plot_lift(filename="lift_curve")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_lift.png" alt="plot_lift" width="700" height="420"/>
 </div>

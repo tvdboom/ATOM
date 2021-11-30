@@ -76,6 +76,7 @@ with atom.canvas(2, 2, title="XGBoost vs LightGBM", filename="canvas"):
     atom.xgb.plot_prc(dataset="both", title="PRC - XGBoost")
     atom.lgb.plot_prc(dataset="both", title="PRC - LightGBM")
 ```
+
 <div align="center">
     <img src="../../img/plots/canvas.png" alt="canvas" width="1000" height="700"/>
 </div>
@@ -99,7 +100,7 @@ Calculating the Shapley values is computationally expensive, especially
 for model agnostic explainers like [Permutation](https://shap.readthedocs.io/en/latest/generated/shap.explainers.Permutation.html).
 To avoid having to recalculate the values for every plot, ATOM stores
 the shapley values internally after the first calculation, and access
-them when needed.
+them when needed again.
 
 Since the plots are not made by ATOM, we can't draw multiple models in
 the same figure. Selecting more than one model will raise an exception.
@@ -241,6 +242,11 @@ depend on the task at hand.
 <tr>
 <td><a href="../../API/plots/plot_partial_dependence">plot_partial_dependence</a></td>
 <td>Plot the partial dependence of features.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_parshap">plot_parshap</a></td>
+<td>Plot the partial correlation of shap values.</td>
 </tr>
 
 <tr>

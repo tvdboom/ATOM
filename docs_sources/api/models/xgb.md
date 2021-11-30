@@ -302,6 +302,11 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#evaluate">evaluate</a></td>
+<td>Get the model's scores for the provided metrics.</td>
+</tr>
+
+<tr>
 <td><a href="#export-pipeline">export_pipeline</a></td>
 <td>Export the model's pipeline to a sklearn-like Pipeline object.</td>
 </tr>
@@ -319,11 +324,6 @@ The remaining utility methods can be found hereunder.
 <tr>
 <td><a href="#reset-predictions">reset_predictions</a></td>
 <td>Clear all the prediction attributes.</td>
-</tr>
-
-<tr>
-<td><a href="#evaluate">evaluate</a></td>
-<td>Get the score for a specific metric.</td>
 </tr>
 
 <tr>
@@ -416,6 +416,50 @@ removed from any active mlflow experiment.
 <br /><br /><br />
 
 
+<a name="evaluate"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
+dataset="test", threshold=0.5)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1120">[source]</a>
+</span>
+</div>
+Get the model's scores for the provided metrics.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+Metrics to calculate. If None, a selection of the most common
+metrics per task are used.
+</p>
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
+Data set on which to calculate the metric. Choose from: "train",
+"test" or "holdout".
+</p>
+<strong>threshold: float, optional (default=0.5)</strong><br>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only used when:
+<ul style="line-height:1.2em;margin-top:5px">
+<li>The task is binary classification.</li>
+<li>The model has a <code>predict_proba</code> method.</li>
+<li>The metric evaluates predicted target values.</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>score: pd.Series</strong><br>
+Scores of the model.
+</td>
+</tr>
+</table>
+<br />
+
+
 <a name="export-pipeline"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
@@ -431,7 +475,7 @@ fitted on the training set.
 !!! info
     ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
     and additionally:
-    <ul>
+    <ul style="line-height:1.2em;margin-top:5px">
     <li>Accepts transformers that change the target column.</li>
     <li>Accepts transformers that drop rows.</li>
     <li>Accepts transformers that only are fitted on a subset of the

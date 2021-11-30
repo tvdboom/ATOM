@@ -14,7 +14,7 @@ permutations can be time-consuming, especially if `n_repeats`
 is high. For this reason, the permutations are stored under the
 `permutations` attribute. If the plot is called again for the
 same model with the same `n_repeats`, it will use the stored
-values, making the method considerably faster. The
+values, making the method considerably faster. The trainer's
 `feature_importance` attribute is updated with the extracted
 importance ranking.
 
@@ -75,6 +75,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["LR", "LDA"], metric="average_precision")
 atom.lda.plot_permutation_importance(show=10, n_repeats=7)
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_permutation_importance.png" alt="plot_permutation_importance" width="700" height="700"/>
 </div>

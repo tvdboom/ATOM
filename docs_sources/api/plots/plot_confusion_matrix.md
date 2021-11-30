@@ -73,6 +73,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["Tree", "Bag"])
 atom.Tree.plot_confusion_matrix(normalize=True)  # For one model
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_confusion_matrix_1.png" alt="plot_confusion_matrix_1" width="560" height="420"/>
 </div>
@@ -80,6 +81,7 @@ atom.Tree.plot_confusion_matrix(normalize=True)  # For one model
 ```python
 atom.plot_confusion_matrix()  # For multiple models
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_confusion_matrix_2.png" alt="plot_confusion_matrix_2" width="700" height="420"/>
 </div>

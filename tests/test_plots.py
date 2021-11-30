@@ -12,6 +12,7 @@ import glob
 import pytest
 from unittest.mock import patch
 from sklearn.metrics import f1_score, get_scorer
+from sklearn.linear_model import LogisticRegression
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
@@ -418,9 +419,14 @@ def test_plot_feature_importance():
     """Assert that the plot_feature_importance method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.plot_feature_importance)
-    atom.run(["KNN", "Tree", "Bag"], metric="f1_micro")
-    pytest.raises(PermissionError, atom.knn.plot_feature_importance)
-    atom.plot_feature_importance(models=["Tree", "Bag"], display=False)
+    atom.run(
+        models=["KNN", "Tree", "Bag", "Bag2"],
+        est_params={"bag2": {"base_estimator": LogisticRegression()}},
+    )
+    with pytest.raises(ValueError, match=r".*has no feature.*"):
+        atom.knn.plot_feature_importance()
+
+    atom.plot_feature_importance(models=["Tree", "Bag", "Bag2"], display=False)
     atom.tree.plot_feature_importance(display=False)
 
 
@@ -492,6 +498,15 @@ def test_plot_partial_dependence(features):
         atom.plot_partial_dependence(target="Yes", display=False)
 
     atom.lgb.plot_partial_dependence(features, target=2, title="title", display=False)
+
+
+def test_plot_parshap():
+    """Assert that the plot_parshap method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.balance("smote")  # To get samples over 500
+    pytest.raises(NotFittedError, atom.plot_parshap)
+    atom.run(["LR", "LGB"])
+    atom.plot_parshap(display=False)
 
 
 def test_plot_confusion_matrix():

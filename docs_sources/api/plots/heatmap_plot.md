@@ -86,6 +86,7 @@ atom = ATOMRegressor(X, y)
 atom.run("RF")
 atom.heatmap_plot()
 ```
+
 <div align="center">
     <img src="../../../img/plots/heatmap_plot.png" alt="heatmap_plot" width="540" height="420"/>
 </div>

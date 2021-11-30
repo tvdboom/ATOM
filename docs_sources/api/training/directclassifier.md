@@ -389,6 +389,11 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 
 <tr>
+<td><a href="#evaluate">evaluate</a></td>
+<td>Get all models' scores for the provided metrics.</td>
+</tr>
+
+<tr>
 <td><a href="#get-class-weight">get_class_weight</a></td>
 <td>Return class weights for a balanced dataset.</td>
 </tr>
@@ -401,6 +406,11 @@ Fontsize for the ticks along the plot's axes.
 <tr>
 <td><a href="#log">log</a></td>
 <td>Save information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
+<td><a href="#merge">merge</a></td>
+<td>Merge another trainer into this one.</td>
 </tr>
 
 <tr>
@@ -421,11 +431,6 @@ Fontsize for the ticks along the plot's axes.
 <tr>
 <td><a href="#save">save</a></td>
 <td>Save the instance to a pickle file.</td>
-</tr>
-
-<tr>
-<td><a href="#evaluate">eval</a></td>
-<td>Get all models'scores for the provided metrics.</td>
 </tr>
 
 <tr>
@@ -547,6 +552,50 @@ Models to delete. If None, delete them all.
 <br />
 
 
+<a name="evaluate"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
+dataset="test", threshold=0.5)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L327">[source]</a>
+</span>
+</div>
+Get all the models' scores for the provided metrics.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+Metrics to calculate. If None, a selection of the most common
+metrics per task are used.
+</p>
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
+Data set on which to calculate the metric. Choose from: "train",
+"test" or "holdout".
+</p>
+<strong>threshold: float, optional (default=0.5)</strong><br>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only used when:
+<ul style="line-height:1.2em;margin-top:5px">
+<li>The task is binary classification.</li>
+<li>The model has a <code>predict_proba</code> method.</li>
+<li>The metric evaluates predicted target values.</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>scores: pd.DataFrame</strong><br>
+Scores of the models.
+</td>
+</tr>
+</table>
+<br />
+
+
 <a name="get-class-weight"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
@@ -624,6 +673,39 @@ Message to write to the logger and print to stdout.
 <p>
 <strong>level: int, optional (default=0)</strong><br>
 Minimum verbosity level to print the message.
+</p>
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="merge"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L448">[source]</a>
+</span>
+</div>
+Merge another trainer into this one. Branches, models, metrics and
+attributes of the other trainer are merged into this one. If there
+are branches and/or models with the same name, they are merged
+adding the `suffix` parameter to their name. The errors and missing
+attributes are extended with those of the other instance. It's only
+possible to merge two instances if they are initialized with the same
+dataset and trained with the same metric.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>other: trainer</strong><br>
+Trainer instance with which to merge.
+</p>
+<p>
+<strong>suffix: str, optional (default="2")</strong><br>
+Conflicting branches and models are merged adding <code>suffix</code>
+to the end of their names.
 </p>
 </td>
 </tr>

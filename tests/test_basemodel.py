@@ -528,15 +528,15 @@ def test_evaluate_custom_metric():
     """Assert that custom metrics are accepted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    assert isinstance(atom.mnb.evaluate(metric="roc_auc_ovo"), pd.DataFrame)
+    assert isinstance(atom.mnb.evaluate("roc_auc_ovo"), pd.Series)
 
 
 def test_evaluate_threshold():
     """Assert that the threshold parameter changes the predictions."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    pred_1 = atom.mnb.evaluate(threshold=0.0001)
-    pred_2 = atom.mnb.evaluate(threshold=0.9999)
+    pred_1 = atom.mnb.evaluate(threshold=0.01)
+    pred_2 = atom.mnb.evaluate(threshold=0.99)
     assert not pred_1.equals(pred_2)
 
 

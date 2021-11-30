@@ -161,8 +161,8 @@ Remaining features ordered by importance. Only if strategy in ("univariate", "SF
 estimator fitted on the reduced set. 
 </p>
 <p>
-<strong>&lt;strategy&gt;: sklearn estimator</strong><br>
-Estimator instance (lowercase strategy) used to transform the data,
+<strong>&lt;strategy&gt;: sklearn transformer</strong><br>
+Transformer instance (lowercase strategy) used to transform the data,
 e.g. <code>feature_selector.pca</code> for the PCA strategy.
 </p>
 </td>

@@ -893,6 +893,54 @@ def get_columns(df, columns, return_inc_exc=False, only_numerical=False):
     return list(dict.fromkeys(inc))  # Avoid duplicates
 
 
+def get_feature_importance(est, attributes=None):
+    """Return the feature importance from an estimator.
+
+    Get the feature importance from the provided attribute. For
+    meta-estimators, get the mean of the values of the underlying
+    estimators.
+
+    Parameters
+    ----------
+    est: sklearn estimator
+        Estimator which to get the feature importance.
+
+    attributes: sequence or None, optional (default=None)
+        Attributes to get, in order of importance. If None, use
+        score > coefficient > feature importance.
+
+    Returns
+    -------
+    data: np.ndarray
+        Estimator's feature importance.
+
+    """
+    data = None
+    if not attributes:
+        attributes = ("scores_", "coef_", "feature_importances_")
+
+    try:
+        data = getattr(est, next(attr for attr in attributes if hasattr(est, attr)))
+    except StopIteration:
+        # Get the mean value for meta-estimators
+        if hasattr(est, "estimators_"):
+            if all(hasattr(x, "feature_importances_") for x in est.estimators_):
+                data = np.mean(
+                    [fi.feature_importances_ for fi in est.estimators_],
+                    axis=0,
+                )
+            elif all(hasattr(x, "coef_") for x in est.estimators_):
+                data = np.mean([fi.coef_ for fi in est.estimators_], axis=0)
+
+    if data is not None:
+        if data.ndim == 1:
+            data = np.abs(data)
+        else:
+            data = np.linalg.norm(data, axis=0, ord=1)
+
+    return data
+
+
 # Pipeline functions =============================================== >>
 
 def name_cols(array, original_df, col_names):
@@ -1507,7 +1555,7 @@ class ShapExplanation:
 
         self._explainer = None
         self._explanation = None
-        self._shap_values = pd.Series()
+        self._shap_values = pd.Series(dtype="object")
         self._expected_value = None
 
     @property
@@ -1523,7 +1571,7 @@ class ShapExplanation:
 
         return self._explainer
 
-    def get_explanation(self, df, target, feature=None):
+    def get_explanation(self, df, target=1, feature=None):
         """Get an Explanation object.
 
         Parameters
@@ -1531,7 +1579,7 @@ class ShapExplanation:
         df: pd.DataFrame
             Data set to look at (subset of the complete dataset).
 
-        target: int
+        target: int, optional (default=1)
             Index of the class in the target column to look at.
             Only for multi-class classification tasks.
 
@@ -1547,8 +1595,13 @@ class ShapExplanation:
         # Get rows that still need to be calculated
         calculate = df.loc[[i for i in df.index if i not in self._shap_values.index], :]
         if not calculate.empty:
+            # Additivity check fails sometimes for no apparent reason
+            kwargs = {}
+            if "check_additivity" in signature(self.explainer.__call__).parameters:
+                kwargs["check_additivity"] = False
+
             # Calculate the new shap values
-            self._explanation = self.explainer(calculate)
+            self._explanation = self.explainer(calculate, **kwargs)
 
             # Remember shap values in the _shap_values attribute
             for i, idx in enumerate(calculate.index):
@@ -1574,7 +1627,7 @@ class ShapExplanation:
         else:
             return self._explanation[:, feature]
 
-    def get_shap_values(self, df, target, feature=None):
+    def get_shap_values(self, df, target=1, feature=None):
         """Get shap values from the Explanation object."""
         return self.get_explanation(df, target, feature).values
 

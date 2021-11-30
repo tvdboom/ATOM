@@ -66,6 +66,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X_text, y_text)
 atom.plot_wordcloud()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_wordcloud.png" alt="plot_wordcloud" width="720" height="460"/>
 </div>

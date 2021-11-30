@@ -10,9 +10,10 @@ show=None, title=None, figsize=None, filename=None, display=True)
 </div>
 
 Plot a model's feature importance. The importances are normalized in
-order to be able to compare them between models. The `feature_importance`
-attribute is updated with the extracted importance ranking. Only for
-models whose estimator has a `feature_importances_` attribute.
+order to be able to compare them between models. Only for models whose
+estimator has a `feature_importances_` or `coef_` attribute. The
+trainer's `feature_importance` attribute is updated with the extracted
+importance ranking.
 
 <table style="font-size:16px">
 <tr>
@@ -67,6 +68,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["LR", "RF"], metric="recall_weighted")
 atom.RF.plot_feature_importance(show=11, filename="random_forest_importance")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_feature_importance.png" alt="plot_feature_importance" width="700" height="700"/>
 </div>

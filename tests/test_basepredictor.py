@@ -18,7 +18,10 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError
-from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train, bin_test
+from .utils import (
+    X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train,
+    bin_test, X10, y10,
+)
 
 
 # Test magic methods =============================================== >>
@@ -420,7 +423,7 @@ def test_evaluate(metric):
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.evaluate)
     atom.run(["Tree", "PA"])
-    assert isinstance(atom.evaluate(metric=metric), pd.DataFrame)
+    assert isinstance(atom.evaluate(metric), pd.DataFrame)
 
 
 def test_class_weights_invalid_dataset():
@@ -441,6 +444,66 @@ def test_get_class_weights(dataset):
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     class_weight = atom.get_class_weight(dataset)
     assert list(class_weight) == [0, 1, 2]
+
+
+def test_merge_invalid_class():
+    """Assert that an error is raised when the class is not a trainer."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(TypeError, match=r".*Expecting a trainer.*"):
+        atom.merge(LDA())
+
+
+def test_merge_different_dataset():
+    """Assert that an error is raised when the og dataset is different."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2 = ATOMClassifier(X10, y10, random_state=1)
+    with pytest.raises(ValueError, match=r".*different dataset.*"):
+        atom_1.merge(atom_2)
+
+
+def test_merge_adopts_metrics():
+    """Assert that the metric of the merged instance is adopted."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2.run("Tree", metric="f1")
+    atom_1.merge(atom_2)
+    assert atom_1.metric == "f1"
+
+
+def test_merge_different_metrics():
+    """Assert that an error is raised when the metrics are different."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_1.run("Tree", metric="f1")
+    atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2.run("Tree", metric="auc")
+    with pytest.raises(ValueError, match=r".*different metric.*"):
+        atom_1.merge(atom_2)
+
+
+def test_merge():
+    """Assert that the merger handles branches, models and attributes."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_1.run("Tree")
+    atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2.branch.rename("b2")
+    atom_2.missing = ["missing"]
+    atom_2.run("LR")
+    atom_1.merge(atom_2)
+    assert list(atom_1._branches) == ["og", "master", "b2"]
+    assert atom_1.models == ["Tree", "LR"]
+    assert atom_1.missing[-1] == "missing"
+
+
+def test_merge_with_suffix():
+    """Assert that the merger handles branches, models and attributes."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_1.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
+    atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
+    atom_1.merge(atom_2)
+    assert list(atom_1._branches) == ["og", "master", "master2"]
+    assert atom_1.models == ["Tree", "Tree2"]
+    assert list(atom_1._errors) == ["LGB", "LGB2"]
 
 
 def test_stacking():

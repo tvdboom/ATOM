@@ -58,8 +58,8 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
-<strong>estimator: sklearn estimator</strong><br>
-Estimator's instance with which the data is scaled.
+<strong>estimator: sklearn transformer</strong><br>
+Transformer instance with which the data is scaled.
 </td>
 </tr>
 </table>

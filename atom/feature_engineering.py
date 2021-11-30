@@ -40,8 +40,8 @@ from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
     SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df,
-    get_scorer, check_scaling, check_is_fitted, composed, crash,
-    method_to_log,
+    get_scorer, check_scaling, check_is_fitted, get_feature_importance,
+    composed, crash, method_to_log,
 )
 
 
@@ -687,8 +687,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         importance is extracted from the external estimator fitted on
         the reduced set.
 
-    <strategy>: sklearn estimator
-        Estimator instance (lowercase strategy) used to transform
+    <strategy>: sklearn transformer
+        Transformer instance (lowercase strategy) used to transform
         the data, e.g. `balancer.pca` for the PCA strategy.
 
     """
@@ -1001,34 +1001,6 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             Transformed feature set.
 
         """
-
-        def get_scores(est):
-            """Return the feature scores for a given estimator.
-
-            Return the values of the scores_, feature_importances_ or
-            coef_ attributes if available (in that order). For
-            multiclass classification tasks, the coef_ attribute has
-            shape (n_targets, n_features). In this case, the mean of
-            the coef_ value over the targets is returned.
-
-            Parameters
-            ----------
-            est: class
-                Estimator for which to get the scores.
-
-            Returns
-            -------
-            scores: np.ndarray
-                Scores of the selected attribute for the estimator.
-
-            """
-            attributes = ["scores_", "feature_importances_", "coef_"]
-            scores = getattr(est, next(i for i in attributes if hasattr(est, i)))
-            if scores.ndim > 1:
-                scores = np.mean(scores, axis=0)
-
-            return scores
-
         check_is_fitted(self)
         X, y = self._prepare_input(X, y)
         columns = X.columns  # Save columns for SFM
@@ -1056,7 +1028,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             return X
 
         elif self.strategy.lower() == "univariate":
-            indices = np.argsort(get_scores(self.univariate))
+            indices = np.argsort(get_feature_importance(self.univariate))
             best_fxs = [X.columns[idx] for idx in indices][::-1]
             self.log(
                 f" --> The univariate test selected "
@@ -1089,7 +1061,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         elif self.strategy.lower() == "sfm":
             # Here we use columns since some cols could be removed before by
             # variance or correlation checks and there would be cols mismatch
-            indices = np.argsort(get_scores(self.sfm.estimator_))
+            indices = np.argsort(get_feature_importance(self.sfm.estimator_))
             best_fxs = [columns[idx] for idx in indices][::-1]
             self.log(
                 f" --> The {self._solver.__class__.__name__} estimator selected "
@@ -1125,7 +1097,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     )
                     X = X.drop(column, axis=1)
 
-            idx = np.argsort(get_scores(self.rfe.estimator_))
+            idx = np.argsort(get_feature_importance(self.rfe.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
 
         elif self.strategy.lower() == "rfecv":
@@ -1141,7 +1113,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     )
                     X = X.drop(column, axis=1)
 
-            idx = np.argsort(get_scores(self.rfecv.estimator_))
+            idx = np.argsort(get_feature_importance(self.rfecv.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
 
         return X

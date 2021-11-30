@@ -2196,6 +2196,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2733,9 +2747,10 @@ show=None, title=None, figsize=None, filename=None, display=True)
 </div>
 
 <p>Plot a model's feature importance. The importances are normalized in
-order to be able to compare them between models. The <code>feature_importance</code>
-attribute is updated with the extracted importance ranking. Only for
-models whose estimator has a <code>feature_importances_</code> attribute.</p>
+order to be able to compare them between models. Only for models whose
+estimator has a <code>feature_importances_</code> or <code>coef_</code> attribute. The
+trainer's <code>feature_importance</code> attribute is updated with the extracted
+importance ranking.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>

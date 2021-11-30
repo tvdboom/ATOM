@@ -70,6 +70,7 @@ atom.successive_halving(
 )
 atom.plot_successive_halving(filename="successive_halving")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_successive_halving.png" alt="plot_successive_halving" width="700" height="420"/>
 </div>

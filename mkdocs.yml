@@ -191,6 +191,7 @@ nav:
             - plot_feature_importance: API/plots/plot_feature_importance.md
             - plot_permutation_importance: API/plots/plot_permutation_importance.md
             - plot_partial_dependence: API/plots/plot_partial_dependence.md
+            - plot_parshap: API/plots/plot_parshap.md
             - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
             - plot_threshold: API/plots/plot_threshold.md
             - plot_probabilities: API/plots/plot_probabilities.md

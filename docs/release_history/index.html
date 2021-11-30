@@ -2304,6 +2304,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../API/plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../API/plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2951,10 +2965,16 @@
   model's performance on a completely independent dataset. Read more
   in the <a href="../user_guide/data-management/#holdout-set">user_guide</a>.</li>
 <li>Complete rework of the <a href="../user_guide/models/#ensembles">ensemble</a> models.</li>
+<li>New <a href="../API/plots/plot_parshap">plot_parshap</a> plot to detect overfitting
+  features.</li>
+<li>The <a href="../API/plots/plot_feature_importance">plot_feature_importance</a>
+  plot now also accepts estimators with coefficients.</li>
 <li>Added the <a href="../API/models/gnb/#transform">transform</a> method for models.</li>
 <li>Added the <code>threshold</code> parameter to the <a href="../API/ATOM/atomclassifier/#evaluate">evaluate</a>
   method.</li>
 <li>Refactor of the model's <a href="../API/models/gnb/#full-train">full_train</a> method.</li>
+<li>The <a href="../API/training/directclassifier/#merge">merge</a> method is available
+  for all trainers.</li>
 <li>Improvements in the trainer's pipeline.</li>
 <li>Training scores are now also saved to the mlflow run.</li>
 <li>Trying to change the data in a branch after fitting a model with it now

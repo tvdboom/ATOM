@@ -64,7 +64,7 @@ class TransformerMixin:
 
         Returns
         -------
-        self: estimator
+        self: transformer
             Fitted instance of self.
 
         """
@@ -101,7 +101,7 @@ class TransformerMixin:
 
 
 class FuncTransformer(BaseTransformer):
-    """Custom estimator for functions."""
+    """Custom transformer for functions."""
 
     def __init__(self, func, columns, args, verbose, logger, **kwargs):
         super().__init__(verbose=verbose, logger=logger)
@@ -135,7 +135,7 @@ class FuncTransformer(BaseTransformer):
 
 
 class DropTransformer(BaseTransformer):
-    """Custom estimator to drop columns."""
+    """Custom transformer to drop columns."""
 
     def __init__(self, columns, verbose, logger):
         super().__init__(verbose=verbose, logger=logger)
@@ -183,8 +183,8 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <strategy>: sklearn estimator
-        Estimator's instance with which the data is scaled.
+    <strategy>: sklearn transformer
+        Transformer instance with which the data is scaled.
 
     """
 
@@ -313,8 +313,8 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <strategy>: sklearn estimator
-        Estimator's instance with which the data is transformed.
+    <strategy>: sklearn transformer
+        Transformer instance with which the data is transformed.
 
     """
 

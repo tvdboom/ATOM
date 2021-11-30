@@ -75,7 +75,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
-<strong>estimator: sklearn estimator</strong><br>
+<strong>estimator: sklearn transformer</strong><br>
 Estimator's instance with which the data is transformed.
 </td>
 </tr>

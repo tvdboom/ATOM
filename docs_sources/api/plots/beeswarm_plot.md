@@ -84,6 +84,7 @@ atom = ATOMRegressor(X, y)
 atom.run("RF")
 atom.beeswarm_plot()
 ```
+
 <div align="center">
     <img src="../../../img/plots/beeswarm_plot.png" alt="beeswarm_plot" width="700" height="700"/>
 </div>
