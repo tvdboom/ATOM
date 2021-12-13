@@ -2764,9 +2764,9 @@ exception if there are multiple models in the pipeline. To avoid
 this, call the plot from a model, e.g. <code>atom.xgb.force_plot()</code>.
 </p>
 <p>
-<strong>index: int, tuple, slice or None, optional (default=None)</strong><br>
-Indices of the rows in the dataset to plot. If tuple (n, m), it selects rows
-n until m. If None, it selects all rows in the test set.
+<strong>index: int, str, sequence or None, optional (default=None)</strong><br>
+Index names or positions of the rows in the dataset to plot.
+If None, it selects all rows in the test set.
 </p>
 <p>
 <strong>target: int or str, optional (default=1)</strong><br>
@@ -2783,7 +2783,7 @@ Figure's size, format as (x, y).
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
-Name of the file. If matplotlib=False, the figure is saved as an html
+Name of the file. If matplotlib=False, the figure is saved as a html
  file. If None, the figure is not saved.
 </p>
 <p>

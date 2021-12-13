@@ -37,7 +37,7 @@ Dataset containing features and target. Allowed formats are:
 <li>(X_train, y_train), (X_test, y_test)</li>
 <li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
-X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame<br>
+X, train, test: dataframe-like<br>
 <p style="margin-top:0;margin-left:15px">
 Feature set with shape=(n_samples, n_features).</p>
 y: int, str or sequence<br>
@@ -127,7 +127,7 @@ no mlflow tracking is performed.
 <p>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 </p>
 </td>
 </tr>
@@ -329,7 +329,8 @@ Dictionary of the encountered exceptions (if any).
 </p>
 <p>
 <strong>winner: <a href="../../../user_guide/models">model</a></strong><br>
-Model subclass that performed best on the test set.
+Model subclass that performed best on the test set (either through the
+<code>metric_test</code> or <code>mean_bootstrap</code> attribute).
 </p>
 <strong>results: pd.DataFrame</strong><br>
 Dataframe of the training results. Columns can include:
@@ -426,8 +427,13 @@ manage the pipeline.
 </tr>
 
 <tr>
+<td><a href="#clear">clear</a></td>
+<td>Clear attributes from all models.</td>
+</tr>
+
+<tr>
 <td><a href="#delete">delete</a></td>
-<td>Remove a model from the pipeline.</td>
+<td>Delete models from the trainer.</td>
 </tr>
 
 <tr>
@@ -478,11 +484,6 @@ manage the pipeline.
 <tr>
 <td><a href="#reset-aesthetics">reset_aesthetics</a></td>
 <td>Reset the plot aesthetics to their default values.</td>
-</tr>
-
-<tr>
-<td><a href="#reset-predictions">reset_predictions</a></td>
-<td>Clear the prediction attributes from all models.</td>
 </tr>
 
 <tr>
@@ -540,20 +541,24 @@ is merged independently with atom.
 !!! warning
 
     * The transformer should have fit and/or transform methods with arguments
-      `X` (accepting a 2d array-like object of shape=(n_samples, n_features))
+      `X` (accepting an array-like object of shape=(n_samples, n_features))
       and/or `y` (accepting a sequence of shape=(n_samples,)).
-    * The transform method should return a feature set as a 2d array-like
+    * The transform method should return a feature set as an array-like
       object of shape=(n_samples, n_features) and/or a target column as a
       sequence of shape=(n_samples,).
 
 !!! note
-    If the transform method doesn't return a dataframe as feature set, the
-    column naming happens as follows. If the transformer returns the same
-    number of columns, the names are kept equal. If the number of columns
-    change, old columns will keep their name (as long as the column is
-    unchanged) and new columns will receive the name `Feature n`, where n
-    stands for the n-th feature. This means that a transformer should only
-    transform, add or drop columns, not combinations of these.
+    If the transform method doesn't return a dataframe:
+
+    * The column naming happens as follows. If the transformer returns the
+      same number of columns, the names are kept equal. If the number of
+      columns change, old columns will keep their name (as long as the column
+      is unchanged) and new columns will receive the name `Feature n`, where
+      n stands for the n-th feature. This means that a transformer should
+      only transform, add or drop columns, not combinations of these.
+    * The index remains the same as before the transformation. This means
+      that the transformer should not add, remove or shuffle rows unless it
+      returns a dataframe.
 
 !!! note
     If the transformer has a `n_jobs` and/or `random_state` parameter that
@@ -735,6 +740,24 @@ Whether to render the plot.
 <br />
 
 
+<a name="clear"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">clear</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L337">[source]</a>
+</span>
+</div>
+Reset all model attributes to their initial state, deleting potentially
+large data arrays. Use this method to free some memory before saving
+the class. The cleared attributes per model are:
+
+* [Prediction attributes](../../../user_guide/predicting).
+* [Metrics scores](../../../user_guide/training/#metric).
+* [Shap values](../../../user_guide/plots/#shap).
+
+<br /><br /><br />
+
+
 <a name="delete"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
@@ -742,13 +765,10 @@ Whether to render the plot.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L305">[source]</a>
 </span>
 </div>
-Delete a model from the trainer. If the winning model is
-removed, the next best model (through `metric_test` or
-`mean_bootstrap`) is selected as winner. If all models are
-removed, the metric and training approach are reset. Use
-this method to drop unwanted models from the pipeline
-or to free some memory before saving. Deleted models are
-not removed from any active mlflow experiment.
+Delete models from the trainer. If all models are removed, the metric
+is reset. Use this method to drop unwanted models from the pipeline
+or to free some memory before saving. Deleted models are not removed
+from any active mlflow experiment.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -1067,18 +1087,6 @@ and models. The dataset is also reset to its form after initialization.
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
-<br /><br /><br />
-
-
-<a name="reset-predictions"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L181">[source]</a>
-</span>
-</div>
-Clear the [prediction attributes](../../../user_guide/predicting) from all models.
-Use this method to free some memory before saving the trainer.
 <br /><br /><br />
 
 

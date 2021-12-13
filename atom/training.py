@@ -225,9 +225,9 @@ class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
             # Select fraction of data to use in this run
             if size <= 1:
                 frac = round(size, 2)
-                train_idx = int(size * self.branch.idx[0])
+                train_idx = int(size * len(self.branch.train))
             else:
-                frac = round(size / self.branch.idx[0], 2)
+                frac = round(size / len(self.branch.train), 2)
                 train_idx = size
 
             for m in self._models.values():
@@ -236,7 +236,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
                 m._train_idx = train_idx
 
             # Print stats for this subset of the data
-            p = round(train_idx * 100.0 / self.branch.idx[0])
+            p = round(train_idx * 100.0 / len(self.branch.train))
             self.log(f"\n\nRun: {run} {'='*32} >>", 1)
             self.log(f"Size of training set: {train_idx} ({p}%)", 1)
             self.log(f"Size of test set: {len(self.test)}", 1)

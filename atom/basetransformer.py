@@ -22,8 +22,8 @@ from typing import Union, Optional
 
 # Own modules
 from .utils import (
-    SEQUENCE, X_TYPES, Y_TYPES, to_df, to_series, merge,
-    prepare_logger, composed, crash, method_to_log,
+    SEQUENCE, X_TYPES, Y_TYPES, to_df, to_series, merge, prepare_logger,
+    composed, crash, method_to_log,
 )
 
 
@@ -158,7 +158,7 @@ class BaseTransformer:
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -219,6 +219,20 @@ class BaseTransformer:
 
         return X, y
 
+    def _set_index(self, df):
+        """Assign an index to the dataframe."""
+        if self.index is True:  # True gets caught by isinstance(int)
+            return df
+        elif self.index is False:
+            return df.reset_index(drop=True)
+        elif isinstance(self.index, (int, str)):
+            return df.set_index(
+                keys=self._get_columns(self.index, include_target=False),
+                drop=True,
+            )
+
+        return df
+
     def _get_data(self, arrays, y=-1, use_n_rows=True):
         """Get the data sets and indices from a sequence of indexables.
 
@@ -248,6 +262,16 @@ class BaseTransformer:
 
         def _no_data_sets(data):
             """Path to follow when no data sets are provided."""
+            # If the index is a sequence, assign it before shuffling
+            if isinstance(self.index, SEQUENCE):
+                if len(self.index) != len(data):
+                    raise ValueError(
+                        "Invalid value for the index parameter. Length of "
+                        f"index ({len(self.index)}) doesn't match that of "
+                        f"the dataset ({len(data)})."
+                    )
+                data.index = self.index
+
             if use_n_rows:
                 if not 0 < self.n_rows <= len(data):
                     raise ValueError(
@@ -261,8 +285,6 @@ class BaseTransformer:
                     data = data.sample(n=int(n), random_state=self.random_state)
                 else:
                     data = data.iloc[:int(n), :]
-
-            data = data.reset_index(drop=True)
 
             if len(data) < 2:
                 raise ValueError(
@@ -296,17 +318,35 @@ class BaseTransformer:
                         f"got {self.holdout_size}."
                     )
 
-                holdout = data.iloc[-holdout_size:, :]
-                data = data.iloc[:-holdout_size, :]
-                idx = [len(data) - test_size, test_size]
+                holdout = self._set_index(data.iloc[-holdout_size:, :])
+                data = self._set_index(data.iloc[:-holdout_size, :])
+                idx = [data.index[:-test_size], data.index[-test_size:]]
 
-                return data, idx, holdout.reset_index(drop=True)
+                return data, idx, holdout
 
             else:
-                return data, [len(data) - test_size, test_size], None
+                holdout = None
+                data = self._set_index(data)
+                idx = [data.index[:-test_size], data.index[-test_size:]]
+
+                return data, idx, holdout
 
         def _has_data_sets(train, test, holdout=None):
             """Path to follow when data sets are provided."""
+            # If the index is a sequence, assign it before shuffling
+            if isinstance(self.index, SEQUENCE):
+                len_data = len(train) + len(test) + (len(holdout) if holdout else 0)
+                if len(self.index) != len_data:
+                    raise ValueError(
+                        "Invalid value for the index parameter. Length of "
+                        f"index ({len(self.index)}) doesn't match that of "
+                        f"the data sets ({len_data})."
+                    )
+                train.index = self.index[:len(train)]
+                test.index = self.index[len(train):len(train) + len(test)]
+                if holdout:
+                    holdout.index = self.index[-len(holdout):]
+
             # Skip the n_rows step if not called from atom
             if hasattr(self, "n_rows") and use_n_rows:
                 # Select same subsample of train and test set
@@ -345,10 +385,10 @@ class BaseTransformer:
                         "The holdout set does not have the "
                         "same columns as the train and test set."
                     )
-                holdout = holdout.reset_index(drop=True)
+                holdout = self._set_index(holdout)
 
-            data = pd.concat([train, test]).reset_index(drop=True)
-            idx = [len(train), len(test)]
+            data = self._set_index(pd.concat([train, test]))
+            idx = [data.index[:len(train)], data.index[-len(test):]]
 
             return data, idx, holdout
 

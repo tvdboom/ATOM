@@ -47,9 +47,9 @@ from .pipeline import Pipeline
 from .plots import BaseModelPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst, it, arr,
-    merge, time_to_str, get_best_score, get_scorer, get_pl_name,
+    merge, time_to_str, get_best_score, get_custom_scorer, get_pl_name,
     variable_return, custom_transform, composed, crash, method_to_log,
-    score_decorator, Table, ShapExplanation,
+    score_decorator, Table, ShapExplanation, CustomDict,
 )
 
 
@@ -61,10 +61,16 @@ class BaseModel(BaseModelPlotter):
         self.name = self.acronym if len(args) == 1 else args[1]
         self.scaler = None
         self.estimator = None
+
         self._run = None  # mlflow run (if experiment is active)
         self._group = self.name  # sh and ts models belong to the same group
         self._holdout = None
         self._pred = [None] * 15
+        self._scores = CustomDict(
+            train=CustomDict(),
+            test=CustomDict(),
+            holdout=CustomDict(),
+        )
         self._shap = ShapExplanation(self)
 
         # BO attributes
@@ -88,8 +94,6 @@ class BaseModel(BaseModelPlotter):
         self.best_params = None
         self.metric_bo = None
         self.time_bo = None
-        self.metric_train = None
-        self.metric_test = None
         self.time_fit = None
         self.metric_bootstrap = None
         self.mean_bootstrap = None
@@ -100,7 +104,7 @@ class BaseModel(BaseModelPlotter):
         # Skip if called from FeatureSelector
         if hasattr(self.T, "_branches"):
             self.branch = self.T.branch
-            self._train_idx = self.branch.idx[0]  # Can change for sh and ts
+            self._train_idx = len(self.branch.idx[0])  # Can change for sh and ts
             if getattr(self, "needs_scaling", None) and not self.T.scaled:
                 self.scaler = Scaler().fit(self.X_train)
 
@@ -301,11 +305,12 @@ class BaseModel(BaseModelPlotter):
                     else:
                         split = ShuffleSplit
 
-                    # Select test_size from ATOM or use default of 0.2
-                    t_size = self.T._test_size if hasattr(self.T, "_test_size") else 0.2
-
                     # Get the ShuffleSplit cross-validator object
-                    fold = split(1, test_size=t_size, random_state=rs)
+                    fold = split(
+                        n_splits=1,
+                        test_size=len(self.test) / self.shape[0],
+                        random_state=rs,
+                    )
 
                     # Fit model just on the one fold
                     score = fit_model(*next(fold.split(self.X_train, self.y_train)))
@@ -536,18 +541,9 @@ class BaseModel(BaseModelPlotter):
             self.estimator.fit(arr(self.X_train), self.y_train, **self._est_params_fit)
 
         # Save metric scores on complete training and test set
-        self.metric_train = flt(
-            [
-                metric(self.estimator, arr(self.X_train), self.y_train)
-                for metric in self.T._metric.values()
-            ]
-        )
-        self.metric_test = flt(
-            [
-                metric(self.estimator, arr(self.X_test), self.y_test)
-                for metric in self.T._metric.values()
-            ]
-        )
+        for metric in self.T._metric.values():
+            self._calculate_score(metric, "train")
+            self._calculate_score(metric, "test")
 
         # Print and log results ==================================== >>
 
@@ -556,10 +552,7 @@ class BaseModel(BaseModelPlotter):
                 f"Early stop at iteration {self._stopped[0]} of {self._stopped[1]}.", 1
             )
         for set_ in ("train", "test"):
-            out = [
-                f"{m.name}: {round(lst(getattr(self, f'metric_{set_}'))[i], 4)}"
-                for i, m in enumerate(self.T._metric.values())
-            ]
+            out = [f"{m}: {round(self._scores[set_][m], 4)}" for m in self.T._metric]
             self.T.log(f"T{set_[1:]} evaluation --> {'   '.join(out)}", 1)
 
         # Get duration and print to log
@@ -568,23 +561,7 @@ class BaseModel(BaseModelPlotter):
 
         # Log parameters, metrics, model and data to mlflow
         if self._run:
-            mlflow.set_tags(
-                {
-                    "fullname": self.fullname,
-                    "branch": self.branch.name,
-                    "time": self.time_fit,
-                }
-            )
-
-            # Only save params for children of BaseEstimator
-            if hasattr(self, "get_params"):
-                # Mlflow only accepts params with char length <250
-                pars = self.estimator.get_params()
-                mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
-
-            for i, m in enumerate(self.T._metric):
-                mlflow.log_metric(f"{m}_train", lst(self.metric_train)[i])
-                mlflow.log_metric(f"{m}_test", lst(self.metric_test)[i])
+            mlflow.set_tags({"fullname": self.fullname, "time": self.time_fit})
 
             # Save evals for models with in-training evaluation
             if hasattr(self, "evals"):
@@ -593,19 +570,7 @@ class BaseModel(BaseModelPlotter):
                     mlflow.log_metric(f"{self.evals['metric']}_train", train, step=step)
                     mlflow.log_metric(f"{self.evals['metric']}_test", test, step=step)
 
-            if self.T.log_model:
-                name = self.estimator.__class__.__name__
-                mlflow.sklearn.log_model(self.estimator, name)
-
-            if self.T.log_data:
-                for set_ in ("train", "test"):
-                    getattr(self, set_).to_csv(f"{set_}.csv")
-                    mlflow.log_artifact(f"{set_}.csv")
-                    os.remove(f"{set_}.csv")
-
-            if self.T.log_pipeline:
-                pl = self.export_pipeline()
-                mlflow.sklearn.log_model(pl, f"pipeline_{self.name}")
+            self._log_to_mlflow()  # Track rest of information
 
     def bootstrap(self):
         """Apply a bootstrap algorithm.
@@ -680,7 +645,7 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def results(self):
-        """Return the results as a pd.Series."""
+        """Overview of the training results."""
         return pd.Series(
             {
                 "metric_bo": getattr(self, "metric_bo", None),
@@ -695,6 +660,16 @@ class BaseModel(BaseModelPlotter):
             },
             name=self.name,
         )
+
+    @property
+    def metric_train(self):
+        """Metric scores on the training set."""
+        return flt([self._scores["train"][name] for name in self.T._metric])
+
+    @property
+    def metric_test(self):
+        """Metric scores on the test set."""
+        return flt([self._scores["test"][name] for name in self.T._metric])
 
     # Prediction methods =========================================== >>
 
@@ -714,7 +689,7 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -741,7 +716,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        pred: np.ndarray
+        pred: np.array
             Return of the attribute.
 
         """
@@ -750,31 +725,47 @@ class BaseModel(BaseModelPlotter):
                 f"{self.estimator.__class__.__name__} doesn't have a {method} method!"
             )
 
-        # When there is a pipeline, apply transformations first
-        for est in self.pipeline:
-            if not est._train_only:
-                X, y = custom_transform(self.T, est, self.branch, (X, y), verbose)
+        try:  # Return from prediction attributes
+            # Raises ValueError if X doesn't select indices
+            rows = self.T._get_rows(X, branch=self.branch)
 
-        # Scale the data if needed
-        if self.scaler:
-            X = self.scaler.transform(X)
+            # Since the pred attrs don't have an index, we
+            # need to know the indices of the requested rows
+            indices = [list(self.dataset.index).index(i) for i in rows]
 
-        if y is None:
-            return getattr(self.estimator, method)(X)
-        else:
-            if metric is None:
-                if self.T.goal == "class":
-                    metric = get_scorer("accuracy")
-                else:
-                    metric = get_scorer("r2")
+            # Concatenate all predictions
+            predictions = np.concatenate(
+                [getattr(self, f"{method}_train"), getattr(self, f"{method}_test")]
+            )
+
+            return flt(predictions[indices])
+
+        except ValueError:  # Calculate new predictions
+            # When there is a pipeline, apply transformations first
+            for transformer in self.pipeline:
+                if not transformer._train_only:
+                    X, y = custom_transform(transformer, self.branch, (X, y), verbose)
+
+            # Scale the data if needed
+            if self.scaler:
+                X = self.scaler.transform(X)
+
+            if y is None:
+                return getattr(self.estimator, method)(X)
             else:
-                metric = get_scorer(metric)
+                if metric is None:
+                    if self.T.goal == "class":
+                        metric = get_custom_scorer("accuracy")
+                    else:
+                        metric = get_custom_scorer("r2")
+                else:
+                    metric = get_custom_scorer(metric)
 
-            kwargs = {}
-            if sample_weight is not None:
-                kwargs["sample_weight"] = sample_weight
+                kwargs = {}
+                if sample_weight is not None:
+                    kwargs["sample_weight"] = sample_weight
 
-            return metric(self.estimator, X, y, **kwargs)
+                return metric(self.estimator, X, y, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, verbose: Optional[int] = None):
@@ -816,11 +807,6 @@ class BaseModel(BaseModelPlotter):
         )
 
     # Prediction properties ======================================== >>
-
-    @composed(crash, method_to_log)
-    def reset_predictions(self):
-        """Clear all the prediction attributes."""
-        self._pred = [None] * 15
 
     @property
     def predict_train(self):
@@ -998,12 +984,74 @@ class BaseModel(BaseModelPlotter):
             )
 
         # Annotate if model overfitted when train 20% > test
-        metric_train = lst(self.metric_train)
-        metric_test = lst(self.metric_test)
-        if metric_train[0] - 0.2 * metric_train[0] > metric_test[0]:
+        score_train = self._scores["train"][list(self.T._metric.keys())[0]]
+        score_test = self._scores["test"][list(self.T._metric.keys())[0]]
+        if score_train - 0.2 * score_train > score_test:
             out += " ~"
 
         return out
+
+    def _log_to_mlflow(self):
+        """Log the model's information to the current mlflow run."""
+        mlflow.set_tag("branch", self.branch.name)
+
+        # Only save params for children of BaseEstimator
+        if hasattr(self, "get_params"):
+            # Mlflow only accepts params with char length <250
+            pars = self.estimator.get_params()
+            mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
+
+        if self.T.log_model:
+            name = self.estimator.__class__.__name__
+            mlflow.sklearn.log_model(self.estimator, name)
+
+        if self.T.log_data:
+            for set_ in ("train", "test"):
+                getattr(self, set_).to_csv(f"{set_}.csv")
+                mlflow.log_artifact(f"{set_}.csv")
+                os.remove(f"{set_}.csv")
+
+        if self.T.log_pipeline:
+            pl = self.export_pipeline()
+            mlflow.sklearn.log_model(pl, f"pipeline_{self.name}")
+
+    def _calculate_score(self, scorer, dataset="test", threshold=0.5):
+        """Calculate a metric score using the prediction attributes."""
+        has_pred_proba = hasattr(self.estimator, "predict_proba")
+        has_dec_func = hasattr(self.estimator, "decision_function")
+
+        # Select method to use for predictions
+        if scorer.__class__.__name__ == "_ThresholdScorer":
+            attr = "decision_function" if has_dec_func else "predict_proba"
+        elif scorer.__class__.__name__ == "_ProbaScorer":
+            attr = "predict_proba" if has_pred_proba else "decision_function"
+        elif self.T.task.startswith("bin") and has_pred_proba:
+            attr = "predict_proba"  # Needed to use threshold parameter
+        else:
+            attr = "predict"
+
+        y_pred = getattr(self, f"{attr}_{dataset}")
+        if self.T.task.startswith("bin") and attr == "predict_proba":
+            y_pred = y_pred[:, 1]
+
+            # Exclude metrics that use probability estimates (e.g. ap, auc)
+            if scorer.__class__.__name__ == "_PredictScorer":
+                y_pred = (y_pred > threshold).astype("int")
+
+        self._scores[dataset][scorer.name] = scorer._sign * float(
+            scorer._score_func(
+                getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs
+            )
+        )
+
+        if self._run:  # Log metric to mlflow run
+            MlflowClient().log_metric(
+                run_id=self._run.info.run_id,
+                key=f"{scorer.name}_{dataset}",
+                value=it(self._scores[dataset][scorer.name]),
+            )
+
+        return self._scores[dataset][scorer.name]
 
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
@@ -1012,9 +1060,10 @@ class BaseModel(BaseModelPlotter):
         Applies probability calibration on the model. The estimator
         is trained via cross-validation on a subset of the training
         data, using the rest to fit the calibrator. The new classifier
-        will replace the `estimator` attribute and is logged to any
-        active mlflow experiment. Since the estimator changed, all the
-        model's prediction attributes are reset.
+        will replace the `estimator` attribute. If there is an active
+        mlflow experiment, a new run is started using the name
+        `[model_name]_calibrate`. Since the estimator changed, the
+        model is cleared. Only if classifier.
 
         Parameters
         ----------
@@ -1036,16 +1085,41 @@ class BaseModel(BaseModelPlotter):
         else:
             self.estimator = calibrator.fit(self.X_test, self.y_test)
 
-        # Log the CCV to the model's mlflow run
-        if self._run and self.T.log_model:
-            with mlflow.start_run(self._run.info.run_id):
-                mlflow.sklearn.log_model(self.estimator, "CalibratedClassifierCV")
+        self.clear()  # Clear model since we have a new estimator
 
-        # Reset attrs dependent on estimator
-        self._pred = [None] * 15
-        self._shap = ShapExplanation(self)
+        # Start a new mlflow run for the new estimator
+        if self._run:
+            self._run = mlflow.start_run(run_name=f"{self.name}_calibrate")
+            self._log_to_mlflow()
+            mlflow.end_run()
+
+        # Save new metric scores on train and test set
+        # Also automatically stores scores to the mlflow run
+        for metric in self.T._metric.values():
+            self._calculate_score(metric, "train")
+            self._calculate_score(metric, "test")
 
         self.T.log(f"Model {self.name} successfully calibrated.", 1)
+
+    @composed(crash, method_to_log)
+    def clear(self):
+        """Clear attributes from the model.
+
+        Reset attributes to their initial state, deleting potentially
+        large data arrays. Use this method to free some memory before
+        saving the class. The cleared attributes per model are:
+            - Prediction attributes.
+            - Metrics scores.
+            - Shap values.
+
+        """
+        self._pred = [None] * 15
+        self._scores = CustomDict(
+            train=CustomDict(),
+            test=CustomDict(),
+            holdout=CustomDict(),
+        )
+        self._shap = ShapExplanation(self)
 
     @composed(crash, method_to_log)
     def cross_validate(self, **kwargs):
@@ -1074,7 +1148,7 @@ class BaseModel(BaseModelPlotter):
         kwargs["n_jobs"] = kwargs.get("n_jobs", self.T.n_jobs)
         kwargs["verbose"] = kwargs.get("verbose", self.T.verbose)
         if kwargs.get("scoring"):
-            scoring = get_scorer(kwargs.pop("scoring"))
+            scoring = get_custom_scorer(kwargs.pop("scoring"))
             scoring = {scoring.name: scoring}
 
         else:
@@ -1113,7 +1187,14 @@ class BaseModel(BaseModelPlotter):
 
     @composed(crash, method_to_log)
     def delete(self):
-        """Delete the model from the trainer."""
+        """Delete the model from the trainer.
+
+        If it's the last model in the trainer, the metric is reset.
+        Use this method to drop unwanted models from the pipeline or
+        to free some memory before saving. The model is not removed
+        from any active mlflow experiment.
+
+        """
         self.T.delete(self.name)
 
     @composed(crash, typechecked)
@@ -1194,40 +1275,13 @@ class BaseModel(BaseModelPlotter):
 
         scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):
-            scorer = get_scorer(met)
-            has_pred_proba = hasattr(self.estimator, "predict_proba")
-            has_dec_func = hasattr(self.estimator, "decision_function")
+            scorer = get_custom_scorer(met)
 
-            # Select method to use for predictions
-            if scorer.__class__.__name__ == "_ThresholdScorer":
-                attr = "decision_function" if has_dec_func else "predict_proba"
-            elif scorer.__class__.__name__ == "_ProbaScorer":
-                attr = "predict_proba" if has_pred_proba else "decision_function"
-            elif self.T.task.startswith("bin") and has_pred_proba:
-                attr = "predict_proba"  # Needed to use threshold parameter
+            # Skip if the scorer has already been calculated
+            if scorer.name in self._scores[dataset] and threshold == 0.5:
+                scores[scorer.name] = self._scores[dataset][scorer.name]
             else:
-                attr = "predict"
-
-            y_pred = getattr(self, f"{attr}_{dataset}")
-            if self.T.task.startswith("bin") and attr == "predict_proba":
-                y_pred = y_pred[:, 1]
-
-                # Exclude metrics that use probability estimates (e.g. ap, auc)
-                if scorer.__class__.__name__ == "_PredictScorer":
-                    y_pred = (y_pred >= threshold).astype("int")
-
-            scores[scorer.name] = scorer._sign * float(
-                scorer._score_func(
-                    getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs
-                )
-            )
-
-            if self._run:  # Log metric to mlflow run
-                MlflowClient().log_metric(
-                    run_id=self._run.info.run_id,
-                    key=f"{scorer.name}_{dataset}",
-                    value=it(scores[scorer.name]),
-                )
+                scores[scorer.name] = self._calculate_score(scorer, dataset, threshold)
 
         return scores
 
@@ -1289,13 +1343,13 @@ class BaseModel(BaseModelPlotter):
     def full_train(self, include_holdout: bool = False):
         """Train the estimator on the complete dataset.
 
-        In some cases it might be desirable to use all available
-        data to train a final model. Note that doing this means
-        that the estimator can no longer be evaluated on the test
-        set. The newly retrained estimator will replace the
-        `estimator` attribute and is logged to any active mlflow
-        experiment. Since the estimator changed, all the model's
-        prediction attributes are reset.
+        In some cases it might be desirable to use all available data
+        to train a final model. Note that doing this means that the
+        estimator can no longer be evaluated on the test set. The newly
+        retrained estimator will replace the `estimator` attribute. If
+        there is an active mlflow experiment, a new run is started
+        with the name `[model_name]_full_train`. Since the estimator
+        changed, the model is cleared.
 
         Parameters
         ----------
@@ -1321,15 +1375,19 @@ class BaseModel(BaseModelPlotter):
         else:
             self.estimator.fit(arr(X), y, **self._est_params_fit)
 
-        # Log the new estimator to the model's mlflow run
-        if self._run and self.T.log_model:
-            with mlflow.start_run(self._run.info.run_id):
-                name = f"full_train_{self.estimator.__class__.__name__}"
-                mlflow.sklearn.log_model(self.estimator, name)
+        self.clear()  # Clear model since we have a new estimator
 
-        # Reset attrs dependent on estimator
-        self._pred = [None] * 15
-        self._shap = ShapExplanation(self)
+        # Start a new mlflow run for the new estimator
+        if self._run:
+            self._run = mlflow.start_run(run_name=f"{self.name}_full_train")
+            self._log_to_mlflow()
+            mlflow.end_run()
+
+        # Save new metric scores on train and test set
+        # Also automatically stores scores to the mlflow run
+        for metric in self.T._metric.values():
+            self._calculate_score(metric, "train")
+            self._calculate_score(metric, "test")
 
         self.T.log(f"Model {self.name} successfully retrained.", 1)
 
@@ -1389,7 +1447,12 @@ class BaseModel(BaseModelPlotter):
         self.T.log(f"{self.fullname} estimator successfully saved.", 1)
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES = None, verbose: Optional[int] = None):
+    def transform(
+        self,
+        X: X_TYPES,
+        y: Optional[Y_TYPES] = None,
+        verbose: Optional[int] = None,
+    ):
         """Transform new data through the model's branch.
 
         Transformers that are only applied on the training set are
@@ -1398,7 +1461,7 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -1422,9 +1485,9 @@ class BaseModel(BaseModelPlotter):
             Transformed target column. Only returned if provided.
 
         """
-        for est in self.pipeline:
-            if not est._train_only:
-                X, y = custom_transform(self, est, self.branch, (X, y), verbose)
+        for transformer in self.pipeline:
+            if not transformer._train_only:
+                X, y = custom_transform(transformer, self.branch, (X, y), verbose)
 
         if self.scaler:
             X = self.scaler.transform(X)

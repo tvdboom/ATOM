@@ -203,7 +203,7 @@ no mlflow tracking is performed.
 <p>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 </p>
 </td>
 </tr>
@@ -326,7 +326,8 @@ Dictionary of the encountered exceptions (if any).
 </p>
 <p>
 <strong>winner: <a href="../../../user_guide/models">model</a></strong><br>
-Model subclass that performed best on the test set.
+Model subclass that performed best on the test set (either through the
+<code>metric_test</code> or <code>mean_bootstrap</code> attribute).
 </p>
 <strong>results: pd.DataFrame</strong><br>
 Dataframe of the training results. Columns can include:
@@ -395,8 +396,13 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 
 <tr>
+<td><a href="#clear">clear</a></td>
+<td>Clear attributes from all models.</td>
+</tr>
+
+<tr>
 <td><a href="#delete">delete</a></td>
-<td>Remove a model from the pipeline.</td>
+<td>Delete models from the trainer.</td>
 </tr>
 
 <tr>
@@ -427,11 +433,6 @@ Fontsize for the ticks along the plot's axes.
 <tr>
 <td><a href="#reset-aesthetics">reset_aesthetics</a></td>
 <td>Reset the plot aesthetics to their default values.</td>
-</tr>
-
-<tr>
-<td><a href="#reset-predictions">reset_predictions</a></td>
-<td>Clear the prediction attributes from all models.</td>
 </tr>
 
 <tr>
@@ -537,6 +538,24 @@ Whether to render the plot.
 <br />
 
 
+<a name="clear"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">clear</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L337">[source]</a>
+</span>
+</div>
+Reset all model attributes to their initial state, deleting potentially
+large data arrays. Use this method to free some memory before saving
+the class. The cleared attributes per model are:
+
+* [Prediction attributes](../../../user_guide/predicting).
+* [Metrics scores](../../../user_guide/training/#metric).
+* [Shap values](../../../user_guide/plots/#shap).
+
+<br /><br /><br />
+
+
 <a name="delete"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
@@ -544,13 +563,10 @@ Whether to render the plot.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L305">[source]</a>
 </span>
 </div>
-Delete a model from the trainer. If the winning model is
-removed, the next best model (through `metric_test` or
-`mean_bootstrap`) is selected as winner. If all models are
-removed, the metric and training approach are reset. Use
-this method to drop unwanted models from the pipeline
-or to free some memory before saving. Deleted models are
-not removed from any active mlflow experiment.
+Delete models from the trainer. If all models are removed, the metric
+is reset. Use this method to drop unwanted models from the pipeline
+or to free some memory before saving. Deleted models are not removed
+from any active mlflow experiment.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -650,7 +666,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -658,7 +675,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -731,18 +748,6 @@ to the end of their names.
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
-<br /><br /><br />
-
-
-<a name="reset-predictions"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L181">[source]</a>
-</span>
-</div>
-Clear the [prediction attributes](../../../user_guide/predicting) from all models.
-Use this method to free some memory before saving the trainer.
 <br /><br /><br />
 
 

@@ -23,7 +23,7 @@ from .data_cleaning import BaseTransformer
 from .basemodel import BaseModel
 from .utils import (
     SEQUENCE, OPTIONAL_PACKAGES, lst, time_to_str, is_multidim,
-    get_scorer, get_best_score, check_scaling, delete, PlotCallback,
+    get_custom_scorer, get_best_score, check_scaling, delete, PlotCallback,
     CustomDict,
 )
 
@@ -169,7 +169,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `numpy.random`.
+        number generator is the `RandomState` used by `np.random`.
 
     """
 
@@ -200,6 +200,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.n_bootstrap = n_bootstrap
 
         # Branching attributes
+        self.index = True
         self.holdout = None
         self._current = "og"
         self._branches = CustomDict({self._current: Branch(self, self._current)})
@@ -281,14 +282,14 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Assign default scorer
         if not self._metric:
             if self.task.startswith("bin"):
-                self._metric = CustomDict(f1=get_scorer("f1"))
+                self._metric = CustomDict(f1=get_custom_scorer("f1"))
             elif self.task.startswith("multi"):
-                self._metric = CustomDict(f1_weighted=get_scorer("f1_weighted"))
+                self._metric = CustomDict(f1_weighted=get_custom_scorer("f1_weighted"))
             else:
-                self._metric = CustomDict(r2=get_scorer("r2"))
+                self._metric = CustomDict(r2=get_custom_scorer("r2"))
 
         # Ignore if it's the same scorer as previous call
-        elif not all([hasattr(m, "name") for m in self._metric.values()]):
+        elif not all(hasattr(m, "name") for m in self._metric.values()):
             self._metric = self._prepare_metric(
                 metric=self._metric,
                 greater_is_better=self.greater_is_better,
@@ -449,8 +450,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         metric_dict = CustomDict()
         for args in zip(metric, *metric_params.values()):
-            metric = get_scorer(*args)
-            metric_dict[metric.name] = metric
+            scorer = get_custom_scorer(*args)
+            metric_dict[scorer.name] = scorer
 
         return metric_dict
 

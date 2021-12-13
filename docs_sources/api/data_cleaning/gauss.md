@@ -42,7 +42,7 @@ Verbosity level of the class. Possible values are:
 </ul>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the quantile strategy. If None, the random number generator
-is the <code>RandomState</code> used by <code>numpy.random</code>.
+is the <code>RandomState</code> used by <code>np.random</code>.
 <p>
 <strong>**kwargs</strong><br>
 Additional keyword arguments for the <code>strategy</code> estimator.
@@ -76,7 +76,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
 <strong>estimator: sklearn transformer</strong><br>
-Estimator's instance with which the data is transformed.
+Object with which the data is transformed.
 </td>
 </tr>
 </table>
@@ -134,7 +134,7 @@ Fit to data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -162,7 +162,7 @@ Fit to data, then transform it.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -195,7 +195,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -203,7 +204,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -291,7 +292,7 @@ Apply the transformations to the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width=80%" style="background:white;">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>

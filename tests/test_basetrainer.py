@@ -9,11 +9,11 @@ Description: Unit tests for basetrainer.py
 
 # Standard packages
 import pytest
-from unittest.mock import patch
-from sklearn.metrics import get_scorer, f1_score
+from skopt.callbacks import TimerCallback
+from mlflow.tracking.fluent import ActiveRun
+from sklearn.metrics import make_scorer, f1_score
 from sklearn.ensemble import RandomForestClassifier
 from skopt.space.space import Integer, Categorical
-from skopt.callbacks import TimerCallback
 
 # Own modules
 from atom.training import DirectClassifier, DirectRegressor
@@ -213,9 +213,9 @@ def test_invalid_delta_y():
 def test_plot():
     """Assert that plotting the BO runs without errors."""
     trainer = DirectClassifier(
-        models=["lSVM", "kSVM", "MLP"],
-        n_calls=45,
-        n_initial_points=20,
+        models="LR",
+        n_calls=17,
+        n_initial_points=8,
         bo_params={"plot": True},
         random_state=1,
     )
@@ -321,14 +321,14 @@ def test_invalid_sequence_parameter():
 
 
 def test_metric_is_sklearn_scorer():
-    """"Assert that using a sklearn SCORER works."""
+    """Assert that using a sklearn SCORER works."""
     trainer = DirectClassifier("LR", metric="balanced_accuracy", random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.metric == "balanced_accuracy"
 
 
 def test_metric_is_acronym():
-    """"Assert that using the metric acronyms work."""
+    """Assert that using the metric acronyms work."""
     trainer = DirectClassifier("LR", metric="auc", random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.metric == "roc_auc"
@@ -336,7 +336,7 @@ def test_metric_is_acronym():
 
 @pytest.mark.parametrize("metric", CUSTOM_SCORERS)
 def test_metric_is_custom(metric):
-    """"Assert that using the metric acronyms work."""
+    """Assert that using the metric acronyms work."""
     trainer = DirectClassifier("LR", metric=metric, random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.metric == CUSTOM_SCORERS[metric].__name__
@@ -357,7 +357,7 @@ def test_metric_is_function():
 
 def test_metric_is_scorer():
     """Assert that a scorer metric works."""
-    trainer = DirectClassifier("LR", metric=get_scorer("f1"), random_state=1)
+    trainer = DirectClassifier("LR", metric=make_scorer(f1_score), random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.metric == "f1"
 
@@ -379,12 +379,11 @@ def test_sequence_parameters():
     assert len(trainer.lgb.metric_bootstrap) == 7
 
 
-@patch("mlflow.start_run")
-def test_run_is_started(mlflow):
-    """Assert that the mlflow run is started."""
-    trainer = DirectRegressor(models=["OLS", "BR"], experiment="test", random_state=1)
+def test_run_is_started():
+    """Assert that a mlflow run is started."""
+    trainer = DirectRegressor(models="OLS", experiment="test", random_state=1)
     trainer.run(reg_train, reg_test)
-    assert mlflow.call_count == 2
+    assert isinstance(trainer.ols._run, ActiveRun)
 
 
 def test_custom_dimensions_for_bo():

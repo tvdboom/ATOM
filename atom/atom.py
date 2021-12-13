@@ -52,11 +52,11 @@ from .training import (
 from .models import CustomModel, MODELS_ENSEMBLES
 from .plots import ATOMPlotter
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt, lst,
-    divide, infer_task, check_dim, check_scaling, is_multidim,
-    get_pl_name, names_from_estimator, get_columns, check_is_fitted,
-    variable_return, fit_one, delete, custom_transform, method_to_log,
-    composed, crash, Table, CustomDict,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
+    lst, divide, infer_task, check_dim, check_scaling, is_multidim,
+    get_pl_name, names_from_estimator, check_is_fitted, variable_return,
+    fit_one, delete, custom_transform, method_to_log, composed, crash,
+    Table, CustomDict,
 )
 
 
@@ -74,7 +74,8 @@ class ATOM(BasePredictor, ATOMPlotter):
     """
 
     @composed(crash, method_to_log)
-    def __init__(self, arrays, y, shuffle, n_rows, test_size, holdout_size):
+    def __init__(self, arrays, y, index, shuffle, n_rows, test_size, holdout_size):
+        self.index = index
         self.shuffle = shuffle
         self.n_rows = n_rows
         self.test_size = test_size
@@ -101,9 +102,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Attach the data to the original branch
         self.og.data = self.branch.data.copy(deep=True)
         self.og.idx = self.branch.idx.copy()
-
-        # Save the test_size fraction for use during training
-        self._test_size = self.branch.idx[1] / self.shape[0]
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
@@ -356,19 +354,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         model = CustomModel(self, estimator=est)
         model.estimator = model.est
 
-        # Save metric scores on complete training and test set
-        model.metric_train = flt(
-            [
-                metric(model.estimator, self.X_train, self.y_train)
-                for metric in self._metric.values()
-            ]
-        )
-        model.metric_test = flt(
-            [
-                metric(model.estimator, self.X_test, self.y_test)
-                for metric in self._metric.values()
-            ]
-        )
+        # Save metric scores on train and test set
+        for metric in self._metric.values():
+            model._calculate_score(metric, "train")
+            model._calculate_score(metric, "test")
 
         self._models.update({model.name: model})
         self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
@@ -604,7 +593,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_dim(self, "shrink")
-        columns = get_columns(self.dataset, columns)
+        columns = self._get_columns(columns)
         exclude_types = ["category", "datetime64[ns]", "bool"]
 
         # Build column filter and type_map
@@ -709,7 +698,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(str(self))
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES = None, verbose: Optional[int] = None):
+    def transform(
+        self,
+        X: X_TYPES,
+        y: Optional[Y_TYPES] = None,
+        verbose: Optional[int] = None,
+    ):
         """Transform new data through the branch.
 
         Transformers that are only applied on the training set are
@@ -717,7 +711,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -741,9 +735,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             Transformed target column. Only returned if provided.
 
         """
-        for est in self.pipeline:
-            if not est._train_only:
-                X, y = custom_transform(self, est, self.branch, (X, y), verbose)
+        for transformer in self.pipeline:
+            if not transformer._train_only:
+                X, y = custom_transform(transformer, self.branch, (X, y), verbose)
 
         return variable_return(X, y)
 
@@ -806,7 +800,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Transformers remember the train_only and cols parameters
         estimator._train_only = train_only
         if columns is not None:
-            inc, exc = get_columns(self.dataset, columns, return_inc_exc=True)
+            inc, exc = self._get_columns(columns, return_inc_exc=True)
             estimator._cols = [
                 [c for c in inc if c != self.target],  # Included cols
                 [c for c in exc if c != self.target],  # Excluded cols
@@ -818,7 +812,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             fit_one(estimator, self.X_train, self.y_train, **fit_params)
 
-        custom_transform(self, estimator, self.branch, verbose=self.verbose)
+        custom_transform(estimator, self.branch, verbose=self.verbose)
 
         # Add the estimator to the pipeline
         self.branch.pipeline = self.pipeline.append(
@@ -889,7 +883,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         Parameters
         ----------
         func: function
-            Function to apply to the dataset.
+            Logic to apply to the dataset.
 
         columns: int or str
             Name or index of the column in the dataset to create
@@ -907,6 +901,10 @@ class ATOM(BasePredictor, ATOMPlotter):
             raise TypeError(
                 "Invalid value for the func parameter. Argument is not callable!"
             )
+
+        # If index, get existing name from dataset
+        if isinstance(columns, int):
+            columns = self._get_columns(columns)[0]
 
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
         self._add_transformer(FuncTransformer(func, columns, args, **kwargs))
@@ -926,6 +924,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_dim(self, "drop")
+
+        columns = self._get_columns(columns, include_target=False)
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
         self._add_transformer(DropTransformer(columns=columns, **kwargs))
 

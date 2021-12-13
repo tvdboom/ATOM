@@ -8,6 +8,7 @@
   model's performance on a completely independent dataset. Read more
   in the [user_guide](../user_guide/data-management/#holdout-set).
 * Complete rework of the [ensemble](../user_guide/models/#ensembles) models.
+* Support for dataframe indexing. Read more in the [user guide](../user_guide/data_management/#indexing).
 * New [plot_parshap](../API/plots/plot_parshap) plot to detect overfitting
   features.
 * The [plot_feature_importance](../API/plots/plot_feature_importance)
@@ -15,6 +16,8 @@
 * Added the [transform](../API/models/gnb/#transform) method for models.
 * Added the `threshold` parameter to the [evaluate](../API/ATOM/atomclassifier/#evaluate)
   method.
+* The `reset_predictions` method is deprecated in favour of the new
+  [clear](../API/ATOM/atomclassifier/#clear) method.
 * Refactor of the model's [full_train](../API/models/gnb/#full-train) method.
 * The [merge](../API/training/directclassifier/#merge) method is available
   for all trainers.

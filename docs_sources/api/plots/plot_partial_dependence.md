@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">plot_partial_dependence</strong>(models=None,
-features=None, kind="average", target=None, title=None, figsize=(10, 6),
+columns=None, kind="average", target=None, title=None, figsize=(10, 6),
 filename=None, display=True)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1939">[source]</a>
@@ -27,7 +27,7 @@ plots. Read more about partial dependence on sklearn's [documentation](https://s
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </p>
 <p>
-<strong>features: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>columns: int, str, sequence or None, optional (default=None)</strong><br>
 Features or feature pairs (name or index) to get the partial dependence
 from. Maximum of 3 allowed. If None, it uses the top 3 features if the
 <code>feature_importance</code> attribute is defined, else it uses the

@@ -40,7 +40,7 @@ from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
     SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df,
-    get_scorer, check_scaling, check_is_fitted, get_feature_importance,
+    get_custom_scorer, check_scaling, check_is_fitted, get_feature_importance,
     composed, crash, method_to_log,
 )
 
@@ -116,7 +116,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -125,7 +125,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Dataframe containing the new features.
+            Transformed feature set.
 
         """
 
@@ -277,16 +277,16 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `numpy.random`.
+        number generator is the `RandomState` used by `np.random`.
 
     Attributes
     ----------
     symbolic_transformer: SymbolicTransformer
-        Instance used to calculate the genetic features. Only for the
+        Object used to calculate the genetic features. Only for the
         genetic strategy.
 
     genetic_features: pd.DataFrame
-        Dataframe of the newly created non-linear features. Only for
+        Information on the newly created non-linear features. Only for
         the genetic strategy. Columns include:
             - name: Name of the feature (automatically created).
             - description: Operators used to create this feature.
@@ -330,7 +330,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
@@ -471,7 +471,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -665,7 +665,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `numpy.random`.
+        number generator is the `RandomState` used by `np.random`.
 
     **kwargs
         Any extra keyword argument for the PCA, SFM, SFS, RFE and
@@ -675,7 +675,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     Attributes
     ----------
     collinear: pd.DataFrame
-        Dataframe of the removed collinear features. Columns include:
+        Information on the removed collinear features. Columns include:
             - drop_feature: Name of the feature dropped by the method.
             - correlated feature: Name of the correlated features.
             - correlation_value: Pearson correlation coefficients of
@@ -688,8 +688,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         the reduced set.
 
     <strategy>: sklearn transformer
-        Transformer instance (lowercase strategy) used to transform
-        the data, e.g. `balancer.pca` for the PCA strategy.
+        Object (lowercase strategy) used to transform the data,
+        e.g. `balancer.pca` for the PCA strategy.
 
     """
 
@@ -736,7 +736,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -966,7 +966,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             # Both RFECV and SFS use the scoring parameter
             if self.kwargs.get("scoring"):
-                self.kwargs["scoring"] = get_scorer(self.kwargs["scoring"])
+                self.kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
             if self.strategy.lower() == "rfecv":
                 # Invert n_features to select them all (default option)
@@ -989,7 +989,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -1052,10 +1052,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 self.log("   >>> Scaling features...", 2)
                 X = self.scaler.transform(X)
 
-            # Define PCA, keep in mind that it has all components still
             n = self.pca.n_components_
+            columns = [f"Component {str(i)}" for i in range(1, n + 1)]
+            X = to_df(self.pca.transform(X)[:, :n], index=X.index, columns=columns)
+
             var = np.array(self.pca.explained_variance_ratio_[:n])
-            X = to_df(self.pca.transform(X)[:, :n], index=X.index, pca=True)
             self.log(f"   >>> Total explained variance: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == "sfm":

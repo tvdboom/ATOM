@@ -247,9 +247,12 @@ def test_setter_with_models():
 
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""
+    new_dataset = merge(X_bin, y_bin)
+    new_dataset.iloc[0, 3] = 4  # Change one value
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.dataset = merge(X_class, y_class)
-    assert atom.dataset.shape == (len(X_class), X_class.shape[1] + 1)
+    atom.dataset = new_dataset
+    assert atom.dataset.iloc[0, 3] == 4  # Check the value is changed
 
 
 def test_train_setter():

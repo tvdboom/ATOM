@@ -91,15 +91,15 @@ Verbosity level of the class. Possible values are:
 <td width="80%" class="td_params">
 <p>
 <strong>missing: list</strong><br>
-List of values that are considered "missing". Default values are: "",
-"?", "None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>,
+Values that are considered "missing". Default values are: "", "?",
+"None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>,
 <code>NaN</code>, <code>+inf</code> and <code>-inf</code> are always
 considered missing since they are incompatible with sklearn estimators.
 </p>
 <p>
 <strong>mapping: dict</strong><br>
-Dictionary of the target values mapped to their respective encoded integer.
- Only available if encode_target=True.
+Target values mapped to their respective encoded integer. Only
+available if encode_target=True.
 </p>
 </td>
 </tr>
@@ -158,7 +158,7 @@ Apply the data cleaning steps to the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -199,7 +199,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -207,7 +208,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -299,7 +300,7 @@ Apply the data cleaning steps to the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>

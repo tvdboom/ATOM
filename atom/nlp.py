@@ -159,7 +159,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -357,7 +357,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -491,7 +491,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -631,7 +631,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -674,7 +674,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.

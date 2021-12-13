@@ -76,8 +76,8 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 !!!warning
     Two category-encoders estimators are unavailable:
 
-    * OneHotEncoder: Use the `max_onehot` parameter.
-    * HashingEncoder: Incompatibility of APIs.
+    * [OneHotEncoder](https://contrib.scikit-learn.org/category_encoders/onehot.html): Use the `max_onehot` parameter.
+    * [HashingEncoder](https://contrib.scikit-learn.org/category_encoders/hashing.html): Incompatibility of APIs.
 
 <br>
 
@@ -134,7 +134,7 @@ Fit to data. Note that leaving y=None can lead to errors if the
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -165,7 +165,7 @@ to errors if the `strategy` encoder requires target values.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -200,7 +200,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -208,7 +209,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -296,7 +297,7 @@ Encode the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>

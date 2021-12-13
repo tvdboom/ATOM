@@ -530,6 +530,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#indexing" class="md-nav__link">
+    Indexing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#branches" class="md-nav__link">
     Branches
   </a>
@@ -2750,6 +2757,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#indexing" class="md-nav__link">
+    Indexing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#branches" class="md-nav__link">
     Branches
   </a>
@@ -2846,6 +2860,12 @@ following formats:</p>
 <li>(X_train, y_train), (X_test, y_test)</li>
 <li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
+<p><br></p>
+<h2 id="indexing">Indexing</h2>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>MultiIndex is not supported.</p>
+</div>
 <p><br></p>
 <h2 id="branches">Branches</h2>
 <p>You might want to compare how a model performs on a dataset transformed
@@ -2953,16 +2973,18 @@ user defined branch) and one additional branch that stores the
 dataframe with which the class was initialized. This internal branch
 is called <code>og</code> (original) and can not be accessed by the user.</p>
 <p>Apart from the dataset itself, the model's <a href="./predicting">predictions</a>
-are also stored as attributes of the model (e.g. <code>predict_proba_train</code>)
-and can occupy considerable memory for large datasets. You can delete
-these attributes using the <a href="../../API/ATOM/atomclassifier/#reset-predictions">reset_predictions</a>
-method in order to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
+(e.g. <code>predict_proba_train</code>), metric scores and <a href="./plots/#shap">shap values</a>
+are also stored as attributes of the model to avoid having to recalculate
+them every time they are needed. All this data can occupy a considerable
+amount memory for large datasets. You can delete all these attributes
+using the <a href="../../API/ATOM/atomclassifier/#clear">clear</a> method in order
+to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
 the class.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Sparse matrices fed to atom or an <a href="../../API/ATOM/atomclassifier/#export-pipeline">exported pipeline</a>
-are converted internally to the full array, filling large spaces
-in memory.</p>
+are converted internally to the full array. Note that this can fill
+large spaces in memory.</p>
 </div>
 <p><br></p>
 <h2 id="data-transformations">Data transformations</h2>

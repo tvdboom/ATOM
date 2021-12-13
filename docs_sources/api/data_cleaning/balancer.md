@@ -9,10 +9,13 @@ n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
 </span>
 </div>
 
-Balance the number of samples per class in the target column. Use only
-for classification tasks. This class can be accessed from atom through
-the [balance](../../ATOM/atomclassifier/#balance) method. Read more in
-the [user guide](../../../user_guide/data_cleaning/#balancing-the-data).
+Balance the number of samples per class in the target column. When
+oversampling, the newly created samples have an increasing integer
+index for numerical indices, and an index of the form [estimator]_N
+for non-numerical indices, where N stands for the N-th sample in the
+data set. Use only for classification tasks. This class can be accessed
+from atom through the [balance](../../ATOM/atomclassifier/#balance)
+method. Read more in the [user guide](../../../user_guide/data_cleaning/#balancing-the-data).
 
 <table style="font-size:16px">
 <tr>
@@ -47,7 +50,7 @@ Verbosity level of the class. Possible values are:
 </ul>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
 <strong>**kwargs</strong><br>
 Additional keyword arguments for the <code>strategy</code> estimator.
@@ -60,6 +63,10 @@ Additional keyword arguments for the <code>strategy</code> estimator.
     Use atom's [classes](../../ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the target class distribution per data set.
 
+!!! warning
+    The [clustercentroids](https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html)
+    estimator is unavailable because of incompatibilities of the APIs.
+
 <br>
 
 
@@ -71,12 +78,12 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>&lt;strategy&gt;: imblearn estimator</strong><br>
-Estimator instance (lowercase strategy) used to oversample or undersample
-the data, e.g. <code>balancer.adasyn</code> for the default strategy.
+Object (lowercase strategy) used to balance  the data,
+e.g. <code>balancer.adasyn</code> for the default strategy.
 </p>
 <p>
 <strong>mapping: dict</strong><br>
-Dictionary of the target values mapped to their respective encoded integer.
+Target values mapped to their respective encoded integer.
 </p>
 </td>
 </tr>
@@ -127,13 +134,13 @@ Dictionary of the target values mapped to their respective encoded integer.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
 </span>
 </div>
-Oversample or undersample the data.
+Balance the data.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>
@@ -174,7 +181,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -182,7 +190,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -268,13 +276,13 @@ Estimator instance.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1474">[source]</a>
 </span>
 </div>
-Oversample or undersample the data.
+Balance the data.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>

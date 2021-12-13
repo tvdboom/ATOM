@@ -38,17 +38,16 @@ class Branch:
     Attributes
     ----------
     pipeline: pd.Series or None, optional (default=None)
-        Sequence of estimators fitted on the data in the branch.
+        Estimators fitted on the data in the branch.
 
     data: pd.DataFrame or None, optional (default=None)
         Dataset coupled to the branch.
 
     idx: tuple or None, optional (default=None)
-        Tuple indicating the train and test sizes.
+        Train and test sizes.
 
     mapping: dict or None, optional (default=None)
-        Dictionary of the target values mapped to their respective
-        encoded integer.
+        Target values mapped to their respective encoded integer.
 
     feature_importance: list, optional (default=None)
         Features ordered by most to least important.
@@ -180,6 +179,8 @@ class Branch:
 
         def counter(name, dim):
             """Return the counter dimension of the provided data set."""
+            if name == "dataset":
+                return name
             if dim == "side":
                 if "X" in name:
                     return name.replace("X", "y")
@@ -200,25 +201,29 @@ class Branch:
 
         # Define the data attrs side and under
         side_name = counter(name, "side")
-        side = getattr(self, side_name) if side_name else None
+        if side_name:
+            side = getattr(self, side_name)
         under_name = counter(name, "under")
-        under = getattr(self, under_name) if under_name else None
+        if under_name:
+            under = getattr(self, under_name)
 
-        # Convert (if necessary) to pandas
+            # Convert (if necessary) to pandas
         if "y" in name:
             value = to_series(
-                value,
+                data=value,
                 index=side.index if side_name else None,
                 name=under.name if under_name else "target",
+                dtype=under.dtype if under_name else None,
             )
         else:
             value = to_df(
-                value,
+                data=value,
                 index=side.index if side_name else None,
                 columns=under.columns if under_name else None,
+                dtypes=under.dtypes if under_name else None,
             )
 
-        if side_name:  # Check for equal number of rows
+        if side_name:  # Check for equal rows
             if len(value) != len(side):
                 raise ValueError(
                     f"{name} and {side_name} must have the same "
@@ -230,7 +235,7 @@ class Branch:
                     f"indices, got {value.index} != {side.index}."
                 )
 
-        if under_name:  # Check for equal number of columns
+        if under_name:  # Check for equal columns
             if "y" in name:
                 if value.name != under.name:
                     raise ValueError(
@@ -244,10 +249,10 @@ class Branch:
                         f"of columns, got {value.shape[1]} != {under.shape[1]}."
                     )
 
-                if list(value.columns) != list(under.columns):
+                if not value.columns.equals(under.columns):
                     raise ValueError(
                         f"{name} and {under_name} must have the same "
-                        f"columns , got {value.columns} != {under.columns}."
+                        f"columns, got {value.columns} != {under.columns}."
                     )
 
         return value
@@ -260,31 +265,31 @@ class Branch:
     @dataset.setter
     @typechecked
     def dataset(self, value: X_TYPES):
-        self.data = value
+        self.data = self._check_setter("dataset", value)
 
     @property
     def train(self):
         """Training set."""
-        return self.data[:self.idx[0]]
+        return self.data.loc[self.idx[0], :]
 
     @train.setter
     @typechecked
     def train(self, value: X_TYPES):
         df = self._check_setter("train", value)
-        self.data = pd.concat([df, self.test])
-        self.idx[0] = len(df)
+        self.data = self.T._set_index(pd.concat([df, self.test]))
+        self.idx[0] = self.data.index[:len(df)]
 
     @property
     def test(self):
         """Test set."""
-        return self.data[-self.idx[1]:]
+        return self.data.loc[self.idx[1], :]
 
     @test.setter
     @typechecked
     def test(self, value: X_TYPES):
         df = self._check_setter("test", value)
-        self.data = pd.concat([self.train, df])
-        self.idx[1] = len(df)
+        self.data = self.T._set_index(pd.concat([self.train, df]))
+        self.idx[1] = self.data.index[-len(df):]
 
     @property
     def X(self):

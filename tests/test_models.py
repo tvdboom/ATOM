@@ -71,15 +71,15 @@ def test_custom_models(model):
 
 def test_deep_learning_models():
     """Assert that ATOM works with deep learning models."""
-    atom = ATOMClassifier(*mnist, n_rows=0.05, random_state=1)
+    atom = ATOMClassifier(*mnist, n_rows=0.01, random_state=1)
     pytest.raises(PermissionError, atom.clean)
     atom.run(models=neural_network())
     assert atom.models == "KC"  # KerasClassifier
 
 
-def test_nice_error_for_unpickable_models():
-    """Assert that pickle errors raise an understandable exception."""
-    atom = ATOMClassifier(*mnist, n_rows=0.05, n_jobs=2, random_state=1)
+def test_error_for_unpickable_models():
+    """Assert that pickle errors raise an explainable exception."""
+    atom = ATOMClassifier(*mnist, n_rows=0.01, n_jobs=2, random_state=1)
     pytest.raises(
         PickleError,
         atom.run,

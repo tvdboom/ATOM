@@ -2754,8 +2754,8 @@ are compatible. Read more about using custom estimators in the <a href="../../..
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>estimator: estimator class or instance</strong><br>
-Model's estimator. Can be a class or an instance.
+<strong>estimator: sklearn estimator</strong><br>
+Custom model's estimator.
 </p>
 <p>
 <strong>acronym: str or None, optional (default=None)</strong><br>
@@ -2778,8 +2778,8 @@ in the <a href="../../../user_guide/models/#deep-learning">user guide</a>.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>estimator: estimator</strong><br>
-Provided estimator with custom attributes for ATOM's pipeline.
+<strong>estimator: sklearn estimator</strong><br>
+Clone of the provided estimator with custom attributes.
 </td>
 </tr>
 </table>
@@ -2788,10 +2788,10 @@ Provided estimator with custom attributes for ATOM's pipeline.
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
 <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">HuberRegressor</span>
 
-<span class="n">model</span> <span class="o">=</span>  <span class="n">ATOMModel</span><span class="p">(</span><span class="n">HuberRegressor</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;hub&quot;</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s2">&quot;Huber&quot;</span><span class="p">)</span>
+<span class="n">huber</span> <span class="o">=</span>  <span class="n">ATOMModel</span><span class="p">(</span><span class="n">HuberRegressor</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;hub&quot;</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s2">&quot;Huber&quot;</span><span class="p">)</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">huber</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_new</span><span class="p">)</span>
 </code></pre></div>
                 

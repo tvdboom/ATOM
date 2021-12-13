@@ -117,7 +117,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray, sps.matrix, pd.DataFrame or None
+        X: dataframe-like or None, optional (default=None)
             Feature set with shape=(n_samples, n_features). None
             if the pipeline only uses y.
 
@@ -151,7 +151,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray, pd.DataFrame, optional (default=None)
+        X: dataframe-like or None, optional (default=None)
             Feature set with shape=(n_samples, n_features). None
             if the estimator only uses y.
 
@@ -166,7 +166,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        X: np.ndarray
+        X: np.array
             Transformed dataset.
 
         """
@@ -189,7 +189,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         **predict_params
@@ -201,7 +201,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        y_pred: np.ndarray
+        y_pred: np.array
             Predicted target with shape=(n_samples,).
 
         """
@@ -216,12 +216,12 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         Returns
         -------
-        y_pred: np.ndarray
+        y_pred: np.array
             Predicted class probabilities.
 
         """
@@ -236,12 +236,12 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         Returns
         -------
-        y_pred: np.ndarray
+        y_pred: np.array
             Predicted class log-probabilities.
 
         """
@@ -256,12 +256,12 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         Returns
         -------
-        y_pred: np.ndarray
+        y_pred: np.array
             Predicted confidence scores.
 
         """
@@ -276,7 +276,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence
@@ -316,7 +316,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix, pd.DataFrame or None
+        X: dataframe-like or None, optional (default=None)
             Feature set with shape=(n_samples, n_features). None
             if the pipeline only uses y.
 

@@ -54,8 +54,8 @@ from atom.basetransformer import BaseTransformer
 from .utils import (
     SEQUENCE_TYPES, SCALAR, lst, check_is_fitted, check_dim, check_goal,
     check_binary_task, check_predict_proba, get_proba_attr, get_corpus,
-    get_scorer, get_best_score, partial_dependence, get_columns,
-    get_feature_importance, composed, crash, plot_from_model,
+    get_custom_scorer, get_best_score, partial_dependence, get_feature_importance,
+    composed, crash, plot_from_model,
 )
 
 
@@ -275,7 +275,7 @@ class BasePlotter:
     def _get_metric(self, metric):
         """Check and return the index of the provided metric."""
         if isinstance(metric, str):
-            name = get_scorer(metric).name
+            name = get_custom_scorer(metric).name
             if name in self.metric:
                 return self._metric.index(name)
 
@@ -312,29 +312,6 @@ class BasePlotter:
                 "Invalid value for the dataset parameter. "
                 "Choose from: train, test or both."
             )
-
-    def _get_index(self, index, model=None, return_test=True):
-        """Check and return the provided parameter index."""
-        branch = model.branch if model else self.branch
-        if index is None:
-            rows = branch.X_test if return_test else branch.X
-        elif isinstance(index, int):
-            if index < 0:
-                rows = branch.X.iloc[[len(model.X) + index]]
-            else:
-                rows = branch.X.iloc[[index]]
-        elif isinstance(index, slice):
-            rows = branch.X.iloc[index]
-        else:
-            rows = branch.X.iloc[slice(*index)]
-
-        if rows.empty:
-            raise ValueError(
-                "Invalid value for the index parameter. Couldn't find "
-                f"the specified rows in the dataset, got: {index}."
-            )
-
-        return rows
 
     def _get_target(self, target):
         """Check and return the provided target's index."""
@@ -803,7 +780,7 @@ class BaseModelPlotter(BasePlotter):
         # Not using sns hue parameter because of legend formatting
         lines = defaultdict(pd.DataFrame)
         for m in models:
-            n_models = m.branch.idx[0] // m._train_idx  # Number of models in iteration
+            n_models = len(m.branch.idx[0]) // m._train_idx  # Number of models in iter
             if m.metric_bootstrap is None:
                 values = {"x": [n_models], "y": [get_best_score(m, metric)]}
             else:
@@ -2088,7 +2065,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_partial_dependence(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        features: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
         kind: str = "average",
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2112,7 +2089,7 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
-        features: int, str, sequence or None, optional (default=None)
+        columns: int, str, sequence or None, optional (default=None)
             Features or feature pairs (name or index) to get the partial
             dependence from. Maximum of 3 allowed. If None, it uses the
             best 3 features if the `feature_importance` attribute is
@@ -2153,34 +2130,19 @@ class BaseModelPlotter(BasePlotter):
 
         """
 
-        def convert_feature(feature):
-            if isinstance(feature, str):
-                try:
-                    feature = list(m.features).index(feature)
-                except ValueError:
-                    raise ValueError(
-                        "Invalid value for the features parameter. "
-                        f"Feature {feature} not found in the dataset."
-                    )
-            elif feature > m.X.shape[1] - 1:  # -1 because of index 0
-                raise ValueError(
-                    "Invalid value for the features parameter. Dataset "
-                    f"has {m.X.shape[1]} features, got index {feature}."
-                )
-            return int(feature)
-
         def get_features(features, m):
+            """Select feature list from provided columns."""
             # Default is to select the best or the first 3 features
             if not features:
                 if not m.branch.feature_importance:
-                    features = [0, 1, 2]
+                    features = m.features[:3]
                 else:
                     features = m.branch.feature_importance[:3]
 
             features = lst(features)
             if len(features) > 3:
                 raise ValueError(
-                    "Invalid value for the features parameter. "
+                    "Invalid value for the columns parameter. "
                     f"Maximum 3 allowed, got {len(features)}."
                 )
 
@@ -2188,18 +2150,21 @@ class BaseModelPlotter(BasePlotter):
             cols = []
             for fxs in features:
                 if isinstance(fxs, (int, str)):
-                    cols.append((convert_feature(fxs),))
+                    cols.append((self._get_columns(fxs, False, branch=m.branch)[0],))
                 elif len(models) == 1:
                     if len(fxs) == 2:
-                        cols.append(tuple(convert_feature(fx) for fx in fxs))
+                        add = []
+                        for fx in fxs:
+                            add.append(self._get_columns(fx, False, branch=m.branch)[0])
+                        cols.append(tuple(add))
                     else:
                         raise ValueError(
-                            "Invalid value for the features parameter. Values "
+                            "Invalid value for the columns parameter. Features "
                             f"should be single or in pairs, got {fxs}."
                         )
                 else:
                     raise ValueError(
-                        "Invalid value for the features parameter. Feature pairs "
+                        "Invalid value for the columns parameter. Feature pairs "
                         f"are invalid when plotting multiple models, got {fxs}."
                     )
             return cols
@@ -2218,7 +2183,7 @@ class BaseModelPlotter(BasePlotter):
 
         axes = []
         fig = self._get_figure()
-        n_cols = 3 if not features else len(lst(features))
+        n_cols = 3 if not columns else len(lst(columns))
         gs = GridSpecFromSubplotSpec(1, n_cols, BasePlotter._fig.grid)
         for i in range(n_cols):
             axes.append(fig.add_subplot(gs[0, i]))
@@ -2228,22 +2193,21 @@ class BaseModelPlotter(BasePlotter):
             color = next(palette)
 
             # Since every model can have different fxs, select them again
-            cols = get_features(features, m)
+            cols = get_features(columns, m)
 
             # Make sure the models use the same features
             if len(models) > 1:
-                fxs_names = [m.features[col[0]] for col in cols]
                 if not names:
-                    names = fxs_names
-                elif names != fxs_names:
+                    names = cols
+                elif names != cols:
                     raise ValueError(
-                        "Invalid value for the features parameter. Not all models "
-                        f"use the same features, got {names} and {fxs_names}."
+                        "Invalid value for the columns parameter. Not all "
+                        f"models use the same features, got {names} and {cols}."
                     )
 
             # Compute averaged predictions
             pd_results = Parallel(n_jobs=self.n_jobs)(
-                delayed(partial_dependence)(m.estimator, m.X_test, col) for col in cols
+                delayed(partial_dependence)(m.estimator, m.X_test, [m.features.index(c) for c in col]) for col in cols
             )
 
             # Get global min and max average predictions of PD grouped by plot type
@@ -2264,7 +2228,7 @@ class BaseModelPlotter(BasePlotter):
                 trans = blended_transform_factory(axi.transData, axi.transAxes)
                 axi.vlines(deciles[fx[0]], 0, 0.05, transform=trans, color="k")
                 axi.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
-                self._plot(ax=axi, xlabel=m.columns[fx[0]])
+                self._plot(ax=axi, xlabel=fx[0])
 
                 # Draw line or contour plot
                 if len(values) == 1:
@@ -2314,7 +2278,7 @@ class BaseModelPlotter(BasePlotter):
 
                     self._plot(
                         ax=axi,
-                        ylabel=m.columns[fx[1]],
+                        ylabel=fx[1],
                         xlim=(min(XX.flatten()), max(XX.flatten())),
                         ylim=(min(YY.flatten()), max(YY.flatten())),
                     )
@@ -2351,7 +2315,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_parshap(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        features: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -2381,7 +2345,7 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
-        features: int, str, sequence or None, optional (default=None)
+        columns: int, str, sequence or None, optional (default=None)
             Names or indices of the features to plot. None to show all.
 
         target: int or str, optional (default=1)
@@ -2420,7 +2384,7 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            fxs = get_columns(m.X, features)
+            fxs = self._get_columns(columns, include_target=False, branch=m.branch)
             marker = next(markers)
 
             parshap = {}
@@ -2756,7 +2720,7 @@ class BaseModelPlotter(BasePlotter):
         if metric is None:
             metric_list = [m._score_func for m in self._metric.values()]
         else:
-            metric_list = [get_scorer(m)._score_func for m in lst(metric)]
+            metric_list = [get_custom_scorer(m)._score_func for m in lst(metric)]
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -2993,7 +2957,7 @@ class BaseModelPlotter(BasePlotter):
     def bar_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, tuple, slice]] = None,
+        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -3018,10 +2982,9 @@ class BaseModelPlotter(BasePlotter):
             models in the pipeline. To avoid this, call the plot
             from a model, e.g. `atom.xgb.bar_plot()`.
 
-        index: int, tuple, slice or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If shape
-            (n, m), it selects rows n until m. If None, it selects
-            all rows in the test set.
+        index: int, str, sequence or None, optional (default=None)
+            Index names or positions of the rows in the dataset to
+            plot. If None, it selects all rows in the test set.
 
         show: int or None, optional (default=None)
             Number of features (ordered by importance) to show.
@@ -3058,10 +3021,10 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "bar_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        index = self._get_index(index, m)
+        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         show = self._get_show(show, m)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(index, target)
+        explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -3084,7 +3047,7 @@ class BaseModelPlotter(BasePlotter):
     def beeswarm_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[tuple, slice]] = None,
+        index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -3107,10 +3070,9 @@ class BaseModelPlotter(BasePlotter):
             from a model, e.g. `atom.xgb.beeswarm_plot()`.
 
         index: tuple, slice or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If shape
-            (n, m), it selects rows n until m. If None, it selects
-            all rows in the test set. The beeswarm plot does not
-            support plotting a single sample.
+            Index names or positions of the rows in the dataset to plot.
+            If None, it selects all rows in the test set. The beeswarm
+            plot does not support plotting a single sample.
 
         show: int or None, optional (default=None)
             Number of features (ordered by importance) to show. None
@@ -3147,10 +3109,10 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "beeswarm_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        index = self._get_index(index, m)
+        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         show = self._get_show(show, m)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(index, target)
+        explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -3173,7 +3135,7 @@ class BaseModelPlotter(BasePlotter):
     def decision_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, tuple, slice]] = None,
+        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -3200,10 +3162,9 @@ class BaseModelPlotter(BasePlotter):
             models in the pipeline. To avoid this, call the plot
             from a model, e.g. `atom.xgb.decision_plot()`.
 
-        index: int, tuple, slice or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If shape
-            (n, m), it selects rows n until m. If None, it selects
-            all rows in the test set.
+        index: int, str, sequence or None, optional (default=None)
+            Index names or positions of the rows in the dataset to plot.
+            If None, it selects all rows in the test set.
 
         show: int or None, optional (default=None)
             Number of features (ordered by importance) to show. None
@@ -3240,7 +3201,7 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "decision_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        index = self._get_index(index, m)
+        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         show = self._get_show(show, m)
         target = self._get_target(target)
 
@@ -3248,8 +3209,8 @@ class BaseModelPlotter(BasePlotter):
         ax = fig.add_subplot(BasePlotter._fig.grid)
         shap.decision_plot(
             base_value=m._shap.get_expected_value(target),
-            shap_values=m._shap.get_shap_values(index, target),
-            features=index,
+            shap_values=m._shap.get_shap_values(rows, target),
+            features=rows,
             feature_display_range=slice(-1, -show - 1, -1),
             auto_size_plot=False,
             show=False,
@@ -3273,7 +3234,7 @@ class BaseModelPlotter(BasePlotter):
     def force_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, tuple, slice]] = None,
+        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
         target: Union[str, int] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (14, 6),
@@ -3297,10 +3258,9 @@ class BaseModelPlotter(BasePlotter):
             models in the pipeline. To avoid this, call the plot
             from a model, e.g. `atom.xgb.force_plot()`.
 
-        index: int, tuple, slice or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If (n, m),
-            it selects rows n until m. If None, it selects all rows
-            in the test set.
+        index: int, str, sequence or None, optional (default=None)
+            Index names or positions of the rows in the dataset to plot.
+            If None, it selects all rows in the test set.
 
         target: int or str, optional (default=1)
             Index or name of the class in the target column to look at.
@@ -3314,7 +3274,7 @@ class BaseModelPlotter(BasePlotter):
 
         filename: str or None, optional (default=None)
             Name of the file. If matplotlib=False, the figure will
-            be saved as an html file. If None, the figure is not saved.
+            be saved as a html file. If None, the figure is not saved.
 
         display: bool or None, optional (default=True)
             Whether to render the plot. If None, it returns the
@@ -3338,15 +3298,15 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "force_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        index = self._get_index(index, m)
+        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         target = self._get_target(target)
 
         self._get_figure()  # To initialize BasePlotter._fig
         sns.set_style("white")  # Only for this plot
         plot = shap.force_plot(
             base_value=m._shap.get_expected_value(target),
-            shap_values=m._shap.get_shap_values(index, target),
-            features=index,
+            shap_values=m._shap.get_shap_values(rows, target),
+            features=rows,
             figsize=figsize,
             show=False,
             **kwargs,
@@ -3379,7 +3339,7 @@ class BaseModelPlotter(BasePlotter):
     def heatmap_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[tuple, slice]] = None,
+        index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -3404,11 +3364,10 @@ class BaseModelPlotter(BasePlotter):
             models in the pipeline. To avoid this, call the plot
             from a model, e.g. `atom.xgb.heatmap_plot()`.
 
-        index: tuple, slice or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If shape
-            (n, m), it selects rows n until m. If None, it selects
-            all rows in the test set. The heatmap plot does not
-            support plotting a single sample.
+        index: slice, sequence or None, optional (default=None)
+            Index names or positions of the rows in the dataset to plot.
+            If None, it selects all rows in the test set. The heatmap
+            plot does not support plotting a single sample.
 
         show: int or None, optional (default=None)
             Number of features (ordered by importance) to show. None
@@ -3444,10 +3403,10 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "heatmap_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        index = self._get_index(index, m)
+        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         show = self._get_show(show, m)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(index, target)
+        explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -3470,7 +3429,7 @@ class BaseModelPlotter(BasePlotter):
     def scatter_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[tuple, slice]] = None,
+        index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         feature: Union[int, str] = 0,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -3496,11 +3455,10 @@ class BaseModelPlotter(BasePlotter):
             models in the pipeline. To avoid this, call the plot
             from a model, e.g. `atom.xgb.scatter_plot()`.
 
-        index: tuple, slice or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If shape
-            (n, m), it selects rows n until m. If None, it selects
-            all rows in the test set. The scatter plot does not
-            support plotting a single sample.
+        index: slice, sequence or None, optional (default=None)
+            Index names or positions of the rows in the dataset to
+            plot. If None, it selects all rows in the test set. The
+            scatter plot does not support plotting a single sample.
 
         feature: int or str, optional (default=0)
             Index or name of the feature to plot.
@@ -3535,9 +3493,9 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "scatter_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        index = self._get_index(index, m)
+        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(index, target, feature)
+        explanation = m._shap.get_explanation(rows, target, feature)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -3561,7 +3519,7 @@ class BaseModelPlotter(BasePlotter):
     def waterfall_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[int] = None,
+        index: Optional[Union[int, str]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -3591,9 +3549,9 @@ class BaseModelPlotter(BasePlotter):
             models in the pipeline. To avoid this, call the plot
             from a model, e.g. `atom.xgb.waterfall_plot()`.
 
-        index: int or None, optional (default=None)
-            Index of the row in the dataset to plot. If None,
-            it selects the first row in the test set. The
+        index: int, str or None, optional (default=None)
+            Index or position of the row in the dataset to plot.
+            If None, it selects the first row in the test set. The
             waterfall plot does not support plotting multiple
             samples.
 
@@ -3629,10 +3587,13 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "waterfall_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        index = m.X_test.iloc[[0]] if index is None else self._get_index(index, m)
+        if index is None:
+            rows = m.X_test.iloc[[0]]
+        else:
+            rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         show = self._get_show(show, m)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(index, target)
+        explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -3703,7 +3664,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         """
         check_dim(self, "plot_correlation")
-        columns = get_columns(self.dataset, columns, only_numerical=True)
+        columns = self._get_columns(columns, only_numerical=True)
         if method.lower() not in ("pearson", "kendall", "spearman"):
             raise ValueError(
                 f"Invalid value for the method parameter, got {method}. "
@@ -3797,7 +3758,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             )
 
         check_dim(self, "plot_scatter_matrix")
-        columns = get_columns(self.dataset, columns, only_numerical=True)
+        columns = self._get_columns(columns, only_numerical=True)
 
         # Use max 250 samples to not clutter the plot
         samples = self.dataset[columns].sample(
@@ -3883,7 +3844,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         """
         check_dim(self, "plot_distribution")
-        columns = get_columns(self.dataset, columns)
+        columns = self._get_columns(columns)
         palette_1 = cycle(sns.color_palette())
         palette_2 = sns.color_palette("Blues_r", 3)
 
@@ -4017,7 +3978,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         """
         check_dim(self, "plot_qq")
-        columns = get_columns(self.dataset, columns)
+        columns = self._get_columns(columns)
         palette = cycle(sns.color_palette())
 
         fig = self._get_figure()
@@ -4060,7 +4021,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_wordcloud(
         self,
-        index: Optional[Union[int, tuple, slice]] = None,
+        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -4075,10 +4036,10 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Parameters
         ----------
-        index: int, tuple, slice or None, optional (default=None)
-            Indices of the documents in the corpus to include in
-            the wordcloud. If shape (n, m), it selects rows n until
-            m. If None, it selects all documents in the dataset.
+        index: int, str, sequence or None, optional (default=None)
+            Index names or positions of the documents in the corpus to
+            include in the wordcloud. If None, it selects all documents
+            in the dataset.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -4113,7 +4074,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         check_dim(self, "plot_wordcloud")
         corpus = get_corpus(self.X)
-        rows = self._get_index(index, return_test=False)
+        rows = self.dataset.loc[self._get_rows(index, return_test=False)]
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -4145,7 +4106,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     def plot_ngrams(
         self,
         ngram: Union[int, str] = "words",
-        index: Optional[Union[int, tuple, slice]] = None,
+        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
         show: int = 10,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
@@ -4166,10 +4127,10 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             n-gram). Choose from: words (1), bigrams (2),
             trigrams (3), quadgrams (4).
 
-        index: int, tuple, slice or None, optional (default=None)
-            Indices of the documents in the corpus to include in
-            the search. If shape (n, m), it selects rows n until m.
-            If None, it selects all documents in the dataset.
+        index: int, str, sequence or None, optional (default=None)
+            Index names or positions of the documents in the corpus to
+            include in the search. If None, it selects all documents in
+            the dataset.
 
         show: int, optional (default=10)
             Number of n-grams (ordered by number of occurrences) to
@@ -4206,7 +4167,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         check_dim(self, "plot_ngrams")
         corpus = get_corpus(self.X)
-        rows = self._get_index(index, return_test=False)
+        rows = self.dataset.loc[self._get_rows(index, return_test=False)]
 
         if str(ngram).lower() in ("1", "word", "words"):
             ngram = "words"

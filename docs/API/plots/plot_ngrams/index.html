@@ -2760,10 +2760,10 @@ Number of contiguous words to search for (size of n-gram).
 Choose from: words (1), bigrams (2), trigrams (3), quadgrams (4).
 </p>
 <p>
-<strong>index: int, tuple, slice or None, optional (default=None)</strong><br>
-Indices of the documents in the corpus to include in the
-search. If shape (n, m), it selects documents n until m.
-If None, it selects all rows in the dataset.
+<strong>index: int, str, sequence or None, optional (default=None)</strong><br>
+Index names or positions of the documents in the corpus to
+include in the search. If None, it selects all documents in
+the dataset.
 </p>
 <p>
 <strong>show: int, optional (default=10)</strong><br>

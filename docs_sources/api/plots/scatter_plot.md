@@ -29,10 +29,10 @@ exception if there are multiple models in the pipeline. To avoid
 this, call the plot from a model, e.g. <code>atom.xgb.scatter_plot()</code>.
 </p>
 <p>
-<strong>index: tuple, slice or None, optional (default=None)</strong><br>
-Indices of the rows in the dataset to plot. If tuple (n, m), it selects
-rows n until m. If None, it selects all rows in the test set. The scatter
-plot does not support plotting a single sample.
+<strong>index: slice, sequence or None, optional (default=None)</strong><br>
+Index names or positions of the rows in the dataset to
+plot. If None, it selects all rows in the test set. The
+scatter plot does not support plotting a single sample.
 </p>
 <p>
 <strong>feature: int or str, optional (default=0)</strong><br>

@@ -299,6 +299,11 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#clear">clear</a></td>
+<td>Clear attributes from the model.</td>
+</tr>
+
+<tr>
 <td><a href="#cross-validate">cross_validate</a></td>
 <td>Evaluate the model using cross-validation.</td>
 </tr>
@@ -329,11 +334,6 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
-<td><a href="#reset-predictions">reset_predictions</a></td>
-<td>Clear all the prediction attributes.</td>
-</tr>
-
-<tr>
 <td><a href="#save-estimator">save_estimator</a></td>
 <td>Save the estimator to a pickle file.</td>
 </tr>
@@ -353,13 +353,13 @@ The remaining utility methods can be found hereunder.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L651">[source]</a>
 </span>
 </div>
-Applies probability calibration on the estimator. The
-estimator is trained via cross-validation on a subset of the
-training data, using the rest to fit the calibrator. The new
-classifier will replace the `estimator` attribute and is
-logged to any active mlflow experiment. Since the estimator
-changed, all the model's prediction attributes are reset.
-Only if classifier.
+Applies probability calibration on the model. The estimator
+is trained via cross-validation on a subset of the training
+data, using the rest to fit the calibrator. The new classifier
+will replace the `estimator` attribute. If there is an active
+mlflow experiment, a new run is started using the name
+`[model_name]_calibrate`. Since the estimator changed, the
+model is [cleared](#clear). Only if classifier.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -373,6 +373,24 @@ for testing.
 </tr>
 </table>
 <br />
+
+
+<a name="clear"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">clear</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1060">[source]</a>
+</span>
+</div>
+Reset attributes to their initial state, deleting potentially
+large data arrays. Use this method to free some memory before
+saving the class. The cleared attributes per model are:
+
+* [Prediction attributes](../../../user_guide/predicting).
+* [Metrics scores](../../../user_guide/training/#metric).
+* [Shap values](../../../user_guide/plots/#shap).
+
+<br /><br /><br />
 
 
 <a name="cross-validate"></a>
@@ -414,12 +432,10 @@ function.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L317">[source]</a>
 </span>
 </div>
-Delete the model from the trainer. If it's the winning model, the next
-best model (through `metric_test` or `mean_bootstrap`) is selected as
-winner. If it's the last model in the trainer, the metric and training
-approach are reset. Use this method to drop unwanted models from
-the pipeline or to free some memory before saving. The model is not
-removed from any active mlflow experiment.
+Delete the model from the trainer. If it's the last model in the
+trainer, the metric is reset. Use this method to drop unwanted
+models from the pipeline or to free some memory before saving.
+The model is not removed from any active mlflow experiment.
 <br /><br /><br />
 
 
@@ -525,13 +541,13 @@ Current branch as a sklearn-like Pipeline object.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L789">[source]</a>
 </span>
 </div>
-Train the estimator on the complete dataset. In some cases it
-might be desirable to use the complete dataset to train a final
-model. Note that doing this means that the estimator can no
-longer be evaluated on the test set. The newly retrained estimator
-will replace the `estimator` attribute and is logged to any active
-mlflow experiment. Since the estimator changed, all the model's
-prediction attributes are reset.
+In some cases it might be desirable to use all available data
+to train a final model. Note that doing this means that the
+estimator can no longer be evaluated on the test set. The newly
+retrained estimator will replace the `estimator` attribute. If
+there is an active mlflow experiment, a new run is started
+with the name `[model_name]_full_train`. Since the estimator
+changed, the model is [cleared](#clear).
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -564,18 +580,6 @@ name of the corresponding run is also changed.
 New tag for the model. If None, the tag is removed.
 </table>
 <br />
-
-
-<a name="reset-predictions"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L210">[source]</a>
-</span>
-</div>
-Clear the [prediction attributes](../../../user_guide/predicting) from all models.
-Use this method to free some memory before saving the trainer.
-<br /><br /><br />
 
 
 <a name="evaluate"></a>
@@ -648,7 +652,7 @@ used feature scaling, the data is also scaled.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Features to transform, with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>

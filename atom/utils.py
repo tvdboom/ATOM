@@ -12,13 +12,14 @@ import math
 import logging
 import numpy as np
 import pandas as pd
+from copy import copy
 from typing import Union
+from scipy import sparse
 from shap import Explainer
 from functools import wraps
 from collections import deque
 from datetime import datetime
 from inspect import signature
-from scipy import sparse
 from collections.abc import MutableMapping
 from sklearn.preprocessing import (
     StandardScaler,
@@ -50,7 +51,6 @@ from category_encoders.woe import WOEEncoder
 
 # Balancers
 from imblearn.under_sampling import (
-    ClusterCentroids,
     CondensedNearestNeighbour,
     EditedNearestNeighbours,
     RepeatedEditedNearestNeighbours,
@@ -99,7 +99,7 @@ SEQUENCE = (list, tuple, np.ndarray, pd.Series)
 # Variable types
 SCALAR = Union[int, float]
 SEQUENCE_TYPES = Union[SEQUENCE]
-X_TYPES = Union[dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
+X_TYPES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
 Y_TYPES = Union[int, str, SEQUENCE_TYPES]
 
 # Non-sklearn models
@@ -149,7 +149,7 @@ CUSTOM_METRICS = (
     "sup",
 )
 
-# Acronyms for some of the common scorers
+# Acronyms for some common scorers
 SCORERS_ACRONYMS = dict(
     ap="average_precision",
     ba="balanced_accuracy",
@@ -206,7 +206,7 @@ PRUNING_STRATS = dict(
 
 # All available balancing strategies
 BALANCING_STRATS = dict(
-    clustercentroids=ClusterCentroids,
+    # clustercentroids=ClusterCentroids,
     condensednearestneighbour=CondensedNearestNeighbour,
     editednearestneighborus=EditedNearestNeighbours,
     repeatededitednearestneighbours=RepeatedEditedNearestNeighbours,
@@ -397,14 +397,14 @@ def time_to_str(t_init):
         return f"{h}h:{m:02.0f}m:{s:02.0f}s"
 
 
-def to_df(data, index=None, columns=None, pca=False):
+def to_df(data, index=None, columns=None, dtypes=None):
     """Convert a dataset to pd.Dataframe.
 
     Parameters
     ----------
-    data: list, tuple, dict, np.ndarray, pd.DataFrame or None
-        Dataset to convert to a dataframe.  If None, return
-        unchanged.
+    data: list, tuple, dict, np.array, sps.matrix, pd.DataFrame or None
+        Dataset to convert to a dataframe.  If already a dataframe
+        or None, return unchanged.
 
     index: sequence or Index
         Values for the dataframe's index.
@@ -412,8 +412,9 @@ def to_df(data, index=None, columns=None, pca=False):
     columns: sequence or None, optional (default=None)
         Name of the columns. Use None for automatic naming.
 
-    pca: bool, optional (default=False)
-        Whether the columns are Features or Components.
+    dtypes: str, dict, np.dtype or None, optional (default=None)
+        Data types for the output columns. If None, the types are
+        inferred from the data.
 
     Returns
     -------
@@ -425,16 +426,16 @@ def to_df(data, index=None, columns=None, pca=False):
         if not isinstance(data, dict):  # Dict already has column names
             if sparse.issparse(data):
                 data = data.toarray()
-            if columns is None and not pca:
+            if columns is None:
                 columns = [f"Feature {str(i)}" for i in range(1, len(data[0]) + 1)]
-            elif columns is None:
-                columns = [f"Component {str(i)}" for i in range(1, len(data[0]) + 1)]
         data = pd.DataFrame(data, index=index, columns=columns)
+        if dtypes is not None:
+            data = data.astype(dtypes)
 
     return data
 
 
-def to_series(data, index=None, name="Target"):
+def to_series(data, index=None, name="target", dtype=None):
     """Convert a column to pd.Series.
 
     Parameters
@@ -445,8 +446,12 @@ def to_series(data, index=None, name="Target"):
     index: sequence or Index, optional (default=None)
         Values for the indices.
 
-    name: string, optional (default="Target")
+    name: string, optional (default="target")
         Name of the target column.
+
+    dtype: str, np.dtype or None, optional (default=None)
+        Data type for the output series. If None, the type is
+        inferred from the data.
 
     Returns
     -------
@@ -455,7 +460,7 @@ def to_series(data, index=None, name="Target"):
 
     """
     if data is not None and not isinstance(data, pd.Series):
-        data = pd.Series(data, index=index, name=name)
+        data = pd.Series(data, index=index, name=name, dtype=dtype)
 
     return data
 
@@ -652,7 +657,7 @@ def names_from_estimator(cls, estimator):
     return create_acronym(get_name(estimator)), get_name(estimator)
 
 
-def get_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
+def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -678,26 +683,20 @@ def get_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
     Returns
     -------
     scorer: scorer
-        Scorer object with name attribute.
+        Custom sklearn scorer with name attribute.
 
     """
-
-    def get_scorer_name(scorer):
-        """Return the name of the provided scorer."""
-        for key, value in SCORERS.items():
-            if scorer.__dict__ == value.__dict__:
-                return key
-
+    # Copies are needed to not alter SCORERS
     if isinstance(metric, str):
         metric = metric.lower()
         if metric in SCORERS:
-            scorer = SCORERS[metric]
+            scorer = copy(SCORERS[metric])
             scorer.name = metric
         elif metric in SCORERS_ACRONYMS:
-            scorer = SCORERS[SCORERS_ACRONYMS[metric]]
+            scorer = copy(SCORERS[SCORERS_ACRONYMS[metric]])
             scorer.name = SCORERS_ACRONYMS[metric]
         elif metric in CUSTOM_SCORERS:
-            scorer = make_scorer(CUSTOM_SCORERS[metric])
+            scorer = make_scorer(copy(CUSTOM_SCORERS[metric]))
             scorer.name = scorer._score_func.__name__
         else:
             raise ValueError(
@@ -706,8 +705,18 @@ def get_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
             )
 
     elif hasattr(metric, "_score_func"):  # Scoring is a scorer
-        scorer = metric
-        scorer.name = get_scorer_name(scorer)
+        scorer = copy(metric)
+
+        # Some scorers use default kwargs
+        default_kwargs = ("precision", "recall", "f1", "jaccard")
+        if any(name in scorer._score_func.__name__ for name in default_kwargs):
+            if not scorer._kwargs:
+                scorer._kwargs = {"average": "binary"}
+
+        for key, value in SCORERS.items():
+            if scorer.__dict__ == value.__dict__:
+                scorer.name = key
+                break
 
     else:  # Scoring is a function with signature metric(y, y_pred)
         scorer = make_scorer(
@@ -778,10 +787,10 @@ def partial_dependence(estimator, X, features):
 
     Returns
     -------
-    avg_pred: np.ndarray
+    avg_pred: np.array
         Average of the predictions.
 
-    pred: np.ndarray
+    pred: np.array
         All predictions.
 
     values: list
@@ -801,98 +810,6 @@ def partial_dependence(estimator, X, features):
     return avg_pred, pred, values
 
 
-def get_columns(df, columns, return_inc_exc=False, only_numerical=False):
-    """Get a subset of the columns.
-
-    Select columns in the dataset by name, index or dtype. Duplicate
-    columns are ignored. Exclude columns if their name start with `!`.
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Dataset from which to get the columns.
-
-    columns: int, str, slice, sequence or None
-        Names, indices or dtypes of the columns to get. If None,
-        it returns all columns in the dataframe.
-
-    return_inc_exc: bool, optional (default=False)
-        Whether to return only included columns or the tuple
-        (included, excluded).
-
-    only_numerical: bool, optional (default=False)
-        Whether to return only numerical columns.
-
-    Returns
-    -------
-    inc: list or tuple
-        Names of the included columns or if return_inc_exc=True,
-        a tuple of (included, excluded) columns.
-
-    """
-    inc, exc = [], []
-    if columns is None:
-        if only_numerical:
-            return list(df.select_dtypes(include=["number"]).columns)
-        else:
-            return df.columns
-    elif isinstance(columns, slice):
-        inc = list(df.columns[columns])
-    else:
-        for col in lst(columns):
-            if isinstance(col, int):
-                try:
-                    inc.append(df.columns[col])
-                except IndexError:
-                    raise ValueError(
-                        f"Invalid value for the columns parameter, got {col} "
-                        f"but length of columns is {len(df.columns)}."
-                    )
-            else:
-                if col not in df.columns:
-                    if col.startswith("!"):
-                        col = col[1:]
-                        if col in df.columns:
-                            exc.append(col)
-                        else:
-                            try:
-                                exc.extend(list(df.select_dtypes(include=col).columns))
-                            except TypeError:
-                                raise ValueError(
-                                    "Invalid value for the columns parameter. "
-                                    f"Column {col} not found in the dataset."
-                                )
-                    else:
-                        try:
-                            inc.extend(list(df.select_dtypes(include=col).columns))
-                        except TypeError:
-                            raise ValueError(
-                                "Invalid value for the columns parameter. "
-                                f"Column {col} not found in the dataset."
-                            )
-                else:
-                    inc.append(col)
-
-    if len(inc) + len(exc) == 0:
-        raise ValueError(
-            "Invalid value for the columns parameter, got "
-            f"{columns}. At least one column has to be selected."
-        )
-    elif inc and exc:
-        raise ValueError(
-            "Invalid value for the columns parameter. You can either "
-            "include or exclude columns, not combinations of these."
-        )
-    elif return_inc_exc:
-        return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
-
-    if exc:
-        # If columns were excluded with `!`, select all but those
-        inc = [col for col in df.columns if col not in exc]
-
-    return list(dict.fromkeys(inc))  # Avoid duplicates
-
-
 def get_feature_importance(est, attributes=None):
     """Return the feature importance from an estimator.
 
@@ -903,7 +820,7 @@ def get_feature_importance(est, attributes=None):
     Parameters
     ----------
     est: sklearn estimator
-        Estimator which to get the feature importance.
+        Predictor from which to get the feature importance.
 
     attributes: sequence or None, optional (default=None)
         Attributes to get, in order of importance. If None, use
@@ -911,7 +828,7 @@ def get_feature_importance(est, attributes=None):
 
     Returns
     -------
-    data: np.ndarray
+    data: np.array
         Estimator's feature importance.
 
     """
@@ -952,7 +869,7 @@ def name_cols(array, original_df, col_names):
 
     Parameters
     ----------
-    array: np.ndarray
+    array: np.array
         Transformed dataset.
 
     original_df: pd.DataFrame
@@ -988,7 +905,7 @@ def reorder_cols(df, original_df, col_names):
     Parameters
     ----------
     df: pd.DataFrame
-        DataFrame to reorder.
+        Dataset to reorder.
 
     original_df: pd.DataFrame
         Original dataset (states the order).
@@ -1009,7 +926,7 @@ def reorder_cols(df, original_df, col_names):
                     "that drop rows aren't applied on all the columns."
                 )
 
-            temp_df[col] = original_df[col].tolist()  # Make list to adopt to index
+            temp_df[col] = original_df[col].tolist()  # Make list to adapt to index
 
         # Derivative cols are added after original (e.g. for one-hot encoding)
         for col_derivative in df.columns:
@@ -1028,10 +945,11 @@ def fit_one(transformer, X=None, y=None, message=None, **fit_params):
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
             args = []
-            if "X" in signature(transformer.fit).parameters:
+            transformer_params = signature(transformer.fit).parameters
+            if "X" in transformer_params and X is not None:
                 inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
                 args.append(X[inc or [c for c in X.columns if c not in exc]])
-            if "y" in signature(transformer.fit).parameters:
+            if "y" in transformer_params and y is not None:
                 args.append(y)
             transformer.fit(*args, **fit_params)
 
@@ -1048,7 +966,7 @@ def transform_one(transformer, X=None, y=None):
             if sparse.issparse(out):
                 out = out.toarray()
 
-            out = to_df(out, columns=name_cols(out, X, use_cols))
+            out = to_df(out, index=X.index, columns=name_cols(out, X, use_cols))
 
         # Reorder columns in case only a subset was used
         return reorder_cols(out, X, use_cols)
@@ -1057,23 +975,24 @@ def transform_one(transformer, X=None, y=None):
     y = to_series(y, index=getattr(X, "index", None))
 
     args = []
-    if "X" in signature(transformer.transform).parameters:
+    transform_params = signature(transformer.transform).parameters
+    if "X" in transform_params and X is not None:
         inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
         args.append(X[inc or [c for c in X.columns if c not in exc]])
-    if "y" in signature(transformer.transform).parameters:
+    if "y" in transform_params and y is not None:
         args.append(y)
     output = transformer.transform(*args)
 
     # Transform can return X, y or both
     if isinstance(output, tuple):
         new_X = prepare_df(output[0])
-        new_y = to_series(output[1], name=y.name)
+        new_y = to_series(output[1], index=new_X.index, name=y.name)
     else:
         if len(output.shape) > 1:
             new_X = prepare_df(output)
             new_y = y if y is None else y.set_axis(new_X.index)
         else:
-            new_y = to_series(output, name=y.name)
+            new_y = to_series(output, index=y.index, name=y.name)
             new_X = X if X is None else X.set_index(new_y.index)
 
     return new_X, new_y
@@ -1089,17 +1008,14 @@ def fit_transform_one(transformer, X=None, y=None, message=None, **fit_params):
 
 # Functions shared by classes ======================================= >>
 
-def custom_transform(self, transformer, branch, data=None, verbose=None):
-    """Applies a estimator on a branch.
+def custom_transform(transformer, branch, data=None, verbose=None):
+    """Applies a transformer on a branch.
 
     This function is generic and should work for all
     methods with parameters X and/or y.
 
     Parameters
     ----------
-    self: class
-        Instance from which the function is called.
-
     transformer: estimator
         Transformer to apply to the data.
 
@@ -1136,23 +1052,39 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
             vb = transformer.verbose  # Save original verbosity
             transformer.verbose = verbose
 
-    if not transformer.__module__.startswith("atom"):
-        self.log(f"Applying {transformer.__class__.__name__} to the dataset...", 1)
+    # Skip transformers that transform only y when it's not provided
+    transform_params = signature(transformer.transform).parameters
+    if list(transform_params.keys()) == ["y"] and y_og is None:
+        branch.T.log(
+            f"Skipping {transformer.__class__.__name__} since it "
+            "only transforms y and no target column is provided...", 3
+        )
+        X, y = X_og, y_og
+    else:
+        if not transformer.__module__.startswith("atom"):
+            branch.T.log(
+                f"Applying {transformer.__class__.__name__} to the dataset...", 1
+            )
 
-    X, y = transform_one(transformer, X_og, y_og)
+        X, y = transform_one(transformer, X_og, y_og)
 
     # Apply changes to the branch
     if not data:
         if transformer._train_only:
             branch.train = merge(X, branch.y_train if y is None else y)
         else:
-            branch.dataset = merge(X, branch.y if y is None else y)
+            branch.data = merge(X, branch.y if y is None else y)
 
             # Since rows can be removed from train and test, reset indices
-            branch.idx[1] = len(X[X.index >= branch.idx[0]])
-            branch.idx[0] = len(X[X.index < branch.idx[0]])
+            branch.idx[0] = [idx for idx in branch.idx[0] if idx in X.index]
+            branch.idx[1] = [idx for idx in branch.idx[1] if idx in X.index]
 
-        branch.dataset = branch.dataset.reset_index(drop=True)
+        if branch.T.index is False:
+            branch.data = branch.dataset.reset_index(drop=True)
+            branch.idx = [
+                branch.data.index[:len(branch.idx[0])],
+                branch.data.index[-len(branch.idx[1]):],
+            ]
 
     # Back to the original verbosity
     if verbose is not None and hasattr(transformer, "verbose"):
@@ -1593,7 +1525,7 @@ class ShapExplanation:
 
         """
         # Get rows that still need to be calculated
-        calculate = df.loc[[i for i in df.index if i not in self._shap_values.index], :]
+        calculate = df.loc[[i for i in df.index if i not in self._shap_values.index]]
         if not calculate.empty:
             # Additivity check fails sometimes for no apparent reason
             kwargs = {}

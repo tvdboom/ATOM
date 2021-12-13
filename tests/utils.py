@@ -10,6 +10,7 @@ Description: Utility variables for the tests.
 # Standard packages
 import os
 import numpy as np
+import pandas as pd
 from tensorflow.keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import (
@@ -52,6 +53,10 @@ mnist = (X_train, y_train), (X_test, y_test)
 # Text data
 X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir 12"]]
 y_text = [0, 1, 1, 0]
+
+# Dataset wth string indices
+X_idx = X_bin.set_index(pd.Index([f"index_{i}" for i in range(len(X_bin))]))
+y_idx = y_bin.set_axis(X_idx.index)
 
 # Small dimensional dataset
 X10 = [

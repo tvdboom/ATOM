@@ -58,6 +58,14 @@ following formats:
 * (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
 
+<br>
+
+## Indexing
+
+!!! info
+    MultiIndex is not supported.
+
+
 
 <br>
 
@@ -183,16 +191,18 @@ dataframe with which the class was initialized. This internal branch
 is called `og` (original) and can not be accessed by the user.
 
 Apart from the dataset itself, the model's [predictions](./predicting)
-are also stored as attributes of the model (e.g. `predict_proba_train`)
-and can occupy considerable memory for large datasets. You can delete
-these attributes using the [reset_predictions](../../API/ATOM/atomclassifier/#reset-predictions)
-method in order to free some memory before [saving](../../API/ATOM/atomclassifier/#save)
+(e.g. `predict_proba_train`), metric scores and [shap values](./plots/#shap)
+are also stored as attributes of the model to avoid having to recalculate
+them every time they are needed. All this data can occupy a considerable
+amount memory for large datasets. You can delete all these attributes
+using the [clear](../../API/ATOM/atomclassifier/#clear) method in order
+to free some memory before [saving](../../API/ATOM/atomclassifier/#save)
 the class.
 
 !!! note
     Sparse matrices fed to atom or an [exported pipeline](../../API/ATOM/atomclassifier/#export-pipeline)
-    are converted internally to the full array, filling large spaces
-    in memory.
+    are converted internally to the full array. Note that this can fill
+    large spaces in memory.
 
 <br>
 

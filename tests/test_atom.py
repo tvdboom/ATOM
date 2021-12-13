@@ -42,12 +42,6 @@ from .utils import (
 
 # Test __init__ ==================================================== >>
 
-def test_test_size_attribute():
-    """Assert that the _test_size attribute is created."""
-    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, n_jobs=2, random_state=1)
-    assert atom._test_size == len(atom.test) / len(atom.dataset)
-
-
 def test_task_assignment():
     """Assert that the correct task is assigned."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -471,6 +465,14 @@ def test_transform_with_y():
     assert len(y) < len(y10)
 
 
+def test_transform_skip_y():
+    """Assert that only transformers are skipped when not provided."""
+    atom = ATOMClassifier(X10_str, y10_str, random_state=1)
+    atom.add(LabelEncoder())
+    atom.encode()
+    assert isinstance(atom.transform(X10_str), pd.DataFrame)
+
+
 # Test base transformers =========================================== >>
 
 def test_custom_params_to_method():
@@ -481,7 +483,7 @@ def test_custom_params_to_method():
 
 
 def test_add_depending_models():
-    """Assert that an error is raised when the branch has depending models."""
+    """Assert that an error is raised when the branch has dependent models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
     with pytest.raises(PermissionError, match=r".*allowed to add transformers.*"):
@@ -527,10 +529,10 @@ def test_add_complete_dataset():
 
 
 def test_add_transformer_only_y():
-    """Assert that atom accepts transformers with only an y parameter."""
+    """Assert that atom accepts transformers with only y."""
     atom = ATOMClassifier(X10, y10_str, random_state=1)
     atom.add(LabelEncoder())
-    assert np.all((atom["Target"] == 0) | (atom["Target"] == 1))
+    assert np.all((atom["target"] == 0) | (atom["target"] == 1))
 
 
 def test_add_sparse_matrices():
@@ -555,30 +557,6 @@ def test_add_keep_column_names():
     assert all(col in cols for col in atom.columns)
 
 
-def test_add_subset_columns():
-    """Assert that you can use a subset of the columns."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-
-    # No columns are selected
-    with pytest.raises(ValueError, match=r".*At least one column.*"):
-        atom.scale(columns="datetime")
-
-    # Column indices
-    cols = atom.columns.copy()
-    atom.scale(columns=[3, 4])
-    assert atom.columns == cols  # All columns are kept
-    assert check_scaling(atom.X.iloc[:, [3, 4]])
-    assert not check_scaling(atom.dataset.iloc[:, [7, 8]])
-
-    # Column names
-    atom.scale(columns=["mean radius", "mean texture"])
-    assert check_scaling(atom.dataset.iloc[:, [0, 1]])
-
-    # Column slice
-    atom.scale(columns=slice(10, 12))
-    assert check_scaling(atom.dataset.iloc[:, [10, 11]])
-
-
 def test_raise_length_mismatch():
     """Assert that an error is raised when there's a mismatch in row length."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -591,20 +569,6 @@ def test_add_derivative_columns_keep_position():
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode()
     assert atom.columns[2].startswith("Feature 3")
-
-
-def test_add_include_or_exclude():
-    """Assert that an error is raised when cols are included and excluded."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*either include or exclude columns.*"):
-        atom.add(StandardScaler(), columns=["mean radius", "!mean texture"])
-
-
-def test_add_duplicate_columns_are_ignored():
-    """Assert that duplicate columns are ignored for the transformers."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.add(StandardScaler(), columns=["mean radius", "mean radius"])
-    assert not atom["mean radius"].equals(X_bin["mean radius"])
 
 
 def test_add_sets_are_kept_equal():
@@ -768,7 +732,7 @@ def test_normalize():
 
 def test_vectorize():
     """Assert that the vectorize method vectorizes the corpus."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y_text, test_size=0.25, random_state=1)
     atom.vectorize(strategy="hashing", n_features=5)
     assert "Corpus" not in atom
     assert atom.shape == (4, 6)

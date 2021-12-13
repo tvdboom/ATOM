@@ -187,11 +187,11 @@ class BasePredictor:
 
         def frac(m):
             """Return the fraction of the train set used for the model."""
-            n_models = m.branch.idx[0] / m._train_idx
+            n_models = len(m.branch.train) / m._train_idx
             if n_models == int(n_models):
                 return round(1.0 / n_models, 2)
             else:
-                return round(m._train_idx / m.branch.idx[0], 2)
+                return round(m._train_idx / len(m.branch.train), 2)
 
         df = pd.DataFrame(
             data=[m.results for m in self._models.values()],
@@ -211,12 +211,6 @@ class BasePredictor:
         return df
 
     # Prediction methods =========================================== >>
-
-    @composed(crash, method_to_log)
-    def reset_predictions(self):
-        """Clear the prediction attributes from all models."""
-        for m in self._models.values():
-            m.reset_predictions()
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
@@ -256,6 +250,171 @@ class BasePredictor:
         return self.winner.score(X, y, metric, sample_weight, **kwargs)
 
     # Utility methods ============================================== >>
+
+    def _get_rows(self, index=None, return_test=True, branch=None):
+        """Get a subset of the rows.
+
+        Parameters
+        ----------
+        index: int, str, slice, sequence or None, optional (default=None)
+            Names or indices of the rows to select. If None,
+            returns the complete dataset or the test set.
+
+        return_test: bool, optional (default=True)
+            Whether to return the test or the complete dataset
+            when no index is provided.
+
+        branch: Branch or None, optional (default=None)
+            Get columns from specified branch. If None, use the
+            current branch.
+
+        Returns
+        -------
+        inc: list
+            Indices of the included rows.
+
+        """
+        if not branch:
+            branch = self.branch
+
+        indices = list(branch.dataset.index)
+        if index is None:
+            inc = list(branch.idx[1]) if return_test else list(branch.X.index)
+        elif isinstance(index, slice):
+            inc = indices[index]
+        else:
+            inc = []
+            for idx in lst(index):
+                if idx in indices:
+                    inc.append(idx)
+                elif isinstance(idx, int):
+                    if -len(indices) <= idx <= -len(indices):
+                        inc.append(indices[idx])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for the index parameter. Value {index} is "
+                            f"out of range for a dataset with length {len(indices)}."
+                        )
+
+        if not inc:
+            raise ValueError(
+                "Invalid value for the index parameter. "
+                f"Index {index} not found in the dataset."
+            )
+
+        return inc
+
+    def _get_columns(
+        self,
+        columns=None,
+        include_target=True,
+        return_inc_exc=False,
+        only_numerical=False,
+        branch=None,
+    ):
+        """Get a subset of the columns.
+
+        Select columns in the dataset by name, index or dtype. Duplicate
+        columns are ignored. Exclude columns if their name start with `!`.
+
+        Parameters
+        ----------
+        columns: int, str, slice, sequence or None
+            Names, indices or dtypes of the columns to get. If None,
+            it returns all columns in the dataframe.
+
+        include_target: bool, optional (default=True)
+            Whether to include the target column in the dataframe to
+            select from.
+
+        return_inc_exc: bool, optional (default=False)
+            Whether to return only included columns or the tuple
+            (included, excluded).
+
+        only_numerical: bool, optional (default=False)
+            Whether to return only numerical columns.
+
+        branch: Branch or None, optional (default=None)
+            Get columns from specified branch. If None, use the current
+            branch.
+
+        Returns
+        -------
+        inc: list
+            Names of the included columns.
+
+        exc: list
+            Names of the excluded columns. Only returned if
+            return_inc_exc=True.
+
+        """
+        if not branch:
+            branch = self.branch
+
+        # Select dataframe from which to get the columns
+        df = branch.dataset if include_target else branch.X
+
+        inc, exc = [], []
+        if columns is None:
+            if only_numerical:
+                return list(df.select_dtypes(include=["number"]).columns)
+            else:
+                return list(df.columns)
+        elif isinstance(columns, slice):
+            inc = list(df.columns[columns])
+        else:
+            for col in lst(columns):
+                if isinstance(col, int):
+                    try:
+                        inc.append(df.columns[col])
+                    except IndexError:
+                        raise ValueError(
+                            f"Invalid value for the columns parameter, got {col} "
+                            f"but length of columns is {len(df.columns)}."
+                        )
+                else:
+                    if col not in df.columns:
+                        if col.startswith("!"):
+                            col = col[1:]
+                            if col in df.columns:
+                                exc.append(col)
+                            else:
+                                try:
+                                    exc.extend(list(df.select_dtypes(col).columns))
+                                except TypeError:
+                                    raise ValueError(
+                                        "Invalid value for the columns parameter. "
+                                        f"Column {col} not found in the dataset."
+                                    )
+                        else:
+                            try:
+                                inc.extend(list(df.select_dtypes(col).columns))
+                            except TypeError:
+                                raise ValueError(
+                                    "Invalid value for the columns parameter. "
+                                    f"Column {col} not found in the dataset."
+                                )
+                    else:
+                        inc.append(col)
+
+        if len(inc) + len(exc) == 0:
+            raise ValueError(
+                "Invalid value for the columns parameter, got "
+                f"{columns}. At least one column has to be selected."
+            )
+        elif inc and exc:
+            raise ValueError(
+                "Invalid value for the columns parameter. You can either "
+                "include or exclude columns, not combinations of these."
+            )
+        elif return_inc_exc:
+            return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
+
+        if exc:
+            # If columns were excluded with `!`, select all but those
+            inc = [col for col in df.columns if col not in exc]
+
+        return list(dict.fromkeys(inc))  # Avoid duplicates
 
     def _get_model_name(self, model):
         """Return a model's name.
@@ -339,17 +498,29 @@ class BasePredictor:
 
         return overview
 
+    @composed(crash, method_to_log)
+    def clear(self):
+        """Clear attributes from all models.
+
+        Reset attributes to their initial state, deleting potentially
+        large data arrays. Use this method to free some memory before
+        saving the class. The cleared attributes per model are:
+            - Prediction attributes.
+            - Metrics scores.
+            - Shap values.
+
+        """
+        for model in self._models.values():
+            model.clear()
+
     @composed(crash, method_to_log, typechecked)
     def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
-        """Delete models from the trainer's pipeline.
+        """Delete models from the trainer.
 
-        Removes a model from the trainer. If the winning model is
-        removed, the next best model (through `metric_test` or
-        `mean_bootstrap`) is selected as winner. If all models are
-        removed, the metric and training approach are reset. Use this
+        If all models are removed, the metric is reset. Use this
         method to drop unwanted models from the pipeline or to free
-        some memory before saving. The model is not removed from any
-        active mlflow experiment.
+        some memory before saving. Deleted models are not removed
+        from any active mlflow experiment.
 
         Parameters
         ----------

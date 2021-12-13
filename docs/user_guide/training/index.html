@@ -2924,13 +2924,13 @@ the metric.</p>
 <p><a name="predefined-scorers"></a>
 <strong>Predefined scorers</strong><br>
 ATOM accepts all of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>
-as well as some custom acronyms and custom scorers. </p>
-<p>Since some of sklearn's scorers have quite long names and ATOM is all
-about <s>lazy</s>fast experimentation, the package provides acronyms
-for some of the most commonly used ones. These acronyms are case-insensitive
-and can be used in the <code>metric</code> parameter instead of the
-scorer's full name, e.g. <code>atom.run("LR", metric="BA")</code> will use
-<code>balanced_accuracy</code>. The available acronyms are:</p>
+as well as some custom acronyms and custom scorers. Since some of
+sklearn's scorers have quite long names and ATOM is all about
+<s>lazy</s>fast experimentation, the package provides acronyms
+for some of the most commonly used ones. These acronyms are
+case-insensitive and can be used in the <code>metric</code> parameter instead
+of the scorer's full name, e.g. <code>atom.run("LR", metric="BA")</code> will
+use <code>balanced_accuracy</code>. The available acronyms are:</p>
 <ul>
 <li>"AP" for "average_precision"</li>
 <li>"BA" for "balanced_accuracy"</li>

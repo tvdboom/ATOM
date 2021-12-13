@@ -14,17 +14,14 @@ import numpy as np
 import pandas as pd
 from unittest.mock import patch
 from skopt.learning import GaussianProcessRegressor
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, r2_score, recall_score
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.training import DirectClassifier
 from atom.utils import check_scaling
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train,
-    bin_test, X10_str, y10,
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, y10,
 )
 
 
@@ -163,7 +160,7 @@ def test_nested_runs_to_mlflow(mlflow):
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.log_bo = True
     atom.run("Tree", n_calls=5)
-    assert mlflow.call_count == 5  # Only called at iterations
+    assert mlflow.call_count == 6  # BO iterations + fit
 
 
 @pytest.mark.parametrize("cv", [1, 3])
@@ -179,13 +176,7 @@ def test_run_set_tags_to_mlflow(mlflow):
     """Assert that the mlflow run gets tagged."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
-    mlflow.assert_called_with(
-        {
-            "fullname": atom.gnb.fullname,
-            "branch": atom.gnb.branch.name,
-            "time": atom.gnb.time_fit,
-        }
-    )
+    mlflow.assert_called_once()
 
 
 @patch("mlflow.log_params")
@@ -194,14 +185,6 @@ def test_run_log_params_to_mlflow(mlflow):
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
     assert mlflow.call_count == 1
-
-
-@patch("mlflow.log_metric")
-def test_run_log_metric_to_mlflow(mlflow):
-    """Assert that metrics are logged to mlflow."""
-    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
-    atom.run("GNB", metric=["f1", "recall", "accuracy"])
-    assert mlflow.call_count == 6
 
 
 @patch("mlflow.log_metric")
@@ -257,10 +240,26 @@ def test_bootstrap_attribute_types():
 # Test utility properties ========================================== >>
 
 def test_results_property():
-    """Assert that an error is raised when the model doesn't have the method."""
+    """Assert that the property returns an overview of the training."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     assert isinstance(atom.tree.results, pd.Series)
+
+
+def test_metrics_property_single_metric():
+    """Assert that the metric properties return a value for single metric."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree", metric="f1")
+    assert isinstance(atom.tree.metric_train, float)
+    assert isinstance(atom.tree.metric_test, float)
+
+
+def test_metrics_property_multi_metric():
+    """Assert that the metric properties return a list for multi-metric."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree", metric=["f1", "recall"])
+    assert isinstance(atom.tree.metric_train, list)
+    assert isinstance(atom.tree.metric_test, list)
 
 
 # Test prediction methods ========================================== >>
@@ -320,16 +319,6 @@ def test_score_with_sample_weights():
 
 
 # Test prediction properties ======================================= >>
-
-def test_reset_predictions():
-    """Assert that reset_predictions removes the made predictions."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    atom.plot_roc()
-    assert isinstance(atom.mnb._pred[4], np.ndarray)  # Predictions are made
-    atom.mnb.reset_predictions()
-    assert atom.mnb._pred[4] is None  # Predictions are reset
-
 
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
 def test_all_prediction_properties(dataset):
@@ -455,21 +444,37 @@ def test_calibrate_prefit():
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
-def test_calibrate_reset_predictions():
-    """Assert that the prediction attributes are reset."""
+def test_calibrate_clear():
+    """Assert that the clear method is called."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    atom.mnb.calibrate()
-    assert atom.mnb._pred == [None] * 15
+    atom.run("Tree")
+    print(atom.tree.predict_log_proba_test)
+    assert atom.tree._pred[7] is not None
+    atom.tree.calibrate()
+    assert atom.tree._pred[7] is None
 
 
-@patch("mlflow.sklearn.log_model")
-def test_calibrate_to_mlflow(mlflow):
-    """Assert that the CCV is logged to mlflow."""
+def test_calibrate_new_mlflow_run():
+    """Assert that a new mlflow run is created."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
+    run = atom.gnb._run
     atom.gnb.calibrate()
-    mlflow.assert_called_with(atom.gnb.estimator, "CalibratedClassifierCV")
+    assert atom.gnb._run is not run
+
+
+def test_clear():
+    """Assert that the clear method resets the model's attributes."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    atom.beeswarm_plot(display=False)
+    assert atom.lr._pred[3] is not None
+    assert atom.lr._scores["train"]
+    assert not atom.lr._shap._shap_values.empty
+    atom.clear()
+    assert atom.lr._pred == [None] * 15
+    assert not atom.lr._scores["train"]
+    assert atom.lr._shap._shap_values.empty
 
 
 def test_cross_validate():
@@ -487,6 +492,14 @@ def test_delete():
     atom.rf.delete()
     assert not atom.models
     assert not atom.metric
+
+
+def test_evaluate_invalid_threshold():
+    """Assert that an error is raised when the threshold is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    with pytest.raises(ValueError, match=r".*Value should lie.*"):
+        atom.mnb.evaluate(threshold=0)
 
 
 def test_evaluate_invalid_dataset():
@@ -534,9 +547,9 @@ def test_evaluate_custom_metric():
 def test_evaluate_threshold():
     """Assert that the threshold parameter changes the predictions."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    pred_1 = atom.mnb.evaluate(threshold=0.01)
-    pred_2 = atom.mnb.evaluate(threshold=0.99)
+    atom.run("RF")
+    pred_1 = atom.rf.evaluate(threshold=0.01)
+    pred_2 = atom.rf.evaluate(threshold=0.99)
     assert not pred_1.equals(pred_2)
 
 
@@ -574,21 +587,23 @@ def test_full_train_holdout():
     assert atom.tree.score_holdout == 1.0  # Perfect score on holdout
 
 
-def test_full_train_reset_predictions():
-    """Assert that the prediction attributes are reset."""
+def test_full_train_clear():
+    """Assert that the clear method is called."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    atom.mnb.full_train()
-    assert atom.mnb._pred == [None] * 15
+    atom.run("Tree")
+    print(atom.tree.predict_log_proba_test)
+    assert atom.tree._pred[7] is not None
+    atom.tree.full_train()
+    assert atom.tree._pred[7] is None
 
 
-@patch("mlflow.sklearn.log_model")
-def test_full_train_to_mlflow(mlflow):
-    """Assert that the full trained estimator is logged to mlflow."""
+def test_full_train_new_mlflow_run():
+    """Assert that a new mlflow run is created."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
+    run = atom.gnb._run
     atom.gnb.full_train()
-    mlflow.assert_called_with(atom.gnb.estimator, "full_train_GaussianNB")
+    assert atom.gnb._run is not run
 
 
 def test_rename():

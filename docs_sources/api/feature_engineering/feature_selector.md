@@ -111,7 +111,7 @@ Verbosity level of the class. Possible values are:
 </ul>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
 <strong>**kwargs</strong><br>
 Any extra keyword argument for the PCA, SFM, RFE, RFECV  and SFS estimators.
@@ -148,7 +148,7 @@ See the corresponding sklearn documentation for the available options.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
 <strong>collinear: pd.DataFrame</strong><br>
-Dataframe of the removed collinear features. Columns include:
+Information on the removed collinear features. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>drop_feature:</b> Name of the feature dropped by the method.</li>
 <li><b>correlated feature:</b> Name of the correlated feature(s).</li>
@@ -162,7 +162,7 @@ estimator fitted on the reduced set.
 </p>
 <p>
 <strong>&lt;strategy&gt;: sklearn transformer</strong><br>
-Transformer instance (lowercase strategy) used to transform the data,
+Object (lowercase strategy) used to transform the data,
 e.g. <code>feature_selector.pca</code> for the PCA strategy.
 </p>
 </td>
@@ -280,7 +280,7 @@ None will raise an exception.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -316,7 +316,7 @@ Leaving it None will raise an exception.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -351,7 +351,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -359,7 +360,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -501,7 +502,7 @@ Transform the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>

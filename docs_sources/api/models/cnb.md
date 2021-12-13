@@ -259,6 +259,11 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#clear">clear</a></td>
+<td>Clear attributes from the model.</td>
+</tr>
+
+<tr>
 <td><a href="#cross-validate">cross_validate</a></td>
 <td>Evaluate the model using cross-validation.</td>
 </tr>
@@ -286,11 +291,6 @@ The remaining utility methods can be found hereunder.
 <tr>
 <td><a href="#rename">rename</a></td>
 <td>Change the model's tag.</td>
-</tr>
-
-<tr>
-<td><a href="#reset-predictions">reset_predictions</a></td>
-<td>Clear all the prediction attributes.</td>
 </tr>
 
 <tr>
@@ -334,6 +334,24 @@ for testing.
 <br />
 
 
+<a name="clear"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">clear</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1060">[source]</a>
+</span>
+</div>
+Reset attributes to their initial state, deleting potentially
+large data arrays. Use this method to free some memory before
+saving the class. The cleared attributes per model are:
+
+* [Prediction attributes](../../../user_guide/predicting).
+* [Metrics scores](../../../user_guide/training/#metric).
+* [Shap values](../../../user_guide/plots/#shap).
+
+<br /><br /><br />
+
+
 <a name="cross-validate"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
@@ -373,12 +391,10 @@ function.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L317">[source]</a>
 </span>
 </div>
-Delete the model from the trainer. If it's the winning model, the next
-best model (through `metric_test` or `mean_bootstrap`) is selected as
-winner. If it's the last model in the trainer, the metric and training
-approach are reset. Use this method to drop unwanted models from
-the pipeline or to free some memory before saving. The model is not
-removed from any active mlflow experiment.
+Delete the model from the trainer. If it's the last model in the
+trainer, the metric is reset. Use this method to drop unwanted
+models from the pipeline or to free some memory before saving.
+The model is not removed from any active mlflow experiment.
 <br /><br /><br />
 
 
@@ -498,18 +514,6 @@ New tag for the model. If None, the tag is removed.
 <br />
 
 
-<a name="reset-predictions"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L210">[source]</a>
-</span>
-</div>
-Clear the [prediction attributes](../../../user_guide/predicting) from all models.
-Use this method to free some memory before saving the trainer.
-<br /><br /><br />
-
-
 <a name="evaluate"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>
@@ -594,7 +598,7 @@ used feature scaling, the data is also scaled.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Features to transform, with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>

@@ -4,8 +4,12 @@
 This documentation consistently uses terms to refer to certain concepts
 related to this package. The most frequent terms are described hereunder.
 
-**array-like**<br>
-Object of type `np.ndarray` or `pd.DataFrame`.
+**dataframe-like**<br>
+Any type object from which a [pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html)
+can be created. This includes an `iterable`, a `dict` whose values
+are 1d-arrays, a two-dimensional `list`, `tuple`, `np.array` or
+`sparse.matrix`, and most commonly, a dataframe. This is the standard
+input format for any dataset.
 
 **atom**<br>
 Instance of the [ATOMClassifier](../../API/ATOM/atomclassifier) or
@@ -64,6 +68,7 @@ returned number must correspond with a better score. See sklearn's
 
 **sequence**<br>
 A one-dimensional array of type `list`, `tuple`, `np.ndarray` or `pd.Series`.
+This is the standard input format for a dataset's target column.
 
 **target**<br>
 Name of the dependent variable, passed as y to an estimator's fit method.

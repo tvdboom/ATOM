@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">plot_parshap</strong>(models=None,
-features=None, target=1, title=None, figsize=(10, 6), filename=None, display=True)
+columns=None, target=1, title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2351">[source]</a>
 </span>
@@ -28,7 +28,7 @@ this plot [here](https://towardsdatascience.com/which-of-your-features-are-overf
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </p>
 <p>
-<strong>features: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>columns: int, str, sequence or None, optional (default=None)</strong><br>
 Names or indices of the features to plot. None to show all.
 </p>
 <p>

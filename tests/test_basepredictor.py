@@ -17,10 +17,10 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
-from atom.utils import NotFittedError
+from atom.utils import NotFittedError, merge
 from .utils import (
     X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train,
-    bin_test, X10, y10,
+    bin_test, X10, y10, X10_str,
 )
 
 
@@ -48,9 +48,8 @@ def test_getattr_model():
 
 def test_getattr_column():
     """Assert that the columns can be accessed as attributes."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(lambda x: np.log(x["mean radius"]), columns="log_column")
-    assert isinstance(atom.log_column, pd.Series)
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert isinstance(atom.alcohol, pd.Series)
 
 
 def test_getattr_dataframe():
@@ -68,9 +67,12 @@ def test_getattr_invalid():
 
 def test_setattr_to_branch():
     """Assert that branch properties can be set from the trainer."""
+    new_dataset = merge(X_bin, y_bin)
+    new_dataset.iloc[0, 3] = 4  # Change one value
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.dataset = bin_train
-    assert atom.shape == (398, 31)
+    atom.dataset = new_dataset
+    assert atom.dataset.iloc[0, 3] == 4  # Check the value is changed
 
 
 def test_setattr_normal():
@@ -223,16 +225,6 @@ def test_results_property_train_sizing():
 
 # Test prediction methods ========================================== >>
 
-def test_reset_predictions():
-    """Assert that we can reset all predictions."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    print(atom.lr.predict_proba_train)
-    print(atom.lgb.predict_test)
-    atom.reset_predictions()
-    assert atom.lr._pred == [None] * 15
-
-
 def test_predict():
     """Assert that the predict method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -282,6 +274,79 @@ def test_score_sample_weights():
 
 
 # Test utility methods ============================================= >>
+
+
+def test_get_columns_is_None():
+    """Assert that all columns are returned."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert len(atom._get_columns(columns=None)) == 4
+    assert len(atom._get_columns(columns=None, only_numerical=True)) == 3
+    assert len(atom._get_columns(columns=None, include_target=False)) == 3
+
+
+def test_get_columns_slice():
+    """Assert that a slice of columns is returned."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert len(atom._get_columns(columns=slice(2, 6))) == 4
+
+
+def test_get_columns_by_index():
+    """Assert that columns can be retrieved by index."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*length of columns is.*"):
+        atom._get_columns(columns=40)
+    assert atom._get_columns(columns=0) == ["mean radius"]
+
+
+def test_get_columns_by_name():
+    """Assert that columns can be retrieved by name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+        atom._get_columns(columns="invalid")
+    assert atom._get_columns(columns="mean radius") == ["mean radius"]
+
+
+def test_get_columns_by_type():
+    """Assert that columns can be retrieved by type."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom._get_columns(columns="!number") == ["Feature 3"]
+    assert atom._get_columns(columns="number") == ["Feature 1", "Feature 2", "target"]
+
+
+def test_get_columns_exclude():
+    """Assert that columns can be excluded using `!`."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+        atom._get_columns(columns="!invalid")
+    assert len(atom._get_columns(columns="!mean radius")) == 30
+    assert len(atom._get_columns(columns=["!mean radius", "!mean texture"])) == 29
+
+
+def test_get_columns_none_selected():
+    """Assert that an error is raised when no columns are selected."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*At least one.*"):
+        atom._get_columns(columns="datetime")
+
+
+def test_get_columns_include_or_exclude():
+    """Assert that an error is raised when cols are included and excluded."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*either include or exclude columns.*"):
+        atom._get_columns(columns=["mean radius", "!mean texture"])
+
+
+def test_get_columns_return_inc_exc():
+    """Assert that included and excluded columns can be returned."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert isinstance(atom._get_columns(columns="number", return_inc_exc=True), tuple)
+
+
+def test_get_columns_remove_duplicates():
+    """Assert that duplicate columns are ignored."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom._get_columns(columns=[0, 1, 0]) == ["mean radius", "mean texture"]
+
 
 def test_get_model_name_winner():
     """Assert that the winner is returned when used as name."""
@@ -353,6 +418,20 @@ def test_available_models():
     assert isinstance(models, pd.DataFrame)
     assert "LR" in models["acronym"].unique()
     assert "BR" not in models["acronym"].unique()
+
+
+def test_clear():
+    """Assert that the clear method resets all model's attributes."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.lgb.beeswarm_plot()
+    assert atom.lr._pred[3] is not None
+    assert atom.lr._scores["train"]
+    assert not atom.lgb._shap._shap_values.empty
+    atom.clear()
+    assert atom.lr._pred == [None] * 15
+    assert not atom.lr._scores["train"]
+    assert atom.lgb._shap._shap_values.empty
 
 
 def test_delete_default():

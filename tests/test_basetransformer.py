@@ -208,13 +208,12 @@ def test_empty_data_arrays():
 
 def test_data_already_set():
     """Assert that if there already is data, the call to run can be empty."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
-
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test)
     trainer.run()
-    assert trainer.dataset.equals(dataset)
-    assert trainer.branch.idx == [len(bin_train), len(bin_test)]
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    assert trainer.branch.idx[0].equals(bin_train.index)
+    assert trainer.branch.idx[1].equals(bin_test.index)
 
 
 def test_input_is_X():
@@ -309,7 +308,6 @@ def test_input_is_X_y():
 
 def test_input_is_2_tuples():
     """Assert that the 2 tuples input works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
@@ -317,16 +315,14 @@ def test_input_is_2_tuples():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run((X_train, y_train), (X_test, y_test))
-    assert trainer.dataset.equals(dataset)
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
 
 
 def test_input_is_train_test():
     """Assert that input train, test works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
-
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.dataset.equals(dataset)
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
 
 
 def test_input_is_train_test_with_parameter_y():
@@ -337,7 +333,6 @@ def test_input_is_train_test_with_parameter_y():
 
 def test_input_is_3_tuples():
     """Assert that the 3 tuples input works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
@@ -347,23 +342,20 @@ def test_input_is_3_tuples():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
-    assert trainer.dataset.equals(dataset)
-    assert trainer.holdout.equals(bin_test.reset_index(drop=True))
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    assert trainer.holdout.equals(bin_test)
 
 
 def test_input_is_train_test_holdout():
     """Assert that input train, test, holdout works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
-
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test, bin_test)
-    assert trainer.dataset.equals(dataset)
-    assert trainer.holdout.equals(bin_test.reset_index(drop=True))
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    assert trainer.holdout.equals(bin_test)
 
 
 def test_4_data_provided():
     """Assert that the 4 elements input works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
@@ -371,12 +363,11 @@ def test_4_data_provided():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(X_train, X_test, y_train, y_test)
-    assert trainer.dataset.equals(dataset)
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
 
 
 def test_6_data_provided():
     """Assert that the 6 elements input works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
@@ -386,8 +377,8 @@ def test_6_data_provided():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
-    assert trainer.dataset.equals(dataset)
-    assert trainer.holdout.equals(bin_test.reset_index(drop=True))
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    assert trainer.holdout.equals(bin_test)
 
 
 def test_invalid_input():

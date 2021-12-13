@@ -20,7 +20,7 @@ from atom.plots import BasePlotter
 from atom.utils import NotFittedError
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_text, y_text, X10_str, y10,
+    X_text, y_text, X10, X10_str, y10, y10_str,
 )
 
 
@@ -441,8 +441,8 @@ def test_plot_permutation_importance():
     atom.lgb.plot_permutation_importance(display=False)
 
 
-@pytest.mark.parametrize("features", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
-def test_plot_partial_dependence(features):
+@pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
+def test_plot_partial_dependence(columns):
     """Assert that the plot_partial_dependence method work as intended."""
     # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -455,30 +455,26 @@ def test_plot_partial_dependence(features):
 
     # More than 3 features
     with pytest.raises(ValueError, match=r".*Maximum 3 allowed.*"):
-        atom.plot_partial_dependence(features=[0, 1, 2, 3], display=False)
+        atom.plot_partial_dependence(columns=[0, 1, 2, 3], display=False)
 
     # Triple feature
     with pytest.raises(ValueError, match=r".*should be single or in pairs.*"):
-        atom.lgb.plot_partial_dependence(features=[(0, 1, 2), 2], display=False)
+        atom.lgb.plot_partial_dependence(columns=[(0, 1, 2), 2], display=False)
 
     # Pair for multi-model
     with pytest.raises(ValueError, match=r".*when plotting multiple models.*"):
-        atom.plot_partial_dependence(features=[(0, 2), 2], display=False)
+        atom.plot_partial_dependence(columns=[(0, 2), 2], display=False)
 
     # Unknown feature
     with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
-        atom.plot_partial_dependence(features=["test", 2], display=False)
-
-    # Invalid index
-    with pytest.raises(ValueError, match=r".*got index.*"):
-        atom.plot_partial_dependence(features=[120, 2], display=False)
+        atom.plot_partial_dependence(columns=["test", 2], display=False)
 
     # Different features for multiple models
     atom.branch = "b2"
     atom.feature_selection(strategy="pca", n_features=5)
     atom.run(["tree2"])
     with pytest.raises(ValueError, match=r".*models use the same features.*"):
-        atom.plot_partial_dependence(features=(0, 1), display=False)
+        atom.plot_partial_dependence(columns=(0, 1), display=False)
 
     atom.branch.delete()
     atom.plot_partial_dependence(kind="both", display=False)
@@ -497,7 +493,7 @@ def test_plot_partial_dependence(features):
     with pytest.raises(ValueError, match=r".*not found in the mapping.*"):
         atom.plot_partial_dependence(target="Yes", display=False)
 
-    atom.lgb.plot_partial_dependence(features, target=2, title="title", display=False)
+    atom.lgb.plot_partial_dependence(columns, target=2, title="title", display=False)
 
 
 def test_plot_parshap():
@@ -553,14 +549,13 @@ def test_plot_probabilities():
     atom.run("Ridge")
     pytest.raises(PermissionError, atom.plot_probabilities)  # Task is not classif
 
-    y = ["a" if i == 0 else "b" for i in y_bin]
-    atom = ATOMClassifier(X_bin, y, random_state=1)
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
     atom.clean()  # Encode the target column
     pytest.raises(NotFittedError, atom.plot_probabilities)
     atom.run(["Tree", "LGB", "PA"], metric="f1")
     pytest.raises(AttributeError, atom.pa.plot_probabilities)  # No predict_proba
-    atom.plot_probabilities(models=["Tree", "LGB"], target="a", display=False)
-    atom.lgb.plot_probabilities(target="b", display=False)
+    atom.plot_probabilities(models=["Tree", "LGB"], target="y", display=False)
+    atom.lgb.plot_probabilities(target="n", display=False)
 
 
 def test_plot_calibration():
@@ -577,13 +572,12 @@ def test_plot_calibration():
     atom.tree.plot_calibration(display=False)
 
 
-@pytest.mark.parametrize("index", [None, 100, -10, (100, 200), slice(100, 200)])
-def test_bar_plot(index):
+def test_bar_plot():
     """Assert that the bar_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.bar_plot)
     atom.run("LR", metric="f1_macro")
-    atom.bar_plot(index=index, display=False)
+    atom.bar_plot(display=False)
 
 
 def test_beeswarm_plot():
@@ -591,7 +585,6 @@ def test_beeswarm_plot():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.beeswarm_plot)
     atom.run("LR", metric="f1_macro")
-    pytest.raises(ValueError, atom.beeswarm_plot, index=(996, 998))  # Invalid index
     atom.beeswarm_plot(display=False)
 
 

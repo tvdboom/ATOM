@@ -95,14 +95,13 @@ the metric.
 <a name="predefined-scorers"></a>
 **Predefined scorers**<br>
 ATOM accepts all of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
-as well as some custom acronyms and custom scorers. 
-
-Since some of sklearn's scorers have quite long names and ATOM is all
-about <s>lazy</s>fast experimentation, the package provides acronyms
-for some of the most commonly used ones. These acronyms are case-insensitive
-and can be used in the `metric` parameter instead of the
-scorer's full name, e.g. `atom.run("LR", metric="BA")` will use
-`balanced_accuracy`. The available acronyms are:
+as well as some custom acronyms and custom scorers. Since some of
+sklearn's scorers have quite long names and ATOM is all about
+<s>lazy</s>fast experimentation, the package provides acronyms
+for some of the most commonly used ones. These acronyms are
+case-insensitive and can be used in the `metric` parameter instead
+of the scorer's full name, e.g. `atom.run("LR", metric="BA")` will
+use `balanced_accuracy`. The available acronyms are:
 
 * "AP" for "average_precision"
 * "BA" for "balanced_accuracy"
