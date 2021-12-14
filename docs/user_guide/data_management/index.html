@@ -2862,10 +2862,16 @@ following formats:</p>
 </ul>
 <p><br></p>
 <h2 id="indexing">Indexing</h2>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>MultiIndex is not supported.</p>
-</div>
+<p>By default, atom resets the dataframe's <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html">index</a>
+after initialization and after every transformation in the pipeline.
+To avoid this, specify the <code>index</code> parameter. If the dataset has an
+'identifier' column, it is useful to use it as index for two reasons:</p>
+<ul>
+<li>An identifier doesn't usually contain any useful information
+  on the target column, and should therefore be removed before training.</li>
+<li><a href="../predicting">Predictions</a> of specific rows can be accessed through
+  their index.</li>
+</ul>
 <p><br></p>
 <h2 id="branches">Branches</h2>
 <p>You might want to compare how a model performs on a dataset transformed

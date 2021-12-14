@@ -689,8 +689,9 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        X: int, str, slice, sequence or dataframe-like
+            Index name or position in the dataset or unseen feature set
+            with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
             - If None: y is ignored.
@@ -768,22 +769,38 @@ class BaseModel(BaseModelPlotter):
                 return metric(self.estimator, X, y, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
-    def predict(self, X: X_TYPES, verbose: Optional[int] = None):
+    def predict(
+        self,
+        X: Union[slice, X_TYPES, Y_TYPES],
+        verbose: Optional[int] = None,
+    ):
         """Get predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict")
 
     @composed(crash, method_to_log, typechecked)
-    def predict_proba(self, X: X_TYPES, verbose: Optional[int] = None):
+    def predict_proba(
+        self,
+        X: Union[slice, X_TYPES, Y_TYPES],
+        verbose: Optional[int] = None,
+    ):
         """Get probability predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict_proba")
 
     @composed(crash, method_to_log, typechecked)
-    def predict_log_proba(self, X: X_TYPES, verbose: Optional[int] = None):
+    def predict_log_proba(
+        self,
+        X: Union[slice, X_TYPES, Y_TYPES],
+        verbose: Optional[int] = None,
+    ):
         """Get log probability predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict_log_proba")
 
     @composed(crash, method_to_log, typechecked)
-    def decision_function(self, X: X_TYPES, verbose: Optional[int] = None):
+    def decision_function(
+        self,
+        X: Union[slice, X_TYPES, Y_TYPES],
+        verbose: Optional[int] = None,
+    ):
         """Get the decision function on new data."""
         return self._prediction(X, verbose=verbose, method="decision_function")
 
@@ -1185,6 +1202,78 @@ class BaseModel(BaseModelPlotter):
 
         return cv
 
+    @composed(crash, typechecked, method_to_log)
+    def dashboard(self, dataset: str = "test", **kwargs):
+        """Create an interactive dashboard to analyze the model.
+
+        The dashboard allows you to investigate SHAP values, permutation
+        importances, interaction effects, partial dependence plots, all
+        kinds of performance plots, and even individual decision trees.
+        By default, the dashboard opens in an external dash app.
+
+        Parameters
+        ----------
+        dataset: str, optional (default="dataset")
+            Data set to get the report from. Choose from: train, test,
+            both or holdout.
+
+        **kwargs
+            Additional keyword arguments for the ExplainerDashboard
+            instance.
+
+        Returns
+        -------
+        profile: ProfileReport
+            Created report object.
+
+        """
+        from explainerdashboard import (
+            ClassifierExplainer, RegressionExplainer, ExplainerDashboard
+        )
+
+        self.T.log("Creating dashboard...", 1)
+
+        dataset = dataset.lower()
+        if dataset == "both":
+            X, y = self.X, self.y
+        elif dataset in ("train", "test"):
+            X, y = getattr(self, f"X_{dataset}"), getattr(self, f"y_{dataset}")
+        elif dataset == "holdout":
+            if self.holdout is None:
+                raise ValueError(
+                    "Invalid value for the dataset parameter. No holdout "
+                    "data set was specified when initializing the trainer."
+                )
+            X, y = self.holdout.iloc[:, :-1], self.holdout.iloc[:, -1]
+        else:
+            raise ValueError(
+                "Invalid value for the dataset parameter, got "
+                f"{dataset}. Choose from: train, test, both or holdout."
+            )
+
+        params = dict(permutation_metric=self.T._metric.values(), n_jobs=self.T.n_jobs)
+        if self.T.goal == "class":
+            explainer = ClassifierExplainer(self.estimator, X, y, **params)
+        else:
+            explainer = RegressionExplainer(self.estimator, X, y, **params)
+
+        # Add shap values from the internal ShapExplanation object
+        explainer.set_shap_values(
+            base_value=self._shap.get_expected_value(return_int=False),
+            shap_values=self._shap.get_shap_values(X, return_all_classes=True),
+        )
+        explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
+
+        # Initialize dashboard
+        dashboard = ExplainerDashboard(
+            explainer=explainer,
+            mode=kwargs.pop("mode", "external"),
+            **kwargs,
+        )
+        dashboard.run()
+
+        return dashboard
+
     @composed(crash, method_to_log)
     def delete(self):
         """Delete the model from the trainer.
@@ -1301,9 +1390,10 @@ class BaseModel(BaseModelPlotter):
         ----------
         memory: bool, str, Memory or None, optional (default=None)
             Used to cache the fitted transformers of the pipeline.
-                If None or False: No caching is performed.
-                If True: A default temp directory is used.
-                If str: Path to the caching directory.
+                - If None or False: No caching is performed.
+                - If True: A default temp directory is used.
+                - If str: Path to the caching directory.
+                - If Memory: Object with the joblib.Memory interface.
 
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
@@ -1335,7 +1425,7 @@ class BaseModel(BaseModelPlotter):
         if not memory:  # None or False
             memory = None
         elif memory is True:
-            memory = Memory(tempfile.gettempdir())
+            memory = tempfile.gettempdir()
 
         return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
 

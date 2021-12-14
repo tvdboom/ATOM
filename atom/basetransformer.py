@@ -221,14 +221,33 @@ class BaseTransformer:
 
     def _set_index(self, df):
         """Assign an index to the dataframe."""
+        target = df.columns[-1]
+
         if self.index is True:  # True gets caught by isinstance(int)
             return df
         elif self.index is False:
-            return df.reset_index(drop=True)
-        elif isinstance(self.index, (int, str)):
-            return df.set_index(
-                keys=self._get_columns(self.index, include_target=False),
-                drop=True,
+            df = df.reset_index(drop=True)
+        elif isinstance(self.index, int):
+            if -df.shape[1] <= self.index <= df.shape[1]:
+                df = df.set_index(df.columns[self.index], drop=True)
+            else:
+                raise ValueError(
+                    f"Invalid value for the index parameter. Value {self.index} "
+                    f"is out of range for a dataset with length {len(df)}."
+                )
+        elif isinstance(self.index, str):
+            if self.index in df:
+                df = df.set_index(self.index, drop=True)
+            else:
+                raise ValueError(
+                    "Invalid value for the index parameter. "
+                    f"Column {self.index} not found in the dataset."
+                )
+
+        if df.index.name == target:
+            raise ValueError(
+                "Invalid value for the index parameter. The index column "
+                f"can not be the same as the target column, got {target}."
             )
 
         return df
@@ -335,7 +354,10 @@ class BaseTransformer:
             """Path to follow when data sets are provided."""
             # If the index is a sequence, assign it before shuffling
             if isinstance(self.index, SEQUENCE):
-                len_data = len(train) + len(test) + (len(holdout) if holdout else 0)
+                len_data = len(train) + len(test)
+                if holdout is not None:
+                    len_data += len(holdout)
+
                 if len(self.index) != len_data:
                     raise ValueError(
                         "Invalid value for the index parameter. Length of "
@@ -344,7 +366,7 @@ class BaseTransformer:
                     )
                 train.index = self.index[:len(train)]
                 test.index = self.index[len(train):len(train) + len(test)]
-                if holdout:
+                if holdout is not None:
                     holdout.index = self.index[-len(holdout):]
 
             # Skip the n_rows step if not called from atom

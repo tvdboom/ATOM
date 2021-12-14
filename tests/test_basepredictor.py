@@ -19,8 +19,8 @@ from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
 from .utils import (
-    X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train,
-    bin_test, X10, y10, X10_str,
+    X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_idx, y_idx,
+    bin_train, bin_test, X10, y10, X10_str,
 )
 
 
@@ -274,6 +274,42 @@ def test_score_sample_weights():
 
 
 # Test utility methods ============================================= >>
+
+
+def test_get_rows_is_None():
+    """Assert that all indices are returned."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    assert len(atom._get_rows(index=None, return_test=True)) < len(X_idx)
+    assert len(atom._get_rows(index=None, return_test=False)) == len(X_idx)
+
+
+def test_get_rows_is_slice():
+    """Assert that a slice of rows is returned."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    assert len(atom._get_rows(index=slice(20, 100, 2))) == 40
+
+
+def test_get_rows_by_name():
+    """Assert that rows can be retrieved by their index label."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+        atom._get_rows(index="index")
+    assert atom._get_rows(index="index_34") == ["index_34"]
+
+
+def test_get_rows_by_position():
+    """Assert that rows can be retrieved by their index position."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    with pytest.raises(ValueError, match=r".*out of range.*"):
+        atom._get_rows(index=1000)
+    assert atom._get_rows(index=100) == [atom.X.index[100]]
+
+
+def test_get_rows_none_selected():
+    """Assert that an error is raised when no rows are selected."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    with pytest.raises(ValueError, match=r".*has to be selected.*"):
+        atom._get_rows(index=slice(1000, 2000))
 
 
 def test_get_columns_is_None():

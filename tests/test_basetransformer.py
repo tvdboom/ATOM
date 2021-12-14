@@ -22,8 +22,8 @@ from atom.training import DirectClassifier
 from atom.basetransformer import BaseTransformer
 from atom.utils import merge
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_bin_array, y_bin_array, mnist,
-    X_text, y_text, X10, y10, bin_train, bin_test,
+    FILE_DIR, X_bin, y_bin, X_idx, y_idx, X_bin_array, y_bin_array,
+    mnist, X_text, y_text, X10, y10, bin_train, bin_test,
 )
 
 
@@ -196,6 +196,77 @@ def test_target_is_none():
     """Assert that target column stays None when empty input."""
     _, y = BaseTransformer._prepare_input(X_bin, y=None)
     assert y is None
+
+
+# Test _set_index ================================================== >>
+
+def test_index_is_true():
+    """Assert that the indices are left as is when index=True."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, shuffle=False, random_state=1)
+    assert atom.dataset.index[0] == "index_0"
+
+
+def test_index_is_False():
+    """Assert that the indices are reset when index=False."""
+    atom = ATOMClassifier(X_idx, y_idx, index=False, shuffle=False, random_state=1)
+    assert atom.dataset.index[0] == 0
+
+
+def test_index_is_int_invalid():
+    """Assert that an error is raised when the index is an invalid int."""
+    with pytest.raises(ValueError, match=r".*is out of range.*"):
+        ATOMClassifier(X_bin, y_bin, index=1000, random_state=1)
+
+
+def test_index_is_int():
+    """Assert that a column can be selected from a position."""
+    atom = ATOMClassifier(X_bin, y_bin, index=0, random_state=1)
+    assert atom.dataset.index.name == "mean radius"
+
+
+def test_index_is_str_invalid():
+    """Assert that an error is raised when the index is an invalid str."""
+    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+        ATOMClassifier(X_bin, y_bin, index="invalid", random_state=1)
+
+
+def test_index_is_str():
+    """Assert that a column can be selected from a name."""
+    atom = ATOMClassifier(X_bin, y_bin, index="mean texture", random_state=1)
+    assert atom.dataset.index.name == "mean texture"
+
+
+def test_index_is_target():
+    """Assert that an error is raised when the index is the target column."""
+    with pytest.raises(ValueError, match=r".*same as the target column.*"):
+        ATOMClassifier(X_bin, index="worst fractal dimension", random_state=1)
+
+
+def test_index_is_sequence_no_data_sets_invalid_length():
+    """Assert that an error is raised when len(index) != len(data)."""
+    with pytest.raises(ValueError, match=r".*Length of index.*"):
+        ATOMClassifier(X_bin, y_bin, index=[1, 2, 3], random_state=1)
+
+
+def test_index_is_sequence_no_data_sets():
+    """Assert that a sequence is set as index when provided."""
+    index = [f"index_{i}" for i in range(len(X_bin))]
+    atom = ATOMClassifier(X_bin, y_bin, index=index, random_state=1)
+    assert atom.dataset.index[0] == "index_421"
+
+
+def test_index_is_sequence_has_data_sets_invalid_length():
+    """Assert that an error is raised when len(index) != len(data)."""
+    with pytest.raises(ValueError, match=r".*Length of index.*"):
+        ATOMClassifier(bin_train, bin_test, index=[1, 2, 3], random_state=1)
+
+
+def test_index_is_sequence_has_data_sets():
+    """Assert that a sequence is set as index when provided."""
+    index = [f"index_{i}" for i in range(len(bin_train) + 2 * len(bin_test))]
+    atom = ATOMClassifier(bin_train, bin_test, bin_test, index=index, random_state=1)
+    assert atom.dataset.index[0] == "index_174"
+    assert atom.holdout.index[0] == "index_661"
 
 
 # Test _get_data =================================================== >>

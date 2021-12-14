@@ -21,7 +21,8 @@ from sklearn.metrics import accuracy_score, r2_score, recall_score
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_scaling
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, y10,
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
+    X_idx, y_idx, X10_str, y10,
 )
 
 
@@ -269,6 +270,14 @@ def test_invalid_method():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("SGD")
     pytest.raises(AttributeError, atom.sgd.predict_proba, X_bin)
+
+
+def test_predictions_from_index():
+    """Assert that predictions when providing indices."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    atom.run("Tree")
+    assert isinstance(atom.tree.predict_proba("index_4"), np.ndarray)
+    assert isinstance(atom.tree.predict(["index_4", "index_8"]), np.ndarray)
 
 
 def test_transformations_first():

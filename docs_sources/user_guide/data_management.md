@@ -62,8 +62,15 @@ following formats:
 
 ## Indexing
 
-!!! info
-    MultiIndex is not supported.
+By default, atom resets the dataframe's [index](https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html)
+after initialization and after every transformation in the pipeline.
+To avoid this, specify the `index` parameter. If the dataset has an
+'identifier' column, it is useful to use it as index for two reasons:
+
+* An identifier doesn't usually contain any useful information
+  on the target column, and should therefore be removed before training.
+* [Predictions](../predicting) of specific rows can be accessed through
+  their index.
 
 
 

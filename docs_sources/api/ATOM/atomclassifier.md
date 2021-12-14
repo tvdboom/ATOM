@@ -886,7 +886,8 @@ Scores of the models.
 
 <a name="export-pipeline"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None, verbose=None)
+<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None,
+memory=None, verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L423">[source]</a>
 </span>
@@ -920,6 +921,14 @@ model used <a href="../../../user_guide/training/#automated-feature-scaling">aut
 the <code>scaler</code> is added to the pipeline. If None, only the
 transformers are added.
 </p>
+<strong>memory: bool, str, Memory or None, optional (default=None)</strong><br>
+Used to cache the fitted transformers of the pipeline.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None or False: No caching is performed.</li>
+<li>If True: A default temp directory is used.</li>
+<li>If str: Path to the caching directory.</li>
+<li>If Memory: Object with the <a href="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html">joblib.Memory</a> interface.</li>
+</ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
 Verbosity level of the transformers in the pipeline. If None, it leaves
@@ -1031,7 +1040,7 @@ to the end of their names.
 <a name="report"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">report</strong>(dataset="dataset",
-n_rows=None, filename=None)
+n_rows=None, filename=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L552">[source]</a>
 </span>
@@ -1049,11 +1058,15 @@ Data set to get the report from.
 </p>
 <p>
 <strong>n_rows: int or None, optional (default=None)</strong><br>
-Number of (randomly picked) rows to process. None for all rows.
+Number of (randomly picked) rows to process. None to use all rows.
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
 Name to save the file with (as .html). None to not save anything.
+</p>
+<p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments for the ProfileReport instance.
 </p>
 </td>
 </tr>

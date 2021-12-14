@@ -27,40 +27,48 @@ methods for estimators in sklearn's API:
 
 <tr>
 <td><a href="../../API/predicting/predict">predict</a></td>
-<td>Transform new data through all transformers in a branch and return class predictions.</td>
+<td>Return class predictions.</td>
 </tr>
 
 <tr>
 <td><a href="../../API/predicting/predict_proba">predict_proba</a></td>
-<td>Transform new data through all transformers in a branch and return class probabilities.</td>
+<td>Return class probabilities.</td>
 </tr>
 
 <tr>
 <td><a href="../../API/predicting/predict_log_proba">predict_log_proba</a></td>
-<td>Transform new data through all transformers in a branch and return class log-probabilities. </td>
+<td>Return class log-probabilities. </td>
 </tr>
 
 <tr>
 <td><a href="../../API/predicting/decision_function">decision_function</a></td>
-<td>Transform new data through all transformers in a branch and return confidence scores.</td>
+<td>Return confidence scores.</td>
 </tr>
 
 <tr>
 <td><a href="../../API/predicting/score">score</a></td>
-<td>Transform new data through all transformers in a branch and return a metric score.</td>
+<td>Return a metric score.</td>
 </tr>
 </table>
 
-Except for transform, the prediction methods can be calculated on the train
-and test set. You can access them through the model's prediction attributes,
-e.g. `atom.mnb.predict_train` or ` atom.mnb.predict_test`. Keep in mind that
-the results are not calculated until the attribute is called for the first
-time. This mechanism avoids having to calculate attributes that are never
-used, saving time and memory.
+Except for transform, the prediction methods can be calculated on the
+train and test set. You can access them through the model's **prediction
+attributes**, e.g. `atom.mnb.predict_train` or ` atom.mnb.predict_test`.
+Keep in mind that the results are not calculated until the attribute is
+called for the first time. This mechanism avoids having to calculate
+attributes that are never used, saving time and memory.
+
+Except for transform and score, it's possible to get the prediction on a
+specific row or rows in the dataset providing their index names or positions,
+e.g. `atom.rf.predict(10)` returns the random forest's prediction on the
+10th row in the dataset, or `atom.rf.predict_proba(["index1", "index2"])`
+returns the model's class probabilities for the rows in the dataset with
+indices `index1` and `index2`.
+
 
 !!! note
     Many of the [plots](../plots) use the prediction attributes. This can
     considerably increase the size of the instance for large datasets. Use
-    the [reset_predictions](../../API/ATOM/atomclassifier/#reset-predictions)
-    method if you need to free some memory!
+    the [clear](../../API/ATOM/atomclassifier/#clear) method if you need to
+    free some memory!
 

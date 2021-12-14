@@ -462,7 +462,7 @@ Scores of the model.
 
 <a name="export-pipeline"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
+<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(memory=None, verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L756">[source]</a>
 </span>
@@ -491,6 +491,14 @@ fitted on the training set.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
+<strong>memory: bool, str, Memory or None, optional (default=None)</strong><br>
+Used to cache the fitted transformers of the pipeline.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None or False: No caching is performed.</li>
+<li>If True: A default temp directory is used.</li>
+<li>If str: Path to the caching directory.</li>
+<li>If Memory: Object with the <a href="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html">joblib.Memory</a> interface.</li>
+</ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
 Verbosity level of the transformers in the pipeline. If None, it leaves

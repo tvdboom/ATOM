@@ -1559,11 +1559,20 @@ class ShapExplanation:
         else:
             return self._explanation[:, feature]
 
-    def get_shap_values(self, df, target=1, feature=None):
+    def get_shap_values(self, df, target=1, return_all_classes=False):
         """Get shap values from the Explanation object."""
-        return self.get_explanation(df, target, feature).values
+        values = self.get_explanation(df, target).values
+        if return_all_classes:
+            if self.T.T.task.startswith("bin") and len(values) != self.T.y.nunique():
+                values = [np.array(1 - values), values]
 
-    def get_expected_value(self, target):
+        return values
+
+    def get_interaction_values(self, df):
+        """Get shap interaction values from the Explanation object."""
+        return self.explainer.shap_interaction_values(df)
+
+    def get_expected_value(self, target=1, return_int=True):
         """Get the expected value of the training set."""
         if self._expected_value is None:
             # Some explainers like Permutation don't have expected_value attr
@@ -1575,10 +1584,11 @@ class ShapExplanation:
                     getattr(self.T, f"{get_proba_attr(self.T)}_train")
                 )
 
-        # Select the target expected value or return all
-        if isinstance(self._expected_value, (list, np.ndarray)):
-            if len(self._expected_value) == self.T.y.nunique():
-                return self._expected_value[target]
+        if return_int:
+            # Select the target expected value or return all
+            if isinstance(self._expected_value, (list, np.ndarray)):
+                if len(self._expected_value) == self.T.y.nunique():
+                    return self._expected_value[target]
 
         return self._expected_value
 

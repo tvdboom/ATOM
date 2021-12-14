@@ -288,18 +288,23 @@ class BasePredictor:
                 if idx in indices:
                     inc.append(idx)
                 elif isinstance(idx, int):
-                    if -len(indices) <= idx <= -len(indices):
+                    if -len(indices) <= idx <= len(indices):
                         inc.append(indices[idx])
                     else:
                         raise ValueError(
                             f"Invalid value for the index parameter. Value {index} is "
                             f"out of range for a dataset with length {len(indices)}."
                         )
+                else:
+                    raise ValueError(
+                        "Invalid value for the index parameter. "
+                        f"Value {idx} not found in the dataset."
+                    )
 
         if not inc:
             raise ValueError(
-                "Invalid value for the index parameter. "
-                f"Index {index} not found in the dataset."
+                "Invalid value for the index parameter, got "
+                f"{index}. At least one row has to be selected."
             )
 
         return inc

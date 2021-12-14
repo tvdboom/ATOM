@@ -24,6 +24,7 @@ packages to use machine learning estimators not provided by sklearn.
 * **[scipy](https://www.scipy.org/)** (>=1.4.1)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.0)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=2.3.0)
+* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.3.7)
 * **[mlflow](https://mlflow.org/)** (>=1.15.0)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.3)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)

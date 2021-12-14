@@ -426,9 +426,10 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         memory: bool, str, Memory or None, optional (default=None)
             Used to cache the fitted transformers of the pipeline.
-                If None or False: No caching is performed.
-                If True: A default temp directory is used.
-                If str: Path to the caching directory.
+                - If None or False: No caching is performed.
+                - If True: A default temp directory is used.
+                - If str: Path to the caching directory.
+                - If Memory: Object with the joblib.Memory interface.
 
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
@@ -473,7 +474,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         if not memory:  # None or False
             memory = None
         elif memory is True:
-            memory = Memory(tempfile.gettempdir())
+            memory = tempfile.gettempdir()
 
         return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
 
@@ -483,6 +484,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         dataset: str = "dataset",
         n_rows: Optional[SCALAR] = None,
         filename: Optional[str] = None,
+        **kwargs,
     ):
         """Create an extensive profile analysis report of the data.
 
@@ -495,12 +497,15 @@ class ATOM(BasePredictor, ATOMPlotter):
             Data set to get the report from.
 
         n_rows: int or None, optional (default=None)
-            Number of (randomly picked) rows in to process. None for
+            Number of (randomly picked) rows to process. None to use
             all rows.
 
         filename: str or None, optional (default=None)
             Name to save the file with (as .html). None to not save
             anything.
+
+        **kwargs
+            Additional keyword arguments for the ProfileReport instance.
 
         Returns
         -------
@@ -513,7 +518,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("Creating profile report...", 1)
 
         n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
-        profile = ProfileReport(getattr(self, dataset).sample(n_rows))
+        profile = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
 
         if filename:
             if not filename.endswith(".html"):

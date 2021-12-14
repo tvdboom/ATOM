@@ -75,9 +75,9 @@ class Pipeline(pipeline.Pipeline):
     def _fit(self, X=None, y=None, **fit_params_steps):
         self.steps = list(self.steps)
         self._validate_steps()
+        memory = check_memory(self.memory)
 
-        # Setup the memory
-        memory = check_memory(self.memory).cache(fit_transform_one)
+        fit_transform_one_cached = memory.cache(fit_transform_one)
 
         for (step_idx, name, transformer) in self._iter(False, False, False):
             if transformer is None or transformer == "passthrough":
@@ -85,7 +85,7 @@ class Pipeline(pipeline.Pipeline):
                     continue
 
             if hasattr(transformer, "transform"):
-                if getattr(memory, "location", "") is None:
+                if memory.location is None:
                     # Don't clone when caching is disabled to
                     # preserve backward compatibility
                     cloned = transformer
@@ -98,7 +98,7 @@ class Pipeline(pipeline.Pipeline):
                             setattr(cloned, attr, getattr(transformer, attr))
 
                 # Fit or load the current estimator from cache
-                X, y, fitted_transformer = memory(
+                X, y, fitted_transformer = fit_transform_one_cached(
                     transformer=cloned,
                     X=X,
                     y=y,

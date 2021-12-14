@@ -304,13 +304,13 @@ class BasePlotter:
                 return [dataset]
             else:
                 raise ValueError(
-                    "Invalid value for the dataset parameter. "
-                    "Choose from: train, test, both or holdout."
+                    "Invalid value for the dataset parameter, got "
+                    f"{dataset}. Choose from: train, test, both or holdout."
                 )
         else:
             raise ValueError(
-                "Invalid value for the dataset parameter. "
-                "Choose from: train, test or both."
+                "Invalid value for the dataset parameter, got "
+                f"{dataset}. Choose from: train, test or both."
             )
 
     def _get_target(self, target):
@@ -2207,7 +2207,11 @@ class BaseModelPlotter(BasePlotter):
 
             # Compute averaged predictions
             pd_results = Parallel(n_jobs=self.n_jobs)(
-                delayed(partial_dependence)(m.estimator, m.X_test, [m.features.index(c) for c in col]) for col in cols
+                delayed(partial_dependence)(
+                    estimator=m.estimator,
+                    X=m.X_test,
+                    features=[m.features.index(c) for c in col],
+                ) for col in cols
             )
 
             # Get global min and max average predictions of PD grouped by plot type
@@ -3587,10 +3591,7 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "waterfall_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
-        if index is None:
-            rows = m.X_test.iloc[[0]]
-        else:
-            rows = m.X.loc[self._get_rows(index, branch=m.branch)]
+        rows = m.X.loc[[self._get_rows(index, branch=m.branch)[0]]]
         show = self._get_show(show, m)
         target = self._get_target(target)
         explanation = m._shap.get_explanation(rows, target)

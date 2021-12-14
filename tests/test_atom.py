@@ -579,6 +579,13 @@ def test_add_sets_are_kept_equal():
     assert len(atom.train) < len_train and len(atom.test) < len_test
 
 
+def test_add_reset_index():
+    """Assert that the indices are reset when index=False."""
+    atom = ATOMClassifier(X_bin, y_bin, index=False, random_state=1)
+    atom.prune()
+    assert list(atom.dataset.index) == list(range(len(atom.dataset)))
+
+
 def test_add_params_to_method():
     """Assert that atom's parameters are passed to the method."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)

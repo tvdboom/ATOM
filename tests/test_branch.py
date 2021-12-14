@@ -14,7 +14,7 @@ import pandas as pd
 # Own modules
 from atom import ATOMClassifier
 from atom.utils import merge
-from .utils import X_bin, y_bin, X_class, y_class, X_bin_array, y_bin_array, mnist
+from .utils import X_bin, y_bin, X_class, X_bin_array, y_bin_array, mnist
 
 
 # Test __init__ ==================================================== >>
@@ -289,8 +289,9 @@ def test_X_train_setter():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X_train = atom.X_train
     new_X_train.iloc[0, 0] = 999
-    atom.X_train = new_X_train
+    atom.X_train = new_X_train.to_numpy()  # To numpy to test dtypes are maintained
     assert atom.X_train.iloc[0, 0] == 999
+    assert list(atom.X_train.dtypes) == list(atom.X_test.dtypes)
 
 
 def test_X_test_setter():
