@@ -700,7 +700,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
-        self._num_cols = X.select_dtypes(include="number")
+        self._num_cols = list(X.select_dtypes(include="number").columns)
 
         # Check input Parameters
         strats = ["drop", "mean", "median", "knn", "most_frequent"]
@@ -1006,7 +1006,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
-        self._cat_cols = X.select_dtypes(exclude="number")
+        self._cat_cols = list(X.select_dtypes(exclude="number").columns)
 
         if isinstance(self.strategy, str):
             if self.strategy.lower().endswith("encoder"):

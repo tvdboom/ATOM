@@ -3811,7 +3811,7 @@ inversely proportional to the class frequencies in the selected data set. </p>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <strong>dataset: str, optional (default="train")</strong><br>
-Data set from which to get the weights. Choose from: train, test or dataset.
+Data set from which to get the weights. Choose from: "train", "test" or "dataset".
 </tr>
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
@@ -4044,7 +4044,7 @@ model's acronym: <code>Stack</code>.
 <p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
 Models that feed the stacking estimator. If None, it selects
-all models trained on the current branch.
+all non-ensemble models trained on the current branch.
 </p>
 <p>
 <strong>**kwargs</strong><br>
@@ -4099,8 +4099,8 @@ model's acronym: <code>Vote</code>.
 </p>
 <p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
-Models that feed the stacking estimator. If None, it selects
-all models trained on the current branch.
+Models that feed the voting estimator. If None, it selects
+all non-ensemble models trained on the current branch.
 </p>
 <p>
 <strong>**kwargs</strong><br>

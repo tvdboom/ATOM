@@ -274,10 +274,11 @@ def test_invalid_method():
 
 def test_predictions_from_index():
     """Assert that predictions when providing indices."""
-    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    atom = ATOMClassifier(X_idx, y_idx, index=True, holdout_size=0.1, random_state=1)
     atom.run("Tree")
     assert isinstance(atom.tree.predict_proba("index_4"), np.ndarray)
     assert isinstance(atom.tree.predict(["index_4", "index_8"]), np.ndarray)
+    assert isinstance(atom.tree.predict_log_proba(atom.holdout.index[0]), np.ndarray)
 
 
 def test_transformations_first():
@@ -369,9 +370,9 @@ def test_holdout_property():
     """Assert that the holdout property is calculated."""
     atom = ATOMClassifier(X10_str, y10, holdout_size=0.1, random_state=1)
     atom.encode()
-    atom.run("MNB")
-    assert not atom.holdout.equals(atom.mnb.holdout)
-    assert len(atom.mnb.holdout.columns) > 3  # Holdout is transformed
+    atom.run(["LR", "Tree"])
+    assert not atom.lr.holdout.equals(atom.tree.holdout)  # Scaler vs no scaler
+    assert len(atom.lr.holdout.columns) > 3  # Holdout is transformed
 
 
 def test_X_property():
@@ -492,6 +493,41 @@ def test_cross_validate():
     atom.run("LR")
     assert isinstance(atom.lr.cross_validate(), dict)
     assert isinstance(atom.lr.cross_validate(scoring="AP"), dict)
+
+
+def test_dashboard_dataset_no_holdout():
+    """Assert that an error is raised when there's no holdout set."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("RF")
+    with pytest.raises(ValueError, match=r".*No holdout data set.*"):
+        atom.rf.dashboard(dataset="holdout")
+
+
+def test_dashboard_invalid_dataset():
+    """Assert that an error is raised when dataset is invalid."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("RF")
+    with pytest.raises(ValueError, match=r".*dataset parameter.*"):
+        atom.rf.dashboard(dataset="invalid")
+
+
+@patch("explainerdashboard.ExplainerDashboard.run")
+@pytest.mark.parametrize("dataset", ["train", "both", "holdout"])
+def test_dashboard(func, dataset):
+    """Assert that an error is raised when dataset is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("RF")
+    atom.rf.dashboard(dataset=dataset)
+    func.assert_called_once()
+
+
+@patch("explainerdashboard.ExplainerDashboard.run")
+def test_dashboard_is_saved(func):
+    """Assert that an error is raised when dataset is invalid."""
+    atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
+    atom.run("RF")
+    atom.rf.dashboard(filename=FILE_DIR + "dashboard")
+    assert glob.glob(FILE_DIR + "dashboard.html")
 
 
 def test_delete():

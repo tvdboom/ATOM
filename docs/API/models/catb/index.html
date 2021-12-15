@@ -3021,7 +3021,7 @@ Metric score(s) on the training set.
 Metric score(s) on the test set.
 </p>
 <p>
-<strong>metric_bootstrap: np.ndarray</strong><br>
+<strong>metric_bootstrap: np.array</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
 </p>
@@ -3059,27 +3059,27 @@ attributes that are never used, saving time and memory.</p>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Prediction attributes:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>predict_train: np.ndarray</strong><br>
+<strong>predict_train: np.array</strong><br>
 Predictions of the model on the training set.
 </p>
 <p>
-<strong> predict_test: np.ndarray</strong><br>
+<strong> predict_test: np.array</strong><br>
 Predictions of the model on the test set.
 </p>
 <p>
-<strong>predict_proba_train: np.ndarray</strong><br>
+<strong>predict_proba_train: np.array</strong><br>
 Predicted probabilities of the model on the training set (only if classifier).
 </p>
 <p>
-<strong>predict_proba_test: np.ndarray</strong><br>
+<strong>predict_proba_test: np.array</strong><br>
 Predicted probabilities of the model on the test set (only if classifier).
 </p>
 <p>
-<strong>predict_log_proba_train: np.ndarray</strong><br>
+<strong>predict_log_proba_train: np.array</strong><br>
 Predicted log probabilities of the model on the training set (only if classifier).
 </p>
 <p>
-<strong>predict_log_proba_test: np.ndarray</strong><br>
+<strong>predict_log_proba_test: np.array</strong><br>
 Predicted log probabilities of the model on the test set (only if classifier).
 </p>
 <p>
@@ -3119,6 +3119,11 @@ The remaining utility methods can be found hereunder.
 <tr>
 <td><a href="#delete">delete</a></td>
 <td>Delete the model from the trainer.</td>
+</tr>
+
+<tr>
+<td><a href="#dashboard">dashboard</a></td>
+<td>Create an interactive dashboard to analyze the model.</td>
 </tr>
 
 <tr>
@@ -3237,6 +3242,46 @@ trainer, the metric is reset. Use this method to drop unwanted
 models from the pipeline or to free some memory before saving.
 The model is not removed from any active mlflow experiment.
 <br /><br /><br /></p>
+<p><a name="dashboard"></a></p>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">dashboard</strong>(dataset="test", filename=None, **kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1205">[source]</a>
+</span>
+</div>
+<p>Create an interactive dashboard to analyze the model. The dashboard
+allows you to investigate SHAP values, permutation importances,
+interaction effects, partial dependence plots, all kinds of
+performance plots, and even individual decision trees. By default,
+the dashboard opens in an external dash app.</p>
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
+Data set to get the report from. Choose from: "train", "test",
+"both" (train and test) or "holdout".
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name to save the file with (as .html). None to not save anything.
+</p>
+<p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments for the ExplainerDashboard instance.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>dashboard: <a href="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html">ExplainerDashboard</a></strong><br>
+Created dashboard object.
+</td>
+</tr>
+</table>
+<p><br /></p>
 <p><a name="evaluate"></a></p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,

@@ -1161,7 +1161,7 @@ model's acronym: <code>Stack</code>.
 <p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
 Models that feed the stacking estimator. If None, it selects
-all models trained on the current branch.
+all non-ensemble models trained on the current branch.
 </p>
 <p>
 <strong>**kwargs</strong><br>
@@ -1218,8 +1218,8 @@ model's acronym: <code>Vote</code>.
 </p>
 <p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
-Models that feed the stacking estimator. If None, it selects
-all models trained on the current branch.
+Models that feed the voting estimator. If None, it selects
+all non-ensemble models trained on the current branch.
 </p>
 <p>
 <strong>**kwargs</strong><br>

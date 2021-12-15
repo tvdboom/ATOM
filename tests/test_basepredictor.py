@@ -632,6 +632,15 @@ def test_stacking():
     assert atom.stack._run
 
 
+def test_stacking_non_ensembles():
+    """Assert that stacking ignores other ensembles."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.voting()
+    atom.stacking()
+    assert len(atom.stack.estimator.estimators) == 2  # No voting
+
+
 def test_stacking_invalid_models():
     """Assert that an error is raised when <2 models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

@@ -19,7 +19,7 @@ from .basetransformer import BaseTransformer
 from .models import MODELS_ENSEMBLES
 from .utils import (
     X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
-    is_multidim, composed, crash, method_to_log,
+    is_multidim, custom_transform, composed, crash, method_to_log,
 )
 
 
@@ -55,8 +55,8 @@ class Branch:
     """
 
     def __init__(self, *args, parent=None):
-        # Make copies of the params to not overwrite mutable variables
         self.T, self.name = args[0], args[1]
+        self._holdout = None  # Always reset holdout calculation
         if not parent:
             self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
             for attr in ("data", "idx", "mapping", "feature_importance"):
@@ -93,9 +93,15 @@ class Branch:
 
     def _get_attrs(self):
         """Get properties and attributes to call from parent."""
-        props = [p for p in dir(self) if isinstance(getattr(Branch, p, None), property)]
-        attrs = [a for a in vars(self) if a not in ("T", "name", "data", "idx")]
-        return props + attrs
+        attrs = []
+        for p in dir(self):
+            if (
+                p in vars(self) and p not in ("T", "name", "data", "idx", "_holdout")
+                or isinstance(getattr(Branch, p, None), property)
+            ):
+                attrs.append(p)
+
+        return attrs
 
     def _get_depending_models(self):
         """Return the models that are dependent on this branch."""
@@ -290,6 +296,19 @@ class Branch:
         df = self._check_setter("test", value)
         self.data = self.T._set_index(pd.concat([self.train, df]))
         self.idx[1] = self.data.index[-len(df):]
+
+    @property
+    def holdout(self):
+        """Holdout set."""
+        if self.T.holdout is not None and self._holdout is None:
+            X, y = self.T.holdout.iloc[:, :-1], self.T.holdout.iloc[:, -1]
+            for transformer in self.pipeline:
+                if not transformer._train_only:
+                    X, y = custom_transform(transformer, self, (X, y), verbose=0)
+
+            self._holdout = merge(X, y)
+
+        return self._holdout
 
     @property
     def X(self):

@@ -27,8 +27,7 @@ different data sets:
   not considered part of atom's dataset (the `dataset` attribute only
   returns the train and test sets). The holdout set is left untouched
   until predictions are made on it, i.e. it does not undergo any pipeline
-  transformations. This also means that the holdout set is independent
-  of the branches. The holdout set is stored in the trainer's `holdout`
+  transformations. The holdout set is stored in the trainer's `holdout`
   attribute. It's features and target can not be accessed separately.
   See [here](../../examples/holdout_set) an example that shows how to
   use the holdout data set.

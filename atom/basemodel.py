@@ -64,7 +64,6 @@ class BaseModel(BaseModelPlotter):
 
         self._run = None  # mlflow run (if experiment is active)
         self._group = self.name  # sh and ts models belong to the same group
-        self._holdout = None
         self._pred = [None] * 15
         self._scores = CustomDict(
             train=CustomDict(),
@@ -682,10 +681,10 @@ class BaseModel(BaseModelPlotter):
         verbose=None,
         method="predict"
     ):
-        """Apply prediction methods on new data.
+        """Get predictions on new data or from existing row(s).
 
-        First transform the new data and then apply the attribute on
-        the best model. The model has to have the provided attribute.
+        For new data, transform it first and then apply the method.
+        The model should have the provided method.
 
         Parameters
         ----------
@@ -717,8 +716,8 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        pred: np.array
-            Return of the attribute.
+        pred: float or np.array
+            Prediction from the new data or row(s).
 
         """
         if not hasattr(self.estimator, method):
@@ -730,16 +729,19 @@ class BaseModel(BaseModelPlotter):
             # Raises ValueError if X doesn't select indices
             rows = self.T._get_rows(X, branch=self.branch)
 
-            # Since the pred attrs don't have an index, we
-            # need to know the indices of the requested rows
-            indices = [list(self.dataset.index).index(i) for i in rows]
-
-            # Concatenate all predictions
-            predictions = np.concatenate(
+            indices = list(self.dataset.index)
+            pred = np.concatenate(
                 [getattr(self, f"{method}_train"), getattr(self, f"{method}_test")]
             )
 
-            return flt(predictions[indices])
+            # If there is a holdout set, add its indices and predictions
+            if self.holdout is not None:
+                indices += list(self.holdout.index)
+                pred = np.concatenate([pred, getattr(self, f"{method}_holdout")])
+
+            # Since the pred attrs don't have an index, we need
+            # to know the index positions of the requested rows
+            return flt(pred[[indices.index(i) for i in rows]])
 
         except ValueError:  # Calculate new predictions
             # When there is a pipeline, apply transformations first
@@ -931,17 +933,14 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def holdout(self):
-        if self.T.holdout is not None:
-            if self._holdout is None:
-                self._holdout = merge(
-                    *self.transform(
-                        X=self.T.holdout.iloc[:, :-1],
-                        y=self.T.holdout.iloc[:, -1],
-                        verbose=0,
-                    )
+        if self.branch.holdout is not None:
+            if self.scaler:
+                return merge(
+                    self.scaler.transform(self.branch.holdout.iloc[:, :-1]),
+                    self.branch.holdout.iloc[:, -1],
                 )
-
-            return self._holdout
+            else:
+                return self.branch.holdout
 
     @property
     def X(self):
@@ -967,7 +966,7 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def X_holdout(self):
-        if self.T.holdout is not None:
+        if self.branch.holdout is not None:
             return self.holdout.iloc[:, :-1]
 
     @property
@@ -976,7 +975,7 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def y_holdout(self):
-        if self.T.holdout is not None:
+        if self.branch.holdout is not None:
             return self.holdout.iloc[:, -1]
 
     # Utility methods ============================================== >>
@@ -1203,7 +1202,12 @@ class BaseModel(BaseModelPlotter):
         return cv
 
     @composed(crash, typechecked, method_to_log)
-    def dashboard(self, dataset: str = "test", **kwargs):
+    def dashboard(
+        self,
+        dataset: str = "test",
+        filename: Optional[str] = None,
+        **kwargs,
+    ):
         """Create an interactive dashboard to analyze the model.
 
         The dashboard allows you to investigate SHAP values, permutation
@@ -1213,9 +1217,13 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        dataset: str, optional (default="dataset")
-            Data set to get the report from. Choose from: train, test,
-            both or holdout.
+        dataset: str, optional (default="test")
+            Data set to get the report from. Choose from: "train", "test",
+            "both" (train and test) or "holdout".
+
+        filename: str or None, optional (default=None)
+            Name to save the file with (as .html). None to not save
+            anything.
 
         **kwargs
             Additional keyword arguments for the ExplainerDashboard
@@ -1223,8 +1231,8 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        profile: ProfileReport
-            Created report object.
+        dashboard: ExplainerDashboard
+            Created dashboard object.
 
         """
         from explainerdashboard import (
@@ -1271,6 +1279,13 @@ class BaseModel(BaseModelPlotter):
             **kwargs,
         )
         dashboard.run()
+
+        if filename:
+            if not filename.endswith(".html"):
+                filename = filename + ".html"
+            with open(filename, "w") as f:
+                f.write(dashboard.to_html())
+            self.T.log("Dashboard successfully saved.", 1)
 
         return dashboard
 

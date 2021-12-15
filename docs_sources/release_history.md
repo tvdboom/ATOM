@@ -11,6 +11,8 @@
 * Support for dataframe indexing. Read more in the [user guide](../user_guide/data_management/#indexing).
 * New [plot_parshap](../API/plots/plot_parshap) plot to detect overfitting
   features.
+* The new [dashboard](../API/models/gnb/#dashboard) method makes analyzing
+  the models even easier using a dashboard app.
 * The [plot_feature_importance](../API/plots/plot_feature_importance)
   plot now also accepts estimators with coefficients.
 * Added the [transform](../API/models/gnb/#transform) method for models.

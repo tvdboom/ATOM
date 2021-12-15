@@ -55,7 +55,7 @@ class BasePredictor:
 
     def __setattr__(self, item, value):
         """Set some properties to the current branch."""
-        if isinstance(getattr(Branch, item, None), property):
+        if item != "holdout" and isinstance(getattr(Branch, item, None), property):
             setattr(self.branch, item, value)
         else:
             super().__setattr__(item, value)
@@ -278,6 +278,9 @@ class BasePredictor:
             branch = self.branch
 
         indices = list(branch.dataset.index)
+        if branch.holdout is not None:
+            indices += list(branch.holdout.index)
+
         if index is None:
             inc = list(branch.idx[1]) if return_test else list(branch.X.index)
         elif isinstance(index, slice):
@@ -452,22 +455,28 @@ class BasePredictor:
                 f"available models are: {', '.join(self._models)}."
             )
 
-    def _get_models(self, models=None):
-        """Return models in the pipeline. Duplicate inputs are ignored."""
+    def _get_models(self, models=None, ensembles=True):
+        """Return models in the pipeline."""
         if not models:
-            if self.models:
-                return lst(self.models).copy()
+            if self._models:
+                to_return = lst(self.models).copy()
             else:
-                return self.models
+                to_return = []
         elif isinstance(models, str):
-            return self._get_model_name(models.lower())
+            to_return = self._get_model_name(models.lower())
         else:
             to_return = []
             for m1 in models:
                 for m2 in self._get_model_name(m1.lower()):
                     to_return.append(m2)
 
-            return list(dict.fromkeys(to_return))  # Avoid duplicates
+        if not ensembles:
+            to_return = [
+                model for model in to_return
+                if not model.startswith("Stack") and not model.startswith("Vote")
+            ]
+
+        return list(dict.fromkeys(to_return))  # Avoid duplicates
 
     @crash
     def available_models(self):
@@ -597,7 +606,7 @@ class BasePredictor:
         Parameters
         ----------
         dataset: str, optional (default="train")
-            Data set from which to get the weights. Choose from
+            Data set from which to get the weights. Choose from:
             "train", "test" or "dataset".
 
         Returns
@@ -705,7 +714,7 @@ class BasePredictor:
 
         models: sequence or None, optional (default=None)
             Models that feed the voting estimator. If None, it selects
-            all models trained on the current branch.
+            all non-ensemble models trained on the current branch.
 
         **kwargs
             Additional keyword arguments for sklearn's stacking instance.
@@ -714,7 +723,7 @@ class BasePredictor:
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_models(models or self.branch._get_depending_models())
+        models = self._get_models(models or self.branch._get_depending_models(), False)
 
         if len(models) < 2:
             raise ValueError(
@@ -765,14 +774,14 @@ class BasePredictor:
 
         models: sequence or None, optional (default=None)
             Models that feed the voting estimator. If None, it selects
-            all models trained on the current branch.
+            all non-ensemble models trained on the current branch.
 
         **kwargs
             Additional keyword arguments for sklearn's voting instance.
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_models(models or self.branch._get_depending_models())
+        models = self._get_models(models or self.branch._get_depending_models(), False)
 
         if len(models) < 2:
             raise ValueError(

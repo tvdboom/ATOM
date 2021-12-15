@@ -233,7 +233,7 @@ class BaseTransformer:
             else:
                 raise ValueError(
                     f"Invalid value for the index parameter. Value {self.index} "
-                    f"is out of range for a dataset with length {len(df)}."
+                    f"is out of range for a dataset with {df.shape[1]} columns."
                 )
         elif isinstance(self.index, str):
             if self.index in df:

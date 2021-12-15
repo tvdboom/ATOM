@@ -150,9 +150,15 @@ def test_train_property():
 
 def test_test_property():
     """Assert that the test property returns the test set."""
-    test_size = 0.3
-    atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.branch.test.shape == (int(test_size * len(X_bin)), X_bin.shape[1] + 1)
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    assert atom.branch.test.shape == (int(0.3 * len(X_bin)), X_bin.shape[1] + 1)
+
+
+def test_holdout_property():
+    """Assert that the holdout property returns a transformed holdout set."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.scale()
+    assert not atom.holdout.equals(atom.branch.holdout)
 
 
 def test_X_property():

@@ -13,7 +13,6 @@ Plot the Receiver Operating Characteristics Curve (ROC). The legend
 shows the Area Under the ROC Curve (AUC) score. Only for binary
 classification tasks. Read more about ROC in sklearn's [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#receiver-operating-characteristic-roc).
 
-
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>

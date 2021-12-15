@@ -67,7 +67,7 @@ returned number must correspond with a better score. See sklearn's
 [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter).
 
 **sequence**<br>
-A one-dimensional array of type `list`, `tuple`, `np.ndarray` or `pd.Series`.
+A one-dimensional array of type `list`, `tuple`, `np.array` or `pd.Series`.
 This is the standard input format for a dataset's target column.
 
 **target**<br>
