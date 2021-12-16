@@ -20,7 +20,6 @@ from .branch import Branch
 from .models import MODELS, CustomModel
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
-from .basemodel import BaseModel
 from .utils import (
     SEQUENCE, OPTIONAL_PACKAGES, lst, time_to_str, is_multidim,
     get_custom_scorer, get_best_score, check_scaling, delete, PlotCallback,
@@ -269,13 +268,18 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                             f"The {acronym} model can't perform regression tasks!"
                         )
 
-                elif not isinstance(m, BaseModel):  # Model is custom estimator
+                else:  # Model is a custom estimator
                     models.append(CustomModel(self, estimator=m))
 
-                else:  # Model is already a model subclass (can happen with reruns)
-                    models.append(m)
+        names = [m.name for m in models]
+        if len(set(names)) != len(names):
+            raise ValueError(
+                "Invalid value for the models parameter. It seems there are "
+                "duplicate models. Add a tag to a model's acronym to train two "
+                "different models with the same estimator, e.g. models=['LR1', 'LR2']."
+            )
 
-        self._models = CustomDict({m.name: m for m in models})
+        self._models = CustomDict({name: model for name, model in zip(names, models)})
 
         # Define scorer ============================================ >>
 

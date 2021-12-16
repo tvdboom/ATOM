@@ -39,7 +39,7 @@ def test_all_regression_models():
     assert len(trainer.models) + len(trainer.errors) == 25
 
 
-def test_multim_predefined_model():
+def test_multidim_predefined_model():
     """Assert that an error is raised for multidim datasets with predefined models."""
     trainer = DirectClassifier("OLS", random_state=1)
     with pytest.raises(ValueError, match=r".*Multidimensional datasets are.*"):
@@ -92,11 +92,18 @@ def test_only_task_models():
         trainer.run(reg_train, reg_test)
 
 
-def test_duplicate_models():
-    """Assert that duplicate inputs are ignored."""
-    trainer = DirectClassifier(["lr", "LR", "lgb"], random_state=1)
+def test_reruns():
+    """Assert that rerunning a trainer works."""
+    trainer = DirectClassifier(["lr", "lda"], random_state=1)
     trainer.run(bin_train, bin_test)
-    assert len(trainer.models) == 2
+    trainer.run(bin_train, bin_test)
+
+
+def test_duplicate_models():
+    """Assert that an error is raised with duplicate models."""
+    trainer = DirectClassifier(["lr", "LR", "lgb"], random_state=1)
+    with pytest.raises(ValueError, match=r".*duplicate models.*"):
+        trainer.run(bin_train, bin_test)
 
 
 def test_default_metric():

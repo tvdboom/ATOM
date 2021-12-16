@@ -177,7 +177,7 @@ set. The only reason of doing cross-validation would be to get an idea
 of the robustness of the model. This can also be achieves using
 [bootstrapping](../user_guide/training/#bootstrapping). That said, ideally
 we would cross-validate the entire pipeline using the entire dataset.
-This can be done using a trainer's [cross_validate](../API/ATOM/atomclassifier/#cross-validate)
+This can be done using a trainer's [cross_validate](../API/models/gnb/#cross-validate)
 method, but for the reason just explained above, the method only outputs
 the final metric results.
 
