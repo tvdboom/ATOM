@@ -1114,7 +1114,7 @@ def delete(self, models):
 
     # If no models, reset the metric
     if not self._models:
-        self._metric = {}
+        self._metric = CustomDict()
 
 
 # Decorators ======================================================= >>
@@ -1539,13 +1539,10 @@ class ShapExplanation:
             for i, idx in enumerate(calculate.index):
                 self._shap_values.loc[idx] = self._explanation.values[i]
 
-        # Get the values for this data set
-        shap_values = self._shap_values.loc[df.index].values
-        base_values = self._explanation.base_values[0]
-
         # Update the explanation object
-        self._explanation.values = np.stack(shap_values)
-        self._explanation.base_values = np.tile(base_values, (len(df), 1))
+        self._explanation.values = np.stack(self._shap_values.loc[df.index].values)
+        if isinstance(self._explanation.base_values, SEQUENCE):
+            self._explanation.base_values = self._explanation.base_values[0]
         self._explanation.data = self.T.X.loc[df.index, :].to_numpy()
 
         # Select the target values from the array

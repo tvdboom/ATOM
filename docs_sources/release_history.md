@@ -6,7 +6,7 @@
 
 * Added the `holdout` data set to have an extra way of assessing a
   model's performance on a completely independent dataset. Read more
-  in the [user_guide](../user_guide/data-management/#holdout-set).
+  in the [user_guide](../user_guide/data_management/#data-sets).
 * Complete rework of the [ensemble](../user_guide/models/#ensembles) models.
 * Support for dataframe indexing. Read more in the [user guide](../user_guide/data_management/#indexing).
 * New [plot_parshap](../API/plots/plot_parshap) plot to detect overfitting

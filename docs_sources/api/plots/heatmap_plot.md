@@ -3,10 +3,10 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">heatmap_plot</strong>(models=None,
-index=None, show=None, target=1, title=None, figsize=(8, 6),
+index=None, show=None, target=1, title=None, figsize=None,
 filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3074">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3353">[source]</a>
 </span>
 </div>
 
@@ -47,8 +47,9 @@ multi-class classification tasks.
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple, optional (default=(8, 6)))</strong><br>
-Figure's size, format as (x, y).
+<strong>figsize: tuple or None, optional (default=None)</strong><br>
+Figure's size, format as (x, y). If None, it adapts the
+size to the number of features shown.
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>

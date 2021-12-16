@@ -4,7 +4,7 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">decision_function</strong>(X, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L205">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L238">[source]</a>
 </span>
 </div>
 

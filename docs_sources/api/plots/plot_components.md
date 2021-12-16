@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None,
 title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L594">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L567">[source]</a>
 </span>
 </div>
 

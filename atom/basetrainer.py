@@ -188,8 +188,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         )
 
         # Parameter attributes
-        self._models = CustomDict({m: m for m in lst(models) if m is not None})
-        self._metric = CustomDict({m: m for m in lst(metric) if m is not None})
+        self._models = models
+        self._metric = metric
         self.greater_is_better = greater_is_better
         self.needs_proba = needs_proba
         self.needs_threshold = needs_threshold
@@ -222,14 +222,14 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Create model subclasses ================================== >>
 
         # If left to default, select all predefined models per task
-        if not self._models:
+        if self._models is None:
             if self.goal == "class":
                 models = [m(self) for m in MODELS.values() if m.goal != "reg"]
             else:
                 models = [m(self) for m in MODELS.values() if m.goal != "class"]
         else:
             models = []
-            for m in self._models.values():
+            for m in lst(self._models):
                 if isinstance(m, str):
                     if is_multidim(self.X):
                         raise ValueError(
@@ -280,7 +280,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Define scorer ============================================ >>
 
         # Assign default scorer
-        if not self._metric:
+        if self._metric is None:
             if self.task.startswith("bin"):
                 self._metric = CustomDict(f1=get_custom_scorer("f1"))
             elif self.task.startswith("multi"):
@@ -289,9 +289,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 self._metric = CustomDict(r2=get_custom_scorer("r2"))
 
         # Ignore if it's the same scorer as previous call
-        elif not all(hasattr(m, "name") for m in self._metric.values()):
+        elif not isinstance(self._metric, CustomDict):
             self._metric = self._prepare_metric(
-                metric=self._metric,
+                metric=lst(self._metric),
                 greater_is_better=self.greater_is_better,
                 needs_proba=self.needs_proba,
                 needs_threshold=self.needs_threshold,

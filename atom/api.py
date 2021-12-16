@@ -124,7 +124,7 @@ def ATOMLoader(
     Returns
     -------
     cls: class instance
-        Un-pickled instance.
+        Unpickled instance.
 
     """
     with open(filename, "rb") as f:

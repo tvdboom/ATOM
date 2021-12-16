@@ -5,7 +5,7 @@
 <em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>(filename,
 data=None, transform_data=True, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L70">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L73">[source]</a>
 </span>
 </div>
 
@@ -61,7 +61,7 @@ is ignored if <code>transform_data=False</code>.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>cls: class instance</strong><br>
-Un-pickled instance.
+Unpickled instance.
 </td>
 </tr>
 </table>

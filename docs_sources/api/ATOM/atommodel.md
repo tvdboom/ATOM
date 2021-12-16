@@ -5,7 +5,7 @@
 <em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>(estimator,
 acronym=None, fullname=None, needs_scaling=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L26">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L27">[source]</a>
 </span>
 </div>
 

@@ -162,7 +162,7 @@ def test_models_property():
 
 def test_models_property_no_run():
     """Assert that the models property doesn't crash for unfitted trainers."""
-    trainer = DirectClassifier(["LR", "Tree"], metric="r2", random_state=1)
+    trainer = DirectClassifier(["LR", "Tree"], random_state=1)
     assert trainer.models == ["LR", "Tree"]
 
 

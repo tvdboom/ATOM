@@ -522,7 +522,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         if filename:
             if not filename.endswith(".html"):
-                filename = filename + ".html"
+                filename += ".html"
             profile.to_file(filename)
             self.log("Report successfully saved.", 1)
 

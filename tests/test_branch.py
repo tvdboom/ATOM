@@ -83,12 +83,12 @@ def test_branch_delete_not_current():
 
 
 def test_branch_delete_depending_models():
-    """Assert that depending models are deleted with the branch."""
+    """Assert that dependent models are deleted with the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
     atom.run("LR")
     atom.delete()
-    assert atom.models is None
+    assert not atom.models
 
 
 # Test rename ====================================================== >>

@@ -60,7 +60,10 @@ from .utils import (
 
 
 class BaseFigure:
-    """Class that stores the position of the current axes in grid.
+    """Base class for the matplotlib figures.
+
+    The instance stores the position of the current axes in grid,
+    as well as the models used for the plot (to track in mlflow).
 
     Parameters
     ----------
@@ -70,21 +73,27 @@ class BaseFigure:
     ncols: int, optional (default=1)
         Number of subplot columns in the canvas.
 
+    create_figure: bool, optional (default=True)
+        Whether to create a new figure. Is False when an external
+        library creates the figure (e.g. force_plot).
+
     is_canvas: bool, optional (default=False)
         Whether the figure shows multiple plots.
 
     """
 
-    def __init__(self, nrows=1, ncols=1, is_canvas=False):
+    def __init__(self, nrows=1, ncols=1, create_figure=True, is_canvas=False):
         self.nrows = nrows
         self.ncols = ncols
+        self.create_figure = create_figure
         self.is_canvas = is_canvas
         self._idx = -1  # Index of the current axes
         self._used_models = []  # Models plotted in this figure
 
         # Create new figure and corresponding grid
-        figure = plt.figure(constrained_layout=is_canvas)
-        self.gridspec = GridSpec(nrows=self.nrows, ncols=self.ncols, figure=figure)
+        if self.create_figure:
+            figure = plt.figure(constrained_layout=is_canvas)
+            self.gridspec = GridSpec(nrows=self.nrows, ncols=self.ncols, figure=figure)
 
     @property
     def figure(self):
@@ -98,7 +107,8 @@ class BaseFigure:
                 "the number of rows and cols to add more plots."
             )
 
-        return plt.gcf()
+        if self.create_figure:
+            return plt.gcf()
 
     @property
     def grid(self):
@@ -235,12 +245,12 @@ class BasePlotter:
         )
 
     @staticmethod
-    def _get_figure():
+    def _get_figure(**kwargs):
         """Return existing figure if in canvas, else a new figure."""
         if BasePlotter._fig and BasePlotter._fig.is_canvas:
             return BasePlotter._fig.figure
         else:
-            BasePlotter._fig = BaseFigure()
+            BasePlotter._fig = BaseFigure(**kwargs)
             return BasePlotter._fig.figure
 
     def _get_subclass(self, models, max_one=False, ensembles=True):
@@ -420,7 +430,6 @@ class BasePlotter:
                         figure=fig,
                         artifact_file=name if name.endswith(".png") else f"{name}.png",
                     )
-
             plt.show() if kwargs.get("display") else plt.close()
             if kwargs.get("display") is None:
                 return fig
@@ -3305,7 +3314,7 @@ class BaseModelPlotter(BasePlotter):
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         target = self._get_target(target)
 
-        self._get_figure()  # To initialize BasePlotter._fig
+        self._get_figure(create_figure=False)
         sns.set_style("white")  # Only for this plot
         plot = shap.force_plot(
             base_value=m._shap.get_expected_value(target),
@@ -3327,9 +3336,10 @@ class BaseModelPlotter(BasePlotter):
                 display=display,
             )
         else:
-            if filename:  # Save to an html file
-                fn = filename if filename.endswith(".html") else filename + ".html"
-                shap.save_html(fn, plot)
+            if filename:  # Save to a html file
+                if not filename.endswith(".html"):
+                    filename += ".html"
+                shap.save_html(filename, plot)
             if display:
                 try:  # Render if possible (for notebooks)
                     from IPython.display import display
@@ -3347,7 +3357,7 @@ class BaseModelPlotter(BasePlotter):
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (8, 6),
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
         **kwargs,
@@ -3384,8 +3394,9 @@ class BaseModelPlotter(BasePlotter):
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=(8, 6)))
-            Figure's size, format as (x, y).
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If

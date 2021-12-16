@@ -6,7 +6,7 @@
 solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
 **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L572">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L571">[source]</a>
 </span>
 </div>
 
@@ -269,7 +269,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L731">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L730">[source]</a>
 </span>
 </div>
 Fit to data. Note that the univariate, SFM (when model is not fitted),
@@ -371,7 +371,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -398,7 +398,7 @@ Minimum verbosity level to print the message.
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L524">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L497">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio vs the number of components.
@@ -411,7 +411,7 @@ See [plot_pca](../../plots/plot_pca) for a description of the parameters.
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>
 (show=None, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L594">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L567">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio per components. See
@@ -424,7 +424,7 @@ Plot the explained variance ratio per components. See
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L671">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L644">[source]</a>
 </span>
 </div>
 Plot the scores obtained by the estimator fitted on every subset of the
@@ -436,7 +436,7 @@ data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the paramete
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L221">[source]</a>
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
@@ -447,7 +447,7 @@ Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their defa
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L370">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -493,7 +493,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L983">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L987">[source]</a>
 </span>
 </div>
 Transform the data.

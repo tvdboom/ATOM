@@ -20,7 +20,7 @@ from .models import MODELS, Stacking, Voting
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
     check_is_fitted, divide, get_best_score, delete,
-    method_to_log, composed, crash,
+    method_to_log, composed, crash, CustomDict,
 )
 
 
@@ -160,14 +160,18 @@ class BasePredictor:
     @property
     def models(self):
         """Return the names of the models in the pipeline."""
-        if self._models:
-            return flt([getattr(m, "name", m) for m in self._models.values()])
+        if isinstance(self._models, CustomDict):
+            return flt([model.name for model in self._models.values()])
+        else:
+            return self._models
 
     @property
     def metric(self):
         """Return the names of the metrics in the pipeline."""
-        if self._metric:
-            return flt([getattr(m, "name", m) for m in self._metric.values()])
+        if isinstance(self._metric, CustomDict):
+            return flt([metric.name for metric in self._metric.values()])
+        else:
+            return self._metric
 
     @property
     def errors(self):

@@ -113,6 +113,10 @@ class FuncTransformer(BaseTransformer):
     def __repr__(self):
         return f"FuncTransformer(func={self.func.__name__}, columns={self.columns})"
 
+    def fit(self, X, y):
+        """Does nothing. Implemented for continuity of the API."""
+        return self
+
     def transform(self, X, y=None):
         """Apply function to the dataset.
 
@@ -138,6 +142,10 @@ class DropTransformer(BaseTransformer):
 
     def __repr__(self):
         return f"DropTransformer(columns={self.columns})"
+
+    def fit(self, X, y):
+        """Does nothing. Implemented for continuity of the API."""
+        return self
 
     def transform(self, X, y=None):
         """Drop columns from the dataset."""

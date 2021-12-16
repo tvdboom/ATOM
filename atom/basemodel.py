@@ -1282,7 +1282,7 @@ class BaseModel(BaseModelPlotter):
 
         if filename:
             if not filename.endswith(".html"):
-                filename = filename + ".html"
+                filename += ".html"
             with open(filename, "w") as f:
                 f.write(dashboard.to_html())
             self.T.log("Dashboard successfully saved.", 1)
