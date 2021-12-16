@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
 y, metric=None, sample_weights=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L211">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L244">[source]</a>
 </span>
 </div>
 
@@ -19,7 +19,7 @@ If called from a trainer, the best model in the pipeline (under the
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>

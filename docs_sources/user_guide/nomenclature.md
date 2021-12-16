@@ -4,6 +4,13 @@
 This documentation consistently uses terms to refer to certain concepts
 related to this package. The most frequent terms are described hereunder.
 
+**dataframe-like**<br>
+Any type object from which a [pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html)
+can be created. This includes an `iterable`, a `dict` whose values
+are 1d-arrays, a two-dimensional `list`, `tuple`, `np.array` or
+`sparse.matrix`, and most commonly, a dataframe. This is the standard
+input format for any dataset.
+
 **atom**<br>
 Instance of the [ATOMClassifier](../../API/ATOM/atomclassifier) or
  [ATOMRegressor](../../API/ATOM/atomregressor) classes (note that the
@@ -14,7 +21,7 @@ Refers to this package.
 
 **branch**<br>
 Collection of transformers fitted to a specific dataset. See
-the [branches](../data_pipelines/#branches) section.
+the [branches](../data_management/#branches) section.
 
 
 **BO**<br>
@@ -60,7 +67,8 @@ returned number must correspond with a better score. See sklearn's
 [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter).
 
 **sequence**<br>
-A one-dimensional array of type `list`, `tuple`, `np.ndarray` or `pd.Series`.
+A one-dimensional array of type `list`, `tuple`, `np.array` or `pd.Series`.
+This is the standard input format for a dataset's target column.
 
 **target**<br>
 Name of the dependent variable, passed as y to an estimator's fit method.

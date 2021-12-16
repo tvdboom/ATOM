@@ -22,13 +22,12 @@ from atom.training import DirectClassifier
 from atom.basetransformer import BaseTransformer
 from atom.utils import merge
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_bin_array, y_bin_array, mnist,
-    X_text, y_text, X10, y10, bin_train, bin_test,
+    FILE_DIR, X_bin, y_bin, X_idx, y_idx, X_bin_array, y_bin_array,
+    mnist, X_text, y_text, X10, y10, bin_train, bin_test,
 )
 
 
 # Test properties ================================================== >>
-
 
 def test_n_jobs_maximum_cores():
     """Assert that value equals n_cores if maximum is exceeded."""
@@ -36,14 +35,11 @@ def test_n_jobs_maximum_cores():
     assert base.n_jobs == multiprocessing.cpu_count()
 
 
-def test_n_jobs_is_zero():
-    """Assert that an error is raised when n_jobs=0."""
-    pytest.raises(ValueError, BaseTransformer, n_jobs=0)
-
-
-def test_too_far_negative_n_jobs():
-    """Assert that an error is raised when value too far negative."""
-    pytest.raises(ValueError, BaseTransformer, n_jobs=-1000)
+@pytest.mark.parametrize("n_jobs", [0, -1000])
+def test_n_jobs_invalid(n_jobs):
+    """Assert that an error is raised when n_jobs is invalid."""
+    with pytest.raises(ValueError, match=r".*n_jobs parameter.*"):
+        BaseTransformer(n_jobs=n_jobs)
 
 
 def test_negative_n_jobs():
@@ -58,7 +54,8 @@ def test_negative_n_jobs():
 @pytest.mark.parametrize("verbose", [-2, 3])
 def test_verbose_parameter(verbose):
     """Assert that the verbose parameter is in correct range."""
-    pytest.raises(ValueError, BaseTransformer, verbose=verbose)
+    with pytest.raises(ValueError, match=r".*verbose parameter.*"):
+        BaseTransformer(verbose=verbose)
 
 
 def test_warnings_parameter_bool():
@@ -72,7 +69,8 @@ def test_warnings_parameter_bool():
 
 def test_warnings_parameter_invalid_str():
     """Assert that an error is raised for an invalid string for warnings."""
-    pytest.raises(ValueError, BaseTransformer, warnings="test")
+    with pytest.raises(ValueError, match=r".*warnings parameter.*"):
+        BaseTransformer(warnings="test")
 
 
 def test_warnings_parameter_str():
@@ -109,7 +107,8 @@ def test_experiment_creation(mlflow):
 
 def test_random_state_setter():
     """Assert that an error is raised for a negative random_state."""
-    pytest.raises(ValueError, BaseTransformer, random_state=-1)
+    with pytest.raises(ValueError, match=r".*random_state parameter.*"):
+        BaseTransformer(random_state=-1)
 
 
 # Test _prepare_input ============================================== >>
@@ -199,7 +198,78 @@ def test_target_is_none():
     assert y is None
 
 
-# Test _get_data_and_idx =========================================== >>
+# Test _set_index ================================================== >>
+
+def test_index_is_true():
+    """Assert that the indices are left as is when index=True."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, shuffle=False, random_state=1)
+    assert atom.dataset.index[0] == "index_0"
+
+
+def test_index_is_False():
+    """Assert that the indices are reset when index=False."""
+    atom = ATOMClassifier(X_idx, y_idx, index=False, shuffle=False, random_state=1)
+    assert atom.dataset.index[0] == 0
+
+
+def test_index_is_int_invalid():
+    """Assert that an error is raised when the index is an invalid int."""
+    with pytest.raises(ValueError, match=r".*is out of range.*"):
+        ATOMClassifier(X_bin, y_bin, index=1000, random_state=1)
+
+
+def test_index_is_int():
+    """Assert that a column can be selected from a position."""
+    atom = ATOMClassifier(X_bin, y_bin, index=0, random_state=1)
+    assert atom.dataset.index.name == "mean radius"
+
+
+def test_index_is_str_invalid():
+    """Assert that an error is raised when the index is an invalid str."""
+    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+        ATOMClassifier(X_bin, y_bin, index="invalid", random_state=1)
+
+
+def test_index_is_str():
+    """Assert that a column can be selected from a name."""
+    atom = ATOMClassifier(X_bin, y_bin, index="mean texture", random_state=1)
+    assert atom.dataset.index.name == "mean texture"
+
+
+def test_index_is_target():
+    """Assert that an error is raised when the index is the target column."""
+    with pytest.raises(ValueError, match=r".*same as the target column.*"):
+        ATOMClassifier(X_bin, index="worst fractal dimension", random_state=1)
+
+
+def test_index_is_sequence_no_data_sets_invalid_length():
+    """Assert that an error is raised when len(index) != len(data)."""
+    with pytest.raises(ValueError, match=r".*Length of index.*"):
+        ATOMClassifier(X_bin, y_bin, index=[1, 2, 3], random_state=1)
+
+
+def test_index_is_sequence_no_data_sets():
+    """Assert that a sequence is set as index when provided."""
+    index = [f"index_{i}" for i in range(len(X_bin))]
+    atom = ATOMClassifier(X_bin, y_bin, index=index, random_state=1)
+    assert atom.dataset.index[0] == "index_421"
+
+
+def test_index_is_sequence_has_data_sets_invalid_length():
+    """Assert that an error is raised when len(index) != len(data)."""
+    with pytest.raises(ValueError, match=r".*Length of index.*"):
+        ATOMClassifier(bin_train, bin_test, index=[1, 2, 3], random_state=1)
+
+
+def test_index_is_sequence_has_data_sets():
+    """Assert that a sequence is set as index when provided."""
+    index = [f"index_{i}" for i in range(len(bin_train) + 2 * len(bin_test))]
+    atom = ATOMClassifier(bin_train, bin_test, bin_test, index=index, random_state=1)
+    assert atom.dataset.index[0] == "index_174"
+    assert atom.holdout.index[0] == "index_661"
+
+
+# Test _get_data =================================================== >>
 
 def test_empty_data_arrays():
     """Assert that an error is raised when no data is provided."""
@@ -209,13 +279,12 @@ def test_empty_data_arrays():
 
 def test_data_already_set():
     """Assert that if there already is data, the call to run can be empty."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
-
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test)
     trainer.run()
-    assert trainer.dataset.equals(dataset)
-    assert trainer.branch.idx == [len(bin_train), len(bin_test)]
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    assert trainer.branch.idx[0].equals(bin_train.index)
+    assert trainer.branch.idx[1].equals(bin_test.index)
 
 
 def test_input_is_X():
@@ -230,10 +299,24 @@ def test_input_is_X_with_parameter_y():
     assert atom.target == "mean texture"
 
 
-def test_input_is_X_y():
-    """Assert that input X, y works."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.dataset.shape == merge(X_bin, y_bin).shape
+def test_input_invalid_holdout():
+    """Assert that an error is raised when holdout is invalid."""
+    with pytest.raises(ValueError, match=r".*holdout_size parameter.*"):
+        ATOMClassifier(X_bin, test_size=0.3, holdout_size=0.8)
+
+
+@pytest.mark.parametrize("holdout_size", [0.1, 40])
+def test_input_is_X_with_holdout(holdout_size):
+    """Assert that input X can be combined with a holdout set."""
+    atom = ATOMClassifier(X_bin, holdout_size=holdout_size, random_state=1)
+    assert isinstance(atom.holdout, pd.DataFrame)
+
+
+@pytest.mark.parametrize("shuffle", [True, False])
+def test_input_is_train_test_with_holdout(shuffle):
+    """Assert that input train and test can be combined with a holdout set."""
+    atom = ATOMClassifier(bin_train, bin_test, bin_test, shuffle=shuffle)
+    assert isinstance(atom.holdout, pd.DataFrame)
 
 
 @pytest.mark.parametrize("n_rows", [0.7, 0.8, 1])
@@ -251,7 +334,8 @@ def test_n_rows_X_y_int():
 
 def test_n_rows_too_large():
     """Assert that an error is raised when n_rows>len(data)."""
-    pytest.raises(ValueError, ATOMClassifier, X_bin, y_bin, n_rows=1e6, random_state=1)
+    with pytest.raises(ValueError, match=r".*n_rows parameter.*"):
+        ATOMClassifier(X_bin, y_bin, n_rows=1e6, random_state=1)
 
 
 def test_no_shuffle_X_y():
@@ -262,13 +346,15 @@ def test_no_shuffle_X_y():
 
 def test_length_dataset():
     """Assert that the dataset is always len>=2."""
-    pytest.raises(ValueError, ATOMClassifier, X10, y10, n_rows=0.01, random_state=1)
+    with pytest.raises(ValueError, match=r".*n_rows parameter.*"):
+        ATOMClassifier(X10, y10, n_rows=0.01, random_state=1)
 
 
-@pytest.mark.parametrize("ts", [-2, 0, 1000])
-def test_test_size_parameter(ts):
+@pytest.mark.parametrize("test_size", [-2, 0, 1000])
+def test_test_size_parameter(test_size):
     """Assert that the test_size parameter is in correct range."""
-    pytest.raises(ValueError, ATOMClassifier, X_bin, test_size=ts, random_state=1)
+    with pytest.raises(ValueError, match=r".*test_size parameter.*"):
+        ATOMClassifier(X_bin, test_size=test_size, random_state=1)
 
 
 def test_test_size_fraction():
@@ -285,24 +371,14 @@ def test_test_size_int():
     assert len(atom.train) == len(X_bin) - 100
 
 
-def test_train_test_provided():
-    """Assert that input train, test works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
-
-    trainer = DirectClassifier("LR", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.dataset.equals(dataset)
+def test_input_is_X_y():
+    """Assert that input X, y works."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.dataset.shape == merge(X_bin, y_bin).shape
 
 
-def test_train_test_provided_with_parameter_y():
-    """Assert that input X works can be combined with y."""
-    atom = ATOMClassifier(bin_train, bin_test, y="mean texture", random_state=1)
-    assert atom.target == "mean texture"
-
-
-def test_train_test_as_tuple_provided():
-    """Assert that input (X_train, y_train), (X_test, y_test) works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
+def test_input_is_2_tuples():
+    """Assert that the 2 tuples input works."""
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
@@ -310,12 +386,47 @@ def test_train_test_as_tuple_provided():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run((X_train, y_train), (X_test, y_test))
-    assert trainer.dataset.equals(dataset)
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+
+
+def test_input_is_train_test():
+    """Assert that input train, test works."""
+    trainer = DirectClassifier("LR", random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+
+
+def test_input_is_train_test_with_parameter_y():
+    """Assert that input X works can be combined with y."""
+    atom = ATOMClassifier(bin_train, bin_test, y="mean texture", random_state=1)
+    assert atom.target == "mean texture"
+
+
+def test_input_is_3_tuples():
+    """Assert that the 3 tuples input works."""
+    X_train = bin_train.iloc[:, :-1]
+    X_test = bin_test.iloc[:, :-1]
+    y_train = bin_train.iloc[:, -1]
+    y_test = bin_test.iloc[:, -1]
+    X_holdout = bin_test.iloc[:, :-1]
+    y_holdout = bin_test.iloc[:, -1]
+
+    trainer = DirectClassifier("LR", random_state=1)
+    trainer.run((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    assert trainer.holdout.equals(bin_test)
+
+
+def test_input_is_train_test_holdout():
+    """Assert that input train, test, holdout works."""
+    trainer = DirectClassifier("LR", random_state=1)
+    trainer.run(bin_train, bin_test, bin_test)
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    assert trainer.holdout.equals(bin_test)
 
 
 def test_4_data_provided():
-    """Assert that input X_train, X_test, y_train, y_test works."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
+    """Assert that the 4 elements input works."""
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
     y_train = bin_train.iloc[:, -1]
@@ -323,13 +434,29 @@ def test_4_data_provided():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(X_train, X_test, y_train, y_test)
-    assert trainer.dataset.equals(dataset)
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+
+
+def test_6_data_provided():
+    """Assert that the 6 elements input works."""
+    X_train = bin_train.iloc[:, :-1]
+    X_test = bin_test.iloc[:, :-1]
+    y_train = bin_train.iloc[:, -1]
+    y_test = bin_test.iloc[:, -1]
+    X_holdout = bin_test.iloc[:, :-1]
+    y_holdout = bin_test.iloc[:, -1]
+
+    trainer = DirectClassifier("LR", random_state=1)
+    trainer.run(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
+    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    assert trainer.holdout.equals(bin_test)
 
 
 def test_invalid_input():
     """Assert that an error is raised when input arrays are invalid."""
     trainer = DirectClassifier("LR", random_state=1)
-    pytest.raises(ValueError, trainer.run, X_bin, bin_train, bin_test)
+    with pytest.raises(ValueError, match=r".*Invalid data arrays.*"):
+        trainer.run(X_bin, y_bin, X_bin, y_bin, y_bin, X_bin, X_bin)
 
 
 def test_n_rows_train_test_frac():
@@ -353,14 +480,33 @@ def test_n_rows_train_test_int():
 
 def test_dataset_is_shuffled():
     """Assert that the dataset is shuffled before splitting."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=True, random_state=1)
     assert not X_bin.equals(atom.X)
 
 
+def test_holdout_is_shuffled():
+    """Assert that the holdout set is shuffled."""
+    atom = ATOMClassifier(bin_train, bin_test, bin_test, shuffle=True, random_state=1)
+    assert not bin_test.equals(atom.holdout)
+
+
 def test_reset_index():
-    """Assert that the indices are reset for the whole dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert list(atom.dataset.index) == list(range(len(X_bin)))
+    """Assert that the indices are reset for the all data sets."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    assert list(atom.dataset.index) == list(range(len(atom.dataset)))
+    assert list(atom.holdout.index) == list(range(len(atom.holdout)))
+
+
+def test_unequal_columns_train_test():
+    """Assert that an error is raised when train and test have different columns."""
+    with pytest.raises(ValueError, match=r".*train and test set do not have.*"):
+        ATOMClassifier(X10, bin_test, random_state=1)
+
+
+def test_unequal_columns_holdout():
+    """Assert that an error is raised when holdout has different columns."""
+    with pytest.raises(ValueError, match=r".*holdout set does not have.*"):
+        ATOMClassifier(bin_train, bin_test, X10, random_state=1)
 
 
 def test_merger_to_dataset():
@@ -392,7 +538,7 @@ def test_log(cls):
 
 def test_file_is_saved():
     """Assert that the pickle file is saved."""
-    atom = ATOMClassifier(X_bin, y_bin)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save(FILE_DIR + "auto")
     assert glob.glob(FILE_DIR + "ATOMClassifier")
 
@@ -400,6 +546,7 @@ def test_file_is_saved():
 @patch("atom.basetransformer.dill")
 def test_save_data_false(cls):
     """Assert that the dataset is restored after saving with save_data=False"""
-    atom = ATOMClassifier(X_bin, y_bin)
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.save(filename=FILE_DIR + "atom", save_data=False)
     assert atom.dataset is not None  # Dataset is restored after saving
+    assert atom.holdout is not None  # Holdout is restored after saving

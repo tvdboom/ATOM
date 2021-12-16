@@ -8,183 +8,123 @@ Description: Unit tests for ensembles.py
 """
 
 # Standard packages
-import pytest
 import numpy as np
+import pytest
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 
 # Own modules
-from atom import ATOMClassifier, ATOMRegressor
-from atom.utils import check_scaling
-from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
+from atom.ensembles import (
+    VotingClassifier,
+    VotingRegressor,
+    StackingClassifier,
+    StackingRegressor,
+)
+from atom.pipeline import Pipeline
+from atom.utils import check_is_fitted
+from .utils import X_bin, y_bin, X_reg, y_reg
 
 
-# Voting =========================================================== >>
-
-def test_vote_one_model():
-    """Assert that an error is raised for voting with one model."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR"])
-    pytest.raises(ValueError, atom.voting)
-
-
-def test_vote_unequal_weight_length():
-    """Assert that an error is raised if the weights have not len(models)."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    pytest.raises(ValueError, atom.voting, weights=[1, 2, 3])
+@pytest.fixture
+def classifiers():
+    """Get a list of classifiers for the ensemble."""
+    return [
+        ("lda", LinearDiscriminantAnalysis().fit(X_bin, y_bin)),
+        ("placeholder1", "drop"),
+        ("pl", Pipeline(
+            [("scaler", StandardScaler()), ("et", ExtraTreesClassifier())]
+        ).fit(X_bin, y_bin)),
+    ]
 
 
-def test_vote_repr():
-    """Assert that the vote model has a __repr__."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree"])
-    atom.voting()
-    assert str(atom.vote).startswith("Voting")
-
-
-def test_vote_evaluate():
-    """Assert that the evaluate works with weights."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LGB"])
-    atom.voting(weights=[1, 2])
-    avg = (atom.tree.evaluate("r2")["r2"] + 2 * atom.lgb.evaluate("r2")["r2"]) / 3
-    assert atom.vote.evaluate("r2")["r2"] == avg
-
-
-def test_vote_invalid_method():
-    """Assert that an error is raised when a model doesn't have the method."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models=["Tree", "LGB"])
-    atom.voting()
-    pytest.raises(AttributeError, atom.vote.predict_log_proba, X_bin)
-
-
-def test_vote_prediction_methods():
-    """Assert that the prediction methods work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.run(models=["Tree"])
-    atom.branch = "branch_2"
-    atom.impute(strat_num="mean", strat_cat="most_frequent")
-    atom.run(["LGB"])
-    atom.voting(models=["Tree", "LGB"])
-    pytest.raises(AttributeError, atom.vote.decision_function, X_bin)
-    assert isinstance(atom.vote.predict(X_bin), np.ndarray)
-    assert isinstance(atom.vote.predict_proba(X_bin), np.ndarray)
-    assert isinstance(atom.vote.score(X_bin, y_bin), np.float64)
-
-
-def test_vote_prediction_attrs():
-    """Assert that the prediction attributes can be calculated."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models=["Tree", "RF"])
-    atom.voting()
-    assert isinstance(atom.vote.metric_train, np.float64)
-    assert isinstance(atom.vote.metric_test, np.float64)
-    assert isinstance(atom.vote.predict_train, np.ndarray)
-    assert isinstance(atom.vote.predict_test, np.ndarray)
-    assert isinstance(atom.vote.predict_proba_train, np.ndarray)
-    assert isinstance(atom.vote.predict_proba_test, np.ndarray)
-    assert isinstance(atom.vote.predict_log_proba_train, np.ndarray)
-    assert isinstance(atom.vote.predict_log_proba_test, np.ndarray)
-    assert isinstance(atom.vote.score_train, np.float64)
-    assert isinstance(atom.vote.score_test, np.float64)
-
-
-def test_vote_decision_function_prediction_attrs():
-    """Assert that the decision functions can be calculated."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models=["lsvm", "pa"])
-    atom.voting()
-    assert isinstance(atom.vote.decision_function_train, np.ndarray)
-    assert isinstance(atom.vote.decision_function_test, np.ndarray)
+@pytest.fixture
+def regressors():
+    """Get a list of regressors for the ensemble."""
+    return [
+        ("ols", LinearRegression()),
+        ("placeholder1", "drop"),
+        ("pl", Pipeline([("scaler", StandardScaler()), ("et", ExtraTreesRegressor())])),
+    ]
 
 
 # Stacking ========================================================= >>
 
-
-def test_stack_one_model():
-    """Assert that an error is raised for stacking with one model."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR"])
-    pytest.raises(ValueError, atom.stacking)
-
-
-def test_stack_method():
-    """Assert that we can customize the stack method."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run(["Tree", "PA"])
-    atom.stacking(stack_method="predict")
-    assert atom.stack.shape == (len(X_class), 3)
+def test_stacking_classifier(classifiers):
+    """Assert that stacking classifiers work."""
+    stack = StackingClassifier(estimators=classifiers, cv=KFold())
+    assert not check_is_fitted(stack, False)
+    stack.fit(X_bin, y_bin)
+    assert check_is_fitted(stack, False)
+    assert len(stack.estimators_) == 2
+    assert stack.estimators_[0] is classifiers[0][1]  # Fitted is same
+    assert stack.estimators_[1] is not classifiers[1][1]  # Unfitted changes
 
 
-def test_passthrough():
-    """Assert that the features are added when passthrough=True."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run(["Tree", "LGB"])
-    atom.stacking(passthrough=True)
-    assert atom.stack.shape == (atom.shape[0], 6 + atom.shape[1])
+def test_stacking_regressor(regressors):
+    """Assert that stacking regressors."""
+    stack = StackingRegressor(estimators=regressors)
+    assert not check_is_fitted(stack, False)
+    stack.fit(X_reg, y_reg)
+    assert check_is_fitted(stack, False)
+    assert len(stack.estimators_) == 2
 
 
-def test_passthrough_scaled():
-    """Assert that the features are scaled when models need it."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["Tree", "LGB"])
-    atom.stacking(passthrough=True)
-    assert check_scaling(atom.stack.X.iloc[:, 2:])
+# Voting =========================================================== >>
+
+def test_voting_initialized_fitted(classifiers):
+    """Assert that the model can be fit at initialization."""
+    vote = VotingClassifier(estimators=classifiers)
+    assert check_is_fitted(vote, False)
 
 
-def test_passthrough_not_scaled():
-    """Assert that the features are not scaled when models don't need it."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["Tree", "RF"])
-    atom.stacking(passthrough=True)
-    assert not check_scaling(atom.stack.X.iloc[:, 2:])
+def test_voting_multilabel(classifiers):
+    """Assert that an error is raised for multilabel targets."""
+    vote = VotingClassifier(estimators=classifiers)
+    with pytest.raises(NotImplementedError, match=r".*Multilabel.*"):
+        vote.fit(X_bin, np.array([[0, 1], [1, 0]]))
 
 
-def test_predefined_model():
-    """Assert that you can use a predefined model as final estimator."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "PA"])
-    atom.stacking(estimator="RF")
-    assert atom.stack.estimator.__class__.__name__ == "RandomForestClassifier"
+def test_voting_invalid_type(classifiers):
+    """Assert that an error is raised when voting type is invalid."""
+    vote = VotingClassifier(estimators=classifiers, voting="invalid")
+    with pytest.raises(ValueError, match=r".*must be 'soft'.*"):
+        vote.fit(X_bin, y_bin)
 
 
-def test_stack_repr():
-    """Assert that the stack model has a __repr__."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree"])
-    atom.stacking()
-    assert str(atom.stack).startswith("Stacking")
+def test_voting_invalid_weights(classifiers):
+    """Assert that an error is raised when weights have invalid length."""
+    vote = VotingClassifier(estimators=classifiers, weights=[0, 1])
+    with pytest.raises(ValueError, match=r".*estimators and weights.*"):
+        vote.fit(X_bin, y_bin)
 
 
-def test_stack_predictions_binary():
-    """Assert that the prediction methods work for binary tasks."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "PA"])
-    atom.stacking(models=["Tree", "PA"], passthrough=True)
-    pytest.raises(AttributeError, atom.stack.decision_function, X_bin)
-    assert isinstance(atom.stack.predict(X_bin), np.ndarray)
-    assert isinstance(atom.stack.score(X_bin, y_bin), np.float64)
+def test_voting_mixed_fit_and_not(classifiers):
+    """Assert that fitted and non-fitted models can be used both."""
+    estimators = classifiers.copy()
+    estimators.append(("not_fitted_lda", LinearDiscriminantAnalysis()))
+
+    vote = VotingClassifier(estimators=estimators)
+    assert not check_is_fitted(vote, False)
+    vote.fit(X_bin, y_bin)
+    assert check_is_fitted(vote, False)
+    assert len(vote.estimators_) == 3
+    assert vote.estimators_[0] is estimators[0][1]  # Fitted is same
+    assert vote.estimators_[2] is not estimators[2][1]  # Unfitted changes
 
 
-def test_stack_predictions_multiclass():
-    """Assert that the prediction methods work for multiclass tasks."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run(["Tree", "PA"])
-    atom.stacking(models=["Tree", "PA"], passthrough=True)
-    assert isinstance(atom.stack.predict(X_class), np.ndarray)
-    assert isinstance(atom.stack.score(X_class, y_class, "f1_weighted"), np.float64)
+@pytest.mark.parametrize("voting", ["soft", "hard"])
+def test_voting_predict(classifiers, voting):
+    """Assert that the predict method doesn't use the encoder."""
+    vote = VotingClassifier(estimators=classifiers, voting=voting)
+    assert isinstance(vote.predict(X_bin), np.ndarray)
 
 
-def test_stack_predictions_regression():
-    """Assert that the prediction methods work for regression tasks."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.clean()
-    atom.run(models=["Tree"])
-    atom.branch = "branch_2"
-    atom.impute(strat_num="mean", strat_cat="most_frequent")
-    atom.run(["PA"])
-    atom.stacking(models=["Tree", "PA"], passthrough=True)
-    assert isinstance(atom.stack.predict(X_reg), np.ndarray)
-    score = atom.stack.score(X_reg, y_reg, sample_weight=list(range(len(y_reg))))
-    assert isinstance(score, np.float64)
+def test_voting_regressor(regressors):
+    """Assert that the regressor works."""
+    vote = VotingRegressor(estimators=regressors)
+    assert not check_is_fitted(vote, False)
+    vote.fit(X_reg, y_reg)
+    assert check_is_fitted(vote, False)

@@ -6,7 +6,7 @@
 index=None, show=None, target=1, title=None, figsize=None, filename=None,
 display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3258">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3534">[source]</a>
 </span>
 </div>
 
@@ -34,10 +34,10 @@ exception if there are multiple models in the pipeline. To avoid
 this, call the plot from a model, e.g. <code>atom.xgb.waterfall_plot()</code>.
 </p>
 <p>
-<strong>index: int or None, optional (default=None)</strong><br>
-Index of the row in the dataset to plot. If None, it selects the
-first row in the test set. The waterfall plot does not support
-plotting multiple samples.
+<strong>index: int, str or None, optional (default=None)</strong><br>
+Index or position of the row in the dataset to plot. If None, it
+selects the first row in the test set. The waterfall plot does
+not support plotting multiple samples.
 </p>
 <p>
 <strong>show: int or None, optional (default=None)</strong><br>
@@ -89,6 +89,7 @@ atom = ATOMClassifier(X, y)
 atom.run("Tree")
 atom.tree.waterfall_plot(index=120)
 ```
+
 <div align="center">
     <img src="../../../img/plots/waterfall_plot.png" alt="waterfall_plot" width="700" height="700"/>
 </div>

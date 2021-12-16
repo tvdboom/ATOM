@@ -12,6 +12,7 @@ import glob
 import pytest
 from unittest.mock import patch
 from sklearn.metrics import f1_score, get_scorer
+from sklearn.linear_model import LogisticRegression
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
@@ -19,7 +20,7 @@ from atom.plots import BasePlotter
 from atom.utils import NotFittedError
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_text, y_text, X10_str, y10,
+    X_text, y_text, X10, X10_str, y10, y10_str,
 )
 
 
@@ -244,6 +245,7 @@ def test_plot_rfecv(scoring):
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(PermissionError, atom.plot_rfecv)
     atom.run("lr", metric="precision")
+    atom.branch = "fs_branch"
     atom.feature_selection(strategy="RFECV", n_features=10, scoring=scoring)
     atom.plot_rfecv(display=False)
 
@@ -310,22 +312,27 @@ def test_plot_evals():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"], metric="f1")
     pytest.raises(ValueError, atom.plot_evals)  # More than 1 model
-    pytest.raises(AttributeError, atom.LR.plot_evals)  # LR has no in-training eval
+    pytest.raises(AttributeError, atom.lr.plot_evals)  # LR has no in-training eval
+    pytest.raises(ValueError, atom.lgb.plot_evals, "holdout")  # No holdout allowed
     atom.plot_evals(models="LGB", display=False)
     atom.lgb.plot_evals(display=False)
 
 
-@pytest.mark.parametrize("dataset", ["train", "test", "both"])
+@pytest.mark.parametrize("dataset", ["train", "test", "both", "holdout"])
 def test_plot_roc(dataset):
     """Assert that the plot_roc method work as intended."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("LGB")
     pytest.raises(PermissionError, atom.plot_roc)  # Task is not binary
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_roc)
+    atom.run("LGB")
+    pytest.raises(ValueError, atom.lgb.plot_roc, dataset="holdout")  # No holdout set
+    pytest.raises(ValueError, atom.lgb.plot_roc, dataset="invalid")  # Invalid dataset
+
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run(["LGB", "kSVM"], metric="f1")
-    pytest.raises(ValueError, atom.lgb.plot_roc, dataset="invalid")
     atom.plot_roc(dataset=dataset, display=False)
     atom.lgb.plot_roc(dataset=dataset, display=False)
 
@@ -356,84 +363,30 @@ def test_plot_det():
     atom.lgb.plot_det(display=False)
 
 
-def test_plot_permutation_importance():
-    """Assert that the plot_permutation_importance method work as intended."""
+def test_plot_gains():
+    """Assert that the plot_gains method work as intended."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("Ridge")
+    pytest.raises(PermissionError, atom.plot_gains)  # Task is not binary
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_permutation_importance)
-    atom.run(["Tree", "LGB"], metric="f1")
-    pytest.raises(ValueError, atom.plot_permutation_importance, show=0)
-    pytest.raises(ValueError, atom.plot_permutation_importance, n_repeats=0)
-    atom.plot_permutation_importance(display=False)
-    atom.lgb.plot_permutation_importance(display=False)
+    pytest.raises(NotFittedError, atom.plot_gains)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_gains(display=False)
+    atom.lgb.plot_gains(display=False)
 
 
-def test_plot_feature_importance():
-    """Assert that the plot_feature_importance method work as intended."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_feature_importance)
-    atom.run(["KNN", "Tree", "Bag"], metric="f1_micro")
-    pytest.raises(PermissionError, atom.knn.plot_feature_importance)
-    atom.plot_feature_importance(models=["Tree", "Bag"], display=False)
-    atom.tree.plot_feature_importance(display=False)
+def test_plot_lift():
+    """Assert that the plot_lift method work as intended."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("Ridge")
+    pytest.raises(PermissionError, atom.plot_lift)  # Task is not binary
 
-
-@pytest.mark.parametrize("features", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
-def test_plot_partial_dependence(features):
-    """Assert that the plot_partial_dependence method work as intended."""
-    # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_partial_dependence)
-    atom.run(["Tree", "LGB"], metric="f1")
-
-    # Invalid kind parameter
-    with pytest.raises(ValueError, match=r".*for the kind parameter.*"):
-        atom.plot_partial_dependence(kind="invalid", display=False)
-
-    # More than 3 features
-    with pytest.raises(ValueError, match=r".*Maximum 3 allowed.*"):
-        atom.plot_partial_dependence(features=[0, 1, 2, 3], display=False)
-
-    # Triple feature
-    with pytest.raises(ValueError, match=r".*should be single or in pairs.*"):
-        atom.lgb.plot_partial_dependence(features=[(0, 1, 2), 2], display=False)
-
-    # Pair for multi-model
-    with pytest.raises(ValueError, match=r".*when plotting multiple models.*"):
-        atom.plot_partial_dependence(features=[(0, 2), 2], display=False)
-
-    # Unknown feature
-    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
-        atom.plot_partial_dependence(features=["test", 2], display=False)
-
-    # Invalid index
-    with pytest.raises(ValueError, match=r".*got index.*"):
-        atom.plot_partial_dependence(features=[120, 2], display=False)
-
-    # Different features for multiple models
-    atom.branch = "branch_2"
-    atom.feature_selection(strategy="pca", n_features=5)
-    atom.run(["tree2"])
-    with pytest.raises(ValueError, match=r".*models use the same features.*"):
-        atom.plot_partial_dependence(features=(0, 1), display=False)
-
-    atom.branch.delete()
-    atom.plot_partial_dependence(kind="both", display=False)
-    atom.lgb.plot_feature_importance(show=5, display=False)
-    atom.lgb.plot_partial_dependence(display=False)
-
-    # For multiclass classification tasks
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run(["Tree", "LGB"], metric="f1_macro")
-
-    # Invalid target int
-    with pytest.raises(ValueError, match=r".*classes, got .*"):
-        atom.plot_partial_dependence(target=5, display=False)
-
-    # Invalid target str
-    with pytest.raises(ValueError, match=r".*not found in the mapping.*"):
-        atom.plot_partial_dependence(target="Yes", display=False)
-
-    atom.lgb.plot_partial_dependence(features, target=2, title="title", display=False)
+    pytest.raises(NotFittedError, atom.plot_lift)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_lift(display=False)
+    atom.lgb.plot_lift(display=False)
 
 
 def test_plot_errors():
@@ -462,17 +415,108 @@ def test_plot_residuals():
     atom.tree.plot_residuals(display=False)
 
 
+def test_plot_feature_importance():
+    """Assert that the plot_feature_importance method work as intended."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_feature_importance)
+    atom.run(
+        models=["KNN", "Tree", "Bag", "Bag2"],
+        est_params={"bag2": {"base_estimator": LogisticRegression()}},
+    )
+    with pytest.raises(ValueError, match=r".*has no feature.*"):
+        atom.knn.plot_feature_importance()
+
+    atom.plot_feature_importance(models=["Tree", "Bag", "Bag2"], display=False)
+    atom.tree.plot_feature_importance(display=False)
+
+
+def test_plot_permutation_importance():
+    """Assert that the plot_permutation_importance method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_permutation_importance)
+    atom.run(["Tree", "LGB"], metric="f1")
+    pytest.raises(ValueError, atom.plot_permutation_importance, show=0)
+    pytest.raises(ValueError, atom.plot_permutation_importance, n_repeats=0)
+    atom.plot_permutation_importance(display=False)
+    atom.lgb.plot_permutation_importance(display=False)
+
+
+@pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
+def test_plot_partial_dependence(columns):
+    """Assert that the plot_partial_dependence method work as intended."""
+    # For binary classification tasks
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_partial_dependence)
+    atom.run(["Tree", "LGB"], metric="f1")
+
+    # Invalid kind parameter
+    with pytest.raises(ValueError, match=r".*for the kind parameter.*"):
+        atom.plot_partial_dependence(kind="invalid", display=False)
+
+    # More than 3 features
+    with pytest.raises(ValueError, match=r".*Maximum 3 allowed.*"):
+        atom.plot_partial_dependence(columns=[0, 1, 2, 3], display=False)
+
+    # Triple feature
+    with pytest.raises(ValueError, match=r".*should be single or in pairs.*"):
+        atom.lgb.plot_partial_dependence(columns=[(0, 1, 2), 2], display=False)
+
+    # Pair for multi-model
+    with pytest.raises(ValueError, match=r".*when plotting multiple models.*"):
+        atom.plot_partial_dependence(columns=[(0, 2), 2], display=False)
+
+    # Unknown feature
+    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+        atom.plot_partial_dependence(columns=["test", 2], display=False)
+
+    # Different features for multiple models
+    atom.branch = "b2"
+    atom.feature_selection(strategy="pca", n_features=5)
+    atom.run(["tree2"])
+    with pytest.raises(ValueError, match=r".*models use the same features.*"):
+        atom.plot_partial_dependence(columns=(0, 1), display=False)
+
+    atom.branch.delete()
+    atom.plot_partial_dependence(kind="both", display=False)
+    atom.lgb.plot_feature_importance(show=5, display=False)
+    atom.lgb.plot_partial_dependence(display=False)
+
+    # For multiclass classification tasks
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run(["Tree", "LGB"], metric="f1_macro")
+
+    # Invalid target int
+    with pytest.raises(ValueError, match=r".*classes, got .*"):
+        atom.plot_partial_dependence(target=5, display=False)
+
+    # Invalid target str
+    with pytest.raises(ValueError, match=r".*not found in the mapping.*"):
+        atom.plot_partial_dependence(target="Yes", display=False)
+
+    atom.lgb.plot_partial_dependence(columns, target=2, title="title", display=False)
+
+
+def test_plot_parshap():
+    """Assert that the plot_parshap method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.balance("smote")  # To get samples over 500
+    pytest.raises(NotFittedError, atom.plot_parshap)
+    atom.run(["LR", "LGB"])
+    atom.plot_parshap(display=False)
+
+
 def test_plot_confusion_matrix():
     """Assert that the plot_confusion_matrix method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(["Ridge"])
-    pytest.raises(PermissionError, atom.plot_confusion_matrix)  # Task is not classif
+    pytest.raises(PermissionError, atom.plot_confusion_matrix)  # Not classification
 
     # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_confusion_matrix)
     atom.run(["RF", "LGB"])
     pytest.raises(ValueError, atom.plot_confusion_matrix, dataset="invalid")
+    pytest.raises(ValueError, atom.plot_confusion_matrix, dataset="holdout")
     atom.plot_confusion_matrix(display=False)
     atom.lgb.plot_confusion_matrix(normalize=True, display=False)
 
@@ -505,14 +549,13 @@ def test_plot_probabilities():
     atom.run("Ridge")
     pytest.raises(PermissionError, atom.plot_probabilities)  # Task is not classif
 
-    y = ["a" if i == 0 else "b" for i in y_bin]
-    atom = ATOMClassifier(X_bin, y, random_state=1)
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
     atom.clean()  # Encode the target column
     pytest.raises(NotFittedError, atom.plot_probabilities)
     atom.run(["Tree", "LGB", "PA"], metric="f1")
     pytest.raises(AttributeError, atom.pa.plot_probabilities)  # No predict_proba
-    atom.plot_probabilities(models=["Tree", "LGB"], target="a", display=False)
-    atom.lgb.plot_probabilities(target="b", display=False)
+    atom.plot_probabilities(models=["Tree", "LGB"], target="y", display=False)
+    atom.lgb.plot_probabilities(target="n", display=False)
 
 
 def test_plot_calibration():
@@ -529,39 +572,12 @@ def test_plot_calibration():
     atom.tree.plot_calibration(display=False)
 
 
-def test_plot_gains():
-    """Assert that the plot_gains method work as intended."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Ridge")
-    pytest.raises(PermissionError, atom.plot_gains)  # Task is not binary
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_gains)
-    atom.run(["LGB", "kSVM"], metric="f1")
-    atom.plot_gains(display=False)
-    atom.lgb.plot_gains(display=False)
-
-
-def test_plot_lift():
-    """Assert that the plot_lift method work as intended."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Ridge")
-    pytest.raises(PermissionError, atom.plot_lift)  # Task is not binary
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_lift)
-    atom.run(["LGB", "kSVM"], metric="f1")
-    atom.plot_lift(display=False)
-    atom.lgb.plot_lift(display=False)
-
-
-@pytest.mark.parametrize("index", [None, 100, -10, (100, 200), slice(100, 200)])
-def test_bar_plot(index):
+def test_bar_plot():
     """Assert that the bar_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.bar_plot)
     atom.run("LR", metric="f1_macro")
-    atom.bar_plot(index=index, display=False)
+    atom.bar_plot(display=False)
 
 
 def test_beeswarm_plot():
@@ -569,7 +585,6 @@ def test_beeswarm_plot():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.beeswarm_plot)
     atom.run("LR", metric="f1_macro")
-    pytest.raises(ValueError, atom.beeswarm_plot, index=(996, 998))  # Invalid index
     atom.beeswarm_plot(display=False)
 
 
@@ -585,11 +600,17 @@ def test_force_plot():
     """Assert that the force_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.force_plot)
-    atom.run("LR", metric="MSE")
+    atom.run(["LR", "MLP"], metric="MSE")
     with atom.canvas(display=False):
         pytest.raises(PermissionError, atom.force_plot, matplotlib=True)
-    atom.force_plot(index=100, matplotlib=True, display=False)
-    atom.force_plot(matplotlib=False, filename=FILE_DIR + "force", display=True)
+
+    # Expected value from Explainer
+    atom.lr.force_plot(index=100, matplotlib=True, display=False)
+
+    # Own calculation of expected value
+    atom.mlp.force_plot(index=100, matplotlib=True, display=False)
+
+    atom.lr.force_plot(matplotlib=False, filename=FILE_DIR + "force", display=True)
     assert glob.glob(FILE_DIR + "force.html")
 
 

@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_results</strong>(models=None,
 metric=0, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L765">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L916">[source]</a>
 </span>
 </div>
 
@@ -68,6 +68,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["QDA", "Tree", "RF", "ET", "LGB"], metric="f1", n_bootstrap=5)
 atom.plot_results()  # With bootstrap...
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_results_1.png" alt="plot_results" width="700" height="420"/>
 </div>
@@ -77,6 +78,7 @@ atom.plot_results()  # With bootstrap...
 atom.run(["QDA", "Tree", "RF", "ET", "LGB"], metric="f1", n_bootstrap=0)
 atom.plot_results()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_results_2.png" alt="plot_results" width="700" height="420"/>
 </div>

@@ -6,7 +6,7 @@
 index=None, show=None, target=1, title=None, figsize=(14, 6),
 filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2953">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3247">[source]</a>
 </span>
 </div>
 
@@ -28,9 +28,9 @@ exception if there are multiple models in the pipeline. To avoid
 this, call the plot from a model, e.g. <code>atom.xgb.force_plot()</code>.
 </p>
 <p>
-<strong>index: int, tuple, slice or None, optional (default=None)</strong><br>
-Indices of the rows in the dataset to plot. If tuple (n, m), it selects rows
-n until m. If None, it selects all rows in the test set.
+<strong>index: int, str, sequence or None, optional (default=None)</strong><br>
+Index names or positions of the rows in the dataset to plot.
+If None, it selects all rows in the test set.
 </p>
 <p>
 <strong>target: int or str, optional (default=1)</strong><br>
@@ -47,7 +47,7 @@ Figure's size, format as (x, y).
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
-Name of the file. If matplotlib=False, the figure is saved as an html
+Name of the file. If matplotlib=False, the figure is saved as a html
  file. If None, the figure is not saved.
 </p>
 <p>
@@ -81,6 +81,7 @@ atom = ATOMClassifier(X, y)
 atom.run("lr")
 atom.force_plot(index=120, matplotlib=True, filename="force_plot")
 ```
+
 <div align="center">
     <img src="../../../img/plots/force_plot.png" alt="force_plot" width="1000" height="420"/>
 </div>

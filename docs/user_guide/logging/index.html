@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/logging/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
   <title>Logging & Tracking - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.a57b2b03.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -488,8 +488,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -521,6 +521,8 @@
       </a>
       
         
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -545,19 +547,6 @@
   <a href="#tracking" class="md-nav__link">
     Tracking
   </a>
-  
-    <nav class="md-nav" aria-label="Tracking">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configuring-a-tracking-server" class="md-nav__link">
-    Configuring a tracking server
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2212,6 +2201,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2505,6 +2508,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2689,6 +2706,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2714,19 +2733,6 @@
     Tracking
   </a>
   
-    <nav class="md-nav" aria-label="Tracking">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configuring-a-tracking-server" class="md-nav__link">
-    Configuring a tracking server
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -2749,15 +2755,21 @@
 trainer's initializer with the name/path to store the logging file.
 If automatic naming is used, the file is saved using the __name__ of
 the class followed by the timestamp of the logger's creation, e.g.
-<code>ATOMClassifier_11May21_20h11m03s</code>. The logging file contains method calls,
-all printed messages to stdout with maximum verbosity and any exception
-raised during running.</p>
+<code>ATOMClassifier_11May21_20h11m03s</code>. The logging file contains method
+calls, all printed messages to stdout with maximum verbosity, and any
+exception raised during running.</p>
 <p><br></p>
 <h2 id="tracking">Tracking</h2>
 <p>ATOM uses <a href="https://www.mlflow.org/docs/latest/tracking.html">mlflow tracking</a>
 as a backend API and UI for logging the models in its pipeline. Start
 tracking your experiments assigning a name to the <code>experiment</code> parameter
 in the trainer's initializer. Every model is tracked using a separate run.
+When no backend is configured, the data is stored locally at <code>./mlruns</code>.
+To configure the backend, use <a href="https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri">mlflow.set_tracking_uri</a>
+in your notebook or IDE before initializing the trainer. This does not
+affect the currently active run (if one exists), but takes effect for
+successive runs. When using ATOM on Databricks, the uri should include
+the complete path to the storage, e.g. <code>/Users/username@domain.com/experiment_name</code>.
 The following elements are tracked:</p>
 <p><strong>Tags</strong><br>
 The runs are automatically tagged with the model's full name, the branch
@@ -2794,14 +2806,6 @@ Plots are stored as .png artifacts in all runs corresponding to the models
 that are showed in the plot. If the <code>filename</code> parameter is specified, they
 are stored under that name, else the plot's name is used. This option can be
 switched off using the trainer's <code>log_plots</code> attribute, e.g. <code>atom.log_plots = False</code>.</p>
-<h3 id="configuring-a-tracking-server">Configuring a tracking server</h3>
-<p>When no backend is configured, the data is stored locally at <code>./mlruns</code>.
-To configure the backend, use <a href="https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri">mlflow.set_tracking_uri</a>
-in your notebook or IDE before initializing the trainer. This does not
-affect the currently active run (if one exists), but takes effect for
-successive runs. When using ATOM on Databricks, the uri should include
-the complete path to the storage, e.g. 
-<code>mlflow.set_tracking_uri("/Users/username@domain.com/experiment_name")</code>.</p>
                 
               
               
@@ -2826,7 +2830,7 @@ the complete path to the storage, e.g.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../data_pipelines/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data pipelines" rel="prev">
+        <a href="../data_management/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data management" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -2835,7 +2839,7 @@ the complete path to the storage, e.g.
               <span class="md-footer__direction">
                 Previous
               </span>
-              Data pipelines
+              Data management
             </div>
           </div>
         </a>
@@ -2911,10 +2915,10 @@ the complete path to the storage, e.g.
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.b1047164.min.js"></script>
       
         <script src="../../stylesheets/extra.js"></script>
       

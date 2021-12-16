@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_qq</strong>(columns=0,
 distribution="norm", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3856">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3951">[source]</a>
 </span>
 </div>
 
@@ -63,6 +63,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.plot_qq(columns=[0, 1], distribution="triang")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_qq.png" alt="plot_qq" width="720" height="460"/>
 </div>

@@ -89,18 +89,17 @@ features in the dataset. For example, if the operator is "log",
 it will create the new feature `LOG(old_feature)` and if the
 operator is "mul", it will create the new feature `old_feature_1 x old_feature_2`.
 The operators can be chosen through the `operators` parameter.
-Available options are:
-<ul>
-<li><b>add: </b>Sum two features together.</li>
-<li><b>sub: </b>Subtract two features from each other.</li>
-<li><b>mul: </b>Multiply two features with each other.</li>
-<li><b>div: </b>Divide two features with each other.</li>
-<li><b>srqt: </b>Take the square root of a feature.</li>
-<li><b>log: </b>Take the logarithm of a feature.</li>
-<li><b>sin: </b>Calculate the sine of a feature.</li>
-<li><b>cos: </b>Calculate the cosine of a feature.</li>
-<li><b>tan: </b>Calculate the tangent of a feature.</li>
-</ul>
+Choose from:
+
+* **add**: Sum two features together.
+* **sub:** Subtract two features from each other.</li>
+* **mul:** Multiply two features with each other.</li>
+* **div:** Divide two features with each other.</li>
+* **srqt:** Take the square root of a feature.</li>
+* **log:** Take the logarithm of a feature.</li>
+* **sin:** Calculate the sine of a feature.</li>
+* **cos:** Calculate the cosine of a feature.</li>
+* **tan:** Calculate the tangent of a feature.</li>
 
 ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.com/) package.
 

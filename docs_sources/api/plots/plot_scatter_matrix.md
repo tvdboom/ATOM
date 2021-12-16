@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_scatter_matrix</strong>(columns=None,
  title=None, figsize=(10, 10), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3627">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3722">[source]</a>
 </span>
 </div>
 
@@ -65,6 +65,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.plot_scatter_matrix(columns=slice(0, 5))
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_scatter_matrix.png" alt="plot_scatter_matrix" width="720" height="720"/>
 </div>

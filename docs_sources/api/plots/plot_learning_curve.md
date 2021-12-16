@@ -5,13 +5,14 @@
 <em>method</em> <strong style="color:#008AB8">plot_learning_curve</strong>(models=None,
 metric=0, title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3451">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L829">[source]</a>
 </span>
 </div>
 
 Plot the model's learning curve: score vs number of training
-samples. Only available for [non-ensemble](../../../user_guide/models/#ensembles)
-models that were fitted using [train sizing](../../../user_guide/training/#train-sizing).
+samples. Only use with models fitted using [train sizing](../../../user_guide/training/#train-sizing).
+[Ensemble](../../../user_guide/models/#ensembles) models are
+ignored.
 
 <table style="font-size:16px">
 <tr>
@@ -70,6 +71,7 @@ atom.train_sizing(
 )
 atom.plot_learning_curve()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_learning_curve.png" alt="plot_learning_curve" width="700" height="420"/>
 </div>

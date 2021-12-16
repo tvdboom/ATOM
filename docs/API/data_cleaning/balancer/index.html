@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/data_cleaning/balancer/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
   <title>Balancer - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.a57b2b03.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -486,8 +486,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -883,6 +883,8 @@
       </a>
       
         
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2208,6 +2210,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2501,6 +2517,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2685,6 +2715,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2738,14 +2770,17 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN",
 n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1403">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1409">[source]</a>
 </span>
 </div>
 
-<p>Balance the number of samples per class in the target column. Use only
-for classification tasks. This class can be accessed from atom through
-the <a href="../../ATOM/atomclassifier/#balance">balance</a> method. Read more in
-the <a href="../../../user_guide/data_cleaning/#balancing-the-data">user guide</a>.</p>
+<p>Balance the number of samples per class in the target column. When
+oversampling, the newly created samples have an increasing integer
+index for numerical indices, and an index of the form [estimator]_N
+for non-numerical indices, where N stands for the N-th sample in the
+data set. Use only for classification tasks. This class can be accessed
+from atom through the <a href="../../ATOM/atomclassifier/#balance">balance</a>
+method. Read more in the <a href="../../../user_guide/data_cleaning/#balancing-the-data">user guide</a>.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -2779,10 +2814,10 @@ Verbosity level of the class. Possible values are:
 </ul>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
 <strong>**kwargs</strong><br>
-Additional keyword arguments passed to the <code>strategy</code> estimator.
+Additional keyword arguments for the <code>strategy</code> estimator.
 </p>
 </td>
 </tr>
@@ -2793,6 +2828,11 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <p>Use atom's <a href="../../ATOM/atomclassifier/#data-attributes">classes</a> attribute
 for an overview of the target class distribution per data set.</p>
 </div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <a href="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html">clustercentroids</a>
+estimator is unavailable because of incompatibilities of the APIs.</p>
+</div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
 <table style="font-size:16px">
@@ -2801,12 +2841,12 @@ for an overview of the target class distribution per data set.</p>
 <td width="80%" class="td_params">
 <p>
 <strong>&lt;strategy&gt;: imblearn estimator</strong><br>
-Estimator instance (lowercase strategy) used to oversample or undersample
-the data, e.g. <code>balancer.adasyn</code> for the default strategy.
+Object (lowercase strategy) used to balance  the data,
+e.g. <code>balancer.adasyn</code> for the default strategy.
 </p>
 <p>
 <strong>mapping: dict</strong><br>
-Dictionary of the target values mapped to their respective encoded integer.
+Target values mapped to their respective encoded integer.
 </p>
 </td>
 </tr>
@@ -2852,13 +2892,13 @@ Dictionary of the target values mapped to their respective encoded integer.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
 </span>
 </div>
-<p>Oversample or undersample the data.</p>
+<p>Balance the data.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>
@@ -2897,7 +2937,8 @@ Balanced target column.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -2905,7 +2946,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -2914,7 +2955,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -2938,7 +2979,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L370">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -2980,16 +3021,16 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1474">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1482">[source]</a>
 </span>
 </div>
-<p>Oversample or undersample the data.</p>
+<p>Balance the data.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>
@@ -3135,10 +3176,10 @@ or
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.b1047164.min.js"></script>
       
         <script src="../../../stylesheets/extra.js"></script>
       

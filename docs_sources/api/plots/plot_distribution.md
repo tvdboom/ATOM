@@ -6,7 +6,7 @@
 distribution=None, show=None, title=None, figsize=None, filename=None,
 display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3704">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3799">[source]</a>
 </span>
 </div>
 
@@ -84,6 +84,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.plot_distribution(columns=[1, 2])  # With numerical columns
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_distribution_1.png" alt="plot_distribution_1" width="720" height="460"/>
 </div>
@@ -92,6 +93,7 @@ atom.plot_distribution(columns=[1, 2])  # With numerical columns
 # With fitted distributions
 atom.plot_distribution(columns="mean radius", distribution=["norm", "triang"])
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_distribution_2.png" alt="plot_distribution_2" width="720" height="460"/>
 </div>
@@ -100,6 +102,7 @@ atom.plot_distribution(columns="mean radius", distribution=["norm", "triang"])
 # With categorical columns
 atom.plot_distribution(columns="Location", show=11)
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_distribution_3.png" alt="plot_distribution_3" width="700" height="700"/>
 </div>

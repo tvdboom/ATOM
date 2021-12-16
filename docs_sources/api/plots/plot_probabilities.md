@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_probabilities</strong>(models=None,
 dataset="test", target=1, title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2459">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2772">[source]</a>
 </span>
 </div>
 
@@ -22,7 +22,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train", "test" or "both".
+Data set on which to calculate the metric. Choose from:
+"train", "test", "both" (train and test) or "holdout".
 </p>
 <p>
 <strong>target: int or str, optional (default=1)</strong><br>
@@ -69,6 +70,7 @@ atom = ATOMClassifier(X, y="RainTomorrow")
 atom.run("rf")
 atom.plot_probabilities()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_probabilities.png" alt="plot_probabilities" width="700" height="420"/>
 </div>

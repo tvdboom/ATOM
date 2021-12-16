@@ -135,7 +135,7 @@ Tokenize the text.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
@@ -170,7 +170,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -178,7 +179,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -189,7 +190,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -215,7 +216,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L370">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -270,7 +271,7 @@ Tokenize the text.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.

@@ -21,15 +21,22 @@ from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.models import MODEL_LIST
+from atom.models import MODELS
+from atom.pipeline import Pipeline
 from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
 
 
 # Variables ======================================================== >>
 
-binary = [m for m in MODEL_LIST if m.task != "reg" and m.acronym != "CatNB"]
-multi = [m for m in MODEL_LIST if m.task != "reg" and not m.acronym.startswith("Cat")]
-regression = [m for m in MODEL_LIST if m.task != "class"]
+binary, multiclass, regression = [], [], []
+for m in MODELS.values():
+    if m.goal != "reg":
+        if m.acronym != "CatNB":
+            binary.append(m.acronym)
+        if not m.acronym.startswith("Cat"):
+            multiclass.append(m.acronym)
+    if m.goal != "class":
+        regression.append(m.acronym)
 
 
 # Functions ======================================================= >>
@@ -64,15 +71,15 @@ def test_custom_models(model):
 
 def test_deep_learning_models():
     """Assert that ATOM works with deep learning models."""
-    atom = ATOMClassifier(*mnist, n_rows=0.05, random_state=1)
+    atom = ATOMClassifier(*mnist, n_rows=0.01, random_state=1)
     pytest.raises(PermissionError, atom.clean)
     atom.run(models=neural_network())
     assert atom.models == "KC"  # KerasClassifier
 
 
-def test_nice_error_for_unpickable_models():
-    """Assert that pickle errors raise an understandable exception."""
-    atom = ATOMClassifier(*mnist, n_rows=0.05, n_jobs=2, random_state=1)
+def test_error_for_unpickable_models():
+    """Assert that pickle errors raise an explainable exception."""
+    atom = ATOMClassifier(*mnist, n_rows=0.01, n_jobs=2, random_state=1)
     pytest.raises(
         PickleError,
         atom.run,
@@ -92,29 +99,29 @@ def test_models_binary(model):
     """Assert that all models work with binary classification."""
     atom = ATOMClassifier(X_bin, y_bin, test_size=0.24, random_state=1)
     atom.run(
-        models=model.acronym,
+        models=model,
         metric="auc",
         n_calls=2,
         n_initial_points=1,
         bo_params={"base_estimator": "rf", "cv": 1},
     )
     assert not atom.errors
-    assert hasattr(atom, model.acronym)
+    assert hasattr(atom, model)
 
 
-@pytest.mark.parametrize("model", multi)
+@pytest.mark.parametrize("model", multiclass)
 def test_models_multiclass(model):
     """Assert that all models work with multiclass classification."""
     atom = ATOMClassifier(X_class2, y_class2, test_size=0.24, random_state=1)
     atom.run(
-        models=model.acronym,
+        models=model,
         metric="f1_micro",
         n_calls=2,
         n_initial_points=1,
         bo_params={"base_estimator": "rf", "cv": 1},
     )
     assert not atom.errors
-    assert hasattr(atom, model.acronym)
+    assert hasattr(atom, model)
 
 
 @pytest.mark.parametrize("model", regression)
@@ -122,14 +129,14 @@ def test_models_regression(model):
     """Assert that all models work with regression."""
     atom = ATOMRegressor(X_reg, y_reg, test_size=0.24, random_state=1)
     atom.run(
-        models=model.acronym,
+        models=model,
         metric="neg_mean_absolute_error",
         n_calls=2,
         n_initial_points=1,
         bo_params={"base_estimator": "gbrt", "cv": 1},
     )
     assert not atom.errors
-    assert hasattr(atom, model.acronym)
+    assert hasattr(atom, model)
 
 
 def test_CatNB():
@@ -141,3 +148,42 @@ def test_CatNB():
     atom.run(models="CatNB", n_calls=2, n_initial_points=1)
     assert not atom.errors
     assert hasattr(atom, "CatNB")
+
+
+# Test ensembles =================================================== >>
+
+def test_stacking():
+    """Assert that the Stacking model works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(models=["OLS", "RF"])
+    atom.stacking()
+    assert isinstance(atom.stack.estimator.estimators_[0], Pipeline)
+    assert isinstance(atom.stack.estimator.estimators_[1], RandomForestRegressor)
+
+
+def test_stacking_multiple_branches():
+    """Assert that an error is raised when branches are different."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    atom.branch = "2"
+    atom.run("LDA")
+    with pytest.raises(ValueError, match=r".*on the current branch.*"):
+        atom.stacking(models=["LR", "LDA"])
+
+
+def test_voting():
+    """Assert that the Voting model works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(models=["OLS", "RF"])
+    atom.voting()
+    assert isinstance(atom.vote.estimator.estimators_[0], Pipeline)
+    assert isinstance(atom.vote.estimator.estimators_[1], RandomForestRegressor)
+
+
+def test_voting_multiple_branches():
+    """Assert that an error is raised when branches are different."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LDA"])
+    atom.branch = "2"
+    with pytest.raises(ValueError, match=r".*on the current branch.*"):
+        atom.voting(models=["LR", "LDA"])

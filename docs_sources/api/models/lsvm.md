@@ -138,64 +138,62 @@ Name of the target column.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
-<strong>bo: pd.DataFrame</strong>
-<blockquote>
-Dataframe containing the information of every step taken by the BO. Columns include:
-<ul>
-<li>"params": Parameters used in the model.</li>
-<li>"estimator": Estimator used for this iteration (fitted on last cross-validation).</li>
-<li>"score": Score of the chosen metric. List of scores for multi-metric.</li>
-<li>"time_iteration": Time spent on this iteration.</li>
-<li>"time": Total time spent since the start of the BO.</li>
+<strong>bo: pd.DataFrame</strong><br>
+Information of every step taken by the BO. Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
+<li><b>call</b>: Name of the call.</li>
+<li><b>params</b>: Parameters used in the model.</li>
+<li><b>estimator</b>: Estimator used for this iteration (fitted on last cross-validation).</li>
+<li><b>score</b>: Score of the chosen metric. List of scores for multi-metric.</li>
+<li><b>time</b>: Time spent on this iteration.</li>
+<li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
-</blockquote>
-<strong>best_params: dict</strong>
-<blockquote>
+<p>
+<strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
-</blockquote>
-<strong>estimator: class</strong>
-<blockquote>
+</p>
+<p>
+<strong>estimator: class</strong><br>
 Estimator instance with the best combination of hyperparameters fitted
 on the complete training set.
-</blockquote>
-<strong>time_bo: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>time_bo: str</strong><br>
 Time it took to run the bayesian optimization algorithm.
-</blockquote>
-<strong>metric_bo: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_bo: float or list</strong><br>
 Best metric score(s) on the BO.
-</blockquote>
-<strong>time_fit: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>time_fit: str</strong><br>
 Time it took to train the model on the complete training set and
 calculate the metric(s) on the test set.
-</blockquote>
-<strong>metric_train: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_train: float or list</strong><br>
 Metric score(s) on the training set.
-</blockquote>
-<strong>metric_test: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_test: float or list</strong><br>
 Metric score(s) on the test set.
-</blockquote>
-<strong>metric_bootstrap: list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_bootstrap: np.array</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
-</blockquote>
-<strong>mean_bootstrap: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>mean_bootstrap: float or list</strong><br>
 Mean of the bootstrap results. List of values for multi-metric runs.
-</blockquote>
-<strong>std_bootstrap: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>std_bootstrap: float or list</strong><br>
 Standard deviation of the bootstrap results. List of values for multi-metric runs.
-</blockquote>
-<strong>results: pd.Series</strong>
-<blockquote>
-Series of the training results. Columns include:
-<ul>
+</p>
+<strong>results: pd.Series</strong><br>
+Training results. Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
 <li><b>metric_train:</b> Metric score on the training set.</li>
@@ -206,7 +204,6 @@ Series of the training results. Columns include:
 <li><b>time_bootstrap:</b> Time spent on the bootstrap algorithm.</li>
 <li><b>time:</b> Total time spent on the whole run.</li>
 </ul>
-</blockquote>
 </td>
 </tr>
 </table>
@@ -224,19 +221,19 @@ attributes that are never used, saving time and memory.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Prediction attributes:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>predict_train: np.ndarray</strong><br>
+<strong>predict_train: np.array</strong><br>
 Predictions of the model on the training set.
 </p>
 <p>
-<strong> predict_test: np.ndarray</strong><br>
+<strong> predict_test: np.array</strong><br>
 Predictions of the model on the test set.
 </p>
 <p>
-<strong>decision_function_train: np.ndarray</strong><br>
+<strong>decision_function_train: np.array</strong><br>
 Decision function scores on the training set (only if classifier).
 </p>
 <p>
-<strong>decision_function_test: np.ndarray</strong><br>
+<strong>decision_function_test: np.array</strong><br>
 Decision function scores on the test set (only if classifier).
 </p>
 <p>
@@ -267,6 +264,11 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#clear">clear</a></td>
+<td>Clear attributes from the model.</td>
+</tr>
+
+<tr>
 <td><a href="#cross-validate">cross_validate</a></td>
 <td>Evaluate the model using cross-validation.</td>
 </tr>
@@ -277,13 +279,23 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#dashboard">dashboard</a></td>
+<td>Create an interactive dashboard to analyze the model.</td>
+</tr>
+
+<tr>
+<td><a href="#evaluate">evaluate</a></td>
+<td>Get the model's scores for the provided metrics.</td>
+</tr>
+
+<tr>
 <td><a href="#export-pipeline">export_pipeline</a></td>
 <td>Export the model's pipeline to a sklearn-like Pipeline object.</td>
 </tr>
 
 <tr>
 <td><a href="#full-train">full_train</a></td>
-<td>Get the estimator trained on the complete dataset.</td>
+<td>Train the estimator on the complete dataset.</td>
 </tr>
 
 <tr>
@@ -292,18 +304,13 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
-<td><a href="#reset-predictions">reset_predictions</a></td>
-<td>Clear all the prediction attributes.</td>
-</tr>
-
-<tr>
-<td><a href="#evaluate">evaluate</a></td>
-<td>Get the score for a specific metric.</td>
-</tr>
-
-<tr>
 <td><a href="#save-estimator">save_estimator</a></td>
 <td>Save the estimator to a pickle file.</td>
+</tr>
+
+<tr>
+<td><a href="#transform">transform</a></td>
+<td>Transform new data through the model's branch.</td>
 </tr>
 </table>
 <br>
@@ -313,16 +320,16 @@ The remaining utility methods can be found hereunder.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L651">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L651">[source]</a>
 </span>
 </div>
-Applies probability calibration on the estimator. The
-estimator is trained via cross-validation on a subset of the
-training data, using the rest to fit the calibrator. The new
-classifier will replace the `estimator` attribute and is
-logged to any active mlflow experiment. Since the estimator
-changed, all the model's prediction attributes are reset.
-Only if classifier.
+Applies probability calibration on the model. The estimator
+is trained via cross-validation on a subset of the training
+data, using the rest to fit the calibrator. The new classifier
+will replace the `estimator` attribute. If there is an active
+mlflow experiment, a new run is started using the name
+`[model_name]_calibrate`. Since the estimator changed, the
+model is [cleared](#clear). Only if classifier.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -338,11 +345,29 @@ for testing.
 <br />
 
 
+<a name="clear"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">clear</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1060">[source]</a>
+</span>
+</div>
+Reset attributes to their initial state, deleting potentially
+large data arrays. Use this method to free some memory before
+saving the class. The cleared attributes per model are:
+
+* [Prediction attributes](../../../user_guide/predicting).
+* [Metrics scores](../../../user_guide/training/#metric).
+* [Shap values](../../../user_guide/plots/#shap).
+
+<br /><br /><br />
+
+
 <a name="cross-validate"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L692">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L692">[source]</a>
 </span>
 </div>
 Evaluate the model using cross-validation. This method cross-validates the
@@ -377,30 +402,115 @@ function.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L317">[source]</a>
 </span>
 </div>
-Delete the model from the trainer. If it's the winning model, the next
-best model (through `metric_test` or `mean_bootstrap`) is selected as
-winner. If it's the last model in the trainer, the metric and training
-approach are reset. Use this method to drop unwanted models from
-the pipeline or to free some memory before saving. The model is not
-removed from any active mlflow experiment.
+Delete the model from the trainer. If it's the last model in the
+trainer, the metric is reset. Use this method to drop unwanted
+models from the pipeline or to free some memory before saving.
+The model is not removed from any active mlflow experiment.
 <br /><br /><br />
+
+
+<a name="dashboard"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">dashboard</strong>(dataset="test", filename=None, **kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1205">[source]</a>
+</span>
+</div>
+Create an interactive dashboard to analyze the model. The dashboard
+allows you to investigate SHAP values, permutation importances,
+interaction effects, partial dependence plots, all kinds of
+performance plots, and even individual decision trees. By default,
+the dashboard opens in an external dash app.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
+Data set to get the report from. Choose from: "train", "test",
+"both" (train and test) or "holdout".
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name to save the file with (as .html). None to not save anything.
+</p>
+<p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments for the ExplainerDashboard instance.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>dashboard: <a href="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html">ExplainerDashboard</a></strong><br>
+Created dashboard object.
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="evaluate"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
+dataset="test", threshold=0.5)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1120">[source]</a>
+</span>
+</div>
+Get the model's scores for the provided metrics.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+Metrics to calculate. If None, a selection of the most common
+metrics per task are used.
+</p>
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
+Data set on which to calculate the metric. Choose from: "train",
+"test" or "holdout".
+</p>
+<strong>threshold: float, optional (default=0.5)</strong><br>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only used when:
+<ul style="line-height:1.2em;margin-top:5px">
+<li>The task is binary classification.</li>
+<li>The model has a <code>predict_proba</code> method.</li>
+<li>The metric evaluates predicted target values.</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>score: pd.Series</strong><br>
+Scores of the model.
+</td>
+</tr>
+</table>
+<br />
 
 
 <a name="export-pipeline"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L756">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L756">[source]</a>
 </span>
 </div>
-Export the model's pipeline to a sklearn-like object. If the model
-used feature scaling, the Scaler is added before the model. The
-returned pipeline is already fitted on the training set.
+Export the model's pipeline to a sklearn-like Pipeline object. If the
+model used [automated feature scaling](../../../user_guide/training/#automated-feature-scaling),
+the `scaler` is added to the pipeline. The returned pipeline is already
+fitted on the training set.
 
 !!! info
     ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
     and additionally:
-    <ul>
+    <ul style="line-height:1.2em;margin-top:5px">
     <li>Accepts transformers that change the target column.</li>
     <li>Accepts transformers that drop rows.</li>
     <li>Accepts transformers that only are fitted on a subset of the
@@ -416,10 +526,20 @@ returned pipeline is already fitted on the training set.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
+<strong>memory: bool, str, Memory or None, optional (default=None)</strong><br>
+Used to cache the fitted transformers of the pipeline.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None or False: No caching is performed.</li>
+<li>If True: A default temp directory is used.</li>
+<li>If str: Path to the caching directory.</li>
+<li>If Memory: Object with the <a href="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html">joblib.Memory</a> interface.</li>
+</ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
-Verbosity level of the transformers in the pipeline.
-If None, it leaves them to their original verbosity.
+Verbosity level of the transformers in the pipeline. If None, it leaves
+them to their original verbosity. Note that this is not the pipeline's
+own verbose parameter. To change that, use the <code>set_params</code>
+method.
 </p>
 </td>
 </tr>
@@ -436,21 +556,26 @@ Current branch as a sklearn-like Pipeline object.
 
 <a name="full-train"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">full_train</strong>()
+<em>method</em> <strong style="color:#008AB8">full_train</strong>(include_holdout=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L789">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L789">[source]</a>
 </span>
 </div>
-Get the estimator trained on the complete dataset. In some cases it
-might be desirable to use all the available data to train a final
-model after the right hyperparameters are found. Note that this
-means that the model can not be evaluated.
+In some cases it might be desirable to use all available data
+to train a final model. Note that doing this means that the
+estimator can no longer be evaluated on the test set. The newly
+retrained estimator will replace the `estimator` attribute. If
+there is an active mlflow experiment, a new run is started
+with the name `[model_name]_full_train`. Since the estimator
+changed, the model is [cleared](#clear).
 <table style="font-size:16px">
 <tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>est: estimator</strong><br>
-Model estimator trained on the full dataset.
+<strong>include_holdout: bool, optional (default=False)</strong><br>
+Whether to include the holdout data set (if available) in the
+training of the estimator. Note that if True, it means the model
+can't be evaluated.
 </td>
 </tr>
 </table>
@@ -461,7 +586,7 @@ Model estimator trained on the full dataset.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L817">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L817">[source]</a>
 </span>
 </div>
 Change the model's tag. The acronym always stays at the beginning
@@ -475,18 +600,6 @@ name of the corresponding run is also changed.
 New tag for the model. If None, the tag is removed.
 </table>
 <br />
-
-
-<a name="reset-predictions"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L210">[source]</a>
-</span>
-</div>
-Clear the [prediction attributes](../../../user_guide/predicting) from all models.
-Use this method to free some memory before saving the trainer.
-<br /><br /><br />
 
 
 <a name="evaluate"></a>
@@ -508,7 +621,8 @@ metrics per task are used.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train" or "test".
+Data set on which to calculate the metric. Choose from: "train",
+"test" or "holdout".
 </p>
 </td>
 </tr>
@@ -527,7 +641,7 @@ Scores of the model.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L854">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L854">[source]</a>
 </span>
 </div>
 Save the estimator to a pickle file.
@@ -537,6 +651,54 @@ Save the estimator to a pickle file.
 <td width="80%" class="td_params">
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L895">[source]</a>
+</span>
+</div>
+Transform new data through the model's branch. Transformers that
+are only applied on the training set are skipped. If the model
+used feature scaling, the data is also scaled.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: dataframe-like</strong><br>
+Features to transform, with shape=(n_samples, n_features).
+</p>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored in the transformers.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
+</ul>
+<p>
+<strong>verbose: int or None, optional (default=None)</strong><br>
+Verbosity level of the output. If None, it uses the transformer's own verbosity.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: pd.DataFrame</strong><br>
+Transformed feature set.
+</p>
+<p>
+<strong>y: pd.Series</strong><br>
+Transformed target column. Only returned if provided.
+</p>
 </td>
 </tr>
 </table>

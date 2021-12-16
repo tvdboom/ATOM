@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/feature_engineering/feature_selector/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
   <title>FeatureSelector - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.a57b2b03.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -486,8 +486,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -1047,6 +1047,8 @@
       </a>
       
         
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2228,6 +2230,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2521,6 +2537,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2705,6 +2735,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2779,7 +2811,7 @@
 solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
 **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L572">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L571">[source]</a>
 </span>
 </div>
 
@@ -2883,7 +2915,7 @@ Verbosity level of the class. Possible values are:
 </ul>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
 <strong>**kwargs</strong><br>
 Any extra keyword argument for the PCA, SFM, RFE, RFECV  and SFS estimators.
@@ -2918,7 +2950,7 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
 <strong>collinear: pd.DataFrame</strong><br>
-Dataframe of the removed collinear features. Columns include:
+Information on the removed collinear features. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>drop_feature:</b> Name of the feature dropped by the method.</li>
 <li><b>correlated feature:</b> Name of the correlated feature(s).</li>
@@ -2931,8 +2963,8 @@ Remaining features ordered by importance. Only if strategy in ("univariate", "SF
 estimator fitted on the reduced set. 
 </p>
 <p>
-<strong>&lt;strategy&gt;: sklearn estimator</strong><br>
-Estimator instance (lowercase strategy) used to transform the data,
+<strong>&lt;strategy&gt;: sklearn transformer</strong><br>
+Object (lowercase strategy) used to transform the data,
 e.g. <code>feature_selector.pca</code> for the PCA strategy.
 </p>
 </td>
@@ -3030,7 +3062,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L731">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L730">[source]</a>
 </span>
 </div>
 <p>Fit to data. Note that the univariate, SFM (when model is not fitted),
@@ -3041,7 +3073,7 @@ None will raise an exception.</p>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -3075,7 +3107,7 @@ Leaving it None will raise an exception.</p>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -3108,7 +3140,8 @@ Transformed feature set.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -3116,7 +3149,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -3125,7 +3158,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3150,7 +3183,7 @@ Minimum verbosity level to print the message.
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L524">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L497">[source]</a>
 </span>
 </div>
 <p>Plot the explained variance ratio vs the number of components.
@@ -3161,7 +3194,7 @@ See <a href="../../plots/plot_pca">plot_pca</a> for a description of the paramet
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>
 (show=None, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L594">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L567">[source]</a>
 </span>
 </div>
 <p>Plot the explained variance ratio per components. See
@@ -3172,7 +3205,7 @@ See <a href="../../plots/plot_pca">plot_pca</a> for a description of the paramet
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L671">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L644">[source]</a>
 </span>
 </div>
 <p>Plot the scores obtained by the estimator fitted on every subset of the
@@ -3182,7 +3215,7 @@ data. See <a href="../../plots/plot_rfecv">plot_rfecv</a> for a description of t
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L221">[source]</a>
 </span>
 </div>
 <p>Reset the <a href="../../../user_guide/plots/#aesthetics">plot aesthetics</a> to their default values.
@@ -3191,7 +3224,7 @@ data. See <a href="../../plots/plot_rfecv">plot_rfecv</a> for a description of t
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L370">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3233,7 +3266,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L983">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L987">[source]</a>
 </span>
 </div>
 <p>Transform the data.</p>
@@ -3242,7 +3275,7 @@ Estimator instance.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -3385,10 +3418,10 @@ or
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.b1047164.min.js"></script>
       
         <script src="../../../stylesheets/extra.js"></script>
       

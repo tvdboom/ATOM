@@ -10,6 +10,7 @@ Description: Module containing all available models. All classes must
         ----
         Name of the model's class in camel case format.
 
+
         Class attributes
         ----------------
         acronym: str
@@ -20,12 +21,13 @@ Description: Module containing all available models. All classes must
             __name__ is used.
 
         needs_scaling: bool
-            Whether the model needs scaled features. Can not be True
-            for datasets with more than two dimensions.
+            Whether the model needs scaled features. Can not be
+            True for datasets with more than two dimensions.
 
-        task: str
-            If the model is only for classification tasks ("class"),
-            regression tasks ("reg") or both ("both").
+        goal: str
+            If the model is only for classification ("class"),
+            regression ("reg") or both ("both").
+
 
         Instance attributes
         -------------------
@@ -46,19 +48,26 @@ Description: Module containing all available models. All classes must
             should be a list with two elements, the parameter's
             default value and the number of decimals.
 
+
+        Properties
+        ----------
+        est_class: estimator's base class
+            Base class (not instance) of the underlying estimator.
+
+
         Methods
         -------
         __init__(self, *args):
-            Class initializer. Contains super() to the ModelOptimizer class.
+            Class initializer. Contains super() to the BaseModel class.
 
         get_init_values(self):
             Return the initial values for the estimator. Don't implement
-            if the method in ModelOptimizer (default behaviour) is sufficient.
+            if the method in BaseModel (default behaviour) is sufficient.
 
         get_params(self, x):
             Return the parameters with rounded decimals and (optional)
             custom changes to the params. Don't implement if the method
-            in ModelOptimizer (default behaviour) is sufficient.
+            in BaseModel (default behaviour) is sufficient.
 
         get_estimator(self, params=None):
             Return the model's estimator with unpacked parameters.
@@ -73,7 +82,7 @@ Description: Module containing all available models. All classes must
 
 To add a new model:
     1. Add the model's class to models.py
-    2. Add the model to the list MODEL_LIST in models.py
+    2. Add the model to the list MODELS in models.py
 
 
 List of available models:
@@ -110,6 +119,10 @@ List of available models:
     - "PA" for Passive Aggressive
     - "SGD" for Stochastic Gradient Descent
     - "MLP" for Multi-layer Perceptron
+
+Additionally, ATOM implements two ensemble models:
+    - "Stack" for Stacking
+    - "Vote" for Voting
 
 """
 
@@ -179,11 +192,18 @@ from sklearn.linear_model import (
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # Own modules
-from .modeloptimizer import ModelOptimizer
-from .utils import dct, create_acronym, CustomDict
+from .basemodel import BaseModel
+from .pipeline import Pipeline
+from .ensembles import (
+    VotingClassifier,
+    VotingRegressor,
+    StackingClassifier,
+    StackingRegressor,
+)
+from .utils import create_acronym, CustomDict
 
 
-class CustomModel(ModelOptimizer):
+class CustomModel(BaseModel):
     """Custom model. Estimator provided by user."""
 
     def __init__(self, *args, **kwargs):
@@ -206,9 +226,17 @@ class CustomModel(ModelOptimizer):
         self.needs_scaling = getattr(self.est, "needs_scaling", False)
         super().__init__(*args)
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if callable(self.est):
+            return self.est
+        else:
+            return self.est.__class__
+
     def get_estimator(self, params=None):
-        """Call the estimator object."""
-        params = dct(copy(params))
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
         sign = signature(self.est.__init__).parameters
 
         # The provided estimator can be a class or an instance
@@ -233,12 +261,12 @@ class CustomModel(ModelOptimizer):
             return self.est
 
 
-class Dummy(ModelOptimizer):
+class Dummy(BaseModel):
     """Dummy classifier/regressor."""
 
     acronym = "Dummy"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -250,16 +278,24 @@ class Dummy(ModelOptimizer):
             self.fullname = "Dummy Regression"
             self.params = {"strategy": ["mean", 0], "quantile": [0.5, 2]}
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return DummyClassifier
+        else:
+            return DummyRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
+        params = copy(params or {})
         if self.T.goal == "class":
-            return DummyClassifier(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
         else:
-            return DummyRegressor(**params)
+            return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -274,66 +310,84 @@ class Dummy(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class GaussianProcess(ModelOptimizer):
+class GaussianProcess(BaseModel):
     """Gaussian process."""
 
     acronym = "GP"
     fullname = "Gaussian Process"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return GaussianProcessClassifier
+        else:
+            return GaussianProcessRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
+        params = copy(params or {})
         if self.T.goal == "class":
-            return GaussianProcessClassifier(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return GaussianProcessRegressor(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
 
 
-class GaussianNaiveBayes(ModelOptimizer):
+class GaussianNaiveBayes(BaseModel):
     """Gaussian Naive Bayes."""
 
     acronym = "GNB"
     fullname = "Gaussian Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return GaussianNB(**dct(params))
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return GaussianNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
 
-class MultinomialNaiveBayes(ModelOptimizer):
+class MultinomialNaiveBayes(BaseModel):
     """Multinomial Naive Bayes."""
 
     acronym = "MNB"
     fullname = "Multinomial Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return MultinomialNB(**dct(params))
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return MultinomialNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -344,22 +398,27 @@ class MultinomialNaiveBayes(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class BernoulliNaiveBayes(ModelOptimizer):
+class BernoulliNaiveBayes(BaseModel):
     """Bernoulli Naive Bayes."""
 
     acronym = "BNB"
     fullname = "Bernoulli Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return BernoulliNB(**dct(params))
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return BernoulliNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -370,22 +429,27 @@ class BernoulliNaiveBayes(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class CategoricalNaiveBayes(ModelOptimizer):
+class CategoricalNaiveBayes(BaseModel):
     """Categorical Naive Bayes."""
 
     acronym = "CatNB"
     fullname = "Categorical Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return CategoricalNB(**dct(params))
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return CategoricalNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -396,22 +460,27 @@ class CategoricalNaiveBayes(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class ComplementNaiveBayes(ModelOptimizer):
+class ComplementNaiveBayes(BaseModel):
     """Complement Naive Bayes."""
 
     acronym = "CNB"
     fullname = "Complement Naive Bayes"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0], "norm": [False, 0]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return ComplementNB(**dct(params))
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return ComplementNB
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -423,29 +492,34 @@ class ComplementNaiveBayes(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class OrdinaryLeastSquares(ModelOptimizer):
+class OrdinaryLeastSquares(BaseModel):
     """Linear Regression (without regularization)."""
 
     acronym = "OLS"
     fullname = "Ordinary Least Squares"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return LinearRegression
+
     def get_estimator(self, params=None):
-        """Call the estimator object."""
-        params = dct(copy(params))
-        return LinearRegression(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
 
 
-class Ridge(ModelOptimizer):
+class Ridge(BaseModel):
     """Linear Regression/Classification with ridge regularization."""
 
     acronym = "Ridge"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -456,19 +530,21 @@ class Ridge(ModelOptimizer):
         else:
             self.fullname = "Ridge Regression"
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return RidgeClassifier
+        else:
+            return RidgeRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return RidgeClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return RidgeRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -480,22 +556,27 @@ class Ridge(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class Lasso(ModelOptimizer):
+class Lasso(BaseModel):
     """Linear Regression with lasso regularization."""
 
     acronym = "Lasso"
     fullname = "Lasso Regression"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"alpha": [1.0, 3], "selection": ["cyclic", 0]}
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return LassoRegressor
+
     def get_estimator(self, params=None):
-        """Call the estimator object."""
-        params = dct(copy(params))
-        return LassoRegressor(
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(
             random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
@@ -509,13 +590,13 @@ class Lasso(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class ElasticNet(ModelOptimizer):
+class ElasticNet(BaseModel):
     """Linear Regression with elasticnet regularization."""
 
     acronym = "EN"
     fullname = "ElasticNet Regression"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -525,10 +606,15 @@ class ElasticNet(ModelOptimizer):
             "selection": ["cyclic", 0],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return ElasticNetRegressor
+
     def get_estimator(self, params=None):
-        """Call the estimator object."""
-        params = dct(copy(params))
-        return ElasticNetRegressor(
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(
             random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
@@ -543,13 +629,13 @@ class ElasticNet(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class BayesianRidge(ModelOptimizer):
+class BayesianRidge(BaseModel):
     """Bayesian ridge regression."""
 
     acronym = "BR"
     fullname = "Bayesian Ridge"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -561,10 +647,15 @@ class BayesianRidge(ModelOptimizer):
             "lambda_2": [1e-6, 8],
         }
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return BayesianRidgeRegressor(**dct(params))
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return BayesianRidgeRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -578,13 +669,13 @@ class BayesianRidge(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class AutomaticRelevanceDetermination(ModelOptimizer):
+class AutomaticRelevanceDetermination(BaseModel):
     """Automatic Relevance Determination."""
 
     acronym = "ARD"
     fullname = "Automatic Relevant Determination"
     needs_scaling = True
-    task = "reg"
+    goal = "reg"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -596,10 +687,15 @@ class AutomaticRelevanceDetermination(ModelOptimizer):
             "lambda_2": [1e-6, 8],
         }
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return ARDRegression(**dct(params))
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return ARDRegression
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -613,13 +709,13 @@ class AutomaticRelevanceDetermination(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class LogisticRegression(ModelOptimizer):
+class LogisticRegression(BaseModel):
     """Logistic Regression."""
 
     acronym = "LR"
     fullname = "Logistic Regression"
     needs_scaling = True
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -630,6 +726,11 @@ class LogisticRegression(ModelOptimizer):
             "max_iter": [100, 0],
             "l1_ratio": [0.5, 1],
         }
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return LR
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -652,9 +753,9 @@ class LogisticRegression(ModelOptimizer):
         return params
 
     def get_estimator(self, params=None):
-        """Call the estimator object."""
-        params = dct(copy(params))
-        return LR(
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             random_state=params.pop("random_state", self.T.random_state),
             **params,
@@ -673,17 +774,22 @@ class LogisticRegression(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class LinearDiscriminantAnalysis(ModelOptimizer):
+class LinearDiscriminantAnalysis(BaseModel):
     """Linear Discriminant Analysis."""
 
     acronym = "LDA"
     fullname = "Linear Discriminant Analysis"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"solver": ["svd", 0], "shrinkage": [0, 1]}
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return LDA
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -694,10 +800,10 @@ class LinearDiscriminantAnalysis(ModelOptimizer):
 
         return params
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return LDA(**dct(params))
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -708,22 +814,27 @@ class LinearDiscriminantAnalysis(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class QuadraticDiscriminantAnalysis(ModelOptimizer):
+class QuadraticDiscriminantAnalysis(BaseModel):
     """Quadratic Discriminant Analysis."""
 
     acronym = "QDA"
     fullname = "Quadratic Discriminant Analysis"
     needs_scaling = False
-    task = "class"
+    goal = "class"
 
     def __init__(self, *args):
         super().__init__(*args)
         self.params = {"reg_param": [0, 1]}
 
-    @staticmethod
-    def get_estimator(params=None):
-        """Call the estimator object."""
-        return QDA(**dct(params))
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return QDA
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -731,13 +842,13 @@ class QuadraticDiscriminantAnalysis(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class KNearestNeighbors(ModelOptimizer):
+class KNearestNeighbors(BaseModel):
     """K-Nearest Neighbors."""
 
     acronym = "KNN"
     fullname = "K-Nearest Neighbors"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -749,19 +860,21 @@ class KNearestNeighbors(ModelOptimizer):
             "p": [2, 0],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return KNeighborsClassifier
+        else:
+            return KNeighborsRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return KNeighborsClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return KNeighborsRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -775,13 +888,13 @@ class KNearestNeighbors(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class RadiusNearestNeighbors(ModelOptimizer):
+class RadiusNearestNeighbors(BaseModel):
     """Radius Nearest Neighbors."""
 
     acronym = "RNN"
     fullname = "Radius Nearest Neighbors"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         self._distances = None
@@ -794,10 +907,6 @@ class RadiusNearestNeighbors(ModelOptimizer):
             "p": [2, 0],
         }
 
-    def get_init_values(self):
-        """Custom method to return a valid radius."""
-        return [np.mean(self.distances)] + super().get_init_values()[1:]
-
     @property
     def distances(self):
         """Return distances between a random subsample of rows."""
@@ -809,18 +918,30 @@ class RadiusNearestNeighbors(ModelOptimizer):
 
         return self._distances
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return RadiusNeighborsClassifier
+        else:
+            return RadiusNeighborsRegressor
+
+    def get_init_values(self):
+        """Custom method to return a valid radius."""
+        return [np.mean(self.distances)] + super().get_init_values()[1:]
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
+        params = copy(params or {})
         if self.T.goal == "class":
-            return RadiusNeighborsClassifier(
-                outlier_label="most_frequent",
+            return self.est_class(
+                outlier_label=params.pop("outlier_label", "most_frequent"),
                 radius=params.pop("radius", np.mean(self.distances)),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return RadiusNeighborsRegressor(
+            return self.est_class(
                 radius=params.pop("radius", np.mean(self.distances)),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
@@ -840,13 +961,13 @@ class RadiusNearestNeighbors(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class DecisionTree(ModelOptimizer):
+class DecisionTree(BaseModel):
     """Single Decision Tree."""
 
     acronym = "Tree"
     fullname = "Decision Tree"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -860,19 +981,21 @@ class DecisionTree(ModelOptimizer):
             "ccp_alpha": [0, 3],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return DecisionTreeClassifier
+        else:
+            return DecisionTreeRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return DecisionTreeClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return DecisionTreeRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -893,12 +1016,12 @@ class DecisionTree(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class Bagging(ModelOptimizer):
+class Bagging(BaseModel):
     """Bagging model (with decision tree as base estimator)."""
 
     acronym = "Bag"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -915,21 +1038,22 @@ class Bagging(ModelOptimizer):
         else:
             self.fullname = "Bagging Regressor"
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return BaggingClassifier
+        else:
+            return BaggingRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return BaggingClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return BaggingRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -943,13 +1067,13 @@ class Bagging(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class ExtraTrees(ModelOptimizer):
+class ExtraTrees(BaseModel):
     """Extremely Randomized Trees."""
 
     acronym = "ET"
     fullname = "Extra-Trees"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -965,6 +1089,14 @@ class ExtraTrees(ModelOptimizer):
             "max_samples": [0.9, 1],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return ExtraTreesClassifier
+        else:
+            return ExtraTreesRegressor
+
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_params(x)
@@ -976,19 +1108,12 @@ class ExtraTrees(ModelOptimizer):
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return ExtraTreesClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return ExtraTreesRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1011,13 +1136,13 @@ class ExtraTrees(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class RandomForest(ModelOptimizer):
+class RandomForest(BaseModel):
     """Random Forest."""
 
     acronym = "RF"
     fullname = "Random Forest"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1033,6 +1158,14 @@ class RandomForest(ModelOptimizer):
             "max_samples": [0.9, 1],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return RandomForestClassifier
+        else:
+            return RandomForestRegressor
+
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_params(x)
@@ -1044,19 +1177,12 @@ class RandomForest(ModelOptimizer):
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return RandomForestClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return RandomForestRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1079,13 +1205,13 @@ class RandomForest(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class AdaBoost(ModelOptimizer):
+class AdaBoost(BaseModel):
     """Adaptive Boosting (with decision tree as base estimator)."""
 
     acronym = "AdaB"
     fullname = "AdaBoost"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1097,19 +1223,21 @@ class AdaBoost(ModelOptimizer):
         else:
             self.params["loss"] = ["linear", 0]
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return AdaBoostClassifier
+        else:
+            return AdaBoostRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return AdaBoostClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return AdaBoostRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1122,13 +1250,13 @@ class AdaBoost(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class GradientBoostingMachine(ModelOptimizer):
+class GradientBoostingMachine(BaseModel):
     """Gradient Boosting Machine."""
 
     acronym = "GBM"
     fullname = "Gradient Boosting Machine"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1152,6 +1280,14 @@ class GradientBoostingMachine(ModelOptimizer):
         if self.T.task.startswith("multi"):
             self.params.pop("loss")
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return GradientBoostingClassifier
+        else:
+            return GradientBoostingRegressor
+
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_params(x)
@@ -1164,17 +1300,11 @@ class GradientBoostingMachine(ModelOptimizer):
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return GradientBoostingClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return GradientBoostingRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1188,7 +1318,7 @@ class GradientBoostingMachine(ModelOptimizer):
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
             Integer(10, 500, name="n_estimators"),
             Categorical(np.linspace(0.5, 1.0, 6), name="subsample"),
-            Categorical(["friedman_mse", "mse"], name="criterion"),
+            Categorical(["friedman_mse", "squared_error"], name="criterion"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Integer(1, 10, name="max_depth"),
@@ -1199,13 +1329,13 @@ class GradientBoostingMachine(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class HistGBM(ModelOptimizer):
+class HistGBM(BaseModel):
     """Histogram-based Gradient Boosting Machine."""
 
     acronym = "hGBM"
     fullname = "HistGBM"
     needs_scaling = False
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1222,19 +1352,21 @@ class HistGBM(ModelOptimizer):
         if self.T.goal == "class":
             self.params.pop("loss")
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return HistGradientBoostingClassifier
+        else:
+            return HistGradientBoostingRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return HistGradientBoostingClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return HistGradientBoostingRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1250,13 +1382,13 @@ class HistGBM(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class XGBoost(ModelOptimizer):
+class XGBoost(BaseModel):
     """Extreme Gradient Boosting."""
 
     acronym = "XGB"
     fullname = "XGBoost"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1273,47 +1405,50 @@ class XGBoost(ModelOptimizer):
             "reg_lambda": [1, 0],
         }
 
-    def get_estimator(self, params=None):
-        """Return the model's estimator with unpacked parameters."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
         from xgboost import XGBClassifier, XGBRegressor
 
-        params = dct(copy(params))
+        if self.T.goal == "class":
+            return XGBClassifier
+        else:
+            return XGBRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
         if self.T.random_state is None:  # XGBoost can't handle random_state to be None
             random_state = params.pop("random_state", randint(0, 1e5))
         else:
             random_state = params.pop("random_state", self.T.random_state)
-        if self.T.goal == "class":
-            return XGBClassifier(
-                use_label_encoder=False,
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=random_state,
-                verbosity=0,
-                **params,
-            )
-        else:
-            return XGBRegressor(
-                use_label_encoder=False,
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=random_state,
-                verbosity=0,
-                **params,
-            )
+        return self.est_class(
+            use_label_encoder=params.pop("use_label_encoder", False),
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=random_state,
+            verbosity=params.pop("verbosity", 0),
+            **params,
+        )
 
     def custom_fit(self, est, train, validation=None, params=None):
         """Fit the model using early stopping and update evals attr."""
         from xgboost.callback import EarlyStopping
 
-        params = dct(copy(params))
+        params = copy(params or {})
         n_estimators = est.get_params().get("n_estimators", 100)
         rounds = self._get_early_stopping_rounds(params, n_estimators)
+        eval_set = params.pop("eval_set", [train, validation] if validation else None)
+        callbacks = params.pop("callbacks", [])
+        if rounds:  # Add early stopping callback
+            callbacks.append(EarlyStopping(rounds, maximize=True))
 
         est.fit(
             X=train[0],
             y=train[1],
-            eval_set=[train, validation] if validation else None,
+            eval_set=eval_set,
             verbose=params.get("verbose", False),
-            callbacks=[EarlyStopping(rounds, maximize=True)] if rounds else None,
-            **{k: v for k, v in params.items()},
+            callbacks=callbacks,
+            **params,
         )
 
         if validation:
@@ -1342,13 +1477,13 @@ class XGBoost(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class LightGBM(ModelOptimizer):
+class LightGBM(BaseModel):
     """Light Gradient Boosting Machine."""
 
     acronym = "LGB"
     fullname = "LightGBM"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1366,39 +1501,43 @@ class LightGBM(ModelOptimizer):
             "reg_lambda": [0, 0],
         }
 
-    def get_estimator(self, params=None):
-        """Return the model's estimator with unpacked parameters."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
 
-        params = dct(copy(params))
         if self.T.goal == "class":
-            return LGBMClassifier(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+            return LGBMClassifier
         else:
-            return LGBMRegressor(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+            return LGBMRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def custom_fit(self, est, train, validation=None, params=None):
         """Fit the model using early stopping and update evals attr."""
-        from lightgbm import early_stopping
+        from lightgbm.callback import early_stopping, log_evaluation
 
-        params = dct(copy(params))
+        params = copy(params or {})
         n_estimators = est.get_params().get("n_estimators", 100)
         rounds = self._get_early_stopping_rounds(params, n_estimators)
+        eval_set = params.pop("eval_set", [train, validation] if validation else None)
+        callbacks = params.pop("callbacks", [log_evaluation(0)])
+        if rounds:  # Add early stopping callback
+            callbacks.append(early_stopping(rounds, True, False))
 
         est.fit(
             X=train[0],
             y=train[1],
-            eval_set=[train, validation] if validation else None,
-            verbose=params.pop("verbose", False),
-            callbacks=[early_stopping(rounds, True, False)] if rounds else None,
-            **{k: v for k, v in params.items()},
+            eval_set=eval_set,
+            callbacks=callbacks,
+            **params,
         )
 
         if validation:
@@ -1428,13 +1567,13 @@ class LightGBM(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class CatBoost(ModelOptimizer):
+class CatBoost(BaseModel):
     """Categorical Boosting Machine."""
 
     acronym = "CatB"
     fullname = "CatBoost"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1448,44 +1587,41 @@ class CatBoost(ModelOptimizer):
             "reg_lambda": [0, 0],
         }
 
-    def get_estimator(self, params=None):
-        """Return the model's estimator with unpacked parameters."""
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
         from catboost import CatBoostClassifier, CatBoostRegressor
 
-        params = dct(copy(params))
         if self.T.goal == "class":
-            return CatBoostClassifier(
-                bootstrap_type="Bernoulli",  # subsample only works with Bernoulli
-                train_dir="",
-                allow_writing_files=False,
-                thread_count=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                verbose=False,
-                **params,
-            )
+            return CatBoostClassifier
         else:
-            return CatBoostRegressor(
-                bootstrap_type="Bernoulli",
-                train_dir="",
-                allow_writing_files=False,
-                thread_count=params.pop("n_jobs", self.T.n_jobs),
-                random_state=params.pop("random_state", self.T.random_state),
-                verbose=False,
-                **params,
-            )
+            return CatBoostRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+        return self.est_class(
+            bootstrap_type=params.pop("bootstrap_type", "Bernoulli"),  # For subsample
+            train_dir=params.pop("train_dir", ""),
+            allow_writing_files=params.pop("allow_writing_files", False),
+            thread_count=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            verbose=params.pop("verbose", False),
+            **params,
+        )
 
     def custom_fit(self, est, train, validation=None, params=None):
         """Fit the model using early stopping and update evals attr."""
-        params = dct(copy(params))
+        params = copy(params or {})
         n_estimators = est.get_params().get("n_estimators", 100)
         rounds = self._get_early_stopping_rounds(params, n_estimators)
 
         est.fit(
             X=train[0],
             y=train[1],
-            eval_set=validation,
+            eval_set=params.pop("eval_set", validation),
             early_stopping_rounds=rounds,
-            **{k: v for k, v in params.items()},
+            **params,
         )
 
         if validation:
@@ -1512,13 +1648,13 @@ class CatBoost(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class LinearSVM(ModelOptimizer):
+class LinearSVM(BaseModel):
     """Linear Support Vector Machine."""
 
     acronym = "lSVM"
     fullname = "Linear-SVM"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1533,6 +1669,14 @@ class LinearSVM(ModelOptimizer):
         if self.T.goal == "reg":
             self.params["loss"] = ["epsilon_insensitive", 0]
             self.params.pop("penalty")
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return LinearSVC
+        else:
+            return LinearSVR
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1555,17 +1699,11 @@ class LinearSVM(ModelOptimizer):
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return LinearSVC(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return LinearSVR(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1583,13 +1721,13 @@ class LinearSVM(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class KernelSVM(ModelOptimizer):
+class KernelSVM(BaseModel):
     """Kernel (non-linear) Support Vector Machine."""
 
     acronym = "kSVM"
     fullname = "Kernel-SVM"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1601,6 +1739,14 @@ class KernelSVM(ModelOptimizer):
             "coef0": [0, 2],
             "shrinking": [True, 0],
         }
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return SVC
+        else:
+            return SVR
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1618,14 +1764,14 @@ class KernelSVM(ModelOptimizer):
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
+        params = copy(params or {})
         if self.T.goal == "class":
-            return SVC(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
         else:
-            return SVR(**params)
+            return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1640,13 +1786,13 @@ class KernelSVM(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class PassiveAggressive(ModelOptimizer):
+class PassiveAggressive(BaseModel):
     """Passive Aggressive."""
 
     acronym = "PA"
     fullname = "Passive Aggressive"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1656,16 +1802,24 @@ class PassiveAggressive(ModelOptimizer):
             "average": [False, 0],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return PassiveAggressiveClassifier
+        else:
+            return PassiveAggressiveRegressor
+
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
+        params = copy(params or {})
         if self.T.goal == "class":
-            return PassiveAggressiveClassifier(
+            return self.est_class(
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return PassiveAggressiveRegressor(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
@@ -1685,13 +1839,13 @@ class PassiveAggressive(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class StochasticGradientDescent(ModelOptimizer):
+class StochasticGradientDescent(BaseModel):
     """Stochastic Gradient Descent."""
 
     acronym = "SGD"
     fullname = "Stochastic Gradient Descent"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1707,6 +1861,14 @@ class StochasticGradientDescent(ModelOptimizer):
             "average": [False, 0],
         }
 
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return SGDClassifier
+        else:
+            return SGDRegressor
+
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_params(x)
@@ -1721,15 +1883,15 @@ class StochasticGradientDescent(ModelOptimizer):
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
+        params = copy(params or {})
         if self.T.goal == "class":
-            return SGDClassifier(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return SGDRegressor(
+            return self.est_class(
                 random_state=params.pop("random_state", self.T.random_state),
                 **params,
             )
@@ -1763,13 +1925,13 @@ class StochasticGradientDescent(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-class MultilayerPerceptron(ModelOptimizer):
+class MultilayerPerceptron(BaseModel):
     """Multi-layer Perceptron."""
 
     acronym = "MLP"
     fullname = "Multi-layer Perceptron"
     needs_scaling = True
-    task = "both"
+    goal = "both"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1784,6 +1946,14 @@ class MultilayerPerceptron(ModelOptimizer):
             "power_t": [0.5, 1],
             "max_iter": [200, 0],
         }
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return MLPClassifier
+        else:
+            return MLPRegressor
 
     def get_init_values(self):
         """Custom method to return the correct hidden_layer_sizes."""
@@ -1830,17 +2000,11 @@ class MultilayerPerceptron(ModelOptimizer):
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
-        params = dct(copy(params))
-        if self.T.goal == "class":
-            return MLPClassifier(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return MLPRegressor(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        params = copy(params or {})
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1860,8 +2024,110 @@ class MultilayerPerceptron(ModelOptimizer):
         return [d for d in dimensions if d.name in self.params]
 
 
-# List of all the available models
-MODEL_LIST = CustomDict(
+# Ensembles ======================================================== >>
+
+class Stacking(BaseModel):
+    """Class for stacking the models in the pipeline."""
+
+    acronym = "Stack"
+    fullname = "Stacking"
+    needs_scaling = False
+    goal = "both"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
+        self._models = kwargs.pop("models")
+        self._est_params = kwargs
+
+        if any(m.branch is not self.branch for m in self._models.values()):
+            raise ValueError(
+                "Invalid value for the models parameter. All "
+                "models must have been fitted on the current branch."
+            )
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return StackingClassifier
+        else:
+            return StackingRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+
+        estimators = []
+        for m in self._models.values():
+            if m.scaler:
+                name = f"pipeline_{m.name}"
+                est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
+            else:
+                name = m.name
+                est = m.estimator
+
+            estimators.append((name, est))
+
+        return self.est_class(
+            estimators=estimators,
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            **params,
+        )
+
+
+class Voting(BaseModel):
+    """Soft Voting/Majority Rule voting."""
+
+    acronym = "Vote"
+    fullname = "Voting"
+    needs_scaling = False
+    goal = "both"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
+        self._models = kwargs.pop("models")
+        self._est_params = kwargs
+
+        if any(m.branch is not self.branch for m in self._models.values()):
+            raise ValueError(
+                "Invalid value for the models parameter. All "
+                "models must have been fitted on the current branch."
+            )
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        if self.T.goal == "class":
+            return VotingClassifier
+        else:
+            return VotingRegressor
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = copy(params or {})
+
+        estimators = []
+        for m in self._models.values():
+            if m.scaler:
+                name = f"pipeline_{m.name}"
+                est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
+            else:
+                name = m.name
+                est = m.estimator
+
+            estimators.append((name, est))
+
+        return self.est_class(
+            estimators=estimators,
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            **params,
+        )
+
+
+# Variables ======================================================== >>
+
+# List of available models
+MODELS = CustomDict(
     Dummy=Dummy,
     GP=GaussianProcess,
     GNB=GaussianNaiveBayes,
@@ -1896,3 +2162,9 @@ MODEL_LIST = CustomDict(
     SGD=StochasticGradientDescent,
     MLP=MultilayerPerceptron,
 )
+
+# List of available ensembles
+ENSEMBLES = CustomDict(Stack=Stacking, Vote=Voting)
+
+# List of all models + ensembles
+MODELS_ENSEMBLES = CustomDict(**MODELS, **ENSEMBLES)

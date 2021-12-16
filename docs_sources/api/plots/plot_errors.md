@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_errors</strong>(models=None,
 dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1492">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1646">[source]</a>
 </span>
 </div>
 
@@ -25,7 +25,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the errors. Options are "train", "test" or "both".
+Data set on which to calculate the errors. Choose from:
+"train", "test", "both" (train and test) or "holdout".
 </p>
 <p>
 <strong>title: str or None, optional (default=None)</strong><br>
@@ -67,6 +68,7 @@ atom = ATOMRegressor(X, y)
 atom.run(["OLS", "LGB"], metric="MAE")
 atom.plot_errors()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_errors.png" alt="plot_errors" width="700" height="420"/>
 </div>

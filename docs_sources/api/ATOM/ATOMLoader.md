@@ -5,7 +5,7 @@
 <em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>(filename,
 data=None, transform_data=True, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L70">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L73">[source]</a>
 </span>
 </div>
 
@@ -26,12 +26,16 @@ Tuple containing the features and target data. Only use this parameter
 if the file is a trainer that was saved using <code>save_data=False</code> (see
 the <a href="../atomclassifier/#save">save</a> method). Allowed formats are:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>X or X, y</li>
+<li>X</li>
+<li>X, y</li>
 <li>train, test</li>
+<li>train, test, holdout</li>
 <li>X_train, X_test, y_train, y_test</li>
+<li>X_train, X_test, X_holdout, y_train, y_test, y_holdout</li>
 <li>(X_train, y_train), (X_test, y_test)</li>
+<li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
-X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame<br>
+X, train, test: dataframe-like<br>
 <p style="margin-top:0;margin-left:15px">
 Feature set with shape=(n_samples, n_features). If no y is provided, the
 last column is used as target.</p>
@@ -57,7 +61,7 @@ is ignored if <code>transform_data=False</code>.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>cls: class instance</strong><br>
-Un-pickled instance.
+Unpickled instance.
 </td>
 </tr>
 </table>

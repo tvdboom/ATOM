@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_evals</strong>(models=None,
 dataset="both", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L978">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1130">[source]</a>
 </span>
 </div>
 
@@ -71,6 +71,7 @@ atom = ATOMRegressor(X, y)
 atom.run(["Bag", "LGB"])
 atom.lgb.plot_evals()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_evals.png" alt="plot_evals" width="700" height="420"/>
 </div>

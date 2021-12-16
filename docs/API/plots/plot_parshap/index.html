@@ -11,19 +11,19 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/data_pipelines/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/plots/plot_parshap/">
       
-      <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <link rel="icon" href="../../../img/favicon.ico">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
-  <title>Data pipelines - ATOM</title>
+  <title>plot_parshap - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.a57b2b03.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.3f5d1f46.min.css">
         
       
     
@@ -38,7 +38,7 @@
     
     
     
-      <link rel="stylesheet" href="../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
     
     
       
@@ -59,7 +59,7 @@
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
   
     
-    <script>function __prefix(e){return new URL("../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    <script>function __prefix(e){return new URL("../../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
     
       <script>var palette=__get("__palette");if(null!==palette&&"object"==typeof palette.color)for(var key in palette.color)document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#data-pipelines" class="md-skip">
+        <a href="#plot_parshap" class="md-skip">
           Skip to content
         </a>
       
@@ -84,9 +84,9 @@
 
 <header class="md-header md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="ATOM" class="md-header__button md-logo" aria-label="ATOM" data-md-component="logo">
+    <a href="../../.." title="ATOM" class="md-header__button md-logo" aria-label="ATOM" data-md-component="logo">
       
-  <img src="../../img/icon_white.png" alt="logo">
+  <img src="../../../img/icon_white.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Data pipelines
+              plot_parshap
             
           </span>
         </div>
@@ -195,7 +195,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../about/" class="md-tabs__link">
+    <a href="../../../about/" class="md-tabs__link">
       About
     </a>
   </li>
@@ -207,7 +207,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../getting_started/" class="md-tabs__link">
+    <a href="../../../getting_started/" class="md-tabs__link">
       Getting started
     </a>
   </li>
@@ -216,15 +216,13 @@
         
   
   
-    
-  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../introduction/" class="md-tabs__link md-tabs__link--active">
+      <a href="../../../user_guide/introduction/" class="md-tabs__link">
         User guide
       </a>
     </li>
@@ -237,7 +235,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../release_history/" class="md-tabs__link">
+    <a href="../../../release_history/" class="md-tabs__link">
       Release history
     </a>
   </li>
@@ -245,6 +243,8 @@
       
         
   
+  
+    
   
 
 
@@ -257,7 +257,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../API/ATOM/atomclassifier/" class="md-tabs__link">
+      <a href="../../ATOM/atomclassifier/" class="md-tabs__link md-tabs__link--active">
         API
       </a>
     </li>
@@ -275,7 +275,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../examples/automl/" class="md-tabs__link">
+      <a href="../../../examples/automl/" class="md-tabs__link">
         Examples
       </a>
     </li>
@@ -288,7 +288,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../faq/" class="md-tabs__link">
+    <a href="../../../faq/" class="md-tabs__link">
       FAQ
     </a>
   </li>
@@ -300,7 +300,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../contributing/" class="md-tabs__link">
+    <a href="../../../contributing/" class="md-tabs__link">
       Contributing
     </a>
   </li>
@@ -312,7 +312,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../dependencies/" class="md-tabs__link">
+    <a href="../../../dependencies/" class="md-tabs__link">
       Dependencies
     </a>
   </li>
@@ -324,7 +324,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../license/" class="md-tabs__link">
+    <a href="../../../license/" class="md-tabs__link">
       License
     </a>
   </li>
@@ -357,9 +357,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="ATOM" class="md-nav__button md-logo" aria-label="ATOM" data-md-component="logo">
+    <a href="../../.." title="ATOM" class="md-nav__button md-logo" aria-label="ATOM" data-md-component="logo">
       
-  <img src="../../img/icon_white.png" alt="logo">
+  <img src="../../../img/icon_white.png" alt="logo">
 
     </a>
     ATOM
@@ -388,7 +388,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/" class="md-nav__link">
+      <a href="../../../about/" class="md-nav__link">
         About
       </a>
     </li>
@@ -403,7 +403,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting_started/" class="md-nav__link">
+      <a href="../../../getting_started/" class="md-nav__link">
         Getting started
       </a>
     </li>
@@ -416,14 +416,12 @@
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
       
       
       
@@ -446,7 +444,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../introduction/" class="md-nav__link">
+      <a href="../../../user_guide/introduction/" class="md-nav__link">
         Introduction
       </a>
     </li>
@@ -460,7 +458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../nomenclature/" class="md-nav__link">
+      <a href="../../../user_guide/nomenclature/" class="md-nav__link">
         Nomenclature
       </a>
     </li>
@@ -474,7 +472,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../first_steps/" class="md-nav__link">
+      <a href="../../../user_guide/first_steps/" class="md-nav__link">
         First steps
       </a>
     </li>
@@ -486,72 +484,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Data pipelines
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        Data pipelines
+    <li class="md-nav__item">
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
       </a>
-      
-        
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#branches" class="md-nav__link">
-    Branches
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#memory-considerations" class="md-nav__link">
-    Memory considerations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data-transformations" class="md-nav__link">
-    Data transformations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#automl" class="md-nav__link">
-    AutoML
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -563,7 +500,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../logging/" class="md-nav__link">
+      <a href="../../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
       </a>
     </li>
@@ -577,7 +514,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../data_cleaning/" class="md-nav__link">
+      <a href="../../../user_guide/data_cleaning/" class="md-nav__link">
         Data cleaning
       </a>
     </li>
@@ -591,7 +528,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../nlp/" class="md-nav__link">
+      <a href="../../../user_guide/nlp/" class="md-nav__link">
         NLP
       </a>
     </li>
@@ -605,7 +542,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../feature_engineering/" class="md-nav__link">
+      <a href="../../../user_guide/feature_engineering/" class="md-nav__link">
         Feature engineering
       </a>
     </li>
@@ -619,7 +556,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../../user_guide/models/" class="md-nav__link">
         Models
       </a>
     </li>
@@ -633,7 +570,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../training/" class="md-nav__link">
+      <a href="../../../user_guide/training/" class="md-nav__link">
         Training
       </a>
     </li>
@@ -647,7 +584,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../predicting/" class="md-nav__link">
+      <a href="../../../user_guide/predicting/" class="md-nav__link">
         Predicting
       </a>
     </li>
@@ -661,7 +598,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../plots/" class="md-nav__link">
+      <a href="../../../user_guide/plots/" class="md-nav__link">
         Plots
       </a>
     </li>
@@ -683,7 +620,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_history/" class="md-nav__link">
+      <a href="../../../release_history/" class="md-nav__link">
         Release history
       </a>
     </li>
@@ -696,12 +633,14 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" checked>
       
       
       
@@ -750,7 +689,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/ATOM/atomclassifier/" class="md-nav__link">
+      <a href="../../ATOM/atomclassifier/" class="md-nav__link">
         ATOMClassifier
       </a>
     </li>
@@ -764,7 +703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/ATOM/atomregressor/" class="md-nav__link">
+      <a href="../../ATOM/atomregressor/" class="md-nav__link">
         ATOMRegressor
       </a>
     </li>
@@ -778,7 +717,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/ATOM/atomloader/" class="md-nav__link">
+      <a href="../../ATOM/atomloader/" class="md-nav__link">
         ATOMLoader
       </a>
     </li>
@@ -792,7 +731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/ATOM/atommodel/" class="md-nav__link">
+      <a href="../../ATOM/atommodel/" class="md-nav__link">
         ATOMModel
       </a>
     </li>
@@ -839,7 +778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/scaler/" class="md-nav__link">
+      <a href="../../data_cleaning/scaler/" class="md-nav__link">
         Scaler
       </a>
     </li>
@@ -853,7 +792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/gauss/" class="md-nav__link">
+      <a href="../../data_cleaning/gauss/" class="md-nav__link">
         Gauss
       </a>
     </li>
@@ -867,7 +806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/cleaner/" class="md-nav__link">
+      <a href="../../data_cleaning/cleaner/" class="md-nav__link">
         Cleaner
       </a>
     </li>
@@ -881,7 +820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/imputer/" class="md-nav__link">
+      <a href="../../data_cleaning/imputer/" class="md-nav__link">
         Imputer
       </a>
     </li>
@@ -895,7 +834,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/encoder/" class="md-nav__link">
+      <a href="../../data_cleaning/encoder/" class="md-nav__link">
         Encoder
       </a>
     </li>
@@ -909,7 +848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/pruner/" class="md-nav__link">
+      <a href="../../data_cleaning/pruner/" class="md-nav__link">
         Pruner
       </a>
     </li>
@@ -923,7 +862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/balancer/" class="md-nav__link">
+      <a href="../../data_cleaning/balancer/" class="md-nav__link">
         Balancer
       </a>
     </li>
@@ -970,7 +909,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/nlp/textcleaner/" class="md-nav__link">
+      <a href="../../nlp/textcleaner/" class="md-nav__link">
         TextCleaner
       </a>
     </li>
@@ -984,7 +923,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/nlp/tokenizer/" class="md-nav__link">
+      <a href="../../nlp/tokenizer/" class="md-nav__link">
         Tokenizer
       </a>
     </li>
@@ -998,7 +937,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/nlp/normalizer/" class="md-nav__link">
+      <a href="../../nlp/normalizer/" class="md-nav__link">
         Normalizer
       </a>
     </li>
@@ -1012,7 +951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/nlp/vectorizer/" class="md-nav__link">
+      <a href="../../nlp/vectorizer/" class="md-nav__link">
         Vectorizer
       </a>
     </li>
@@ -1059,7 +998,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/feature_engineering/feature_extractor/" class="md-nav__link">
+      <a href="../../feature_engineering/feature_extractor/" class="md-nav__link">
         FeatureExtractor
       </a>
     </li>
@@ -1073,7 +1012,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/feature_engineering/feature_generator/" class="md-nav__link">
+      <a href="../../feature_engineering/feature_generator/" class="md-nav__link">
         FeatureGenerator
       </a>
     </li>
@@ -1087,7 +1026,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/feature_engineering/feature_selector/" class="md-nav__link">
+      <a href="../../feature_engineering/feature_selector/" class="md-nav__link">
         FeatureSelector
       </a>
     </li>
@@ -1134,7 +1073,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/training/directclassifier/" class="md-nav__link">
+      <a href="../../training/directclassifier/" class="md-nav__link">
         DirectClassifier
       </a>
     </li>
@@ -1148,7 +1087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/training/directregressor/" class="md-nav__link">
+      <a href="../../training/directregressor/" class="md-nav__link">
         DirectRegressor
       </a>
     </li>
@@ -1162,7 +1101,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/training/successivehalvingclassifier/" class="md-nav__link">
+      <a href="../../training/successivehalvingclassifier/" class="md-nav__link">
         SuccessiveHalvingClassifier
       </a>
     </li>
@@ -1176,7 +1115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/training/successivehalvingregressor/" class="md-nav__link">
+      <a href="../../training/successivehalvingregressor/" class="md-nav__link">
         SuccessiveHalvingRegressor
       </a>
     </li>
@@ -1190,7 +1129,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/training/trainsizingclassifier/" class="md-nav__link">
+      <a href="../../training/trainsizingclassifier/" class="md-nav__link">
         TrainSizingClassifier
       </a>
     </li>
@@ -1204,7 +1143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/training/trainsizingregressor/" class="md-nav__link">
+      <a href="../../training/trainsizingregressor/" class="md-nav__link">
         TrainSizingRegressor
       </a>
     </li>
@@ -1251,7 +1190,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/dummy/" class="md-nav__link">
+      <a href="../../models/dummy/" class="md-nav__link">
         Dummy
       </a>
     </li>
@@ -1265,7 +1204,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/gp/" class="md-nav__link">
+      <a href="../../models/gp/" class="md-nav__link">
         Gaussian Process
       </a>
     </li>
@@ -1279,7 +1218,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/gnb/" class="md-nav__link">
+      <a href="../../models/gnb/" class="md-nav__link">
         Gaussian Naive Bayes
       </a>
     </li>
@@ -1293,7 +1232,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/mnb/" class="md-nav__link">
+      <a href="../../models/mnb/" class="md-nav__link">
         Multinomial Naive Bayes
       </a>
     </li>
@@ -1307,7 +1246,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/bnb/" class="md-nav__link">
+      <a href="../../models/bnb/" class="md-nav__link">
         Bernoulli Naive Bayes
       </a>
     </li>
@@ -1321,7 +1260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/catnb/" class="md-nav__link">
+      <a href="../../models/catnb/" class="md-nav__link">
         Categorical Naive Bayes
       </a>
     </li>
@@ -1335,7 +1274,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/cnb/" class="md-nav__link">
+      <a href="../../models/cnb/" class="md-nav__link">
         Complement Naive Bayes
       </a>
     </li>
@@ -1349,7 +1288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/ols/" class="md-nav__link">
+      <a href="../../models/ols/" class="md-nav__link">
         Ordinary Least Squares
       </a>
     </li>
@@ -1363,7 +1302,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/ridge/" class="md-nav__link">
+      <a href="../../models/ridge/" class="md-nav__link">
         Ridge
       </a>
     </li>
@@ -1377,7 +1316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/lasso/" class="md-nav__link">
+      <a href="../../models/lasso/" class="md-nav__link">
         Lasso
       </a>
     </li>
@@ -1391,7 +1330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/en/" class="md-nav__link">
+      <a href="../../models/en/" class="md-nav__link">
         Elastic Net
       </a>
     </li>
@@ -1405,7 +1344,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/br/" class="md-nav__link">
+      <a href="../../models/br/" class="md-nav__link">
         Bayesian Ridge
       </a>
     </li>
@@ -1419,7 +1358,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/ard/" class="md-nav__link">
+      <a href="../../models/ard/" class="md-nav__link">
         Automated Relevance Determination
       </a>
     </li>
@@ -1433,7 +1372,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/lr/" class="md-nav__link">
+      <a href="../../models/lr/" class="md-nav__link">
         Logistic Regression
       </a>
     </li>
@@ -1447,7 +1386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/lda/" class="md-nav__link">
+      <a href="../../models/lda/" class="md-nav__link">
         Linear Discriminant Analysis
       </a>
     </li>
@@ -1461,7 +1400,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/qda/" class="md-nav__link">
+      <a href="../../models/qda/" class="md-nav__link">
         Quadratic Discriminant Analysis
       </a>
     </li>
@@ -1475,7 +1414,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/knn/" class="md-nav__link">
+      <a href="../../models/knn/" class="md-nav__link">
         K-Nearest Neighbors
       </a>
     </li>
@@ -1489,7 +1428,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/rnn/" class="md-nav__link">
+      <a href="../../models/rnn/" class="md-nav__link">
         Radius Nearest Neighbors
       </a>
     </li>
@@ -1503,7 +1442,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/tree/" class="md-nav__link">
+      <a href="../../models/tree/" class="md-nav__link">
         Decision Tree
       </a>
     </li>
@@ -1517,7 +1456,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/bag/" class="md-nav__link">
+      <a href="../../models/bag/" class="md-nav__link">
         Bagging
       </a>
     </li>
@@ -1531,7 +1470,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/et/" class="md-nav__link">
+      <a href="../../models/et/" class="md-nav__link">
         Extra-Trees
       </a>
     </li>
@@ -1545,7 +1484,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/rf/" class="md-nav__link">
+      <a href="../../models/rf/" class="md-nav__link">
         Random Forest
       </a>
     </li>
@@ -1559,7 +1498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/adab/" class="md-nav__link">
+      <a href="../../models/adab/" class="md-nav__link">
         AdaBoost
       </a>
     </li>
@@ -1573,7 +1512,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/gbm/" class="md-nav__link">
+      <a href="../../models/gbm/" class="md-nav__link">
         Gradient Boosting Machine
       </a>
     </li>
@@ -1587,7 +1526,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/hgbm/" class="md-nav__link">
+      <a href="../../models/hgbm/" class="md-nav__link">
         HistGBM
       </a>
     </li>
@@ -1601,7 +1540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/xgb/" class="md-nav__link">
+      <a href="../../models/xgb/" class="md-nav__link">
         XGBoost
       </a>
     </li>
@@ -1615,7 +1554,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/lgb/" class="md-nav__link">
+      <a href="../../models/lgb/" class="md-nav__link">
         LightGBM
       </a>
     </li>
@@ -1629,7 +1568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/catb/" class="md-nav__link">
+      <a href="../../models/catb/" class="md-nav__link">
         CatBoost
       </a>
     </li>
@@ -1643,7 +1582,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/lsvm/" class="md-nav__link">
+      <a href="../../models/lsvm/" class="md-nav__link">
         Linear-SVM
       </a>
     </li>
@@ -1657,7 +1596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/ksvm/" class="md-nav__link">
+      <a href="../../models/ksvm/" class="md-nav__link">
         Kernel-SVM
       </a>
     </li>
@@ -1671,7 +1610,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/pa/" class="md-nav__link">
+      <a href="../../models/pa/" class="md-nav__link">
         Passive Aggressive
       </a>
     </li>
@@ -1685,7 +1624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/sgd/" class="md-nav__link">
+      <a href="../../models/sgd/" class="md-nav__link">
         Stochastic Gradient Descent
       </a>
     </li>
@@ -1699,7 +1638,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/models/mlp/" class="md-nav__link">
+      <a href="../../models/mlp/" class="md-nav__link">
         Multi-layer Perceptron
       </a>
     </li>
@@ -1746,7 +1685,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/predicting/transform/" class="md-nav__link">
+      <a href="../../predicting/transform/" class="md-nav__link">
         transform
       </a>
     </li>
@@ -1760,7 +1699,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/predicting/predict/" class="md-nav__link">
+      <a href="../../predicting/predict/" class="md-nav__link">
         predict
       </a>
     </li>
@@ -1774,7 +1713,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/predicting/predict_proba/" class="md-nav__link">
+      <a href="../../predicting/predict_proba/" class="md-nav__link">
         predict_proba
       </a>
     </li>
@@ -1788,7 +1727,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/predicting/predict_log_proba/" class="md-nav__link">
+      <a href="../../predicting/predict_log_proba/" class="md-nav__link">
         predict_log_proba
       </a>
     </li>
@@ -1802,7 +1741,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/predicting/decision_function/" class="md-nav__link">
+      <a href="../../predicting/decision_function/" class="md-nav__link">
         decision_function
       </a>
     </li>
@@ -1816,7 +1755,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/predicting/score/" class="md-nav__link">
+      <a href="../../predicting/score/" class="md-nav__link">
         score
       </a>
     </li>
@@ -1835,12 +1774,14 @@
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_8" type="checkbox" id="__nav_5_8" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_8" type="checkbox" id="__nav_5_8" checked>
       
       
       
@@ -1863,7 +1804,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_correlation/" class="md-nav__link">
+      <a href="../plot_correlation/" class="md-nav__link">
         plot_correlation
       </a>
     </li>
@@ -1877,7 +1818,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_scatter_matrix/" class="md-nav__link">
+      <a href="../plot_scatter_matrix/" class="md-nav__link">
         plot_scatter_matrix
       </a>
     </li>
@@ -1891,7 +1832,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_distribution/" class="md-nav__link">
+      <a href="../plot_distribution/" class="md-nav__link">
         plot_distribution
       </a>
     </li>
@@ -1905,7 +1846,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_qq/" class="md-nav__link">
+      <a href="../plot_qq/" class="md-nav__link">
         plot_qq
       </a>
     </li>
@@ -1919,7 +1860,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_wordcloud/" class="md-nav__link">
+      <a href="../plot_wordcloud/" class="md-nav__link">
         plot_wordcloud
       </a>
     </li>
@@ -1933,7 +1874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_ngrams/" class="md-nav__link">
+      <a href="../plot_ngrams/" class="md-nav__link">
         plot_ngrams
       </a>
     </li>
@@ -1947,7 +1888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
+      <a href="../plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
     </li>
@@ -1961,7 +1902,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_pca/" class="md-nav__link">
+      <a href="../plot_pca/" class="md-nav__link">
         plot_pca
       </a>
     </li>
@@ -1975,7 +1916,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_components/" class="md-nav__link">
+      <a href="../plot_components/" class="md-nav__link">
         plot_components
       </a>
     </li>
@@ -1989,7 +1930,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_rfecv/" class="md-nav__link">
+      <a href="../plot_rfecv/" class="md-nav__link">
         plot_rfecv
       </a>
     </li>
@@ -2003,7 +1944,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_successive_halving/" class="md-nav__link">
+      <a href="../plot_successive_halving/" class="md-nav__link">
         plot_successive_halving
       </a>
     </li>
@@ -2017,7 +1958,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_learning_curve/" class="md-nav__link">
+      <a href="../plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
     </li>
@@ -2031,7 +1972,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_results/" class="md-nav__link">
+      <a href="../plot_results/" class="md-nav__link">
         plot_results
       </a>
     </li>
@@ -2045,7 +1986,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_bo/" class="md-nav__link">
+      <a href="../plot_bo/" class="md-nav__link">
         plot_bo
       </a>
     </li>
@@ -2059,7 +2000,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_evals/" class="md-nav__link">
+      <a href="../plot_evals/" class="md-nav__link">
         plot_evals
       </a>
     </li>
@@ -2073,7 +2014,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_roc/" class="md-nav__link">
+      <a href="../plot_roc/" class="md-nav__link">
         plot_roc
       </a>
     </li>
@@ -2087,7 +2028,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_prc/" class="md-nav__link">
+      <a href="../plot_prc/" class="md-nav__link">
         plot_prc
       </a>
     </li>
@@ -2101,7 +2042,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_det/" class="md-nav__link">
+      <a href="../plot_det/" class="md-nav__link">
         plot_det
       </a>
     </li>
@@ -2115,7 +2056,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_gains/" class="md-nav__link">
+      <a href="../plot_gains/" class="md-nav__link">
         plot_gains
       </a>
     </li>
@@ -2129,7 +2070,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_lift/" class="md-nav__link">
+      <a href="../plot_lift/" class="md-nav__link">
         plot_lift
       </a>
     </li>
@@ -2143,7 +2084,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_errors/" class="md-nav__link">
+      <a href="../plot_errors/" class="md-nav__link">
         plot_errors
       </a>
     </li>
@@ -2157,7 +2098,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_residuals/" class="md-nav__link">
+      <a href="../plot_residuals/" class="md-nav__link">
         plot_residuals
       </a>
     </li>
@@ -2171,7 +2112,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
+      <a href="../plot_feature_importance/" class="md-nav__link">
         plot_feature_importance
       </a>
     </li>
@@ -2185,7 +2126,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
+      <a href="../plot_permutation_importance/" class="md-nav__link">
         plot_permutation_importance
       </a>
     </li>
@@ -2199,7 +2140,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
+      <a href="../plot_partial_dependence/" class="md-nav__link">
         plot_partial_dependence
       </a>
     </li>
@@ -2211,9 +2152,65 @@
               
   
   
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          plot_parshap
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        plot_parshap
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_confusion_matrix/" class="md-nav__link">
+      <a href="../plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
     </li>
@@ -2227,7 +2224,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_threshold/" class="md-nav__link">
+      <a href="../plot_threshold/" class="md-nav__link">
         plot_threshold
       </a>
     </li>
@@ -2241,7 +2238,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_probabilities/" class="md-nav__link">
+      <a href="../plot_probabilities/" class="md-nav__link">
         plot_probabilities
       </a>
     </li>
@@ -2255,7 +2252,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_calibration/" class="md-nav__link">
+      <a href="../plot_calibration/" class="md-nav__link">
         plot_calibration
       </a>
     </li>
@@ -2269,7 +2266,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/bar_plot/" class="md-nav__link">
+      <a href="../bar_plot/" class="md-nav__link">
         bar_plot
       </a>
     </li>
@@ -2283,7 +2280,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/beeswarm_plot/" class="md-nav__link">
+      <a href="../beeswarm_plot/" class="md-nav__link">
         beeswarm_plot
       </a>
     </li>
@@ -2297,7 +2294,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/decision_plot/" class="md-nav__link">
+      <a href="../decision_plot/" class="md-nav__link">
         decision_plot
       </a>
     </li>
@@ -2311,7 +2308,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/force_plot/" class="md-nav__link">
+      <a href="../force_plot/" class="md-nav__link">
         force_plot
       </a>
     </li>
@@ -2325,7 +2322,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/heatmap_plot/" class="md-nav__link">
+      <a href="../heatmap_plot/" class="md-nav__link">
         heatmap_plot
       </a>
     </li>
@@ -2339,7 +2336,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/scatter_plot/" class="md-nav__link">
+      <a href="../scatter_plot/" class="md-nav__link">
         scatter_plot
       </a>
     </li>
@@ -2353,7 +2350,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/waterfall_plot/" class="md-nav__link">
+      <a href="../waterfall_plot/" class="md-nav__link">
         waterfall_plot
       </a>
     </li>
@@ -2408,7 +2405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/automl/" class="md-nav__link">
+      <a href="../../../examples/automl/" class="md-nav__link">
         AutoML
       </a>
     </li>
@@ -2422,7 +2419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/binary_classification/" class="md-nav__link">
+      <a href="../../../examples/binary_classification/" class="md-nav__link">
         Binary classification
       </a>
     </li>
@@ -2436,7 +2433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/calibration/" class="md-nav__link">
+      <a href="../../../examples/calibration/" class="md-nav__link">
         Calibration
       </a>
     </li>
@@ -2450,7 +2447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/deep_learning/" class="md-nav__link">
+      <a href="../../../examples/deep_learning/" class="md-nav__link">
         Deep learning
       </a>
     </li>
@@ -2464,7 +2461,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/early_stopping/" class="md-nav__link">
+      <a href="../../../examples/early_stopping/" class="md-nav__link">
         Early stopping
       </a>
     </li>
@@ -2478,7 +2475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/ensembles/" class="md-nav__link">
+      <a href="../../../examples/ensembles/" class="md-nav__link">
         Ensembles
       </a>
     </li>
@@ -2492,7 +2489,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/feature_engineering/" class="md-nav__link">
+      <a href="../../../examples/feature_engineering/" class="md-nav__link">
         Feature engineering
       </a>
     </li>
@@ -2506,7 +2503,21 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/imbalanced_datasets/" class="md-nav__link">
+      <a href="../../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
     </li>
@@ -2520,7 +2531,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/multiclass_classification/" class="md-nav__link">
+      <a href="../../../examples/multiclass_classification/" class="md-nav__link">
         Multiclass classification
       </a>
     </li>
@@ -2534,7 +2545,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/multi_metric/" class="md-nav__link">
+      <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
     </li>
@@ -2548,7 +2559,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/nlp/" class="md-nav__link">
+      <a href="../../../examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2562,7 +2573,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/regression/" class="md-nav__link">
+      <a href="../../../examples/regression/" class="md-nav__link">
         Regression
       </a>
     </li>
@@ -2576,7 +2587,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/successive_halving/" class="md-nav__link">
+      <a href="../../../examples/successive_halving/" class="md-nav__link">
         Successive halving
       </a>
     </li>
@@ -2590,7 +2601,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/train_sizing/" class="md-nav__link">
+      <a href="../../../examples/train_sizing/" class="md-nav__link">
         Train sizing
       </a>
     </li>
@@ -2604,7 +2615,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/utilities/" class="md-nav__link">
+      <a href="../../../examples/utilities/" class="md-nav__link">
         Utilities
       </a>
     </li>
@@ -2626,7 +2637,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../faq/" class="md-nav__link">
+      <a href="../../../faq/" class="md-nav__link">
         FAQ
       </a>
     </li>
@@ -2641,7 +2652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../../../contributing/" class="md-nav__link">
         Contributing
       </a>
     </li>
@@ -2656,7 +2667,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dependencies/" class="md-nav__link">
+      <a href="../../../dependencies/" class="md-nav__link">
         Dependencies
       </a>
     </li>
@@ -2671,7 +2682,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../license/" class="md-nav__link">
+      <a href="../../../license/" class="md-nav__link">
         License
       </a>
     </li>
@@ -2690,6 +2701,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2704,29 +2717,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#branches" class="md-nav__link">
-    Branches
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#memory-considerations" class="md-nav__link">
-    Memory considerations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data-transformations" class="md-nav__link">
-    Data transformations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#automl" class="md-nav__link">
-    AutoML
+  <a href="#example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -2744,157 +2736,86 @@
               
                 
                 
-                <h1 id="data-pipelines">Data pipelines</h1>
+                <h1 id="plot_parshap">plot_parshap</h1>
 <hr />
-<p>During the exploration phase, you might want to compare how a model
-performs on a dataset processed using different transformers. For
-example, on one dataset balanced with an undersampling strategy and
-the other with an oversampling strategy. For this, atom has the
-branching system.</p>
-<p><br></p>
-<h2 id="branches">Branches</h2>
-<p>The branching system helps manage multiple pipelines within the same
-atom instance. Every pipeline is stored in a branch, which can be
-accessed through the <code>branch</code> attribute. A branch contains a copy of
-the dataset, and all transformers and models that are fitted on that
-specific dataset. Transformers and models called from atom use the
-dataset in the current branch, as well as data attributes such as
-<code>atom.dataset</code>. Also  Use the branch's __repr__ to get an overview
-of the transformers in the branch. Don't change the data in a branch
-after fitting a model, this can cause unexpected model behaviour.
-Instead, create a new branch for every unique pipeline.</p>
-<p>By default, atom starts with one branch called "master". To start a new
-branch, set a new name to the property, e.g. <code>atom.branch = "undersample"</code>.
-This will create a new branch from the current one. To create a branch
-from any other branch type "_from_" between the new name and the branch
-from which to split, e.g. <code>atom.branch = "oversample_from_master"</code> will
-create branch "oversample" from branch "master", even if the current branch
-is "undersample". To switch between existing branches, just type the name
-of the desired branch, e.g. <code>atom.branch = "master"</code> brings you back to the
-master branch. Note that every branch contains a unique copy of the whole
-dataset! Creating many branches can cause memory issues for large datasets.</p>
-<p>See the <a href="../../examples/imbalanced_datasets">Imbalanced datasets</a> or
-<a href="../../examples/feature_engineering">Feature engineering</a> examples for
-branching use cases.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Always create a new branch if you want to change the dataset after fitting
-a model! Not doing so can cause unexpected model behaviour.</p>
-</div>
-<p><br></p>
-<div align="center">
-    <img src="../../img/diagram_branch.png" alt="diagram_branch" />
-    <figcaption>Figure 1. Diagram of a possible branch system to compare an oversampling with an undersampling pipeline.</figcaption>
-</div>
-
-<p>The branch class has the following methods.</p>
-<table style="font-size:16px;margin-top:5px">
-<tr>
-<td><a href="#delete">delete</a></td>
-<td>Delete the branch from the atom instance.</td>
-</tr>
-
-<tr>
-<td><a href="#rename">rename</a></td>
-<td>Change the name of the branch.</td>
-</tr>
-
-<tr>
-<td><a href="#status">status</a></td>
-<td>Get an overview of the pipeline and models in the branch.</td>
-</tr>
-</table>
-<p><br></p>
-<p><a name="delete"></a></p>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">delete</strong>()
+<em>method</em> <strong style="color:#008AB8">plot_parshap</strong>(models=None,
+columns=None, target=1, title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L106">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2328">[source]</a>
 </span>
 </div>
-<p>Delete the branch and all the models in it. Same as executing <code>del atom.branch</code>.
-<br /><br /><br /></p>
-<p><a name="rename"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">rename</strong>(name)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L128">[source]</a>
-</span>
-</div>
-<p>Change the name of the branch.</p>
+
+<p>Plots the train and test correlation between the shap value of
+every feature with its target value, after removing the effect
+of all other features (partial correlation). This plot is
+useful to identify the features that are contributing most to
+overfitting. Features that lie below the bisector (diagonal
+line) performed worse on the test set than on the training set.
+If the estimator has a <code>feature_importances_</code> or <code>coef_</code> attribute,
+its normalized values are shown in a color map. Read more about
+this plot <a href="https://towardsdatascience.com/which-of-your-features-are-overfitting-c46d0762e769">here</a>.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>name: str</strong><br>
-New name for the branch. Can not be empty nor equal to an existing branch.
+<strong>models: str, sequence or None, optional (default=None)</strong><br>
+Name of the models to plot. If None, all the models in the pipeline are selected.
 </p>
+<p>
+<strong>columns: int, str, sequence or None, optional (default=None)</strong><br>
+Names or indices of the features to plot. None to show all.
+</p>
+<p>
+<strong>target: int or str, optional (default=1)</strong><br>
+Index or name of the class in the target column to look at.
+Only for multi-class classification tasks.
+</p>
+<p>
+<strong>title: str or None, optional (default=None)</strong><br>
+Plot's title. If None, the title is left empty.
+</p>
+<p>
+<strong>figsize: tuple, optional (default=(10, 6))</strong><br>
+Figure's size, format as (x, y). If None, it adapts the size to the
+number of features shown.
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name of the file. Use "auto" for automatic naming.
+If None, the figure is not saved.
+</p>
+<p>
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>
 </table>
 <p><br /></p>
-<p><a name="status"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">status</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L152">[source]</a>
-</span>
+<h2 id="example">Example</h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+
+<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;GNB&quot;</span><span class="p">,</span> <span class="s2">&quot;LGB&quot;</span><span class="p">])</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">gnb</span><span class="o">.</span><span class="n">plot_parshap</span><span class="p">()</span>
+</code></pre></div>
+<div align="center">
+    <img src="../../../img/plots/plot_parshap_1.png" alt="plot_parshap" width="700" height="420"/>
 </div>
-<p>Get an overview of the pipeline and models in the branch. This method
-prints the same information as the __repr__ and also saves it to the
-logger.
-<br /><br /><br /></p>
-<h2 id="memory-considerations">Memory considerations</h2>
-<p>Atom stores one copy of the dataframe in each branch. Note that there
-are always at least two branches in the instance: master (or another
-user defined branch) and one additional branch that stores the
-dataframe with which the class was initialized. This internal branch
-is called <code>og</code> (original) and is used for the <a href="../../API/ATOM/atomclassifier/#reset">reset</a>
-and <a href="../../API/ATOM/atomclassifier/#cross-validate">cross_validate</a>
-methods, as well as to be able to create new branches from the original
-dataframe, even after having applied transformations.</p>
-<p>Apart from the dataset itself, the model's <a href="./predicting">predictions</a>
-are also stored as attributes of the model (e.g. <code>predict_proba_train</code>)
-and can occupy considerable memory for large datasets. You can delete
-these attributes using the <a href="../../API/ATOM/atomclassifier/#reset-predictions">reset_predictions</a>
-method to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
-the class.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Sparse matrices fed to atom or an <a href="../../API/ATOM/atomclassifier/#export-pipeline">exported pipeline</a>
-are converted internally to the full array, filling large spaces
-in memory.</p>
-</div>
-<p><br></p>
-<h2 id="data-transformations">Data transformations</h2>
-<p>Performing data transformations is a common requirement of many datasets
-before they are ready to be ingested by a model. ATOM provides various
-classes to apply <a href="../data_cleaning">data cleaning</a> and
-<a href="../feature_engineering">feature engineering</a> transformations to the data.
-This tooling should be able to help you apply most of the typically needed
-transformations to get the data ready for modelling. For further
-fine-tuning, it's also possible to transform the data using
-custom transformers (see the <a href="../../API/ATOM/atomclassifier/#add">add</a> method)
-or through a function (see the <a href="../../API/ATOM/atomclassifier/#apply">apply</a>
-method). Remember that all transformations are only applied to the dataset
-in the current branch.</p>
-<p><br></p>
-<h2 id="automl">AutoML</h2>
-<p>Automated machine learning (AutoML) automates the selection, composition
-and parameterization of machine learning pipelines. Automating the machine
-learning process makes it more user-friendly and often provides faster, more
-accurate outputs than hand-coded algorithms. ATOM uses the <a href="http://epistasislab.github.io/tpot/">TPOT</a>
-package for AutoML optimization. TPOT uses a genetic algorithm to intelligently
-explore thousands of possible pipelines in order to find the best one for your
-data. Such an algorithm can be started through the <a href="../../API/ATOM/atomclassifier/#automl">automl</a>
-method. The resulting data transformers and final estimator are merged with atom's
-pipeline (check the <code>pipeline</code> and <code>models</code> attributes after the method
-finishes running).</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>AutoML algorithms aren't intended to run for only a few minutes. If left
-to its default parameters, the method can take a very long time to finish!</p>
+
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">lgb</span><span class="o">.</span><span class="n">plot_parshap</span><span class="p">()</span>
+</code></pre></div>
+<div align="center">
+    <img src="../../../img/plots/plot_parshap_2.png" alt="plot_parshap" width="700" height="420"/>
 </div>
                 
               
@@ -2920,7 +2841,7 @@ to its default parameters, the method can take a very long time to finish!</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../first_steps/" class="md-footer__link md-footer__link--prev" aria-label="Previous: First steps" rel="prev">
+        <a href="../plot_partial_dependence/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_partial_dependence" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -2929,20 +2850,20 @@ to its default parameters, the method can take a very long time to finish!</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              First steps
+              plot_partial_dependence
             </div>
           </div>
         </a>
       
       
         
-        <a href="../logging/" class="md-footer__link md-footer__link--next" aria-label="Next: Logging &amp; Tracking" rel="next">
+        <a href="../plot_confusion_matrix/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_confusion_matrix" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Logging & Tracking
+              plot_confusion_matrix
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -3005,12 +2926,12 @@ to its default parameters, the method can take a very long time to finish!</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.b1047164.min.js"></script>
       
-        <script src="../../stylesheets/extra.js"></script>
+        <script src="../../../stylesheets/extra.js"></script>
       
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
       

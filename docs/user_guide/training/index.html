@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/training/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
   <title>Training - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.a57b2b03.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -488,8 +488,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -591,6 +591,8 @@
       </a>
       
         
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -607,6 +609,13 @@
         <li class="md-nav__item">
   <a href="#metric" class="md-nav__link">
     Metric
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automated-feature-scaling" class="md-nav__link">
+    Automated feature scaling
   </a>
   
 </li>
@@ -2234,6 +2243,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2527,6 +2550,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2711,6 +2748,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2727,6 +2766,13 @@
         <li class="md-nav__item">
   <a href="#metric" class="md-nav__link">
     Metric
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automated-feature-scaling" class="md-nav__link">
+    Automated feature scaling
   </a>
   
 </li>
@@ -2844,10 +2890,6 @@ parameters or on different data sets. See the
 <a href="../../examples/imbalanced_datasets">Imbalanced datasets</a> example.</p>
 <p>Additional things to take into account:</p>
 <ul>
-<li>Models that require feature scaling will automatically do so
-  before training (if the data is not already scaled). Use the
-  <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
-  method to see for which models this is the case.</li>
 <li>If an exception is encountered while fitting an estimator, the
   pipeline will automatically jump to the next model. The exceptions are
   stored in the <code>errors</code> attribute. Note that when a model is skipped,
@@ -2882,13 +2924,13 @@ the metric.</p>
 <p><a name="predefined-scorers"></a>
 <strong>Predefined scorers</strong><br>
 ATOM accepts all of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>
-as well as some custom acronyms and custom scorers. </p>
-<p>Since some of sklearn's scorers have quite long names and ATOM is all
-about <s>lazy</s>fast experimentation, the package provides acronyms
-for some of the most commonly used ones. These acronyms are case-insensitive
-and can be used in the <code>metric</code> parameter instead of the
-scorer's full name, e.g. <code>atom.run("LR", metric="BA")</code> will use
-<code>balanced_accuracy</code>. The available acronyms are:</p>
+as well as some custom acronyms and custom scorers. Since some of
+sklearn's scorers have quite long names and ATOM is all about
+<s>lazy</s>fast experimentation, the package provides acronyms
+for some of the most commonly used ones. These acronyms are
+case-insensitive and can be used in the <code>metric</code> parameter instead
+of the scorer's full name, e.g. <code>atom.run("LR", metric="BA")</code> will
+use <code>balanced_accuracy</code>. The available acronyms are:</p>
 <ul>
 <li>"AP" for "average_precision"</li>
 <li>"BA" for "balanced_accuracy"</li>
@@ -2940,6 +2982,23 @@ the bayesian optimization and to select the winning model.</p>
 <code>metric</code> parameter.</p>
 </div>
 <p><br></p>
+<h2 id="automated-feature-scaling">Automated feature scaling</h2>
+<p>Models that require feature scaling will automatically do so before
+training, if the data is not already scaled. The data is considered
+scaled if it has one of the following prerequisites:</p>
+<ul>
+<li>The mean value over the mean of all columns is &lt;0.05 and the mean of
+  the standard deviation over all columns lies between 0.93 and 1.07.</li>
+<li>There is a transformer in the pipeline whose __name__ contains the
+  word <code>scaler</code>.</li>
+</ul>
+<p>The scaling is applied using a <a href="../../API/data_cleaning/scaler">Scaler</a>
+with default parameters. It can be accessed from the model through the
+<code>scaler</code> attribute. The scaled dataset can be examined through the
+model's <a href="../../API/models/gnb/#data-attributes">data attributes</a>. Use
+the <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
+method to see which models require feature scaling. </p>
+<p><br></p>
 <h2 id="parameter-customization">Parameter customization</h2>
 <p>By default, the parameters every estimator uses are the same default
 parameters they get from their respective packages. To select different
@@ -2980,17 +3039,19 @@ ignored by the bayesian optimization! </p>
 estimator's hyperparameters before training it. ATOM provides
 <a href="https://en.wikipedia.org/wiki/Hyperparameter_optimization">hyperparameter tuning</a>
 using a <a href="https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.">bayesian optimization</a>
-(BO) approach implemented with <a href="https://scikit-optimize.github.io/stable/">skopt</a>.
+(BO) approach implemented with <a href="https://scikit-optimize.github.io/stable/">scikit-optimize</a>.
 The BO is optimized on the first metric provided with the <code>metric</code>
 parameter. Each step is either computed by cross-validation on the
 complete training set or by randomly splitting the training set every
-iteration into a (sub) training set and a validation set. This process
-can create some minimum data leakage towards specific parameters, but
-it ensures maximal use of the provided data. However, the leakage is
-not present in the independent test set, thus the final score of every
-model is unbiased. Note that, if the dataset is relatively small, the
-BO's best score can consistently be lower than the final score on the
-test set due to the considerable fewer instances on which it is trained.</p>
+iteration into a (sub) training and validation set. This process can
+create some minimum data leakage towards specific parameters (since
+the estimator is evaluated on data that is used to train the next
+estimator), but it ensures maximal use of the provided data. However,
+the leakage is not present in the independent test set, thus the final
+score of every model is unbiased. Note that, if the dataset is relatively
+small, the BO's best score can consistently be lower than the final score
+on the test set due to the considerable fewer instances on which it is
+trained.</p>
 <p>There are many possibilities to tune the BO to your liking. Use
 <code>n_calls</code> and <code>n_initial_points</code> to determine the number of iterations
 that are performed randomly at the start (exploration) and the number
@@ -3247,10 +3308,10 @@ method to see the model's performance per size of the training set.</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.b1047164.min.js"></script>
       
         <script src="../../stylesheets/extra.js"></script>
       

@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None,
 dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1142">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1294">[source]</a>
 </span>
 </div>
 
@@ -23,7 +23,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train", "test" or "both".
+Data set on which to calculate the metric. Choose from:
+"train", "test", "both" (train and test) or "holdout".
 </p>
 <p>
 <strong>title: str or None, optional (default=None)</strong><br>
@@ -65,6 +66,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["LR", "RF", "LGB"], metric="average_precision")
 atom.plot_prc()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_prc.png" alt="plot_prc" width="700" height="420"/>
 </div>

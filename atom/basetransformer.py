@@ -22,8 +22,8 @@ from typing import Union, Optional
 
 # Own modules
 from .utils import (
-    SEQUENCE, X_TYPES, Y_TYPES, to_df, to_series, merge,
-    prepare_logger, composed, crash, method_to_log,
+    SEQUENCE, X_TYPES, Y_TYPES, to_df, to_series, merge, prepare_logger,
+    composed, crash, method_to_log,
 )
 
 
@@ -158,7 +158,7 @@ class BaseTransformer:
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -219,8 +219,41 @@ class BaseTransformer:
 
         return X, y
 
-    def _get_data_and_idx(self, arrays, y=-1, use_n_rows=True):
-        """Get the dataset and indices from a sequence of indexables.
+    def _set_index(self, df):
+        """Assign an index to the dataframe."""
+        target = df.columns[-1]
+
+        if self.index is True:  # True gets caught by isinstance(int)
+            return df
+        elif self.index is False:
+            df = df.reset_index(drop=True)
+        elif isinstance(self.index, int):
+            if -df.shape[1] <= self.index <= df.shape[1]:
+                df = df.set_index(df.columns[self.index], drop=True)
+            else:
+                raise ValueError(
+                    f"Invalid value for the index parameter. Value {self.index} "
+                    f"is out of range for a dataset with {df.shape[1]} columns."
+                )
+        elif isinstance(self.index, str):
+            if self.index in df:
+                df = df.set_index(self.index, drop=True)
+            else:
+                raise ValueError(
+                    "Invalid value for the index parameter. "
+                    f"Column {self.index} not found in the dataset."
+                )
+
+        if df.index.name == target:
+            raise ValueError(
+                "Invalid value for the index parameter. The index column "
+                f"can not be the same as the target column, got {target}."
+            )
+
+        return df
+
+    def _get_data(self, arrays, y=-1, use_n_rows=True):
+        """Get the data sets and indices from a sequence of indexables.
 
         Parameters
         ----------
@@ -233,16 +266,36 @@ class BaseTransformer:
         use_n_rows: bool, optional (default=True)
             Whether to use the `n_rows` parameter on the dataset.
 
+        Returns
+        -------
+        data: pd.DataFrame
+            Dataset containing the train and test sets.
+
+        idx: list
+            Sizes of the train and test sets.
+
+        holdout: pd.DataFrame or None
+            Holdout data set. Returns None if not specified.
+
         """
 
-        def _no_train_test(data):
-            """Path to follow when no train and test are provided."""
-            if use_n_rows:
-                if self.n_rows > len(data):
+        def _no_data_sets(data):
+            """Path to follow when no data sets are provided."""
+            # If the index is a sequence, assign it before shuffling
+            if isinstance(self.index, SEQUENCE):
+                if len(self.index) != len(data):
                     raise ValueError(
-                        "Invalid value for the n_rows parameter. The provided"
-                        " number is larger than the number of samples, got "
-                        f"len(data)={len(data)} and n_rows={int(self.n_rows)}."
+                        "Invalid value for the index parameter. Length of "
+                        f"index ({len(self.index)}) doesn't match that of "
+                        f"the dataset ({len(data)})."
+                    )
+                data.index = self.index
+
+            if use_n_rows:
+                if not 0 < self.n_rows <= len(data):
+                    raise ValueError(
+                        "Invalid value for the n_rows parameter. Value "
+                        f"should lie between 0 and len(X), got {self.n_rows}."
                     )
 
                 # Select subset of the data
@@ -252,31 +305,70 @@ class BaseTransformer:
                 else:
                     data = data.iloc[:int(n), :]
 
-            data = data.reset_index(drop=True)
-
             if len(data) < 2:
                 raise ValueError(
-                    "Invalid value for the n_rows parameter, got "
-                    f"{self.n_rows}. Length of dataset can not be <2."
+                    "Invalid value for the n_rows parameter. The "
+                    f"length of the dataset can't be <2, got {self.n_rows}."
                 )
 
-            if self.test_size <= 0 or self.test_size >= len(data):
+            if not 0 < self.test_size < len(data):
                 raise ValueError(
                     "Invalid value for the test_size parameter. Value "
                     f"should lie between 0 and len(X), got {self.test_size}."
                 )
 
-            # Define train and test indices
+            # Define test set size
             if self.test_size < 1:
-                test_idx = int(self.test_size * len(data))
+                test_size = int(self.test_size * len(data))
             else:
-                test_idx = self.test_size
-            idx = [len(data) - test_idx, test_idx]
+                test_size = self.test_size
 
-            return data, idx
+            if self.holdout_size:
+                # Define holdout set size
+                if self.holdout_size < 1:
+                    holdout_size = int(self.holdout_size * len(data))
+                else:
+                    holdout_size = self.holdout_size
 
-        def _has_train_test(train, test):
-            """Path to follow when train and test are provided."""
+                if not 0 <= holdout_size <= len(data) - test_size:
+                    raise ValueError(
+                        "Invalid value for the holdout_size parameter. "
+                        "Value should lie between 0 and len(X) - len(test), "
+                        f"got {self.holdout_size}."
+                    )
+
+                holdout = self._set_index(data.iloc[-holdout_size:, :])
+                data = self._set_index(data.iloc[:-holdout_size, :])
+                idx = [data.index[:-test_size], data.index[-test_size:]]
+
+                return data, idx, holdout
+
+            else:
+                holdout = None
+                data = self._set_index(data)
+                idx = [data.index[:-test_size], data.index[-test_size:]]
+
+                return data, idx, holdout
+
+        def _has_data_sets(train, test, holdout=None):
+            """Path to follow when data sets are provided."""
+            # If the index is a sequence, assign it before shuffling
+            if isinstance(self.index, SEQUENCE):
+                len_data = len(train) + len(test)
+                if holdout is not None:
+                    len_data += len(holdout)
+
+                if len(self.index) != len_data:
+                    raise ValueError(
+                        "Invalid value for the index parameter. Length of "
+                        f"index ({len(self.index)}) doesn't match that of "
+                        f"the data sets ({len_data})."
+                    )
+                train.index = self.index[:len(train)]
+                test.index = self.index[len(train):len(train) + len(test)]
+                if holdout is not None:
+                    holdout.index = self.index[-len(holdout):]
+
             # Skip the n_rows step if not called from atom
             if hasattr(self, "n_rows") and use_n_rows:
                 # Select same subsample of train and test set
@@ -289,16 +381,38 @@ class BaseTransformer:
                     else:
                         train = train.iloc[:n_train, :]
                         test = test.iloc[:n_test, :]
+
+                    if holdout is not None:
+                        n_holdout = int(len(holdout) * self.n_rows)
+                        if self.shuffle:
+                            holdout = holdout.sample(
+                                n=n_holdout,
+                                random_state=self.random_state,
+                            )
+                        else:
+                            holdout = holdout.iloc[:n_holdout, :]
+
                 else:
                     raise ValueError(
                         "Invalid value for the n_rows parameter. Value has "
                         "to be <1 when a train and test set are provided."
                     )
 
-            data = pd.concat([train, test]).reset_index(drop=True)
-            idx = [len(train), len(test)]
+            if not train.columns.equals(test.columns):
+                raise ValueError("The train and test set do not have the same columns.")
 
-            return data, idx
+            if holdout is not None:
+                if not train.columns.equals(holdout.columns):
+                    raise ValueError(
+                        "The holdout set does not have the "
+                        "same columns as the train and test set."
+                    )
+                holdout = self._set_index(holdout)
+
+            data = self._set_index(pd.concat([train, test]))
+            idx = [data.index[:len(train)], data.index[-len(test):]]
+
+            return data, idx, holdout
 
         # Process input arrays ===================================== >>
 
@@ -309,41 +423,62 @@ class BaseTransformer:
                     "successfully. See the documentation for the allowed formats."
                 )
             else:
-                return self.branch.data, self.branch.idx
+                return self.branch.data, self.branch.idx, self.holdout
 
         elif len(arrays) == 1:
             # arrays=(X,)
             data = merge(*self._prepare_input(arrays[0], y=y))
-            data, idx = _no_train_test(data)
+            data, idx, holdout = _no_data_sets(data)
 
         elif len(arrays) == 2:
             if len(arrays[0]) == len(arrays[1]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test))
                 train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
                 test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
-                data, idx = _has_train_test(train, test)
+                data, idx, holdout = _has_data_sets(train, test)
             elif isinstance(arrays[1], (int, str)) or np.array(arrays[1]).ndim == 1:
                 # arrays=(X, y)
                 data = merge(*self._prepare_input(arrays[0], arrays[1]))
-                data, idx = _no_train_test(data)
+                data, idx, holdout = _no_data_sets(data)
             else:
                 # arrays=(train, test)
                 train = merge(*self._prepare_input(arrays[0], y=y))
                 test = merge(*self._prepare_input(arrays[1], y=y))
-                data, idx = _has_train_test(train, test)
+                data, idx, holdout = _has_data_sets(train, test)
+
+        elif len(arrays) == 3:
+            if len(arrays[0]) == len(arrays[1]) == len(arrays[2]) == 2:
+                # arrays=((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
+                train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
+                test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
+                holdout = merge(*self._prepare_input(arrays[2][0], arrays[2][1]))
+                data, idx, holdout = _has_data_sets(train, test, holdout)
+            else:
+                # arrays=(train, test, holdout)
+                train = merge(*self._prepare_input(arrays[0], y=y))
+                test = merge(*self._prepare_input(arrays[1], y=y))
+                holdout = merge(*self._prepare_input(arrays[2], y=y))
+                data, idx, holdout = _has_data_sets(train, test, holdout)
 
         elif len(arrays) == 4:
             # arrays=(X_train, X_test, y_train, y_test)
             train = merge(*self._prepare_input(arrays[0], arrays[2]))
             test = merge(*self._prepare_input(arrays[1], arrays[3]))
-            data, idx = _has_train_test(train, test)
+            data, idx, holdout = _has_data_sets(train, test)
+
+        elif len(arrays) == 6:
+            # arrays=(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
+            train = merge(*self._prepare_input(arrays[0], arrays[3]))
+            test = merge(*self._prepare_input(arrays[1], arrays[4]))
+            holdout = merge(*self._prepare_input(arrays[2], arrays[5]))
+            data, idx, holdout = _has_data_sets(train, test, holdout)
 
         else:
             raise ValueError(
                 "Invalid data arrays. See the documentation for the allowed formats."
             )
 
-        return data, idx
+        return data, idx, holdout
 
     @composed(crash, typechecked)
     def log(self, msg: Union[int, float, str], level: int = 0):
@@ -382,7 +517,8 @@ class BaseTransformer:
 
         """
         if not save_data and hasattr(self, "dataset"):
-            data = {}  # Store the data to reattach later
+            data = {"holdout": deepcopy(self.holdout)}  # Store data to reattach later
+            self.holdout = None
             for key, value in self._branches.items():
                 data[key] = deepcopy(value.data)
                 value.data = None
@@ -395,7 +531,8 @@ class BaseTransformer:
 
         # Restore the data to the attributes
         if not save_data and hasattr(self, "dataset"):
+            self.holdout = data["holdout"]
             for key, value in self._branches.items():
                 value.data = data[key]
 
-        self.log(self.__class__.__name__ + " saved successfully!", 1)
+        self.log(f"{self.__class__.__name__} successfully saved.", 1)

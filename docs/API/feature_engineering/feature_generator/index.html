@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/feature_engineering/feature_generator/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
   <title>FeatureGenerator - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.a57b2b03.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -486,8 +486,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../../../user_guide/data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -1033,6 +1033,8 @@
       </a>
       
         
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2208,6 +2210,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2501,6 +2517,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2685,6 +2715,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2775,7 +2807,7 @@ Number of programs in each generation. Only for the genetic strategy.
 <p>
 <strong>operators: str, list, tuple or None, optional (default=None)</strong><br>
 Name of the operators to be used on the features. None to use all.
-Choose from: "add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan".
+Choose from: add, sub, mul, div, sqrt, log, sin, cos, tan.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
@@ -2799,7 +2831,7 @@ Verbosity level of the class. Possible values are:
 </ul>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 </td>
 </tr>
 </table>
@@ -2832,10 +2864,10 @@ can do its task.</p>
 <td width="80%" class="td_params">
 <p>
 <strong>symbolic_transformer: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
-Instance used to calculate the genetic features. Only for the genetic strategy.
+Object used to calculate the genetic features. Only for the genetic strategy.
 </p>
 <strong>genetic_features: pd.DataFrame</strong><br>
-Dataframe of the newly created non-linear features. Only for the genetic
+Information on the newly created non-linear features. Only for the genetic
 strategy. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>name:</b> Name of the feature (automatically created).</li>
@@ -2888,7 +2920,7 @@ strategy. Columns include:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L329">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L328">[source]</a>
 </span>
 </div>
 <p>Fit to data.</p>
@@ -2897,7 +2929,7 @@ strategy. Columns include:
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>
@@ -2928,7 +2960,7 @@ Fitted instance of self.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>
@@ -2960,7 +2992,8 @@ Feature set with the newly generated features.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -2968,7 +3001,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -2977,7 +3010,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3001,7 +3034,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L370">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3043,7 +3076,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L470">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L469">[source]</a>
 </span>
 </div>
 <p>Generate new features.</p>
@@ -3052,7 +3085,7 @@ Estimator instance.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -3191,10 +3224,10 @@ or
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.b1047164.min.js"></script>
       
         <script src="../../../stylesheets/extra.js"></script>
       

@@ -5,14 +5,13 @@
 <em>method</em> <strong style="color:#008AB8">plot_roc</strong>(models=None,
 dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1059">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1211">[source]</a>
 </span>
 </div>
 
 Plot the Receiver Operating Characteristics Curve (ROC). The legend
 shows the Area Under the ROC Curve (AUC) score. Only for binary
 classification tasks. Read more about ROC in sklearn's [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#receiver-operating-characteristic-roc).
-
 
 <table style="font-size:16px">
 <tr>
@@ -24,7 +23,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train", "test" or "both".
+Data set on which to calculate the metric. Choose from:
+"train", "test", "both" (train and test) or "holdout".
 </p>
 <p>
 <strong>title: str or None, optional (default=None)</strong><br>
@@ -65,6 +65,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["LR", "RF", "LGB"], metric="roc_auc")
 atom.plot_roc(filename="roc_curve")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_roc.png" alt="plot_roc" width="700" height="420"/>
 </div>

@@ -4,7 +4,7 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">predict_proba</strong>(X, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L193">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L226">[source]</a>
 </span>
 </div>
 
@@ -19,7 +19,7 @@ model is used. The estimator must have a `predict_proba` method.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -31,7 +31,7 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>p: np.ndarray</strong><br>
+<strong>p: np.array</strong><br>
 The class probabilities of the input samples, with shape=(n_samples,)
 for binary classification tasks and (n_samples, n_classes) for
 multiclass classification tasks.

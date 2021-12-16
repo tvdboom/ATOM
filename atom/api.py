@@ -9,22 +9,23 @@ Description: Module containing the API classes.
 
 # Standard packages
 import dill
-from copy import copy
+from copy import deepcopy
 from logging import Logger
 from typeguard import typechecked
-from typing import Optional, Union
+from typing import Optional, Union, Any
+from sklearn.base import clone
 
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import SCALAR, Y_TYPES, custom_transform
+from .utils import SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
 
 
 # Functions ======================================================== >>
 
 @typechecked
 def ATOMModel(
-    estimator,
+    estimator: Any,
     acronym: str = None,
     fullname: str = None,
     needs_scaling: bool = False,
@@ -36,8 +37,8 @@ def ATOMModel(
 
     Parameters
     ----------
-    estimator: estimator class or instance
-        Model's estimator. Can be a class or an instance.
+    estimator: sklearn estimator
+        Custom model's estimator.
 
     acronym: str or None, optional (default=None)
         Model's acronym. Used to call the model from the trainer.
@@ -53,10 +54,12 @@ def ATOMModel(
 
     Returns
     -------
-    estimator: estimator
-        Provided estimator with custom attributes for ATOM's pipeline.
+    estimator: sklearn estimator
+        Clone of the provided estimator with custom attributes.
 
     """
+    estimator = clone(estimator)
+
     if acronym:
         estimator.acronym = acronym
     if fullname:
@@ -89,12 +92,16 @@ def ATOMLoader(
         Tuple containing the dataset. Only use this parameter if the
         file is a trainer that was saved using`save_data=False`.
         Allowed formats are:
-            - X or X, y
+            - X
+            - X, y
             - train, test
+            - train, test, holdout
             - X_train, X_test, y_train, y_test
+            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
             - (X_train, y_train), (X_test, y_test)
+            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X, train, test: dataframe-like
             Feature set with shape=(n_samples, n_features). If no
             y is provided, the last column is used as target.
 
@@ -117,7 +124,7 @@ def ATOMLoader(
     Returns
     -------
     cls: class instance
-        Un-pickled instance.
+        Unpickled instance.
 
     """
     with open(filename, "rb") as f:
@@ -135,7 +142,7 @@ def ATOMLoader(
             )
 
         # Prepare the provided data
-        data, idx = cls._get_data_and_idx(data, use_n_rows=transform_data)
+        data, idx, cls.holdout = cls._get_data(data, use_n_rows=transform_data)
 
         # Apply transformations per branch
         step = {}  # Current step in the pipeline per branch
@@ -153,16 +160,16 @@ def ATOMLoader(
                 for i, est1 in enumerate(v1.pipeline):
                     # Skip if the transformation was already applied
                     if step.get(b1, -1) < i:
-                        custom_transform(cls, est1, branch, verbose=verbose)
+                        custom_transform(est1, branch, verbose=verbose)
 
                         for b2, v2 in cls._branches.items():
                             if b1 != b2 and v2.pipeline.get(i) is est1:
                                 # Update the data and step for the other branch
-                                cls._branches[b2].data = copy(branch.data)
-                                cls._branches[b2].idx = copy(branch.idx)
+                                cls._branches[b2].data = deepcopy(branch.data)
+                                cls._branches[b2].idx = deepcopy(branch.idx)
                                 step[b2] = i
 
-    cls.log(f"{cls.__class__.__name__} loaded successfully!", 1)
+    cls.log(f"{cls.__class__.__name__} successfully loaded.", 1)
 
     return cls
 
@@ -179,10 +186,13 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - X
             - X, y
             - train, test
+            - train, test, holdout
             - X_train, X_test, y_train, y_test
+            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
             - (X_train, y_train), (X_test, y_test)
+            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X, train, test: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
@@ -198,20 +208,38 @@ class ATOMClassifier(BaseTransformer, ATOM):
         This parameter is ignored if the target column is provided
         through `arrays`.
 
+    index: bool, int, str or sequence, optional (default=False)
+        - If False: Reset to RangeIndex.
+        - If True: Use the current index.
+        - If int: Index of the column to use as index.
+        - If str: Name of the column to use as index.
+        - If sequence: Index column with shape=(n_samples,).
+
     shuffle: bool, optional (default=True)
         Whether to shuffle the dataset before splitting the train and
         test set. Be aware that not shuffling the dataset can cause
         an unequal distribution of the target classes over the sets.
 
     n_rows: int or float, optional (default=1)
-        - If <=1: Fraction of the dataset to use.
-        - If >1: Number of rows to use (only if input is X, y).
+        Random subsample of the provided dataset to use. The default
+        value selects all the rows.
+        - If <=1: Select this fraction of the dataset.
+        - If >1: Select this exact number of rows. Only if the input
+                 doesn't already specify the data sets (i.e. X or X, y).
 
-    test_size: int, float, optional (default=0.2)
+    test_size: int or float, optional (default=0.2)
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
-        This parameter is ignored if the train and test set are provided
+        This parameter is ignored if the test set is provided
+        through `arrays`.
+
+    holdout_size: int, float or None, optional (default=None)
+        - If None: No holdout data set is kept apart.
+        - If <=1: Fraction of the dataset to include in the holdout set.
+        - If >1: Number of rows to include in the holdout set.
+
+        This parameter is ignored if the holdout set is provided
         through `arrays`.
 
     n_jobs: int, optional (default=1)
@@ -247,7 +275,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `numpy.random`.
+        number generator is the `RandomState` used by `np.random`.
 
     """
 
@@ -256,9 +284,11 @@ class ATOMClassifier(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
+        index: Union[bool, int, str, SEQUENCE_TYPES] = False,
         shuffle: bool = True,
         n_rows: SCALAR = 1,
-        test_size: float = 0.2,
+        test_size: SCALAR = 0.2,
+        holdout_size: Optional[SCALAR] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -276,7 +306,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         )
 
         self.goal = "class"
-        ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size)
+        ATOM.__init__(self, arrays, y, index, shuffle, n_rows, test_size, holdout_size)
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
@@ -289,10 +319,13 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - X
             - X, y
             - train, test
+            - train, test, holdout
             - X_train, X_test, y_train, y_test
+            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
             - (X_train, y_train), (X_test, y_test)
+            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X, train, test: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
@@ -301,10 +334,19 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - Else: Target column with shape=(n_samples,).
 
     y: int, str or sequence, optional (default=-1)
-        Target column in X. Ignored if provided through `arrays`.
         - If int: Index of the target column in X.
         - If str: Name of the target column in X.
         - Else: Target column with shape=(n_samples,).
+
+        This parameter is ignored if the target column is provided
+        through `arrays`.
+
+    index: bool, int, str or sequence, optional (default=False)
+        - If False: Reset to RangeIndex.
+        - If True: Use the current index.
+        - If int: Index of the column to use as index.
+        - If str: Name of the column to use as index.
+        - If sequence: Index column with shape=(n_samples,).
 
     shuffle: bool, optional (default=True)
         Whether to shuffle the dataset before splitting the train and
@@ -312,14 +354,26 @@ class ATOMRegressor(BaseTransformer, ATOM):
         an unequal distribution of the target classes over the sets.
 
     n_rows: int or float, optional (default=1)
-        - If <=1: Fraction of the dataset to use.
-        - If >1: Number of rows to use (only if input is X, y).
+        Random subsample of the provided dataset to use. The default
+        value selects all the rows.
+        - If <=1: Select this fraction of the dataset.
+        - If >1: Select this exact number of rows. Only if the input
+                 doesn't already specify the data sets (i.e. X or X, y).
 
-    test_size: int, float, optional (default=0.2)
+    test_size: int or float, optional (default=0.2)
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
-        Is ignored if the train and test set are provided.
+        This parameter is ignored if the test set is provided
+        through `arrays`.
+
+    holdout_size: int, float or None, optional (default=None)
+        - If None: No holdout data set is kept apart.
+        - If <=1: Fraction of the dataset to include in the holdout set.
+        - If >1: Number of rows to include in the holdout set.
+
+        This parameter is ignored if the holdout set is provided
+        through `arrays`.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -354,7 +408,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `numpy.random`.
+        number generator is the `RandomState` used by `np.random`.
 
     """
 
@@ -363,9 +417,11 @@ class ATOMRegressor(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
+        index: Union[bool, int, str, SEQUENCE_TYPES] = False,
         shuffle: bool = True,
         n_rows: SCALAR = 1,
-        test_size: float = 0.2,
+        test_size: SCALAR = 0.2,
+        holdout_size: Optional[SCALAR] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -383,4 +439,4 @@ class ATOMRegressor(BaseTransformer, ATOM):
         )
 
         self.goal = "reg"
-        ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size)
+        ATOM.__init__(self, arrays, y, index, shuffle, n_rows, test_size, holdout_size)

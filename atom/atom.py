@@ -8,13 +8,13 @@ Description: Module containing the ATOM class.
 """
 
 # Standard packages
-import os
-import contextlib
+import tempfile
 import numpy as np
 import pandas as pd
 from scipy import stats
 from copy import deepcopy
 from inspect import signature
+from joblib.memory import Memory
 from typeguard import typechecked
 from typing import Union, Optional, Any, Dict
 
@@ -49,14 +49,14 @@ from .training import (
     TrainSizingClassifier,
     TrainSizingRegressor,
 )
-from .models import CustomModel, MODEL_LIST
+from .models import CustomModel, MODELS_ENSEMBLES
 from .plots import ATOMPlotter
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt, lst,
-    divide, infer_task, check_method, check_scaling, check_multidim,
-    get_pl_name, names_from_estimator, get_columns, check_is_fitted,
-    variable_return, fit_one, delete, custom_transform, method_to_log,
-    composed, crash, Table, CustomDict,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
+    lst, divide, infer_task, check_dim, check_scaling, is_multidim,
+    get_pl_name, names_from_estimator, check_is_fitted, variable_return,
+    fit_one, delete, custom_transform, method_to_log, composed, crash,
+    Table, CustomDict,
 )
 
 
@@ -74,10 +74,12 @@ class ATOM(BasePredictor, ATOMPlotter):
     """
 
     @composed(crash, method_to_log)
-    def __init__(self, arrays, y, shuffle, n_rows, test_size):
+    def __init__(self, arrays, y, index, shuffle, n_rows, test_size, holdout_size):
+        self.index = index
         self.shuffle = shuffle
         self.n_rows = n_rows
         self.test_size = test_size
+        self.holdout_size = holdout_size
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
         # Branching attributes
@@ -95,14 +97,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("<< ================== ATOM ================== >>", 1)
 
         # Prepare the provided data
-        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays, y=y)
+        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays, y=y)
 
         # Attach the data to the original branch
         self.og.data = self.branch.data.copy(deep=True)
         self.og.idx = self.branch.idx.copy()
-
-        # Save the test_size fraction for use during training
-        self._test_size = self.branch.idx[1] / len(self.dataset)
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
@@ -126,7 +125,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         if len(self._branches) - 1 == 1:
             out += f" {self._current}"
         else:
-            for branch in [b for b in self._branches.keys() if b != "og"]:
+            for branch in [b for b in self._branches if b != "og"]:
                 out += f"\n   >>> {branch}{' !' if branch == self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
@@ -134,14 +133,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         return out
 
-    def __len__(self):
-        return len(self.pipeline)
-
     def __iter__(self):
         yield from self.pipeline.values
-
-    def __contains__(self, item):
-        return item in self.dataset
 
     def __getitem__(self, item):
         if isinstance(item, int):
@@ -149,17 +142,21 @@ class ATOM(BasePredictor, ATOMPlotter):
         elif isinstance(item, str):
             if item in self._branches:
                 return self._branches[item]  # Get branch
+            elif item in self._models:
+                return self._models[item]  # Get model
             elif item in self.dataset:
                 return self.dataset[item]  # Get column from dataset
             else:
                 raise ValueError(
-                    f"{self.__class__.__name__}'s dataset "
-                    f"has no branch nor column called {item}."
+                    f"{self.__class__.__name__} object has no "
+                    f"branch, model or column called {item}."
                 )
+        elif isinstance(item, list):
+            return self.dataset[item]  # Get subset of dataset
         else:
             raise TypeError(
                 f"{self.__class__.__name__} is only "
-                "subscriptable with types int or str."
+                "subscriptable with types int, str or list."
             )
 
     # Utility properties =========================================== >>
@@ -167,9 +164,12 @@ class ATOM(BasePredictor, ATOMPlotter):
     @BasePredictor.branch.setter
     @typechecked
     def branch(self, name: str):
-        if name in [b for b in self._branches.keys() if b != "og"]:
-            self._current = self._branches[name].name
-            self.log(f"Switched to branch {self._current}.", 1)
+        if name in self._branches and name.lower() != "og":
+            if self.branch is self._branches[name]:
+                self.log(f"Already on branch {self.branch.name}.", 1)
+            else:
+                self._current = self._branches[name].name
+                self.log(f"Switched to branch {self._current}.", 1)
         else:
             # Branch can be created from current or another
             if "_from_" in name:
@@ -180,20 +180,18 @@ class ATOM(BasePredictor, ATOMPlotter):
             # Check if the new name is valid
             if not new_branch:
                 raise ValueError("A branch can't have an empty name!")
-            elif new_branch.lower() in map(str.lower, MODEL_LIST.keys()):
-                raise ValueError(
-                    f"Invalid name for the branch. {new_branch} is the "
-                    f"acronym of model {MODEL_LIST[new_branch].fullname}. "
-                )
-            elif new_branch.lower() in ("og", "vote", "stack"):
-                raise ValueError(
-                    "This name is reserved for internal purposes. "
-                    "Choose a different name for the branch."
-                )
-            elif new_branch in self._branches:
+            elif new_branch in self._branches:  # Can happen when using _from_
                 raise ValueError(
                     f"Branch {self._branches[new_branch].name} already exists!"
                 )
+            else:
+                for model in MODELS_ENSEMBLES.values():
+                    if new_branch.lower().startswith(model.acronym.lower()):
+                        raise ValueError(
+                            "Invalid name for the branch. The name of a branch may "
+                            f"not begin with a model's acronym, and {model.acronym} "
+                            f"is the acronym of the {model.fullname} model."
+                        )
 
             # Check if the parent branch exists
             if from_branch not in self._branches:
@@ -204,25 +202,25 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             self._branches[new_branch] = Branch(self, new_branch, parent=from_branch)
             self._current = new_branch
-            self.log(f"New branch {self._current} successfully created!", 1)
+            self.log(f"New branch {self._current} successfully created.", 1)
 
     @property
     def scaled(self):
         """Whether the feature set is scaled."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             est_names = [est.__class__.__name__.lower() for est in self.pipeline]
             return check_scaling(self.X) or any("scaler" in name for name in est_names)
 
     @property
     def duplicates(self):
         """Number of duplicate rows in the dataset."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             return self.dataset.duplicated().sum()
 
     @property
     def nans(self):
         """Columns with the number of missing values in them."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum()
             return nans[nans > 0]
@@ -230,7 +228,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_nans(self):
         """Number of samples containing missing values."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum(axis=1)
             return len(nans[nans > 0])
@@ -238,31 +236,31 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def numerical(self):
         """Names of the numerical features in the dataset."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             return list(self.X.select_dtypes(include=["number"]).columns)
 
     @property
     def n_numerical(self):
         """Number of numerical features in the dataset."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             return len(self.numerical)
 
     @property
     def categorical(self):
         """Names of the categorical features in the dataset."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             return list(self.X.select_dtypes(include=["object", "category"]).columns)
 
     @property
     def n_categorical(self):
         """Number of categorical features in the dataset."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             return len(self.categorical)
 
     @property
     def outliers(self):
         """Columns in training set with amount of outlier values."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=num_and_target)
@@ -271,7 +269,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_outliers(self):
         """Number of samples in the training set containing outliers."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
@@ -279,18 +277,14 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def classes(self):
         """Distribution of target classes per data set."""
-        return (
-            pd.DataFrame(
-                {
-                    "dataset": self.y.value_counts(sort=False, dropna=False),
-                    "train": self.y_train.value_counts(sort=False, dropna=False),
-                    "test": self.y_test.value_counts(sort=False, dropna=False),
-                },
-                index=self.mapping.values(),
-            )
-            .fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
-            .astype(int)
-        )
+        return pd.DataFrame(
+            {
+                "dataset": self.y.value_counts(sort=False, dropna=False),
+                "train": self.y_train.value_counts(sort=False, dropna=False),
+                "test": self.y_test.value_counts(sort=False, dropna=False),
+            },
+            index=self.mapping.values(),
+        ).fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
     def n_classes(self):
@@ -316,7 +310,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         from tpot import TPOTClassifier, TPOTRegressor
 
-        check_method(self, "automl")
+        check_dim(self, "automl")
 
         # Define the scoring parameter
         if self._metric and not kwargs.get("scoring"):
@@ -360,19 +354,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         model = CustomModel(self, estimator=est)
         model.estimator = model.est
 
-        # Save metric scores on complete training and test set
-        model.metric_train = flt(
-            [
-                metric(model.estimator, self.X_train, self.y_train)
-                for metric in self._metric
-            ]
-        )
-        model.metric_test = flt(
-            [
-                metric(model.estimator, self.X_test, self.y_test)
-                for metric in self._metric
-            ]
-        )
+        # Save metric scores on train and test set
+        for metric in self._metric.values():
+            model._calculate_score(metric, "train")
+            model._calculate_score(metric, "test")
 
         self._models.update({model.name: model})
         self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
@@ -423,6 +408,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def export_pipeline(
         self,
         model: Optional[str] = None,
+        memory: Optional[Union[bool, str, Memory]] = None,
         verbose: Optional[int] = None,
     ):
         """Export atom's pipeline to a sklearn-like Pipeline object.
@@ -438,9 +424,18 @@ class ATOM(BasePredictor, ATOMPlotter):
             is added before the model. If None, only the
             transformers are added.
 
+        memory: bool, str, Memory or None, optional (default=None)
+            Used to cache the fitted transformers of the pipeline.
+                - If None or False: No caching is performed.
+                - If True: A default temp directory is used.
+                - If str: Path to the caching directory.
+                - If Memory: Object with the joblib.Memory interface.
+
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity.
+            None, it leaves them to their original verbosity. Note
+            that this is not the pipeline's own verbose parameter.
+            To change that, use the `set_params` method.
 
         Returns
         -------
@@ -463,90 +458,25 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         if model:
             model = getattr(self, self._get_model_name(model)[0])
+
+            if self.branch is not model.branch:
+                raise ValueError(
+                    "The model to export is not fitted on the current "
+                    f"branch. Change to the {model.branch.name} branch "
+                    "or use the model's export_pipeline method."
+                )
+
             if model.scaler:
                 steps.append(("scaler", deepcopy(model.scaler)))
 
-            # Redirect stdout to avoid annoying prints
-            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-                steps.append((model.name, deepcopy(model.estimator)))
+            steps.append((model.name, deepcopy(model.estimator)))
 
-        return Pipeline(steps)  # ATOM's pipeline, not sklearn
+        if not memory:  # None or False
+            memory = None
+        elif memory is True:
+            memory = tempfile.gettempdir()
 
-    @composed(crash, method_to_log, typechecked)
-    def merge(self, atom: Any, suffix: str = "2"):
-        """Merge another atom instance into this one.
-
-        Branches, models, metrics and attributes of the other atom
-        instance are merged into this one. If there are branches
-        and/or models with the same name, they are merged adding
-        the `suffix` parameter to their name. The errors and missing
-        attributes are extended with those of the other instance. It's
-        only possible to merge two instances if they are initialized
-        using the same dataset and trained using the same metric.
-
-        Parameters
-        ----------
-        atom: ATOMClassifier or ATOMRegressor
-            Other atom instance with which to merge.
-
-        suffix: str, optional (default="2")
-            Conflicting branches and models are merged adding `suffix`
-            to the end of their names.
-
-        """
-        if self.goal == "class":
-            if not getattr(atom, "goal", "") == "class":
-                raise TypeError(
-                    "Invalid type for the atom parameter. The provided object should "
-                    f"be an ATOMClassifier instance, got {atom.__class__.__name__}."
-                )
-        elif self.goal == "reg":
-            if not getattr(atom, "goal", "") == "reg":
-                raise TypeError(
-                    "Invalid type for the atom parameter. The provided object should "
-                    f"be an ATOMRegressor instance, got {atom.__class__.__name__}."
-                )
-
-        # Check that both instances have the same original dataset
-        if self["og"].data.shape != atom["og"].data.shape:
-            raise ValueError(
-                "Invalid value for the atom parameter. The provided atom instance "
-                f"was initialized with a different dataset (shape={atom['og'].shape}) "
-                f"than this one (shape={self['og'].shape})."
-            )
-
-        # Check that both instances have the same metric
-        if not self._metric:
-            self._metric = atom._metric
-        elif atom.metric and self.metric != atom.metric:
-            raise ValueError(
-                "Invalid value for the atom parameter. The provided atom "
-                f"instance uses a different metric ({atom.metric}) than "
-                f"this one ({self.metric})."
-            )
-
-        self.log("Merging atom...", 1)
-        for name, branch in atom._branches.items():
-            if name != "og":  # Original dataset is the same
-                self.log(f" --> Merging branch {name}.", 1)
-                if name in self._branches:
-                    name = f"{name}{suffix}"
-                branch.name = name
-                self._branches[name] = branch
-
-        for name, model in atom._models.items():
-            self.log(f" --> Merging model {name}.", 1)
-            if name in self._models:
-                name = f"{name}{suffix}"
-            model.name = name
-            self._models[name] = model
-
-        self.log(" --> Merging attributes.", 1)
-        self.missing.extend([x for x in atom.missing if x not in self.missing])
-        for name, error in atom._errors.items():
-            if name in self._errors:
-                name = f"{name}{suffix}"
-            self._errors[name] = error
+        return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
 
     @composed(crash, typechecked)
     def report(
@@ -554,6 +484,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         dataset: str = "dataset",
         n_rows: Optional[SCALAR] = None,
         filename: Optional[str] = None,
+        **kwargs,
     ):
         """Create an extensive profile analysis report of the data.
 
@@ -566,12 +497,15 @@ class ATOM(BasePredictor, ATOMPlotter):
             Data set to get the report from.
 
         n_rows: int or None, optional (default=None)
-            Number of (randomly picked) rows in to process. None for
+            Number of (randomly picked) rows to process. None to use
             all rows.
 
         filename: str or None, optional (default=None)
             Name to save the file with (as .html). None to not save
             anything.
+
+        **kwargs
+            Additional keyword arguments for the ProfileReport instance.
 
         Returns
         -------
@@ -584,13 +518,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("Creating profile report...", 1)
 
         n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
-        profile = ProfileReport(getattr(self, dataset).sample(n_rows))
+        profile = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
 
         if filename:
             if not filename.endswith(".html"):
-                filename = filename + ".html"
+                filename += ".html"
             profile.to_file(filename)
-            self.log("Report saved successfully!", 1)
+            self.log("Report successfully saved.", 1)
 
         return profile
 
@@ -604,14 +538,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         # Delete all models and branches
         delete(self, self._get_models())
-        for name in [b for b in self._branches.keys() if b != "og"]:
+        for name in [b for b in self._branches if b != "og"]:
             self._branches.pop(name)
 
         # Re-create the master branch from original
         self._branches["master"] = Branch(self, "master", parent="og")
         self._current = "master"
 
-        self.log("The instance is successfully reset!", 1)
+        self.log("The instance is successfully reset.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = "auto", dataset: str = "dataset"):
@@ -632,7 +566,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             filename += ".csv"
 
         getattr(self, dataset).to_csv(filename, index=False)
-        self.log("Data set saved successfully!", 1)
+        self.log("Data set successfully saved.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def shrink(
@@ -663,8 +597,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             strictly positive.
 
         """
-        check_method(self, "shrink")
-        columns = get_columns(self.dataset, columns)
+        check_dim(self, "shrink")
+        columns = self._get_columns(columns)
         exclude_types = ["category", "datetime64[ns]", "bool"]
 
         # Build column filter and type_map
@@ -708,7 +642,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 new_dtypes[c] = new_t
 
         self.branch.data = self.branch.data.astype(new_dtypes)
-        self.log("The column dtypes are converted successfully!", 1)
+        self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
     def stats(self, _vb: int = -2):
@@ -723,7 +657,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
 
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             nans = self.nans.sum()
             n_categorical = self.n_categorical
             outliers = self.outliers.sum()
@@ -746,12 +680,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("-" * 37, _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
         self.log(f"Test set size: {len(self.test)}", _vb)
+        if self.holdout is not None:
+            self.log(f"Holdout set size: {len(self.holdout)}", _vb)
         self.log("-" * 37, _vb)
 
         # Print count and balance of classes
         if self.task != "regression":
             cls = self.classes
-            spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * 3)
+            spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * len(cls.columns))
             func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
 
             table = Table([("", "left"), *cls.columns], spaces)
@@ -767,7 +703,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(str(self))
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES = None, verbose: Optional[int] = None):
+    def transform(
+        self,
+        X: X_TYPES,
+        y: Optional[Y_TYPES] = None,
+        verbose: Optional[int] = None,
+    ):
         """Transform new data through the branch.
 
         Transformers that are only applied on the training set are
@@ -775,7 +716,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -799,8 +740,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             Transformed target column. Only returned if provided.
 
         """
-        for est in [est for est in self.pipeline if not est._train_only]:
-            X, y = custom_transform(self, est, self.branch, (X, y), verbose)
+        for transformer in self.pipeline:
+            if not transformer._train_only:
+                X, y = custom_transform(transformer, self.branch, (X, y), verbose)
 
         return variable_return(X, y)
 
@@ -840,12 +782,18 @@ class ATOM(BasePredictor, ATOMPlotter):
             on the complete dataset.
 
         **fit_params
-            Additional keyword arguments passed to the transformer's fit
-            method.
+            Additional keyword arguments for the transformer's fit method.
 
         """
+        if self.branch._get_depending_models():
+            raise PermissionError(
+                "It's not allowed to add transformers to the branch "
+                "after it has been used to train models. Create a "
+                "new branch to continue the pipeline."
+            )
+
         if not hasattr(estimator, "transform"):
-            raise ValueError("Added transformers should have a transform method!")
+            raise AttributeError("Added transformers should have a transform method!")
 
         # Add BaseTransformer params to the estimator if left to default
         if all(hasattr(estimator, attr) for attr in ("get_params", "set_params")):
@@ -854,11 +802,14 @@ class ATOM(BasePredictor, ATOMPlotter):
                 if p in sign and estimator.get_params()[p] == sign[p]._default:
                     estimator.set_params(**{p: getattr(self, p)})
 
-        # Transformers remember the train_only and columns parameters
+        # Transformers remember the train_only and cols parameters
         estimator._train_only = train_only
-        estimator._cols = [
-            col for col in get_columns(self.dataset, columns) if col != self.target
-        ]
+        if columns is not None:
+            inc, exc = self._get_columns(columns, return_inc_exc=True)
+            estimator._cols = [
+                [c for c in inc if c != self.target],  # Included cols
+                [c for c in exc if c != self.target],  # Excluded cols
+            ]
 
         if hasattr(estimator, "fit") and not check_is_fitted(estimator, False):
             if not estimator.__module__.startswith("atom"):
@@ -866,7 +817,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             fit_one(estimator, self.X_train, self.y_train, **fit_params)
 
-        custom_transform(self, estimator, self.branch, verbose=self.verbose)
+        custom_transform(estimator, self.branch, verbose=self.verbose)
 
         # Add the estimator to the pipeline
         self.branch.pipeline = self.pipeline.append(
@@ -908,11 +859,10 @@ class ATOM(BasePredictor, ATOMPlotter):
             is skipped when making predictions on unseen data.
 
         **fit_params
-            Additional keyword arguments passed to the estimator's fit
-            method.
+            Additional keyword arguments for the estimator's fit method.
 
         """
-        check_method(self, "add")
+        check_dim(self, "add")
         if transformer.__class__.__name__ == "Pipeline":
             # Recursively add all transformers to the pipeline
             for name, est in transformer.named_steps.items():
@@ -938,24 +888,28 @@ class ATOM(BasePredictor, ATOMPlotter):
         Parameters
         ----------
         func: function
-            Function to apply to the dataset.
+            Logic to apply to the dataset.
 
         columns: int or str
             Name or index of the column in the dataset to create
             or transform.
 
         args: tuple, optional (default=())
-            Positional arguments passed to func after the dataset.
+            Positional arguments for the function (after the dataset).
 
         **kwargs
-            Additional keyword arguments passed to func.
+            Additional keyword arguments for the function.
 
         """
-        check_method(self, "apply")
+        check_dim(self, "apply")
         if not callable(func):
             raise TypeError(
                 "Invalid value for the func parameter. Argument is not callable!"
             )
+
+        # If index, get existing name from dataset
+        if isinstance(columns, int):
+            columns = self._get_columns(columns)[0]
 
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
         self._add_transformer(FuncTransformer(func, columns, args, **kwargs))
@@ -974,7 +928,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             Names or indices of the columns to drop.
 
         """
-        check_method(self, "drop")
+        check_dim(self, "drop")
+
+        columns = self._get_columns(columns, include_target=False)
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
         self._add_transformer(DropTransformer(columns=columns, **kwargs))
 
@@ -990,7 +946,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_method(self, "scale")
+        check_dim(self, "scale")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Scaler().get_params())
         scaler = Scaler(strategy=strategy, **kwargs)
@@ -1014,7 +970,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_method(self, "gauss")
+        check_dim(self, "gauss")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Gauss().get_params())
         gauss = Gauss(strategy=strategy, **kwargs)
@@ -1053,7 +1009,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_method(self, "clean")
+        check_dim(self, "clean")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Cleaner().get_params())
         cleaner = Cleaner(
@@ -1094,7 +1050,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_method(self, "impute")
+        check_dim(self, "impute")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Imputer().get_params())
         imputer = Imputer(
@@ -1135,7 +1091,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_method(self, "encode")
+        check_dim(self, "encode")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Encoder().get_params())
         encoder = Encoder(
@@ -1171,7 +1127,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_method(self, "prune")
+        check_dim(self, "prune")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Pruner().get_params())
         pruner = Pruner(
@@ -1203,7 +1159,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_method(self, "balance")
+        check_dim(self, "balance")
         if self.goal != "class":
             raise PermissionError(
                 "The balance method is only available for classification tasks!"
@@ -1252,7 +1208,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See nlp.py for a description of the parameters.
 
         """
-        check_method(self, "nlpclean")
+        check_dim(self, "nlpclean")
         kwargs = self._prepare_kwargs(kwargs, TextCleaner().get_params())
         textcleaner = TextCleaner(
             decode=decode,
@@ -1294,7 +1250,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See nlp.py for a description of the parameters.
 
         """
-        check_method(self, "tokenize")
+        check_dim(self, "tokenize")
         kwargs = self._prepare_kwargs(kwargs, Tokenizer().get_params())
         tokenizer = Tokenizer(
             bigram_freq=bigram_freq,
@@ -1328,7 +1284,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See nlp.py for a description of the parameters.
 
         """
-        check_method(self, "normalize")
+        check_dim(self, "normalize")
         kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
         normalizer = Normalizer(
             stopwords=stopwords,
@@ -1351,7 +1307,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See nlp.py for a description of the parameters.
 
         """
-        check_method(self, "normalize")
+        check_dim(self, "normalize")
         kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
         vectorizer = Vectorizer(strategy=strategy, **kwargs)
 
@@ -1384,7 +1340,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See feature_engineering.py for a description of the parameters.
 
         """
-        check_method(self, "feature_extraction")
+        check_dim(self, "feature_extraction")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, FeatureExtractor().get_params())
         feature_extractor = FeatureExtractor(
@@ -1417,7 +1373,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See feature_engineering.py for a description of the parameters.
 
         """
-        check_method(self, "feature_generation")
+        check_dim(self, "feature_generation")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, FeatureGenerator().get_params())
         feature_generator = FeatureGenerator(
@@ -1460,7 +1416,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See feature_engineering.py for a description of the parameters.
 
         """
-        check_method(self, "feature_selection")
+        check_dim(self, "feature_selection")
         if isinstance(strategy, str):
             if strategy.lower() == "univariate" and solver is None:
                 solver = "f_classif" if self.goal == "class" else "f_regression"
@@ -1528,18 +1484,18 @@ class ATOM(BasePredictor, ATOMPlotter):
                 metric = self._metric
             else:
                 # If there's a metric, it should be the same as previous run
-                _metric = BaseTrainer._prepare_metric(
+                new_metric = BaseTrainer._prepare_metric(
                     metric=lst(metric),
                     greater_is_better=gib,
                     needs_proba=needs_proba,
                     needs_threshold=needs_threshold,
                 )
 
-                if list(_metric.keys()) != list(self._metric.keys()):
+                if list(new_metric) != list(self._metric):
                     raise ValueError(
                         "Invalid value for the metric parameter! The metric "
                         "should be the same as previous run. Expected "
-                        f"{self.metric}, got {flt([m.name for m in _metric])}."
+                        f"{self.metric}, got {flt(list(new_metric))}."
                     )
 
         return metric
@@ -1559,7 +1515,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         try:
             trainer._tracking_params = self._tracking_params
-            trainer._branches = {self._current: self.branch}
+            trainer._branches = {"og": self.og, self._current: self.branch}
             trainer._current = self._current
             trainer.scaled = self.scaled
             trainer.run()
@@ -1573,7 +1529,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._models.update(trainer._models)
         self._metric = trainer._metric
 
-        for model in self._models:
+        for model in self._models.values():
             self._errors.pop(model.name, None)  # Remove model from errors (if there)
             model.T = self  # Change the model's parent class from trainer to atom
 

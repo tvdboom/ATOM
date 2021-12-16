@@ -6,7 +6,7 @@
 metric=None, dataset="test", steps=100, title=None, figsize=(10, 6),
 filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2359">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2672">[source]</a>
 </span>
 </div>
 
@@ -30,7 +30,8 @@ used to run the pipeline is plotted.
 </p>
 <p>
 <strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train", "test" or "both".
+Data set on which to calculate the metric. Choose from:
+"train", "test", "both" (train and test) or "holdout".
 </p>
 <p>
 <strong>steps: int, optional (default=100)</strong><br>
@@ -77,6 +78,7 @@ atom = ATOMClassifier(X, y)
 atom.run("LGB")
 atom.plot_threshold(metric=["accuracy", "f1", recall_score])
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_threshold.png" alt="plot_threshold" width="700" height="420"/>
 </div>

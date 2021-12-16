@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None,
 method="pearson", title=None, figsize=(8, 7), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3541">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3636">[source]</a>
 </span>
 </div>
 
@@ -64,6 +64,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.plot_correlation()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_correlation.png" alt="plot_correlation" width="560" height="480"/>
 </div>

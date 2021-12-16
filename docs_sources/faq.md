@@ -79,7 +79,7 @@ accepts column names, column indices, dtypes or a slice object.
 ### How can I compare the same model on different datasets?
 
 In many occasions you might want to test how a model performs on datasets
-processed with different pipelines. For this, atom has the [branch system](../user_guide/data_pipelines/#branches).
+processed with different pipelines. For this, atom has the [branch system](../user_guide/data_management/#branches).
 Create a new branch for every new pipeline you want to test and use the plot
 methods to compare all models, independent of the branch it was trained on.
 

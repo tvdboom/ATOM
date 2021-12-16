@@ -16,10 +16,10 @@ from typing import Optional
 
 # Own modules
 from .basetransformer import BaseTransformer
-from .models import MODEL_LIST
+from .models import MODELS_ENSEMBLES
 from .utils import (
     X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
-    check_multidim, composed, crash, method_to_log,
+    is_multidim, custom_transform, composed, crash, method_to_log,
 )
 
 
@@ -38,17 +38,16 @@ class Branch:
     Attributes
     ----------
     pipeline: pd.Series or None, optional (default=None)
-        Sequence of estimators fitted on the data in the branch.
+        Estimators fitted on the data in the branch.
 
     data: pd.DataFrame or None, optional (default=None)
         Dataset coupled to the branch.
 
     idx: tuple or None, optional (default=None)
-        Tuple indicating the train and test sizes.
+        Train and test sizes.
 
     mapping: dict or None, optional (default=None)
-        Dictionary of the target values mapped to their respective
-        encoded integer.
+        Target values mapped to their respective encoded integer.
 
     feature_importance: list, optional (default=None)
         Features ordered by most to least important.
@@ -56,8 +55,8 @@ class Branch:
     """
 
     def __init__(self, *args, parent=None):
-        # Make copies of the params to not overwrite mutable variables
         self.T, self.name = args[0], args[1]
+        self._holdout = None  # Always reset holdout calculation
         if not parent:
             self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
             for attr in ("data", "idx", "mapping", "feature_importance"):
@@ -94,58 +93,71 @@ class Branch:
 
     def _get_attrs(self):
         """Get properties and attributes to call from parent."""
-        props = [p for p in dir(self) if isinstance(getattr(Branch, p, None), property)]
-        attrs = [a for a in vars(self) if a not in ("T", "name", "data", "idx")]
-        return props + attrs
+        attrs = []
+        for p in dir(self):
+            if (
+                p in vars(self) and p not in ("T", "name", "data", "idx", "_holdout")
+                or isinstance(getattr(Branch, p, None), property)
+            ):
+                attrs.append(p)
+
+        return attrs
 
     def _get_depending_models(self):
         """Return the models that are dependent on this branch."""
-        return [m.name for m in self.T._models if m.branch is self]
+        return [m.name for m in self.T._models.values() if m.branch is self]
 
     @composed(crash, method_to_log, typechecked)
     def delete(self, name: Optional[str] = None):
         """Delete the branch and all the models in it."""
         if name is None:
-            name = self.T._current
+            name = self.name
+
+        if name == "og":
+            raise PermissionError(
+                "The og branch is an internal branch and can not be deleted!"
+            )
         elif name not in self.T._branches:
             raise ValueError(f"Branch {name} not found in {self.T.__class__.__name__}!")
-
-        if len(self.T._branches) <= 2:
+        elif len(self.T._branches) <= 2:
             raise PermissionError(
                 f"Can't delete the last branch in {self.T.__class__.__name__}!"
             )
         else:
-            # Delete all depending models
-            for model in self.T._branches[name]._get_depending_models():
-                self.T.delete(model)
+            branch = self.T._branches[name]
 
-            self.T._branches.pop(name)
-            if name == self.T._current:  # Reset the current branch
-                self.T._current = list(self.T._branches.keys())[1]  # 0 is og
-            self.T.log(f"Branch {name} successfully deleted!", 1)
+            # Delete all depending models
+            depending_models = branch._get_depending_models()
+            if depending_models:
+                self.T.delete(depending_models)
+
+            # Reset the current branch
+            if branch.name == self.T._current:
+                self.T._current = list(self.T._branches)[1]  # 0 is og
+
+            self.T._branches.pop(branch.name)
+            self.T.log(f"Branch {branch.name} successfully deleted.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def rename(self, name: str):
         """Change the name of the branch."""
         if not name:
             raise ValueError("A branch can't have an empty name!")
-        elif name.lower() in map(str.lower, MODEL_LIST.keys()):
-            raise ValueError(
-                f"Invalid name for the branch. {name} is the "
-                f"acronym of model {MODEL_LIST[name].fullname}. "
-            )
-        elif name.lower() in ("og", "vote", "stack"):
-            raise ValueError(
-                "This name is reserved for internal purposes. "
-                "Choose a different name for the branch."
-            )
         elif name in self.T._branches:
             raise ValueError(f"Branch {self.T._branches[name].name} already exists!")
+        else:
+            for model in MODELS_ENSEMBLES.values():
+                if name.lower().startswith(model.acronym.lower()):
+                    raise ValueError(
+                        "Invalid name for the branch. The name of a branch may "
+                        f"not begin with a model's acronym, and {model.acronym} "
+                        f"is the acronym of the {model.fullname} model."
+                    )
 
         self.name = name
         self.pipeline.name = name
         self.T._branches[name] = self.T._branches.pop(self.T._current)
-        self.T.log(f"Branch {self.T._current} was renamed to {name}.", 1)
+        self.T.log(f"Branch {self.T._current} is renamed to {name}.", 1)
         self.T._current = name
 
     @composed(crash, method_to_log)
@@ -173,6 +185,8 @@ class Branch:
 
         def counter(name, dim):
             """Return the counter dimension of the provided data set."""
+            if name == "dataset":
+                return name
             if dim == "side":
                 if "X" in name:
                     return name.replace("X", "y")
@@ -184,27 +198,38 @@ class Branch:
                 if "test" in name:
                     return name.replace("test", "train")
 
+        if self._get_depending_models():
+            raise PermissionError(
+                "It's not allowed to change the data in the branch "
+                "after it has been used to train models. Create a "
+                "new branch to continue the pipeline."
+            )
+
         # Define the data attrs side and under
         side_name = counter(name, "side")
-        side = getattr(self, side_name) if side_name else None
+        if side_name:
+            side = getattr(self, side_name)
         under_name = counter(name, "under")
-        under = getattr(self, under_name) if under_name else None
+        if under_name:
+            under = getattr(self, under_name)
 
-        # Convert (if necessary) to pandas
+            # Convert (if necessary) to pandas
         if "y" in name:
             value = to_series(
-                value,
+                data=value,
                 index=side.index if side_name else None,
                 name=under.name if under_name else "target",
+                dtype=under.dtype if under_name else None,
             )
         else:
             value = to_df(
-                value,
+                data=value,
                 index=side.index if side_name else None,
                 columns=under.columns if under_name else None,
+                dtypes=under.dtypes if under_name else None,
             )
 
-        if side_name:  # Check for equal number of rows
+        if side_name:  # Check for equal rows
             if len(value) != len(side):
                 raise ValueError(
                     f"{name} and {side_name} must have the same "
@@ -216,7 +241,7 @@ class Branch:
                     f"indices, got {value.index} != {side.index}."
                 )
 
-        if under_name:  # Check for equal number of columns
+        if under_name:  # Check for equal columns
             if "y" in name:
                 if value.name != under.name:
                     raise ValueError(
@@ -230,10 +255,10 @@ class Branch:
                         f"of columns, got {value.shape[1]} != {under.shape[1]}."
                     )
 
-                if list(value.columns) != list(under.columns):
+                if not value.columns.equals(under.columns):
                     raise ValueError(
                         f"{name} and {under_name} must have the same "
-                        f"columns , got {value.columns} != {under.columns}."
+                        f"columns, got {value.columns} != {under.columns}."
                     )
 
         return value
@@ -245,32 +270,45 @@ class Branch:
 
     @dataset.setter
     @typechecked
-    def dataset(self, value: Optional[X_TYPES]):
+    def dataset(self, value: X_TYPES):
         self.data = self._check_setter("dataset", value)
 
     @property
     def train(self):
         """Training set."""
-        return self.data[:self.idx[0]]
+        return self.data.loc[self.idx[0], :]
 
     @train.setter
     @typechecked
     def train(self, value: X_TYPES):
         df = self._check_setter("train", value)
-        self.data = pd.concat([df, self.test])
-        self.idx[0] = len(df)
+        self.data = self.T._set_index(pd.concat([df, self.test]))
+        self.idx[0] = self.data.index[:len(df)]
 
     @property
     def test(self):
         """Test set."""
-        return self.data[-self.idx[1]:]
+        return self.data.loc[self.idx[1], :]
 
     @test.setter
     @typechecked
     def test(self, value: X_TYPES):
         df = self._check_setter("test", value)
-        self.data = pd.concat([self.train, df])
-        self.idx[1] = len(df)
+        self.data = self.T._set_index(pd.concat([self.train, df]))
+        self.idx[1] = self.data.index[-len(df):]
+
+    @property
+    def holdout(self):
+        """Holdout set."""
+        if self.T.holdout is not None and self._holdout is None:
+            X, y = self.T.holdout.iloc[:, :-1], self.T.holdout.iloc[:, -1]
+            for transformer in self.pipeline:
+                if not transformer._train_only:
+                    X, y = custom_transform(transformer, self, (X, y), verbose=0)
+
+            self._holdout = merge(X, y)
+
+        return self._holdout
 
     @property
     def X(self):
@@ -296,7 +334,7 @@ class Branch:
 
     @property
     def X_train(self):
-        """Feature set of the training set."""
+        """Features of the training set."""
         return self.train.drop(self.target, axis=1)
 
     @X_train.setter
@@ -307,7 +345,7 @@ class Branch:
 
     @property
     def X_test(self):
-        """Feature set of the test set."""
+        """Features of the test set."""
         return self.test.drop(self.target, axis=1)
 
     @X_test.setter
@@ -341,7 +379,7 @@ class Branch:
     @property
     def shape(self):
         """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
-        if not check_multidim(self.X):
+        if not is_multidim(self.X):
             return self.data.shape
         else:
             return len(self.data), self.X.iloc[0, 0].shape, 2

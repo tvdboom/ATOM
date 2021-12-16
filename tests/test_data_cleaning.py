@@ -31,8 +31,8 @@ from atom.utils import (
     NotFittedError, check_scaling,
 )
 from .utils import (
-    X_bin, y_bin, X_class, y_class, X10, X10_nan, X10_str,
-    X10_str2, X10_sn, y10, y10_str,
+    X_bin, y_bin, X_class, y_class, X_idx, y_idx, X10, X10_nan,
+    X10_str, X10_str2, X10_sn, y10, y10_str,
 )
 
 
@@ -655,18 +655,36 @@ def test_balancer_kwargs():
     assert balancer.smote.get_params()["k_neighbors"] == 12
 
 
-def test_return_pandas():
-    """Assert that pandas objects are returned, not numpy."""
-    X, y = Balancer().transform(X_bin, y_bin)
-    assert isinstance(X, pd.DataFrame)
-    assert isinstance(y, pd.Series)
+def test_oversampling_numerical_index():
+    """Assert that new samples have an increasing int index."""
+    X, y = Balancer(strategy="smote").transform(X_bin, y_bin)
+    assert list(X.index) == list(range(len(X)))
 
 
-def test_return_correct_column_names():
-    """Assert that the returned objects have the original column names."""
-    X, y = Balancer().transform(X_bin, y_bin)
-    assert list(X.columns) == list(X_bin.columns)
-    assert y.name == y_bin.name
+def test_oversampling_string_index():
+    """Assert that new samples have a new index."""
+    X, y = Balancer(strategy="smote").transform(X_idx, y_idx)
+    assert X.index[-1] == f"smote_{len(X) - len(X_idx)}"
+
+
+def test_undersampling_keeps_indices():
+    """Assert that indices are kept after transformation."""
+    X, y = Balancer(strategy="nearmiss").transform(X_bin, y_bin)
+    assert list(X.index) != list(range(len(X)))
+
+
+def test_combinations_numerical_index():
+    """Assert that new samples have an increasing int index."""
+    X, y = Balancer(strategy="smoteenn").transform(X_bin, y_bin)
+    assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
+    assert max(X.index) > max(X_bin.index)  # Samples were added
+
+
+def test_combinations_string_index():
+    """Assert that new samples have a new index."""
+    X, y = Balancer(strategy="smotetomek").transform(X_idx, y_idx)
+    assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
+    assert len(X.index.str.startswith("smotetomek") > 0)  # Samples were added
 
 
 def test_balancer_attach_attribute():

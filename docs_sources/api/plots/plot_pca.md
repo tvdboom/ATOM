@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None,
 figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L524">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L497">[source]</a>
 </span>
 </div>
 
@@ -57,6 +57,7 @@ atom = ATOMClassifier(X, y)
 atom.feature_selection(strategy="PCA", n_features=11)
 atom.plot_pca()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_pca.png" alt="plot_pca" width="700" height="420"/>
 </div>

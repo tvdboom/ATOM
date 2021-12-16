@@ -3,10 +3,10 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">heatmap_plot</strong>(models=None,
-index=None, show=None, target=1, title=None, figsize=(8, 6),
+index=None, show=None, target=1, title=None, figsize=None,
 filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3074">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3353">[source]</a>
 </span>
 </div>
 
@@ -28,10 +28,10 @@ exception if there are multiple models in the pipeline. To avoid
 this, call the plot from a model, e.g. <code>atom.xgb.heatmap_plot()</code>.
 </p>
 <p>
-<strong>index: tuple, slice or None, optional (default=None)</strong><br>
-Indices of the rows in the dataset to plot. If tuple (n, m), it selects rows
-n until m. If None, it selects all rows in the test set. The heatmap plot does
-not support plotting a single sample.
+<strong>index: slice, sequence or None, optional (default=None)</strong><br>
+Index names or positions of the rows in the dataset to plot.
+If None, it selects all rows in the test set. The heatmap
+plot does not support plotting a single sample.
 </p>
 <p>
 <strong>show: int or None, optional (default=None)</strong><br>
@@ -47,8 +47,9 @@ multi-class classification tasks.
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple, optional (default=(8, 6)))</strong><br>
-Figure's size, format as (x, y).
+<strong>figsize: tuple or None, optional (default=None)</strong><br>
+Figure's size, format as (x, y). If None, it adapts the
+size to the number of features shown.
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
@@ -86,6 +87,7 @@ atom = ATOMRegressor(X, y)
 atom.run("RF")
 atom.heatmap_plot()
 ```
+
 <div align="center">
     <img src="../../../img/plots/heatmap_plot.png" alt="heatmap_plot" width="540" height="420"/>
 </div>

@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_ngrams</strong>(ngram="words",
 index=None, show=10, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4023">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4118">[source]</a>
 </span>
 </div>
 
@@ -24,10 +24,10 @@ Number of contiguous words to search for (size of n-gram).
 Choose from: words (1), bigrams (2), trigrams (3), quadgrams (4).
 </p>
 <p>
-<strong>index: int, tuple, slice or None, optional (default=None)</strong><br>
-Indices of the documents in the corpus to include in the
-search. If shape (n, m), it selects documents n until m.
-If None, it selects all rows in the dataset.
+<strong>index: int, str, sequence or None, optional (default=None)</strong><br>
+Index names or positions of the documents in the corpus to
+include in the search. If None, it selects all documents in
+the dataset.
 </p>
 <p>
 <strong>show: int, optional (default=10)</strong><br>
@@ -74,6 +74,7 @@ atom = ATOMClassifier(X_text, y_text)
 atom.textclean()
 atom.plot_ngrams("bigrams")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_ngrams.png" alt="plot_ngrams" width="700" height="700"/>
 </div>

@@ -1,6 +1,38 @@
 # Release history
 -----------------
 
+<a name="v4100"></a>
+### Version 4.10.0
+
+* Added the `holdout` data set to have an extra way of assessing a
+  model's performance on a completely independent dataset. Read more
+  in the [user_guide](../user_guide/data_management/#data-sets).
+* Complete rework of the [ensemble](../user_guide/models/#ensembles) models.
+* Support for dataframe indexing. Read more in the [user guide](../user_guide/data_management/#indexing).
+* New [plot_parshap](../API/plots/plot_parshap) plot to detect overfitting
+  features.
+* The new [dashboard](../API/models/gnb/#dashboard) method makes analyzing
+  the models even easier using a dashboard app.
+* The [plot_feature_importance](../API/plots/plot_feature_importance)
+  plot now also accepts estimators with coefficients.
+* Added the [transform](../API/models/gnb/#transform) method for models.
+* Added the `threshold` parameter to the [evaluate](../API/ATOM/atomclassifier/#evaluate)
+  method.
+* The `reset_predictions` method is deprecated in favour of the new
+  [clear](../API/ATOM/atomclassifier/#clear) method.
+* Refactor of the model's [full_train](../API/models/gnb/#full-train) method.
+* The [merge](../API/training/directclassifier/#merge) method is available
+  for all trainers.
+* Improvements in the trainer's pipeline.
+* Training scores are now also saved to the mlflow run.
+* Trying to change the data in a branch after fitting a model with it now
+  raises an exception.
+* Fixed a bug where the columns of array inputs were not ordered correctly.
+* Fixed a bug where branches did not correctly act case-insensitive.
+* Fixed a bug where the [export_pipeline](../API/models/gnb/#export-pipeline)
+  method for models would not export the transformers in the correct branch.
+
+
 <a name="v491"></a>
 ### Version 4.9.1
 
@@ -193,7 +225,7 @@
 
 * Possibility to [add](../API/ATOM/atomclassifier/#add) custom transformers to the pipeline.
 * The [export_pipeline](../API/ATOM/atomclassifier/#export-pipeline) utility method exports atom's current pipeline to a sklearn object.
-* Use [AutoML](../user_guide/data_pipelines/#automl) to automate the search for an optimized pipeline.
+* Use [AutoML](../user_guide/data_management/#automl) to automate the search for an optimized pipeline.
 * New magic methods makes atom behave similarly to sklearn's [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html).
 * All [training approaches](../user_guide/training) can now be combined in the same atom instance.
 * New [plot_scatter_matrix](../API/plots/plot_scatter_matrix), [plot_distribution](../API/plots/plot_distribution) and [plot_qq](../API/plots/plot_qq) plots for data inspection.
@@ -229,7 +261,7 @@
 
 * Possibility to add custom models to the pipeline using [ATOMModel](../API/ATOM/atommodel).
 * Compatibility with [deep learning](../user_guide/models/#deep-learning) models.
-* New branch system for different data pipelines. Read more in the [user guide](../user_guide/data_pipelines/#branches).
+* New branch system for different data pipelines. Read more in the [user guide](../user_guide/data_management/#branches).
 * Use the [canvas](../API/ATOM/atomclassifier/#canvas) contextmanager to draw multiple plots in one figure.
 * New [voting](../user_guide/models/#voting) and [stacking](../user_guide/models/#stacking) ensemble techniques.
 * New [get_class_weight](../API/ATOM/atomclassifier/#get-class-weight) utility method.

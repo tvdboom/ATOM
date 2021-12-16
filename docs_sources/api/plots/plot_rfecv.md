@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None,
 figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L671">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L644">[source]</a>
 </span>
 </div>
 
@@ -58,6 +58,7 @@ atom = ATOMClassifier(X, y)
 atom.feature_selection(strategy="RFECV", solver="LGB", scoring="precision")
 atom.plot_rfecv()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_rfecv.png" alt="plot_rfecv" width="700" height="420"/>
 </div>

@@ -24,19 +24,19 @@ from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg
 
 def test_name():
     """Assert that the name is attached to the estimator."""
-    model = ATOMModel(HuberRegressor, acronym="hub")
+    model = ATOMModel(HuberRegressor(), acronym="hub")
     assert model.acronym == "hub"
 
 
 def test_fullname():
     """Assert that the fullname is attached to the estimator."""
-    model = ATOMModel(HuberRegressor, acronym="hub", fullname="Hubber")
+    model = ATOMModel(HuberRegressor(), acronym="hub", fullname="Hubber")
     assert model.fullname == "Hubber"
 
 
 def test_needs_scaling():
     """Assert that the needs_scaling is attached to the estimator."""
-    model = ATOMModel(HuberRegressor, acronym="hub", needs_scaling=True)
+    model = ATOMModel(HuberRegressor(), acronym="hub", needs_scaling=True)
     assert model.needs_scaling
 
 
@@ -85,7 +85,7 @@ def test_load_ignores_n_rows_parameter():
 def test_transform_data():
     """Assert that the data is transformed correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.prune(columns=slice(3, 10))
+    atom.scale(columns=slice(3, 10))
     atom.apply(lambda df: df["mean radius"] + 2, columns="mean radius")
     atom.feature_generation(strategy="dfs", n_features=5)
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
@@ -102,15 +102,15 @@ def test_transform_data_multiple_branches():
     """Assert that the data is transformed with multiple branches."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.prune()
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     atom.balance()
     atom.feature_generation(strategy="dfs", n_features=5)
-    atom.branch = "branch_3"
+    atom.branch = "b3"
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=20)
     atom.save(FILE_DIR + "atom_2", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom_2", data=(X_bin, y_bin), transform_data=True)
-    for branch in atom._branches.keys():
+    for branch in atom._branches:
         assert_frame_equal(
             left=atom2._branches[branch].data,
             right=atom._branches[branch].data,

@@ -14,7 +14,7 @@ import pandas as pd
 # Own modules
 from atom import ATOMClassifier
 from atom.utils import merge
-from .utils import X_bin, y_bin, X_class, y_class, X_bin_array, y_bin_array, mnist
+from .utils import X_bin, y_bin, X_class, X_bin_array, y_bin_array, mnist
 
 
 # Test __init__ ==================================================== >>
@@ -29,9 +29,9 @@ def test_attrs_are_passed():
     """Assert that the attributes from the parent are passed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
-    atom.branch = "branch_2"
-    assert atom.branch_2.idx is not atom.master.idx
-    assert atom.branch_2.adasyn is atom.master.adasyn
+    atom.branch = "b2"
+    assert atom.b2.idx is not atom.master.idx
+    assert atom.b2.adasyn is atom.master.adasyn
 
 
 # Test __repr__ ==================================================== >>
@@ -47,39 +47,48 @@ def test_repr():
 def test_branch_delete_current():
     """Assert that we can delete the current branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     atom.branch.delete()
-    assert "branch_2" not in atom._branches
+    assert "b2" not in atom._branches
 
 
-def test_branch_delete_invalid_name():
-    """Assert that an error is raised when the name is invalid."""
+def test_branch_delete_og():
+    """Assert that an error is raised when og is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "branch_2"
-    pytest.raises(ValueError, atom.branch.delete, "invalid")
+    with pytest.raises(PermissionError, match=r".*can not be deleted.*"):
+        atom.branch.delete("og")
 
 
-def test_branch_delete_not_current():
-    """Assert that we can delete any branch."""
+def test_branch_delete_not_existing_branch():
+    """Assert that an error is raised when the branch doesn't exist."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "branch_2"
-    atom.branch.delete("master")
-    assert "master" not in atom._branches
-
-
-def test_branch_delete_depending_models():
-    """Assert that depending models are deleted with the branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "branch_2"
-    atom.run("LR")
-    atom.delete()
-    assert "LR" not in atom.models
+    atom.branch = "b2"
+    with pytest.raises(ValueError, match=r".*not found in.*"):
+        atom.branch.delete("invalid")
 
 
 def test_branch_delete_last_branch():
     """Assert that an error is raised when the last branch is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(PermissionError, atom.branch.delete)
+    with pytest.raises(PermissionError, match=r".*last branch in.*"):
+        atom.branch.delete()
+
+
+def test_branch_delete_not_current():
+    """Assert that we can delete any branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.branch.delete("master")
+    assert "master" not in atom._branches
+
+
+def test_branch_delete_depending_models():
+    """Assert that dependent models are deleted with the branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.run("LR")
+    atom.delete()
+    assert not atom.models
 
 
 # Test rename ====================================================== >>
@@ -91,34 +100,27 @@ def test_rename_empty_name():
         atom.branch.rename("")
 
 
-def test_rename_model_name():
-    """Assert that an error is raised when name is a model's acronym."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*acronym of model.*"):
-        atom.branch.rename("Lda")
-
-
-def test_rename_restricted_name():
-    """Assert that an error is raised when name is restricted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*This name is reserved.*"):
-        atom.branch.rename("og")
-
-
 def test_rename_existing_name():
     """Assert that an error is raised when name already exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "branch_2"
+    atom.branch = "b2"
     with pytest.raises(ValueError, match=r".*already exists!.*"):
         atom.branch.rename("master")
+
+
+def test_rename_model_name():
+    """Assert that an error is raised when name is a model's acronym."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*model's acronym.*"):
+        atom.branch.rename("Lda")
 
 
 def test_rename_method():
     """Assert that the branch name changes correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch.rename("branch_1")
-    assert atom.branch.name == "branch_1"
-    assert atom.branch.pipeline.name == "branch_1"
+    atom.branch.rename("b1")
+    assert atom.branch.name == "b1"
+    assert atom.branch.pipeline.name == "b1"
 
 
 # Test status ====================================================== >>
@@ -148,9 +150,15 @@ def test_train_property():
 
 def test_test_property():
     """Assert that the test property returns the test set."""
-    test_size = 0.3
-    atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.branch.test.shape == (int(test_size * len(X_bin)), X_bin.shape[1] + 1)
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    assert atom.branch.test.shape == (int(0.3 * len(X_bin)), X_bin.shape[1] + 1)
+
+
+def test_holdout_property():
+    """Assert that the holdout property returns a transformed holdout set."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.scale()
+    assert not atom.holdout.equals(atom.branch.holdout)
 
 
 def test_X_property():
@@ -235,11 +243,22 @@ def test_target_property():
 
 # Test property setters ============================================ >>
 
+def test_setter_with_models():
+    """Assert that an error is raised when there are models."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    with pytest.raises(PermissionError, match=r".*not allowed to change the data.*"):
+        atom.X = X_class
+
+
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""
+    new_dataset = merge(X_bin, y_bin)
+    new_dataset.iloc[0, 3] = 4  # Change one value
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.dataset = merge(X_class, y_class)
-    assert atom.dataset.shape == (len(X_class), X_class.shape[1] + 1)
+    atom.dataset = new_dataset
+    assert atom.dataset.iloc[0, 3] == 4  # Check the value is changed
 
 
 def test_train_setter():
@@ -276,8 +295,9 @@ def test_X_train_setter():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X_train = atom.X_train
     new_X_train.iloc[0, 0] = 999
-    atom.X_train = new_X_train
+    atom.X_train = new_X_train.to_numpy()  # To numpy to test dtypes are maintained
     assert atom.X_train.iloc[0, 0] == 999
+    assert list(atom.X_train.dtypes) == list(atom.X_test.dtypes)
 
 
 def test_X_test_setter():

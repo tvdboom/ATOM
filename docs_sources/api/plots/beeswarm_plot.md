@@ -6,7 +6,7 @@
 index=None, show=None, target=1, title=None, figsize=None, filename=None,
 display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2748">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3060">[source]</a>
 </span>
 </div>
 
@@ -25,9 +25,9 @@ exception if there are multiple models in the pipeline. To avoid
 this, call the plot from a model, e.g. <code>atom.xgb.beeswarm_plot()</code>.
 </p>
 <p>
-<strong>index: tuple, slice or None, optional (default=None)</strong><br>
-Indices of the rows in the dataset to plot. If tuple (n, m), it selects
-rows n until m. If None, it selects all rows in the test set. The beeswarm
+<strong>index: slice, sequence or None, optional (default=None)</strong><br>
+Index names or positions of the rows in the dataset to plot.
+If None, it selects all rows in the test set. The beeswarm
 plot does not support plotting a single sample.
 </p>
 <p>
@@ -84,6 +84,7 @@ atom = ATOMRegressor(X, y)
 atom.run("RF")
 atom.beeswarm_plot()
 ```
+
 <div align="center">
     <img src="../../../img/plots/beeswarm_plot.png" alt="beeswarm_plot" width="700" height="700"/>
 </div>

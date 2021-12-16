@@ -84,7 +84,7 @@ nav:
         - Introduction: user_guide/introduction.md
         - Nomenclature: user_guide/nomenclature.md
         - First steps: user_guide/first_steps.md
-        - Data pipelines: user_guide/data_pipelines.md
+        - Data management: user_guide/data_management.md
         - Logging & Tracking: user_guide/logging.md
         - Data cleaning: user_guide/data_cleaning.md
         - NLP: user_guide/nlp.md
@@ -191,6 +191,7 @@ nav:
             - plot_feature_importance: API/plots/plot_feature_importance.md
             - plot_permutation_importance: API/plots/plot_permutation_importance.md
             - plot_partial_dependence: API/plots/plot_partial_dependence.md
+            - plot_parshap: API/plots/plot_parshap.md
             - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
             - plot_threshold: API/plots/plot_threshold.md
             - plot_probabilities: API/plots/plot_probabilities.md
@@ -210,6 +211,7 @@ nav:
         - Early stopping: examples/early_stopping.ipynb
         - Ensembles: examples/ensembles.ipynb
         - Feature engineering: examples/feature_engineering.ipynb
+        - Holdout set: examples/holdout_set.ipynb
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multi-metric runs: examples/multi_metric.ipynb

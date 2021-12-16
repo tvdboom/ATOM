@@ -3,508 +3,354 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing the Voting and Stacking classes.
+Description: Module containing the ensemble estimators.
 
 """
 
 # Standard packages
 import numpy as np
-import pandas as pd
-from copy import copy
-from typing import Optional, Union
-from typeguard import typechecked
+from copy import deepcopy
+from joblib import Parallel, delayed
+
+# Sklearn
+from sklearn.base import clone
+from sklearn.utils import Bunch
+from sklearn.base import is_classifier
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import (
+    VotingClassifier as VC,
+    VotingRegressor as VR,
+    StackingClassifier as SC,
+    StackingRegressor as SR,
+)
+from sklearn.utils.validation import column_or_1d
+from sklearn.ensemble._base import _fit_single_estimator
+from sklearn.model_selection import check_cv, cross_val_predict
+from sklearn.utils.multiclass import check_classification_targets
 
 # Own modules
-from .branch import Branch
-from .basemodel import BaseModel
-from .data_cleaning import Scaler
-from .models import MODEL_LIST
-from .utils import (
-    SEQUENCE_TYPES, flt, arr, merge, get_acronym, get_best_score,
-    get_scorer, custom_transform, composed, crash, CustomDict,
-)
+from .utils import check_is_fitted
 
 
 class BaseEnsemble:
-    """Base class for all ensembles."""
+    """Base class for all ensemble estimators."""
 
-    def _process_branches(self, X, y, verbose, method):
-        """Transform data through all branches.
+    def _get_fitted_attrs(self):
+        """Update the fitted attributes (end with underscore)"""
+        self.named_estimators_ = Bunch()
 
-        This method transforms provided data through all the branches
-        from the models in the ensemble. Shared transformations are
-        not repeated. Note that a unique copy of the data is stored
-        per branch, so this method can cause memory issues for many
-        branches or large datasets.
-
-        """
-        for m in self._models:
-            if not hasattr(m.estimator, method):
-                raise AttributeError(
-                    f"{m.estimator.__class__.__name__} doesn't have a {method} method!"
-                )
-
-        # Branches used by the models in the instance
-        branch_names = set(m.branch.name for m in self._models)
-        branches = {k: v for k, v in self.T._branches.items() if k in branch_names}
-
-        data = {k: (copy(X), copy(y)) for k in branch_names}
-        step = {}  # Current step in the pipeline per branch
-        for b1, v1 in branches.items():
-            _print = True
-            for idx, est in enumerate([t for t in v1.pipeline if not t._train_only]):
-                # Skip if the transformation was already applied
-                if step.get(b1, -1) < idx:
-                    if _print:  # Just print message once per branch
-                        _print = False
-                        self.T.log(f"Transforming data for branch {b1}:", 1)
-                    data[b1] = custom_transform(self.T, est, v1, data[b1], verbose)
-
-                    for b2, v2 in branches.items():
-                        if b1 != b2 and v2.pipeline.get(idx) is est:
-                            # Update the data and step for the other branch
-                            data[b2] = copy(data[b1])
-                            step[b2] = idx
-
-        return data
-
-
-class Voting(BaseModel, BaseEnsemble):
-    """Class for voting with the models in the pipeline."""
-
-    acronym = "Vote"
-    fullname = "Voting"
-
-    def __init__(self, *args, models, weights):
-        super().__init__(*args)
-
-        self.models = models
-        self.weights = weights
-        self._pred_attrs = [None] * 12  # With score_train and score_test
-        self._models = CustomDict(
-            {k: v for k, v in self.T._models.items() if v.name in self.models}
-        )
-
-        if len(self.models) < 2:
-            raise ValueError(
-                "Invalid value for the models parameter. A Voting "
-                "class should contain at least two models."
-            )
-
-        if self.weights and len(self.models) != len(self.weights):
-            raise ValueError(
-                "Invalid value for the weights parameter. Length should "
-                "be equal to the number of models, got len(models)="
-                f"{len(self.models)} and len(weights)={len(self.weights)}."
-            )
-
-    def __repr__(self):
-        out_1 = f"{self.fullname}"
-        out_1 += f"\n --> Models: {self.models}"
-        out_1 += f"\n --> Weights: {self.weights}"
-        out_2 = [
-            f"{m.name}: {round(get_best_score(self, i), 4)}"
-            for i, m in enumerate(self.T._metric)
-        ]
-        return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
-
-    @composed(crash, typechecked)
-    def evaluate(
-        self,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-    ):
-        """Get the model's evaluation for provided metrics.
-
-        Parameters
-        ----------
-        metric: str, scorer or None, optional (default=None)
-            Metrics to calculate. If None, a selection of the most
-            common metrics per task are used.
-
-        dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
-            "train" or "test".
-
-        Returns
-        -------
-        score: pd.Series
-            Model's evaluation.
-
-        """
-        scores = pd.Series(name=self.name, dtype=float)
-
-        # Get the scores from all models in the ensemble
-        results = [m.evaluate(metric, dataset) for m in self._models]
-
-        # Calculate averages per metric
-        for idx in results[0].index:
-            values = [x[idx] for x in results]
-            scores[idx] = np.average(values, axis=0, weights=self.weights)
-
-        return scores
-
-    def _prediction(
-        self,
-        X,
-        y=None,
-        metric=None,
-        sample_weight=None,
-        verbose=None,
-        method="predict"
-    ):
-        """Get the mean of the prediction methods on new data.
-
-        Transform the new data and apply the attribute on all the
-        models. All models need to have the provided attribute.
-
-        Parameters
-        ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, sequence or None, optional (default=None)
-            - If None: y is ignored.
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
-
-        metric: str, func, scorer or None, optional (default=None)
-            Metric to calculate. Choose from any of sklearn's SCORERS,
-            a function with signature metric(y_true, y_pred) or a scorer
-            object. If None, it returns mean accuracy for classification
-            tasks and r2 for regression tasks. Only for method="score".
-
-        sample_weight: sequence or None, optional (default=None)
-            Sample weights for the score method.
-
-        verbose: int or None, optional (default=None)
-            Verbosity level for the transformers. If None, it uses the
-            estimator's own verbosity.
-
-        method: str, optional (default="predict")
-            Prediction method to be applied to the estimator.
-
-        Returns
-        -------
-        pred: np.ndarray
-            Return of the attribute.
-
-        """
-        data = self._process_branches(X, y, verbose, method)
-
-        if method == "predict":
-            pred = []
-            for m in self._models:
-                pred.append(m.predict(data[m.branch.name][0]))
-
-            return np.apply_along_axis(
-                func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
-                axis=0,
-                arr=np.array(pred).astype("int"),
-            )
-
-        elif method in ("predict_proba", "predict_log_proba", "decision_function"):
-            pred = []
-            for m in self._models:
-                pred.append(getattr(m, method)(data[m.branch.name][0]))
-
-            return np.average(pred, axis=0, weights=self.weights)
-
-        elif method == "score":
-            pred = []
-            for m in self._models:
-                pred.append(m.score(*data[m.branch.name], metric, sample_weight))
-
-            return np.average(pred, axis=0, weights=self.weights)
-
-    # Prediction properties ======================================== >>
-
-    @property
-    def metric_train(self):
-        if self._pred_attrs[0] is None:
-            pred = np.array([m.metric_train for m in self._models])
-            self._pred_attrs[0] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[0]
-
-    @property
-    def metric_test(self):
-        if self._pred_attrs[1] is None:
-            pred = np.array([m.metric_test for m in self._models])
-            self._pred_attrs[1] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[1]
-
-    @property
-    def predict_train(self):
-        if self._pred_attrs[2] is None:
-            pred = np.array([m.predict_train for m in self._models])
-            self._pred_attrs[2] = np.apply_along_axis(
-                func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
-                axis=0,
-                arr=pred.astype("int"),
-            )
-        return self._pred_attrs[2]
-
-    @property
-    def predict_test(self):
-        if self._pred_attrs[3] is None:
-            pred = np.array([m.predict_test for m in self._models])
-            self._pred_attrs[3] = np.apply_along_axis(
-                func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
-                axis=0,
-                arr=pred.astype("int"),
-            )
-        return self._pred_attrs[3]
-
-    @property
-    def predict_proba_train(self):
-        if self._pred_attrs[4] is None:
-            pred = np.array([m.predict_proba_train for m in self._models])
-            self._pred_attrs[4] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[4]
-
-    @property
-    def predict_proba_test(self):
-        if self._pred_attrs[5] is None:
-            pred = np.array([m.predict_proba_test for m in self._models])
-            self._pred_attrs[5] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[5]
-
-    @property
-    def predict_log_proba_train(self):
-        if self._pred_attrs[6] is None:
-            pred = np.array([m.predict_log_proba_train for m in self._models])
-            self._pred_attrs[6] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[6]
-
-    @property
-    def predict_log_proba_test(self):
-        if self._pred_attrs[7] is None:
-            pred = np.array([m.predict_log_proba_test for m in self._models])
-            self._pred_attrs[7] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[7]
-
-    @property
-    def decision_function_train(self):
-        if self._pred_attrs[8] is None:
-            pred = np.array([m.decision_function_train for m in self._models])
-            self._pred_attrs[8] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[8]
-
-    @property
-    def decision_function_test(self):
-        if self._pred_attrs[9] is None:
-            pred = np.array([m.decision_function_test for m in self._models])
-            self._pred_attrs[9] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[9]
-
-    @property
-    def score_train(self):
-        if self._pred_attrs[10] is None:
-            pred = np.array([m.score_train for m in self._models])
-            self._pred_attrs[10] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[10]
-
-    @property
-    def score_test(self):
-        if self._pred_attrs[11] is None:
-            pred = np.array([m.score_test for m in self._models])
-            self._pred_attrs[11] = np.average(pred, axis=0, weights=self.weights)
-        return self._pred_attrs[11]
-
-
-class Stacking(BaseModel, BaseEnsemble):
-    """Class for stacking the models in the pipeline."""
-
-    acronym = "Stack"
-    fullname = "Stacking"
-
-    def __init__(self, *args, models, estimator, stack_method, passthrough):
-        super().__init__(*args)
-
-        self.models = models
-        self.estimator = estimator
-        self.stack_method = stack_method
-        self.passthrough = passthrough
-        self._models = CustomDict(
-            {k: v for k, v in self.T._models.items() if v.name in self.models}
-        )
-        self._fxs_scaler = None
-
-        if len(self.models) < 2:
-            raise ValueError(
-                "Invalid value for the models parameter. A Stacking "
-                "class should contain at least two models."
-            )
-
-        # Create the dataset for the Stacking instance
-        dataset = pd.DataFrame()
-        for m in self._models:
-            attr = self._get_stack_attr(m)
-            pred = np.concatenate(
-                [getattr(m, f"{attr}_train"), getattr(m, f"{attr}_test")]
-            )
-            if attr == "predict_proba" and self.T.task.startswith("bin"):
-                pred = pred[:, 1]
-
-            if pred.ndim == 1:
-                dataset[f"{attr}_{m.name}"] = pred
+        # Uses 'drop' as placeholder for dropped estimators
+        est_iter = iter(self.estimators_)
+        for name, est in self.estimators:
+            if est == "drop" or check_is_fitted(est, False):
+                self.named_estimators_[name] = est
             else:
-                for i in range(pred.shape[1]):
-                    dataset[f"{attr}_{m.name}_{i}"] = pred[:, i]
+                self.named_estimators_[name] = next(est_iter)
 
-        # Add scaled features from the branch to the set
-        if self.passthrough:
-            fxs = self.T.X  # Doesn't point to the same id
-            if any(m.needs_scaling for m in self._models) and not self.T.scaled:
-                self._fxs_scaler = Scaler().fit(self.T.X_train)
-                fxs = self._fxs_scaler.transform(fxs)
+            if hasattr(est, "feature_names_in_"):
+                self.feature_names_in_ = est.feature_names_in_
 
-            dataset = pd.concat([dataset, fxs], axis=1, join="inner")
 
-        # The instance has its own internal branch
-        self.branch = Branch(self, "StackBranch")
-        self.branch.data = merge(dataset, self.T.y)
-        self.branch.idx = self.T.branch.idx
-        self._train_idx = self.branch.idx[0]
+class BaseVoting(BaseEnsemble):
+    """Base class for the voting estimators."""
 
-        if isinstance(self.estimator, str):
-            # Add goal, n_jobs and random_state from trainer for the estimator
-            self.goal = self.T.goal
-            self.n_jobs = self.T.n_jobs
-            self.random_state = self.T.random_state
+    def fit(self, X, y, sample_weight=None):
+        names, all_estimators = self._validate_estimators()
 
-            # Get one of ATOM's predefined models
-            model = MODEL_LIST[get_acronym(self.estimator)](self)
-            self.estimator = model.get_estimator()
-
-        self.estimator.fit(self.X_train, self.y_train)
-
-        # Save metric scores on complete training and test set
-        self.metric_train = flt(
-            [
-                metric(self.estimator, arr(self.X_train), self.y_train)
-                for metric in self.T._metric
-            ]
-        )
-        self.metric_test = flt(
-            [
-                metric(self.estimator, arr(self.X_test), self.y_test)
-                for metric in self.T._metric
-            ]
+        # Difference with sklearn's implementation, skip fitted estimators
+        estimators = Parallel(n_jobs=self.n_jobs)(
+            delayed(_fit_single_estimator)(
+                clone(clf),
+                X,
+                y,
+                sample_weight=sample_weight,
+                message_clsname="Voting",
+                message=self._log_message(names[idx], idx + 1, len(all_estimators)),
+            )
+            for idx, clf in enumerate(all_estimators)
+            if clf != "drop" and not check_is_fitted(clf, False)
         )
 
-    def __repr__(self):
-        out_1 = f"{self.fullname}"
-        out_1 += f"\n --> Models: {self.models}"
-        out_1 += f"\n --> Estimator: {self.estimator.__class__.__name__}"
-        out_1 += f"\n --> Stack method: {self.stack_method}"
-        out_1 += f"\n --> Passthrough: {self.passthrough}"
-        out_2 = [
-            f"{m.name}: {round(get_best_score(self, i), 4)}"
-            for i, m in enumerate(self.T._metric)
-        ]
-        return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
-
-    def _get_stack_attr(self, model):
-        """Get the stack attribute for a specific model."""
-        if self.stack_method == "auto":
-            if hasattr(model.estimator, "predict_proba"):
-                return "predict_proba"
-            elif hasattr(model.estimator, "decision_function"):
-                return "decision_function"
-            else:
-                return "predict"
-
-        return self.stack_method
-
-    # Prediction methods =========================================== >>
-
-    def _prediction(
-        self,
-        X,
-        y=None,
-        metric=None,
-        sample_weight=None,
-        verbose=None,
-        method="predict"
-    ):
-        """Get the mean of the prediction methods on new data.
-
-        First transform the new data and apply the attribute on all
-        the models. All models need to have the provided attribute.
-
-        Parameters
-        ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, sequence or None, optional (default=None)
-            - If None: y is ignored.
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
-
-        metric: str, func, scorer or None, optional (default=None)
-            Metric to calculate. Choose from any of sklearn's SCORERS,
-            a function with signature metric(y_true, y_pred) or a scorer
-            object. If None, it returns mean accuracy for classification
-            tasks and r2 for regression tasks. Only for method="score".
-
-        sample_weight: sequence or None, optional (default=None)
-            Sample weights for the score method.
-
-        verbose: int or None, optional (default=None)
-            Verbosity level for the transformers. If None, it uses the
-            estimator's own verbosity.
-
-        method: str, optional (default="predict")
-            Prediction method to be applied to the estimator.
-
-        Returns
-        -------
-        pred: np.ndarray
-            Return of the attribute.
-
-        """
-        data = self._process_branches(X, y, verbose, method)
-
-        # Create the feature set from which to make predictions
-        fxs_set = pd.DataFrame()
-        for m in self._models:
-            attr = self._get_stack_attr(m)
-            pred = getattr(m, attr)(data[m.branch.name][0])
-            if attr == "predict_proba" and self.T.task.startswith("bin"):
-                pred = pred[:, 1]
-
-            # Add features to the dataset
-            if pred.ndim == 1:
-                fxs_set[f"{attr}_{m.name}"] = pred
-            else:
-                for i in range(pred.shape[1]):
-                    fxs_set[f"{attr}_{m.name}_{i}"] = pred[:, i]
-
-        # Add scaled features from the branch to the set
-        if self.passthrough:
-            fxs_pass = self.T.X
-            if self._fxs_scaler:
-                fxs_pass = self._fxs_scaler.transform(fxs_pass)
-
-            fxs_set = pd.concat([fxs_set, fxs_pass], axis=1, join="inner")
-
-        if y is None:
-            return getattr(self.estimator, method)(fxs_set)
-        else:
-            if metric is None:
-                if self.T.goal == "class":
-                    metric = get_scorer("accuracy")
+        self.estimators_ = []
+        estimators = iter(estimators)
+        for est in self.estimators:
+            if est[1] != "drop":
+                if check_is_fitted(est[1], False):
+                    self.estimators_.append(est[1])
                 else:
-                    metric = get_scorer("r2")
-            else:
-                metric = get_scorer(metric)
+                    self.estimators_.append(next(estimators))
 
-            kwargs = {}
-            if sample_weight is not None:
-                kwargs["sample_weight"] = sample_weight
+        self._get_fitted_attrs()  # Update the fit attrs
 
-            return metric(self.estimator, fxs_set, self.T.y, **kwargs)
+        return self
+
+
+class BaseStacking(BaseEnsemble):
+    """Base class for the stacking estimators."""
+
+    def fit(self, X, y, sample_weight=None):
+        names, all_estimators = self._validate_estimators()
+        self._validate_final_estimator()
+
+        stack_method = [self.stack_method] * len(all_estimators)
+
+        # Difference with sklearn's implementation, skip fitted estimators
+        estimators = Parallel(n_jobs=self.n_jobs)(
+            delayed(_fit_single_estimator)(clone(clf), X, y, sample_weight)
+            for idx, clf in enumerate(all_estimators)
+            if clf != "drop" and not check_is_fitted(clf, False)
+        )
+
+        self.estimators_ = []
+        estimators = iter(estimators)
+        for est in self.estimators:
+            if est[1] != "drop":
+                if check_is_fitted(est[1], False):
+                    self.estimators_.append(est[1])
+                else:
+                    self.estimators_.append(next(estimators))
+
+        self._get_fitted_attrs()  # Update the fit attrs
+
+        # To train the meta-classifier using the most data as possible,
+        # we use cross-validation for the output of the stacked estimators
+
+        # To ensure that the data provided to each estimator are the
+        # same, we need to set the random state of the cv if there is
+        # one and we need to take a copy
+        cv = check_cv(self.cv, y=y, classifier=is_classifier(self))
+        if hasattr(cv, "random_state") and cv.random_state is None:
+            cv.random_state = np.random.RandomState()
+
+        self.stack_method_ = [
+            self._method_name(name, est, meth)
+            for name, est, meth in zip(names, all_estimators, stack_method)
+        ]
+        fit_params = (
+            {"sample_weight": sample_weight} if sample_weight is not None else None
+        )
+
+        predictions = Parallel(n_jobs=self.n_jobs)(
+            delayed(cross_val_predict)(
+                clone(est),
+                X,
+                y,
+                cv=deepcopy(cv),
+                method=meth,
+                n_jobs=self.n_jobs,
+                fit_params=fit_params,
+                verbose=self.verbose,
+            )
+            for est, meth in zip(all_estimators, self.stack_method_)
+            if est != "drop"
+        )
+
+        # Only not None or not 'drop' estimators will be used in transform.
+        # Remove the None from the method as well.
+        self.stack_method_ = [
+            meth for (meth, est) in zip(self.stack_method_, all_estimators)
+            if est != "drop"
+        ]
+
+        X_meta = self._concatenate_predictions(X, predictions)
+        _fit_single_estimator(
+            self.final_estimator_, X_meta, y, sample_weight=sample_weight
+        )
+
+        return self
+
+
+class VotingClassifier(BaseVoting, VC):
+    """Soft Voting/Majority Rule classifier.
+
+    Modified version of sklearn's VotingClassifier. Differences are:
+        - Doesn't fit estimators if they're already fitted.
+        - Is considered fitted when all estimators are at initialization.
+        - Doesn't implement a LabelEncoder to encode the target column.
+
+    """
+
+    def __init__(
+            self,
+            estimators,
+            *,
+            voting="hard",
+            weights=None,
+            n_jobs=None,
+            flatten_transform=True,
+            verbose=False,
+    ):
+        super().__init__(
+            estimators,
+            voting=voting,
+            weights=weights,
+            n_jobs=n_jobs,
+            flatten_transform=flatten_transform,
+            verbose=verbose,
+        )
+
+        # If all estimators are prefit, create fitted attrs
+        if all(e[1] == "drop" or check_is_fitted(e[1], False) for e in self.estimators):
+            self.estimators_ = [e[1] for e in self.estimators if e[1] != "drop"]
+            self._get_fitted_attrs()
+
+    def fit(self, X, y, sample_weight=None):
+        """Fit the estimators, skipping prefit ones.
+
+        Parameters
+        ----------
+        X: {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training vectors, where `n_samples` is the number of
+            samples and `n_features` is the number of features.
+
+        y: array-like of shape (n_samples,)
+            Target values.
+
+        sample_weight: array-like of shape (n_samples,), default=None
+            Sample weights. If None, then samples are equally weighted.
+            Note that this is supported only if all underlying estimators
+            support sample weights.
+
+        Returns
+        -------
+        self: VotingClassifier
+            Fitted instance of self.
+
+        """
+        check_classification_targets(y)
+        if isinstance(y, np.ndarray) and len(y.shape) > 1 and y.shape[1] > 1:
+            raise NotImplementedError(
+                "Multilabel and multi-output classification is not supported."
+            )
+
+        if self.voting not in ("soft", "hard"):
+            raise ValueError(
+                f"Voting must be 'soft' or 'hard', got (voting={self.voting})."
+            )
+
+        if self.weights is not None and len(self.weights) != len(self.estimators):
+            raise ValueError(
+                "Number of estimators and weights must be equal, got "
+                f"{len(self.weights)} weights, {len(self.estimators)} estimators."
+            )
+
+        return super().fit(X, y, sample_weight)
+
+    def predict(self, X):
+        """Predict class labels for X.
+
+        Parameters
+        ----------
+        X: {array-like, sparse matrix} of shape (n_samples, n_features)
+            The input samples.
+
+        Returns
+        -------
+        predictions: array-like of shape (n_samples,)
+            Predicted class labels.
+
+        """
+        check_is_fitted(self)
+        if self.voting == "soft":
+            return np.argmax(self.predict_proba(X), axis=1)
+        else:
+            return np.apply_along_axis(
+                lambda x: np.argmax(np.bincount(x, weights=self._weights_not_none)),
+                axis=1,
+                arr=self._predict(X),
+            )
+
+
+class VotingRegressor(BaseVoting, VR):
+    """Soft Voting/Majority Rule regressor.
+
+    Modified version of sklearn's VotingRegressor. Differences are:
+        - Doesn't fit estimators if they're already fitted.
+        - Is considered fitted when all estimators are at initialization.
+
+    """
+
+    def __init__(self, estimators, *, weights=None, n_jobs=None, verbose=False):
+        super().__init__(
+            estimators,
+            weights=weights,
+            n_jobs=n_jobs,
+            verbose=verbose,
+        )
+
+        # If all estimators are prefit, create fitted attrs
+        if all(e[1] == "drop" or check_is_fitted(e[1], False) for e in self.estimators):
+            self.estimators_ = [est[1] for est in self.estimators if est[1] != "drop"]
+            self._get_fitted_attrs()
+
+
+class StackingClassifier(BaseStacking, SC):
+    """Stack of estimators with a final classifier.
+
+    Modified version of sklearn's StackingClassifier. Difference is:
+        - Doesn't fit estimators if they're already fitted.
+
+    """
+
+    def fit(self, X, y, sample_weight=None):
+        """Fit the estimators, skipping prefit ones.
+
+        Parameters
+        ----------
+        X: {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training vectors, where `n_samples` is the number of
+            samples and `n_features` is the number of features.
+
+        y: array-like of shape (n_samples,)
+            Target values.
+
+        sample_weight: array-like of shape (n_samples,), default=None
+            Sample weights. If None, then samples are equally weighted.
+            Note that this is supported only if all underlying estimators
+            support sample weights.
+
+        Returns
+        -------
+        self: StackingClassifier
+            Fitted instance of self.
+
+        """
+        check_classification_targets(y)
+        self._le = LabelEncoder().fit(y)
+        self.classes_ = self._le.classes_
+        return super().fit(X, self._le.transform(y), sample_weight)
+
+
+class StackingRegressor(BaseStacking, SR):
+    """Stack of estimators with a final regressor.
+
+    Modified version of sklearn's StackingRegressor. Difference is:
+        - Doesn't fit estimators if they're already fitted.
+
+    """
+
+    def fit(self, X, y, sample_weight=None):
+        """Fit the estimators, skipping prefit ones.
+
+        Parameters
+        ----------
+        X: {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training vectors, where `n_samples` is the number of
+            samples and `n_features` is the number of features.
+
+        y: array-like of shape (n_samples,)
+            Target values.
+
+        sample_weight: array-like of shape (n_samples,), default=None
+            Sample weights. If None, then samples are equally weighted.
+            Note that this is supported only if all underlying estimators
+            support sample weights.
+
+        Returns
+        -------
+        self: StackingRegressor
+            Fitted instance of self.
+
+        """
+        y = column_or_1d(y, warn=True)
+        return super().fit(X, y, sample_weight)

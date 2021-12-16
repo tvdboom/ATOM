@@ -43,7 +43,7 @@ Number of programs in each generation. Only for the genetic strategy.
 <p>
 <strong>operators: str, list, tuple or None, optional (default=None)</strong><br>
 Name of the operators to be used on the features. None to use all.
-Choose from: "add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan".
+Choose from: add, sub, mul, div, sqrt, log, sin, cos, tan.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
@@ -67,7 +67,7 @@ Verbosity level of the class. Possible values are:
 </ul>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 </td>
 </tr>
 </table>
@@ -100,10 +100,10 @@ generator is the <code>RandomState</code> instance used by <code>numpy.random</c
 <td width="80%" class="td_params">
 <p>
 <strong>symbolic_transformer: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
-Instance used to calculate the genetic features. Only for the genetic strategy.
+Object used to calculate the genetic features. Only for the genetic strategy.
 </p>
 <strong>genetic_features: pd.DataFrame</strong><br>
-Dataframe of the newly created non-linear features. Only for the genetic
+Information on the newly created non-linear features. Only for the genetic
 strategy. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>name:</b> Name of the feature (automatically created).</li>
@@ -162,7 +162,7 @@ strategy. Columns include:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L329">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L328">[source]</a>
 </span>
 </div>
 Fit to data.
@@ -171,7 +171,7 @@ Fit to data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>
@@ -204,7 +204,7 @@ Fit to data, then transform it.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str or sequence</strong><br>
@@ -238,7 +238,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -246,7 +247,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -257,7 +258,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -283,7 +284,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L370">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -329,7 +330,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L470">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L469">[source]</a>
 </span>
 </div>
 Generate new features.
@@ -338,7 +339,7 @@ Generate new features.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>

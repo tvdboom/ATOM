@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_calibration</strong>(models=None,
 n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2549">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2862">[source]</a>
 </span>
 </div>
 
@@ -80,6 +80,7 @@ atom = ATOMClassifier(X, y)
 atom.run(["GNB", "LR", "LGB"], metric="average_precision")
 atom.plot_calibration()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_calibration.png" alt="plot_calibration" width="700" height="700"/>
 </div>

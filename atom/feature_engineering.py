@@ -34,14 +34,14 @@ from sklearn.feature_selection import (
 )
 
 # Own modules
-from .models import MODEL_LIST
+from .models import MODELS
 from .basetransformer import BaseTransformer
 from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
     SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df,
-    get_scorer, check_scaling, check_is_fitted, get_acronym, composed,
-    crash, method_to_log,
+    get_custom_scorer, check_scaling, check_is_fitted, get_feature_importance,
+    composed, crash, method_to_log,
 )
 
 
@@ -116,7 +116,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -125,7 +125,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Dataframe containing the new features.
+            Transformed feature set.
 
         """
 
@@ -256,8 +256,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     operators: str, sequence or None, optional (default=None)
         Mathematical operators to apply on the features. None for all.
-        Choose from: "add", "sub", "mul", "div", "sqrt", "log", "inv",
-        "sin", "cos", "tan".
+        Choose from: add, sub, mul, div, sqrt, log, inv, sin, cos, tan.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -278,16 +277,16 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `numpy.random`.
+        number generator is the `RandomState` used by `np.random`.
 
     Attributes
     ----------
     symbolic_transformer: SymbolicTransformer
-        Instance used to calculate the genetic features. Only for the
+        Object used to calculate the genetic features. Only for the
         genetic strategy.
 
     genetic_features: pd.DataFrame
-        Dataframe of the newly created non-linear features. Only for
+        Information on the newly created non-linear features. Only for
         the genetic strategy. Columns include:
             - name: Name of the feature (automatically created).
             - description: Operators used to create this feature.
@@ -331,7 +330,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
@@ -472,7 +471,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -532,7 +531,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             if len(descript) == 0:
                 self.log(
                     " --> WARNING! The genetic algorithm couldn't "
-                    "find any improving non-linear features!", 1
+                    "find any improving non-linear features.", 1
                 )
                 return X
 
@@ -666,7 +665,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `numpy.random`.
+        number generator is the `RandomState` used by `np.random`.
 
     **kwargs
         Any extra keyword argument for the PCA, SFM, SFS, RFE and
@@ -676,7 +675,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     Attributes
     ----------
     collinear: pd.DataFrame
-        Dataframe of the removed collinear features. Columns include:
+        Information on the removed collinear features. Columns include:
             - drop_feature: Name of the feature dropped by the method.
             - correlated feature: Name of the correlated features.
             - correlation_value: Pearson correlation coefficients of
@@ -688,9 +687,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         importance is extracted from the external estimator fitted on
         the reduced set.
 
-    <strategy>: sklearn estimator
-        Estimator instance (lowercase strategy) used to transform
-        the data, e.g. `balancer.pca` for the PCA strategy.
+    <strategy>: sklearn transformer
+        Object (lowercase strategy) used to transform the data,
+        e.g. `balancer.pca` for the PCA strategy.
 
     """
 
@@ -737,7 +736,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -816,9 +815,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     else:
                         self._solver = self.solver
 
-                    # Set to right acronym and get the model's estimator
-                    model = MODEL_LIST[get_acronym(self._solver)](self)
-                    self._solver = model.get_estimator()
+                    # Get estimator from predefined models
+                    if self._solver not in MODELS:
+                        raise ValueError(
+                            "Invalid value for the solver parameter. Unknown "
+                            f"model: {self._solver}. Choose from: {', '.join(MODELS)}."
+                        )
+                    else:
+                        self._solver = MODELS[self._solver](self).get_estimator()
                 else:
                     self._solver = self.solver
 
@@ -962,7 +966,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             # Both RFECV and SFS use the scoring parameter
             if self.kwargs.get("scoring"):
-                self.kwargs["scoring"] = get_scorer(self.kwargs["scoring"])
+                self.kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
             if self.strategy.lower() == "rfecv":
                 # Invert n_features to select them all (default option)
@@ -985,7 +989,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -997,34 +1001,6 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             Transformed feature set.
 
         """
-
-        def get_scores(est):
-            """Return the feature scores for a given estimator.
-
-            Return the values of the scores_, feature_importances_ or
-            coef_ attributes if available (in that order). For
-            multiclass classification tasks, the coef_ attribute has
-            shape (n_targets, n_features). In this case, the mean of
-            the coef_ value over the targets is returned.
-
-            Parameters
-            ----------
-            est: class
-                Estimator for which to get the scores.
-
-            Returns
-            -------
-            scores: np.ndarray
-                Scores of the selected attribute for the estimator.
-
-            """
-            attributes = ["scores_", "feature_importances_", "coef_"]
-            scores = getattr(est, next(i for i in attributes if hasattr(est, i)))
-            if scores.ndim > 1:
-                scores = np.mean(scores, axis=0)
-
-            return scores
-
         check_is_fitted(self)
         X, y = self._prepare_input(X, y)
         columns = X.columns  # Save columns for SFM
@@ -1052,7 +1028,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             return X
 
         elif self.strategy.lower() == "univariate":
-            indices = np.argsort(get_scores(self.univariate))
+            indices = np.argsort(get_feature_importance(self.univariate))
             best_fxs = [X.columns[idx] for idx in indices][::-1]
             self.log(
                 f" --> The univariate test selected "
@@ -1076,16 +1052,17 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 self.log("   >>> Scaling features...", 2)
                 X = self.scaler.transform(X)
 
-            # Define PCA, keep in mind that it has all components still
             n = self.pca.n_components_
+            columns = [f"Component {str(i)}" for i in range(1, n + 1)]
+            X = to_df(self.pca.transform(X)[:, :n], index=X.index, columns=columns)
+
             var = np.array(self.pca.explained_variance_ratio_[:n])
-            X = to_df(self.pca.transform(X)[:, :n], index=X.index, pca=True)
             self.log(f"   >>> Total explained variance: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == "sfm":
             # Here we use columns since some cols could be removed before by
             # variance or correlation checks and there would be cols mismatch
-            indices = np.argsort(get_scores(self.sfm.estimator_))
+            indices = np.argsort(get_feature_importance(self.sfm.estimator_))
             best_fxs = [columns[idx] for idx in indices][::-1]
             self.log(
                 f" --> The {self._solver.__class__.__name__} estimator selected "
@@ -1121,7 +1098,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     )
                     X = X.drop(column, axis=1)
 
-            idx = np.argsort(get_scores(self.rfe.estimator_))
+            idx = np.argsort(get_feature_importance(self.rfe.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
 
         elif self.strategy.lower() == "rfecv":
@@ -1137,7 +1114,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     )
                     X = X.drop(column, axis=1)
 
-            idx = np.argsort(get_scores(self.rfecv.estimator_))
+            idx = np.argsort(get_feature_importance(self.rfecv.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
 
         return X

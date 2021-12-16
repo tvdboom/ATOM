@@ -8,19 +8,19 @@ Description: Module containing the BasePredictor class.
 """
 
 # Standard packages
+import mlflow
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
-from typing import Union, Optional
+from typing import Union, Optional, Any
 
 # Own modules
 from .branch import Branch
-from .models import MODEL_LIST
-from .ensembles import Voting, Stacking
+from .models import MODELS, Stacking, Voting
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
     check_is_fitted, divide, get_best_score, delete,
-    method_to_log, composed, crash,
+    method_to_log, composed, crash, CustomDict,
 )
 
 
@@ -45,31 +45,63 @@ class BasePredictor:
         elif self.__dict__.get("_models").get(item.lower()):
             return self._models[item.lower()]  # Get model subclass
         elif item in self.branch.columns:
-            return self.branch.dataset[item]  # Get column
+            return self.branch.dataset[item]  # Get column from dataset
         elif item in DF_ATTRS:
             return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{item}'."
+                f"{self.__class__.__name__} object has no attribute {item}."
             )
 
     def __setattr__(self, item, value):
         """Set some properties to the current branch."""
-        if isinstance(getattr(Branch, item, None), property):
+        if item != "holdout" and isinstance(getattr(Branch, item, None), property):
             setattr(self.branch, item, value)
         else:
             super().__setattr__(item, value)
 
     def __delattr__(self, item):
         """Call appropriate methods for model and branch deletion."""
-        # To delete branches, call the appropriate method
         if item == "branch":
             self.branch.delete()
+        elif item in self._branches:
+            self._branches[item].delete()
+        elif item == "winner" or item in self._models:
+            self.delete(item)
+        elif item in self.__dict__:
+            del self.__dict__[item]
         else:
-            try:
-                self.delete(item)
-            except ValueError:
-                del self.__dict__[item]
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{item}'."
+            )
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __contains__(self, item):
+        if self.dataset is None:
+            return False
+        else:
+            return item in self.dataset
+
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            if item in self._models:
+                return self._models[item]  # Get model
+            elif item in self.dataset:
+                return self.dataset[item]  # Get column from dataset
+            else:
+                raise ValueError(
+                    f"{self.__class__.__name__} object "
+                    f"has no model or column called {item}."
+                )
+        elif isinstance(item, list):
+            return self.dataset[item]  # Get subset of dataset
+        else:
+            raise TypeError(
+                f"{self.__class__.__name__} is only "
+                "subscriptable with types str or list."
+            )
 
     # Tracking properties ========================================== >>
 
@@ -128,12 +160,18 @@ class BasePredictor:
     @property
     def models(self):
         """Return the names of the models in the pipeline."""
-        return flt([getattr(model, "name", model) for model in self._models])
+        if isinstance(self._models, CustomDict):
+            return flt([model.name for model in self._models.values()])
+        else:
+            return self._models
 
     @property
     def metric(self):
         """Return the names of the metrics in the pipeline."""
-        return flt([getattr(metric, "name", metric) for metric in self._metric])
+        if isinstance(self._metric, CustomDict):
+            return flt([metric.name for metric in self._metric.values()])
+        else:
+            return self._metric
 
     @property
     def errors(self):
@@ -144,7 +182,8 @@ class BasePredictor:
     def winner(self):
         """Return the best performing model."""
         if self._models:  # Returns None if not fitted
-            return self._models[np.argmax([get_best_score(m) for m in self._models])]
+            best_index = np.argmax([get_best_score(m) for m in self._models.values()])
+            return self._models[best_index]  # CustomDict can select item from index
 
     @property
     def results(self):
@@ -152,23 +191,23 @@ class BasePredictor:
 
         def frac(m):
             """Return the fraction of the train set used for the model."""
-            n_models = m.branch.idx[0] / m._train_idx
+            n_models = len(m.branch.train) / m._train_idx
             if n_models == int(n_models):
                 return round(1.0 / n_models, 2)
             else:
-                return round(m._train_idx / m.branch.idx[0], 2)
+                return round(m._train_idx / len(m.branch.train), 2)
 
         df = pd.DataFrame(
-            data=[m.results for m in self._models],
+            data=[m.results for m in self._models.values()],
             columns=self._models[0].results.index if self._models else [],
             index=lst(self.models),
         ).dropna(axis=1, how="all")
 
         # For sh and ts runs, include the fraction of training set
-        if any(m._train_idx != len(m.branch.train) for m in self._models):
+        if any(m._train_idx != len(m.branch.train) for m in self._models.values()):
             df = df.set_index(
                 pd.MultiIndex.from_arrays(
-                    [[frac(m) for m in self._models], self.models],
+                    [[frac(m) for m in self._models.values()], self.models],
                     names=["frac", "model"],
                 )
             ).sort_index(level=0, ascending=True)
@@ -176,12 +215,6 @@ class BasePredictor:
         return df
 
     # Prediction methods =========================================== >>
-
-    @composed(crash, method_to_log)
-    def reset_predictions(self):
-        """Clear the prediction attributes from all models."""
-        for m in self._models:
-            m._pred_attrs = [None] * 10
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
@@ -222,6 +255,179 @@ class BasePredictor:
 
     # Utility methods ============================================== >>
 
+    def _get_rows(self, index=None, return_test=True, branch=None):
+        """Get a subset of the rows.
+
+        Parameters
+        ----------
+        index: int, str, slice, sequence or None, optional (default=None)
+            Names or indices of the rows to select. If None,
+            returns the complete dataset or the test set.
+
+        return_test: bool, optional (default=True)
+            Whether to return the test or the complete dataset
+            when no index is provided.
+
+        branch: Branch or None, optional (default=None)
+            Get columns from specified branch. If None, use the
+            current branch.
+
+        Returns
+        -------
+        inc: list
+            Indices of the included rows.
+
+        """
+        if not branch:
+            branch = self.branch
+
+        indices = list(branch.dataset.index)
+        if branch.holdout is not None:
+            indices += list(branch.holdout.index)
+
+        if index is None:
+            inc = list(branch.idx[1]) if return_test else list(branch.X.index)
+        elif isinstance(index, slice):
+            inc = indices[index]
+        else:
+            inc = []
+            for idx in lst(index):
+                if idx in indices:
+                    inc.append(idx)
+                elif isinstance(idx, int):
+                    if -len(indices) <= idx <= len(indices):
+                        inc.append(indices[idx])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for the index parameter. Value {index} is "
+                            f"out of range for a dataset with length {len(indices)}."
+                        )
+                else:
+                    raise ValueError(
+                        "Invalid value for the index parameter. "
+                        f"Value {idx} not found in the dataset."
+                    )
+
+        if not inc:
+            raise ValueError(
+                "Invalid value for the index parameter, got "
+                f"{index}. At least one row has to be selected."
+            )
+
+        return inc
+
+    def _get_columns(
+        self,
+        columns=None,
+        include_target=True,
+        return_inc_exc=False,
+        only_numerical=False,
+        branch=None,
+    ):
+        """Get a subset of the columns.
+
+        Select columns in the dataset by name, index or dtype. Duplicate
+        columns are ignored. Exclude columns if their name start with `!`.
+
+        Parameters
+        ----------
+        columns: int, str, slice, sequence or None
+            Names, indices or dtypes of the columns to get. If None,
+            it returns all columns in the dataframe.
+
+        include_target: bool, optional (default=True)
+            Whether to include the target column in the dataframe to
+            select from.
+
+        return_inc_exc: bool, optional (default=False)
+            Whether to return only included columns or the tuple
+            (included, excluded).
+
+        only_numerical: bool, optional (default=False)
+            Whether to return only numerical columns.
+
+        branch: Branch or None, optional (default=None)
+            Get columns from specified branch. If None, use the current
+            branch.
+
+        Returns
+        -------
+        inc: list
+            Names of the included columns.
+
+        exc: list
+            Names of the excluded columns. Only returned if
+            return_inc_exc=True.
+
+        """
+        if not branch:
+            branch = self.branch
+
+        # Select dataframe from which to get the columns
+        df = branch.dataset if include_target else branch.X
+
+        inc, exc = [], []
+        if columns is None:
+            if only_numerical:
+                return list(df.select_dtypes(include=["number"]).columns)
+            else:
+                return list(df.columns)
+        elif isinstance(columns, slice):
+            inc = list(df.columns[columns])
+        else:
+            for col in lst(columns):
+                if isinstance(col, int):
+                    try:
+                        inc.append(df.columns[col])
+                    except IndexError:
+                        raise ValueError(
+                            f"Invalid value for the columns parameter, got {col} "
+                            f"but length of columns is {len(df.columns)}."
+                        )
+                else:
+                    if col not in df.columns:
+                        if col.startswith("!"):
+                            col = col[1:]
+                            if col in df.columns:
+                                exc.append(col)
+                            else:
+                                try:
+                                    exc.extend(list(df.select_dtypes(col).columns))
+                                except TypeError:
+                                    raise ValueError(
+                                        "Invalid value for the columns parameter. "
+                                        f"Column {col} not found in the dataset."
+                                    )
+                        else:
+                            try:
+                                inc.extend(list(df.select_dtypes(col).columns))
+                            except TypeError:
+                                raise ValueError(
+                                    "Invalid value for the columns parameter. "
+                                    f"Column {col} not found in the dataset."
+                                )
+                    else:
+                        inc.append(col)
+
+        if len(inc) + len(exc) == 0:
+            raise ValueError(
+                "Invalid value for the columns parameter, got "
+                f"{columns}. At least one column has to be selected."
+            )
+        elif inc and exc:
+            raise ValueError(
+                "Invalid value for the columns parameter. You can either "
+                "include or exclude columns, not combinations of these."
+            )
+        elif return_inc_exc:
+            return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
+
+        if exc:
+            # If columns were excluded with `!`, select all but those
+            inc = [col for col in df.columns if col not in exc]
+
+        return list(dict.fromkeys(inc))  # Avoid duplicates
+
     def _get_model_name(self, model):
         """Return a model's name.
 
@@ -250,22 +456,31 @@ class BasePredictor:
         else:
             raise ValueError(
                 f"Model {model} not found in the pipeline! The "
-                f"available models are: {', '.join(self.models)}."
+                f"available models are: {', '.join(self._models)}."
             )
 
-    def _get_models(self, models=None):
-        """Return models in the pipeline. Duplicate inputs are ignored."""
+    def _get_models(self, models=None, ensembles=True):
+        """Return models in the pipeline."""
         if not models:
-            return lst(self.models).copy()
+            if self._models:
+                to_return = lst(self.models).copy()
+            else:
+                to_return = []
         elif isinstance(models, str):
-            return self._get_model_name(models.lower())
+            to_return = self._get_model_name(models.lower())
         else:
             to_return = []
             for m1 in models:
                 for m2 in self._get_model_name(m1.lower()):
                     to_return.append(m2)
 
-            return list(dict.fromkeys(to_return))  # Avoid duplicates
+        if not ensembles:
+            to_return = [
+                model for model in to_return
+                if not model.startswith("Stack") and not model.startswith("Vote")
+            ]
+
+        return list(dict.fromkeys(to_return))  # Avoid duplicates
 
     @crash
     def available_models(self):
@@ -277,21 +492,21 @@ class BasePredictor:
             Information about the predefined models available for the
             current task. Columns include:
                 - acronym: Model's acronym (used to call the model).
-                - name: Full name of the model.
+                - fullname: Complete name of the model.
                 - estimator: The model's underlying estimator.
                 - module: The estimator's module.
                 - needs_scaling: Whether the model requires feature scaling.
 
         """
         overview = pd.DataFrame()
-        for model in MODEL_LIST:
+        for model in MODELS.values():
             m = model(self)
             est = m.get_estimator()
-            if m.task[:3] == self.goal[:3] or m.task == "both":
+            if m.goal[:3] == self.goal[:3] or m.goal == "both":
                 overview = overview.append(
                     {
                         "acronym": m.acronym,
-                        "name": m.fullname,
+                        "fullname": m.fullname,
                         "estimator": est.__class__.__name__,
                         "module": est.__module__,
                         "needs_scaling": str(m.needs_scaling),
@@ -301,17 +516,29 @@ class BasePredictor:
 
         return overview
 
+    @composed(crash, method_to_log)
+    def clear(self):
+        """Clear attributes from all models.
+
+        Reset attributes to their initial state, deleting potentially
+        large data arrays. Use this method to free some memory before
+        saving the class. The cleared attributes per model are:
+            - Prediction attributes.
+            - Metrics scores.
+            - Shap values.
+
+        """
+        for model in self._models.values():
+            model.clear()
+
     @composed(crash, method_to_log, typechecked)
     def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
-        """Delete models from the trainer's pipeline.
+        """Delete models from the trainer.
 
-        Removes a model from the trainer. If the winning model is
-        removed, the next best model (through `metric_test` or
-        `mean_bootstrap`) is selected as winner. If all models are
-        removed, the metric and training approach are reset. Use this
+        If all models are removed, the metric is reset. Use this
         method to drop unwanted models from the pipeline or to free
-        some memory before saving. The model is not removed from any
-        active mlflow experiment.
+        some memory before saving. Deleted models are not removed
+        from any active mlflow experiment.
 
         Parameters
         ----------
@@ -320,14 +547,23 @@ class BasePredictor:
 
         """
         models = self._get_models(models)
-        delete(self, models)
-        self.log(f"Model{'' if len(models) == 1 else 's'} deleted successfully!", 1)
+        if not models:
+            self.log(f"No models to delete.", 1)
+        else:
+            delete(self, models)
+            if len(models) == 1:
+                self.log(f"Model {models[0]} successfully deleted.", 1)
+            else:
+                self.log(f"Deleting {len(models)} models...", 1)
+                for m in models:
+                    self.log(f" --> Model {m} successfully deleted.", 1)
 
     @composed(crash, typechecked)
     def evaluate(
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
+        threshold: float = 0.5,
     ):
         """Get all models' scores for the provided metrics.
 
@@ -337,9 +573,16 @@ class BasePredictor:
             Metric to calculate. If None, it returns an overview of
             the most common metrics per task.
 
+        threshold: float, optional (default=0.5)
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only used when:
+                - The task is binary classification.
+                - The model has a `predict_proba` method.
+                - The metric evaluates predicted target values.
+
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
-            "train" or "test".
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
 
         Returns
         -------
@@ -350,8 +593,8 @@ class BasePredictor:
         check_is_fitted(self, attributes="_models")
 
         scores = pd.DataFrame()
-        for m in self._models:
-            scores = scores.append(m.evaluate(metric, dataset=dataset))
+        for m in self._models.values():
+            scores = scores.append(m.evaluate(metric, dataset, threshold))
 
         return scores
 
@@ -367,7 +610,7 @@ class BasePredictor:
         Parameters
         ----------
         dataset: str, optional (default="train")
-            Data set from which to get the weights. Choose between
+            Data set from which to get the weights. Choose from:
             "train", "test" or "dataset".
 
         Returns
@@ -384,92 +627,178 @@ class BasePredictor:
         if dataset not in ("train", "test", "dataset"):
             raise ValueError(
                 "Invalid value for the dataset parameter. "
-                "Choose between 'train', 'test' or 'dataset'."
+                "Choose from: train, test or dataset."
             )
 
         y = self.classes[dataset]
         return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
 
     @composed(crash, method_to_log, typechecked)
-    def stacking(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        estimator: Optional[Union[str, callable]] = None,
-        stack_method: str = "auto",
-        passthrough: bool = False,
-    ):
-        """Add a Stacking instance to the models in the pipeline.
+    def merge(self, other: Any, suffix: str = "2"):
+        """Merge another trainer into this one.
+
+        Branches, models, metrics and attributes of the other trainer
+        are merged into this one. If there are branches and/or models
+        with the same name, they are merged adding the `suffix`
+        parameter to their name. The errors and missing attributes are
+        extended with those of the other instance. It's only possible
+        to merge two instances if they are initialized with the same
+        dataset and trained with the same metric.
 
         Parameters
         ----------
+        other: trainer
+            Trainer instance with which to merge.
+
+        suffix: str, optional (default="2")
+            Conflicting branches and models are merged adding `suffix`
+            to the end of their names.
+
+        """
+        if not hasattr(other, "_branches"):
+            raise TypeError(
+                "Invalid type for the other parameter. Expecting a "
+                f"trainer instance, got {other.__class__.__name__}."
+            )
+
+        # Check that both instances have the same original dataset
+        if not self._branches["og"].data.equals(other._branches["og"].data):
+            raise ValueError(
+                "Invalid value for the other parameter. The provided trainer "
+                "was initialized with a different dataset than this one."
+            )
+
+        # Check that both instances have the same metric
+        if not self._metric:
+            self._metric = other._metric
+        elif other.metric and self.metric != other.metric:
+            raise ValueError(
+                "Invalid value for the other parameter. The provided trainer uses "
+                f"a different metric ({other.metric}) than this one ({self.metric})."
+            )
+
+        self.log("Merging instances...", 1)
+        for name, branch in other._branches.items():
+            if name != "og":  # Original dataset is the same
+                self.log(f" --> Merging branch {name}.", 1)
+                if name in self._branches:
+                    name = f"{name}{suffix}"
+                branch.name = name
+                self._branches[name] = branch
+
+        for name, model in other._models.items():
+            self.log(f" --> Merging model {name}.", 1)
+            if name in self._models:
+                name = f"{name}{suffix}"
+            model.name = name
+            self._models[name] = model
+
+        self.log(" --> Merging attributes.", 1)
+        if hasattr(self, "missing"):
+            self.missing.extend([x for x in other.missing if x not in self.missing])
+        for name, error in other._errors.items():
+            if name in self._errors:
+                name = f"{name}{suffix}"
+            self._errors[name] = error
+
+    @composed(crash, method_to_log, typechecked)
+    def stacking(
+        self,
+        name: str = "Stack",
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        **kwargs,
+    ):
+        """Add a Stacking model to the pipeline.
+
+        Parameters
+        ----------
+        name: str, optional (default="Stack")
+            Name of the model. The name is always presided with the
+            model's acronym: `stack`.
+
         models: sequence or None, optional (default=None)
-            Models that feed the stacking. If None, it selects all
-            models depending on the current branch.
+            Models that feed the voting estimator. If None, it selects
+            all non-ensemble models trained on the current branch.
 
-        estimator: str, callable or None, optional (default=None)
-            The final estimator, which is used to combine the base
-            estimators. If str, choose from ATOM's predefined models.
-            If None, a default estimator is selected:
-                - LogisticRegression for classification tasks.
-                - Ridge for regression tasks.
-
-        stack_method: str, optional (default="auto")
-            Methods called for each base estimator. If "auto", it
-            will try to invoke `predict_proba`, `decision_function`
-            or `predict` in that order.
-
-        passthrough: bool, optional (default=False)
-            When False, only the predictions of estimators are used
-            as training data for the final estimator. When True, the
-            estimator is trained on the predictions as well as the
-            original training data.
+        **kwargs
+            Additional keyword arguments for sklearn's stacking instance.
+            The model's acronyms can be used for the `final_estimator`
+            parameter.
 
         """
         check_is_fitted(self, attributes="_models")
+        models = self._get_models(models or self.branch._get_depending_models(), False)
 
-        if not models:
-            models = self.branch._get_depending_models()
-        if not estimator:
-            estimator = "LR" if self.goal == "class" else "Ridge"
+        if len(models) < 2:
+            raise ValueError(
+                "Invalid value for the models parameter. A Stacking model should "
+                f"contain at least two underlying estimators, got {models}."
+            )
 
-        self._models["stack"] = Stacking(
-            self,
-            models=self._get_models(models),
-            estimator=estimator,
-            stack_method=stack_method,
-            passthrough=passthrough,
-        )
-        self.log(f"{self.stack.fullname} added to the models!", 1)
+        if not name.lower().startswith("stack"):
+            name = f"Stack{name}"
+
+        if isinstance(kwargs.get("final_estimator"), str):
+            if kwargs["final_estimator"] not in MODELS:
+                raise ValueError(
+                    "Invalid value for the final_estimator parameter. Unknown model: "
+                    f"{kwargs['final_estimator']}. Choose from: {', '.join(MODELS)}."
+                )
+            else:
+                model = MODELS[kwargs["final_estimator"]](self)
+                if model.goal not in (self.goal, "both"):
+                    raise ValueError(
+                        "Invalid value for the final_estimator parameter. Model "
+                        f"{model.fullname} can not perform {self.task} tasks."
+                    )
+
+                kwargs["final_estimator"] = model.get_estimator()
+
+        self._models[name] = Stacking(self, name, models=self._models[models], **kwargs)
+
+        if self.experiment:
+            self[name]._run = mlflow.start_run(run_name=self[name].name)
+
+        self[name].fit()
 
     @composed(crash, method_to_log, typechecked)
     def voting(
         self,
+        name: str = "Vote",
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        weights: Optional[SEQUENCE_TYPES] = None,
+        **kwargs,
     ):
-        """Add a Voting instance to the models in the pipeline.
+        """Add a Voting model to the pipeline.
 
         Parameters
         ----------
-        models: sequence or None, optional (default=None)
-            Models that feed the voting. If None, it selects all models
-            depending on the current branch.
+        name: str, optional (default="Vote")
+            Name of the model. The name is always presided with the
+            model's acronym: `vote`.
 
-        weights: sequence or None, optional (default=None)
-            Sequence of weights (int or float) to weight the
-            occurrences of predicted class labels (hard voting)
-            or class probabilities before averaging (soft voting).
-            If None, it uses uniform weights.
+        models: sequence or None, optional (default=None)
+            Models that feed the voting estimator. If None, it selects
+            all non-ensemble models trained on the current branch.
+
+        **kwargs
+            Additional keyword arguments for sklearn's voting instance.
 
         """
         check_is_fitted(self, attributes="_models")
+        models = self._get_models(models or self.branch._get_depending_models(), False)
 
-        if not models:
-            models = self.branch._get_depending_models()
+        if len(models) < 2:
+            raise ValueError(
+                "Invalid value for the models parameter. A Voting model should "
+                f"contain at least two underlying estimators, got {models}."
+            )
 
-        self._models["vote"] = Voting(
-            self,
-            models=self._get_models(models),
-            weights=weights,
-        )
-        self.log(f"{self.vote.fullname} added to the models!", 1)
+        if not name.lower().startswith("vote"):
+            name = f"Vote{name}"
+
+        self._models[name] = Voting(self, name, models=self._models[models], **kwargs)
+
+        if self.experiment:
+            self[name]._run = mlflow.start_run(run_name=self[name].name)
+
+        self[name].fit()

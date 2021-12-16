@@ -15,7 +15,10 @@ from sklearn.utils.validation import check_memory
 from sklearn.utils.metaestimators import available_if
 
 # Own modules
-from .utils import variable_return, fit_one, transform_one, fit_transform_one
+from .utils import (
+    variable_return, fit_one, transform_one, fit_transform_one,
+    check_is_fitted,
+)
 
 
 def _final_estimator_has(attr):
@@ -43,11 +46,18 @@ class Pipeline(pipeline.Pipeline):
         - Always outputs pandas objects.
         - Uses transformers that are only applied on the training set
           to fit the pipeline, not to make predictions on unseen data.
-
-    Partially from https://github.com/scikit-learn-contrib/imbalanced
-    -learn/blob/master/imblearn/pipeline.py.
+        - The instance is considered fitted at initialization if all
+          the underlying transformers/estimator in the pipeline are.
 
     """
+
+    def __init__(self, steps, *, memory=None, verbose=False):
+        super().__init__(steps, memory=memory, verbose=verbose)
+
+        # If all estimators are fitted, Pipeline is fitted
+        self._is_fitted = False
+        if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
+            self._is_fitted = True
 
     def _iter(self, with_final=True, filter_passthrough=True, filter_train_only=True):
         """Generate (idx, (name, trans)) tuples from self.steps.
@@ -65,9 +75,9 @@ class Pipeline(pipeline.Pipeline):
     def _fit(self, X=None, y=None, **fit_params_steps):
         self.steps = list(self.steps)
         self._validate_steps()
+        memory = check_memory(self.memory)
 
-        # Setup the memory
-        memory = check_memory(self.memory).cache(fit_transform_one)
+        fit_transform_one_cached = memory.cache(fit_transform_one)
 
         for (step_idx, name, transformer) in self._iter(False, False, False):
             if transformer is None or transformer == "passthrough":
@@ -75,15 +85,20 @@ class Pipeline(pipeline.Pipeline):
                     continue
 
             if hasattr(transformer, "transform"):
-                if getattr(memory, "location", "") is None:
+                if memory.location is None:
                     # Don't clone when caching is disabled to
                     # preserve backward compatibility
                     cloned = transformer
                 else:
                     cloned = clone(transformer)
 
+                    # Attach internal attrs otherwise wiped by clone
+                    for attr in ("_cols", "_train_only"):
+                        if hasattr(transformer, attr):
+                            setattr(cloned, attr, getattr(transformer, attr))
+
                 # Fit or load the current estimator from cache
-                X, y, fitted_transformer = memory(
+                X, y, fitted_transformer = fit_transform_one_cached(
                     transformer=cloned,
                     X=X,
                     y=y,
@@ -102,7 +117,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray, sps.matrix, pd.DataFrame or None
+        X: dataframe-like or None, optional (default=None)
             Feature set with shape=(n_samples, n_features). None
             if the pipeline only uses y.
 
@@ -128,6 +143,7 @@ class Pipeline(pipeline.Pipeline):
                 fit_params_last_step = fit_params_steps[self.steps[-1][0]]
                 fit_one(self._final_estimator, X, y, **fit_params_last_step)
 
+        self._is_fitted = True
         return self
 
     def fit_transform(self, X=None, y=None, **fit_params):
@@ -135,7 +151,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray, pd.DataFrame, optional (default=None)
+        X: dataframe-like or None, optional (default=None)
             Feature set with shape=(n_samples, n_features). None
             if the estimator only uses y.
 
@@ -150,7 +166,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        X: np.ndarray
+        X: np.array
             Transformed dataset.
 
         """
@@ -173,7 +189,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         **predict_params
@@ -185,7 +201,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        y_pred: np.ndarray
+        y_pred: np.array
             Predicted target with shape=(n_samples,).
 
         """
@@ -200,12 +216,12 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         Returns
         -------
-        y_pred: np.ndarray
+        y_pred: np.array
             Predicted class probabilities.
 
         """
@@ -220,12 +236,12 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         Returns
         -------
-        y_pred: np.ndarray
+        y_pred: np.array
             Predicted class log-probabilities.
 
         """
@@ -240,12 +256,12 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         Returns
         -------
-        y_pred: np.ndarray
+        y_pred: np.array
             Predicted confidence scores.
 
         """
@@ -260,7 +276,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
+        X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence
@@ -300,7 +316,7 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array, sps.matrix, pd.DataFrame or None
+        X: dataframe-like or None, optional (default=None)
             Feature set with shape=(n_samples, n_features). None
             if the pipeline only uses y.
 

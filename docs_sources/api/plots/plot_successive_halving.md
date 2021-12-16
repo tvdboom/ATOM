@@ -5,13 +5,14 @@
 <em>method</em> <strong style="color:#008AB8">plot_successive_halving</strong>(models=None,
 metric=0, title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3357">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L738">[source]</a>
 </span>
 </div>
 
 Plot of the models' scores per iteration of the successive
-halving. Only available for [non-ensemble](../../../user_guide/models/#ensembles)
-models that were fitted using [successive halving](../../../user_guide/training/#successive-halving).
+halving. Only use with models fitted using [successive halving](../../../user_guide/training/#successive-halving).
+[Ensemble](../../../user_guide/models/#ensembles) models are
+ignored.
 
 <table style="font-size:16px">
 <tr>
@@ -69,6 +70,7 @@ atom.successive_halving(
 )
 atom.plot_successive_halving(filename="successive_halving")
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_successive_halving.png" alt="plot_successive_halving" width="700" height="420"/>
 </div>

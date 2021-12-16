@@ -143,13 +143,19 @@ and validate a Convolutional Neural Network implemented with Keras.
 
 Ensemble models use multiple estimators to obtain better predictive
 performance than could be obtained from any of the constituent learning
-algorithms alone. ATOM implements two ensemble techniques: voting and stacking.
+algorithms alone. ATOM implements two ensemble techniques: voting and
+stacking. Click [here](../../examples/ensembles) to see an example that uses
+ensemble models.
+
+If the ensemble's underlying estimator is a model that used [automated feature scaling](../training/#automated-feature-scaling),
+it's added as a Pipeline containing the `scaler` and estimator. If an
+[mlflow experiment](../logging/#tracking) is active, the ensembles start
+their own run, just like the [predefined  models](#predefined-models) do.
 
 !!! warning
-    Although it is possible to include models from different branches
-    in the same ensemble, this is highly discouraged. Data sets from
-    different branches with unequal shape can result in unexpected
-    errors for plots and prediction methods.
+    Combining models trained on different branches into one ensemble is
+    not allowed and will raise an exception.
+
 
 ### Voting
 
@@ -160,23 +166,27 @@ out their individual weaknesses. Read more in sklearn's [documentation](https://
 
 A voting model is created from a trainer through the [voting](../../API/ATOM/atomclassifier/#voting)
 method. The voting model is added automatically to the list of
-models in the pipeline, under the `Vote` acronym. Although similar,
-this model is different from the VotingClassifier and VotingRegressor
-estimators from sklearn. Remember that the model is added to the
-plots if the `models` parameter is not specified. Plots that require
-a data set will use the one in the current branch. Plots that require
-an estimator object will raise an exception.
+models in the pipeline, under the `Vote` acronym. The underlying
+estimator is a custom adaptation of [VotingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html)
+or [VotingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html)
+depending on the task. The differences between ATOM's and sklearn's
+implementation are:
 
-The `Vote` model has the same prediction attributes and prediction
-methods as other models. The `predict_proba`, `predict_log_proba`,
-`decision_function` and `score` methods return the average predictions
-(soft voting) over the models in the instance. Note that these methods
-will raise an exception if not all estimators in the voting instance
-have the specified method. The `predict` method returns the majority
-vote (hard voting). The `evaluate` method also returns the average
-score for the selected metric over the models.
+- ATOM's implementation doesn't fit estimators if they're already fitted.
+- ATOM's instance is considered fitted at initialization when all underlying
+  estimators are.
+- ATOM's VotingClassifier doesn't implement a LabelEncoder to encode the
+  target column.
 
-Click [here](../../examples/ensembles) for a voting example.
+The two estimators are customized in this way to save time and computational
+resources, since the classes are always initialized with fitted estimators.
+As a consequence of this, the VotingClassifier can not use sklearn's build-in
+LabelEncoder for the target column since it can't be fitted when initializing
+the class. For the vast majority of use cases, the changes will have no effect.
+If you want to export the estimator and retrain it on different data, just make
+sure to [clone](https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html)
+the underlying estimators first.
+
 
 <br>
 
@@ -189,11 +199,14 @@ prediction. Read more in sklearn's [documentation](https://scikit-learn.org/stab
 
 A stacking model is created from a trainer through the [stacking](../../API/ATOM/atomclassifier/#stacking)
 method. The stacking model is added automatically to the list of
-models in the pipeline, under the `Stack` acronym. Remember that the
-model is added to the plots if the `models` parameter is not
-specified. Plots that require a data set will use the one in the
-current branch. The prediction methods, the evaluate method and the
-plot methods that require an estimator object will use the stacking's
-final estimator, under the `estimator` attribute.
-
-Click [here](../../examples/ensembles) for a stacking example.
+models in the pipeline, under the `Stack` acronym. The underlying
+estimator is a custom adaptation of [StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html)
+or [StackingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html)
+depending on the task. The only difference between ATOM's and sklearn's
+implementation is that ATOM's implementation doesn't fit estimators if
+they're already fitted. The two estimators are customized in this way to
+save time and computational resources, since the classes are always
+initialized with fitted estimators. For the vast majority of use cases,
+the changes will have no effect. If you want to export the estimator and
+retrain it on different data, just make sure to [clone](https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html)
+the underlying estimators first.

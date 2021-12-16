@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None,
 title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L594">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L567">[source]</a>
 </span>
 </div>
 
@@ -62,6 +62,7 @@ atom = ATOMClassifier(X, y)
 atom.feature_selection(strategy="PCA", n_features=11)
 atom.plot_components()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_components.png" alt="plot_components" width="700" height="700"/>
 </div>

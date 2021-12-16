@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(strategy="standard",
 verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L157">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L160">[source]</a>
 </span>
 </div>
 
@@ -40,7 +40,7 @@ Verbosity level of the class. Possible values are:
 </ul>
 <p>
 <strong>**kwargs</strong><br>
-Additional keyword arguments passed to the <code>strategy</code> estimator.
+Additional keyword arguments for the <code>strategy</code> estimator.
 </p>
 </td>
 </tr>
@@ -58,8 +58,8 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
-<strong>estimator: sklearn estimator</strong><br>
-Estimator's instance with which the data is scaled.
+<strong>estimator: sklearn transformer</strong><br>
+Object instance with which the data is scaled.
 </td>
 </tr>
 </table>
@@ -112,7 +112,7 @@ Estimator's instance with which the data is scaled.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L207">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L210">[source]</a>
 </span>
 </div>
 Compute the mean and std to be used for scaling.
@@ -121,7 +121,7 @@ Compute the mean and std to be used for scaling.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -153,7 +153,7 @@ Fit to data, then transform it.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -186,7 +186,8 @@ Get parameters for this estimator.
 <td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained
+subobjects that are estimators.
 </p>
 </td>
 </tr>
@@ -194,7 +195,7 @@ If True, will return the parameters for this estimator and contained subobjects 
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>params: dict</strong><br>
-Dictionary of the parameter names mapped to their values.
+Parameter names mapped to their values.
 </td>
 </tr>
 </table>
@@ -205,7 +206,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -231,7 +232,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L370">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -277,7 +278,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L242">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L245">[source]</a>
 </span>
 </div>
 Perform standardization by centering and scaling.
@@ -286,7 +287,7 @@ Perform standardization by centering and scaling.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
+<strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>

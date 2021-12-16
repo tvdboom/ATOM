@@ -6,7 +6,7 @@
 index=None, show=None, target=1, title=None, figsize=None, filename=None,
 display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2837">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3148">[source]</a>
 </span>
 </div>
 
@@ -30,9 +30,9 @@ exception if there are multiple models in the pipeline. To avoid
 this, call the plot from a model, e.g. <code>atom.xgb.decision_plot()</code>.
 </p>
 <p>
-<strong>index: int, tuple, slice or None, optional (default=None)</strong><br>
-Indices of the rows in the dataset to plot. If tuple (n, m), it selects rows
-n until m. If None, select all rows in the test set.
+<strong>index: int, str, sequence or None, optional (default=None)</strong><br>
+Index names or positions of the rows in the dataset to plot.
+If None, it selects all rows in the test set.
 </p>
 <p>
 <strong>show: int or None, optional (default=None)</strong><br>
@@ -88,6 +88,7 @@ atom = ATOMRegressor(X, y)
 atom.run("RF")
 atom.decision_plot()  # For multiple samples
 ```
+
 <div align="center">
     <img src="../../../img/plots/decision_plot_1.png" alt="decision_plot_1" width="700" height="700"/>
 </div>
@@ -95,6 +96,7 @@ atom.decision_plot()  # For multiple samples
 ```python
 atom.decision_plot(index=120)  # For a single sample
 ```
+
 <div align="center">
     <img src="../../../img/plots/decision_plot_2.png" alt="decision_plot_2" width="700" height="700"/>
 </div>

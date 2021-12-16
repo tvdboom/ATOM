@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/predicting/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
   <title>Predicting - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.a57b2b03.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -488,8 +488,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../data_pipelines/" class="md-nav__link">
-        Data pipelines
+      <a href="../data_management/" class="md-nav__link">
+        Data management
       </a>
     </li>
   
@@ -2162,6 +2162,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_parshap/" class="md-nav__link">
+        plot_parshap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -2455,6 +2469,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/holdout_set/" class="md-nav__link">
+        Holdout set
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
@@ -2639,6 +2667,8 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2682,42 +2712,48 @@ methods for estimators in sklearn's API:</p>
 
 <tr>
 <td><a href="../../API/predicting/predict">predict</a></td>
-<td>Transform new data through all transformers in a branch and return class predictions.</td>
+<td>Return class predictions.</td>
 </tr>
 
 <tr>
 <td><a href="../../API/predicting/predict_proba">predict_proba</a></td>
-<td>Transform new data through all transformers in a branch and return class probabilities.</td>
+<td>Return class probabilities.</td>
 </tr>
 
 <tr>
 <td><a href="../../API/predicting/predict_log_proba">predict_log_proba</a></td>
-<td>Transform new data through all transformers in a branch and return class log-probabilities. </td>
+<td>Return class log-probabilities. </td>
 </tr>
 
 <tr>
 <td><a href="../../API/predicting/decision_function">decision_function</a></td>
-<td>Transform new data through all transformers in a branch and return confidence scores.</td>
+<td>Return confidence scores.</td>
 </tr>
 
 <tr>
 <td><a href="../../API/predicting/score">score</a></td>
-<td>Transform new data through all transformers in a branch and return a metric score.</td>
+<td>Return a metric score.</td>
 </tr>
 </table>
 
-<p>Except for transform, the prediction methods can be calculated on the train
-and test set. You can access them through the model's prediction attributes,
-e.g. <code>atom.mnb.predict_train</code> or <code>atom.mnb.predict_test</code>. Keep in mind that
-the results are not calculated until the attribute is called for the first
-time. This mechanism avoids having to calculate attributes that are never
-used, saving time and memory.</p>
+<p>Except for transform, the prediction methods can be calculated on the
+train and test set. You can access them through the model's <strong>prediction
+attributes</strong>, e.g. <code>atom.mnb.predict_train</code> or <code>atom.mnb.predict_test</code>.
+Keep in mind that the results are not calculated until the attribute is
+called for the first time. This mechanism avoids having to calculate
+attributes that are never used, saving time and memory.</p>
+<p>Except for transform and score, it's possible to get the prediction on a
+specific row or rows in the dataset providing their index names or positions,
+e.g. <code>atom.rf.predict(10)</code> returns the random forest's prediction on the
+10th row in the dataset, or <code>atom.rf.predict_proba(["index1", "index2"])</code>
+returns the model's class probabilities for the rows in the dataset with
+indices <code>index1</code> and <code>index2</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Many of the <a href="../plots">plots</a> use the prediction attributes. This can
 considerably increase the size of the instance for large datasets. Use
-the <a href="../../API/ATOM/atomclassifier/#reset-predictions">reset_predictions</a>
-method if you need to free some memory!</p>
+the <a href="../../API/ATOM/atomclassifier/#clear">clear</a> method if you need to
+free some memory!</p>
 </div>
                 
               
@@ -2828,10 +2864,10 @@ method if you need to free some memory!</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.b1047164.min.js"></script>
       
         <script src="../../stylesheets/extra.js"></script>
       

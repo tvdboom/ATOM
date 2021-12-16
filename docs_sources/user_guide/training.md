@@ -57,10 +57,6 @@ parameters or on different data sets. See the
 
 Additional things to take into account:
 
-* Models that require feature scaling will automatically do so
-  before training (if the data is not already scaled). Use the
-  [available_models](../../API/ATOM/atomclassifier/#available-models)
-  method to see for which models this is the case.
 * If an exception is encountered while fitting an estimator, the
   pipeline will automatically jump to the next model. The exceptions are
   stored in the `errors` attribute. Note that when a model is skipped,
@@ -99,14 +95,13 @@ the metric.
 <a name="predefined-scorers"></a>
 **Predefined scorers**<br>
 ATOM accepts all of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
-as well as some custom acronyms and custom scorers. 
-
-Since some of sklearn's scorers have quite long names and ATOM is all
-about <s>lazy</s>fast experimentation, the package provides acronyms
-for some of the most commonly used ones. These acronyms are case-insensitive
-and can be used in the `metric` parameter instead of the
-scorer's full name, e.g. `atom.run("LR", metric="BA")` will use
-`balanced_accuracy`. The available acronyms are:
+as well as some custom acronyms and custom scorers. Since some of
+sklearn's scorers have quite long names and ATOM is all about
+<s>lazy</s>fast experimentation, the package provides acronyms
+for some of the most commonly used ones. These acronyms are
+case-insensitive and can be used in the `metric` parameter instead
+of the scorer's full name, e.g. `atom.run("LR", metric="BA")` will
+use `balanced_accuracy`. The available acronyms are:
 
 * "AP" for "average_precision"
 * "BA" for "balanced_accuracy"
@@ -159,6 +154,26 @@ the bayesian optimization and to select the winning model.
 !!! info
     Some plots let you choose which of the metrics to show using the
     `metric` parameter.
+
+<br>
+
+## Automated feature scaling
+
+Models that require feature scaling will automatically do so before
+training, if the data is not already scaled. The data is considered
+scaled if it has one of the following prerequisites:
+
+* The mean value over the mean of all columns is <0.05 and the mean of
+  the standard deviation over all columns lies between 0.93 and 1.07.
+* There is a transformer in the pipeline whose \__name__ contains the
+  word `scaler`.
+
+The scaling is applied using a [Scaler](../../API/data_cleaning/scaler)
+with default parameters. It can be accessed from the model through the
+`scaler` attribute. The scaled dataset can be examined through the
+model's [data attributes](../../API/models/gnb/#data-attributes). Use
+the [available_models](../../API/ATOM/atomclassifier/#available-models)
+method to see which models require feature scaling. 
 
 <br>
 
@@ -215,17 +230,19 @@ In order to achieve maximum performance, it's important to tune an
 estimator's hyperparameters before training it. ATOM provides
 [hyperparameter tuning](https://en.wikipedia.org/wiki/Hyperparameter_optimization)
 using a [bayesian optimization](https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.)
-(BO) approach implemented with [skopt](https://scikit-optimize.github.io/stable/).
+(BO) approach implemented with [scikit-optimize](https://scikit-optimize.github.io/stable/).
 The BO is optimized on the first metric provided with the `metric`
 parameter. Each step is either computed by cross-validation on the
 complete training set or by randomly splitting the training set every
-iteration into a (sub) training set and a validation set. This process
-can create some minimum data leakage towards specific parameters, but
-it ensures maximal use of the provided data. However, the leakage is
-not present in the independent test set, thus the final score of every
-model is unbiased. Note that, if the dataset is relatively small, the
-BO's best score can consistently be lower than the final score on the
-test set due to the considerable fewer instances on which it is trained.
+iteration into a (sub) training and validation set. This process can
+create some minimum data leakage towards specific parameters (since
+the estimator is evaluated on data that is used to train the next
+estimator), but it ensures maximal use of the provided data. However,
+the leakage is not present in the independent test set, thus the final
+score of every model is unbiased. Note that, if the dataset is relatively
+small, the BO's best score can consistently be lower than the final score
+on the test set due to the considerable fewer instances on which it is
+trained.
 
 There are many possibilities to tune the BO to your liking. Use
 `n_calls` and `n_initial_points` to determine the number of iterations
