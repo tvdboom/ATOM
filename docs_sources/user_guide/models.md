@@ -13,7 +13,7 @@ be accessed using their acronyms, e.g. `atom.LGB` to access the
 LightGBM's model. The available models and their corresponding
 acronyms are: 
 
-* "Dummy" for [Dummy Classification/Regression](../../API/models/dummy)
+* "Dummy" for [Dummy Estimator](../../API/models/dummy)
 * "GP" for [Gaussian Process](../../API/models/gp)
 * "GNB" for [Gaussian Naive Bayes](../../API/models/gnb)
 * "MNB" for [Multinomial Naive Bayes](../../API/models/mnb)
@@ -21,7 +21,7 @@ acronyms are:
 * "CatNB" for [Categorical Naive Bayes](../../API/models/catnb)
 * "CNB" for [Complement Naive Bayes](../../API/models/cnb)
 * "OLS" for [Ordinary Least Squares](../../API/models/ols)
-* "Ridge" for [Ridge Classification/Regression](../../API/models/ridge)
+* "Ridge" for [Ridge Estimator](../../API/models/ridge)
 * "Lasso" for [Lasso Regression](../../API/models/lasso)
 * "EN" for [Elastic Net](../../API/models/en)
 * "BR" for [Bayesian Ridge](../../API/models/br)
@@ -123,7 +123,7 @@ with more than 2 dimensions, e.g. image data can have shape (n_samples,
 length, width, rgb). These data structures are not intended to store in
 a two-dimensional pandas dataframe, but, since ATOM requires a dataframe
 for its internal API, datasets with more than two dimensions are stored
-in a single column called "Multidimensional feature", where every row
+in a single column called "multidim feature", where every row
 contains one (multidimensional) sample. Note that the [data cleaning](../data_cleaning),
 [feature engineering](../feature_engineering) and some of the [plotting](../plots)
 methods are unavailable when this is the case.

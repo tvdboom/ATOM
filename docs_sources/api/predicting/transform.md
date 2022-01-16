@@ -8,7 +8,7 @@
 </span>
 </div>
 
-Transform new data through the current branch. Transformers that are
+Transform unseen data through the current branch. Transformers that are
 only applied on the training set are skipped. This method can only be
 called from atom, not from the models.
 

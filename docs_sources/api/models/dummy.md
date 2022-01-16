@@ -1,5 +1,5 @@
-# Dummy Classification/Regression (Dummy)
------------------------------------------
+# Dummy Estimator (Dummy)
+-------------------------
 
 When doing supervised learning, a simple sanity check consists of
 comparing one's estimator against simple rules of thumb. The
@@ -139,6 +139,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.

@@ -22,8 +22,8 @@ from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
 from .utils import (
     SEQUENCE, OPTIONAL_PACKAGES, lst, time_to_str, is_multidim,
-    get_custom_scorer, get_best_score, check_scaling, delete, PlotCallback,
-    CustomDict,
+    is_sparse, get_custom_scorer, get_best_score, check_scaling,
+    delete, PlotCallback, CustomDict,
 )
 
 
@@ -84,9 +84,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     est_params: dict or None, optional (default=None)
         Additional parameters for the estimators. See the corresponding
         documentation for the available options. For multiple models,
-        use the acronyms as key and a dict of the parameters as value.
-        Add _fit to the parameter's name to pass it to the fit method
-        instead of the initializer.
+        use the acronyms as key (or 'all' for all models) and a dict
+        of the parameters as value. Add _fit to the parameter's name
+        to pass it to the fit method instead of the initializer.
 
     bo_params: dict or None, optional (default=None)
         Additional parameters to for the BO. These can include:
@@ -115,11 +115,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 validation set.
             - callback: callable or list of callables, optional (default=None)
                 Callbacks for the BO.
-            - dimensions: dict, sequence or None, optional (default=None)
-                Custom hyperparameter space for the BO. Can be an
-                array to share the same dimensions across models
-                or a dictionary with the model names as key. If
-                None, ATOM's predefined dimensions are used.
+            - dimensions: dict, list or None, optional (default=None)
+                Custom hyperparameter space for the BO. Can be a list
+                to share the same dimensions across models or a dict
+                with the model names as key (or `all` for all models).
+                If None, ATOM's predefined dimensions are used.
             - plot: bool, optional (default=False)
                 Whether to plot the BO's progress as it runs.
                 Creates a canvas with two plots: the first plot
@@ -215,7 +215,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         if self.mapping is None:
             self.mapping = {str(v): v for v in sorted(self.y.unique())}
 
-        if self.scaled is None:
+        if self.scaled is None and not is_multidim(self.X) and not is_sparse(self.X):
             self.scaled = check_scaling(self.X)
 
         # Create model subclasses ================================== >>
@@ -339,7 +339,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 params = {}
                 for key, value in self.est_params.items():
                     # Parameters for this model only
-                    if key.lower() == name.lower():
+                    if key.lower() == name.lower() or key.lower() == "all":
                         params.update(value)
                     # Parameters for all models
                     elif key not in self._models:
@@ -428,7 +428,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                         # Dimensions for every specific model
                         for key, value in self.bo_params["dimensions"].items():
                             # Parameters for this model only
-                            if key.lower() == name.lower():
+                            if key.lower() == name.lower() or key.lower() == "all":
                                 model._dimensions = value
                                 break
 
@@ -466,7 +466,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.log("\nTraining " + "=" * 25 + " >>", 1)
         if not self.__class__.__name__.startswith("SuccessiveHalving"):
             self.log(f"Models: {', '.join(lst(self.models))}", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}\n", 1)
+        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         to_remove = []
         for i, m in enumerate(self._models.values()):
@@ -487,7 +487,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
                 # Get the total time spend on this model
                 setattr(m, "time", time_to_str(model_time))
-                self.log("-" * 49 + f"\nTotal time: {m.time}\n\n", 1)
+                self.log("-" * 49 + f"\nTotal time: {m.time}", 1)
 
             except Exception as ex:
                 self.log(
@@ -523,7 +523,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     "or the logging file to investigate the exceptions."
                 )
 
-        self.log(f"Final results {'=' * 20} >>", 1)
+        self.log(f"\n\nFinal results {'=' * 20} >>", 1)
         self.log(f"Duration: {time_to_str(t_init)}\n{'-' * 37}", 1)
 
         # Get max length of the model names

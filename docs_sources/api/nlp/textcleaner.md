@@ -15,7 +15,7 @@ drop_punctuation=True, verbose=0, logger=None)
 Applies standard text cleaning to the corpus. Transformations include
 normalizing characters and dropping noise from the text (emails, HTML
 tags, URLs, etc...). The transformations are applied on the column
-named `Corpus`, in the same order the parameters are presented. If
+named `corpus`, in the same order the parameters are presented. If
 there is no column with that name, an exception is raised. This class
 can be accessed from atom through the [textclean](../../ATOM/atomclassifier/#textclean)
 method. Read more in the [user guide](../../../user_guide/nlp/#text-cleaning).
@@ -103,6 +103,7 @@ Verbosity level of the class. Possible values are:
 <br>
 
 
+
 ## Attributes
 
 <table style="font-size:16px">
@@ -116,6 +117,7 @@ the document index from which the occurrence was dropped.
 </tr>
 </table>
 <br>
+
 
 
 ## Methods

@@ -3,7 +3,7 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing the feature engineering estimators.
+Description: Module containing the feature engineering transformers.
 
 """
 
@@ -152,13 +152,13 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Extracting datetime features...", 1)
 
         i = 0
-        for col in X.select_dtypes(exclude="number"):
-            if X[col].dtype.name == "datetime64[ns]":
-                col_dt = X[col]
-                self.log(f" --> Extracting features from datetime column {col}.", 1)
-            elif col in X.select_dtypes(exclude="number").columns:
+        for name, column in X.select_dtypes(exclude="number").items():
+            if column.dtype.name == "datetime64[ns]":
+                col_dt = column
+                self.log(f" --> Extracting features from datetime column {name}.", 1)
+            elif name in X.select_dtypes(exclude="number").columns:
                 col_dt = pd.to_datetime(
-                    arg=X[col],
+                    arg=column,
                     errors="coerce",  # Converts to NaT if he can't format
                     format=self.fmt[i] if isinstance(self.fmt, SEQUENCE) else self.fmt,
                     infer_datetime_format=True,
@@ -171,7 +171,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 else:
                     i += 1
                     self.log(
-                        f" --> Extracting features from categorical column {col}.", 1
+                        f" --> Extracting features from categorical column {name}.", 1
                     )
 
             # Extract features from the datetime column
@@ -214,8 +214,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Add every new feature after the previous one
                 encode_variable(
-                    idx=X.columns.get_loc(col),
-                    name=f"{col}_{fx}",
+                    idx=X.columns.get_loc(name),
+                    name=f"{name}_{fx}",
                     values=values,
                     min_val=min_val,
                     max_val=max_val,
@@ -223,7 +223,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Drop the original datetime column
             if self.drop_columns:
-                X = X.drop(col, axis=1)
+                X = X.drop(name, axis=1)
 
         return X
 
@@ -480,7 +480,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Dataframe containing the newly generated features.
+            Dataset containing the newly generated features.
 
         """
         check_is_fitted(self)
@@ -563,7 +563,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             )
 
             cols = list(X.columns) + list(self.genetic_features["name"])
-            X = pd.DataFrame(np.hstack((X, new_features)), columns=cols)
+            X = pd.DataFrame(np.hstack((X, new_features)), index=X.index, columns=cols)
 
         return X
 
@@ -722,6 +722,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self.feature_importance = None
         self.scaler = None
         self._solver = None
+        self._kwargs = kwargs.copy()
         self._n_features = None
         self._low_variance = {}
         self._is_fitted = False
@@ -874,21 +875,19 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             # Select the features with correlations above or equal to the threshold
             to_drop = [i for i in upper.columns if any(abs(upper[i] >= max_))]
 
-            # Iterate to record pairs of correlated features
+            # Record the correlated features and corresponding values
+            corr_features, corr_values = [], []
             for col in to_drop:
-                # Find the correlated features and corresponding values
-                corr_features = list(upper.index[abs(upper[col]) >= max_])
-                corr_values = list(round(upper[col][abs(upper[col]) >= max_], 5))
+                corr_features.append(list(upper.index[abs(upper[col]) >= max_]))
+                corr_values.append(list(round(upper[col][abs(upper[col]) >= max_], 5)))
 
-                # Update dataframe
-                self.collinear = self.collinear.append(
-                    {
-                        "drop_feature": col,
-                        "correlated_feature": ", ".join(corr_features),
-                        "correlation_value": ", ".join(map(str, corr_values)),
-                    },
-                    ignore_index=True,
-                )
+            self.collinear = pd.DataFrame(
+                data={
+                    "drop_feature": to_drop,
+                    "correlated_feature": [", ".join(fxs) for fxs in corr_features],
+                    "correlation_value": [", ".join(map(str, v)) for v in corr_values],
+                }
+            )
 
             X = X.drop(to_drop, axis=1)
 
@@ -920,20 +919,22 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "sfm":
             # If any of these attr exists, model is already fitted
-            condition1 = hasattr(self._solver, "coef_")
-            condition2 = hasattr(self._solver, "feature_importances_")
-            self.kwargs["prefit"] = True if condition1 or condition2 else False
+            if any(hasattr(self._solver, a) for a in ("coef_", "feature_importances_")):
+                prefit = self._kwargs.pop("prefit", True)
+            else:
+                prefit = False
 
             # If threshold is not specified, select only based on _n_features
             if not self.kwargs.get("threshold"):
-                self.kwargs["threshold"] = -np.inf
+                self._kwargs["threshold"] = -np.inf
 
             self.sfm = SelectFromModel(
                 estimator=self._solver,
                 max_features=self._n_features,
-                **self.kwargs,
+                prefit=prefit,
+                **self._kwargs,
             )
-            if self.kwargs["prefit"]:
+            if prefit:
                 if len(self.sfm.get_support()) != X.shape[1]:
                     raise ValueError(
                         "Invalid value for the solver parameter. The "
@@ -950,7 +951,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 estimator=self._solver,
                 n_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
-                **self.kwargs,
+                **self._kwargs,
             ).fit(X, y)
 
         elif self.strategy.lower() == "rfe":
@@ -958,7 +959,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             self.rfe = RFE(
                 estimator=self._solver,
                 n_features_to_select=self._n_features,
-                **self.kwargs,
+                **self._kwargs,
             ).fit(X, y)
 
         else:
@@ -966,7 +967,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             # Both RFECV and SFS use the scoring parameter
             if self.kwargs.get("scoring"):
-                self.kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
             if self.strategy.lower() == "rfecv":
                 # Invert n_features to select them all (default option)
@@ -977,7 +978,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     estimator=self._solver,
                     min_features_to_select=self._n_features,
                     n_jobs=self.n_jobs,
-                    **self.kwargs,
+                    **self._kwargs,
                 ).fit(X, y)
 
         self._is_fitted = True

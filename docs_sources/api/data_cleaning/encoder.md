@@ -46,7 +46,7 @@ name and the value is the class order, e.g. {"salary": ["low",
 </p>
 <p>
 <strong>frac_to_other: int, float or None, optional (default=None)</strong><br>
-Classes with less occurrences than n_rows * <code>frac_to_other</code>
+Classes with fewer occurrences than n_rows * <code>frac_to_other</code>
 are replaced with the string <code>other</code>. This transformation
 is done before the encoding of the column. If None, skip this step.
 </p>
@@ -80,6 +80,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
     * [HashingEncoder](https://contrib.scikit-learn.org/category_encoders/hashing.html): Incompatibility of APIs.
 
 <br>
+
 
 
 ## Methods

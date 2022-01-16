@@ -247,21 +247,24 @@ Name of the target column.
 Target classes mapped to their respective encoded integer.
 </p>
 <p>
-<strong>scaled: bool</strong><br>
+<strong>scaled: bool or None</strong><br>
 Whether the feature set is scaled. It is considered scaled when
 it has mean=0 and std=1, or when atom has a scaler in the pipeline.
+Returns None for multidimensional or sparse datasets.
 </p>
 <p>
 <strong>duplicates: int</strong><br>
 Number of duplicate rows in the dataset.
 </p>
 <p>
-<strong>nans: pd.Series</strong><br>
-Columns with the number of missing values in them.
+<strong>nans: pd.Series or None</strong><br>
+Columns with the number of missing values in them. Returns None for
+multidimensional or sparse datasets.
 </p>
 <p>
-<strong>n_nans: int</strong><br>
-Number of samples containing missing values.
+<strong>n_nans: int or None</strong><br>
+Number of samples containing missing values. Returns None for
+multidimensional or sparse datasets.
 </p>
 <p>
 <strong>numerical: list</strong><br>
@@ -280,12 +283,14 @@ Names of the categorical features in the dataset.
 Number of categorical features in the dataset.
 </p>
 <p>
-<strong>outliers: pd.Series</strong><br>
-Columns in training set with amount of outlier values.
+<strong>outliers: pd.Series or None</strong><br>
+Columns in training set with amount of outlier values. Returns None for
+multidimensional or sparse datasets.
 </p>
 <p>
-<strong>n_outliers: int</strong><br>
-Number of samples in the training set containing outliers.
+<strong>n_outliers: int or None</strong><br>
+Number of samples in the training set containing outliers. Returns None for
+multidimensional or sparse datasets.
 </p>
 <p>
 <strong>classes: pd.DataFrame</strong><br>
@@ -686,6 +691,7 @@ Columns include:
 <li><b>estimator:</b> The model's underlying estimator.</li>
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
+<li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
 </ul>
 </td>
 </tr>
@@ -1529,7 +1535,7 @@ drop_numbers=True, regex_numbers=None, drop_punctuation=True)
 Applies standard text cleaning to the corpus. Transformations include
 normalizing characters and dropping noise from the text (emails, HTML
 tags, URLs, etc...). The transformations are applied on the column
-named `Corpus`, in the same order the parameters are presented. If
+named `corpus`, in the same order the parameters are presented. If
 there is no column with that name, an exception is raised. See the
 [TextCleaner](../nlp/textcleaner.md) class for a description of the
 parameters.
@@ -1547,7 +1553,7 @@ trigram_freq=None, quadgram_freq=None)
 Convert documents into sequences of words. Additionally, create
 n-grams (represented by words united with underscores, e.g.
 "New_York") based on their frequency in the corpus. The
-transformations are applied on the column named `Corpus`. If
+transformations are applied on the column named `corpus`. If
 there is no column with that name, an exception is raised. See
 the [Tokenizer](../nlp/tokenizer.md) class for a description
 of the parameters.
@@ -1563,7 +1569,7 @@ custom_stopwords=None, stem=False, lemmatize=True)
 </span>
 </div>
 Convert words to a more uniform standard. The transformations are
-applied on the column named `Corpus`, in the same order the parameters
+applied on the column named `corpus`, in the same order the parameters
 are presented. If there is no column with that name, an exception is
 raised. See the [Normalizer](../nlp/normalizer.md) class for a
 description of the parameters.
@@ -1578,10 +1584,11 @@ description of the parameters.
 </span>
 </div>
 Transform the corpus into meaningful vectors of numbers. The
-transformation is applied on the column named `Corpus`. If there
-is no column with that name, an exception is raised. See the
-[Vectorizer](../nlp/vectorizer.md) class for a description of
-the parameters.
+transformation is applied on the column named `corpus`. If there
+is no column with that name, an exception is raised. The transformed
+columns are returned in sparse format only if all provided columns
+(except `corpus`) are sparse. See the [Vectorizer](../nlp/vectorizer.md)
+class for a description of the parameters.
 <br /><br /><br />
 
 

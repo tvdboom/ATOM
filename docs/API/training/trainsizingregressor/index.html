@@ -2954,10 +2954,10 @@ value applies to the n-th model.
 <p>
 <strong>est_params: dict, optional (default=None)</strong><br>
 Additional parameters for the estimators. See the corresponding
-documentation for the available options. For multiple models, use
-the acronyms as key and a dictionary of the parameters as value.
-Add _fit to the parameter's name to pass it to the fit method instead
-of the initializer.
+documentation for the available options. For multiple models,
+use the acronyms as key (or 'all' for all models) and a dict
+of the parameters as value. Add _fit to the parameter's name
+to pass it to the fit method instead of the initializer.
 </p>
 <strong>bo_params: dict, optional (default=None)</strong><br>
 Additional parameters to for the BO. These can include:
@@ -2981,9 +2981,10 @@ will stop if the model didn't improve in last <code>early_stopping</code> rounds
 fraction of rounds from the total. If None, no early stopping is performed. Only
 available for models that allow in-training evaluation.</li>
 <li><b>callback: callable or list of callables, optional (default=None)</b><br>Callbacks for the BO.</li>
-<li><b>dimensions: dict, array or None, optional (default=None)</b><br>Custom hyperparameter
-space for the bayesian optimization. Can be an array to share dimensions across
-models or a dictionary with the model's name as key. If None, ATOM's predefined dimensions are used.</li>
+<li><b>dimensions: dict, list or None, optional (default=None)</b><br>Custom hyperparameter
+space for the bayesian optimization. Can be a list to share dimensions across
+models or a dict with the model's name as key (or 'all' for all models). If None,
+ATOM's predefined dimensions are used.</li>
 <li><b>plot: bool, optional (default=False)</b><br>Whether to plot the BO's progress as it runs.
 Creates a canvas with two plots: the first plot shows the score of every trial
 and the second shows the distance between the last consecutive steps.</li>
@@ -3285,6 +3286,7 @@ Columns include:
 <li><b>estimator:</b> The model's underlying estimator.</li>
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
+<li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
 </ul>
 </td>
 </tr>

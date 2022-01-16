@@ -10,10 +10,12 @@ verbose=0, logger=None, *kwargs)
 </div>
 
 Transform the corpus into meaningful vectors of numbers. The
-transformation is applied on the column named `Corpus`. If there
-is no column with that name, an exception is raised. This class
-can be accessed from atom through the [vectorize](../../ATOM/atomclassifier/#vectorize)
-method. Read more in the [user guide](../../../user_guide/nlp/#vectorization).
+transformation is applied on the column named `corpus`. If there
+is no column with that name, an exception is raised. The transformed
+columns are returned in sparse format only if all provided columns
+(except `corpus`) are sparse. This class can be accessed from atom
+through the [vectorize](../../ATOM/atomclassifier/#vectorize) method.
+Read more in the [user guide](../../../user_guide/nlp/#vectorization).
 
 <table style="font-size:16px">
 <tr>
@@ -48,6 +50,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 </table>
 
 <br>
+
 
 
 ## Methods
@@ -289,7 +292,6 @@ Transformed corpus.
 </tr>
 </table>
 <br />
-
 
 
 ## Example

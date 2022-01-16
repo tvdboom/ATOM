@@ -4043,7 +4043,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
         """Plot a wordcloud from the corpus.
 
         The text for the plot is extracted from the column
-        named `Corpus`. If there is no column with that name,
+        named `corpus`. If there is no column with that name,
         an exception is raised.
 
         Parameters
@@ -4128,7 +4128,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
         """Plot n-gram frequencies.
 
         The text for the plot is extracted from the column
-        named `Corpus`. If there is no column with that name,
+        named `corpus`. If there is no column with that name,
         an exception is raised. If the documents are not
         tokenized, the words are separated by spaces.
 

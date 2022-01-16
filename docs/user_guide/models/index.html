@@ -2829,7 +2829,7 @@ be accessed using their acronyms, e.g. <code>atom.LGB</code> to access the
 LightGBM's model. The available models and their corresponding
 acronyms are: </p>
 <ul>
-<li>"Dummy" for <a href="../../API/models/dummy">Dummy Classification/Regression</a></li>
+<li>"Dummy" for <a href="../../API/models/dummy">Dummy Estimator</a></li>
 <li>"GP" for <a href="../../API/models/gp">Gaussian Process</a></li>
 <li>"GNB" for <a href="../../API/models/gnb">Gaussian Naive Bayes</a></li>
 <li>"MNB" for <a href="../../API/models/mnb">Multinomial Naive Bayes</a></li>
@@ -2837,7 +2837,7 @@ acronyms are: </p>
 <li>"CatNB" for <a href="../../API/models/catnb">Categorical Naive Bayes</a></li>
 <li>"CNB" for <a href="../../API/models/cnb">Complement Naive Bayes</a></li>
 <li>"OLS" for <a href="../../API/models/ols">Ordinary Least Squares</a></li>
-<li>"Ridge" for <a href="../../API/models/ridge">Ridge Classification/Regression</a></li>
+<li>"Ridge" for <a href="../../API/models/ridge">Ridge Estimator</a></li>
 <li>"Lasso" for <a href="../../API/models/lasso">Lasso Regression</a></li>
 <li>"EN" for <a href="../../API/models/en">Elastic Net</a></li>
 <li>"BR" for <a href="../../API/models/br">Bayesian Ridge</a></li>
@@ -2931,7 +2931,7 @@ with more than 2 dimensions, e.g. image data can have shape (n_samples,
 length, width, rgb). These data structures are not intended to store in
 a two-dimensional pandas dataframe, but, since ATOM requires a dataframe
 for its internal API, datasets with more than two dimensions are stored
-in a single column called "Multidimensional feature", where every row
+in a single column called "multidim feature", where every row
 contains one (multidimensional) sample. Note that the <a href="../data_cleaning">data cleaning</a>,
 <a href="../feature_engineering">feature engineering</a> and some of the <a href="../plots">plotting</a>
 methods are unavailable when this is the case.</p>

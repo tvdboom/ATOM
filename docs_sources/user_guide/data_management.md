@@ -190,8 +190,8 @@ logger.
 
 ## Memory considerations
 
-Atom stores one copy of the dataframe in each branch. Note that there
-are always at least two branches in the instance: master (or another
+An atom instance stores one copy of the dataframe in each branch. Note
+that there are always at least two branches in the instance: master (or another
 user defined branch) and one additional branch that stores the
 dataframe with which the class was initialized. This internal branch
 is called `og` (original) and can not be accessed by the user.

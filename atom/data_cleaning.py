@@ -3,7 +3,7 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing the data cleaning estimators.
+Description: Module containing the data cleaning transformers.
 
 """
 
@@ -542,44 +542,44 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         # Replace all missing values with NaN
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
-        for col in X:
+        for name, column in X.items():
             # Count occurrences in the column
-            n_unique = X[col].nunique(dropna=True)
+            n_unique = column.nunique(dropna=True)
 
             # Drop features with invalid data type
-            if X[col].dtype.name in lst(self.drop_types):
+            if column.dtype.name in lst(self.drop_types):
                 self.log(
-                    f" --> Dropping feature {col} for having a "
-                    f"prohibited type: {X[col].dtype.name}.", 2
+                    f" --> Dropping feature {name} for having a "
+                    f"prohibited type: {column.dtype.name}.", 2
                 )
-                X = X.drop(col, axis=1)
+                X = X.drop(name, axis=1)
                 continue
 
-            elif X[col].dtype.name in ("object", "category"):
+            elif column.dtype.name in ("object", "category"):
                 if self.strip_categorical:
                     # Strip strings from blank spaces
-                    X[col] = X[col].apply(
+                    X[name] = column.apply(
                         lambda val: val.strip() if isinstance(val, str) else val
                     )
 
                 # Drop features where all values are different
                 if self.drop_max_cardinality and n_unique == len(X):
                     self.log(
-                        f" --> Dropping feature {col} due to maximum cardinality.", 2
+                        f" --> Dropping feature {name} due to maximum cardinality.", 2
                     )
-                    X = X.drop(col, axis=1)
+                    X = X.drop(name, axis=1)
                     continue
 
             # Drop features with minimum cardinality (all values are the same)
             if self.drop_min_cardinality:
-                all_nan = X[col].isna().sum() == len(X)
+                all_nan = column.isna().sum() == len(X)
                 if n_unique == 1 or all_nan:
                     self.log(
-                        f" --> Dropping feature {col} due to minimum "
+                        f" --> Dropping feature {name} due to minimum "
                         f"cardinality. Contains only 1 class: "
-                        f"{'NaN' if all_nan else X[col].unique()[0]}."
+                        f"{'NaN' if all_nan else column.unique()[0]}."
                     )
-                    X = X.drop(col, axis=1)
+                    X = X.drop(name, axis=1)
 
         # Drop duplicate samples
         if self.drop_duplicates:
@@ -748,36 +748,41 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         if self._max_nan_rows:
             X = X.dropna(axis=0, thresh=self._max_nan_rows)
 
-        for col in X:
+        # Reset internal attrs in case of repeated fit
+        self._drop_cols = []
+        self._imputers = {}
+
+        # Assign an imputer to each column
+        for name, column in X.items():
             # Remember columns with too many missing values
-            if self._max_nan_cols and X[col].isna().sum() > self._max_nan_cols:
-                self._drop_cols.append(col)
+            if self._max_nan_cols and column.isna().sum() > self._max_nan_cols:
+                self._drop_cols.append(name)
                 continue  # Skip to side column
 
             # Column is numerical
-            if col in self._num_cols:
+            if name in self._num_cols:
                 if isinstance(self.strat_num, str):
                     if self.strat_num.lower() == "knn":
-                        self._imputers[col] = KNNImputer().fit(X[[col]])
+                        self._imputers[name] = KNNImputer().fit(X[[name]])
 
                     elif self.strat_num.lower() == "most_frequent":
-                        self._imputers[col] = SimpleImputer(
+                        self._imputers[name] = SimpleImputer(
                             strategy="constant",
-                            fill_value=X[col].mode()[0],
-                        ).fit(X[[col]])
+                            fill_value=column.mode()[0],
+                        ).fit(X[[name]])
 
                     # Strategies mean or median
                     elif self.strat_num.lower() != "drop":
-                        self._imputers[col] = SimpleImputer(
+                        self._imputers[name] = SimpleImputer(
                             strategy=self.strat_num.lower()
-                        ).fit(X[[col]])
+                        ).fit(X[[name]])
 
             # Column is categorical
             elif self.strat_cat.lower() == "most_frequent":
-                self._imputers[col] = SimpleImputer(
+                self._imputers[name] = SimpleImputer(
                     strategy="constant",
-                    fill_value=X[col].mode()[0],
-                ).fit(X[[col]])
+                    fill_value=column.mode()[0],
+                ).fit(X[[name]])
 
         self._is_fitted = True
         return self
@@ -831,76 +836,76 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     f"than {self._max_nan_rows} missing values.", 2
                 )
 
-        for col in X:
-            nans = X[col].isna().sum()
+        for name, column in X.items():
+            nans = column.isna().sum()
 
             # Drop columns with too many missing values
-            if col in self._drop_cols:
+            if name in self._drop_cols:
                 self.log(
-                    f" --> Dropping feature {col}. Contains {nans} "
+                    f" --> Dropping feature {name}. Contains {nans} "
                     f"({nans * 100 // len(X)}%) missing values.", 2
                 )
-                X = X.drop(col, axis=1)
+                X = X.drop(name, axis=1)
                 continue
 
             # Apply only if column is numerical and contains missing values
-            if col in self._num_cols and nans > 0:
+            if name in self._num_cols and nans > 0:
                 if not isinstance(self.strat_num, str):
                     self.log(
                         f" --> Imputing {nans} missing values with number "
-                        f"{str(self.strat_num)} in feature {col}.", 2
+                        f"{str(self.strat_num)} in feature {name}.", 2
                     )
-                    X[col] = X[col].replace(np.NaN, self.strat_num)
+                    X[name] = column.replace(np.NaN, self.strat_num)
 
                 elif self.strat_num.lower() == "drop":
-                    X = X.dropna(subset=[col], axis=0)
+                    X = X.dropna(subset=[name], axis=0)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
                     self.log(
                         f" --> Dropping {nans} samples due to missing "
-                        f"values in feature {col}.", 2
+                        f"values in feature {name}.", 2
                     )
 
                 elif self.strat_num.lower() == "knn":
                     self.log(
                         f" --> Imputing {nans} missing values using "
-                        f"the KNN imputer in feature {col}.", 2
+                        f"the KNN imputer in feature {name}.", 2
                     )
-                    X[col] = self._imputers[col].transform(X[[col]])
+                    X[name] = self._imputers[name].transform(X[[name]])
 
                 else:  # Strategies mean, median or most_frequent
-                    mode = round(self._imputers[col].statistics_[0], 2)
+                    mode = round(self._imputers[name].statistics_[0], 2)
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"{self.strat_num.lower()} ({mode}) in feature {col}.", 2
+                        f"{self.strat_num.lower()} ({mode}) in feature {name}.", 2
                     )
-                    X[col] = self._imputers[col].transform(X[[col]])
+                    X[name] = self._imputers[name].transform(X[[name]])
 
             # Column is categorical and contains missing values
             elif nans > 0:
                 if self.strat_cat.lower() not in ("drop", "most_frequent"):
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"{self.strat_cat} in feature {col}.", 2
+                        f"{self.strat_cat} in feature {name}.", 2
                     )
-                    X[col] = X[col].replace(np.NaN, self.strat_cat)
+                    X[name] = column.replace(np.NaN, self.strat_cat)
 
                 elif self.strat_cat.lower() == "drop":
-                    X = X.dropna(subset=[col], axis=0)
+                    X = X.dropna(subset=[name], axis=0)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
                     self.log(
-                        f" --> Dropping {nans} samples due to missing "
-                        f"values in feature {col}.", 2
+                        f" --> Dropping {nans} samples due to "
+                        f"missing values in feature {name}.", 2
                     )
 
                 elif self.strat_cat.lower() == "most_frequent":
-                    mode = self._imputers[col].statistics_[0]
+                    mode = self._imputers[name].statistics_[0]
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"most_frequent ({mode}) in feature {col}.", 2
+                        f"most_frequent ({mode}) in feature {name}.", 2
                     )
-                    X[col] = self._imputers[col].transform(X[[col]])
+                    X[name] = self._imputers[name].transform(X[[name]])
 
         return variable_return(X, y)
 
@@ -941,7 +946,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         "medium", "high"]}.
 
     frac_to_other: int, float or None, optional (default=None)
-        Classes with less occurrences than `fraction_to_other` (as
+        Classes with fewer occurrences than `fraction_to_other` (as
         total number or fraction of rows) are replaced with the string
         `other`. This transformation is done before the encoding of the
         column. If None, skip this step.
@@ -980,13 +985,12 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.frac_to_other = frac_to_other
         self.kwargs = kwargs
 
+        self._cat_cols = None
         self._max_onehot = None
-        self._ordinal = None
         self._frac_to_other = None
         self._to_other = defaultdict(list)
-        self._encoders = {}
         self._categories = {}
-        self._cat_cols = None
+        self._encoders = {}
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -1049,11 +1053,6 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             self._max_onehot = self.max_onehot
 
-        if self.ordinal is None:
-            self._ordinal = {}
-        else:
-            self._ordinal = self.ordinal
-
         if self.frac_to_other:
             if self.frac_to_other < 0:
                 raise ValueError(
@@ -1067,44 +1066,46 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Fitting Encoder...", 1)
 
-        for col in (c for c in X if c in self._cat_cols):
+        # Reset internal attrs in case of repeated fit
+        self._to_other = defaultdict(list)
+        self._categories, self._encoders = {}, {}
+
+        for name, column in X[self._cat_cols].items():
             # Group uncommon classes into "other"
             if self._frac_to_other:
-                for category, count in X[col].value_counts().items():
+                for category, count in column.value_counts().items():
                     if count <= self._frac_to_other:
-                        self._to_other[col].append(category)
-                        X[col] = X[col].replace(category, "other")
+                        self._to_other[name].append(category)
+                        X[name] = column.replace(category, "other")
 
             # Get the unique categories before fitting
-            self._categories[col] = X[col].unique().tolist()
+            self._categories[name] = column.unique().tolist()
 
             # Perform encoding type dependent on number of unique values
-            if col in self._ordinal or len(self._categories[col]) == 2:
-                unique = X[col].unique()
+            ordinal = self.ordinal or {}
+            if name in ordinal or len(self._categories[name]) == 2:
+                # Create custom mapping from 0 to N - 1
+                mapp = {v: i for i, v in enumerate(ordinal.get(name, column.unique()))}
+                mapp.setdefault(np.NaN, -1)  # Encoder always needs mapping of NaN
 
-                # Create a custom mapping: 0 to N - 1
-                mapping = {v: i for i, v in enumerate(self._ordinal.get(col, unique))}
-                if np.NaN not in mapping:  # Encoder always needs mapping of NaN value
-                    mapping[np.NaN] = -1
-
-                self._encoders[col] = OrdinalEncoder(
-                    mapping=[{"col": col, "mapping": mapping}],
+                self._encoders[name] = OrdinalEncoder(
+                    mapping=[{"col": name, "mapping": mapp}],
                     handle_missing="return_nan",
                     handle_unknown="value",
-                ).fit(X[[col]])
+                ).fit(X[[name]])
 
-            elif 2 < len(self._categories[col]) <= self._max_onehot:
-                self._encoders[col] = OneHotEncoder(
+            elif 2 < len(self._categories[name]) <= self._max_onehot:
+                self._encoders[name] = OneHotEncoder(
                     use_cat_names=True,
                     handle_missing="return_nan",
                     handle_unknown="value",
-                ).fit(X[[col]])
+                ).fit(X[[name]])
 
             else:
-                args = [X[[col]]]
+                args = [X[[name]]]
                 if "y" in signature(estimator.fit).parameters:
                     args.append(y)
-                self._encoders[col] = clone(estimator).fit(*args)
+                self._encoders[name] = clone(estimator).fit(*args)
 
         self._is_fitted = True
         return self
@@ -1132,41 +1133,41 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Encoding categorical columns...", 1)
 
-        for col in (c for c in X if c in self._cat_cols):
+        for name, column in X[self._cat_cols].items():
             # Convert classes to "other"
-            X[col] = X[col].replace(self._to_other[col], "other")
+            X[name] = column.replace(self._to_other[name], "other")
 
-            n_classes = len(X[col].unique())
+            n_classes = len(column.unique())
             self.log(
-                f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
-                f"feature {col}. Contains {n_classes} classes.", 2
+                f" --> {self._encoders[name].__class__.__name__[:-7]}-encoding "
+                f"feature {name}. Contains {n_classes} classes.", 2
             )
 
             # Count the propagated missing values
-            n_nans = X[col].isna().sum()
+            n_nans = column.isna().sum()
             if n_nans:
                 self.log(f"   >>> Propagating {n_nans} missing values.", 2)
 
             # Get the new encoded columns
-            new_cols = self._encoders[col].transform(X[[col]])
+            new_cols = self._encoders[name].transform(X[[name]])
 
-            # Drop _nan columns (missing values are propagated)
+            # Drop _nan columns (since missing values are propagated)
             new_cols = new_cols[[col for col in new_cols if not col.endswith("_nan")]]
 
             # Check for unknown classes
-            uc = len([i for i in X[col].unique() if i not in self._categories[col]])
+            uc = len([i for i in column.unique() if i not in self._categories[name]])
             if uc:
                 self.log(f"   >>> Handling {uc} unknown classes.", 2)
 
             # Insert the new columns at old location
             for i, new_col in enumerate(new_cols):
                 if new_col in X:
-                    X[col] = new_cols[col]  # Replace existing column
+                    X[name] = new_cols[name]  # Replace existing column
                 else:
                     # Drop the original column
-                    if col in X:
-                        idx = X.columns.get_loc(col)
-                        X = X.drop(col, axis=1)
+                    if name in X:
+                        idx = X.columns.get_loc(name)
+                        X = X.drop(name, axis=1)
 
                     X.insert(idx + i, new_col, new_cols[new_col])
 

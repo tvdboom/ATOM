@@ -76,6 +76,7 @@ Verbosity level of the class. Possible values are:
 <br>
 
 
+
 ## Methods
 
 <table style="font-size:16px">

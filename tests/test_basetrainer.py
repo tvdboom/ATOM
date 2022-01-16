@@ -157,6 +157,31 @@ def test_n_bootstrap_parameter_is_below_zero():
         trainer.run(bin_train, bin_test)
 
 
+def test_est_params_all_models():
+    """Assert that est_params passes the parameters to all models."""
+    trainer = DirectClassifier(
+        models=["XGB", "LGB"],
+        n_calls=5,
+        est_params={"n_estimators": 220, "all": {"max_depth": 4}},
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert trainer.lgb.estimator.get_params()["n_estimators"] == 220
+    assert trainer.xgb.estimator.get_params()["max_depth"] == 4
+
+
+def test_est_params_per_model():
+    """Assert that est_params passes the parameters per model."""
+    trainer = DirectClassifier(
+        models=["XGB", "LGB"],
+        est_params={"xgb": {"n_estimators": 100}, "lgb": {"n_estimators": 200}},
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert trainer.xgb.estimator.get_params()["n_estimators"] == 100
+    assert trainer.lgb.estimator.get_params()["n_estimators"] == 200
+
+
 def test_base_estimator_default():
     """Assert that GP is the default base estimator."""
     trainer = DirectClassifier("LR", n_calls=5, random_state=1)
@@ -243,13 +268,27 @@ def test_invalid_early_stopping():
         trainer.run(bin_train, bin_test)
 
 
-def test_custom_dimensions_all_models():
-    """Assert that the custom dimensions are for all models if not dict."""
+def test_custom_dimensions_is_list():
+    """Assert that the custom dimensions are for all models if list."""
     trainer = DirectClassifier(
         models=["LR1", "LR2"],
         n_calls=2,
         n_initial_points=2,
-        bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]},
+        bo_params={"dimensions": [Integer(10, 20, name="max_iter")]},
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert list(trainer.lr1.best_params) == ["max_iter"]
+    assert list(trainer.lr2.best_params) == ["max_iter"]
+
+
+def test_custom_dimensions_all_models():
+    """Assert that the custom dimensions can be set for all models."""
+    trainer = DirectClassifier(
+        models=["LR1", "LR2"],
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": {"all": [Integer(10, 20, name="max_iter")]}},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
@@ -287,31 +326,6 @@ def test_optimizer_kwargs():
     )
     trainer.run(bin_train, bin_test)
     assert trainer._bo["kwargs"].get("acq_func") == "EI"
-
-
-def test_est_params_all_models():
-    """Assert that est_params passes the parameters to all models."""
-    trainer = DirectClassifier(
-        models=["XGB", "LGB"],
-        n_calls=5,
-        est_params={"n_estimators": 220},
-        random_state=1,
-    )
-    trainer.run(bin_train, bin_test)
-    assert trainer.lgb.estimator.get_params()["n_estimators"] == 220
-    assert trainer.xgb.estimator.get_params()["n_estimators"] == 220
-
-
-def test_est_params_per_model():
-    """Assert that est_params passes the parameters per model."""
-    trainer = DirectClassifier(
-        models=["XGB", "LGB"],
-        est_params={"xgb": {"n_estimators": 100}, "lgb": {"n_estimators": 200}},
-        random_state=1,
-    )
-    trainer.run(bin_train, bin_test)
-    assert trainer.xgb.estimator.get_params()["n_estimators"] == 100
-    assert trainer.lgb.estimator.get_params()["n_estimators"] == 200
 
 
 # Test _prepare_metric ============================================= >>

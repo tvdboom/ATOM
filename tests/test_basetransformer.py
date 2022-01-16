@@ -132,14 +132,14 @@ def test_input_data_in_training():
 def test_multidimensional_X():
     """Assert that more than two dimensional datasets are handled correctly."""
     atom = ATOMClassifier(*mnist, random_state=1)
-    assert atom.X.columns == ["Multidimensional feature"]
+    assert atom.X.columns == ["multidim feature"]
     assert atom.X.iloc[0, 0].shape == (28, 28, 1)
 
 
 def test_text_to_corpus():
-    """Assert that for text data the column is named Corpus."""
+    """Assert that for text data the column is named corpus."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
-    assert atom.X.columns == ["Corpus"]
+    assert atom.X.columns == ["corpus"]
 
 
 def test_sparse_matrices():

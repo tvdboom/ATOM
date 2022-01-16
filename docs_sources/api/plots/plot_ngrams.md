@@ -10,7 +10,7 @@ index=None, show=10, title=None, figsize=None, filename=None, display=True)
 </div>
 
 Plot n-gram frequencies. The text for the plot is extracted from
-the column named `Corpus`. If there is no column with that name,
+the column named `corpus`. If there is no column with that name,
 an exception is raised. If the documents are not tokenized, the
 words are separated by spaces.
 

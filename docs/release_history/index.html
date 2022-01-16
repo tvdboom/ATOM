@@ -655,6 +655,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#version-4110" class="md-nav__link">
+    Version 4.11.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-4100" class="md-nav__link">
     Version 4.10.0
   </a>
@@ -2825,6 +2832,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#version-4110" class="md-nav__link">
+    Version 4.11.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-4100" class="md-nav__link">
     Version 4.10.0
   </a>
@@ -2958,6 +2972,23 @@
                 
                 <h1 id="release-history">Release history</h1>
 <hr />
+<p><a name="v4110"></a></p>
+<h3 id="version-4110">Version 4.11.0</h3>
+<ul>
+<li>Full support for parse matrices. Read more in the <a href="../user_guide/data_management/#memory-considerations">user guide</a>.</li>
+<li>Custom dimensions for the BO can now be shared across models using the
+  key <code>all</code> in <code>bo_params["dimensions"]</code>.</li>
+<li>It's now possible to tune a custom number of layers for the <a href="../API/models/mlp">MLP</a>
+  model.</li>
+<li>If multiple BO calls share the best score, the one with the shortest
+  training time is selected as winner instead of the first.</li>
+<li>Fixed a bug where the BO could fail when custom dimensions where defined
+  and <code>n_initial_points=1</code>.</li>
+<li>Fixed a bug where <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>
+  could fail after repeated calls to fit.</li>
+<li>Performance improvements for the custom pipeline.</li>
+<li>Minor documentation fixes.</li>
+</ul>
 <p><a name="v4100"></a></p>
 <h3 id="version-4100">Version 4.10.0</h3>
 <ul>

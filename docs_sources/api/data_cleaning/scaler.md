@@ -66,6 +66,7 @@ Object instance with which the data is scaled.
 <br>
 
 
+
 ## Methods
 
 <table style="font-size:16px">

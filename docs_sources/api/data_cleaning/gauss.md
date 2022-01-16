@@ -69,6 +69,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <br>
 
 
+
 ## Attributes
 
 <table style="font-size:16px">
@@ -81,6 +82,7 @@ Object with which the data is transformed.
 </tr>
 </table>
 <br>
+
 
 
 ## Methods

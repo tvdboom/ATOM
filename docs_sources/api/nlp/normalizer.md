@@ -10,7 +10,7 @@ custom_stopwords=None, stem=False, lemmatize=True, verbose=0, logger=None)
 </div>
 
 Convert words to a more uniform standard. The transformations are
-applied on the column named `Corpus`, in the same order the parameters
+applied on the column named `corpus`, in the same order the parameters
 are presented. If there is no column with that name, an exception is
 raised. If the provided documents are strings, words are separated by
 spaces. This class can be accessed from atom through the [normalize](../../ATOM/atomclassifier/#normalize)
@@ -64,6 +64,7 @@ Verbosity level of the class. Possible values are:
     documents from a string to a sequence of words.
 
 <br>
+
 
 
 ## Methods

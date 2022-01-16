@@ -8,19 +8,21 @@
 </span>
 </div>
 
-Transform new data through the current branch and return class
-probabilities. Transformers that are only applied on the training set
-are skipped. If called from a trainer, the best model in the pipeline
-(under the `winner` attribute) is used. If called from a model, that
-model is used. The estimator must have a `predict_proba` method.
+Get class probabilities on unseen data or rows in the dataset. New
+data is first transformed through the model's pipeline. Transformers
+that are only applied on the training set are skipped. If called from
+a trainer, the best model in the pipeline (under the `winner` attribute)
+is used. If called from a model, that model is used. The estimator must
+have a `predict_proba` method.
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like</strong><br>
-Feature set with shape=(n_samples, n_features).
+<strong>X: int, str, slice, sequence or dataframe-like</strong><br>
+Index names or positions of rows in the dataset, or unseen feature
+set with shape=(n_samples, n_features).
 </p>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>

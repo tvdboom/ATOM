@@ -9,10 +9,11 @@ y, metric=None, sample_weights=None, verbose=None)
 </span>
 </div>
 
-Transform new data through the current branch and return a metric score.
-Transformers that are only applied on the training set are skipped.
-If called from a trainer, the best model in the pipeline (under the
-`winner` attribute) is used. If called from a model, that model is used.
+Get a metric score on unseen data. New data is first transformed
+through the model's pipeline. Transformers that are only applied
+on the training set are skipped. If called from a trainer, the best
+model in the pipeline (under the `winner` attribute) is used. If
+called from a model, that model is used.
 
 <table style="font-size:16px">
 <tr>

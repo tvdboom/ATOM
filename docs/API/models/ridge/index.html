@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ridge-classificationregression-ridge" class="md-skip">
+        <a href="#ridge-estimator-ridge" class="md-skip">
           Skip to content
         </a>
       
@@ -2832,9 +2832,11 @@
               
                 
                 
-                <h1 id="ridge-classificationregression-ridge">Ridge Classification/Regression (Ridge)</h1>
+                <h1 id="ridge-estimator-ridge">Ridge Estimator (Ridge)</h1>
 <hr />
-<p>Linear least squares with l2 regularization.</p>
+<p>Linear least squares with l2 regularization. If classifier, it first
+converts the target values into {-1, 1} and then treats the problem
+as a regression task.</p>
 <p>Corresponding estimators are:</p>
 <ul>
 <li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html">RidgeClassifier</a>
@@ -2954,6 +2956,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.

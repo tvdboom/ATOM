@@ -223,7 +223,7 @@ BALANCING_STRATS = dict(
     smoten=SMOTEN,
     adasyn=ADASYN,
     borderlinesmote=BorderlineSMOTE,
-    kmanssmote=KMeansSMOTE,
+    kmeanssmote=KMeansSMOTE,
     svmsmote=SVMSMOTE,
     smoteenn=SMOTEENN,
     smotetomek=SMOTETomek,
@@ -280,7 +280,12 @@ def variable_return(X, y):
 
 def is_multidim(df):
     """Check if the dataframe contains a multidimensional column."""
-    return df.columns[0] == "Multidimensional feature" and len(df.columns) <= 2
+    return df.columns[0] == "multidim feature" and len(df.columns) <= 2
+
+
+def is_sparse(df):
+    """Check if the dataframe contains any sparse columns."""
+    return any(pd.api.types.is_sparse(df[col]) for col in df)
 
 
 def check_dim(cls, method):
@@ -335,8 +340,8 @@ def check_scaling(X):
 def get_corpus(X):
     """Get text column from dataframe."""
     try:
-        return [col for col in X if col.lower() == "corpus"][0]
-    except IndexError:
+        return next(col for col in X if col.lower() == "corpus")
+    except StopIteration:
         raise ValueError("The provided dataset does not contain a text corpus!")
 
 
@@ -402,17 +407,17 @@ def to_df(data, index=None, columns=None, dtypes=None):
 
     Parameters
     ----------
-    data: list, tuple, dict, np.array, sps.matrix, pd.DataFrame or None
-        Dataset to convert to a dataframe.  If already a dataframe
-        or None, return unchanged.
+    data: list, tuple, dict, np.array, sp.matrix, pd.DataFrame or None
+        Dataset to convert to a dataframe.  If None or already a
+        dataframe, return unchanged.
 
-    index: sequence or Index
+    index: sequence or pd.Index
         Values for the dataframe's index.
 
     columns: sequence or None, optional (default=None)
         Name of the columns. Use None for automatic naming.
 
-    dtypes: str, dict, np.dtype or None, optional (default=None)
+    dtypes: str, dict, dtype or None, optional (default=None)
         Data types for the output columns. If None, the types are
         inferred from the data.
 
@@ -423,12 +428,15 @@ def to_df(data, index=None, columns=None, dtypes=None):
 
     """
     if data is not None and not isinstance(data, pd.DataFrame):
-        if not isinstance(data, dict):  # Dict already has column names
-            if sparse.issparse(data):
-                data = data.toarray()
+        if sparse.issparse(data):
             if columns is None:
+                columns = [f"Feature {str(i)}" for i in range(1, data.shape[1] + 1)]
+            data = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
+        else:
+            if columns is None and not isinstance(data, dict):
                 columns = [f"Feature {str(i)}" for i in range(1, len(data[0]) + 1)]
-        data = pd.DataFrame(data, index=index, columns=columns)
+            data = pd.DataFrame(data, index, columns)
+
         if dtypes is not None:
             data = data.astype(dtypes)
 
@@ -468,10 +476,10 @@ def to_series(data, index=None, name="target", dtype=None):
 def arr(df):
     """From dataframe to multidimensional array.
 
-    When the data consist of more than 2 dimensions, ATOM stores
-    it in a df with a single column, "Multidimensional feature".
-    This function extracts the arrays from every row and returns
-    them stacked.
+    When the data consist of more than 2 dimensions, ATOM
+    stores it in a df with a single column, "multidim feature".
+    This function extracts the arrays from every row and
+    returns them stacked.
 
     Parameters
     ----------
@@ -485,7 +493,7 @@ def arr(df):
 
     """
     if is_multidim(df):
-        return np.stack(df["Multidimensional feature"].values)
+        return np.stack(df["multidim feature"].values)
     else:
         return df
 
@@ -886,7 +894,7 @@ def name_cols(array, original_df, col_names):
     # If columns were added or removed
     temp_cols = []
     for i, col in enumerate(array.T, start=1):
-        mask = original_df.apply(lambda c: all(c == col))
+        mask = original_df.apply(lambda c: np.array_equal(c, col, equal_nan=True))
         if any(mask) and mask[mask].index.values[0] not in temp_cols:
             temp_cols.append(mask[mask].index.values[0])
         else:
@@ -963,13 +971,13 @@ def transform_one(transformer, X=None, y=None):
 
         # Convert to pandas and assign proper column names
         if not isinstance(out, pd.DataFrame):
-            if sparse.issparse(out):
-                out = out.toarray()
-
             out = to_df(out, index=X.index, columns=name_cols(out, X, use_cols))
 
-        # Reorder columns in case only a subset was used
-        return reorder_cols(out, X, use_cols)
+        # Reorder columns if only a subset was used
+        if len(use_cols) != X.shape[1]:
+            return reorder_cols(out, X, use_cols)
+        else:
+            return out
 
     X = to_df(X, index=getattr(y, "index", None))
     y = to_series(y, index=getattr(X, "index", None))
@@ -1593,14 +1601,13 @@ class ShapExplanation:
 class CustomDict(MutableMapping):
     """Custom ordered dictionary.
 
-    Custom dictionary for the _models and _metric private attributes
-    of the trainers. the main differences with the Python dictionary
-    are:
+    The main differences with the Python dictionary are:
         - It has ordered entries.
         - It allows getting an item from an index position.
         - It can insert key value pairs at a specific position.
         - Key requests are case-insensitive.
         - Returns a subset of itself using getitem with a list of keys.
+        - Replace method to change a value only if key exists.
 
     """
 
@@ -1653,8 +1660,9 @@ class CustomDict(MutableMapping):
                 raise e
 
     def __setitem__(self, key, value):
-        self.__keys.append(key)
         self.__data[self._conv(key)] = value
+        if key not in self.__keys:
+            self.__keys.append(key)
 
     def __delitem__(self, key):
         del self.__data[self._conv(key)]
@@ -1747,3 +1755,7 @@ class CustomDict(MutableMapping):
             return self.__keys.index(self._get_key(key))
         except ValueError:
             raise KeyError(key)
+
+    def replace(self, key, value):
+        if key in self:
+            self[key] = value

@@ -10,7 +10,7 @@ title=None, figsize=(10, 6), filename=None, display=True, **kwargs)
 </div>
 
 Plot a wordcloud from the corpus. The text for the plot is extracted
-from the column named `Corpus`. If there is no column with that name,
+from the column named `corpus`. If there is no column with that name,
 an exception is raised.
 
 <table style="font-size:16px">

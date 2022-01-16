@@ -70,6 +70,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <br>
 
 
+
 ## Attributes
 
 <table style="font-size:16px">
@@ -89,6 +90,7 @@ Target values mapped to their respective encoded integer.
 </tr>
 </table>
 <br>
+
 
 
 ## Methods

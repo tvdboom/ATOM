@@ -496,6 +496,7 @@ class BasePredictor:
                 - estimator: The model's underlying estimator.
                 - module: The estimator's module.
                 - needs_scaling: Whether the model requires feature scaling.
+                - accepts_sparse: Whether the model supports sparse matrices.
 
         """
         overview = pd.DataFrame()
@@ -510,6 +511,7 @@ class BasePredictor:
                         "estimator": est.__class__.__name__,
                         "module": est.__module__,
                         "needs_scaling": str(m.needs_scaling),
+                        "accepts_sparse": str(m.accepts_sparse),
                     },
                     ignore_index=True,
                 )

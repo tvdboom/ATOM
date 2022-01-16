@@ -54,9 +54,9 @@ from .plots import ATOMPlotter
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
     lst, divide, infer_task, check_dim, check_scaling, is_multidim,
-    get_pl_name, names_from_estimator, check_is_fitted, variable_return,
-    fit_one, delete, custom_transform, method_to_log, composed, crash,
-    Table, CustomDict,
+    is_sparse, get_pl_name, names_from_estimator, check_is_fitted,
+    variable_return, fit_one, delete, custom_transform, method_to_log,
+    composed, crash, Table, CustomDict,
 )
 
 
@@ -207,7 +207,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def scaled(self):
         """Whether the feature set is scaled."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             est_names = [est.__class__.__name__.lower() for est in self.pipeline]
             return check_scaling(self.X) or any("scaler" in name for name in est_names)
 
@@ -220,7 +220,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def nans(self):
         """Columns with the number of missing values in them."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum()
             return nans[nans > 0]
@@ -228,7 +228,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_nans(self):
         """Number of samples containing missing values."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum(axis=1)
             return len(nans[nans > 0])
@@ -260,7 +260,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def outliers(self):
         """Columns in training set with amount of outlier values."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=num_and_target)
@@ -269,7 +269,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_outliers(self):
         """Number of samples in the training set containing outliers."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
@@ -289,7 +289,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_classes(self):
         """Number of classes in the target column."""
-        return len(self.y.unique())
+        return self.y.nunique(dropna=False)
 
     # Utility methods =============================================== >>
 
@@ -622,7 +622,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             if old_t.name in exclude_types:
                 continue
 
-            t = next((v for k, v in type_map.items() if old_t.name.startswith(k)))
+            t = next(v for k, v in type_map.items() if old_t.name.startswith(k))
             if isinstance(t, list):
                 # Use uint if values are strictly positive
                 if int2uint and t == type_map["int"] and self[c].min() >= 0:
@@ -630,7 +630,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
                 # Find the smallest type that fits
                 new_t = next(
-                    (r[0] for r in t if r[1] <= self[c].min() and r[2] >= self[c].max())
+                    r[0] for r in t if r[1] <= self[c].min() and r[2] >= self[c].max()
                 )
                 if new_t and new_t == old_t:
                     new_t = None  # Keep as is
@@ -658,34 +658,37 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(f"Shape: {self.shape}", _vb)
 
         if not is_multidim(self.X):
-            nans = self.nans.sum()
-            n_categorical = self.n_categorical
-            outliers = self.outliers.sum()
-            duplicates = self.dataset.duplicated().sum()
+            if is_sparse(self.X):
+                self.log("Sparse: True", _vb)
+            else:
+                nans = self.nans.sum()
+                n_categorical = self.n_categorical
+                outliers = self.outliers.sum()
+                duplicates = self.dataset.duplicated().sum()
 
-            self.log(f"Scaled: {self.scaled}", _vb)
-            if self.nans.sum():
-                p_nans = round(100 * nans / self.dataset.size, 1)
-                self.log(f"Missing values: {nans} ({p_nans}%)", _vb)
-            if n_categorical:
-                p_cat = round(100 * n_categorical / self.n_features, 1)
-                self.log(f"Categorical features: {n_categorical} ({p_cat}%)", _vb)
-            if outliers:
-                p_out = round(100 * outliers / self.train.size, 1)
-                self.log(f"Outlier values: {outliers} ({p_out}%)", _vb)
-            if duplicates:
-                p_dup = round(100 * duplicates / len(self.dataset), 1)
-                self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
+                self.log(f"Scaled: {self.scaled}", _vb)
+                if nans:
+                    p_nans = round(100 * nans / self.dataset.size, 1)
+                    self.log(f"Missing values: {nans} ({p_nans}%)", _vb)
+                if n_categorical:
+                    p_cat = round(100 * n_categorical / self.n_features, 1)
+                    self.log(f"Categorical features: {n_categorical} ({p_cat}%)", _vb)
+                if outliers:
+                    p_out = round(100 * outliers / self.train.size, 1)
+                    self.log(f"Outlier values: {outliers} ({p_out}%)", _vb)
+                if duplicates:
+                    p_dup = round(100 * duplicates / len(self.dataset), 1)
+                    self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
 
         self.log("-" * 37, _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
         self.log(f"Test set size: {len(self.test)}", _vb)
         if self.holdout is not None:
             self.log(f"Holdout set size: {len(self.holdout)}", _vb)
-        self.log("-" * 37, _vb)
 
         # Print count and balance of classes
         if self.task != "regression":
+            self.log("-" * 37, _vb)
             cls = self.classes
             spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * len(cls.columns))
             func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
@@ -1201,7 +1204,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Transformations include normalizing characters and dropping
         noise from the text (emails, HTML tags, URLs, etc...). The
-        transformations are applied on the column named `Corpus`, in
+        transformations are applied on the column named `corpus`, in
         the same order the parameters are presented. If there is no
         column with that name, an exception is raised.
 
@@ -1244,7 +1247,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         Convert documents into sequences of words. Additionally,
         create n-grams (represented by words united with underscores,
         e.g. "New_York") based on their frequency in the corpus. The
-        transformations are applied on the column named `Corpus`. If
+        transformations are applied on the column named `corpus`. If
         there is no column with that name, an exception is raised.
 
         See nlp.py for a description of the parameters.
@@ -1277,7 +1280,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Normalize the corpus.
 
         Convert words to a more uniform standard. The transformations
-        are applied on the column named `Corpus`, in the same order the
+        are applied on the column named `corpus`, in the same order the
         parameters are presented. If there is no column with that name,
         an exception is raised.
 
@@ -1301,7 +1304,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Vectorize the corpus.
 
         Transform the corpus into meaningful vectors of numbers. The
-        transformation is applied on the column named `Corpus`. If
+        transformation is applied on the column named `corpus`. If
         there is no column with that name, an exception is raised.
 
         See nlp.py for a description of the parameters.

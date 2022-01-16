@@ -2972,8 +2972,8 @@ prints the same information as the __repr__ and also saves it to the
 logger.
 <br /><br /><br /></p>
 <h2 id="memory-considerations">Memory considerations</h2>
-<p>Atom stores one copy of the dataframe in each branch. Note that there
-are always at least two branches in the instance: master (or another
+<p>An atom instance stores one copy of the dataframe in each branch. Note
+that there are always at least two branches in the instance: master (or another
 user defined branch) and one additional branch that stores the
 dataframe with which the class was initialized. This internal branch
 is called <code>og</code> (original) and can not be accessed by the user.</p>

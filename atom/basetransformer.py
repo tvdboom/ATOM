@@ -180,13 +180,13 @@ class BaseTransformer:
         # create a dataframe with one multidimensional column
         array = np.array(X)
         if array.ndim > 2 and not isinstance(array[0, 0, 0], str):
-            X = pd.DataFrame({"Multidimensional feature": [row for row in X]})
+            X = pd.DataFrame({"multidim feature": [row for row in X]})
         else:
             X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
-            # If text dataset, change the name of the column to Corpus
+            # If text dataset, change the name of the column to corpus
             if X.shape[1] == 1 and X[X.columns[0]].dtype == "object":
-                X = X.rename(columns={X.columns[0]: "Corpus"})
+                X = X.rename(columns={X.columns[0]: "corpus"})
 
         # Prepare target column
         if isinstance(y, (dict, *SEQUENCE)):

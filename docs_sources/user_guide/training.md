@@ -183,12 +183,13 @@ By default, the parameters every estimator uses are the same default
 parameters they get from their respective packages. To select different
 ones, use `est_params`. There are two ways to add custom parameters to
 the models: adding them directly to the dictionary as key-value pairs
-or through various dictionaries with the model names as keys.
+or through dictionaries.
 
-Adding the parameters directly to `est_params` will share them across
-all models in the pipeline. In this example, both the XGBoost and the
-LightGBM model will use n_estimators=200. Make sure all the models do 
-have the specified parameters or an exception will be raised!
+Adding the parameters directly to `est_params` (or using a dict with
+the key 'all') will share them across all models in the pipeline. In
+this example, both the XGBoost and the LightGBM model will use
+n_estimators=200. Make sure all the models do have the specified
+parameters or an exception will be raised!
 
 ```python
 atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
@@ -241,8 +242,10 @@ estimator), but it ensures maximal use of the provided data. However,
 the leakage is not present in the independent test set, thus the final
 score of every model is unbiased. Note that, if the dataset is relatively
 small, the BO's best score can consistently be lower than the final score
-on the test set due to the considerable fewer instances on which it is
-trained.
+on the test set due to the considerable lower fraction of instances on
+which it is trained. After running the BO, the parameters that resulted
+in the best score (in case of a tie, the call with the shortest training
+time is selected) are used to train the model on the complete training set.
 
 There are many possibilities to tune the BO to your liking. Use
 `n_calls` and `n_initial_points` to determine the number of iterations
@@ -279,7 +282,7 @@ customize the BO.
 By default, the hyperparameters and corresponding dimensions per model
 are predefined by ATOM. Use the `dimensions` key to use custom ones.
 Just like with `est_params`, you can share the same dimensions across
-models or use a dictionary with the model names as keys to specify the
+models or use a dictionary with the model name as key to specify the
 dimensions for every individual model. Note that the provided search
 space dimensions must be compliant with skopt's API.
 
@@ -290,6 +293,10 @@ atom.run(
     bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]},
 )
 ```
+
+!!! note
+    Make sure to import the dimension types from scikit-optimize:
+    `from skopt.space.space import Real, Categorical, Integer`.
 
 !!! warning
     Keras' models can only use hyperparameter tuning when `n_jobs=1` or

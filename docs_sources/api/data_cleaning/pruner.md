@@ -79,6 +79,7 @@ in a dict with the strategy's name as key.
 <br>
 
 
+
 ## Attributes
 
 <table style="font-size:16px">
@@ -92,6 +93,7 @@ Object (lowercase strategy) used to prune the data, e.g.
 </tr>
 </table>
 <br>
+
 
 
 ## Methods
