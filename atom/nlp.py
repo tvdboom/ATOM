@@ -565,7 +565,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             except LookupError:
                 nltk.download("averaged_perceptron_tagger")
             try:
-                nltk.data.find("tokenizers")
+                nltk.data.find("corpora/omw-1.4")
             except LookupError:
                 nltk.download("omw-1.4")
 
