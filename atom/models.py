@@ -401,10 +401,6 @@ class CategoricalNaiveBayes(BaseModel):
     accepts_sparse = True
     goal = "class"
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
-
     @property
     def est_class(self):
         """Return the estimator's class."""
@@ -785,18 +781,30 @@ class RadiusNearestNeighbors(BaseModel):
     accepts_sparse = True
     goal = "both"
 
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._distances = None
 
     @property
     def distances(self):
         """Return distances between a random subsample of rows."""
         if self._distances is None:
-            self._distances = cdist(
-                self.X_train.select_dtypes("number").sample(min(50, len(self.X_train))),
-                self.X_train.select_dtypes("number").sample(min(50, len(self.X_train))),
-            ).flatten()
+            # If called from FeatureSelector, no data to calculate
+            # distances so return the estimator's default value: 1
+            if hasattr(self.T, "_branches"):
+                cols = self.X_train.select_dtypes("number")
+                self._distances = cdist(
+                    cols.sample(
+                        n=min(50, len(self.X_train)),
+                        random_state=self.T.random_state,
+                    ),
+                    cols.sample(
+                        n=min(50, len(self.X_train)),
+                        random_state=self.T.random_state,
+                    ),
+                ).flatten()
+            else:
+                self._distances = 1
 
         return self._distances
 

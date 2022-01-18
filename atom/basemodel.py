@@ -58,7 +58,7 @@ from .utils import (
 class BaseModel(BaseModelPlotter):
     """Base class for all models."""
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.T = args[0]  # Trainer instance
         self.name = self.acronym if len(args) == 1 else args[1]
         self.scaler = None
@@ -102,8 +102,8 @@ class BaseModel(BaseModelPlotter):
         self.time_bootstrap = None
         self.time = None
 
-        # Skip if called from FeatureSelector
-        if hasattr(self.T, "_branches"):
+        # Skip this (slower) part if not called for the estimator
+        if not kwargs.get("fast_init"):
             self.branch = self.T.branch
             self._train_idx = len(self.branch.idx[0])  # Can change for sh and ts
             if getattr(self, "needs_scaling", None) and self.T.scaled is False:
@@ -274,15 +274,15 @@ class BaseModel(BaseModelPlotter):
 
                 """
                 # Define subsets from original dataset
-                X_subtrain = self.T.og.dataset.iloc[train_idx, :-1]
-                y_subtrain = self.T.og.dataset.iloc[train_idx, -1]
-                X_val = self.T.og.dataset.iloc[val_idx, :-1]
-                y_val = self.T.og.dataset.iloc[val_idx, -1]
+                branch = self.T._get_og_branches()[0]
+                X_subtrain = branch.dataset.iloc[train_idx, :-1]
+                y_subtrain = branch.dataset.iloc[train_idx, -1]
+                X_val = branch.dataset.iloc[val_idx, :-1]
+                y_val = branch.dataset.iloc[val_idx, -1]
 
                 # Transform subsets if there is a pipeline
-                pl = self.export_pipeline(verbose=0)
-                if len(pl) > 1:
-                    pl = pl[:-1]  # Drop the estimator
+                if not self.T.pipeline.empty:
+                    pl = self.export_pipeline(verbose=0)[:-1]  # Drop the estimator
                     X_subtrain, y_subtrain = pl.fit_transform(X_subtrain, y_subtrain)
                     X_val, y_val = pl.transform(X_val, y_val)
 
@@ -1174,12 +1174,6 @@ class BaseModel(BaseModelPlotter):
         else:
             scoring = dict(self.T._metric)
 
-        # Get the complete pipeline
-        pl = self.export_pipeline(verbose=0)
-
-        # Use the untransformed dataset (in the og branch)
-        og = getattr(self.T, "og", self.T._current)
-
         self.T.log("Applying cross-validation...", 1)
 
         # Workaround the _score function to allow for pipelines
@@ -1187,7 +1181,14 @@ class BaseModel(BaseModelPlotter):
         og_score = deepcopy(_validation._score)
         _validation._score = score_decorator(og_score)
 
-        cv = _validation.cross_validate(pl, og.X, og.y, scoring=scoring, **kwargs)
+        branch = self.T._get_og_branches()[0]
+        cv = _validation.cross_validate(
+            estimator=self.export_pipeline(verbose=0),
+            X=branch.X,
+            y=branch.y,
+            scoring=scoring,
+            **kwargs,
+        )
         _validation._score = og_score  # Reset _score to og value
 
         # Output mean and std of metric

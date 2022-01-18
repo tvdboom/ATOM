@@ -1608,6 +1608,7 @@ class CustomDict(MutableMapping):
         - Key requests are case-insensitive.
         - Returns a subset of itself using getitem with a list of keys.
         - Replace method to change a value only if key exists.
+        - Min method to return all elements except one.
 
     """
 
@@ -1759,3 +1760,6 @@ class CustomDict(MutableMapping):
     def replace(self, key, value):
         if key in self:
             self[key] = value
+
+    def min(self, key):
+        return self.__class__({k: v for k, v in self.items() if k != key})

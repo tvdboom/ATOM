@@ -489,12 +489,14 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Creating new features...", 1)
 
         if self.strategy.lower() == "dfs":
+            index = X.index
             es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
             X = ft.calculate_feature_matrix(
-                features=self._dfs_features,
-                entityset=es,
-                n_jobs=self.n_jobs,
-            )
+                    features=self._dfs_features,
+                    entityset=es,
+                    n_jobs=self.n_jobs,
+                )
+            X.index = index
 
             self.log(
                 f" --> {len(self._dfs_features)} new "
@@ -823,7 +825,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                             f"model: {self._solver}. Choose from: {', '.join(MODELS)}."
                         )
                     else:
-                        self._solver = MODELS[self._solver](self).get_estimator()
+                        model = MODELS[self._solver](self, fast_init=True)
+                        self._solver = model.get_estimator()
                 else:
                     self._solver = self.solver
 

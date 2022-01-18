@@ -537,6 +537,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#sparse-matrices" class="md-nav__link">
+    Sparse matrices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#branches" class="md-nav__link">
     Branches
   </a>
@@ -2764,6 +2771,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#sparse-matrices" class="md-nav__link">
+    Sparse matrices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#branches" class="md-nav__link">
     Branches
   </a>
@@ -2872,6 +2886,20 @@ To avoid this, specify the <code>index</code> parameter. If the dataset has an
   their index.</li>
 </ul>
 <p><br></p>
+<h2 id="sparse-matrices">Sparse matrices</h2>
+<p>If atom is initialized using a scipy sparse matrix, it is converted
+internally to a dataframe of sparse columns. Read more about pandas'
+sparse data structures <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html">here</a>.
+The same conversion takes place when a transformer returns a sparse
+matrix, like for example the <a href="../../API/NLP/vectorizer">Vectorizer</a>.</p>
+<p>Note that a dataset can only benefit from sparsity when all it's
+columns are sparse. Mixing sparse and non-sparse columns is not
+advised and can cause estimators to decrease their training speed
+or even crash. Use the <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
+method to check with models have native support for sparse matrices.</p>
+<p>Click <a href="../../examples/nlp">here</a> to see an example that uses sparse
+data.</p>
+<p><br></p>
 <h2 id="branches">Branches</h2>
 <p>You might want to compare how a model performs on a dataset transformed
 through multiple pipelines, each using different transformers. For
@@ -2972,25 +3000,23 @@ prints the same information as the __repr__ and also saves it to the
 logger.
 <br /><br /><br /></p>
 <h2 id="memory-considerations">Memory considerations</h2>
-<p>An atom instance stores one copy of the dataframe in each branch. Note
-that there are always at least two branches in the instance: master (or another
-user defined branch) and one additional branch that stores the
-dataframe with which the class was initialized. This internal branch
-is called <code>og</code> (original) and can not be accessed by the user.</p>
+<p>An atom instance stores one copy of the dataframe in each branch, and
+one copy of the initial dataset with which the instance is initialized
+(this copy is necessary to avoid data leakage during hyperparameter
+tuning and for some specific methods like <a href="../../API/models/gnb/#cross-validate">cross_validate</a>
+and <a href="../../API/ATOM/atomclassifier/#reset">reset</a>). This initial copy
+is created as soon as there are no branches in the initial state (usually
+after calling the first data transformation) and it's stored in an
+internal branch called <code>og</code> (original). The og branch is not accessible
+by the user.</p>
 <p>Apart from the dataset itself, the model's <a href="./predicting">predictions</a>
 (e.g. <code>predict_proba_train</code>), metric scores and <a href="./plots/#shap">shap values</a>
 are also stored as attributes of the model to avoid having to recalculate
-them every time they are needed. All this data can occupy a considerable
-amount memory for large datasets. You can delete all these attributes
+them every time they are needed. This data can occupy a considerable
+amount of memory for large datasets. You can delete all these attributes
 using the <a href="../../API/ATOM/atomclassifier/#clear">clear</a> method in order
 to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
 the class.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Sparse matrices fed to atom or an <a href="../../API/ATOM/atomclassifier/#export-pipeline">exported pipeline</a>
-are converted internally to the full array. Note that this can fill
-large spaces in memory.</p>
-</div>
 <p><br></p>
 <h2 id="data-transformations">Data transformations</h2>
 <p>Performing data transformations is a common requirement of many

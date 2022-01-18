@@ -98,7 +98,7 @@ def test_getitem():
     atom.impute()
     atom.run("LDA")
     assert atom[1].__class__.__name__ == "Imputer"
-    assert atom["og"] is atom.og
+    assert atom["master"] is atom.master
     assert atom["LDA"] is atom["lda"] is atom.lda
     assert atom["mean radius"] is atom.dataset["mean radius"]
     assert isinstance(atom[["mean radius", "mean texture"]], pd.DataFrame)
@@ -367,12 +367,14 @@ def test_report(cls):
 
 def test_reset():
     """Assert that the reset method deletes models and branches."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom.scale()
     atom.branch = "2"
+    atom.encode()
     atom.run("LR")
     atom.reset()
-    assert not atom.models and len(atom._branches) == 2
-    assert atom.dataset.equals(atom.og.dataset)
+    assert not atom.models and len(atom._branches) == 1
+    assert atom["Feature 3"].dtype.name == "object"  # Is reset back to str
 
 
 def test_save_data():

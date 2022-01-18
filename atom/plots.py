@@ -1711,7 +1711,7 @@ class BaseModelPlotter(BasePlotter):
                 # Fit the points using linear regression
                 from .models import OrdinaryLeastSquares
 
-                model = OrdinaryLeastSquares(self).get_estimator()
+                model = OrdinaryLeastSquares(self, fast_init=True).get_estimator()
                 model.fit(
                     X=np.array(getattr(self, f"y_{set_}")).reshape(-1, 1),
                     y=getattr(m, f"predict_{set_}"),

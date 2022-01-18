@@ -71,6 +71,24 @@ To avoid this, specify the `index` parameter. If the dataset has an
 * [Predictions](../predicting) of specific rows can be accessed through
   their index.
 
+<br>
+
+## Sparse matrices
+
+If atom is initialized using a scipy sparse matrix, it is converted
+internally to a dataframe of sparse columns. Read more about pandas'
+sparse data structures [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html).
+The same conversion takes place when a transformer returns a sparse
+matrix, like for example the [Vectorizer](../../API/NLP/vectorizer).
+
+Note that a dataset can only benefit from sparsity when all it's
+columns are sparse. Mixing sparse and non-sparse columns is not
+advised and can cause estimators to decrease their training speed
+or even crash. Use the [available_models](../../API/ATOM/atomclassifier/#available-models)
+method to check with models have native support for sparse matrices.
+
+Click [here](../../examples/nlp) to see an example that uses sparse
+data.
 
 
 <br>
@@ -190,25 +208,24 @@ logger.
 
 ## Memory considerations
 
-An atom instance stores one copy of the dataframe in each branch. Note
-that there are always at least two branches in the instance: master (or another
-user defined branch) and one additional branch that stores the
-dataframe with which the class was initialized. This internal branch
-is called `og` (original) and can not be accessed by the user.
+An atom instance stores one copy of the dataframe in each branch, and
+one copy of the initial dataset with which the instance is initialized
+(this copy is necessary to avoid data leakage during hyperparameter
+tuning and for some specific methods like [cross_validate](../../API/models/gnb/#cross-validate)
+and [reset](../../API/ATOM/atomclassifier/#reset)). This initial copy
+is created as soon as there are no branches in the initial state (usually
+after calling the first data transformation) and it's stored in an
+internal branch called `og` (original). The og branch is not accessible
+by the user.
 
 Apart from the dataset itself, the model's [predictions](./predicting)
 (e.g. `predict_proba_train`), metric scores and [shap values](./plots/#shap)
 are also stored as attributes of the model to avoid having to recalculate
-them every time they are needed. All this data can occupy a considerable
-amount memory for large datasets. You can delete all these attributes
+them every time they are needed. This data can occupy a considerable
+amount of memory for large datasets. You can delete all these attributes
 using the [clear](../../API/ATOM/atomclassifier/#clear) method in order
 to free some memory before [saving](../../API/ATOM/atomclassifier/#save)
 the class.
-
-!!! note
-    Sparse matrices fed to atom or an [exported pipeline](../../API/ATOM/atomclassifier/#export-pipeline)
-    are converted internally to the full array. Note that this can fill
-    large spaces in memory.
 
 <br>
 

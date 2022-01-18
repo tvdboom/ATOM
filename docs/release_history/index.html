@@ -2975,17 +2975,19 @@
 <p><a name="v4110"></a></p>
 <h3 id="version-4110">Version 4.11.0</h3>
 <ul>
-<li>Full support for parse matrices. Read more in the <a href="../user_guide/data_management/#memory-considerations">user guide</a>.</li>
+<li>Full support for parse matrices. Read more in the <a href="../user_guide/data_management/#sparse-matrices">user guide</a>.</li>
 <li>Custom dimensions for the BO can now be shared across models using the
   key <code>all</code> in <code>bo_params["dimensions"]</code>.</li>
 <li>It's now possible to tune a custom number of layers for the <a href="../API/models/mlp">MLP</a>
   model.</li>
 <li>If multiple BO calls share the best score, the one with the shortest
-  training time is selected as winner instead of the first.</li>
+  training time is selected as winner (instead of the first).</li>
 <li>Fixed a bug where the BO could fail when custom dimensions where defined
   and <code>n_initial_points=1</code>.</li>
 <li>Fixed a bug where <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>
   could fail after repeated calls to fit.</li>
+<li>Fixed a bug where <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>
+  didn't pass the correct data indices to its output.</li>
 <li>Performance improvements for the custom pipeline.</li>
 <li>Minor documentation fixes.</li>
 </ul>

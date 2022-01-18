@@ -2799,6 +2799,14 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 </tr>
 </table>
 
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The returned dataframe is only sparse when all the columns in the
+provided dataset except for <code>corpus</code> are sparse. Calling this
+transformer with other non-sparse columns forces the output matrix
+to be converted to its full array. This process can be very slow and
+occupy large chunks of memory.</p>
+</div>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size:16px">

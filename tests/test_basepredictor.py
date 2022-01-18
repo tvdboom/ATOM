@@ -88,9 +88,9 @@ def test_delattr_branch():
     atom.branch = "b2"
     atom.branch = "b3"
     del atom.branch
-    assert list(atom._branches) == ["og", "master", "b2"]
+    assert list(atom._branches) == ["master", "b2"]
     del atom.b2
-    assert list(atom._branches) == ["og", "master"]
+    assert list(atom._branches) == ["master"]
 
 
 def test_delattr_models():
@@ -604,7 +604,7 @@ def test_merge():
     atom_2.missing = ["missing"]
     atom_2.run("LR")
     atom_1.merge(atom_2)
-    assert list(atom_1._branches) == ["og", "master", "b2"]
+    assert list(atom_1._branches) == ["master", "b2"]
     assert atom_1.models == ["Tree", "LR"]
     assert atom_1.missing[-1] == "missing"
 
@@ -616,7 +616,7 @@ def test_merge_with_suffix():
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_2.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
     atom_1.merge(atom_2)
-    assert list(atom_1._branches) == ["og", "master", "master2"]
+    assert list(atom_1._branches) == ["master", "master2"]
     assert atom_1.models == ["Tree", "Tree2"]
     assert list(atom_1._errors) == ["LGB", "LGB2"]
 

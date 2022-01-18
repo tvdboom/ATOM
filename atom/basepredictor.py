@@ -37,8 +37,7 @@ class BasePredictor:
     )
 
     def __getattr__(self, item):
-        """Get attributes from the current branch."""
-        if self.__dict__.get("_branches").get(item):
+        if item in self.__dict__.get("_branches").min("og"):
             return self._branches[item]  # Get branch
         elif item in self.branch._get_attrs():
             return getattr(self.branch, item)  # Get attr from branch
@@ -54,14 +53,12 @@ class BasePredictor:
             )
 
     def __setattr__(self, item, value):
-        """Set some properties to the current branch."""
         if item != "holdout" and isinstance(getattr(Branch, item, None), property):
             setattr(self.branch, item, value)
         else:
             super().__setattr__(item, value)
 
     def __delattr__(self, item):
-        """Call appropriate methods for model and branch deletion."""
         if item == "branch":
             self.branch.delete()
         elif item in self._branches:
@@ -254,6 +251,10 @@ class BasePredictor:
         return self.winner.score(X, y, metric, sample_weight, **kwargs)
 
     # Utility methods ============================================== >>
+
+    def _get_og_branches(self):
+        """Return branches containing the original dataset."""
+        return [branch for branch in self._branches.values() if branch.pipeline.empty]
 
     def _get_rows(self, index=None, return_test=True, branch=None):
         """Get a subset of the rows.
@@ -501,15 +502,14 @@ class BasePredictor:
         """
         overview = pd.DataFrame()
         for model in MODELS.values():
-            m = model(self)
-            est = m.get_estimator()
+            m = model(self, fast_init=True)
             if m.goal[:3] == self.goal[:3] or m.goal == "both":
                 overview = overview.append(
                     {
                         "acronym": m.acronym,
                         "fullname": m.fullname,
-                        "estimator": est.__class__.__name__,
-                        "module": est.__module__,
+                        "estimator": m.est_class.__name__,
+                        "module": m.est_class.__module__,
                         "needs_scaling": str(m.needs_scaling),
                         "accepts_sparse": str(m.accepts_sparse),
                     },
@@ -664,7 +664,7 @@ class BasePredictor:
             )
 
         # Check that both instances have the same original dataset
-        if not self._branches["og"].data.equals(other._branches["og"].data):
+        if not self._get_og_branches()[0].data.equals(other._get_og_branches()[0].data):
             raise ValueError(
                 "Invalid value for the other parameter. The provided trainer "
                 "was initialized with a different dataset than this one."
@@ -680,13 +680,12 @@ class BasePredictor:
             )
 
         self.log("Merging instances...", 1)
-        for name, branch in other._branches.items():
-            if name != "og":  # Original dataset is the same
-                self.log(f" --> Merging branch {name}.", 1)
-                if name in self._branches:
-                    name = f"{name}{suffix}"
-                branch.name = name
-                self._branches[name] = branch
+        for name, branch in other._branches.min("og").items():
+            self.log(f" --> Merging branch {name}.", 1)
+            if name in self._branches:
+                name = f"{name}{suffix}"
+            branch.name = name
+            self._branches[name] = branch
 
         for name, model in other._models.items():
             self.log(f" --> Merging model {name}.", 1)

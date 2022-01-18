@@ -565,7 +565,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             except LookupError:
                 nltk.download("averaged_perceptron_tagger")
             try:
-                nltk.data.find("omw-1.4")
+                nltk.data.find("tokenizers")
             except LookupError:
                 nltk.download("omw-1.4")
 
@@ -647,8 +647,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
-            Transformed corpus.
+        self: Vectorizer
+            Fitted instance of self.
 
         """
         X, y = self._prepare_input(X, y)

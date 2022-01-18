@@ -63,14 +63,14 @@ def test_branch_delete_not_existing_branch():
     """Assert that an error is raised when the branch doesn't exist."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
-    with pytest.raises(ValueError, match=r".*not found in.*"):
+    with pytest.raises(ValueError, match=r".*not found.*"):
         atom.branch.delete("invalid")
 
 
 def test_branch_delete_last_branch():
     """Assert that an error is raised when the last branch is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(PermissionError, match=r".*last branch in.*"):
+    with pytest.raises(PermissionError, match=r".*last branch.*"):
         atom.branch.delete()
 
 

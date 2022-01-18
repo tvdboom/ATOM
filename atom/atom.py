@@ -82,14 +82,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.holdout_size = holdout_size
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
-        # Branching attributes
-        self._branches = CustomDict(
-            og=Branch(self, "og"),  # Original branch saves provided dataset
-            master=Branch(self, "master"),  # Main branch
-        )
-        self._current = "master"  # Keeps track of the current branch
+        self._current = "master"  # Keeps track of the branch the user is in
+        self._branches = CustomDict({self._current: Branch(self, self._current)})
 
-        # Training attributes
         self._models = CustomDict()
         self._metric = CustomDict()
         self._errors = CustomDict()
@@ -98,10 +93,6 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Prepare the provided data
         self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays, y=y)
-
-        # Attach the data to the original branch
-        self.og.data = self.branch.data.copy(deep=True)
-        self.og.idx = self.branch.idx.copy()
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
@@ -122,10 +113,10 @@ class ATOM(BasePredictor, ATOMPlotter):
     def __repr__(self):
         out = f"{self.__class__.__name__}"
         out += f"\n --> Branches:"
-        if len(self._branches) - 1 == 1:
+        if len(self._branches.min("og")) == 1:
             out += f" {self._current}"
         else:
-            for branch in [b for b in self._branches if b != "og"]:
+            for branch in self._branches.min("og"):
                 out += f"\n   >>> {branch}{' !' if branch == self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
@@ -140,7 +131,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         if isinstance(item, int):
             return self.pipeline.iloc[item]  # Get estimator from pipeline
         elif isinstance(item, str):
-            if item in self._branches:
+            if item in self._branches.min("og"):
                 return self._branches[item]  # Get branch
             elif item in self._models:
                 return self._models[item]  # Get model
@@ -536,16 +527,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         to its form after initialization.
 
         """
-        # Delete all models and branches
+        # Delete all models in the instance
         delete(self, self._get_models())
-        for name in [b for b in self._branches if b != "og"]:
-            self._branches.pop(name)
 
-        # Re-create the master branch from original
-        self._branches["master"] = Branch(self, "master", parent="og")
+        # Recreate the master branch from original (and drop rest)
         self._current = "master"
+        self._branches = CustomDict({self._current: self._get_og_branches()[0]})
 
-        self.log("The instance is successfully reset.", 1)
+        self.log(f"{self.__class__.__name__} successfully reset.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = "auto", dataset: str = "dataset"):
@@ -819,6 +808,10 @@ class ATOM(BasePredictor, ATOMPlotter):
                 self.log(f"Fitting {estimator.__class__.__name__}...", 1)
 
             fit_one(estimator, self.X_train, self.y_train, **fit_params)
+
+        # Create an og branch before transforming (if it doesn't exist already)
+        if self._get_og_branches() == [self.branch]:
+            self._branches.insert(0, "og", Branch(self, "og", parent=self.branch))
 
         custom_transform(estimator, self.branch, verbose=self.verbose)
 
@@ -1513,13 +1506,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         Parameters
         ----------
         trainer: class
-            Trainer instance to run.
+            Initialized trainer to run.
 
         """
         try:
             trainer._tracking_params = self._tracking_params
-            trainer._branches = {"og": self.og, self._current: self.branch}
             trainer._current = self._current
+            trainer._branches = self._branches
             trainer.scaled = self.scaled
             trainer.run()
         finally:
