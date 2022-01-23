@@ -52,7 +52,7 @@ Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *list(range(1, 10))], name="max_depth")
+Categorical([None, *range(1, 10)], name="max_depth")
 </p>
 <p>
 <strong>subsample: float, default=1.0</strong><br>
@@ -60,7 +60,7 @@ Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
 </p>
 <p>
 <strong>colsample_by_level: float, default=1.0</strong><br>
-Categorical(np.linspace(0.3, 1.0, 8), name="colsample_by_level")
+Categorical(np.linspace(0.4, 1.0, 7), name="colsample_by_level")
 </p>
 <p>
 <strong>reg_lambda: int, default=0</strong><br>

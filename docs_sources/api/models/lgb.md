@@ -47,7 +47,7 @@ Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
 <p>
 <strong>max_depth: int, default=-1</strong><br>
-Categorical([-1, *list(range(1, 10))], name="max_depth")
+Categorical([-1, *range(1, 10)], name="max_depth")
 </p>
 <p>
 <strong>num_leaves: int, default=31</strong><br>
@@ -55,7 +55,7 @@ Integer(20, 40, name="num_leaves")
 </p>
 <p>
 <strong>min_child_weight: float, default=0.001</strong><br>
-Categorical([1e-5, 1e-3, 0.1, 1, 10, 100], name="min_child_weight"),
+Categorical([1e-4, 1e-3, 0.01, 0.1, 1, 10, 100], name="min_child_weight"),
 </p>
 <p>
 <strong>min_child_samples: int, default=20</strong><br>
@@ -67,7 +67,7 @@ Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
 </p>
 <p>
 <strong>colsample_bytree: float, default=1.0</strong><br>
-Categorical(np.linspace(0.3, 1.0, 8), name="colsample_by_level")
+Categorical(np.linspace(0.4, 1.0, 7), name="colsample_by_level")
 </p>
 <p>
 <strong>reg_alpha: float, default=0.0</strong><br>

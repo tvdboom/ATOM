@@ -27,6 +27,7 @@ def _final_estimator_has(attr):
     Used together with `available_if` in `Pipeline`.
 
     """
+
     def check(self):
         # Raise original `AttributeError` if `attr` does not exist
         getattr(self._final_estimator, attr)

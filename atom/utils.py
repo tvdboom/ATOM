@@ -427,14 +427,18 @@ def to_df(data, index=None, columns=None, dtypes=None):
         Transformed dataframe.
 
     """
-    if data is not None and not isinstance(data, pd.DataFrame):
+    # Get number of columns (list/tuple have no shape and sp.matrix has no index)
+    n_cols = lambda data: data.shape[1] if hasattr(data, "shape") else len(data[0])
+
+    if not isinstance(data, pd.DataFrame) and data is not None:
+        # Assign default column names (dict already has column names)
+        if not isinstance(data, dict) and columns is None:
+            columns = [f"Feature {str(i)}" for i in range(1, n_cols(data) + 1)]
+
+        # Create dataframe from sparse matrix or directly from data
         if sparse.issparse(data):
-            if columns is None:
-                columns = [f"Feature {str(i)}" for i in range(1, data.shape[1] + 1)]
             data = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
         else:
-            if columns is None and not isinstance(data, dict):
-                columns = [f"Feature {str(i)}" for i in range(1, len(data[0]) + 1)]
             data = pd.DataFrame(data, index, columns)
 
         if dtypes is not None:
@@ -922,8 +926,16 @@ def reorder_cols(df, original_df, col_names):
         Names of the columns used in the transformer.
 
     """
+    # Check if columns returned by the transformer are already in the dataset
+    for col in df.columns:
+        if col in original_df.columns:
+            raise RuntimeError(
+                f"The column '{col}' returned by the transformer "
+                "already exists in the original dataset."
+            )
+
     temp_df = pd.DataFrame(index=df.index)
-    for col in dict.fromkeys(list(original_df.columns) + list(df.columns)):
+    for col in list(original_df.columns) + list(df.columns):
         if col in df.columns:
             temp_df[col] = df[col]
         elif col not in col_names:
@@ -1206,25 +1218,6 @@ def plot_from_model(f):
     return wrapper
 
 
-def score_decorator(f):
-    """Decorator for sklearn's _score function.
-
-    Special `hack` for sklearn.model_selection._validation._score
-    in order to score pipelines that drop samples during transforming.
-
-    """
-
-    def wrapper(*args, **kwargs):
-        args = list(args)  # Convert to list for item assignment
-        if len(args[0]) > 1:  # Has transformers
-            args[1], args[2] = args[0][:-1].transform(args[1], args[2])
-
-        # Return f(final_estimator, X_transformed, y_transformed, ...)
-        return f(args[0][-1], *tuple(args[1:]), **kwargs)
-
-    return wrapper
-
-
 # Custom scorers =================================================== >>
 
 def true_negatives(y_true, y_pred):
@@ -1313,6 +1306,8 @@ class Table:
     """
 
     def __init__(self, headers, spaces, default_pos="right"):
+        assert len(headers) == len(spaces)
+
         self.headers = []
         self.positions = []
         for header in headers:
@@ -1621,6 +1616,8 @@ class CustomDict(MutableMapping):
             if self._conv(k) == self._conv(key):
                 return k
 
+        raise KeyError(key)
+
     def __init__(self, iterable_or_mapping=None, **kwargs):
         """Class initializer.
 
@@ -1629,8 +1626,8 @@ class CustomDict(MutableMapping):
         unless you want the order to be arbitrary.
 
         """
-        self.__data = {}
         self.__keys = []
+        self.__data = {}
 
         if iterable_or_mapping is not None:
             try:
@@ -1648,26 +1645,23 @@ class CustomDict(MutableMapping):
 
     def __getitem__(self, key):
         if isinstance(key, list):
-            return self.__class__(
-                {self._get_key(k): self[k] for k in key if self._get_key(k)}
-            )
-
-        try:
+            return self.__class__({self._get_key(k): self[k] for k in key})
+        elif self._conv(key) in self.__data:
             return self.__data[self._conv(key)]  # From key
-        except KeyError as e:
+        else:
             try:
                 return self.__data[self._conv(self.__keys[key])]  # From index
             except (TypeError, IndexError):
-                raise e
+                raise KeyError(key)
 
     def __setitem__(self, key, value):
-        self.__data[self._conv(key)] = value
-        if key not in self.__keys:
+        if key not in self:
             self.__keys.append(key)
+        self.__data[self._conv(key)] = value
 
     def __delitem__(self, key):
-        del self.__data[self._conv(key)]
         self.__keys.remove(self._get_key(key))
+        del self.__data[self._conv(key)]
 
     def __iter__(self):
         yield from self.keys()
@@ -1676,10 +1670,7 @@ class CustomDict(MutableMapping):
         return len(self.__keys)
 
     def __contains__(self, key):
-        if self._get_key(key) is None:
-            return False
-        else:
-            return True
+        return self._conv(key) in self.__data
 
     def __repr__(self):
         return str(dict(self))
@@ -1704,14 +1695,14 @@ class CustomDict(MutableMapping):
             self.__data[self._conv(new_key)] = value
 
     def get(self, key, default=None):
-        try:
+        if key in self:
             return self[key]
-        except KeyError:
+        else:
             return default
 
     def pop(self, key, default=None):
-        value = self.get(key)
-        if value:
+        if key in self:
+            value = self[key]
             self.__delitem__(key)
             return value
         else:
@@ -1735,31 +1726,26 @@ class CustomDict(MutableMapping):
                 iterable = iterable_or_mapping
 
             for key, value in iterable:
-                if key not in self:
-                    self.__keys.append(key)
-                self.__data[self._conv(key)] = value
+                self[key] = value
 
         for key, value in kwargs.items():
-            if key not in self:
-                self.__keys.append(key)
-            self.__data[self._conv(key)] = value
+            self[key] = value
 
     def setdefault(self, key, default=None):
-        try:
+        if key in self:
             return self[key]
-        except KeyError:
+        else:
             self[key] = default
-            return self[key]
+            return default
 
     def index(self, key):
-        try:
-            return self.__keys.index(self._get_key(key))
-        except ValueError:
-            raise KeyError(key)
+        return self.__keys.index(self._get_key(key))
 
     def replace(self, key, value):
         if key in self:
             self[key] = value
 
     def min(self, key):
-        return self.__class__({k: v for k, v in self.items() if k != key})
+        return self.__class__(
+            {k: v for k, v in self.items() if self._conv(k) != self._conv(key)}
+        )

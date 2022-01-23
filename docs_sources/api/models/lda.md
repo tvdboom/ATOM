@@ -31,8 +31,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/l
 Categorical(["svd", "lsqr", "eigen"], name="solver")
 </p>
 <p>
-<strong>shrinkage: float, default=0</strong><br>
-Categorical(np.linspace(0.0, 1.0, 11), name="shrinkage")
+<strong>shrinkage: float, default="auto"</strong><br>
+Categorical(np.linspace(0.1, 1.0, 10), name="shrinkage")
 </p>
 </td>
 </tr>

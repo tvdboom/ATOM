@@ -60,7 +60,7 @@ Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
 </p>
 <p>
 <strong>colsample_by_tree: float, default=1.0</strong><br>
-Categorical(np.linspace(0.3, 1.0, 8), name="colsample_by_tree")
+Categorical(np.linspace(0.4, 1.0, 7), name="colsample_by_tree")
 </p>
 <p>
 <strong>reg_alpha: float, default=0.0</strong><br>

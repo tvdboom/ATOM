@@ -11,7 +11,7 @@ Description: Unit tests for models.py
 import pytest
 import numpy as np
 from pickle import PickleError
-from skopt.space.space import Categorical
+from skopt.space.space import Categorical, Integer
 from sklearn.ensemble import RandomForestRegressor
 
 # Keras
@@ -21,6 +21,7 @@ from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
+from atom.feature_engineering import FeatureSelector
 from atom.models import MODELS
 from atom.pipeline import Pipeline
 from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
@@ -30,12 +31,12 @@ from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
 
 binary, multiclass, regression = [], [], []
 for m in MODELS.values():
-    if m.goal != "reg":
+    if "class" in m.goal:
         if m.acronym != "CatNB":
-            binary.append(m.acronym)
+            binary.append(m.acronym)  # CatNB needs a special dataset
         if not m.acronym.startswith("Cat"):
-            multiclass.append(m.acronym)
-    if m.goal != "class":
+            multiclass.append(m.acronym)  # CatB fails with error on their side
+    if "reg" in m.goal:
         regression.append(m.acronym)
 
 
@@ -148,6 +149,44 @@ def test_CatNB():
     atom.run(models="CatNB", n_calls=2, n_initial_points=1)
     assert not atom.errors
     assert hasattr(atom, "CatNB")
+
+
+def test_RNN():
+    """Assert that the RNN model works when called just for the estimator."""
+    with pytest.raises(ValueError):
+        # Fails cause RNN has no coef_ nor feature_importances_ attribute
+        FeatureSelector("SFM", solver="RNN_class").fit_transform(X_bin, y_bin)
+
+
+def test_MLP_custom_hidden_layer_sizes():
+    """Assert that the MLP model can have custom hidden_layer_sizes."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="MLP",
+        n_calls=2,
+        n_initial_points=1,
+        est_params={"hidden_layer_sizes": (31, 2)},
+    )
+    assert atom.mlp.estimator.get_params()["hidden_layer_sizes"] == (31, 2)
+
+
+def test_MLP_custom_n_layers():
+    """Assert that the MLP model can have a custom number of hidden layers."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="MLP",
+        n_calls=2,
+        n_initial_points=1,
+        bo_params={
+            "dimensions": [
+                Integer(0, 100, name="hidden_layer_1"),
+                Integer(0, 20, name="hidden_layer_2"),
+                Integer(0, 20, name="hidden_layer_3"),
+                Integer(0, 20, name="hidden_layer_4"),
+            ]
+        },
+    )
+    assert atom.mlp.bo["params"][0]["hidden_layer_sizes"] == (100,)
 
 
 # Test ensembles =================================================== >>

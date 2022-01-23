@@ -52,7 +52,7 @@ Integer(10, 50, name="max_leaf_nodes")
 </p>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *np.linspace(1, 10, 10)], name="max_depth")
+Categorical([None, *range(1, 11], name="max_depth")
 </p>
 <p>
 <strong>min_samples_leaf: int, default=20</strong><br>
@@ -60,7 +60,7 @@ Integer(10, 30, name="min_samples_leaf")
 </p>
 <p>
 <strong>l2_regularization: float, default=0.0</strong><br>
-Categorical([*np.linspace(0.0, 1.0, 11)], name="l2_regularization")
+Categorical(np.linspace(0.0, 1.0, 11), name="l2_regularization")
 </p>
 </td>
 </tr>

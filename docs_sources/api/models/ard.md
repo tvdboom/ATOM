@@ -31,19 +31,19 @@ Integer(100, 1000, name="n_iter")
 </p>
 <p>
 <strong>alpha_1: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_1")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1")
 </p>
 <p>
 <strong>alpha_2: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_2")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_2")
 </p>
 <p>
 <strong>lambda_1: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_1")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_1")
 </p>
 <p>
 <strong>lambda_2: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_2")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_2")
 </p>
 </td>
 </tr>

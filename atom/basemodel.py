@@ -10,9 +10,9 @@ Description: Module containing the BaseModel class.
 # Standard packages
 import os
 import dill
+import mock
 import mlflow
 import tempfile
-import traceback
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -32,10 +32,11 @@ from sklearn.utils import resample
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
+from sklearn.model_selection._validation import _score, cross_validate
 
 # Others
-from skopt.utils import check_x_in_space
-from skopt.space.space import Space, check_dimension
+from skopt.space.transformers import LabelEncoder
+from skopt.space.space import Categorical, check_dimension
 from skopt.optimizer import (
     base_minimize,
     gp_minimize,
@@ -47,11 +48,12 @@ from skopt.optimizer import (
 from .data_cleaning import Scaler
 from .pipeline import Pipeline
 from .plots import BaseModelPlotter
+from .patches import inverse_transform, fit, transform, score
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst, it, arr,
     merge, time_to_str, get_best_score, get_custom_scorer, get_pl_name,
     variable_return, custom_transform, composed, crash, method_to_log,
-    score_decorator, Table, ShapExplanation, CustomDict,
+    Table, ShapExplanation, CustomDict,
 )
 
 
@@ -168,43 +170,65 @@ class BaseModel(BaseModelPlotter):
                     f"estimator {self.get_estimator().__class__.__name__}."
                 )
 
+    def _get_dimension(self, dimension):
+        """Check the validity of the hyperparameter dimensions."""
+        if isinstance(dimension, str):
+            # If it's a name, use the predefined dimension
+            try:
+                return next(d for d in self.get_dimensions() if d.name == dimension)
+            except StopIteration:
+                raise ValueError(
+                    "Invalid value for the dimensions parameter. Dimension "
+                    f"{dimension} is not a predefined hyperparameter of the "
+                    f"{self.fullname} model. See the model's documentation "
+                    "for an overview of the available hyperparameter and "
+                    "their dimensions."
+                )
+        else:
+            return check_dimension(dimension)
+
     def _get_default_params(self):
         """Get the estimator's default parameters for the BO dimensions."""
         x0 = CustomDict()
         params = signature(self.est_class.__init__).parameters
-        for dim in [d.name for d in self._dimensions]:
+        for dim in self._dimensions:
             # Special case for MLP, layers are different from default
-            if dim == "hidden_layer_1":
-                x0[dim] = 100
-            elif dim.startswith("hidden_layer"):
-                x0[dim] = 0
-            elif dim in params and params[dim].default is not Parameter.empty:
-                x0[dim] = params[dim].default
+            if dim.name == "hidden_layer_1":
+                x0[dim.name] = 100
+            elif dim.name.startswith("hidden_layer"):
+                x0[dim.name] = 0
+            elif dim.name in params and params[dim.name].default is not Parameter.empty:
+                x0[dim.name] = params[dim.name].default
             else:
-                # Return empty when it's not possible to extract all default values.
-                # This can happen when the value is not present in the parameter
-                # list (e.g. kwargs) or when the parameter has no default value
+                # Return random value in dimension if it's not possible to
+                # extract a default value. This can happen when the value
+                # is not present in the parameter list (with kwargs) or when
+                # the parameter has no default value
+                x0[dim.name] = dim.rvs(1, random_state=self.T.random_state)[0]
                 self.T.log(
-                    " --> Failed to initialize BO with the estimator's default "
-                    f"parameters. Couldn't find a default for parameter {dim}. "
-                    "Falling back to a random initialization.", 2
+                    " --> Couldn't find a default value for parameter "
+                    f"{dim.name}. Using a random initialization.", 2
                 )
-                return CustomDict()
 
-        # Check if default params are within allowed space
-        try:
-            check_x_in_space(list(x0.values()), Space(self._dimensions))
-            return x0
-        except (TypeError, ValueError) as ex:
-            self.T.log(
-                " --> Failed to initialize BO with the estimator's default "
-                "parameters. The default values are not within the dimension "
-                "space. See the logger for the output error. Falling back to "
-                "a random initialization.", 2
-            )
-            self.T.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
-            self.T.log(f"{type(ex).__name__}: {ex}", 3)
-            return CustomDict()
+        # If default value isn't in dimension space, get a random value
+        for (name, value), dimension in zip(x0.items(), self._dimensions):
+            try:
+                is_valid = value in dimension
+            except TypeError:  # Can fail when e.g. checking None in Integer
+                is_valid = False
+            finally:
+                if not is_valid:
+                    x0[name] = dimension.rvs(1, random_state=self.T.random_state)[0]
+                    self.T.log(
+                        f" --> The default value of parameter {name} doesn't lie "
+                        "within the dimension space. Using a random initialization", 2
+                    )
+
+        return x0
+
+    def _get_param(self, params, parameter):
+        """Get the estimator's parameter from est_params or BO."""
+        return params.get(parameter) or self._est_params.get(parameter)
 
     def _get_early_stopping_rounds(self, params, max_iter):
         """Get the number of rounds for early stopping."""
@@ -426,44 +450,57 @@ class BaseModel(BaseModelPlotter):
                 f"should be >n_initial_points, got {self._n_calls}."
             )
 
-        self._check_est_params()  # Check validity of parameters
+        # Check validity of parameters (not in basetrainer to skip if error)
+        self._check_est_params()
 
         init_bo = datetime.now()  # Track the BO's duration
 
         self.T.log(f"\n\nRunning BO for {self.fullname}...", 1)
 
+        # Assign proper dimensions format or predefined
+        if self._dimensions:
+            self._dimensions = [self._get_dimension(d) for d in self._dimensions]
+        else:
+            self._dimensions = self.get_dimensions()
+
+        # Drop hyperparameter if already defined in est_params
+        self._dimensions = [
+            d for d in self._dimensions if d.name not in self._est_params
+        ]
+
+        # If no hyperparameters to optimize, skip BO
+        if not self._dimensions:
+            self.T.log(" --> Skipping BO. No hyperparameters to optimize.", 2)
+            return
+
         pbar = None
         if self.T.verbose == 1:
             pbar = tqdm(total=self._n_calls, desc="Initial point 1")
 
-        # Get custom or predefined dimensions
-        # Drop dimensions if already defined in est_params
-        if self._dimensions:
-            self._dimensions = [
-                check_dimension(d) for d in self._dimensions
-                if d.name not in self._est_params
-            ]
-        else:
-            self._dimensions = [
-                d for d in self.get_dimensions() if d.name not in self._est_params
-            ]
-
-        # If no hyperparameters left to optimize, skip BO
-        if not self._dimensions:
-            self.T.log(" --> Skipping BO. No hyperparameters found to optimize.", 2)
-            return
-
         # If only 1 initial point, use the model's default parameters
         x0 = self._get_default_params() if self._n_initial_points == 1 else {}
 
-        # Initialize BO table
-        sequence = [("call", "left")] + self._dims
+        # Initialize the BO table
+        headers = [("call", "left")] + self._dims
         for m in self.T._metric.values():
-            sequence.extend([m.name, "best_" + m.name])
+            headers.extend([m.name, "best_" + m.name])
         if self._early_stopping and self.T._bo["cv"] == 1:
-            sequence.append("early_stopping")
-        sequence.extend(["time", "total_time"])
-        table = Table(sequence, [max(7, len(str(text))) for text in sequence])
+            headers.append("early_stopping")
+        headers.extend(["time", "total_time"])
+
+        # Define the width op every column in the table
+        spaces = [len(str(headers[0]))]
+        for dim in self._dimensions:
+            # If the dimension has categories, take the mean of the widths
+            # Else take the max of 7 (a minimum) and the width of the name
+            if hasattr(dim, "categories"):
+                options = np.mean([len(str(cat)) for cat in dim.categories], dtype=int)
+            else:
+                options = 0
+            spaces.append(max(7, len(dim.name), options))
+        spaces.extend([max(7, len(t)) for t in headers[1 + len(self._dimensions):]])
+
+        table = Table(headers, spaces)
         self.T.log(table.print_header(), 2)
         self.T.log(table.print_line(), 2)
 
@@ -481,17 +518,22 @@ class BaseModel(BaseModelPlotter):
             **bo_kwargs["kwargs"],
         )
 
-        if isinstance(self.T._bo["base_estimator"], str):
-            if self.T._bo["base_estimator"].lower() == "gp":
-                gp_minimize(**kwargs)
-            elif self.T._bo["base_estimator"].lower() == "et":
-                forest_minimize(base_estimator="ET", **kwargs)
-            elif self.T._bo["base_estimator"].lower() == "rf":
-                forest_minimize(base_estimator="RF", **kwargs)
-            elif self.T._bo["base_estimator"].lower() == "gbrt":
-                gbrt_minimize(**kwargs)
-        else:
-            base_minimize(base_estimator=self.T._bo["base_estimator"], **kwargs)
+        # Monkey patch skopt objects to fix bug with str and num in Categorical
+        with mock.patch.object(Categorical, "inverse_transform", inverse_transform):
+            with mock.patch.object(LabelEncoder, "fit", fit):
+                with mock.patch.object(LabelEncoder, "transform", transform):
+                    base_estimator = self.T._bo["base_estimator"]
+                    if isinstance(base_estimator, str):
+                        if base_estimator.lower() == "gp":
+                            gp_minimize(**kwargs)
+                        elif base_estimator.lower() == "et":
+                            forest_minimize(base_estimator="ET", **kwargs)
+                        elif base_estimator.lower() == "rf":
+                            forest_minimize(base_estimator="RF", **kwargs)
+                        elif base_estimator.lower() == "gbrt":
+                            gbrt_minimize(**kwargs)
+                    else:
+                        base_minimize(base_estimator=base_estimator, **kwargs)
 
         if pbar:
             pbar.close()
@@ -1162,11 +1204,7 @@ class BaseModel(BaseModelPlotter):
             Return of sklearn's cross_validate function.
 
         """
-        from sklearn.model_selection import _validation
-
-        # Adopt params from the trainer if not specified
-        kwargs["n_jobs"] = kwargs.get("n_jobs", self.T.n_jobs)
-        kwargs["verbose"] = kwargs.get("verbose", self.T.verbose)
+        # Assign scoring from predefined or trainer if not specified
         if kwargs.get("scoring"):
             scoring = get_custom_scorer(kwargs.pop("scoring"))
             scoring = {scoring.name: scoring}
@@ -1176,20 +1214,19 @@ class BaseModel(BaseModelPlotter):
 
         self.T.log("Applying cross-validation...", 1)
 
-        # Workaround the _score function to allow for pipelines
-        # that drop samples during transformation
-        og_score = deepcopy(_validation._score)
-        _validation._score = score_decorator(og_score)
-
-        branch = self.T._get_og_branches()[0]
-        cv = _validation.cross_validate(
-            estimator=self.export_pipeline(verbose=0),
-            X=branch.X,
-            y=branch.y,
-            scoring=scoring,
-            **kwargs,
-        )
-        _validation._score = og_score  # Reset _score to og value
+        # Monkey patch the _score function to allow for
+        # pipelines that drop samples during transformation
+        with mock.patch("sklearn.model_selection._validation._score", score(_score)):
+            branch = self.T._get_og_branches()[0]
+            cv = cross_validate(
+                estimator=self.export_pipeline(verbose=0),
+                X=branch.X,
+                y=branch.y,
+                scoring=scoring,
+                n_jobs=kwargs.pop("n_jobs", self.T.n_jobs),
+                verbose=kwargs.pop("verbose", 0),
+                **kwargs,
+            )
 
         # Output mean and std of metric
         mean = [np.mean(cv[f"test_{m}"]) for m in scoring]

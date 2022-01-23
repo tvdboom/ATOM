@@ -26,7 +26,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/n
 <td width="80%" class="td_params">
 <p>
 <strong>alpha: float, default=1.0</strong><br>
-Real(1e-3, 10, "log-uniform", name="alpha")
+Real(0.01, 10, "log-uniform", name="alpha")
 </p>
 <p>
 <strong>fit_prior: bool, default=True</strong><br>

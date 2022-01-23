@@ -53,8 +53,8 @@ Categorical(["lbfgs", "sgd", "adam"], name="solver")
 Real(1e-4, 0.1, "log-uniform", name="alpha")
 </p>
 <p>
-<strong>batch_size: int, default=200</strong><br>
-Categorical([8, 16, 32, 64, 128, 256], name="batch_size")
+<strong>batch_size: str or int, default="auto"</strong><br>
+["auto", 8, 16, 32, 64, 128, 256]
 </p>
 <p>
 <strong>learning_rate: str, default="constant"</strong><br>

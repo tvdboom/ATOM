@@ -23,7 +23,6 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/m
 * By default, the estimator adopts the default parameters provided by
   its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
-* The `quantile` parameter is only used with DummyRegressor.
 * The `random_state` parameter is set equal to that of the trainer.
 
 <table style="font-size:16px">
@@ -33,14 +32,10 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/m
 <strong>strategy: str</strong><br>
 <ul style="line-height:1.5em;margin-top:5px">
 <li>classifier: default="prior"<br>
-Categorical(["stratified", "most_frequent", "prior", "uniform"], name="strategy")</li>
+Categorical(["most_frequent", "prior", "stratified", "uniform"], name="strategy")</li>
 <li>regressor: default="mean"<br>
-Categorical(["mean", "median", "quantile"], name="strategy")</li>
+Categorical(["mean", "median"], name="strategy")</li>
 </ul>
-<p>
-<strong>quantile: float, default=0.5</strong><br>
-Real(0.0, 1.0, name="quantile")
-</p>
 </td>
 </tr>
 </table>

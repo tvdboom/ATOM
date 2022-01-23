@@ -276,6 +276,18 @@ def test_score_sample_weights():
 # Test utility methods ============================================= >>
 
 
+def test_get_og_branches():
+    """Assert that the method returns all original branches."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.branch = "b3"
+    atom.scale()
+    assert len(atom._get_og_branches()) == 2  # master and b2
+    atom.reset()
+    atom.scale()
+    assert len(atom._get_og_branches()) == 1  # Just og
+
+
 def test_get_rows_is_None():
     """Assert that all indices are returned."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)

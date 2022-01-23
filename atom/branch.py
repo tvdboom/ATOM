@@ -130,7 +130,7 @@ class Branch:
                 self.T.delete(depending_models)
 
             # If this is the last og branch, create a new one
-            if self.T._get_og_branches() == [self]:
+            if self.T._get_og_branches() == [branch]:
                 self.T._branches.insert(0, "og", Branch(self.T, "og", parent=self))
 
             # Reset the current branch

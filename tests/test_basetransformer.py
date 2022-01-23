@@ -142,10 +142,20 @@ def test_text_to_corpus():
     assert atom.X.columns == ["corpus"]
 
 
-def test_sparse_matrices():
-    """Assert that sparse matrices are accepted as input type."""
-    X, y = BaseTransformer._prepare_input(sparse.eye(10), y10)
-    assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
+def test_sparse_matrices_X_y():
+    """Assert that sparse matrices are accepted as (X, y) input."""
+    atom = ATOMClassifier(sparse.eye(10), y10, random_state=1)
+    assert isinstance(atom.X, pd.DataFrame)
+    assert atom.shape == (10, 11)
+    assert atom[atom.columns[0]].dtype.name == "Sparse[float64, 0]"
+
+
+def test_sparse_matrices_2_tuples():
+    """Assert that sparse matrices are accepted as 2-tuples input."""
+    atom = ATOMClassifier((sparse.eye(10), y10), (sparse.eye(10), y10), random_state=1)
+    assert isinstance(atom.X, pd.DataFrame)
+    assert atom.shape == (20, 11)
+    assert atom[atom.columns[0]].dtype.name == "Sparse[float64, 0]"
 
 
 def test_to_pandas():

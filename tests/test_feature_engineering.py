@@ -399,12 +399,12 @@ def test_RFECV_strategy_before_pipeline_classification():
     """Assert that the RFECV strategy works before a fitted pipeline."""
     selector = FeatureSelector(
         strategy="RFECV",
-        solver="RF_class",
+        solver="Tree_class",
         n_features=None,
         random_state=1,
     )
     X = selector.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 17
+    assert X.shape[1] == 4
     assert set(selector.feature_importance) == set(X.columns)
 
 

@@ -36,7 +36,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/l
 <td width="80%" class="td_params">
 <p>
 <strong>penalty: str, default="l2"</strong><br>
-Categorical(["none", "l1", "l2", "elasticnet"], name="penalty")
+Categorical(["l1", "l2", "elasticnet", "none"], name="penalty")
 </p>
 <p>
 <strong>C: float, default=1.0</strong><br>
@@ -51,8 +51,8 @@ Categorical(["lbfgs", "newton-cg", "liblinear", "sag", "saga"], name="solver")
 Integer(100, 1000, name="max_iter")
 </p>
 <p>
-<strong>l1_ratio: float, default=0.5</strong><br>
-Categorical(np.linspace(0.1, 0.9, 9), name="l1_ratio")
+<strong>l1_ratio: float, default=None</strong><br>
+Categorical([None, *np.linspace(0.1, 0.9, 9)], name="l1_ratio")
 </p>
 </td>
 </tr>

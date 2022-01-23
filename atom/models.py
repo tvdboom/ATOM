@@ -26,9 +26,9 @@ Description: Module containing all available models. All classes must
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
-        goal: str
-            If the model is only for classification ("class"),
-            regression ("reg") or both ("both").
+        goal: list
+            If the model can do classification ("class"), and/or
+            regression ("reg") tasks.
 
 
         Instance attributes
@@ -191,6 +191,16 @@ from .ensembles import (
 from .utils import create_acronym, CustomDict
 
 
+# Variables ======================================================== >>
+
+zero_to_one_exc = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+zero_to_one_inc = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+half_to_one_exc = [0.5, 0.6, 0.7, 0.8, 0.9]
+half_to_one_inc = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+
+# Classes ========================================================== >>
+
 class CustomModel(BaseModel):
     """Custom model. Estimator provided by user."""
 
@@ -255,7 +265,7 @@ class Dummy(BaseModel):
     fullname = "Dummy Estimator"
     needs_scaling = False
     accepts_sparse = False
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -278,13 +288,11 @@ class Dummy(BaseModel):
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         if self.T.goal == "class":
-            strategies = ["stratified", "most_frequent", "prior", "uniform"]
-            return [Categorical(strategies, name="strategy")]
+            categories = ["most_frequent", "prior", "stratified", "uniform"]
         else:
-            return [
-                Categorical(["mean", "median", "quantile"], name="strategy"),
-                Real(0.0, 1.0, name="quantile"),
-            ]
+            categories = ["mean", "median", "quantile"]
+
+        return [Categorical(categories, name="strategy")]
 
 
 class GaussianProcess(BaseModel):
@@ -294,7 +302,7 @@ class GaussianProcess(BaseModel):
     fullname = "Gaussian Process"
     needs_scaling = False
     accepts_sparse = False
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -326,7 +334,7 @@ class GaussianNaiveBayes(BaseModel):
     fullname = "Gaussian Naive Bayes"
     needs_scaling = False
     accepts_sparse = False
-    goal = "class"
+    goal = ["class"]
 
     @property
     def est_class(self):
@@ -345,7 +353,7 @@ class MultinomialNaiveBayes(BaseModel):
     fullname = "Multinomial Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
-    goal = "class"
+    goal = ["class"]
 
     @property
     def est_class(self):
@@ -360,7 +368,7 @@ class MultinomialNaiveBayes(BaseModel):
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
         return [
-            Real(1e-3, 10, "log-uniform", name="alpha"),
+            Real(0.01, 10, "log-uniform", name="alpha"),
             Categorical([True, False], name="fit_prior"),
         ]
 
@@ -372,7 +380,7 @@ class BernoulliNaiveBayes(BaseModel):
     fullname = "Bernoulli Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
-    goal = "class"
+    goal = ["class"]
 
     @property
     def est_class(self):
@@ -387,7 +395,7 @@ class BernoulliNaiveBayes(BaseModel):
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
         return [
-            Real(1e-3, 10, "log-uniform", name="alpha"),
+            Real(0.01, 10, "log-uniform", name="alpha"),
             Categorical([True, False], name="fit_prior"),
         ]
 
@@ -399,7 +407,7 @@ class CategoricalNaiveBayes(BaseModel):
     fullname = "Categorical Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
-    goal = "class"
+    goal = ["class"]
 
     @property
     def est_class(self):
@@ -414,7 +422,7 @@ class CategoricalNaiveBayes(BaseModel):
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
         return [
-            Real(1e-3, 10, "log-uniform", name="alpha"),
+            Real(0.01, 10, "log-uniform", name="alpha"),
             Categorical([True, False], name="fit_prior"),
         ]
 
@@ -426,7 +434,7 @@ class ComplementNaiveBayes(BaseModel):
     fullname = "Complement Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
-    goal = "class"
+    goal = ["class"]
 
     @property
     def est_class(self):
@@ -441,7 +449,7 @@ class ComplementNaiveBayes(BaseModel):
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
         return [
-            Real(1e-3, 10, "log-uniform", name="alpha"),
+            Real(0.01, 10, "log-uniform", name="alpha"),
             Categorical([True, False], name="fit_prior"),
             Categorical([True, False], name="norm"),
         ]
@@ -454,7 +462,7 @@ class OrdinaryLeastSquares(BaseModel):
     fullname = "Ordinary Least Squares"
     needs_scaling = True
     accepts_sparse = True
-    goal = "reg"
+    goal = ["reg"]
 
     @property
     def est_class(self):
@@ -473,7 +481,7 @@ class Ridge(BaseModel):
     fullname = "Ridge Estimator"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -507,7 +515,7 @@ class Lasso(BaseModel):
     fullname = "Lasso Regression"
     needs_scaling = True
     accepts_sparse = True
-    goal = "reg"
+    goal = ["reg"]
 
     @property
     def est_class(self):
@@ -537,7 +545,7 @@ class ElasticNet(BaseModel):
     fullname = "ElasticNet Regression"
     needs_scaling = True
     accepts_sparse = True
-    goal = "reg"
+    goal = ["reg"]
 
     @property
     def est_class(self):
@@ -556,7 +564,7 @@ class ElasticNet(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         return [
             Real(1e-3, 10, "log-uniform", name="alpha"),
-            Categorical(np.linspace(0.1, 0.9, 9), name="l1_ratio"),
+            Categorical(half_to_one_exc, name="l1_ratio"),
             Categorical(["cyclic", "random"], name="selection"),
         ]
 
@@ -568,7 +576,7 @@ class BayesianRidge(BaseModel):
     fullname = "Bayesian Ridge"
     needs_scaling = True
     accepts_sparse = False
-    goal = "reg"
+    goal = ["reg"]
 
     @property
     def est_class(self):
@@ -584,10 +592,10 @@ class BayesianRidge(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         return [
             Integer(100, 1000, name="n_iter"),
-            Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_1"),
-            Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_2"),
-            Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_1"),
-            Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_2"),
+            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1"),
+            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_2"),
+            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_1"),
+            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_2"),
         ]
 
 
@@ -598,7 +606,7 @@ class AutomaticRelevanceDetermination(BaseModel):
     fullname = "Automatic Relevant Determination"
     needs_scaling = True
     accepts_sparse = False
-    goal = "reg"
+    goal = ["reg"]
 
     @property
     def est_class(self):
@@ -614,10 +622,10 @@ class AutomaticRelevanceDetermination(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         return [
             Integer(100, 1000, name="n_iter"),
-            Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_1"),
-            Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_2"),
-            Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_1"),
-            Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_2"),
+            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1"),
+            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_2"),
+            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_1"),
+            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_2"),
         ]
 
 
@@ -628,7 +636,7 @@ class LogisticRegression(BaseModel):
     fullname = "Logistic Regression"
     needs_scaling = True
     accepts_sparse = True
-    goal = "class"
+    goal = ["class"]
 
     @property
     def est_class(self):
@@ -640,7 +648,8 @@ class LogisticRegression(BaseModel):
         params = super().get_parameters(x)
 
         # Limitations on penalty + solver combinations
-        penalty, solver = params.get("penalty"), params.get("solver")
+        penalty = self._get_param(params, "penalty")
+        solver = self._get_param(params, "solver")
         cond_1 = penalty == "none" and solver == "liblinear"
         cond_2 = penalty == "l1" and solver not in ("liblinear", "saga")
         cond_3 = penalty == "elasticnet" and solver != "saga"
@@ -648,9 +657,9 @@ class LogisticRegression(BaseModel):
         if cond_1 or cond_2 or cond_3:
             params.replace("penalty", "l2")  # Change to default value
 
-        if params.get("penalty") != "elasticnet":
+        if self._get_param(params, "penalty") != "elasticnet":
             params.pop("l1_ratio", None)
-        if params.get("penalty") == "none":
+        if self._get_param(params, "penalty") == "none":
             params.pop("C", None)
 
         return params
@@ -668,11 +677,11 @@ class LogisticRegression(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         solvers = ["lbfgs", "newton-cg", "liblinear", "sag", "saga"]
         return [
-            Categorical(["none", "l1", "l2", "elasticnet"], name="penalty"),
+            Categorical(["l1", "l2", "elasticnet", "none"], name="penalty"),
             Real(1e-3, 100, "log-uniform", name="C"),
             Categorical(solvers, name="solver"),
             Integer(100, 1000, name="max_iter"),
-            Categorical(np.linspace(0.1, 0.9, 9), name="l1_ratio"),
+            Categorical([None, *zero_to_one_exc], name="l1_ratio"),
         ]
 
 
@@ -683,7 +692,7 @@ class LinearDiscriminantAnalysis(BaseModel):
     fullname = "Linear Discriminant Analysis"
     needs_scaling = False
     accepts_sparse = False
-    goal = "class"
+    goal = ["class"]
 
     @property
     def est_class(self):
@@ -694,7 +703,7 @@ class LinearDiscriminantAnalysis(BaseModel):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_parameters(x)
 
-        if params.get("solver") == "svd":
+        if self._get_param(params, "solver") == "svd":
             params.pop("shrinkage", None)
 
         return params
@@ -708,7 +717,7 @@ class LinearDiscriminantAnalysis(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         return [
             Categorical(["svd", "lsqr", "eigen"], name="solver"),
-            Categorical(np.linspace(0.0, 1.0, 11), name="shrinkage"),
+            Categorical([None, "auto", *half_to_one_inc], name="shrinkage"),
         ]
 
 
@@ -719,7 +728,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     fullname = "Quadratic Discriminant Analysis"
     needs_scaling = False
     accepts_sparse = False
-    goal = "class"
+    goal = ["class"]
 
     @property
     def est_class(self):
@@ -733,7 +742,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
-        return [Categorical(np.linspace(0.0, 1.0, 11), name="reg_param")]
+        return [Categorical(zero_to_one_inc, name="reg_param")]
 
 
 class KNearestNeighbors(BaseModel):
@@ -743,7 +752,7 @@ class KNearestNeighbors(BaseModel):
     fullname = "K-Nearest Neighbors"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -779,7 +788,7 @@ class RadiusNearestNeighbors(BaseModel):
     fullname = "Radius Nearest Neighbors"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -789,16 +798,16 @@ class RadiusNearestNeighbors(BaseModel):
     def distances(self):
         """Return distances between a random subsample of rows."""
         if self._distances is None:
-            # If called from FeatureSelector, no data to calculate
-            # distances so return the estimator's default value: 1
+            # If called only for estimator, there's no data to calculate
+            # distances so return the estimator's default radius value: 1
             if hasattr(self.T, "_branches"):
-                cols = self.X_train.select_dtypes("number")
+                numerical_cols = self.X_train.select_dtypes("number")
                 self._distances = cdist(
-                    cols.sample(
+                    numerical_cols.sample(
                         n=min(50, len(self.X_train)),
                         random_state=self.T.random_state,
                     ),
-                    cols.sample(
+                    numerical_cols.sample(
                         n=min(50, len(self.X_train)),
                         random_state=self.T.random_state,
                     ),
@@ -859,7 +868,7 @@ class DecisionTree(BaseModel):
     fullname = "Decision Tree"
     needs_scaling = False
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -889,7 +898,10 @@ class DecisionTree(BaseModel):
             Categorical([None, *list(range(1, 10))], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
-            Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_features"),
+            Categorical(
+                categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
+                name="max_features",
+            ),
             Real(0, 0.035, name="ccp_alpha"),
         ]
 
@@ -901,7 +913,7 @@ class Bagging(BaseModel):
     fullname = "Bagging"
     needs_scaling = False
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -924,8 +936,8 @@ class Bagging(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         return [
             Integer(10, 500, name="n_estimators"),
-            Categorical(np.linspace(0.5, 1.0, 6), name="max_samples"),
-            Categorical(np.linspace(0.5, 1.0, 6), name="max_features"),
+            Categorical(half_to_one_inc, name="max_samples"),
+            Categorical(half_to_one_inc, name="max_features"),
             Categorical([True, False], name="bootstrap"),
             Categorical([True, False], name="bootstrap_features"),
         ]
@@ -938,7 +950,7 @@ class ExtraTrees(BaseModel):
     fullname = "Extra-Trees"
     needs_scaling = False
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -952,7 +964,7 @@ class ExtraTrees(BaseModel):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_parameters(x)
 
-        if not params.get("bootstrap"):
+        if not self._get_param(params, "bootstrap"):
             params.pop("max_samples", None)
 
         return params
@@ -978,10 +990,13 @@ class ExtraTrees(BaseModel):
             Categorical([None, *list(range(1, 10))], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
-            Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_features"),
+            Categorical(
+                categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
+                name="max_features",
+            ),
             Categorical([True, False], name="bootstrap"),
             Real(0, 0.035, name="ccp_alpha"),
-            Categorical(np.linspace(0.5, 0.9, 5), name="max_samples"),
+            Categorical([None, *half_to_one_exc], name="max_samples"),
         ]
 
 
@@ -992,7 +1007,7 @@ class RandomForest(BaseModel):
     fullname = "Random Forest"
     needs_scaling = False
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1006,7 +1021,7 @@ class RandomForest(BaseModel):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_parameters(x)
 
-        if not params.get("bootstrap"):
+        if not self._get_param(params, "bootstrap"):
             params.pop("max_samples", None)
 
         return params
@@ -1032,10 +1047,13 @@ class RandomForest(BaseModel):
             Categorical([None, *list(range(1, 10))], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
-            Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_features"),
+            Categorical(
+                categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
+                name="max_features",
+            ),
             Categorical([True, False], name="bootstrap"),
             Real(0, 0.035, name="ccp_alpha"),
-            Categorical(np.linspace(0.5, 0.9, 5), name="max_samples"),
+            Categorical([None, *half_to_one_exc], name="max_samples"),
         ]
 
 
@@ -1046,7 +1064,7 @@ class AdaBoost(BaseModel):
     fullname = "AdaBoost"
     needs_scaling = False
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1067,7 +1085,7 @@ class AdaBoost(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         dimensions = [
             Integer(50, 500, name="n_estimators"),
-            Real(0.01, 1.0, "log-uniform", name="learning_rate"),
+            Real(0.01, 10, "log-uniform", name="learning_rate"),
         ]
 
         if self.T.goal == "class":
@@ -1086,7 +1104,7 @@ class GradientBoostingMachine(BaseModel):
     fullname = "Gradient Boosting Machine"
     needs_scaling = False
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1100,7 +1118,7 @@ class GradientBoostingMachine(BaseModel):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_parameters(x)
 
-        if params.get("loss") not in ("huber", "quantile"):
+        if self._get_param(params, "loss") not in ("huber", "quantile"):
             params.pop("alpha", None)
 
         return params
@@ -1125,18 +1143,21 @@ class GradientBoostingMachine(BaseModel):
             [
                 Real(0.01, 1.0, "log-uniform", name="learning_rate"),
                 Integer(10, 500, name="n_estimators"),
-                Categorical(np.linspace(0.5, 1.0, 6), name="subsample"),
+                Categorical(half_to_one_inc, name="subsample"),
                 Categorical(["friedman_mse", "squared_error"], name="criterion"),
                 Integer(2, 20, name="min_samples_split"),
                 Integer(1, 20, name="min_samples_leaf"),
                 Integer(1, 10, name="max_depth"),
-                Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_features"),
+                Categorical(
+                    categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
+                    name="max_features",
+                ),
                 Real(0, 0.035, name="ccp_alpha"),
             ]
         )
 
-        if self.goal == "reg":
-            dimensions.append(Categorical(np.linspace(0.5, 0.9, 5), name="alpha"))
+        if self.T.goal == "reg":
+            dimensions.append(Categorical(half_to_one_exc, name="alpha"))
 
         return dimensions
 
@@ -1148,7 +1169,7 @@ class HistGBM(BaseModel):
     fullname = "HistGBM"
     needs_scaling = False
     accepts_sparse = False
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1168,7 +1189,7 @@ class HistGBM(BaseModel):
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         dimensions = []
-        if self.T.task == "reg":
+        if self.T.goal == "reg":
             loss = ["squared_error", "absolute_error", "poisson"]
             dimensions.append(Categorical(loss, name="loss"))
 
@@ -1177,9 +1198,9 @@ class HistGBM(BaseModel):
                 Real(0.01, 1.0, "log-uniform", name="learning_rate"),
                 Integer(10, 500, name="max_iter"),
                 Integer(10, 50, name="max_leaf_nodes"),
-                Categorical([None, *np.linspace(1, 10, 10)], name="max_depth"),
+                Categorical([None, *range(1, 11)], name="max_depth"),
                 Integer(10, 30, name="min_samples_leaf"),
-                Categorical([*np.linspace(0.0, 1.0, 11)], name="l2_regularization"),
+                Categorical(zero_to_one_inc, name="l2_regularization"),
             ]
         )
 
@@ -1193,7 +1214,7 @@ class XGBoost(BaseModel):
     fullname = "XGBoost"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1258,8 +1279,8 @@ class XGBoost(BaseModel):
             Integer(1, 10, name="max_depth"),
             Real(0, 1.0, name="gamma"),
             Integer(1, 10, name="min_child_weight"),
-            Categorical(np.linspace(0.5, 1.0, 6), name="subsample"),
-            Categorical(np.linspace(0.3, 1.0, 8), name="colsample_bytree"),
+            Categorical(half_to_one_inc, name="subsample"),
+            Categorical([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], name="colsample_bytree"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_alpha"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda"),
         ]
@@ -1272,7 +1293,7 @@ class LightGBM(BaseModel):
     fullname = "LightGBM"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1327,12 +1348,12 @@ class LightGBM(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Categorical([-1, *list(range(1, 10))], name="max_depth"),
+            Categorical([-1, *range(1, 10)], name="max_depth"),
             Integer(20, 40, name="num_leaves"),
-            Categorical([1e-5, 1e-3, 0.1, 1, 10, 100], name="min_child_weight"),
+            Categorical([1e-4, 1e-3, 0.01, 0.1, 1, 10, 100], name="min_child_weight"),
             Integer(10, 30, name="min_child_samples"),
-            Categorical(np.linspace(0.5, 1.0, 6), name="subsample"),
-            Categorical(np.linspace(0.3, 1.0, 8), name="colsample_bytree"),
+            Categorical(half_to_one_inc, name="subsample"),
+            Categorical([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], name="colsample_bytree"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_alpha"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda"),
         ]
@@ -1345,7 +1366,7 @@ class CatBoost(BaseModel):
     fullname = "CatBoost"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1399,9 +1420,9 @@ class CatBoost(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Categorical([None, *list(range(1, 10))], name="max_depth"),
-            Categorical(np.linspace(0.5, 1.0, 6), name="subsample"),
-            Categorical(np.linspace(0.3, 1.0, 8), name="colsample_bylevel"),
+            Categorical([None, *range(1, 10)], name="max_depth"),
+            Categorical(half_to_one_inc, name="subsample"),
+            Categorical([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], name="colsample_bylevel"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda"),
         ]
 
@@ -1413,7 +1434,7 @@ class LinearSVM(BaseModel):
     fullname = "Linear-SVM"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1429,15 +1450,16 @@ class LinearSVM(BaseModel):
 
         if self.T.goal == "class":
             # l1 regularization can't be combined with hinge
-            if params.get("loss") == "hinge":
+            if self._get_param(params, "loss") == "hinge":
                 params.replace("penalty", "l2")
-            # l1 regularization can't be combined with squared_hinge when dual=True
-            if params.get("penalty") == "l1" and params.get("loss") == "squared_hinge":
-                params.replace("dual", False)
-            # l2 regularization can't be combined with hinge when dual=False
-            if params.get("penalty") == "l2" and params.get("loss") == "hinge":
-                params.replace("dual", True)
-        elif params.get("loss") == "epsilon_insensitive":
+                # l2 regularization can't be combined with hinge when dual=False
+                if self._get_param(params, "penalty") == "l2":
+                    params.replace("dual", True)
+            elif self._get_param(params, "loss") == "squared_hinge":
+                # l1 regularization can't be combined with squared_hinge when dual=True
+                if self._get_param(params, "penalty") == "l1":
+                    params.replace("dual", False)
+        elif self._get_param(params, "loss") == "epsilon_insensitive":
             params.replace("dual", True)
 
         return params
@@ -1476,7 +1498,7 @@ class KernelSVM(BaseModel):
     fullname = "Kernel-SVM"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1490,12 +1512,12 @@ class KernelSVM(BaseModel):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_parameters(x)
 
-        if params.get("kernel") == "poly":
+        if self._get_param(params, "kernel") == "poly":
             params.replace("gamma", "scale")  # Crashes in combination with "auto"
         else:
             params.pop("degree", None)
 
-        if params.get("kernel") != "rbf":
+        if self._get_param(params, "kernel") != "rbf":
             params.pop("coef0", None)
 
         return params
@@ -1530,7 +1552,7 @@ class PassiveAggressive(BaseModel):
     fullname = "Passive Aggressive"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1574,7 +1596,7 @@ class StochasticGradientDescent(BaseModel):
     fullname = "Stochastic Gradient Descent"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1588,10 +1610,10 @@ class StochasticGradientDescent(BaseModel):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_parameters(x)
 
-        if params.get("penalty") != "elasticnet":
+        if self._get_param(params, "penalty") != "elasticnet":
             params.pop("l1_ratio", None)
 
-        if params.get("learning_rate") == "optimal":
+        if self._get_param(params, "learning_rate") == "optimal":
             params.pop("eta0", None)
 
         return params
@@ -1628,12 +1650,13 @@ class StochasticGradientDescent(BaseModel):
         return [
             Categorical(loss if self.T.goal == "class" else loss[-4:], name="loss"),
             Categorical(["none", "l1", "l2", "elasticnet"], name="penalty"),
-            Real(1e-4, 1.0, "log-uniform", name="alpha"),
-            Categorical(np.linspace(0.05, 0.95, 19), name="l1_ratio"),
+            Real(1e-5, 1.0, "log-uniform", name="alpha"),
+            Categorical([0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio"),
+            Integer(500, 1500, name="max_iter"),
             Real(1e-4, 1.0, "log-uniform", name="epsilon"),
             Categorical(learning_rate, name="learning_rate"),
-            Real(1e-4, 1.0, "log-uniform", name="eta0"),
-            Categorical(np.linspace(0.1, 0.9, 9), name="power_t"),
+            Real(1e-2, 10, "log-uniform", name="eta0"),
+            Categorical(zero_to_one_exc, name="power_t"),
             Categorical([True, False], name="average"),
         ]
 
@@ -1645,7 +1668,7 @@ class MultilayerPerceptron(BaseModel):
     fullname = "Multi-layer Perceptron"
     needs_scaling = True
     accepts_sparse = True
-    goal = "both"
+    goal = ["class", "reg"]
 
     @property
     def est_class(self):
@@ -1681,7 +1704,7 @@ class MultilayerPerceptron(BaseModel):
             params.insert(0, "hidden_layer_sizes", tuple(hidden_layer_sizes))
 
         # Solve rest of parameters
-        if params.get("solver") != "sgd":
+        if self._get_param(params, "solver") != "sgd":
             params.pop("learning_rate", None)
             params.pop("power_t", None)
         else:
@@ -1705,10 +1728,10 @@ class MultilayerPerceptron(BaseModel):
             Categorical(["identity", "logistic", "tanh", "relu"], name="activation"),
             Categorical(["lbfgs", "sgd", "adam"], name="solver"),
             Real(1e-4, 0.1, "log-uniform", name="alpha"),
-            Categorical([8, 16, 32, 64, 128, 256], name="batch_size"),
+            Categorical(["auto", 8, 16, 32, 64, 128, 256], name="batch_size"),
             Categorical(["constant", "invscaling", "adaptive"], name="learning_rate"),
             Real(1e-3, 0.1, "log-uniform", name="learning_rate_init"),
-            Categorical(np.linspace(0.1, 0.9, 9), name="power_t"),
+            Categorical(zero_to_one_exc, name="power_t"),
             Integer(50, 500, name="max_iter"),
         ]
 
@@ -1727,7 +1750,7 @@ class Stacking(BaseModel):
     acronym = "Stack"
     fullname = "Stacking"
     needs_scaling = False
-    goal = "both"
+    goal = ["class", "reg"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
@@ -1774,7 +1797,7 @@ class Voting(BaseModel):
     acronym = "Vote"
     fullname = "Voting"
     needs_scaling = False
-    goal = "both"
+    goal = ["class", "reg"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)

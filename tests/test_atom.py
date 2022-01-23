@@ -537,8 +537,16 @@ def test_add_transformer_only_y():
     assert np.all((atom["target"] == 0) | (atom["target"] == 1))
 
 
+def test_returned_column_already_exists():
+    """Assert that an error is raised if an existing column is returned."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.apply(lambda x: 1, columns="new")
+    with pytest.raises(RuntimeError, match=r".*already exists in the original.*"):
+        atom.vectorize(columns="corpus")
+
+
 def test_add_sparse_matrices():
-    """Assert that transformers that return sparse mtx are accepted."""
+    """Assert that transformers that return sp.matrix are accepted."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.add(OneHotEncoder(handle_unknown="ignore"), columns=2)
     assert atom.shape == (10, 7)  # Creates 4 extra columns
@@ -874,7 +882,7 @@ def test_models_and_metric_are_updated():
 def test_errors_are_removed():
     """Assert that the errors are removed if subsequent runs are successful."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["BNB", "Tree"], bo_params={"dimensions": {"Tree": 2}})  # Invalid dims
+    atom.run(["BNB", "Tree"], n_initial_points=(2, 7))  # Invalid value for Tree
     atom.run("Tree")  # Runs correctly
     assert not atom.errors  # Errors should be empty
 

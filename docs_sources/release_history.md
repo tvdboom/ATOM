@@ -6,7 +6,9 @@
 
 * Full support for parse matrices. Read more in the [user guide](../user_guide/data_management/#sparse-matrices).
 * Custom dimensions for the BO can now be shared across models using the
-  key `all` in `bo_params["dimensions"]`.
+  key 'all' in `bo_params["dimensions"]`.
+* Assign hyperparameters to tune with the predefined dimensions through
+  `bo_params["dimensions"]`.
 * It's now possible to tune a custom number of layers for the [MLP](../API/models/mlp)
   model.
 * If multiple BO calls share the best score, the one with the shortest

@@ -561,7 +561,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             except LookupError:
                 nltk.download("wordnet")
             try:
-                nltk.data.find("taggers")
+                nltk.data.find("taggers/averaged_perceptron_tagger")
             except LookupError:
                 nltk.download("averaged_perceptron_tagger")
             try:
@@ -715,7 +715,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             # If corpus is the only column, return as sparse df
             return to_df(matrix, index=X.index, columns=columns)
         else:
-            if not is_sparse(X.drop(corpus, axis=1)):
+            X = X.drop(corpus, axis=1)
+            if not is_sparse(X):
                 # If there are more columns than just corpus and they are
                 # not all sparse, the matrix is converted to its full array
                 self.log(
@@ -724,6 +725,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
                 matrix = matrix.toarray()
                 for i, col in enumerate(columns):
-                    X[col] = matrix[:, i]
+                    # If the column name already exists, add _tokenizer
+                    X[col if col not in X else f"{col}_vectorizer"] = matrix[:, i]
 
-            return X.drop(corpus, axis=1)
+            return X

@@ -12,8 +12,9 @@ import pytest
 import pandas as pd
 
 # Own modules
+from atom import ATOMClassifier
 from atom.nlp import TextCleaner, Tokenizer, Normalizer, Vectorizer
-from .utils import X_bin, X_text
+from .utils import X_bin, X_text, y_text
 
 
 # Test TextCleaner ================================================= >>
@@ -180,9 +181,10 @@ def test_returns_sparse():
     assert all(pd.api.types.is_sparse(X[c]) for c in X.columns)
 
 
-def test_sparse_with_non_sparse():
+def test_sparse_with_dense():
     """Assert that the output is dense when mixed with non-sparse columns."""
-    X = pd.DataFrame(X_text, columns=["corpus"])
-    X["non_sparse"] = [4, 5, 2, 3]
-    X = Vectorizer(strategy="bow").fit_transform(X)
-    assert all(not pd.api.types.is_sparse(X[c]) for c in X.columns)
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.apply(lambda x: 1, columns="new")  # Create dense column
+    atom.vectorize()
+    assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)
+    assert "new_vectorizer" in atom

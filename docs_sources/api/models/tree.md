@@ -50,8 +50,8 @@ Integer(2, 20, name="min_samples_split")
 Integer(1, 20, name="min_samples_leaf")
 </p>
 <p>
-<strong>max_features: float or None, default=None</strong><br>
-Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_features")
+<strong>max_features: str, float or None, default=None</strong><br>
+Categorical(["auto", "sqrt", "log2", *np.linspace(0.5, 0.9, 5), None], name="max_features")
 </p>
 <p>
 <strong>ccp_alpha: float, default=0.0</strong><br>

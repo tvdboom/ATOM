@@ -51,10 +51,10 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 
 !!! warning
     The returned dataframe is only sparse when all the columns in the
-    provided dataset except for `corpus` are sparse. Calling this
+    provided dataset (except `corpus`) are sparse. Calling this
     transformer with other non-sparse columns forces the output matrix
-    to be converted to its full array. This process can be very slow and
-    occupy large chunks of memory.
+    to be converted to its full array. This is not recommended since the
+    process can be very slow and occupy large chunks of memory.
 
 
 <br>

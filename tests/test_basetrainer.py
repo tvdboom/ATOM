@@ -23,7 +23,62 @@ from .utils import (
 )
 
 
-# Test _check_parameters =========================================== >>
+# Test _prepare_metric ============================================= >>
+
+def test_invalid_sequence_parameter():
+    """Assert that an error is raised for parameters with the wrong length."""
+    trainer = DirectClassifier(
+        models="LR",
+        metric=f1_score,
+        needs_proba=[True, False],
+        random_state=1,
+    )
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
+def test_metric_is_sklearn_scorer():
+    """Assert that using a sklearn SCORER works."""
+    trainer = DirectClassifier("LR", metric="balanced_accuracy", random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.metric == "balanced_accuracy"
+
+
+def test_metric_is_acronym():
+    """Assert that using the metric acronyms work."""
+    trainer = DirectClassifier("LR", metric="auc", random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.metric == "roc_auc"
+
+
+@pytest.mark.parametrize("metric", CUSTOM_SCORERS)
+def test_metric_is_custom(metric):
+    """Assert that using the metric acronyms work."""
+    trainer = DirectClassifier("LR", metric=metric, random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.metric == CUSTOM_SCORERS[metric].__name__
+
+
+def test_metric_is_invalid_scorer_name():
+    """Assert that an error is raised when scorer name is invalid."""
+    trainer = DirectClassifier("LR", metric="test", random_state=1)
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
+def test_metric_is_function():
+    """Assert that a function metric works."""
+    trainer = DirectClassifier("LR", metric=f1_score, random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.metric == "f1_score"
+
+
+def test_metric_is_scorer():
+    """Assert that a scorer metric works."""
+    trainer = DirectClassifier("LR", metric=make_scorer(f1_score), random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.metric == "f1"
+
+
+# Test _prepare_parameters =========================================== >>
 
 def test_all_classification_models():
     """Assert that the default value selects all models."""
@@ -182,6 +237,49 @@ def test_est_params_per_model():
     assert trainer.lgb.estimator.get_params()["n_estimators"] == 200
 
 
+def test_est_params_default_method():
+    """Assert that custom parameters overwrite the default ones."""
+    trainer = DirectClassifier("RF", est_params={"n_jobs": 3}, random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.rf.estimator.get_params()["n_jobs"] == 3
+    assert trainer.rf.estimator.get_params()["random_state"] == 1
+
+
+@pytest.mark.parametrize("model", ["XGB", "LGB", "CatB"])
+def test_est_params_for_fit(model):
+    """Assert that est_params is used for fit if ends in _fit."""
+    trainer = DirectClassifier(
+        models=model,
+        est_params={"early_stopping_rounds_fit": 2},
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert getattr(trainer, model)._stopped != ("---", "---")
+
+
+def test_est_params_unknown_param():
+    """Assert that unknown parameters in est_params are caught."""
+    trainer = DirectClassifier(
+        models=["LR", "LGB"],
+        n_calls=5,
+        est_params={"test": 220},
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert list(trainer.errors.keys()) == ["LR"]  # LGB passes since it accepts kwargs
+
+
+def test_est_params_unknown_param_fit():
+    """Assert that unknown parameters in est_params_fit are caught."""
+    trainer = DirectClassifier(
+        models=["LR", "LGB"],
+        est_params={"test_fit": 220},
+        random_state=1,
+    )
+    with pytest.raises(RuntimeError):
+        trainer.run(bin_train, bin_test)
+
+
 def test_base_estimator_default():
     """Assert that GP is the default base estimator."""
     trainer = DirectClassifier("LR", n_calls=5, random_state=1)
@@ -268,10 +366,49 @@ def test_invalid_early_stopping():
         trainer.run(bin_train, bin_test)
 
 
+def test_custom_dimensions_is_name():
+    """Assert that the parameters to tune can be set by name."""
+    trainer = DirectClassifier(
+        models="LR1",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": "max_iter"},
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert list(trainer.lr1.best_params) == ["max_iter"]
+
+
+def test_custom_dimensions_name_is_invalid():
+    """Assert that an error is raised when an invalid parameter is provided."""
+    trainer = DirectClassifier(
+        models="LR1",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": "invalid"},
+        random_state=1,
+    )
+    with pytest.raises(ValueError, match=r".*is not a predefined hyperparameter.*"):
+        trainer.run(bin_train, bin_test)
+
+
+def test_custom_dimensions_is_dim():
+    """Assert that the custom dimensions are for all models if dimension."""
+    trainer = DirectClassifier(
+        models="LR1",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": Integer(10, 20, name="max_iter")},
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert list(trainer.lr1.best_params) == ["max_iter"]
+
+
 def test_custom_dimensions_is_list():
     """Assert that the custom dimensions are for all models if list."""
     trainer = DirectClassifier(
-        models=["LR1", "LR2"],
+        models="LR1",
         n_calls=2,
         n_initial_points=2,
         bo_params={"dimensions": [Integer(10, 20, name="max_iter")]},
@@ -279,21 +416,25 @@ def test_custom_dimensions_is_list():
     )
     trainer.run(bin_train, bin_test)
     assert list(trainer.lr1.best_params) == ["max_iter"]
-    assert list(trainer.lr2.best_params) == ["max_iter"]
 
 
-def test_custom_dimensions_all_models():
+def test_custom_dimensions_is_all():
     """Assert that the custom dimensions can be set for all models."""
     trainer = DirectClassifier(
         models=["LR1", "LR2"],
         n_calls=2,
         n_initial_points=2,
-        bo_params={"dimensions": {"all": [Integer(10, 20, name="max_iter")]}},
+        bo_params={
+            "dimensions": {
+                "all": [Integer(10, 20, name="max_iter")],
+                "LR2": Categorical(["l1", "l2"], name="penalty"),
+            },
+        },
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
     assert list(trainer.lr1.best_params) == ["max_iter"]
-    assert list(trainer.lr2.best_params) == ["max_iter"]
+    assert list(trainer.lr2.best_params) == ["max_iter", "penalty"]
 
 
 def test_custom_dimensions_per_model():
@@ -328,61 +469,6 @@ def test_optimizer_kwargs():
     assert trainer._bo["kwargs"].get("acq_func") == "EI"
 
 
-# Test _prepare_metric ============================================= >>
-
-def test_invalid_sequence_parameter():
-    """Assert that an error is raised for parameters with the wrong length."""
-    trainer = DirectClassifier(
-        models="LR",
-        metric=f1_score,
-        needs_proba=[True, False],
-        random_state=1,
-    )
-    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
-
-
-def test_metric_is_sklearn_scorer():
-    """Assert that using a sklearn SCORER works."""
-    trainer = DirectClassifier("LR", metric="balanced_accuracy", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.metric == "balanced_accuracy"
-
-
-def test_metric_is_acronym():
-    """Assert that using the metric acronyms work."""
-    trainer = DirectClassifier("LR", metric="auc", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.metric == "roc_auc"
-
-
-@pytest.mark.parametrize("metric", CUSTOM_SCORERS)
-def test_metric_is_custom(metric):
-    """Assert that using the metric acronyms work."""
-    trainer = DirectClassifier("LR", metric=metric, random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.metric == CUSTOM_SCORERS[metric].__name__
-
-
-def test_metric_is_invalid_scorer_name():
-    """Assert that an error is raised when scorer name is invalid."""
-    trainer = DirectClassifier("LR", metric="test", random_state=1)
-    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
-
-
-def test_metric_is_function():
-    """Assert that a function metric works."""
-    trainer = DirectClassifier("LR", metric=f1_score, random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.metric == "f1_score"
-
-
-def test_metric_is_scorer():
-    """Assert that a scorer metric works."""
-    trainer = DirectClassifier("LR", metric=make_scorer(f1_score), random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.metric == "f1"
-
-
 # Test _core_iteration ============================================= >>
 
 def test_sequence_parameters():
@@ -400,13 +486,6 @@ def test_sequence_parameters():
     assert len(trainer.lgb.metric_bootstrap) == 7
 
 
-def test_run_is_started():
-    """Assert that a mlflow run is started."""
-    trainer = DirectRegressor(models="OLS", experiment="test", random_state=1)
-    trainer.run(reg_train, reg_test)
-    assert isinstance(trainer.ols._run, ActiveRun)
-
-
 def test_custom_dimensions_for_bo():
     """Assert that the BO runs when custom dimensions are provided."""
     trainer = DirectRegressor(
@@ -417,6 +496,13 @@ def test_custom_dimensions_for_bo():
     )
     trainer.run(reg_train, reg_test)
     assert not trainer.ols.bo.empty
+
+
+def test_mlflow_run_is_started():
+    """Assert that a mlflow run starts with the run method."""
+    trainer = DirectRegressor(models="OLS", experiment="test", random_state=1)
+    trainer.run(reg_train, reg_test)
+    assert isinstance(trainer.ols._run, ActiveRun)
 
 
 def test_error_handling():

@@ -319,14 +319,14 @@ class BaseTransformer:
 
             # Define test set size
             if self.test_size < 1:
-                test_size = int(self.test_size * len(data))
+                test_size = max(1, int(self.test_size * len(data)))
             else:
                 test_size = self.test_size
 
             if self.holdout_size:
                 # Define holdout set size
                 if self.holdout_size < 1:
-                    holdout_size = int(self.holdout_size * len(data))
+                    holdout_size = max(1, int(self.holdout_size * len(data)))
                 else:
                     holdout_size = self.holdout_size
 
@@ -431,7 +431,7 @@ class BaseTransformer:
             data, idx, holdout = _no_data_sets(data)
 
         elif len(arrays) == 2:
-            if len(arrays[0]) == len(arrays[1]) == 2:
+            if isinstance(arrays[0], tuple) and len(arrays[0]) == len(arrays[1]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test))
                 train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
                 test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))

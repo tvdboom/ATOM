@@ -503,7 +503,7 @@ class BasePredictor:
         overview = pd.DataFrame()
         for model in MODELS.values():
             m = model(self, fast_init=True)
-            if m.goal[:3] == self.goal[:3] or m.goal == "both":
+            if self.goal in m.goal:
                 overview = overview.append(
                     {
                         "acronym": m.acronym,
@@ -747,7 +747,7 @@ class BasePredictor:
                 )
             else:
                 model = MODELS[kwargs["final_estimator"]](self)
-                if model.goal not in (self.goal, "both"):
+                if self.goal not in model.goal:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
                         f"{model.fullname} can not perform {self.task} tasks."

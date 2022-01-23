@@ -79,12 +79,13 @@ If atom is initialized using a scipy sparse matrix, it is converted
 internally to a dataframe of sparse columns. Read more about pandas'
 sparse data structures [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html).
 The same conversion takes place when a transformer returns a sparse
-matrix, like for example the [Vectorizer](../../API/NLP/vectorizer).
+matrix, like the [Vectorizer](../../API/NLP/vectorizer) for example.
 
-Note that a dataset can only benefit from sparsity when all it's
-columns are sparse. Mixing sparse and non-sparse columns is not
-advised and can cause estimators to decrease their training speed
-or even crash. Use the [available_models](../../API/ATOM/atomclassifier/#available-models)
+Note that ATOM considers a dataset to be sparse if any of the columns
+is sparse. A dataset can only benefit from sparsity when all its
+columns are sparse, hence mixing sparse and non-sparse columns is
+not recommended and can cause estimators to decrease their training
+speed or even crash. Use the [available_models](../../API/ATOM/atomclassifier/#available-models)
 method to check with models have native support for sparse matrices.
 
 Click [here](../../examples/nlp) to see an example that uses sparse

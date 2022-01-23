@@ -74,14 +74,6 @@ def test_branch_delete_last_branch():
         atom.branch.delete()
 
 
-def test_branch_delete_not_current():
-    """Assert that we can delete any branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    atom.branch.delete("master")
-    assert "master" not in atom._branches
-
-
 def test_branch_delete_depending_models():
     """Assert that dependent models are deleted with the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -89,6 +81,25 @@ def test_branch_delete_depending_models():
     atom.run("LR")
     atom.delete()
     assert not atom.models
+
+
+def test_last_og_branch():
+    """Assert that an og branch is created if the last one is deleted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.scale()
+    assert "og" not in atom._branches
+    assert len(atom._get_og_branches()) == 1  # master is the last og branch
+    atom.branch.delete("master")
+    assert "og" in atom._branches
+
+
+def test_branch_delete_not_current():
+    """Assert that we can delete any branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.branch.delete("master")
+    assert "master" not in atom._branches
 
 
 # Test rename ====================================================== >>

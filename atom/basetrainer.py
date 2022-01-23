@@ -210,7 +210,29 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self._bo = {"base_estimator": "GP", "cv": 1, "callback": [], "kwargs": {}}
         self._errors = CustomDict()
 
-    def _check_parameters(self):
+    @staticmethod
+    def _prepare_metric(metric, **kwargs):
+        """Check the validity of the metric."""
+        metric_params = {}
+        for key, value in kwargs.items():
+            if isinstance(value, SEQUENCE):
+                if len(value) != len(metric):
+                    raise ValueError(
+                        "Invalid value for the greater_is_better parameter. Length "
+                        "should be equal to the number of metrics, got len(metric)="
+                        f"{len(metric)} and len({key})={len(value)}."
+                    )
+            else:
+                metric_params[key] = [value for _ in metric]
+
+        metric_dict = CustomDict()
+        for args in zip(metric, *metric_params.values()):
+            scorer = get_custom_scorer(*args)
+            metric_dict[scorer.name] = scorer
+
+        return metric_dict
+
+    def _prepare_parameters(self):
         """Check the validity of the input parameters."""
         if self.mapping is None:
             self.mapping = {str(v): v for v in sorted(self.y.unique())}
@@ -223,9 +245,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # If left to default, select all predefined models per task
         if self._models is None:
             if self.goal == "class":
-                models = [m(self) for m in MODELS.values() if m.goal != "reg"]
+                models = [m(self) for m in MODELS.values() if "class" in m.goal]
             else:
-                models = [m(self) for m in MODELS.values() if m.goal != "class"]
+                models = [m(self) for m in MODELS.values() if "reg" in m.goal]
         else:
             models = []
             for m in lst(self._models):
@@ -259,11 +281,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 
                     # Check for regression/classification-only models
-                    if self.goal == "class" and models[-1].goal == "reg":
+                    if self.goal == "class" and self.goal not in models[-1].goal:
                         raise ValueError(
                             f"The {acronym} model can't perform classification tasks!"
                         )
-                    elif self.goal == "reg" and models[-1].goal == "class":
+                    elif self.goal == "reg" and self.goal not in models[-1].goal:
                         raise ValueError(
                             f"The {acronym} model can't perform regression tasks!"
                         )
@@ -418,46 +440,23 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     if hasattr(model, "custom_fit"):
                         model._early_stopping = self.bo_params["early_stopping"]
 
-            # Add custom dimensions to every model subclass
+            # Add hyperparameter dimensions to every model subclass
             if self.bo_params.get("dimensions"):
                 for name, model in self._models.items():
                     # If not dict, the dimensions are for all models
                     if not isinstance(self.bo_params["dimensions"], dict):
-                        model._dimensions = self.bo_params["dimensions"]
+                        model._dimensions = lst(self.bo_params["dimensions"])
                     else:
                         # Dimensions for every specific model
                         for key, value in self.bo_params["dimensions"].items():
-                            # Parameters for this model only
                             if key.lower() == name.lower() or key.lower() == "all":
-                                model._dimensions = value
-                                break
+                                model._dimensions.extend(list(lst(value)))
 
             # The remaining bo_params are added as kwargs to the optimizer
             self._bo["kwargs"] = {
-                k: v for k, v in self.bo_params.items() if k not in list(self._bo) + exc
+                k: v for k, v in self.bo_params.items()
+                if k not in list(self._bo) + exc
             }
-
-    @staticmethod
-    def _prepare_metric(metric, **kwargs):
-        """Return a list of scorers given the parameters."""
-        metric_params = {}
-        for key, value in kwargs.items():
-            if isinstance(value, SEQUENCE):
-                if len(value) != len(metric):
-                    raise ValueError(
-                        "Invalid value for the greater_is_better parameter. Length "
-                        "should be equal to the number of metrics, got len(metric)="
-                        f"{len(metric)} and len({key})={len(value)}."
-                    )
-            else:
-                metric_params[key] = [value for _ in metric]
-
-        metric_dict = CustomDict()
-        for args in zip(metric, *metric_params.values()):
-            scorer = get_custom_scorer(*args)
-            metric_dict[scorer.name] = scorer
-
-        return metric_dict
 
     def _core_iteration(self):
         """Fit and evaluate the models in the pipeline."""

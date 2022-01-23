@@ -45,11 +45,11 @@ Categorical(["none", "l1", "l2", "elasticnet"], name="penalty")
 </p>
 <p>
 <strong>alpha: float, default=1e-4</strong><br>
-Real(1e-4, 1.0, "log-uniform", name="alpha")
+Real(1e-5, 1.0, "log-uniform", name="alpha")
 </p>
 <p>
 <strong>l1_ratio: float, default=0.15</strong><br>
-Categorical(np.linspace(0.1, 0.9, 9), name="l1_ratio").
+Categorical([0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio").
 </p>
 <p>
 <strong>epsilon: float, default=0.1</strong><br>
@@ -60,8 +60,8 @@ Real(1e-4, 1.0, "log-uniform", name="epsilon")
 Categorical(["constant", "invscaling", "optimal", "adaptive"], name="learning_rate")
 </p>
 <p>
-<strong>eta0: float, default=1e-4</strong><br>
-Real(1e-4, 1.0, "log-uniform", name="eta0").
+<strong>eta0: float, default=1e-2</strong><br>
+Real(1e-2, 10, "log-uniform", name="eta0").
 </p>
 <p>
 <strong>power_t: float, default=0.5</strong><br>

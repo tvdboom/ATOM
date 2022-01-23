@@ -36,7 +36,7 @@ Integer(10, 500, name="n_estimators")
 </p>
 <p>
 <strong>learning_rate: float, default=1.0</strong><br>
-Real(0.01, 1.0, "log-uniform", name="learning_rate")
+Real(0.01, 10, "log-uniform", name="learning_rate")
 </p>
 <p>
 <strong>algorithm: str, default="SAMME.R"</strong><br>

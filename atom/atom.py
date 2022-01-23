@@ -369,7 +369,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         Returns
         -------
         df: pd.DataFrame
-            Dataframe with the statistic results.
+            Statistic results.
 
         """
         if isinstance(columns, int):
@@ -649,6 +649,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         if not is_multidim(self.X):
             if is_sparse(self.X):
                 self.log("Sparse: True", _vb)
+                if hasattr(self.X, "sparse"):  # All columns are sparse
+                    self.log(f"Density: {100. * self.X.sparse.density:.2f}%", _vb)
+                else:  # Not all columns are sparse
+                    n_sparse = len([pd.api.types.is_sparse(self.X[c]) for c in self.X])
+                    n_dense = self.n_features - n_sparse
+                    p_sparse = round(100 * n_sparse / self.n_features, 1)
+                    p_dense = round(100 * n_dense / self.n_features, 1)
+                    self.log(f"Dense features: {n_dense} ({p_dense}%)", _vb)
+                    self.log(f"Sparse features: {n_sparse} ({p_sparse}%)", _vb)
             else:
                 nans = self.nans.sum()
                 n_categorical = self.n_categorical
@@ -1205,6 +1214,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_dim(self, "nlpclean")
+        columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, TextCleaner().get_params())
         textcleaner = TextCleaner(
             decode=decode,
@@ -1223,7 +1233,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        self._add_transformer(textcleaner)
+        self._add_transformer(textcleaner, columns=columns)
 
         setattr(self.branch, "drops", getattr(textcleaner, "drops"))
 
@@ -1247,6 +1257,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_dim(self, "tokenize")
+        columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Tokenizer().get_params())
         tokenizer = Tokenizer(
             bigram_freq=bigram_freq,
@@ -1255,7 +1266,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        self._add_transformer(tokenizer)
+        self._add_transformer(tokenizer, columns=columns)
 
         self.branch.bigrams = tokenizer.bigrams
         self.branch.trigrams = tokenizer.trigrams
@@ -1281,6 +1292,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_dim(self, "normalize")
+        columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
         normalizer = Normalizer(
             stopwords=stopwords,
@@ -1290,7 +1302,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        self._add_transformer(normalizer)
+        self._add_transformer(normalizer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def vectorize(self, strategy: str = "BOW", **kwargs):
@@ -1304,10 +1316,11 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_dim(self, "normalize")
+        columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
         vectorizer = Vectorizer(strategy=strategy, **kwargs)
 
-        self._add_transformer(vectorizer)
+        self._add_transformer(vectorizer, columns=columns)
 
         # Attach the estimator attribute to atom's branch
         for attr in ("bow", "tfidf", "hashing"):
