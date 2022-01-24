@@ -1081,7 +1081,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "sfs":
             self.log(
-                f" --> The SFS selected {self.sfs.n_features_to_select_}"
+                f" --> SFS selected {self.sfs.n_features_to_select_}"
                 " features from the dataset.", 2
             )
             for n, column in enumerate(X):
@@ -1091,7 +1091,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "rfe":
             self.log(
-                f" --> The RFE selected {self.rfe.n_features_}"
+                f" --> RFE selected {self.rfe.n_features_}"
                 " features from the dataset.", 2
             )
             for n, column in enumerate(X):
@@ -1107,7 +1107,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "rfecv":
             self.log(
-                f" --> The RFECV selected {self.rfecv.n_features_}"
+                f" --> RFECV selected {self.rfecv.n_features_}"
                 " features from the dataset.", 2
             )
             for n, column in enumerate(X):

@@ -1350,7 +1350,7 @@
   
     <li class="md-nav__item">
       <a href="../API/models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1462,7 +1462,7 @@
   
     <li class="md-nav__item">
       <a href="../API/models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1476,7 +1476,7 @@
   
     <li class="md-nav__item">
       <a href="../API/models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1490,7 +1490,21 @@
   
     <li class="md-nav__item">
       <a href="../API/models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1519,6 +1533,34 @@
     <li class="md-nav__item">
       <a href="../API/models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2976,8 +3018,14 @@
 <h3 id="version-4110">Version 4.11.0</h3>
 <ul>
 <li>Full support for parse matrices. Read more in the <a href="../user_guide/data_management/#sparse-matrices">user guide</a>.</li>
+<li>The <a href="../API/ATOM/atomclassifier/#shrink">shrink</a> method also handles
+  sparse features and can convert dense datasets to sparse format.</li>
+<li>Added three new linear models: <a href="../API/models/lars">Lars</a>, <a href="../API/models/huber">Huber</a>
+  and <a href="../API/models/perc">Perc</a>.</li>
 <li>Custom dimensions for the BO can now be shared across models using the
-  key <code>all</code> in <code>bo_params["dimensions"]</code>.</li>
+  key 'all' in <code>bo_params["dimensions"]</code>.</li>
+<li>Assign hyperparameters to tune with the predefined dimensions through
+  <code>bo_params["dimensions"]</code>.</li>
 <li>It's now possible to tune a custom number of layers for the <a href="../API/models/mlp">MLP</a>
   model.</li>
 <li>If multiple BO calls share the best score, the one with the shortest

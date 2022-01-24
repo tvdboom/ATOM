@@ -10,7 +10,6 @@ Description: Module containing the BaseModel class.
 # Standard packages
 import os
 import dill
-import mock
 import mlflow
 import tempfile
 import numpy as np
@@ -19,6 +18,7 @@ from tqdm import tqdm
 from copy import deepcopy
 from datetime import datetime
 from pickle import PickleError
+from unittest.mock import patch
 from typeguard import typechecked
 from typing import Optional, Union
 from joblib.memory import Memory
@@ -519,9 +519,9 @@ class BaseModel(BaseModelPlotter):
         )
 
         # Monkey patch skopt objects to fix bug with str and num in Categorical
-        with mock.patch.object(Categorical, "inverse_transform", inverse_transform):
-            with mock.patch.object(LabelEncoder, "fit", fit):
-                with mock.patch.object(LabelEncoder, "transform", transform):
+        with patch.object(Categorical, "inverse_transform", inverse_transform):
+            with patch.object(LabelEncoder, "fit", fit):
+                with patch.object(LabelEncoder, "transform", transform):
                     base_estimator = self.T._bo["base_estimator"]
                     if isinstance(base_estimator, str):
                         if base_estimator.lower() == "gp":
@@ -1216,7 +1216,7 @@ class BaseModel(BaseModelPlotter):
 
         # Monkey patch the _score function to allow for
         # pipelines that drop samples during transformation
-        with mock.patch("sklearn.model_selection._validation._score", score(_score)):
+        with patch("sklearn.model_selection._validation._score", score(_score)):
             branch = self.T._get_og_branches()[0]
             cv = cross_validate(
                 estimator=self.export_pipeline(verbose=0),
@@ -1309,12 +1309,14 @@ class BaseModel(BaseModelPlotter):
 
         # Add shap values from the internal ShapExplanation object
         explainer.set_shap_values(
-            base_value=self._shap.get_expected_value(return_int=False),
+            base_value=self._shap.get_expected_value(return_one=False),
             shap_values=self._shap.get_shap_values(X, return_all_classes=True),
         )
-        explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
 
-        # Initialize dashboard
+        # Some explainers (like Linear) don't have interaction values
+        if hasattr(self._shap.explainer, "shap_interaction_values"):
+            explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
+
         dashboard = ExplainerDashboard(
             explainer=explainer,
             mode=kwargs.pop("mode", "external"),

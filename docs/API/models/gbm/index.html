@@ -1193,7 +1193,7 @@
   
     <li class="md-nav__item">
       <a href="../dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1305,7 +1305,7 @@
   
     <li class="md-nav__item">
       <a href="../ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1319,7 +1319,7 @@
   
     <li class="md-nav__item">
       <a href="../lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1333,7 +1333,21 @@
   
     <li class="md-nav__item">
       <a href="../en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1362,6 +1376,34 @@
     <li class="md-nav__item">
       <a href="../ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2898,16 +2940,12 @@ Integer(1, 20, name="min_samples_leaf")
 Integer(1, 10, name="max_depth")
 </p>
 <p>
-<strong>max_features: float or None, default=None</strong><br>
-Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_features")
+<strong>max_features: str, float or None, default="auto"</strong><br>
+Categorical(["auto", "sqrt", "log2", *np.linspace(0.5, 0.9, 5), None], name="max_features")
 </p>
 <p>
-<strong>ccp_alpha: float, default=0</strong><br>
+<strong>ccp_alpha: float, default=0.0</strong><br>
 Real(0, 0.035, name="ccp_alpha")
-</p>
-<p>
-<strong>alpha: float, default=0.9</strong><br>
-Categorical(np.linspace(0.5, 0.9, 5), name="alpha")
 </p>
 </td>
 </tr>

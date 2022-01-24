@@ -637,7 +637,7 @@ def create_acronym(fullname):
         return acronym
 
 
-def names_from_estimator(cls, estimator):
+def names_from_estimator(cls, est):
     """Get the model's acronym and fullname from an estimator.
 
     Parameters
@@ -645,8 +645,8 @@ def names_from_estimator(cls, estimator):
     cls: class
         Trainer from which the function is called.
 
-    estimator: class
-        Estimator instance to get the information from.
+    est: Estimator
+        Model to get the information from.
 
     Returns
     -------
@@ -659,14 +659,13 @@ def names_from_estimator(cls, estimator):
     """
     from .models import MODELS
 
-    get_name = lambda est: est.__class__.__name__
     for key, value in MODELS.items():
-        model = value(cls)
-        if get_name(model.get_estimator()) == get_name(estimator):
-            return model.acronym, model.fullname
+        model = value(cls, fast_intialization=True)
+        if model.est_class.__name__ == est.__class__.__name__:
+            return key, model.fullname
 
     # If it's not any of the predefined models, create a new acronym
-    return create_acronym(get_name(estimator)), get_name(estimator)
+    return create_acronym(est.__class__.__name__), est.__class__.__name__
 
 
 def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
@@ -928,7 +927,7 @@ def reorder_cols(df, original_df, col_names):
     """
     # Check if columns returned by the transformer are already in the dataset
     for col in df.columns:
-        if col in original_df.columns:
+        if col in original_df.columns and col not in col_names:
             raise RuntimeError(
                 f"The column '{col}' returned by the transformer "
                 "already exists in the original dataset."
@@ -1572,7 +1571,7 @@ class ShapExplanation:
         """Get shap interaction values from the Explanation object."""
         return self.explainer.shap_interaction_values(df)
 
-    def get_expected_value(self, target=1, return_int=True):
+    def get_expected_value(self, target=1, return_one=True):
         """Get the expected value of the training set."""
         if self._expected_value is None:
             # Some explainers like Permutation don't have expected_value attr
@@ -1584,11 +1583,11 @@ class ShapExplanation:
                     getattr(self.T, f"{get_proba_attr(self.T)}_train")
                 )
 
-        if return_int:
-            # Select the target expected value or return all
-            if isinstance(self._expected_value, (list, np.ndarray)):
-                if len(self._expected_value) == self.T.y.nunique():
-                    return self._expected_value[target]
+        if return_one and isinstance(self._expected_value, (list, np.ndarray)):
+            if len(self._expected_value) == self.T.y.nunique():
+                return self._expected_value[target]  # Return target expected value
+        if not return_one and not isinstance(self._expected_value, (list, np.ndarray)):
+            return [1 - self._expected_value, self._expected_value]  # Must be binary
 
         return self._expected_value
 

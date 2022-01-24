@@ -1193,7 +1193,7 @@
   
     <li class="md-nav__item">
       <a href="../dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1305,7 +1305,7 @@
   
     <li class="md-nav__item">
       <a href="../ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1319,7 +1319,7 @@
   
     <li class="md-nav__item">
       <a href="../lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1333,7 +1333,21 @@
   
     <li class="md-nav__item">
       <a href="../en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1362,6 +1376,34 @@
     <li class="md-nav__item">
       <a href="../ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2861,8 +2903,8 @@ assuming that all classes share the same covariance matrix.</p>
 Categorical(["svd", "lsqr", "eigen"], name="solver")
 </p>
 <p>
-<strong>shrinkage: float, default=0</strong><br>
-Categorical(np.linspace(0.0, 1.0, 11), name="shrinkage")
+<strong>shrinkage: float, default="auto"</strong><br>
+Categorical(np.linspace(0.1, 1.0, 10), name="shrinkage")
 </p>
 </td>
 </tr>

@@ -1193,7 +1193,7 @@
   
     <li class="md-nav__item">
       <a href="../dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1305,7 +1305,7 @@
   
     <li class="md-nav__item">
       <a href="../ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1319,7 +1319,7 @@
   
     <li class="md-nav__item">
       <a href="../lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1333,7 +1333,21 @@
   
     <li class="md-nav__item">
       <a href="../en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1452,6 +1466,34 @@
     <li class="md-nav__item">
       <a href="../ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2860,19 +2902,19 @@ Integer(100, 1000, name="n_iter")
 </p>
 <p>
 <strong>alpha_1: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_1")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1")
 </p>
 <p>
 <strong>alpha_2: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_2")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_2")
 </p>
 <p>
 <strong>lambda_1: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_1")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_1")
 </p>
 <p>
 <strong>lambda_2: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_2")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_2")
 </p>
 </td>
 </tr>
@@ -3474,7 +3516,7 @@ Transformed target column. Only returned if provided.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../en/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Elastic Net" rel="prev">
+        <a href="../lars/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Least Angle Regression" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -3483,7 +3525,7 @@ Transformed target column. Only returned if provided.
               <span class="md-footer__direction">
                 Previous
               </span>
-              Elastic Net
+              Least Angle Regression
             </div>
           </div>
         </a>

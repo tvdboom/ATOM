@@ -384,23 +384,10 @@ def test_save_data():
     assert glob.glob(FILE_DIR + "ATOMClassifier_dataset.csv")
 
 
-def test_shrink_dtypes():
-    """Assert that the dtypes are optimized to save memory."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert not atom.dtypes.equals(X_bin.dtypes)
-
-
-def test_shrink_exclude_columns():
-    """Assert that columns can be excluded."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.shrink(columns=-1)
-    assert atom.dtypes[0].name != "float32"
-    assert atom.dtypes[-1].name == "int8"
-
-
 def test_shrink_dtypes_excluded():
     """Assert that some dtypes are excluded from changing."""
     atom = ATOMClassifier(X10_str2, y10, random_state=1)
+    assert atom.dtypes[3].name == "bool"
     atom.shrink()
     assert atom.dtypes[3].name == "bool"
 
@@ -418,18 +405,48 @@ def test_shrink_obj2cat():
 def test_shrink_int2uint():
     """Assert that the int2uint parameter works as intended."""
     atom = ATOMClassifier(X10_str2, y10, random_state=1)
+    assert atom.dtypes[0].name == "int64"
     atom.shrink()
     assert atom.dtypes[0].name == "int8"
 
+    assert atom.dtypes[0].name == "int8"
     atom.shrink(int2uint=True)
     assert atom.dtypes[0].name == "uint8"
+
+
+def test_shrink_sparse_arrays():
+    """Assert that sparse arrays are also transformed."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.vectorize(strategy="bow")
+    assert atom.dtypes[0].name == "Sparse[int64, 0]"
+    atom.shrink()
+    assert atom.dtypes[0].name == "Sparse[int8, 0]"
 
 
 def test_shrink_dtypes_unchanged():
     """Assert that optimal dtypes are left unchanged."""
     atom = ATOMClassifier(X_bin.astype("float32"), y_bin, random_state=1)
+    assert atom.dtypes[3].name == "float32"
     atom.shrink()
     assert atom.dtypes[3].name == "float32"
+
+
+def test_shrink_dense2sparse():
+    """Assert that the dataset can be converted to sparse."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.dtypes[0].name == "float64"
+    atom.shrink(dense2sparse=True)
+    assert atom.dtypes[0].name == "Sparse[float32, 0]"
+
+
+def test_shrink_exclude_columns():
+    """Assert that columns can be excluded."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.dtypes[0].name == "float64"
+    assert atom.dtypes[-1].name == "int32"
+    atom.shrink(columns=-1)
+    assert atom.dtypes[0].name == "float64"
+    assert atom.dtypes[-1].name == "int8"
 
 
 def test_status():

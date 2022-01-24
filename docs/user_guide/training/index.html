@@ -1282,7 +1282,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1394,7 +1394,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1408,7 +1408,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1422,7 +1422,21 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1451,6 +1465,34 @@
     <li class="md-nav__item">
       <a href="../../API/models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2984,8 +3026,9 @@ the bayesian optimization and to select the winning model.</p>
 <p><br></p>
 <h2 id="automated-feature-scaling">Automated feature scaling</h2>
 <p>Models that require feature scaling will automatically do so before
-training, if the data is not already scaled. The data is considered
-scaled if it has one of the following prerequisites:</p>
+training, unless the data is <a href="../data_management/#sparse-matrices">sparse</a>
+or already scaled. The data is considered scaled if it has one of
+the following prerequisites:</p>
 <ul>
 <li>The mean value over the mean of all columns is &lt;0.05 and the mean of
   the standard deviation over all columns lies between 0.93 and 1.07.</li>
@@ -3006,15 +3049,15 @@ ones, use <code>est_params</code>. There are two ways to add custom parameters t
 the models: adding them directly to the dictionary as key-value pairs
 or through dictionaries.</p>
 <p>Adding the parameters directly to <code>est_params</code> (or using a dict with
-the key 'all') will share them across all models in the pipeline. In
-this example, both the XGBoost and the LightGBM model will use
-n_estimators=200. Make sure all the models do have the specified
+the key 'all') shares them across all models in the pipeline. In
+this example, both the XGBoost and the LightGBM model use
+<code>n_estimators=200</code>. Make sure all the models do have the specified
 parameters or an exception will be raised!</p>
 <div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;LGB&quot;</span><span class="p">],</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">})</span>
 </code></pre></div>
 <p>To specify parameters per model, use the model name as key and a dict
-of the parameters as value. In this example, the XGBoost model will
-use n_estimators=200 and the Multi-layer Perceptron will use one hidden
+of the parameters as value. In this example, the XGBoost model uses
+<code>n_estimators=200</code> and the Multi-layer Perceptron uses one hidden
 layer with 75 neurons.</p>
 <div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;MLP&quot;</span><span class="p">],</span>
@@ -3032,7 +3075,8 @@ parameter. For example, to change XGBoost's verbosity, we can run:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If a parameter is specified through <code>est_params</code>, it is
-ignored by the bayesian optimization! </p>
+ignored by the bayesian optimization, even if it's added
+manually to <code>bo_params["dimensions"]</code>!</p>
 </div>
 <p><br></p>
 <h2 id="hyperparameter-tuning">Hyperparameter tuning</h2>
@@ -3085,22 +3129,47 @@ you can change the output's width running the following code in a cell:
 <p>Other settings can be changed through the <code>bo_params</code> parameter, a
 dictionary where every key-value combination can be used to further
 customize the BO.</p>
-<p>By default, the hyperparameters and corresponding dimensions per model
-are predefined by ATOM. Use the <code>dimensions</code> key to use custom ones.
-Just like with <code>est_params</code>, you can share the same dimensions across
-models or use a dictionary with the model name as key to specify the
-dimensions for every individual model. Note that the provided search
-space dimensions must be compliant with skopt's API.</p>
+<p>By default, which hyperparameters are tuned and their corresponding
+dimensions are predefined by ATOM. Use the 'dimensions' key to customize
+these. Just like with <code>est_params</code>, you can share the same parameters
+across models or use a dictionary with the model name as key to specify
+the parameters for every individual model. Use the key 'all' to tune some
+hyperparameters for all models when you also want to tune other parameters
+only for specific ones. The following example tunes the <code>n_estimators</code>
+parameter for both models but the <code>max_depth</code> parameter only for the Random
+Forest.</p>
 <div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-    <span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
     <span class="n">n_calls</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-    <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">Integer</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;max_iter&quot;</span><span class="p">)]},</span>
+    <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="s2">&quot;n_estimators&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="s2">&quot;max_depth&quot;</span><span class="p">}},</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>If just the parameter name is provided, the predefined dimension space
+is used. It's also possible to provide custom dimension spaces, but make
+sure the dimensions are compliant with <a href="https://scikit-optimize.github.io/stable/modules/classes.html">skopt's API</a>.
+See every model's individual documentation in the API section for an
+overview of their hyperparameters and dimensions.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">skopt.space.space</span> <span class="kn">import</span> <span class="n">Categorical</span><span class="p">,</span> <span class="n">Integer</span>
+
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
+    <span class="n">n_calls</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="n">Integer</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="n">Integer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;max_depth&quot;</span><span class="p">),</span>
+                <span class="n">Categorical</span><span class="p">([</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;log2&quot;</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;max_features&quot;</span><span class="p">),</span>
+            <span class="p">],</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
 <span class="p">)</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Make sure to import the dimension types from scikit-optimize:
-<code>from skopt.space.space import Real, Categorical, Integer</code>.</p>
+<p>When specifying dimension spaces manually, make sure to import the
+dimension types from scikit-optimize: <code>from skopt.space.space import
+Real, Categorical, Integer</code>.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>

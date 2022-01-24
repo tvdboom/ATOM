@@ -49,7 +49,7 @@ Real(1e-5, 1.0, "log-uniform", name="alpha")
 </p>
 <p>
 <strong>l1_ratio: float, default=0.15</strong><br>
-Categorical([0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio").
+Categorical([0.05, 0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio").
 </p>
 <p>
 <strong>epsilon: float, default=0.1</strong><br>

@@ -582,9 +582,11 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Transform the corpus into meaningful vectors of numbers. The
     transformation is applied on the column named `corpus`. If
-    there is no column with that name, an exception is raised.
-    The transformed columns are returned in sparse format only
-    if all provided columns (except `corpus`) are sparse.
+    there is no column with that name, an exception is raised. The
+    transformed columns are named after the word they are embedding
+    (if the column is already present in the provided dataset,
+    `_[strategy]` is added behind the name), and returned in sparse
+    format only if all provided columns (except `corpus`) are sparse.
 
     Parameters
     ----------
@@ -725,7 +727,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
                 matrix = matrix.toarray()
                 for i, col in enumerate(columns):
-                    # If the column name already exists, add _tokenizer
-                    X[col if col not in X else f"{col}_vectorizer"] = matrix[:, i]
+                    # If the column name already exists, add _[strategy]
+                    col_name = f"{col}_{self.strategy.lower()}" if col in X else col
+                    X[col_name] = matrix[:, i]
 
             return X

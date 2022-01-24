@@ -560,30 +560,39 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def shrink(
         self,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         obj2cat: bool = True,
-        int2uint: bool = False
+        int2uint: bool = False,
+        dense2sparse: bool = False,
+        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
     ):
-        """Converts the dataset's columns to the smallest possible dtype.
+        """Converts the columns to the smallest possible matching dtype.
 
-        Use this method for memory optimization. Note that applying
-        transformers to the data may alter the dtypes again.
-        From: https://github.com/fastai/fastai/blob/master/fastai/tabular/core.py
+        Examples are: float64 -> float32, int64 -> int8, etc... Sparse
+        arrays also transform their non-fill value. Use this method for
+        memory optimization. Note that applying transformers to the
+        data may alter the types again.
+
+        Partially from: https://github.com/fastai/fastai/blob/master/
+        fastai/tabular/core.py
 
         Parameters
         ----------
-        columns: int, str, slice, sequence or None, optional (default=None)
-            Names, indices or dtypes of the columns in the dataset to
-            shrink. If None, transform all columns.
-
         obj2cat: bool, optional (default=True)
             Whether to convert `object` to `category`. Only if the
             number of categories would be less than 30% of the length
             of the column.
 
         int2uint: bool, optional (default=False)
-            Whether to convert `int` to `uint`. Only if the values are
-            strictly positive.
+            Whether to convert integers to unsigned integers. Only if the
+            values in the column are strictly positive.
+
+        dense2sparse: bool, optional (default=False)
+            Whether to convert all features to sparse format. The element
+            that is compressed is always zero.
+
+        columns: int, str, slice, sequence or None, optional (default=None)
+            Names, indices or dtypes of the columns in the dataset to
+            shrink. If None, transform all columns.
 
         """
         check_dim(self, "shrink")
@@ -607,30 +616,54 @@ class ATOM(BasePredictor, ATOMPlotter):
             exclude_types += ["object"]
 
         new_dtypes = {}
-        for c, old_t in {k: v for k, v in self.dtypes.items() if k in columns}.items():
-            if old_t.name in exclude_types:
+        for name, column in self.dataset.items():
+            old_t = column.dtype
+            if name not in columns or old_t.name in exclude_types:
                 continue
 
-            t = next(v for k, v in type_map.items() if old_t.name.startswith(k))
+            if pd.api.types.is_sparse(column):
+                t = next(
+                    v for k, v in type_map.items() if old_t.subtype.name.startswith(k)
+                )
+            else:
+                t = next(
+                    v for k, v in type_map.items() if old_t.name.startswith(k)
+                )
+
             if isinstance(t, list):
                 # Use uint if values are strictly positive
-                if int2uint and t == type_map["int"] and self[c].min() >= 0:
+                if int2uint and t == type_map["int"] and column.min() >= 0:
                     t = type_map["uint"]
 
                 # Find the smallest type that fits
                 new_t = next(
-                    r[0] for r in t if r[1] <= self[c].min() and r[2] >= self[c].max()
+                    r[0] for r in t if r[1] <= column.min() and r[2] >= column.max()
                 )
                 if new_t and new_t == old_t:
                     new_t = None  # Keep as is
             else:
                 # Convert to category if number of categories less than 30% of column
-                new_t = t if self[c].nunique() <= int(len(self[c]) * 0.3) else "object"
+                new_t = t if column.nunique() <= int(len(column) * 0.3) else "object"
 
             if new_t:
-                new_dtypes[c] = new_t
+                if pd.api.types.is_sparse(column):
+                    new_dtypes[name] = pd.SparseDtype(new_t, old_t.fill_value)
+                else:
+                    new_dtypes[name] = new_t
 
         self.branch.data = self.branch.data.astype(new_dtypes)
+
+        if dense2sparse:
+            new_cols = {}
+            for name, column in self.X.items():
+                new_cols[name] = pd.arrays.SparseArray(
+                    data=column,
+                    fill_value=0,
+                    dtype=column.dtype,
+                )
+
+            self.branch.X = pd.DataFrame(new_cols, index=self.y.index)
+
         self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
@@ -652,7 +685,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 if hasattr(self.X, "sparse"):  # All columns are sparse
                     self.log(f"Density: {100. * self.X.sparse.density:.2f}%", _vb)
                 else:  # Not all columns are sparse
-                    n_sparse = len([pd.api.types.is_sparse(self.X[c]) for c in self.X])
+                    n_sparse = sum([pd.api.types.is_sparse(self.X[c]) for c in self.X])
                     n_dense = self.n_features - n_sparse
                     p_sparse = round(100 * n_sparse / self.n_features, 1)
                     p_dense = round(100 * n_dense / self.n_features, 1)

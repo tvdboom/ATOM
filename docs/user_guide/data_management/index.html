@@ -1275,7 +1275,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1387,7 +1387,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1401,7 +1401,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1415,7 +1415,21 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1444,6 +1458,34 @@
     <li class="md-nav__item">
       <a href="../../API/models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2891,12 +2933,14 @@ To avoid this, specify the <code>index</code> parameter. If the dataset has an
 internally to a dataframe of sparse columns. Read more about pandas'
 sparse data structures <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html">here</a>.
 The same conversion takes place when a transformer returns a sparse
-matrix, like for example the <a href="../../API/NLP/vectorizer">Vectorizer</a>.</p>
-<p>Note that a dataset can only benefit from sparsity when all it's
-columns are sparse. Mixing sparse and non-sparse columns is not
-advised and can cause estimators to decrease their training speed
-or even crash. Use the <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
-method to check with models have native support for sparse matrices.</p>
+matrix, like, for example, the <a href="../../API/NLP/vectorizer">Vectorizer</a>.</p>
+<p>Note that ATOM considers a dataset to be sparse if any of the columns
+is sparse. A dataset can only benefit from sparsity when all its
+columns are sparse, hence mixing sparse and non-sparse columns is
+not recommended and can cause estimators to decrease their training
+speed or even crash. Use the <a href="../../API/ATOM/atomclassifier/#shrink">shrink</a>
+method to convert dense features to sparse and the <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
+method to check which models have native support for sparse matrices.</p>
 <p>Click <a href="../../examples/nlp">here</a> to see an example that uses sparse
 data.</p>
 <p><br></p>

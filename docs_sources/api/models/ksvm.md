@@ -44,7 +44,7 @@ Categorical(["linear", "poly", "rbf", "sigmoid"], name="kernel")
 </p>
 <p>
 <strong>degree: int, default=3</strong><br>
-Integer(2, 5, name="degree").
+Integer(2, 5, name="degree")
 </p>
 <p>
 <strong>gamma: str, default="scale"</strong><br>
@@ -52,7 +52,11 @@ Categorical(["scale", "auto"], name="gamma")
 </p>
 <p>
 <strong>coef0: float, default=0</strong><br>
-Real(-1.0, 1.0, name="coef0").
+Real(-1.0, 1.0, name="coef0")
+</p>
+<p>
+<strong>epsilon: float, default=0.1</strong><br>
+Real(1e-3, 100, "log-uniform", name="epsilon")
 </p>
 <p>
 <strong>shrinking: bool, default=True</strong><br>

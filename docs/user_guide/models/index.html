@@ -1274,7 +1274,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1386,7 +1386,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1400,7 +1400,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1414,7 +1414,21 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1443,6 +1457,34 @@
     <li class="md-nav__item">
       <a href="../../API/models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2819,15 +2861,15 @@
                 <h1 id="models">Models</h1>
 <hr />
 <h2 id="predefined-models">Predefined models</h2>
-<p>ATOM provides 33 models for classification and regression tasks that
-can be used to fit the data in the pipeline. After fitting, a class
-containing the underlying estimator is attached to the trainer as an
-attribute. We refer to these "subclasses" as models. Apart from the
-estimator, the models contain a variety of attributes and methods to
-help you understand how the underlying estimator performed. They can
-be accessed using their acronyms, e.g. <code>atom.LGB</code> to access the
+<p>ATOM provides many models for classification and regression tasks
+that can be used to fit the data in the pipeline. After fitting, a
+class containing the underlying estimator is attached to the trainer
+as an attribute. We refer to these "subclasses" as models. Apart from
+the estimator, the models contain a variety of attributes and methods
+to help you understand how the underlying estimator performed. They
+can be accessed using their acronyms, e.g. <code>atom.LGB</code> to access the
 LightGBM's model. The available models and their corresponding
-acronyms are: </p>
+acronyms are:</p>
 <ul>
 <li>"Dummy" for <a href="../../API/models/dummy">Dummy Estimator</a></li>
 <li>"GP" for <a href="../../API/models/gp">Gaussian Process</a></li>
@@ -2839,9 +2881,12 @@ acronyms are: </p>
 <li>"OLS" for <a href="../../API/models/ols">Ordinary Least Squares</a></li>
 <li>"Ridge" for <a href="../../API/models/ridge">Ridge Estimator</a></li>
 <li>"Lasso" for <a href="../../API/models/lasso">Lasso Regression</a></li>
-<li>"EN" for <a href="../../API/models/en">Elastic Net</a></li>
+<li>"EN" for <a href="../../API/models/en">ElasticNet Regression</a></li>
+<li>"Lars" for <a href="../../API/models/lars">Least Angle Regression</a></li>
 <li>"BR" for <a href="../../API/models/br">Bayesian Ridge</a></li>
 <li>"ARD" for <a href="../../API/models/ard">Automated Relevance Determination</a></li>
+<li>"Huber" for <a href="../../API/models/huber">Huber Regression</a></li>
+<li>"Perc" for <a href="../../API/models/perc">Perceptron</a></li>
 <li>"LR" for <a href="../../API/models/lr">Logistic Regression</a></li>
 <li>"LDA" for <a href="../../API/models/lda">Linear Discriminant Analysis</a></li>
 <li>"QDA" for <a href="../../API/models/qda">Quadratic Discriminant Analysis</a></li>
@@ -2876,36 +2921,41 @@ only through the trainers.</p>
 <p><br></p>
 <h2 id="custom-models">Custom models</h2>
 <p>It is also possible to create your own models in ATOM's pipeline. For
-example, imagine we want to use sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lars.html">Lars</a>
+example, imagine we want to use sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RANSACRegressor.html">RANSACRegressor</a>
 estimator (note that is not included in ATOM's <a href="#predefined-models">predefined models</a>).
 There are two ways to achieve this:</p>
 <ul>
 <li>Using <a href="../../API/ATOM/atommodel">ATOMModel</a> (recommended). With this
 approach you can pass the required model characteristics to the pipeline.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">Lars</span>
-<span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
+<span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">RANSACRegressor</span>
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">ATOMModel</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="n">Lars</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s2">&quot;Lars Regression&quot;</span><span class="p">,</span> <span class="n">needs_scaling</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ransac</span> <span class="o">=</span> <span class="n">ATOMModel</span><span class="p">(</span>
+    <span class="n">models</span><span class="o">=</span><span class="n">RANSACRegressor</span><span class="p">,</span>
+    <span class="n">acronym</span><span class="o">=</span><span class="s2">&quot;RANSAC&quot;</span><span class="p">,</span>
+    <span class="n">fullname</span><span class="o">=</span><span class="s2">&quot;Random Sample Consensus&quot;</span><span class="p">,</span>
+    <span class="n">needs_scaling</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">ransac</span><span class="p">)</span>
 </code></pre></div>
 <ul>
 <li>Using the estimator's class or an instance of the class. This approach will
 also call <a href="../../API/ATOM/atommodel">ATOMModel</a> under the hood, but it will
 leave its parameters to their default values.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">Lars</span>
-<span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
+<span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">RANSACRegressor</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Lars</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">RANSACRegressor</span><span class="p">)</span>
 </code></pre></div>
 <p>Additional things to take into account:</p>
 <ul>
 <li>Custom models can be accessed through their acronym like any other model, e.g.
-  <code>atom.lars</code> in the example above.</li>
+  <code>atom.ransac</code> in the example above.</li>
 <li>Custom models are not restricted to sklearn estimators, but they should
   follow <a href="https://scikit-learn.org/stable/developers/develop.html">sklearn's API</a>,
   i.e. have a fit and predict method.</li>

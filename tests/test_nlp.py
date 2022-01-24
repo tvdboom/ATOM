@@ -185,6 +185,6 @@ def test_sparse_with_dense():
     """Assert that the output is dense when mixed with non-sparse columns."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     atom.apply(lambda x: 1, columns="new")  # Create dense column
-    atom.vectorize()
+    atom.vectorize(strategy="BOW")
     assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)
-    assert "new_vectorizer" in atom
+    assert "new_bow" in atom

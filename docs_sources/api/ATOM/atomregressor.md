@@ -485,7 +485,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#shrink">shrink</a></td>
-<td>Converts the dataset's columns to the smallest possible dtype.</td>
+<td>Converts the columns to the smallest possible matching dtype.</td>
 </tr>
 
 <tr>
@@ -1112,23 +1112,20 @@ Data set to save.
 
 <a name="shrink"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">shrink</strong>(columns=None, obj2cat=True, int2uint=False)
+<em>method</em> <strong style="color:#008AB8">shrink</strong>(obj2cat=True,
+int2uint=False, dense2sparse=False, columns=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L572">[source]</a>
 </span>
 </div>
-Converts the dataset's columns to the smallest possible dtype.
-Use this method for memory optimization. Note that applying
-transformers to the data may alter the dtypes again.
+Converts the columns to the smallest possible matching dtype. Examples
+are: float64 -> float32, int64 -> int8, etc... Sparse arrays also
+transform their non-fill value. Use this method for memory optimization.
+Note that applying transformers to the data may alter the types again.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<p>
-<strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>
-Names, indices or dtypes of the columns in the dataset to shrink.
-If None, transform all columns.
-</p>
 <p>
 <strong>obj2cat: bool, optional (default=True)</strong><br>
 Whether to convert <code>object</code> to <code>category</code>. Only if the
@@ -1137,8 +1134,18 @@ of the column.
 </p>
 <p>
 <strong>int2uint: bool, optional (default=False)</strong><br>
-Whether to convert <code>int</code> to <code>uint</code>. Only if the values are
-strictly positive.
+Whether to convert integers to unsigned integers. Only if the values in
+the column are strictly positive.
+</p>
+<p>
+<strong>dense2sparse: bool, optional (default=False)</strong><br>
+Whether to convert all features to sparse format. The element that is
+compressed is always zero.
+</p>
+<p>
+<strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>
+Names, indices or dtypes of the columns in the dataset to shrink.
+If None, transform all columns.
 </p>
 </td>
 </tr>

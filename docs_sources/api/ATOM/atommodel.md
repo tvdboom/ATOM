@@ -55,11 +55,11 @@ Clone of the provided estimator with custom attributes.
 
 ```python
 from atom import ATOMRegressor, ATOMModel
-from sklearn.linear_model import HuberRegressor
+from sklearn.linear_model import RANSACRegressor
 
-huber =  ATOMModel(HuberRegressor(), name="hub", fullname="Huber")
+ransac =  ATOMModel(RANSACRegressor(), name="RANSAC", fullname="Random Sample Consensus")
 
 atom = ATOMRegressor(X, y)
-atom.run(huber)
-atom.hub.predict(X_new)
+atom.run(ransac)
+atom.ransac.predict(X_new)
 ```

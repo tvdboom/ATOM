@@ -1242,7 +1242,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1354,7 +1354,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1368,7 +1368,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1382,7 +1382,21 @@
   
     <li class="md-nav__item">
       <a href="../../models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1411,6 +1425,34 @@
     <li class="md-nav__item">
       <a href="../../models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2763,7 +2805,9 @@ verbose=0, logger=None, *kwargs)
 <p>Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named <code>corpus</code>. If there
 is no column with that name, an exception is raised. The transformed
-columns are returned in sparse format only if all provided columns
+columns are named after the word they are embedding (if the column is
+already present in the provided dataset, <code>_[strategy]</code> is added behind
+the name), and returned in sparse format only if all provided columns
 (except <code>corpus</code>) are sparse. This class can be accessed from atom
 through the <a href="../../ATOM/atomclassifier/#vectorize">vectorize</a> method.
 Read more in the <a href="../../../user_guide/nlp/#vectorization">user guide</a>.</p>
@@ -2802,10 +2846,10 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The returned dataframe is only sparse when all the columns in the
-provided dataset except for <code>corpus</code> are sparse. Calling this
+provided dataset (except <code>corpus</code>) are sparse. Calling this
 transformer with other non-sparse columns forces the output matrix
-to be converted to its full array. This process can be very slow and
-occupy large chunks of memory.</p>
+to be converted to its full array. This is not recommended since the
+process can be very slow and occupy large chunks of memory.</p>
 </div>
 <p><br></p>
 <h2 id="methods">Methods</h2>

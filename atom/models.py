@@ -86,8 +86,11 @@ List of available models:
     - "Ridge" for Ridge Estimator
     - "Lasso" for Lasso Linear Regression
     - "EN" for ElasticNet Linear Regression
+    - "Lars" for Least Angle Regression
     - "BR" for Bayesian Ridge
     - "ARD" for Automated Relevance Determination
+    - "Huber" for Huber Regression
+    - "Perc" for Perceptron
     - "LR" for Logistic Regression
     - "LDA" for Linear Discriminant Analysis
     - "QDA" for Quadratic Discriminant Analysis
@@ -141,8 +144,11 @@ from sklearn.linear_model import (
     Ridge as RidgeRegressor,
     Lasso as LassoRegressor,
     ElasticNet as ElasticNetRegressor,
+    Lars,
     BayesianRidge as BayesianRidgeRegressor,
     ARDRegression,
+    HuberRegressor,
+    Perceptron as Perc,
     LogisticRegression as LR,
 )
 from sklearn.discriminant_analysis import (
@@ -569,6 +575,28 @@ class ElasticNet(BaseModel):
         ]
 
 
+class LeastAngleRegression(BaseModel):
+    """Least Angle Regression."""
+
+    acronym = "Lars"
+    fullname = "Least Angle Regression"
+    needs_scaling = True
+    accepts_sparse = False
+    goal = ["reg"]
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return Lars
+
+    def get_estimator(self, **params):
+        """Return the model's estimator with unpacked parameters."""
+        return self.est_class(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
+
+
 class BayesianRidge(BaseModel):
     """Bayesian ridge regression."""
 
@@ -626,6 +654,77 @@ class AutomaticRelevanceDetermination(BaseModel):
             Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_2"),
             Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_1"),
             Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_2"),
+        ]
+
+
+class HuberRegression(BaseModel):
+    """Huber regression."""
+
+    acronym = "Huber"
+    fullname = "Huber Regression"
+    needs_scaling = True
+    accepts_sparse = False
+    goal = ["reg"]
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return HuberRegressor
+
+    def get_estimator(self, **params):
+        """Return the model's estimator with unpacked parameters."""
+        return self.est_class(**params)
+
+    @staticmethod
+    def get_dimensions():
+        """Return a list of the bounds for the hyperparameters."""
+        return [
+            Real(1, 10, "log-uniform", name="epsilon"),
+            Integer(50, 500, name="max_iter"),
+            Categorical([1e-4, 1e-3, 1e-2, 1e-1, 1], name="alpha"),
+        ]
+
+
+class Perceptron(BaseModel):
+    """Linear Perceptron classification."""
+
+    acronym = "Perc"
+    fullname = "Perceptron"
+    needs_scaling = True
+    accepts_sparse = False
+    goal = ["class"]
+
+    @property
+    def est_class(self):
+        """Return the estimator's class."""
+        return Perc
+
+    def get_parameters(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
+        params = super().get_parameters(x)
+
+        if self._get_param(params, "penalty") != "elasticnet":
+            params.pop("l1_ratio", None)
+
+        return params
+
+    def get_estimator(self, **params):
+        """Return the model's estimator with unpacked parameters."""
+        return self.est_class(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
+
+    @staticmethod
+    def get_dimensions():
+        """Return a list of the bounds for the hyperparameters."""
+        return [
+            Categorical([None, "l2", "l1", "elasticnet"], name="penalty"),
+            Categorical([1e-4, 1e-3, 1e-2, 0.1, 1, 10], name="alpha"),
+            Categorical([0.05, 0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio"),
+            Integer(500, 1500, name="max_iter"),
+            Real(1e-2, 10, "log-uniform", name="eta0"),
         ]
 
 
@@ -1449,12 +1548,11 @@ class LinearSVM(BaseModel):
         params = super().get_parameters(x)
 
         if self.T.goal == "class":
-            # l1 regularization can't be combined with hinge
             if self._get_param(params, "loss") == "hinge":
+                # l1 regularization can't be combined with hinge
                 params.replace("penalty", "l2")
                 # l2 regularization can't be combined with hinge when dual=False
-                if self._get_param(params, "penalty") == "l2":
-                    params.replace("dual", True)
+                params.replace("dual", True)
             elif self._get_param(params, "loss") == "squared_hinge":
                 # l1 regularization can't be combined with squared_hinge when dual=True
                 if self._get_param(params, "penalty") == "l1":
@@ -1512,12 +1610,19 @@ class KernelSVM(BaseModel):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_parameters(x)
 
-        if self._get_param(params, "kernel") == "poly":
+        if self.T.goal == "class":
+            params.pop("epsilon", None)
+
+        kernel = self._get_param(params, "kernel")
+        if kernel == "poly":
             params.replace("gamma", "scale")  # Crashes in combination with "auto"
         else:
             params.pop("degree", None)
 
-        if self._get_param(params, "kernel") != "rbf":
+        if kernel not in ("rbf", "poly", "sigmoid"):
+            params.pop("gamma", None)
+
+        if kernel not in ("poly", "sigmoid"):
             params.pop("coef0", None)
 
         return params
@@ -1541,6 +1646,7 @@ class KernelSVM(BaseModel):
             Integer(2, 5, name="degree"),
             Categorical(["scale", "auto"], name="gamma"),
             Real(-1.0, 1.0, name="coef0"),
+            Real(1e-3, 100, "log-uniform", name="epsilon"),
             Categorical([True, False], name="shrinking"),
         ]
 
@@ -1651,7 +1757,7 @@ class StochasticGradientDescent(BaseModel):
             Categorical(loss if self.T.goal == "class" else loss[-4:], name="loss"),
             Categorical(["none", "l1", "l2", "elasticnet"], name="penalty"),
             Real(1e-5, 1.0, "log-uniform", name="alpha"),
-            Categorical([0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio"),
+            Categorical([0.05, 0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio"),
             Integer(500, 1500, name="max_iter"),
             Real(1e-4, 1.0, "log-uniform", name="epsilon"),
             Categorical(learning_rate, name="learning_rate"),
@@ -1853,8 +1959,11 @@ MODELS = CustomDict(
     Ridge=Ridge,
     Lasso=Lasso,
     EN=ElasticNet,
+    Lars=LeastAngleRegression,
     BR=BayesianRidge,
     ARD=AutomaticRelevanceDetermination,
+    Huber=HuberRegression,
+    Perc=Perceptron,
     LR=LogisticRegression,
     LDA=LinearDiscriminantAnalysis,
     QDA=QuadraticDiscriminantAnalysis,
