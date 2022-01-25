@@ -34,9 +34,9 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.data_cleaning import Scaler, Pruner
 from atom.utils import check_scaling
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_text,
-    y_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10, y10_str,
-    y10_sn, X20_out,
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_sparse,
+    X_text, y_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10,
+    y10_str, y10_sn, X20_out,
 )
 
 
@@ -202,7 +202,7 @@ def test_n_nans():
 def test_numerical():
     """Assert that numerical returns the names of the numerical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.numerical == ["Feature 1", "Feature 2"]
+    assert atom.numerical == ["feature 1", "feature 2"]
 
 
 def test_n_numerical():
@@ -214,7 +214,7 @@ def test_n_numerical():
 def test_categorical():
     """Assert that categorical returns the names of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.categorical == ["Feature 3"]
+    assert atom.categorical == ["feature 3"]
 
 
 def test_n_categorical():
@@ -299,11 +299,11 @@ def test_automl_invalid_scoring():
     pytest.raises(ValueError, atom.automl, scoring="r2")
 
 
-@pytest.mark.parametrize("column", ["Feature 1", 1])
+@pytest.mark.parametrize("column", ["feature 1", 1])
 def test_distribution(column):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    pytest.raises(ValueError, atom.distribution, columns="Feature 3")
+    pytest.raises(ValueError, atom.distribution, columns="feature 3")
     df = atom.distribution(columns=column)
     assert len(df) == 11
 
@@ -374,7 +374,7 @@ def test_reset():
     atom.run("LR")
     atom.reset()
     assert not atom.models and len(atom._branches) == 1
-    assert atom["Feature 3"].dtype.name == "object"  # Is reset back to str
+    assert atom["feature 3"].dtype.name == "object"  # Is reset back to str
 
 
 def test_save_data():
@@ -416,8 +416,7 @@ def test_shrink_int2uint():
 
 def test_shrink_sparse_arrays():
     """Assert that sparse arrays are also transformed."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
-    atom.vectorize(strategy="bow")
+    atom = ATOMClassifier(X_sparse, y10, random_state=1)
     assert atom.dtypes[0].name == "Sparse[int64, 0]"
     atom.shrink()
     assert atom.dtypes[0].name == "Sparse[int8, 0]"
@@ -443,7 +442,7 @@ def test_shrink_exclude_columns():
     """Assert that columns can be excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.dtypes[0].name == "float64"
-    assert atom.dtypes[-1].name == "int32"
+    assert atom.dtypes[-1].name != "int8"
     atom.shrink(columns=-1)
     assert atom.dtypes[0].name == "float64"
     assert atom.dtypes[-1].name == "int8"
@@ -459,7 +458,7 @@ def test_transform_method():
     """ Assert that the transform method works as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
-    assert atom.transform(X10_str)["Feature 3"].dtype.kind in "ifu"
+    assert atom.transform(X10_str)["feature 3"].dtype.kind in "ifu"
 
 
 def test_transform_not_train_only():
@@ -595,7 +594,7 @@ def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode()
-    assert atom.columns[2].startswith("Feature 3")
+    assert atom.columns[2].startswith("feature 3")
 
 
 def test_add_sets_are_kept_equal():
@@ -765,7 +764,7 @@ def test_normalize():
 
 
 def test_vectorize():
-    """Assert that the vectorize method vectorizes the corpus."""
+    """Assert that the vectorize method converts the corpus to numerical."""
     atom = ATOMClassifier(X_text, y_text, test_size=0.25, random_state=1)
     atom.vectorize(strategy="hashing", n_features=5)
     assert "corpus" not in atom

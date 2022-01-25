@@ -503,6 +503,12 @@ class FSPlotter(BasePlotter):
     ):
         """Plot the explained variance ratio vs number of components.
 
+        If the underlying estimator is PCA (for dense datasets), all
+        possible components are plotted. If the underlying estimator
+        is TruncatedSVD (for sparse datasets), it only shows the
+        selected components. The blue star marks the number of
+        components selected by the user.
+
         Parameters
         ----------
         title: str or None, optional (default=None)
@@ -530,23 +536,22 @@ class FSPlotter(BasePlotter):
                 "The plot_pca method is only available if PCA was applied on the data!"
             )
 
-        n = self.pca.n_components_  # Number of chosen components
-        var = np.array(self.pca.explained_variance_ratio_[:n])
+        var = np.array(self.pca.explained_variance_ratio_[:self.pca._n_components])
         var_all = np.array(self.pca.explained_variance_ratio_)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.scatter(
-            x=self.pca.n_components_ - 1,
+            x=self.pca._n_components,
             y=var.sum(),
             marker="*",
             s=130,
             c="blue",
             edgecolors="b",
             zorder=3,
-            label=f"Total variance retained: {round(var.sum(), 3)}",
+            label=f"Variance ratio retained: {round(var.sum(), 3)}",
         )
-        ax.plot(range(self.pca.n_features_), np.cumsum(var_all), marker="o")
+        ax.plot(range(1, len(var_all) + 1), np.cumsum(var_all), marker="o")
         ax.axhline(var.sum(), ls="--", color="k")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
 

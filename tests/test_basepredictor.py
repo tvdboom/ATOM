@@ -357,8 +357,8 @@ def test_get_columns_by_name():
 def test_get_columns_by_type():
     """Assert that columns can be retrieved by type."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom._get_columns(columns="!number") == ["Feature 3"]
-    assert atom._get_columns(columns="number") == ["Feature 1", "Feature 2", "target"]
+    assert atom._get_columns(columns="!number") == ["feature 3"]
+    assert atom._get_columns(columns="number") == ["feature 1", "feature 2", "target"]
 
 
 def test_get_columns_exclude():

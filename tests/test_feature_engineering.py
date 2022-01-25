@@ -20,7 +20,9 @@ from atom.feature_engineering import (
     FeatureSelector,
 )
 from atom.utils import to_df
-from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, X10_dt
+from .utils import (
+    X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_sparse, X10_str, X10_dt
+)
 
 
 # Test FeatureExtractor ============================================ >>
@@ -41,42 +43,42 @@ def test_wrongly_converted_columns_are_ignored():
     """Assert that columns converted unsuccessfully are skipped."""
     extractor = FeatureExtractor()
     X = extractor.transform(X10_str)
-    assert "Feature 3" in X.columns
+    assert "feature 3" in X.columns
 
 
 def test_datetime_features_are_used():
     """Assert that datetime64 features are used as is."""
     X = to_df(X10_dt.copy())
-    X["Feature 3"] = pd.to_datetime(X["Feature 3"])
+    X["feature 3"] = pd.to_datetime(X["feature 3"])
 
     extractor = FeatureExtractor(features="day")
     X = extractor.transform(X)
-    assert "Feature 3_day" in X.columns
-    assert "Feature 3" not in X.columns
+    assert "feature 3_day" in X.columns
+    assert "feature 3" not in X.columns
 
 
 def test_wrongly_converted_features_are_ignored():
     """Assert that wrongly converted features are ignored."""
     extractor = FeatureExtractor(features=["tz", "is_leap_year", "day"])
     X = extractor.transform(X10_dt)
-    assert "Feature 2_tz" not in X.columns  # Not pd.Series.dt
+    assert "feature 2_tz" not in X.columns  # Not pd.Series.dt
 
 
 def test_ordinal_features():
     """Assert that ordinal features are created."""
     extractor = FeatureExtractor(features="day")
     X = extractor.transform(X10_dt)
-    assert "Feature 3_day" in X.columns
-    assert "Feature 3" not in X.columns
+    assert "feature 3_day" in X.columns
+    assert "feature 3" not in X.columns
 
 
 def test_order_features():
     """Assert that the new features are in the order provided."""
     extractor = FeatureExtractor()
     X = extractor.transform(X10_dt)
-    assert X.columns.get_loc("Feature 3_day") == 2
-    assert X.columns.get_loc("Feature 3_month") == 3
-    assert X.columns.get_loc("Feature 3_year") == 4
+    assert X.columns.get_loc("feature 3_day") == 2
+    assert X.columns.get_loc("feature 3_month") == 3
+    assert X.columns.get_loc("feature 3_year") == 4
 
 
 @pytest.mark.parametrize("fxs", [
@@ -101,7 +103,7 @@ def test_features_are_not_dropped():
     """Assert that features are kept when drop_columns=False."""
     extractor = FeatureExtractor(drop_columns=False)
     X = extractor.transform(X10_dt)
-    assert "Feature 3" in X.columns
+    assert "feature 3" in X.columns
 
 
 # Test FeatureGenerator ============================================ >>
@@ -109,20 +111,22 @@ def test_features_are_not_dropped():
 def test_n_features_parameter_negative():
     """Assert that an error is raised when n_features is negative."""
     generator = FeatureGenerator(n_features=-2)
-    with pytest.raises(ValueError, match=r".*should be >0.*"):
+    with pytest.raises(ValueError, match=r".*the n_features parameter.*"):
         generator.fit(X_bin, y_bin)
 
 
 def test_population_parameter():
     """Assert that an error is raised when population is invalid."""
     generator = FeatureGenerator(strategy="gfg", population=30)
-    pytest.raises(ValueError, generator.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*the population parameter.*"):
+        generator.fit(X_reg, y_reg)
 
 
 def test_generations_parameter():
     """Assert that an error is raised when generations is invalid."""
     generator = FeatureGenerator(strategy="gfg", generations=0)
-    pytest.raises(ValueError, generator.fit, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*the generations parameter.*"):
+        generator.fit(X_bin, y_bin)
 
 
 def test_n_features_parameter_not_one_percent():
@@ -213,19 +217,22 @@ def test_updated_dataset():
 def test_unknown_strategy_parameter():
     """Assert that an error is raised when strategy is unknown."""
     selector = FeatureSelector(strategy="invalid")
-    pytest.raises(ValueError, selector.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*the strategy parameter.*"):
+        selector.fit(X_reg, y_reg)
 
 
 def test_solver_parameter_empty_univariate():
     """Assert that an error is raised when solver is None for univariate."""
     selector = FeatureSelector(strategy="univariate")
-    pytest.raises(ValueError, selector.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*can't be None.*"):
+        selector.fit(X_reg, y_reg)
 
 
 def test_raise_unknown_solver_univariate():
     """Assert that an error is raised when the solver is unknown."""
     selector = FeatureSelector(strategy="univariate", solver="invalid")
-    pytest.raises(ValueError, selector.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*the solver parameter.*"):
+        selector.fit(X_reg, y_reg)
 
 
 def test_solver_auto_PCA():
@@ -238,7 +245,8 @@ def test_solver_auto_PCA():
 def test_solver_parameter_empty_SFM():
     """Assert that an error is raised when solver is None for SFM strategy."""
     selector = FeatureSelector(strategy="SFM", solver=None)
-    pytest.raises(ValueError, selector.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*can't be None.*"):
+        selector.fit(X_reg, y_reg)
 
 
 def test_goal_attribute():
@@ -257,31 +265,43 @@ def test_goal_attribute():
 def test_solver_parameter_invalid_value():
     """Assert that an error is raised when solver is unknown."""
     selector = FeatureSelector(strategy="RFE", solver="invalid")
-    pytest.raises(ValueError, selector.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*Unknown model.*"):
+        selector.fit(X_reg, y_reg)
+
+
+def test_kwargs_but_no_strategy():
+    """Assert that an error is raised when kwargs are defined and strategy=None."""
+    selector = FeatureSelector(strategy=None, cv=2)
+    with pytest.raises(ValueError, match=r".*Keyword arguments.*"):
+        selector.fit(X_reg, y_reg)
 
 
 def test_n_features_parameter():
     """Assert that an error is raised when n_features is invalid."""
     selector = FeatureSelector(strategy="SFM", solver="XGB_reg", n_features=0)
-    pytest.raises(ValueError, selector.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*the n_features parameter.*"):
+        selector.fit(X_reg, y_reg)
 
 
 def test_max_frac_repeated_parameter():
     """Assert that an error is raised when max_frac_repeated is invalid."""
     selector = FeatureSelector(strategy=None, max_frac_repeated=1.1)
-    pytest.raises(ValueError, selector.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*the max_frac_repeated parameter.*"):
+        selector.fit(X_reg, y_reg)
 
 
 def test_max_correlation_parameter():
     """Assert that an error is raised when max_correlation is invalid."""
     selector = FeatureSelector(strategy=None, max_correlation=-0.2)
-    pytest.raises(ValueError, selector.fit, X_reg, y_reg)
+    with pytest.raises(ValueError, match=r".*the max_correlation parameter.*"):
+        selector.fit(X_reg, y_reg)
 
 
 def test_error_y_is_None():
     """Assert that an error is raised when y is None for some strategies."""
     selector = FeatureSelector(strategy="univariate", solver=f_regression, n_features=9)
-    pytest.raises(ValueError, selector.fit, X_reg)
+    with pytest.raises(ValueError, match=r".*the y parameter.*"):
+        selector.fit(X_reg)
 
 
 def test_remove_low_variance():
@@ -325,7 +345,14 @@ def test_PCA_components():
     """Assert that the PCA strategy creates components instead of features."""
     selector = FeatureSelector(strategy="PCA")
     X = selector.fit_transform(X_bin)
-    assert "Component 1" in X.columns
+    assert "component 1" in X.columns
+
+
+def test_PCA_sparse_data():
+    """Assert that the PCA strategy uses TruncatedSVD for sparse data."""
+    selector = FeatureSelector(strategy="PCA", n_features=2)
+    selector.fit(X_sparse)
+    assert selector.pca.__class__.__name__ == "TruncatedSVD"
 
 
 def test_SFM_prefit_invalid_estimator():
@@ -439,7 +466,11 @@ def test_kwargs_parameter_threshold():
 def test_kwargs_parameter_tol():
     """Assert that the kwargs parameter works as intended (add tol)."""
     selector = FeatureSelector(
-        strategy="PCA", solver="arpack", tol=0.001, n_features=12, random_state=1
+        strategy="PCA",
+        solver="arpack",
+        tol=0.001,
+        n_features=12,
+        random_state=1,
     )
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 12

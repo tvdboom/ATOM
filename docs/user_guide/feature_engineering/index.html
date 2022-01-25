@@ -2967,9 +2967,17 @@ arrays (scores, p-values). Read more in sklearn's <a href="https://scikit-learn.
 <p><a name="pca"></a>
 <strong>Principal Components Analysis</strong><br>
 Applying PCA will reduce the dimensionality of the dataset by maximizing
-the variance of each dimension. The new features are called Component
-1, Component 2, etc... The data is scaled to mean=0 and std=1 before
-fitting the transformer (if it wasn't already). Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#pca">documentation</a>.</p>
+the variance of each dimension. The new features are called component
+1, component 2, etc... PCA can be applied in two ways:</p>
+<ul>
+<li>If the data is dense (i.e. not sparse), the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a>.
+  Before fitting the transformer, the data is scaled to mean=0 and std=1
+  if it wasn't already. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#pca">documentation</a>.</li>
+<li>If the data is <a href="../data_management/#sparse-matrices">sparse</a> (often the
+  case for term-document matrices, see <a href="../../API/nlp/vectorizer">Vectorizer</a>),
+  the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html">TruncatedSVD</a>.
+  Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis">documentation</a>.</li>
+</ul>
 <p><a name="sfm"></a>
 <strong>Selection from model</strong><br>
 SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</code> attributes

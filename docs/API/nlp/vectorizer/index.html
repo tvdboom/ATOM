@@ -3080,12 +3080,12 @@ Transformed corpus.
 <p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">vectorize</span><span class="p">()</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;TF-IDF&quot;</span><span class="p">)</span>
 </code></pre></div>
 or
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">Vectorizer</span>
 
-<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">Vectorizer</span><span class="p">(</span><span class="s2">&quot;tf-idf&quot;</span><span class="p">)</span>
+<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">Vectorizer</span><span class="p">(</span><span class="s2">&quot;TF-IDF&quot;</span><span class="p">)</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 </code></pre></div></p>
                 

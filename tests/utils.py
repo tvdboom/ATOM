@@ -54,6 +54,15 @@ mnist = (X_train, y_train), (X_test, y_test)
 X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir 12"]]
 y_text = [0, 1, 1, 0]
 
+# Sparse data
+X_sparse = pd.DataFrame(
+    data={
+        "feature 1": pd.arrays.SparseArray([1, 0, 0, 0, 0, 0, 1, 0, 1, 0]),
+        "feature 2": pd.arrays.SparseArray([1, 0, 1, 0, 0, 1, 0, 0, 1, 0]),
+        "feature 3": pd.arrays.SparseArray([1, 1, 1, 0, 0, 0, 1, 0, 0, 0]),
+    }
+)
+
 # Dataset wth string indices
 X_idx = X_bin.set_index(pd.Index([f"index_{i}" for i in range(len(X_bin))]))
 y_idx = y_bin.set_axis(X_idx.index)

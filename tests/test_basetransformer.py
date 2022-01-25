@@ -12,7 +12,6 @@ import glob
 import pytest
 import pandas as pd
 import multiprocessing
-from scipy import sparse
 from unittest.mock import patch
 from pandas.testing import assert_frame_equal
 
@@ -23,7 +22,7 @@ from atom.basetransformer import BaseTransformer
 from atom.utils import merge
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_idx, y_idx, X_bin_array, y_bin_array,
-    mnist, X_text, y_text, X10, y10, bin_train, bin_test,
+    mnist, X_sparse, X_text, y_text, X10, y10, bin_train, bin_test,
 )
 
 
@@ -130,7 +129,7 @@ def test_input_data_in_training():
 
 
 def test_multidimensional_X():
-    """Assert that more than two dimensional datasets are handled correctly."""
+    """Assert that more than two-dimensional datasets are handled correctly."""
     atom = ATOMClassifier(*mnist, random_state=1)
     assert atom.X.columns == ["multidim feature"]
     assert atom.X.iloc[0, 0].shape == (28, 28, 1)
@@ -144,17 +143,17 @@ def test_text_to_corpus():
 
 def test_sparse_matrices_X_y():
     """Assert that sparse matrices are accepted as (X, y) input."""
-    atom = ATOMClassifier(sparse.eye(10), y10, random_state=1)
+    atom = ATOMClassifier(X_sparse, y10, random_state=1)
     assert isinstance(atom.X, pd.DataFrame)
-    assert atom.shape == (10, 11)
+    assert atom.shape == (10, 4)
     assert atom[atom.columns[0]].dtype.name == "Sparse[float64, 0]"
 
 
 def test_sparse_matrices_2_tuples():
     """Assert that sparse matrices are accepted as 2-tuples input."""
-    atom = ATOMClassifier((sparse.eye(10), y10), (sparse.eye(10), y10), random_state=1)
+    atom = ATOMClassifier((X_sparse, y10), (X_sparse, y10), random_state=1)
     assert isinstance(atom.X, pd.DataFrame)
-    assert atom.shape == (20, 11)
+    assert atom.shape == (20, 4)
     assert atom[atom.columns[0]].dtype.name == "Sparse[float64, 0]"
 
 

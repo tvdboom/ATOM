@@ -433,7 +433,7 @@ def to_df(data, index=None, columns=None, dtypes=None):
     if not isinstance(data, pd.DataFrame) and data is not None:
         # Assign default column names (dict already has column names)
         if not isinstance(data, dict) and columns is None:
-            columns = [f"Feature {str(i)}" for i in range(1, n_cols(data) + 1)]
+            columns = [f"feature {str(i)}" for i in range(1, n_cols(data) + 1)]
 
         # Create dataframe from sparse matrix or directly from data
         if sparse.issparse(data):
@@ -901,7 +901,7 @@ def name_cols(array, original_df, col_names):
         if any(mask) and mask[mask].index.values[0] not in temp_cols:
             temp_cols.append(mask[mask].index.values[0])
         else:
-            temp_cols.append(f"Feature {i + original_df.shape[1] - len(col_names)}")
+            temp_cols.append(f"feature {i + original_df.shape[1] - len(col_names)}")
 
     return temp_cols
 
@@ -949,7 +949,7 @@ def reorder_cols(df, original_df, col_names):
 
         # Derivative cols are added after original (e.g. for one-hot encoding)
         for col_derivative in df.columns:
-            # Exclude cols with default naming (Feature 1 -> Feature 10, etc...)
+            # Exclude cols with default naming (feature 1 -> feature 10, etc...)
             if col_derivative.startswith(col) and not col.startswith("Feature"):
                 temp_df[col_derivative] = df[col_derivative]
 

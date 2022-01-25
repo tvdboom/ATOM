@@ -540,7 +540,7 @@ is merged independently with atom.
     * The column naming happens as follows. If the transformer returns the
       same number of columns, the names are kept equal. If the number of
       columns change, old columns will keep their name (as long as the column
-      is unchanged) and new columns will receive the name `Feature n`, where
+      is unchanged) and new columns will receive the name `feature n`, where
       n stands for the n-th feature. This means that a transformer should
       only transform, add or drop columns, not combinations of these.
     * The index remains the same as before the transformation. This means

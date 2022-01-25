@@ -9,7 +9,12 @@ figsize=(10, 6), filename=None, display=True)
 </span>
 </div>
 
-Plot the explained variance ratio vs the number of components.  Only
+Plot the explained variance ratio vs the number of components. If the
+underlying estimator is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
+(for dense datasets), all possible components are plotted. If the
+underlying estimator is [TruncatedSVD](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html)
+(for sparse datasets), it only shows the selected components. The blue
+star marks the number of components selected by the user. Only
 available if [PCA](../../../user_guide/feature_engineering/#pca) was
 applied on the data.
 

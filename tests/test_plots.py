@@ -20,7 +20,7 @@ from atom.plots import BasePlotter
 from atom.utils import NotFittedError
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_text, y_text, X10, X10_str, y10, y10_str,
+    X_sparse, X_text, y_text, X10, X10_str, y10, y10_str,
 )
 
 
@@ -178,7 +178,7 @@ def test_plot_scatter_matrix():
     atom.plot_scatter_matrix(columns=[0, 1, 2], display=False)
 
 
-@pytest.mark.parametrize("columns", [2, "Feature 1", [0, 1]])
+@pytest.mark.parametrize("columns", [2, "feature 1", [0, 1]])
 def test_plot_distribution(columns):
     """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -221,11 +221,12 @@ def test_plot_pipeline():
     atom.plot_pipeline(model="Tree", title="Pipeline plot", display=False)
 
 
-def test_plot_pca():
+@pytest.mark.parametrize("X", [X10, X_sparse])
+def test_plot_pca(X):
     """Assert that the plot_pca method work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X, y10, random_state=1)
     pytest.raises(PermissionError, atom.plot_pca)
-    atom.feature_selection(strategy="PCA", n_features=10)
+    atom.feature_selection(strategy="PCA", n_features=2)
     atom.plot_pca(display=False)
 
 

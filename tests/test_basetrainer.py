@@ -33,7 +33,8 @@ def test_invalid_sequence_parameter():
         needs_proba=[True, False],
         random_state=1,
     )
-    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+    with pytest.raises(ValueError, match=r".*length should be equal.*"):
+        trainer.run(bin_train, bin_test)
 
 
 def test_metric_is_sklearn_scorer():

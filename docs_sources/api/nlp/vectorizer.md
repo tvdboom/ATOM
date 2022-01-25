@@ -310,12 +310,12 @@ Transformed corpus.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.vectorize()
+atom.vectorize(strategy="TF-IDF")
 ```
 or
 ```python
 from atom.nlp import Vectorizer
 
-vectorizer = Vectorizer("tf-idf")
+vectorizer = Vectorizer("TF-IDF")
 X = vectorizer.transform(X)
 ```

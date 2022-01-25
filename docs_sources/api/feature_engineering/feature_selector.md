@@ -23,7 +23,7 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: string or None, optional (default=None)</strong><br>
+<strong>strategy: str or None, optional (default=None)</strong><br>
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>None: Do not perform any feature selection algorithm.</li>
@@ -34,7 +34,7 @@ Feature selection strategy to use. Choose from:
 <li>"RFE": Recursive Feature Elimination.</li>
 <li>"RFECV": RFE with cross-validated selection.</li>
 </ul>
-<strong>solver: string, estimator or None, optional (default=None)</strong><br>
+<strong>solver: str, estimator or None, optional (default=None)</strong><br>
 Solver or model to use for the feature selection strategy. See
 sklearn's documentation for an extended description of the choices.
 Select None for the default option per strategy (only for univariate
@@ -49,14 +49,16 @@ and PCA).
     <li>"chi2"</li>
     <li>Any function taking two arrays (X, y), and returning
         arrays (scores, p-values). See the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</li>
-    </ul></li>
+    </ul>
+</li>
 <li>for "PCA", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
-    <li>"auto" (default)</li>
-    <li>"full"</li>
+    <li>"auto" (not available for sparse data, default for dense data)</li>
+    <li>"full" (not available for sparse data)</li>
     <li>"arpack"</li>
-    <li>"randomized"</li>
-    </ul></li>
+    <li>"randomized" (default for sparse data)</li>
+    </ul>
+</li>
 <li>for "SFM", "SFS", "RFE" and "RFECV":<br>
 <p>The base estimator. For SFM, RFE and RFECV, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
@@ -122,8 +124,8 @@ See the corresponding sklearn documentation for the available options.
 </table>
 
 !!! info
-    If strategy="PCA", the data is scaled to mean=0 and std=1 before
-    fitting the transformer (if it wasn't already).
+    If strategy="PCA" and the provided data is dense, it's scaled to mean=0
+    and std=1 before fitting the transformer (if it wasn't already).
 
 !!! tip
     Use the [plot_feature_importance](../plots/plot_feature_importance.md) method to

@@ -4,7 +4,7 @@
 <a name="v4110"></a>
 ### Version 4.11.0
 
-* Full support for parse matrices. Read more in the [user guide](../user_guide/data_management/#sparse-matrices).
+* Full support for sparse matrices. Read more in the [user guide](../user_guide/data_management/#sparse-matrices).
 * The [shrink](../API/ATOM/atomclassifier/#shrink) method also handles
   sparse features and can convert dense datasets to sparse format.
 * Added three new linear models: [Lars](../API/models/lars), [Huber](../API/models/huber)

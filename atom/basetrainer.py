@@ -218,9 +218,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if isinstance(value, SEQUENCE):
                 if len(value) != len(metric):
                     raise ValueError(
-                        "Invalid value for the greater_is_better parameter. Length "
-                        "should be equal to the number of metrics, got len(metric)="
-                        f"{len(metric)} and len({key})={len(value)}."
+                        f"Invalid value for the {key} parameter. Its length "
+                        "should be equal to the number of metrics, got "
+                        f"len(metric)={len(metric)} and len({key})={len(value)}."
                     )
             else:
                 metric_params[key] = [value for _ in metric]

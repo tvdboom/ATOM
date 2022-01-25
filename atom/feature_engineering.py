@@ -19,7 +19,7 @@ import featuretools as ft
 from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_selection import (
     f_classif,
     f_regression,
@@ -40,8 +40,8 @@ from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
     SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df,
-    get_custom_scorer, check_scaling, check_is_fitted, get_feature_importance,
-    composed, crash, method_to_log,
+    is_sparse, get_custom_scorer, check_scaling, check_is_fitted,
+    get_feature_importance, composed, crash, method_to_log,
 )
 
 
@@ -551,7 +551,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             for i, idx in enumerate(index):
                 features_df = features_df.append(
                     {
-                        "name": "Feature " + str(1 + i + len(X.columns)),
+                        "name": "feature " + str(1 + i + len(X.columns)),
                         "description": descript[idx],
                         "fitness": fitness[idx],
                     },
@@ -582,7 +582,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     Parameters
     ----------
-    strategy: string or None, optional (default=None)
+    strategy: str or None, optional (default=None)
         Feature selection strategy to use. Choose from:
             - None: Do not perform any feature selection algorithm.
             - "univariate": Univariate F-test.
@@ -609,10 +609,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 + Any function taking two arrays (X, y), and returning
                   arrays (scores, p-values).
             - for "PCA", choose from:
-                + "auto" (default)
-                + "full"
+                + "auto" (not available for sparse data, default for dense data)
+                + "full" (not available for sparse data)
                 + "arpack"
-                + "randomized"
+                + "randomized" (default for sparse data)
             - for "SFM", "SFS", "RFE" and "RFECV":
                 The base estimator. For SFM, RFE and RFECV, it should
                 have either a `feature_importances_` or `coef_`
@@ -799,7 +799,13 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self._solver = self.solver
 
             elif self.strategy.lower() == "pca":
-                self._solver = "auto" if self.solver is None else self.solver
+                if self._solver is None:
+                    if is_sparse(X):
+                        self._solver = "randomized"
+                    else:
+                        self._solver = "auto"
+                else:
+                    self._solver = self.solver
 
             else:
                 if self.solver is None:
@@ -829,6 +835,13 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                         self._solver = model.get_estimator()
                 else:
                     self._solver = self.solver
+
+        elif self.kwargs:
+            kwargs = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
+            raise ValueError(
+                f"Keyword arguments ({kwargs}) are specified for "
+                f"the strategy estimator but no strategy is selected."
+            )
 
         if self.n_features is None:
             self._n_features = X.shape[1]
@@ -863,7 +876,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 for u, c in zip(unique, count):
                     # If count is larger than fraction of total...
                     if c >= self.max_frac_repeated * len(X):
-                        self._low_variance[col] = [u, c // len(X) * 100]
+                        self._low_variance[col] = [u, c // 100. * len(X)]
                         X = X.drop(col, axis=1)
                         break
 
@@ -906,19 +919,28 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             ).fit(X, y)
 
         elif self.strategy.lower() == "pca":
-            if not check_scaling(X):
-                self.scaler = Scaler().fit(X)
-                X = self.scaler.transform(X)
+            if is_sparse(X):
+                self.pca = TruncatedSVD(
+                    n_components=self._n_features,
+                    algorithm=self._solver,
+                    random_state=self.random_state,
+                    **self.kwargs,
+                )
+            else:
+                if not check_scaling(X):
+                    self.scaler = Scaler().fit(X)
+                    X = self.scaler.transform(X)
 
-            self.pca = PCA(
-                n_components=None,  # Select all because of the pca plots
-                svd_solver=self._solver,
-                random_state=self.random_state,
-                **self.kwargs,
-            ).fit(X)
+                self.pca = PCA(
+                    n_components=X.shape[1],  # Select all because of the pca plots
+                    svd_solver=self._solver,
+                    random_state=self.random_state,
+                    **self.kwargs,
+                )
 
-            # Reset number of components
-            self.pca.n_components_ = self._n_features
+            # Fit and add desired number of components as internal attr
+            self.pca.fit(X)
+            self.pca._n_components = self._n_features
 
         elif self.strategy.lower() == "sfm":
             # If any of these attr exists, model is already fitted
@@ -1056,12 +1078,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 self.log("   >>> Scaling features...", 2)
                 X = self.scaler.transform(X)
 
-            n = self.pca.n_components_
-            columns = [f"Component {str(i)}" for i in range(1, n + 1)]
-            X = to_df(self.pca.transform(X)[:, :n], index=X.index, columns=columns)
+            X = to_df(
+                data=self.pca.transform(X)[:, :self._n_features],
+                index=X.index,
+                columns=[f"component {str(i)}" for i in range(1, self._n_features + 1)],
+            )
 
-            var = np.array(self.pca.explained_variance_ratio_[:n])
-            self.log(f"   >>> Total explained variance: {round(var.sum(), 3)}", 2)
+            var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
+            self.log(f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == "sfm":
             # Here we use columns since some cols could be removed before by

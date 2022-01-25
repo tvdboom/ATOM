@@ -51,9 +51,9 @@ from .plots import BaseModelPlotter
 from .patches import inverse_transform, fit, transform, score
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst, it, arr,
-    merge, time_to_str, get_best_score, get_custom_scorer, get_pl_name,
-    variable_return, custom_transform, composed, crash, method_to_log,
-    Table, ShapExplanation, CustomDict,
+    merge, is_sparse, time_to_str, get_best_score, get_custom_scorer,
+    get_pl_name, variable_return, custom_transform, composed, crash,
+    method_to_log, Table, ShapExplanation, CustomDict,
 )
 
 
