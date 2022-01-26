@@ -218,7 +218,7 @@ elements faster.
 
 * **\__len__:** Returns the length of the dataset.
 * **\__contains__:** Checks if the provided item is a column in the dataset.
-* **\__getitem__:** Access a model, a column or a subset of the dataset.
+* **\__getitem__:** Access a model, column or subset of the dataset.
 
 <br>
 

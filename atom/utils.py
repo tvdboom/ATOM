@@ -929,28 +929,27 @@ def reorder_cols(df, original_df, col_names):
     for col in df.columns:
         if col in original_df.columns and col not in col_names:
             raise RuntimeError(
-                f"The column '{col}' returned by the transformer "
+                f"Column '{col}' returned by the transformer "
                 "already exists in the original dataset."
             )
 
     temp_df = pd.DataFrame(index=df.index)
-    for col in list(original_df.columns) + list(df.columns):
+    for col in dict.fromkeys(list(original_df.columns) + list(df.columns)):
         if col in df.columns:
             temp_df[col] = df[col]
         elif col not in col_names:
             if len(df) != len(original_df):
                 raise ValueError(
                     f"Length of values ({len(df)}) does not match length of index "
-                    f"({len(original_df)}). This might happen when transformations "
+                    f"({len(original_df)}). This usually happens when transformations "
                     "that drop rows aren't applied on all the columns."
                 )
 
-            temp_df[col] = original_df[col].tolist()  # Make list to adapt to index
+            temp_df[col] = original_df[col].values  # Take values to adapt to new index
 
         # Derivative cols are added after original (e.g. for one-hot encoding)
         for col_derivative in df.columns:
-            # Exclude cols with default naming (feature 1 -> feature 10, etc...)
-            if col_derivative.startswith(col) and not col.startswith("Feature"):
+            if col_derivative.startswith(f"{col}_"):
                 temp_df[col_derivative] = df[col_derivative]
 
     return temp_df

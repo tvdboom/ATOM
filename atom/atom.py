@@ -127,29 +127,6 @@ class ATOM(BasePredictor, ATOMPlotter):
     def __iter__(self):
         yield from self.pipeline.values
 
-    def __getitem__(self, item):
-        if isinstance(item, int):
-            return self.pipeline.iloc[item]  # Get estimator from pipeline
-        elif isinstance(item, str):
-            if item in self._branches.min("og"):
-                return self._branches[item]  # Get branch
-            elif item in self._models:
-                return self._models[item]  # Get model
-            elif item in self.dataset:
-                return self.dataset[item]  # Get column from dataset
-            else:
-                raise ValueError(
-                    f"{self.__class__.__name__} object has no "
-                    f"branch, model or column called {item}."
-                )
-        elif isinstance(item, list):
-            return self.dataset[item]  # Get subset of dataset
-        else:
-            raise TypeError(
-                f"{self.__class__.__name__} is only "
-                "subscriptable with types int, str or list."
-            )
-
     # Utility properties =========================================== >>
 
     @BasePredictor.branch.setter

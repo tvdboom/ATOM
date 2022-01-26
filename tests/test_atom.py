@@ -91,23 +91,6 @@ def test_iter():
     assert [item for item in atom][1] == atom.pipeline[1]
 
 
-def test_getitem():
-    """Assert that atom is subscriptable."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.impute()
-    atom.run("LDA")
-    assert atom[1].__class__.__name__ == "Imputer"
-    assert atom["master"] is atom.master
-    assert atom["LDA"] is atom["lda"] is atom.lda
-    assert atom["mean radius"] is atom.dataset["mean radius"]
-    assert isinstance(atom[["mean radius", "mean texture"]], pd.DataFrame)
-    with pytest.raises(ValueError, match=r".*has no branch, model or column.*"):
-        print(atom["invalid"])
-    with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
-        print(atom[2.3])
-
-
 # Test utility properties =========================================== >>
 
 def test_branch_same():

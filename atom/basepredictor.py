@@ -82,22 +82,31 @@ class BasePredictor:
             return item in self.dataset
 
     def __getitem__(self, item):
-        if isinstance(item, str):
-            if item in self._models:
+        if self.dataset is None:
+            raise RuntimeError(
+                "This instance has no dataset annexed to it. Use the "
+                "run() method before getting an item from the trainer."
+            )
+        elif isinstance(item, int):
+            return self.dataset[self.columns[item]]
+        elif isinstance(item, str):
+            if item in self._branches.min("og"):
+                return self._branches[item]  # Get branch
+            elif item in self._models:
                 return self._models[item]  # Get model
             elif item in self.dataset:
                 return self.dataset[item]  # Get column from dataset
             else:
                 raise ValueError(
-                    f"{self.__class__.__name__} object "
-                    f"has no model or column called {item}."
+                    f"{self.__class__.__name__} object has no "
+                    f"branch, model or column called {item}."
                 )
         elif isinstance(item, list):
             return self.dataset[item]  # Get subset of dataset
         else:
             raise TypeError(
                 f"{self.__class__.__name__} is only "
-                "subscriptable with types str or list."
+                "subscriptable with types int, str or list."
             )
 
     # Tracking properties ========================================== >>
@@ -633,7 +642,7 @@ class BasePredictor:
             )
 
         y = self.classes[dataset]
-        return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
+        return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
 
     @composed(crash, method_to_log, typechecked)
     def merge(self, other: Any, suffix: str = "2"):

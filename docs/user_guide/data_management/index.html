@@ -2915,6 +2915,11 @@ following formats:</p>
 <li>(X_train, y_train), (X_test, y_test)</li>
 <li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
+<p>The input data is always converted internally to a <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html">pandas dataframe</a>,
+if it isn't one already. The column names should always be strings. If
+they are not, atom changes their type at initialization. If no column
+names are provided, default names are given of the form <code>feature n</code>,
+where n stands for the n-th feature.</p>
 <p><br></p>
 <h2 id="indexing">Indexing</h2>
 <p>By default, atom resets the dataframe's <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html">index</a>

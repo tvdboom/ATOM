@@ -132,17 +132,56 @@ def test_len():
     assert len(trainer) == len(X_bin)
 
 
-def test_getitem():
-    """Assert that atom is subscriptable."""
+def test_getitem_no_dataset():
+    """Assert that an error is raised when getitem is used before run."""
     trainer = DirectClassifier(models="LR", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer["LR"] is trainer["lr"] is trainer.lr
-    assert trainer["mean radius"] is trainer.dataset["mean radius"]
-    assert isinstance(trainer[["mean radius", "mean texture"]], pd.DataFrame)
-    with pytest.raises(ValueError, match=r".*has no model or column.*"):
-        print(trainer["invalid"])
+    with pytest.raises(RuntimeError, match=r".*has no dataset.*"):
+        print(trainer[4])
+
+
+def test_getitem_int():
+    """Assert that getitem works for a column index."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom[0] is atom["mean radius"]
+
+
+def test_getitem_str_from_branch():
+    """Assert that getitem works for a branch name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom[0] is atom["mean radius"]
+
+
+def test_getitem_str_from_model():
+    """Assert that getitem works for a model name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LDA")
+    assert atom["lda"] is atom.lda
+
+
+def test_getitem_str_from_column():
+    """Assert that getitem works for a column name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom["mean radius"] is atom.dataset["mean radius"]
+
+
+def test_getitem_invalid_str():
+    """Assert that an error is raised when getitem is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*has no branch, model or column.*"):
+        print(atom["invalid"])
+
+
+def test_getitem_list():
+    """Assert that getitem works for a list of column names."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert isinstance(atom[["mean radius", "mean texture"]], pd.DataFrame)
+
+
+def test_getitem_invalid_type():
+    """Assert that an error is raised when getitem is invalid type."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
-        print(trainer[2.3])
+        print(atom[2.3])
 
 
 # Test utility properties ========================================== >>

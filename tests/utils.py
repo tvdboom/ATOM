@@ -50,10 +50,6 @@ X_train = X_train.reshape(60000, 28, 28, 1)
 X_test = X_test.reshape(10000, 28, 28, 1)
 mnist = (X_train, y_train), (X_test, y_test)
 
-# Text data
-X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir 12"]]
-y_text = [0, 1, 1, 0]
-
 # Sparse data
 X_sparse = pd.DataFrame(
     data={
@@ -62,6 +58,10 @@ X_sparse = pd.DataFrame(
         "feature 3": pd.arrays.SparseArray([1, 1, 1, 0, 0, 0, 1, 0, 0, 0]),
     }
 )
+
+# Text data
+X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir 12"]]
+y_text = [0, 1, 1, 0]
 
 # Dataset wth string indices
 X_idx = X_bin.set_index(pd.Index([f"index_{i}" for i in range(len(X_bin))]))

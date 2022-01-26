@@ -145,8 +145,7 @@ different results per branch.
 * **\__len__:** Returns the length of the dataset.
 * **\__iter__:** Iterate over the pipeline's transformers.
 * **\__contains__:** Checks if the provided item is a column in the dataset.
-* **\__getitem__:** If int, return the i-th transformer in the pipeline.
-  If str, access a branch, a model, a column or a subset of the dataset.
+* **\__getitem__:** Access a branch, model, column or subset of the dataset.
 
 <br>
 
