@@ -169,7 +169,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed corpus.
 
         """
@@ -367,7 +367,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed corpus.
 
         """
@@ -501,7 +501,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed corpus.
 
         """
@@ -649,7 +649,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        self: Vectorizer
+        Vectorizer
             Fitted instance of self.
 
         """
@@ -692,7 +692,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed corpus.
 
         """

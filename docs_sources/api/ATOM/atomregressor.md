@@ -429,7 +429,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#distribution">distribution</a></td>
-<td>Get statistics on a column's distribution.</td>
+<td>Get statistics on column distributions.</td>
 </tr>
 
 <tr>
@@ -663,7 +663,7 @@ Give an overview of the available predefined models.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>overview: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Information about the predefined models available for the current task.
 Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -770,31 +770,40 @@ Models to delete. If None, delete them all.
 
 <a name="distribution"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">distribution</strong>(columns=0)
+<em>method</em> <strong style="color:#008AB8">distribution</strong>(distributions=None, columns=0)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L366">[source]</a>
 </span>
 </div>
-Compute the [KS-statistic](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)
-for various distributions against a column in the dataset. Missing values are ignored.
+Compute the [Kolmogorov-Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)
+for various distributions against columns in the dataset. Only for
+numerical columns. Missing values are ignored.
 
 !!! tip
     Use the [plot_distribution](../../plots/plot_distribution) method to plot
-    the column's distribution.
+    a column's distribution.
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>columns: int or str, optional (default=0)</strong><br>
-Index or name of the column to get the statistics from. Only
-numerical columns are accepted.
+<p>
+<strong>distributions: str, sequence or None, optional (default=None)</strong><br>
+Names of the distributions in `scipy.stats` to get the statistics
+on. If None, a selection of the most common ones is used.
+</p>
+<p>
+<strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>
+Names, indices or dtypes of the columns in the dataset to
+perform the test on. If None, select all numerical columns.
+</p>
+</td>
 </tr>
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>stats: pd.DataFrame</strong><br>
-Dataframe with the statistic results.
+<strong>pd.DataFrame</strong><br>
+Statistic results with score and p-value in multiindex levels.
 </td>
 </tr>
 </table>
@@ -855,7 +864,7 @@ Data set on which to calculate the metric. Choose from: "train",
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>scores: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Scores of the models.
 </td>
 </tr>
@@ -920,7 +929,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -1023,7 +1032,7 @@ Additional keyword arguments for the ProfileReport instance.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>report: <a href="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html#pandas_profiling.profile_report.ProfileReport">ProfileReport</a></strong><br>
+<strong><a href="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html#pandas_profiling.profile_report.ProfileReport">ProfileReport</a></strong><br>
 Created profile object.
 </td>
 </tr>

@@ -124,7 +124,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed feature set.
 
         """
@@ -340,7 +340,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        self: FeatureGenerator
+        FeatureGenerator
 
         """
         X, y = self._prepare_input(X, y)
@@ -479,7 +479,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Dataset containing the newly generated features.
 
         """
@@ -750,7 +750,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         Returns
         -------
-        self: FeatureSelector
+        FeatureSelector
+            Fitted instance of self.
 
         """
 
@@ -1023,7 +1024,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed feature set.
 
         """

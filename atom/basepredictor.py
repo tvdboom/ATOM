@@ -284,7 +284,7 @@ class BasePredictor:
 
         Returns
         -------
-        inc: list
+        list
             Indices of the included rows.
 
         """
@@ -362,10 +362,10 @@ class BasePredictor:
 
         Returns
         -------
-        inc: list
+        list
             Names of the included columns.
 
-        exc: list
+        list
             Names of the excluded columns. Only returned if
             return_inc_exc=True.
 
@@ -498,7 +498,7 @@ class BasePredictor:
 
         Returns
         -------
-        overview: pd.DataFrame
+        pd.DataFrame
             Information about the predefined models available for the
             current task. Columns include:
                 - acronym: Model's acronym (used to call the model).
@@ -597,7 +597,7 @@ class BasePredictor:
 
         Returns
         -------
-        scores: pd.DataFrame
+        pd.DataFrame
             Scores of the models.
 
         """
@@ -626,7 +626,7 @@ class BasePredictor:
 
         Returns
         -------
-        class_weights: dict
+        dict
             Classes with the corresponding weights.
 
         """

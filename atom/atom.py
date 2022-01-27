@@ -52,11 +52,11 @@ from .training import (
 from .models import CustomModel, MODELS_ENSEMBLES
 from .plots import ATOMPlotter
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
-    lst, divide, infer_task, check_dim, check_scaling, is_multidim,
-    is_sparse, get_pl_name, names_from_estimator, check_is_fitted,
-    variable_return, fit_one, delete, custom_transform, method_to_log,
-    composed, crash, Table, CustomDict,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, flt, lst, divide,
+    infer_task, check_dim, check_scaling, is_multidim, is_sparse,
+    get_pl_name, names_from_estimator, check_is_fitted, variable_return,
+    fit_one, delete, custom_transform, method_to_log, composed, crash,
+    Table, CustomDict,
 )
 
 
@@ -331,46 +331,75 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
 
     @composed(crash, typechecked)
-    def distribution(self, columns: Union[int, str] = 0):
-        """Get statistics on a column's distribution.
+    def distribution(
+        self,
+        distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+    ):
+        """Get statistics on column distributions.
 
-        Compute the KS-statistic for various distributions against
-        a column in the dataset.
+        Compute the Kolmogorov-Smirnov test for various distributions
+        against columns in the dataset. Only for numerical columns.
+        Missing values are ignored.
 
         Parameters
         ----------
-        columns: int or str, optional (default=0)
-            Index or name of the column to get the statistics from.
-            Only numerical columns are accepted.
+        distributions: str, sequence or None, optional (default=None)
+            Names of the distributions in `scipy.stats` to get the
+            statistics on. If None, a selection of the most common
+            ones is used.
+
+        columns: int, str, slice, sequence or None, optional (default=None)
+            Names, indices or dtypes of the columns in the dataset to
+            perform the test on. If None, select all numerical columns.
 
         Returns
         -------
-        df: pd.DataFrame
-            Statistic results.
+        pd.DataFrame
+            Statistic results with score and p-value in multiindex levels.
 
         """
-        if isinstance(columns, int):
-            columns = self.columns[columns]
+        if distributions is None:
+            distributions = [
+                "beta",
+                "expon",
+                "gamma",
+                "invgauss",
+                "lognorm",
+                "norm",
+                "pearson3",
+                "triang",
+                "uniform",
+                "weibull_min",
+                "weibull_max",
+            ]
+        else:
+            distributions = lst(distributions)
 
-        if columns in self.categorical:
-            raise ValueError(
-                "Invalid value for the columns parameter. Column should "
-                f"be numerical, got categorical column {columns}."
-            )
+        columns = self._get_columns(columns, only_numerical=True)
 
-        # Drop missing values from the column before fitting
-        X = self[columns].replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
+        df = pd.DataFrame(
+            index=pd.MultiIndex.from_product(
+                iterables=(distributions, ["score", "p_value"]),
+                names=["dist", "stat"],
+            ),
+            columns=columns,
+        )
 
-        df = pd.DataFrame(columns=["ks", "p_value"])
-        for dist in DISTRIBUTIONS:
-            # Get KS-statistic with fitted distribution parameters
-            param = getattr(stats, dist).fit(X)
-            stat = stats.kstest(X, dist, args=param)
+        for col in columns:
+            # Drop missing values from the column before fitting
+            X = self[col].replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
 
-            # Add as row to the dataframe
-            df.loc[dist] = {"ks": round(stat[0], 4), "p_value": round(stat[1], 4)}
+            for dist in distributions:
+                # Get KS-statistic with fitted distribution parameters
+                param = getattr(stats, dist).fit(X)
+                stat = stats.kstest(X, dist, args=param)
 
-        return df.sort_values("ks")
+                # Add as column to the dataframe
+                df.loc[(dist, "score"), col] = round(stat[0], 4)
+                df.loc[(dist, "p_value"), col] = round(stat[1], 4)
+
+        return df
 
     @composed(crash, typechecked)
     def export_pipeline(
@@ -407,7 +436,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Returns
         -------
-        pipeline: Pipeline
+        Pipeline
             Current branch as a sklearn-like Pipeline object.
 
         """
@@ -477,7 +506,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Returns
         -------
-        profile: ProfileReport
+        ProfileReport
             Created report object.
 
         """
@@ -744,10 +773,10 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed feature set.
 
-        y: pd.Series
+        pd.Series
             Transformed target column. Only returned if provided.
 
         """
@@ -1493,7 +1522,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Returns
         -------
-        metric: str, function, scorer or sequence
+        str, function, scorer or sequence
             Metric for the run. Should be the same as previous run.
 
         """

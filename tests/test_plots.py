@@ -183,7 +183,7 @@ def test_plot_distribution(columns):
     """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     pytest.raises(ValueError, atom.plot_distribution, columns=2, show=-1, display=False)
-    atom.plot_distribution(columns=columns, distribution="pearson3", display=False)
+    atom.plot_distribution(columns=columns, distributions="pearson3", display=False)
 
 
 def test_plot_qq():

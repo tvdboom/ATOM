@@ -185,13 +185,13 @@ def test_n_nans():
 def test_numerical():
     """Assert that numerical returns the names of the numerical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.numerical == ["feature 1", "feature 2"]
+    assert atom.numerical == ["feature 1", "feature 2", "feature 4"]
 
 
 def test_n_numerical():
     """Assert that n_categorical returns the number of numerical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.n_numerical == 2
+    assert atom.n_numerical == 3
 
 
 def test_categorical():
@@ -279,16 +279,17 @@ def test_automl_invalid_scoring():
     """Assert that an error is raised when the provided scoring is invalid."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree", metric="mse")
-    pytest.raises(ValueError, atom.automl, scoring="r2")
+    with pytest.raises(ValueError, match=r".*scoring parameter.*"):
+        atom.automl(scoring="r2")
 
 
-@pytest.mark.parametrize("column", ["feature 1", 1])
-def test_distribution(column):
+@pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
+@pytest.mark.parametrize("columns", ["feature 1", 1, None])
+def test_distribution(distributions, columns):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    pytest.raises(ValueError, atom.distribution, columns="feature 3")
-    df = atom.distribution(columns=column)
-    assert len(df) == 11
+    df = atom.distribution(distributions=distributions, columns=columns)
+    assert isinstance(df, pd.DataFrame)
 
 
 def test_export_pipeline_empty():
@@ -431,6 +432,13 @@ def test_shrink_exclude_columns():
     assert atom.dtypes[-1].name == "int8"
 
 
+def test_stats_mixed_sparse_dense():
+    """Assert that stats show new information for mixed datasets."""
+    atom = ATOMClassifier(X_sparse, y10, random_state=1)
+    atom.apply(lambda x: 1, columns="new_column")
+    atom.stats()
+
+
 def test_status():
     """Assert that the status method prints an overview of the instance."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
@@ -548,7 +556,7 @@ def test_add_sparse_matrices():
     """Assert that transformers that return sp.matrix are accepted."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.add(OneHotEncoder(handle_unknown="ignore"), columns=2)
-    assert atom.shape == (10, 7)  # Creates 4 extra columns
+    assert atom.shape == (10, 8)  # Creates 4 extra columns
 
 
 def test_add_keep_column_names():
@@ -576,8 +584,8 @@ def test_raise_length_mismatch():
 def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.encode()
-    assert atom.columns[2].startswith("feature 3")
+    atom.encode(columns="feature 3")
+    assert atom.columns[2:5] == ["feature 3_a", "feature 3_b", "feature 3_c"]
 
 
 def test_add_sets_are_kept_equal():

@@ -119,21 +119,6 @@ DF_ATTRS = (
     "iat",
 )
 
-# List of available distributions
-DISTRIBUTIONS = (
-    "beta",
-    "expon",
-    "gamma",
-    "invgauss",
-    "lognorm",
-    "norm",
-    "pearson3",
-    "triang",
-    "uniform",
-    "weibull_min",
-    "weibull_max",
-)
-
 # List of custom metrics for the evaluate method
 CUSTOM_METRICS = (
     "cm",
@@ -896,11 +881,13 @@ def name_cols(array, original_df, col_names):
 
     # If columns were added or removed
     temp_cols = []
-    for i, col in enumerate(array.T, start=1):
+    for i, col in enumerate(array.T, start=2):
         mask = original_df.apply(lambda c: np.array_equal(c, col, equal_nan=True))
         if any(mask) and mask[mask].index.values[0] not in temp_cols:
+            # If the column is equal, use the existing name
             temp_cols.append(mask[mask].index.values[0])
         else:
+            # If the column is new, use a default name
             temp_cols.append(f"feature {i + original_df.shape[1] - len(col_names)}")
 
     return temp_cols
@@ -994,11 +981,17 @@ def transform_one(transformer, X=None, y=None):
 
     args = []
     transform_params = signature(transformer.transform).parameters
-    if "X" in transform_params and X is not None:
-        inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
-        args.append(X[inc or [c for c in X.columns if c not in exc]])
-    if "y" in transform_params and y is not None:
-        args.append(y)
+    if "X" in transform_params:
+        if X is not None:
+            inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
+            args.append(X[inc or [c for c in X.columns if c not in exc]])
+        else:  # If X is None and needed in the transformer, skip it
+            return X, y
+    if "y" in transform_params:
+        if y is not None:
+            args.append(y)
+        elif "X" not in transform_params:
+            return X, y  # If y is None and needed, and no X in transformer, skip it
     output = transformer.transform(*args)
 
     # Transform can return X, y or both

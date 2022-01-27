@@ -41,7 +41,7 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>p: np.array</strong><br>
+<strong>np.array</strong><br>
 The class log-probabilities of the input samples, with shape=(n_samples,)
 for binary classification tasks and (n_samples, n_classes) for multiclass
 classification tasks.

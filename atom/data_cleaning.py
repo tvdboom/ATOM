@@ -64,7 +64,7 @@ class TransformerMixin:
 
         Returns
         -------
-        self: transformer
+        transformer
             Fitted instance of self.
 
         """
@@ -90,10 +90,10 @@ class TransformerMixin:
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed dataframe.
 
-        y: pd.Series
+        pd.Series
             Target column corresponding to X. Only returned if provided.
 
         """
@@ -220,7 +220,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        self: Scaler
+        Scaler
             Fitted instance of self.
 
         """
@@ -255,7 +255,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Scaled dataframe.
 
         """
@@ -351,7 +351,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        self: Scaler
+        Scaler
             Fitted instance of self.
 
         """
@@ -399,7 +399,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Scaled dataframe.
 
         """
@@ -528,10 +528,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed dataframe.
 
-        y: pd.Series
+        pd.Series
             Target column corresponding to X. Only returned if provided.
 
         """
@@ -703,7 +703,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        self: Imputer
+        Imputer
             Fitted instance of self.
 
         """
@@ -808,10 +808,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Imputed dataframe.
 
-        y: pd.Series
+        pd.Series
             Target column corresponding to X.
 
         """
@@ -1013,7 +1013,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        self: Encoder
+        Encoder
             Fitted instance of self.
 
         """
@@ -1124,7 +1124,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Encoded dataframe.
 
         """
@@ -1160,9 +1160,9 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 self.log(f"   >>> Handling {uc} unknown classes.", 2)
 
             # Insert the new columns at old location
-            for i, new_col in enumerate(new_cols):
+            for i, new_col in enumerate(sorted(new_cols)):
                 if new_col in X:
-                    X[name] = new_cols[name]  # Replace existing column
+                    X[new_col] = new_cols[new_col].values  # Replace existing column
                 else:
                     # Drop the original column
                     if name in X:
@@ -1273,10 +1273,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed dataframe.
 
-        y: pd.Series
+        pd.Series
             Target column corresponding to X. Only returned if provided.
 
         """
@@ -1495,10 +1495,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Balanced dataframe.
 
-        y: pd.Series
+        pd.Series
             Target column corresponding to X.
 
         """

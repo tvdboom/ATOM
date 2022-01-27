@@ -148,7 +148,7 @@ def test_getitem_int():
 def test_getitem_str_from_branch():
     """Assert that getitem works for a branch name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom[0] is atom["mean radius"]
+    assert atom["master"] is atom._branches["master"]
 
 
 def test_getitem_str_from_model():
@@ -366,9 +366,9 @@ def test_get_rows_none_selected():
 def test_get_columns_is_None():
     """Assert that all columns are returned."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert len(atom._get_columns(columns=None)) == 4
-    assert len(atom._get_columns(columns=None, only_numerical=True)) == 3
-    assert len(atom._get_columns(columns=None, include_target=False)) == 3
+    assert len(atom._get_columns(columns=None)) == 5
+    assert len(atom._get_columns(columns=None, only_numerical=True)) == 4
+    assert len(atom._get_columns(columns=None, include_target=False)) == 4
 
 
 def test_get_columns_slice():
@@ -396,8 +396,8 @@ def test_get_columns_by_name():
 def test_get_columns_by_type():
     """Assert that columns can be retrieved by type."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom._get_columns(columns="!number") == ["feature 3"]
-    assert atom._get_columns(columns="number") == ["feature 1", "feature 2", "target"]
+    assert len(atom._get_columns(columns="!number")) == 1
+    assert len(atom._get_columns(columns="number")) == 4
 
 
 def test_get_columns_exclude():

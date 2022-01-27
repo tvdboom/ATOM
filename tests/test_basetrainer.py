@@ -216,26 +216,27 @@ def test_n_bootstrap_parameter_is_below_zero():
 def test_est_params_all_models():
     """Assert that est_params passes the parameters to all models."""
     trainer = DirectClassifier(
-        models=["XGB", "LGB"],
-        n_calls=5,
-        est_params={"n_estimators": 220, "all": {"max_depth": 4}},
+        models=["RF", "ET"],
+        n_calls=2,
+        n_initial_points=1,
+        est_params={"n_estimators": 20, "all": {"bootstrap": False}},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert trainer.lgb.estimator.get_params()["n_estimators"] == 220
-    assert trainer.xgb.estimator.get_params()["max_depth"] == 4
+    assert trainer.et.estimator.get_params()["n_estimators"] == 20
+    assert trainer.rf.estimator.get_params()["bootstrap"] is False
 
 
 def test_est_params_per_model():
     """Assert that est_params passes the parameters per model."""
     trainer = DirectClassifier(
         models=["XGB", "LGB"],
-        est_params={"xgb": {"n_estimators": 100}, "lgb": {"n_estimators": 200}},
+        est_params={"xgb": {"n_estimators": 15}, "lgb": {"n_estimators": 20}},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert trainer.xgb.estimator.get_params()["n_estimators"] == 100
-    assert trainer.lgb.estimator.get_params()["n_estimators"] == 200
+    assert trainer.xgb.estimator.get_params()["n_estimators"] == 15
+    assert trainer.lgb.estimator.get_params()["n_estimators"] == 20
 
 
 def test_est_params_default_method():

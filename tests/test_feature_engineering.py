@@ -343,7 +343,7 @@ def test_PCA_strategy():
 
 def test_PCA_components():
     """Assert that the PCA strategy creates components instead of features."""
-    selector = FeatureSelector(strategy="PCA")
+    selector = FeatureSelector(strategy="PCA", solver="arpack")
     X = selector.fit_transform(X_bin)
     assert "component 1" in X.columns
 

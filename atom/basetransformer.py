@@ -169,10 +169,10 @@ class BaseTransformer:
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Feature dataset.
 
-        y: pd.Series
+        pd.Series
             Target column corresponding to X.
 
         """
@@ -271,13 +271,13 @@ class BaseTransformer:
 
         Returns
         -------
-        data: pd.DataFrame
+        pd.DataFrame
             Dataset containing the train and test sets.
 
-        idx: list
+        list
             Sizes of the train and test sets.
 
-        holdout: pd.DataFrame or None
+        pd.DataFrame or None
             Holdout data set. Returns None if not specified.
 
         """

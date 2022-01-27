@@ -134,7 +134,7 @@ Does nothing. Implemented for continuity of the API.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Scaler</strong><br>
+<strong>Scaler</strong><br>
 Fitted instance of self.
 </tr>
 </table>
@@ -195,7 +195,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -267,7 +267,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Scaler</strong><br>
+<strong>Scaler</strong><br>
 Estimator instance.
 </td>
 </tr>

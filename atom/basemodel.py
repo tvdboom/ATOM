@@ -762,7 +762,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        pred: float or np.array
+        float or np.array
             Calculated prediction.
 
         """
@@ -1200,7 +1200,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        score: dict
+        dict
             Return of sklearn's cross_validate function.
 
         """
@@ -1273,7 +1273,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        dashboard: ExplainerDashboard
+        ExplainerDashboard
             Created dashboard object.
 
         """
@@ -1373,7 +1373,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        score: pd.Series
+        pd.Series
             Scores of the model.
 
         """
@@ -1462,7 +1462,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        pipeline: Pipeline
+        Pipeline
             Current branch as a sklearn-like Pipeline object.
 
         """
@@ -1623,7 +1623,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed feature set.
 
         y: pd.Series

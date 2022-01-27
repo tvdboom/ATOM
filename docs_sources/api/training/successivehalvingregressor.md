@@ -462,7 +462,7 @@ Give an overview of the available predefined models.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>overview: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Information about the predefined models available for the current task.
 Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -595,7 +595,7 @@ Data set on which to calculate the metric. Choose from: "train",
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>scores: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Scores of the models.
 </td>
 </tr>
@@ -624,7 +624,7 @@ Data set from which to get the weights. Choose from: "train", "test" or "dataset
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>class_weights: dict</strong><br>
+<strong>dict</strong><br>
 Classes with the corresponding weights.
 </td>
 </tr>
@@ -654,7 +654,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -807,7 +807,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: SuccessiveHalvingRegressor</strong><br>
+<strong>SuccessiveHalvingRegressor</strong><br>
 Estimator instance.
 </td>
 </tr>

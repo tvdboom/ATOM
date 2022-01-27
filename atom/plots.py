@@ -363,7 +363,7 @@ class BasePlotter:
 
         Parameters
         ----------
-        fig: matplotlib.figure.Figure, optional (default=None)
+        matplotlib.figure.Figure, optional (default=None)
             Current plotting figure. If None, ignore the figure.
 
         ax: matplotlib.axes.Axes or None, optional (default=None)
@@ -527,7 +527,7 @@ class FSPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -601,7 +601,7 @@ class FSPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -676,7 +676,7 @@ class FSPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -779,7 +779,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -870,7 +870,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -961,7 +961,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1074,7 +1074,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1177,7 +1177,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1253,7 +1253,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1336,7 +1336,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1419,7 +1419,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1498,7 +1498,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1593,7 +1593,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1691,7 +1691,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1789,7 +1789,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1882,7 +1882,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -1991,7 +1991,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -2139,7 +2139,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -2387,7 +2387,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -2560,7 +2560,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -2724,7 +2724,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -2818,7 +2818,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -2916,7 +2916,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3032,7 +3032,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3120,7 +3120,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3212,7 +3212,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3303,7 +3303,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only if `display=None` and `matplotlib=True`.
 
         """
@@ -3416,7 +3416,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3506,7 +3506,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3600,7 +3600,7 @@ class BaseModelPlotter(BasePlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3676,7 +3676,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3764,7 +3764,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3804,7 +3804,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     def plot_distribution(
         self,
         columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
-        distribution: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
@@ -3823,11 +3823,11 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
         columns: int, str, slice or sequence, optional (default=0)
             Slice, names or indices of the columns to plot. It is only
             possible to plot one categorical column. If more than just
-            the one categorical column is selected, all categorical
+            one categorical columns are selected, all categorical
             columns are ignored.
 
-        distribution: str, sequence or None, optional (default=None)
-            Names of the `scipy.stats` distribution to fit to the
+        distributions: str, sequence or None, optional (default=None)
+            Names of the `scipy.stats` distributions to fit to the
             columns. If None, no distribution is fitted. Only for
             numerical columns.
 
@@ -3856,7 +3856,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -3904,7 +3904,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
                 display=display,
             )
         else:
-            kde = kwargs.pop("kde", False if distribution else True)
+            kde = kwargs.pop("kde", False if distributions else True)
             bins = kwargs.pop("bins", 40)
             for i, col in enumerate(columns):
                 sns.histplot(
@@ -3918,7 +3918,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
                     **kwargs,
                 )
 
-                if distribution:
+                if distributions:
                     x = np.linspace(*ax.get_xlim(), 100)
 
                     # Drop the missing values form the column
@@ -3929,7 +3929,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
                     h = np.histogram(values, bins=bins)
 
                     # Get a line for each distribution
-                    for j, dist in enumerate(lst(distribution)):
+                    for j, dist in enumerate(lst(distributions)):
                         params = getattr(stats, dist).fit(values)
 
                         # Calculate pdf and scale to match observed data
@@ -3945,7 +3945,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
                 title=title,
                 xlabel="Values",
                 ylabel="Counts",
-                legend=("best", len(columns) + len(lst(distribution))),
+                legend=("best", len(columns) + len(lst(distributions))),
                 figsize=figsize or (10, 6),
                 plotname="plot_distribution",
                 filename=filename,
@@ -3990,7 +3990,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -4077,7 +4077,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -4170,7 +4170,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
@@ -4271,7 +4271,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
+        matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """

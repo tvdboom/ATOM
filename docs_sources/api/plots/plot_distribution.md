@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">plot_distribution</strong>(columns=0,
-distribution=None, show=None, title=None, figsize=None, filename=None,
+distributions=None, show=None, title=None, figsize=None, filename=None,
 display=True, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3799">[source]</a>
@@ -26,7 +26,7 @@ the one categorical column is selected, all categorical
 columns are ignored.
 </p>
 <p>
-<strong>distribution: str, sequence or None, optional (default=None)</strong><br>
+<strong>distributions: str, sequence or None, optional (default=None)</strong><br>
 Names of the <code>scipy.stats</code> distributions to fit to the column.
 If None, no distribution is fitted. Only for numerical columns.
 </p>
@@ -62,7 +62,7 @@ Additional keyword arguments for seaborn's <a href="https://seaborn.pydata.org/g
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>fig: matplotlib.figure.Figure</strong><br>
+<strong>matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>
@@ -91,7 +91,7 @@ atom.plot_distribution(columns=[1, 2])  # With numerical columns
 
 ```python
 # With fitted distributions
-atom.plot_distribution(columns="mean radius", distribution=["norm", "triang"])
+atom.plot_distribution(columns="mean radius", distributions=["norm", "triang"])
 ```
 
 <div align="center">

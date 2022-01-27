@@ -157,7 +157,7 @@ Does nothing. Implemented for continuity of the API.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Imputer</strong><br>
+<strong>Imputer</strong><br>
 Fitted instance of self.
 </tr>
 </table>
@@ -194,11 +194,11 @@ Feature set with shape=(n_samples, n_features).
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>
@@ -229,7 +229,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -301,7 +301,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Imputer</strong><br>
+<strong>Imputer</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -339,11 +339,11 @@ Feature set with shape=(n_samples, n_features).
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>

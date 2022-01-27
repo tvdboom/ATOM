@@ -40,11 +40,12 @@ class Pipeline(pipeline.Pipeline):
     """Custom Pipeline class.
 
     This class behaves as a sklearn pipeline, and additionally:
+        - Always outputs pandas objects.
+        - Is able to transform only X or y.
         - Accepts transformers that change the target column.
         - Accepts transformers that drop rows.
         - Accepts transformers that only are fitted on a subset
           of the provided dataset.
-        - Always outputs pandas objects.
         - Uses transformers that are only applied on the training set
           to fit the pipeline, not to make predictions on unseen data.
         - The instance is considered fitted at initialization if all
@@ -133,7 +134,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        self: Pipeline
+        Pipeline
             Fitted instance of self.
 
         """
@@ -167,7 +168,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        X: np.array
+        np.array
             Transformed dataset.
 
         """
@@ -202,7 +203,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        y_pred: np.array
+        np.array
             Predicted target with shape=(n_samples,).
 
         """
@@ -222,7 +223,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        y_pred: np.array
+        np.array
             Predicted class probabilities.
 
         """
@@ -242,7 +243,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        y_pred: np.array
+        np.array
             Predicted class log-probabilities.
 
         """
@@ -262,7 +263,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        y_pred: np.array
+        np.array
             Predicted confidence scores.
 
         """
@@ -290,7 +291,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        y_pred: float
+        float
             Mean accuracy or r2 of self.predict(X) with respect to y.
 
         """
@@ -329,10 +330,10 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed feature set. Only returned if provided.
 
-        y: pd.Series
+        pd.Series
             Transformed target column. Only returned if provided.
 
         """
