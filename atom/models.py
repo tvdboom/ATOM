@@ -758,6 +758,10 @@ class LogisticRegression(BaseModel):
 
         if self._get_param(params, "penalty") != "elasticnet":
             params.pop("l1_ratio", None)
+        elif self._get_param(params, "l1_ratio") is None:
+            # l1_ratio can't be None with elasticnet (select value randomly)
+            params.replace("l1_ratio", np.random.choice(zero_to_one_exc))
+
         if self._get_param(params, "penalty") == "none":
             params.pop("C", None)
 

@@ -3,9 +3,9 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">plot_qq</strong>(columns=0,
-distribution="norm", title=None, figsize=(10, 6), filename=None, display=True)
+distributions="norm", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3951">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3956">[source]</a>
 </span>
 </div>
 
@@ -21,8 +21,8 @@ Slice, names or indices of the columns to plot. Selected
 categorical columns are ignored.
 </p>
 <p>
-<strong>distribution: str, sequence or None, optional (default="norm")</strong><br>
-Name of the <code>scipy.stats</code> distribution to fit to the columns.
+<strong>distributions: str, sequence or None, optional (default="norm")</strong><br>
+Name of the <code>scipy.stats</code> distributions to fit to the columns.
 </p>
 <p>
 <strong>title: str or None, optional (default=None)</strong><br>
@@ -61,7 +61,7 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.plot_qq(columns=[0, 1], distribution="triang")
+atom.plot_qq(columns=[0, 1], distributions="triang")
 ```
 
 <div align="center">

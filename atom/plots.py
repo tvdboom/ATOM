@@ -3956,7 +3956,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     def plot_qq(
         self,
         columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
-        distribution: Union[str, SEQUENCE_TYPES] = "norm",
+        distributions: Union[str, SEQUENCE_TYPES] = "norm",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -3970,8 +3970,8 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             Slice, names or indices of the columns to plot. Selected
             categorical columns are ignored.
 
-        distribution: str, sequence or None, optional (default="norm")
-            Names of the `scipy.stats` distribution to fit to the
+        distributions: str, sequence or None, optional (default="norm")
+            Names of the `scipy.stats` distributions to fit to the
             columns.
 
         title: str or None, optional (default=None)
@@ -4006,7 +4006,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             color = next(palette)
             m = cycle(["+", "1", "x", "*", "d", "p", "h"])
             qn_b = np.percentile(self.dataset[col], percentiles)
-            for dist in lst(distribution):
+            for dist in lst(distributions):
                 stat = getattr(stats, dist)
                 params = stat.fit(self.dataset[col])
 
@@ -4014,7 +4014,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
                 samples = stat.rvs(*params, size=101, random_state=self.random_state)
                 qn_a = np.percentile(samples, percentiles)
 
-                label = col + (" - " + dist if len(lst(distribution)) > 1 else "")
+                label = col + (" - " + dist if len(lst(distributions)) > 1 else "")
                 plt.scatter(qn_a, qn_b, color=color, marker=next(m), s=50, label=label)
 
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
@@ -4028,7 +4028,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             ylim=ylim,
             xlabel="Theoretical quantiles",
             ylabel="Observed quantiles",
-            legend=("best", len(columns) + len(lst(distribution))),
+            legend=("best", len(columns) + len(lst(distributions))),
             figsize=figsize or (10, 6),
             plotname="plot_qq",
             filename=filename,

@@ -800,7 +800,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self._solver = self.solver
 
             elif self.strategy.lower() == "pca":
-                if self._solver is None:
+                if self.solver is None:
                     if is_sparse(X):
                         self._solver = "randomized"
                     else:
@@ -933,7 +933,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     X = self.scaler.transform(X)
 
                 self.pca = PCA(
-                    n_components=X.shape[1],  # Select all because of the pca plots
+                    n_components=X.shape[1] - 1,  # All -1 because of the pca plot
                     svd_solver=self._solver,
                     random_state=self.random_state,
                     **self.kwargs,

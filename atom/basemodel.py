@@ -51,9 +51,9 @@ from .plots import BaseModelPlotter
 from .patches import inverse_transform, fit, transform, score
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst, it, arr,
-    merge, is_sparse, time_to_str, get_best_score, get_custom_scorer,
-    get_pl_name, variable_return, custom_transform, composed, crash,
-    method_to_log, Table, ShapExplanation, CustomDict,
+    merge, time_to_str, get_best_score, get_custom_scorer, get_pl_name,
+    variable_return, custom_transform, composed, crash, method_to_log,
+    Table, ShapExplanation, CustomDict,
 )
 
 
@@ -397,25 +397,23 @@ class BaseModel(BaseModelPlotter):
                 score = lst(self.bo.loc[self.bo["params"] == params, "score"].values[0])
                 self._stopped = ("---", "---")
 
-            # Append row to the bo attribute
-            t = time_to_str(t_iter)
-            t_tot = time_to_str(init_bo)
-            self.bo = self.bo.append(
+            # Add row to the bo attribute
+            row = pd.Series(
                 {
                     "call": call,
                     "params": params,
                     "estimator": est,
                     "score": flt(score),
-                    "time": t,
-                    "total_time": t_tot,
-                },
-                ignore_index=True,
+                    "time": time_to_str(t_iter),
+                    "total_time": time_to_str(init_bo),
+                }
             )
+            self.bo.loc[self._iter - 1] = row
 
             # Save BO calls to experiment as nested runs
             if self.T.log_bo:
                 with mlflow.start_run(run_name=f"{self.name} - {call}", nested=True):
-                    mlflow.set_tag("time", t)
+                    mlflow.set_tag("time", row["time"])
                     mlflow.log_params(params)
                     for i, m in enumerate(self.T._metric):
                         mlflow.log_metric(m, score[i])
@@ -437,7 +435,7 @@ class BaseModel(BaseModelPlotter):
                 sequence.update(
                     {"early_stopping": f"{self._stopped[0]}/{self._stopped[1]}"}
                 )
-            sequence.update({"time": t, "total_time": t_tot})
+            sequence.update({"time": row["time"], "total_time": row["total_time"]})
             self.T.log(table.print(sequence), 2)
 
             return -score[0]  # Negative since skopt tries to minimize

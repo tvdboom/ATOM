@@ -27,6 +27,7 @@ from sklearn.preprocessing import (
     MaxAbsScaler,
     RobustScaler,
 )
+
 from sklearn.ensemble import IsolationForest
 from sklearn.covariance import EllipticEnvelope
 from sklearn.neighbors import LocalOutlierFactor

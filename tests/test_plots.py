@@ -189,7 +189,7 @@ def test_plot_distribution(columns):
 def test_plot_qq():
     """Assert that the plot_qq method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.plot_qq(columns=[0, 1], distribution="pearson3", display=False)
+    atom.plot_qq(columns=[0, 1], distributions="pearson3", display=False)
 
 
 def test_plot_wordcloud():

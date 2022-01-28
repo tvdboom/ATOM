@@ -356,7 +356,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         Returns
         -------
         pd.DataFrame
-            Statistic results with score and p-value in multiindex levels.
+            Statistic results with multiindex levels:
+                - dist: Name of the distribution.
+                - stat: Statistic results:
+                    - score: KS-test score.
+                    - p_value: Corresponding p-value.
 
         """
         if distributions is None:
@@ -589,8 +593,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             of the column.
 
         int2uint: bool, optional (default=False)
-            Whether to convert integers to unsigned integers. Only if the
-            values in the column are strictly positive.
+            Whether to convert `int` to `uint` (unsigned integer). Only if
+            the values in the column are strictly positive.
 
         dense2sparse: bool, optional (default=False)
             Whether to convert all features to sparse format. The element
@@ -864,8 +868,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         custom_transform(estimator, self.branch, verbose=self.verbose)
 
         # Add the estimator to the pipeline
-        self.branch.pipeline = self.pipeline.append(
-            pd.Series([estimator], name=self._current), ignore_index=True
+        self.branch.pipeline = pd.concat(
+            [self.pipeline, pd.Series([estimator], name=self._current)],
+            ignore_index=True,
         )
 
     @composed(crash, method_to_log, typechecked)

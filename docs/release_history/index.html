@@ -3018,20 +3018,17 @@
 <h3 id="version-4110">Version 4.11.0</h3>
 <ul>
 <li>Full support for sparse matrices. Read more in the <a href="../user_guide/data_management/#sparse-matrices">user guide</a>.</li>
-<li>The <a href="../API/ATOM/atomclassifier/#shrink">shrink</a> method also handles
-  sparse features and can convert dense datasets to sparse format.</li>
+<li>The <a href="../API/ATOM/atomclassifier/#shrink">shrink</a> method now also handles
+  sparse features.</li>
+<li>Refactor of the <a href="../API/ATOM/atomclassifier/#distribution">distribution</a> method.</li>
 <li>Added three new linear models: <a href="../API/models/lars">Lars</a>, <a href="../API/models/huber">Huber</a>
   and <a href="../API/models/perc">Perc</a>.</li>
-<li>Custom dimensions for the BO can now be shared across models using the
-  key 'all' in <code>bo_params["dimensions"]</code>.</li>
-<li>Assign hyperparameters to tune with the predefined dimensions through
-  <code>bo_params["dimensions"]</code>.</li>
-<li>It's now possible to tune a custom number of layers for the <a href="../API/models/mlp">MLP</a>
-  model.</li>
+<li>Dimensions can be shared across models using the key 'all' in <code>bo_params["dimensions"]</code>.</li>
+<li>Assign hyperparameters to tune using the predefined dimensions.</li>
+<li>It's now possible to tune a custom number of layers for the <a href="../API/models/mlp">MLP</a> model.</li>
 <li>If multiple BO calls share the best score, the one with the shortest
   training time is selected as winner (instead of the first).</li>
-<li>Fixed a bug where the BO could fail when custom dimensions where defined
-  and <code>n_initial_points=1</code>.</li>
+<li>Fixed a bug where the BO could fail when custom dimensions where defined.</li>
 <li>Fixed a bug where <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>
   could fail after repeated calls to fit.</li>
 <li>Fixed a bug where <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>
