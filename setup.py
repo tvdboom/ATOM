@@ -10,16 +10,16 @@ Description: Package's setup code.
 import setuptools
 
 
-with open("README.md") as f:
+with open("README.md", encoding="utf8") as f:
     long_description = f.read()
 
-with open("requirements.txt") as f:
+with open("requirements.txt", encoding="utf8") as f:
     requirements = f.read().splitlines()
 
-with open("requirements-optional.txt") as f:
+with open("requirements-optional.txt", encoding="utf8") as f:
     optional_requirements = f.read().splitlines()
 
-with open("requirements-test.txt") as f:
+with open("requirements-test.txt", encoding="utf8") as f:
     test_requirements = f.read().splitlines()
 
 setuptools.setup(
