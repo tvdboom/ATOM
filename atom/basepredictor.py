@@ -37,8 +37,7 @@ class BasePredictor:
     )
 
     def __getattr__(self, item):
-        """Get attributes from the current branch."""
-        if self.__dict__.get("_branches").get(item):
+        if item in self.__dict__.get("_branches").min("og"):
             return self._branches[item]  # Get branch
         elif item in self.branch._get_attrs():
             return getattr(self.branch, item)  # Get attr from branch
@@ -54,14 +53,12 @@ class BasePredictor:
             )
 
     def __setattr__(self, item, value):
-        """Set some properties to the current branch."""
         if item != "holdout" and isinstance(getattr(Branch, item, None), property):
             setattr(self.branch, item, value)
         else:
             super().__setattr__(item, value)
 
     def __delattr__(self, item):
-        """Call appropriate methods for model and branch deletion."""
         if item == "branch":
             self.branch.delete()
         elif item in self._branches:
@@ -85,22 +82,31 @@ class BasePredictor:
             return item in self.dataset
 
     def __getitem__(self, item):
-        if isinstance(item, str):
-            if item in self._models:
+        if self.dataset is None:
+            raise RuntimeError(
+                "This instance has no dataset annexed to it. Use the "
+                "run() method before getting an item from the trainer."
+            )
+        elif isinstance(item, int):
+            return self.dataset[self.columns[item]]
+        elif isinstance(item, str):
+            if item in self._branches.min("og"):
+                return self._branches[item]  # Get branch
+            elif item in self._models:
                 return self._models[item]  # Get model
             elif item in self.dataset:
                 return self.dataset[item]  # Get column from dataset
             else:
                 raise ValueError(
-                    f"{self.__class__.__name__} object "
-                    f"has no model or column called {item}."
+                    f"{self.__class__.__name__} object has no "
+                    f"branch, model or column called {item}."
                 )
         elif isinstance(item, list):
             return self.dataset[item]  # Get subset of dataset
         else:
             raise TypeError(
                 f"{self.__class__.__name__} is only "
-                "subscriptable with types str or list."
+                "subscriptable with types int, str or list."
             )
 
     # Tracking properties ========================================== >>
@@ -255,6 +261,10 @@ class BasePredictor:
 
     # Utility methods ============================================== >>
 
+    def _get_og_branches(self):
+        """Return branches containing the original dataset."""
+        return [branch for branch in self._branches.values() if branch.pipeline.empty]
+
     def _get_rows(self, index=None, return_test=True, branch=None):
         """Get a subset of the rows.
 
@@ -274,7 +284,7 @@ class BasePredictor:
 
         Returns
         -------
-        inc: list
+        list
             Indices of the included rows.
 
         """
@@ -352,10 +362,10 @@ class BasePredictor:
 
         Returns
         -------
-        inc: list
+        list
             Names of the included columns.
 
-        exc: list
+        list
             Names of the excluded columns. Only returned if
             return_inc_exc=True.
 
@@ -488,7 +498,7 @@ class BasePredictor:
 
         Returns
         -------
-        overview: pd.DataFrame
+        pd.DataFrame
             Information about the predefined models available for the
             current task. Columns include:
                 - acronym: Model's acronym (used to call the model).
@@ -496,20 +506,21 @@ class BasePredictor:
                 - estimator: The model's underlying estimator.
                 - module: The estimator's module.
                 - needs_scaling: Whether the model requires feature scaling.
+                - accepts_sparse: Whether the model supports sparse matrices.
 
         """
         overview = pd.DataFrame()
         for model in MODELS.values():
-            m = model(self)
-            est = m.get_estimator()
-            if m.goal[:3] == self.goal[:3] or m.goal == "both":
+            m = model(self, fast_init=True)
+            if self.goal in m.goal:
                 overview = overview.append(
                     {
                         "acronym": m.acronym,
                         "fullname": m.fullname,
-                        "estimator": est.__class__.__name__,
-                        "module": est.__module__,
+                        "estimator": m.est_class.__name__,
+                        "module": m.est_class.__module__,
                         "needs_scaling": str(m.needs_scaling),
+                        "accepts_sparse": str(m.accepts_sparse),
                     },
                     ignore_index=True,
                 )
@@ -586,7 +597,7 @@ class BasePredictor:
 
         Returns
         -------
-        scores: pd.DataFrame
+        pd.DataFrame
             Scores of the models.
 
         """
@@ -615,7 +626,7 @@ class BasePredictor:
 
         Returns
         -------
-        class_weights: dict
+        dict
             Classes with the corresponding weights.
 
         """
@@ -631,7 +642,7 @@ class BasePredictor:
             )
 
         y = self.classes[dataset]
-        return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
+        return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
 
     @composed(crash, method_to_log, typechecked)
     def merge(self, other: Any, suffix: str = "2"):
@@ -662,7 +673,7 @@ class BasePredictor:
             )
 
         # Check that both instances have the same original dataset
-        if not self._branches["og"].data.equals(other._branches["og"].data):
+        if not self._get_og_branches()[0].data.equals(other._get_og_branches()[0].data):
             raise ValueError(
                 "Invalid value for the other parameter. The provided trainer "
                 "was initialized with a different dataset than this one."
@@ -678,13 +689,12 @@ class BasePredictor:
             )
 
         self.log("Merging instances...", 1)
-        for name, branch in other._branches.items():
-            if name != "og":  # Original dataset is the same
-                self.log(f" --> Merging branch {name}.", 1)
-                if name in self._branches:
-                    name = f"{name}{suffix}"
-                branch.name = name
-                self._branches[name] = branch
+        for name, branch in other._branches.min("og").items():
+            self.log(f" --> Merging branch {name}.", 1)
+            if name in self._branches:
+                name = f"{name}{suffix}"
+            branch.name = name
+            self._branches[name] = branch
 
         for name, model in other._models.items():
             self.log(f" --> Merging model {name}.", 1)
@@ -746,7 +756,7 @@ class BasePredictor:
                 )
             else:
                 model = MODELS[kwargs["final_estimator"]](self)
-                if model.goal not in (self.goal, "both"):
+                if self.goal not in model.goal:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
                         f"{model.fullname} can not perform {self.task} tasks."

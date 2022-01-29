@@ -5,12 +5,12 @@
 <em>method</em> <strong style="color:#008AB8">plot_wordcloud</strong>(index=None,
 title=None, figsize=(10, 6), filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4034">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4039">[source]</a>
 </span>
 </div>
 
 Plot a wordcloud from the corpus. The text for the plot is extracted
-from the column named `Corpus`. If there is no column with that name,
+from the column named `corpus`. If there is no column with that name,
 an exception is raised.
 
 <table style="font-size:16px">
@@ -49,7 +49,7 @@ Additional keyword arguments for the <a href="https://amueller.github.io/word_cl
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>fig: matplotlib.figure.Figure</strong><br>
+<strong>matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>

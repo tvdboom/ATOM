@@ -9,7 +9,12 @@ figsize=(10, 6), filename=None, display=True)
 </span>
 </div>
 
-Plot the explained variance ratio vs the number of components.  Only
+Plot the explained variance ratio vs the number of components. If the
+underlying estimator is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
+(for dense datasets), all possible components are plotted. If the
+underlying estimator is [TruncatedSVD](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html)
+(for sparse datasets), it only shows the selected components. The blue
+star marks the number of components selected by the user. Only
 available if [PCA](../../../user_guide/feature_engineering/#pca) was
 applied on the data.
 
@@ -39,7 +44,7 @@ Whether to render the plot. If None, it returns the matplotlib figure.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>fig: matplotlib.figure.Figure</strong><br>
+<strong>matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>

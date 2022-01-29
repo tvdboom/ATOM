@@ -6,7 +6,7 @@
 solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
 **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L571">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L573">[source]</a>
 </span>
 </div>
 
@@ -23,7 +23,7 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: string or None, optional (default=None)</strong><br>
+<strong>strategy: str or None, optional (default=None)</strong><br>
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>None: Do not perform any feature selection algorithm.</li>
@@ -34,7 +34,7 @@ Feature selection strategy to use. Choose from:
 <li>"RFE": Recursive Feature Elimination.</li>
 <li>"RFECV": RFE with cross-validated selection.</li>
 </ul>
-<strong>solver: string, estimator or None, optional (default=None)</strong><br>
+<strong>solver: str, estimator or None, optional (default=None)</strong><br>
 Solver or model to use for the feature selection strategy. See
 sklearn's documentation for an extended description of the choices.
 Select None for the default option per strategy (only for univariate
@@ -49,14 +49,16 @@ and PCA).
     <li>"chi2"</li>
     <li>Any function taking two arrays (X, y), and returning
         arrays (scores, p-values). See the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</li>
-    </ul></li>
+    </ul>
+</li>
 <li>for "PCA", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
-    <li>"auto" (default)</li>
-    <li>"full"</li>
+    <li>"auto" (not available for sparse data, default for dense data)</li>
+    <li>"full" (not available for sparse data)</li>
     <li>"arpack"</li>
-    <li>"randomized"</li>
-    </ul></li>
+    <li>"randomized" (default for sparse data)</li>
+    </ul>
+</li>
 <li>for "SFM", "SFS", "RFE" and "RFECV":<br>
 <p>The base estimator. For SFM, RFE and RFECV, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
@@ -122,8 +124,8 @@ See the corresponding sklearn documentation for the available options.
 </table>
 
 !!! info
-    If strategy="PCA", the data is scaled to mean=0 and std=1 before
-    fitting the transformer (if it wasn't already).
+    If strategy="PCA" and the provided data is dense, it's scaled to mean=0
+    and std=1 before fitting the transformer (if it wasn't already).
 
 !!! tip
     Use the [plot_feature_importance](../plots/plot_feature_importance.md) method to
@@ -269,7 +271,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L730">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L733">[source]</a>
 </span>
 </div>
 Fit to data. Note that the univariate, SFM (when model is not fitted),
@@ -294,7 +296,7 @@ Feature set with shape=(n_samples, n_features).
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: FeatureSelector</strong><br>
+<strong>FeatureSelector</strong><br>
 Fitted instance of self.
 </tr>
 </table>
@@ -330,7 +332,7 @@ Feature set with shape=(n_samples, n_features).
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </tr>
 </table>
@@ -359,7 +361,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -371,7 +373,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -447,7 +449,7 @@ Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their defa
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -481,7 +483,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: FeatureGenerator</strong><br>
+<strong>FeatureGenerator</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -493,7 +495,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L987">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1014">[source]</a>
 </span>
 </div>
 Transform the data.
@@ -514,7 +516,7 @@ Does nothing. Implemented for continuity of the API.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </tr>
 </table>

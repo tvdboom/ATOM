@@ -4,11 +4,11 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L706">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L750">[source]</a>
 </span>
 </div>
 
-Transform new data through the current branch. Transformers that are
+Transform unseen data through the current branch. Transformers that are
 only applied on the training set are skipped. This method can only be
 called from atom, not from the models.
 
@@ -37,11 +37,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>

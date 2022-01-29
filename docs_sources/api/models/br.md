@@ -30,19 +30,19 @@ Integer(100, 1000, name="n_iter")
 </p>
 <p>
 <strong>alpha_1: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_1")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1")
 </p>
 <p>
 <strong>alpha_2: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_2")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_2")
 </p>
 <p>
 <strong>lambda_1: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_1")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_1")
 </p>
 <p>
 <strong>lambda_2: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_2")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_2")
 </p>
 </td>
 </tr>
@@ -141,6 +141,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
@@ -489,7 +493,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -635,11 +639,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>

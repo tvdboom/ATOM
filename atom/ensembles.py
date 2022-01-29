@@ -199,21 +199,20 @@ class VotingClassifier(BaseVoting, VC):
 
         Parameters
         ----------
-        X: {array-like, sparse matrix} of shape (n_samples, n_features)
-            Training vectors, where `n_samples` is the number of
-            samples and `n_features` is the number of features.
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
 
-        y: array-like of shape (n_samples,)
-            Target values.
+        y: sequence
+            Target column.
 
-        sample_weight: array-like of shape (n_samples,), default=None
+        sample_weight: sequence or None, optional (default=None)
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.
 
         Returns
         -------
-        self: VotingClassifier
+        VotingClassifier
             Fitted instance of self.
 
         """
@@ -241,12 +240,12 @@ class VotingClassifier(BaseVoting, VC):
 
         Parameters
         ----------
-        X: {array-like, sparse matrix} of shape (n_samples, n_features)
-            The input samples.
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
 
         Returns
         -------
-        predictions: array-like of shape (n_samples,)
+        np.array
             Predicted class labels.
 
         """
@@ -297,21 +296,20 @@ class StackingClassifier(BaseStacking, SC):
 
         Parameters
         ----------
-        X: {array-like, sparse matrix} of shape (n_samples, n_features)
-            Training vectors, where `n_samples` is the number of
-            samples and `n_features` is the number of features.
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
 
-        y: array-like of shape (n_samples,)
-            Target values.
+        y: sequence
+            Target column.
 
-        sample_weight: array-like of shape (n_samples,), default=None
+        sample_weight: sequence or None, optional (default=None)
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.
 
         Returns
         -------
-        self: StackingClassifier
+        StackingClassifier
             Fitted instance of self.
 
         """
@@ -334,21 +332,20 @@ class StackingRegressor(BaseStacking, SR):
 
         Parameters
         ----------
-        X: {array-like, sparse matrix} of shape (n_samples, n_features)
-            Training vectors, where `n_samples` is the number of
-            samples and `n_features` is the number of features.
+        X: dataframe-like
+            Feature set with shape (n_samples, n_features)
 
-        y: array-like of shape (n_samples,)
-            Target values.
+        y: sequence
+            Target column.
 
-        sample_weight: array-like of shape (n_samples,), default=None
+        sample_weight: sequence or None, optional (default=None)
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.
 
         Returns
         -------
-        self: StackingRegressor
+        StackingRegressor
             Fitted instance of self.
 
         """

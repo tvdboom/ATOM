@@ -88,9 +88,9 @@ def test_delattr_branch():
     atom.branch = "b2"
     atom.branch = "b3"
     del atom.branch
-    assert list(atom._branches) == ["og", "master", "b2"]
+    assert list(atom._branches) == ["master", "b2"]
     del atom.b2
-    assert list(atom._branches) == ["og", "master"]
+    assert list(atom._branches) == ["master"]
 
 
 def test_delattr_models():
@@ -132,17 +132,56 @@ def test_len():
     assert len(trainer) == len(X_bin)
 
 
-def test_getitem():
-    """Assert that atom is subscriptable."""
+def test_getitem_no_dataset():
+    """Assert that an error is raised when getitem is used before run."""
     trainer = DirectClassifier(models="LR", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer["LR"] is trainer["lr"] is trainer.lr
-    assert trainer["mean radius"] is trainer.dataset["mean radius"]
-    assert isinstance(trainer[["mean radius", "mean texture"]], pd.DataFrame)
-    with pytest.raises(ValueError, match=r".*has no model or column.*"):
-        print(trainer["invalid"])
+    with pytest.raises(RuntimeError, match=r".*has no dataset.*"):
+        print(trainer[4])
+
+
+def test_getitem_int():
+    """Assert that getitem works for a column index."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom[0] is atom["mean radius"]
+
+
+def test_getitem_str_from_branch():
+    """Assert that getitem works for a branch name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom["master"] is atom._branches["master"]
+
+
+def test_getitem_str_from_model():
+    """Assert that getitem works for a model name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LDA")
+    assert atom["lda"] is atom.lda
+
+
+def test_getitem_str_from_column():
+    """Assert that getitem works for a column name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom["mean radius"] is atom.dataset["mean radius"]
+
+
+def test_getitem_invalid_str():
+    """Assert that an error is raised when getitem is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*has no branch, model or column.*"):
+        print(atom["invalid"])
+
+
+def test_getitem_list():
+    """Assert that getitem works for a list of column names."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert isinstance(atom[["mean radius", "mean texture"]], pd.DataFrame)
+
+
+def test_getitem_invalid_type():
+    """Assert that an error is raised when getitem is invalid type."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
-        print(trainer[2.3])
+        print(atom[2.3])
 
 
 # Test utility properties ========================================== >>
@@ -276,6 +315,18 @@ def test_score_sample_weights():
 # Test utility methods ============================================= >>
 
 
+def test_get_og_branches():
+    """Assert that the method returns all original branches."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.branch = "b3"
+    atom.scale()
+    assert len(atom._get_og_branches()) == 2  # master and b2
+    atom.reset()
+    atom.scale()
+    assert len(atom._get_og_branches()) == 1  # Just og
+
+
 def test_get_rows_is_None():
     """Assert that all indices are returned."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
@@ -315,9 +366,9 @@ def test_get_rows_none_selected():
 def test_get_columns_is_None():
     """Assert that all columns are returned."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert len(atom._get_columns(columns=None)) == 4
-    assert len(atom._get_columns(columns=None, only_numerical=True)) == 3
-    assert len(atom._get_columns(columns=None, include_target=False)) == 3
+    assert len(atom._get_columns(columns=None)) == 5
+    assert len(atom._get_columns(columns=None, only_numerical=True)) == 4
+    assert len(atom._get_columns(columns=None, include_target=False)) == 4
 
 
 def test_get_columns_slice():
@@ -345,8 +396,8 @@ def test_get_columns_by_name():
 def test_get_columns_by_type():
     """Assert that columns can be retrieved by type."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom._get_columns(columns="!number") == ["Feature 3"]
-    assert atom._get_columns(columns="number") == ["Feature 1", "Feature 2", "target"]
+    assert len(atom._get_columns(columns="!number")) == 1
+    assert len(atom._get_columns(columns="number")) == 4
 
 
 def test_get_columns_exclude():
@@ -604,7 +655,7 @@ def test_merge():
     atom_2.missing = ["missing"]
     atom_2.run("LR")
     atom_1.merge(atom_2)
-    assert list(atom_1._branches) == ["og", "master", "b2"]
+    assert list(atom_1._branches) == ["master", "b2"]
     assert atom_1.models == ["Tree", "LR"]
     assert atom_1.missing[-1] == "missing"
 
@@ -616,7 +667,7 @@ def test_merge_with_suffix():
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_2.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
     atom_1.merge(atom_2)
-    assert list(atom_1._branches) == ["og", "master", "master2"]
+    assert list(atom_1._branches) == ["master", "master2"]
     assert atom_1.models == ["Tree", "Tree2"]
     assert list(atom_1._errors) == ["LGB", "LGB2"]
 

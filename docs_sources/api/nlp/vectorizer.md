@@ -5,15 +5,19 @@
 <em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="BOW",
 verbose=0, logger=None, *kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L576">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L580">[source]</a>
 </span>
 </div>
 
 Transform the corpus into meaningful vectors of numbers. The
-transformation is applied on the column named `Corpus`. If there
-is no column with that name, an exception is raised. This class
-can be accessed from atom through the [vectorize](../../ATOM/atomclassifier/#vectorize)
-method. Read more in the [user guide](../../../user_guide/nlp/#vectorization).
+transformation is applied on the column named `corpus`. If there
+is no column with that name, an exception is raised. The transformed
+columns are named after the word they are embedding (if the column is
+already present in the provided dataset, `_[strategy]` is added behind
+the name), and returned in sparse format only if all provided columns
+(except `corpus`) are sparse. This class can be accessed from atom
+through the [vectorize](../../ATOM/atomclassifier/#vectorize) method.
+Read more in the [user guide](../../../user_guide/nlp/#vectorization).
 
 <table style="font-size:16px">
 <tr>
@@ -47,7 +51,16 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 </tr>
 </table>
 
+!!! warning
+    The returned dataframe is only sparse when all the columns in the
+    provided dataset (except `corpus`) are sparse. Calling this
+    transformer with other non-sparse columns forces the output matrix
+    to be converted to its full array. This is not recommended since the
+    process can be very slow and occupy large chunks of memory.
+
+
 <br>
+
 
 
 ## Methods
@@ -93,7 +106,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L629">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L637">[source]</a></span></div>
 Fit to text.
 <table style="font-size:16px">
 <tr>
@@ -114,7 +127,7 @@ Does nothing. Implemented for continuity of the API.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Vectorizer</strong><br>
+<strong>Vectorizer</strong><br>
 Fitted instance of self.
 </tr>
 </table>
@@ -177,7 +190,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -189,7 +202,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -215,7 +228,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -249,7 +262,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Vectorizer</strong><br>
+<strong>Vectorizer</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -261,7 +274,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L672">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L680">[source]</a>
 </span>
 </div>
 Normalize the text.
@@ -291,19 +304,18 @@ Transformed corpus.
 <br />
 
 
-
 ## Example
 
 ```python
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.vectorize()
+atom.vectorize(strategy="TF-IDF")
 ```
 or
 ```python
 from atom.nlp import Vectorizer
 
-vectorizer = Vectorizer("tf-idf")
+vectorizer = Vectorizer("TF-IDF")
 X = vectorizer.transform(X)
 ```

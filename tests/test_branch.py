@@ -63,23 +63,15 @@ def test_branch_delete_not_existing_branch():
     """Assert that an error is raised when the branch doesn't exist."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
-    with pytest.raises(ValueError, match=r".*not found in.*"):
+    with pytest.raises(ValueError, match=r".*not found.*"):
         atom.branch.delete("invalid")
 
 
 def test_branch_delete_last_branch():
     """Assert that an error is raised when the last branch is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(PermissionError, match=r".*last branch in.*"):
+    with pytest.raises(PermissionError, match=r".*last branch.*"):
         atom.branch.delete()
-
-
-def test_branch_delete_not_current():
-    """Assert that we can delete any branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    atom.branch.delete("master")
-    assert "master" not in atom._branches
 
 
 def test_branch_delete_depending_models():
@@ -89,6 +81,25 @@ def test_branch_delete_depending_models():
     atom.run("LR")
     atom.delete()
     assert not atom.models
+
+
+def test_last_og_branch():
+    """Assert that an og branch is created if the last one is deleted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.scale()
+    assert "og" not in atom._branches
+    assert len(atom._get_og_branches()) == 1  # master is the last og branch
+    atom.branch.delete("master")
+    assert "og" in atom._branches
+
+
+def test_branch_delete_not_current():
+    """Assert that we can delete any branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.branch.delete("master")
+    assert "master" not in atom._branches
 
 
 # Test rename ====================================================== >>

@@ -218,6 +218,18 @@
   
 
 
+  <li class="md-tabs__item">
+    <a href="../../../release_history/" class="md-tabs__link">
+      Release history
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
   
   
   
@@ -227,18 +239,6 @@
       </a>
     </li>
   
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../../../release_history/" class="md-tabs__link">
-      Release history
-    </a>
-  </li>
 
       
         
@@ -417,22 +417,37 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../../release_history/" class="md-nav__link">
+        Release history
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3">
+        <label class="md-nav__link" for="__nav_4">
           User guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="User guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_3">
+        <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           User guide
         </label>
@@ -608,21 +623,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../release_history/" class="md-nav__link">
-        Release history
-      </a>
     </li>
   
 
@@ -1249,7 +1249,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1361,7 +1361,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1375,7 +1375,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1389,7 +1389,21 @@
   
     <li class="md-nav__item">
       <a href="../../models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1418,6 +1432,34 @@
     <li class="md-nav__item">
       <a href="../../models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2927,11 +2969,11 @@ Feature set with shape=(n_samples, n_features).
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>
@@ -2960,7 +3002,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -2970,7 +3012,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -2994,7 +3036,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3026,7 +3068,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Cleaner</strong><br>
+<strong>Cleaner</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -3060,11 +3102,11 @@ Feature set with shape=(n_samples, n_features).
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>
@@ -3144,7 +3186,7 @@ or
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            © Copyright 2019-2021, by Mavs.
+            © Copyright 2019-2022, by Mavs.
           </div>
         
         

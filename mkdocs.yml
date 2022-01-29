@@ -6,7 +6,7 @@ repo_url: https://github.com/tvdboom/ATOM
 edit_uri: ""
 docs_dir: docs_sources/
 site_dir: docs/
-copyright: © Copyright 2019-2021, by Mavs.
+copyright: © Copyright 2019-2022, by Mavs.
 
 theme:
   name: material
@@ -80,6 +80,7 @@ extra_javascript:
 nav:
     - About: about.md
     - Getting started: getting_started.md
+    - Release history: release_history.md
     - User guide:
         - Introduction: user_guide/introduction.md
         - Nomenclature: user_guide/nomenclature.md
@@ -93,7 +94,6 @@ nav:
         - Training: user_guide/training.md
         - Predicting: user_guide/predicting.md
         - Plots: user_guide/plots.md
-    - Release history: release_history.md
     - API:
         - ATOM:
             - ATOMClassifier: API/ATOM/atomclassifier.md
@@ -125,7 +125,7 @@ nav:
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
         - Models:
-            - Dummy: API/models/dummy.md
+            - Dummy Estimator: API/models/dummy.md
             - Gaussian Process: API/models/gp.md
             - Gaussian Naive Bayes: API/models/gnb.md
             - Multinomial Naive Bayes: API/models/mnb.md
@@ -133,11 +133,14 @@ nav:
             - Categorical Naive Bayes: API/models/catnb.md
             - Complement Naive Bayes: API/models/cnb.md
             - Ordinary Least Squares: API/models/ols.md
-            - Ridge: API/models/ridge.md
-            - Lasso: API/models/lasso.md
-            - Elastic Net: API/models/en.md
+            - Ridge Estimator: API/models/ridge.md
+            - Lasso Regression: API/models/lasso.md
+            - ElasticNet Regression: API/models/en.md
+            - Least Angle Regression: API/models/lars.md
             - Bayesian Ridge: API/models/br.md
             - Automated Relevance Determination: API/models/ard.md
+            - Huber Regression: API/models/huber.md
+            - Perceptron: API/models/perc.md
             - Logistic Regression: API/models/lr.md
             - Linear Discriminant Analysis: API/models/lda.md
             - Quadratic Discriminant Analysis: API/models/qda.md

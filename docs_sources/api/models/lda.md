@@ -31,8 +31,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/l
 Categorical(["svd", "lsqr", "eigen"], name="solver")
 </p>
 <p>
-<strong>shrinkage: float, default=0</strong><br>
-Categorical(np.linspace(0.0, 1.0, 11), name="shrinkage")
+<strong>shrinkage: float, default="auto"</strong><br>
+Categorical(np.linspace(0.1, 1.0, 10), name="shrinkage")
 </p>
 </td>
 </tr>
@@ -133,6 +133,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
@@ -546,7 +550,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -706,11 +710,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>

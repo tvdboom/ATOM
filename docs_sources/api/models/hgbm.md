@@ -52,7 +52,7 @@ Integer(10, 50, name="max_leaf_nodes")
 </p>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *np.linspace(1, 10, 10)], name="max_depth")
+Categorical([None, *range(1, 11], name="max_depth")
 </p>
 <p>
 <strong>min_samples_leaf: int, default=20</strong><br>
@@ -60,7 +60,7 @@ Integer(10, 30, name="min_samples_leaf")
 </p>
 <p>
 <strong>l2_regularization: float, default=0.0</strong><br>
-Categorical([*np.linspace(0.0, 1.0, 11)], name="l2_regularization")
+Categorical(np.linspace(0.0, 1.0, 11), name="l2_regularization")
 </p>
 </td>
 </tr>
@@ -160,6 +160,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
@@ -574,7 +578,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -720,11 +724,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>

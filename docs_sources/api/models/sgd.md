@@ -45,11 +45,11 @@ Categorical(["none", "l1", "l2", "elasticnet"], name="penalty")
 </p>
 <p>
 <strong>alpha: float, default=1e-4</strong><br>
-Real(1e-4, 1.0, "log-uniform", name="alpha")
+Real(1e-5, 1.0, "log-uniform", name="alpha")
 </p>
 <p>
 <strong>l1_ratio: float, default=0.15</strong><br>
-Categorical(np.linspace(0.1, 0.9, 9), name="l1_ratio").
+Categorical([0.05, 0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio").
 </p>
 <p>
 <strong>epsilon: float, default=0.1</strong><br>
@@ -60,8 +60,8 @@ Real(1e-4, 1.0, "log-uniform", name="epsilon")
 Categorical(["constant", "invscaling", "optimal", "adaptive"], name="learning_rate")
 </p>
 <p>
-<strong>eta0: float, default=1e-4</strong><br>
-Real(1e-4, 1.0, "log-uniform", name="eta0").
+<strong>eta0: float, default=1e-2</strong><br>
+Real(1e-2, 10, "log-uniform", name="eta0").
 </p>
 <p>
 <strong>power_t: float, default=0.5</strong><br>
@@ -169,6 +169,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
@@ -567,7 +571,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -713,11 +717,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>

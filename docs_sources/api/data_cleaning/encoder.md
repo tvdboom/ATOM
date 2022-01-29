@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut",
 max_onehot=10, ordinal=None, frac_to_other=None, verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L908">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L913">[source]</a>
 </span>
 </div>
 
@@ -46,7 +46,7 @@ name and the value is the class order, e.g. {"salary": ["low",
 </p>
 <p>
 <strong>frac_to_other: int, float or None, optional (default=None)</strong><br>
-Classes with less occurrences than n_rows * <code>frac_to_other</code>
+Classes with fewer occurrences than n_rows * <code>frac_to_other</code>
 are replaced with the string <code>other</code>. This transformation
 is done before the encoding of the column. If None, skip this step.
 </p>
@@ -80,6 +80,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
     * [HashingEncoder](https://contrib.scikit-learn.org/category_encoders/hashing.html): Incompatibility of APIs.
 
 <br>
+
 
 
 ## Methods
@@ -126,7 +127,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L993">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L997">[source]</a></span></div>
 Fit to data. Note that leaving y=None can lead to errors if the
 `strategy` encoder requires target values.
 <table style="font-size:16px">
@@ -148,7 +149,7 @@ Feature set with shape=(n_samples, n_features).
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Encoder</strong><br>
+<strong>Encoder</strong><br>
 Fitted instance of self.
 </tr>
 </table>
@@ -179,7 +180,7 @@ Feature set with shape=(n_samples, n_features).
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </tr>
 </table>
@@ -208,7 +209,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -220,7 +221,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -246,7 +247,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -280,7 +281,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: Encoder</strong><br>
+<strong>Encoder</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -290,7 +291,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1113">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1114">[source]</a></span></div>
 Encode the data.
 <table style="font-size:16px">
 <tr>
@@ -309,7 +310,7 @@ Does nothing. Implemented for continuity of the API.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </tr>
 </table>

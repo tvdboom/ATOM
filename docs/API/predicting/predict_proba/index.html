@@ -218,6 +218,18 @@
   
 
 
+  <li class="md-tabs__item">
+    <a href="../../../release_history/" class="md-tabs__link">
+      Release history
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
   
   
   
@@ -227,18 +239,6 @@
       </a>
     </li>
   
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../../../release_history/" class="md-tabs__link">
-      Release history
-    </a>
-  </li>
 
       
         
@@ -417,22 +417,37 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../../release_history/" class="md-nav__link">
+        Release history
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3">
+        <label class="md-nav__link" for="__nav_4">
           User guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="User guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_3">
+        <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           User guide
         </label>
@@ -608,21 +623,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../release_history/" class="md-nav__link">
-        Release history
-      </a>
     </li>
   
 
@@ -1191,7 +1191,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1303,7 +1303,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1317,7 +1317,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1331,7 +1331,21 @@
   
     <li class="md-nav__item">
       <a href="../../models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1360,6 +1374,34 @@
     <li class="md-nav__item">
       <a href="../../models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2741,22 +2783,24 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">predict_proba</strong>(X, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L226">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L232">[source]</a>
 </span>
 </div>
 
-<p>Transform new data through the current branch and return class
-probabilities. Transformers that are only applied on the training set
-are skipped. If called from a trainer, the best model in the pipeline
-(under the <code>winner</code> attribute) is used. If called from a model, that
-model is used. The estimator must have a <code>predict_proba</code> method.</p>
+<p>Get class probabilities on unseen data or rows in the dataset. New
+data is first transformed through the model's pipeline. Transformers
+that are only applied on the training set are skipped. If called from
+a trainer, the best model in the pipeline (under the <code>winner</code> attribute)
+is used. If called from a model, that model is used. The estimator must
+have a <code>predict_proba</code> method.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like</strong><br>
-Feature set with shape=(n_samples, n_features).
+<strong>X: int, str, slice, sequence or dataframe-like</strong><br>
+Index names or positions of rows in the dataset, or unseen feature
+set with shape=(n_samples, n_features).
 </p>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
@@ -2767,7 +2811,7 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>p: np.array</strong><br>
+<strong>np.array</strong><br>
 The class probabilities of the input samples, with shape=(n_samples,)
 for binary classification tasks and (n_samples, n_classes) for
 multiclass classification tasks.
@@ -2845,7 +2889,7 @@ multiclass classification tasks.
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            © Copyright 2019-2021, by Mavs.
+            © Copyright 2019-2022, by Mavs.
           </div>
         
         

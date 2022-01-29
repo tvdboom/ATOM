@@ -61,7 +61,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
         """
         self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
-        self._check_parameters()
+        self._prepare_parameters()
 
         self._core_iteration()
 
@@ -114,7 +114,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
         """
         self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
-        self._check_parameters()
+        self._prepare_parameters()
 
         if self.skip_runs < 0:
             raise ValueError(
@@ -213,7 +213,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
         """
         self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
-        self._check_parameters()
+        self._prepare_parameters()
 
         # Convert integer train_sizes to sequence
         if isinstance(self.train_sizes, int):

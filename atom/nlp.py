@@ -33,8 +33,8 @@ from nltk.collocations import (
 from .data_cleaning import TransformerMixin
 from .basetransformer import BaseTransformer
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, check_is_fitted,
-    get_corpus, composed, crash, method_to_log,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, to_df, is_sparse,
+    check_is_fitted, get_corpus, composed, crash, method_to_log,
 )
 
 
@@ -43,7 +43,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Transformations include normalizing characters and dropping
     noise from the text (emails, HTML tags, URLs, etc...). The
-    transformations are applied on the column named `Corpus`, in
+    transformations are applied on the column named `corpus`, in
     the same order the parameters are presented. If there is no
     column with that name, an exception is raised.
 
@@ -169,7 +169,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed corpus.
 
         """
@@ -287,7 +287,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     Convert documents into sequences of words. Additionally,
     create n-grams (represented by words united with underscores,
     e.g. "New_York") based on their frequency in the corpus. The
-    transformations are applied on the column named `Corpus`. If
+    transformations are applied on the column named `corpus`. If
     there is no column with that name, an exception is raised.
 
     Parameters
@@ -367,7 +367,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed corpus.
 
         """
@@ -432,7 +432,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Normalize the corpus.
 
     Convert words to a more uniform standard. The transformations
-    are applied on the column named `Corpus`, in the same order the
+    are applied on the column named `corpus`, in the same order the
     parameters are presented. If there is no column with that name,
     an exception is raised. If the provided documents are strings,
     words are separated by spaces.
@@ -501,7 +501,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed corpus.
 
         """
@@ -561,9 +561,13 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             except LookupError:
                 nltk.download("wordnet")
             try:
-                nltk.data.find("taggers")
+                nltk.data.find("taggers/averaged_perceptron_tagger")
             except LookupError:
                 nltk.download("averaged_perceptron_tagger")
+            try:
+                nltk.data.find("corpora/omw-1.4")
+            except LookupError:
+                nltk.download("omw-1.4")
 
             self.log(" --> Applying lemmatization.", 2)
             wnl = WordNetLemmatizer()
@@ -577,8 +581,12 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Vectorize text data.
 
     Transform the corpus into meaningful vectors of numbers. The
-    transformation is applied on the column named `Corpus`. If
-    there is no column with that name, an exception is raised.
+    transformation is applied on the column named `corpus`. If
+    there is no column with that name, an exception is raised. The
+    transformed columns are named after the word they are embedding
+    (if the column is already present in the provided dataset,
+    `_[strategy]` is added behind the name), and returned in sparse
+    format only if all provided columns (except `corpus`) are sparse.
 
     Parameters
     ----------
@@ -641,8 +649,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
-            Transformed corpus.
+        Vectorizer
+            Fitted instance of self.
 
         """
         X, y = self._prepare_input(X, y)
@@ -684,7 +692,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed corpus.
 
         """
@@ -698,13 +706,29 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         if not isinstance(X[corpus][0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
-        matrix = self._estimator.transform(X[corpus]).toarray()
+        matrix = self._estimator.transform(X[corpus])
         if self.strategy.lower() != "hashing":
-            for i, word in enumerate(self._estimator.get_feature_names_out()):
-                X[word] = matrix[:, i]
+            columns = self._estimator.get_feature_names_out()
         else:
             # Hashing has no words to put as column names
-            for i, word in enumerate(range(matrix.shape[1])):
-                X[f"hash_{i}"] = matrix[:, i]
+            columns = [f"hash_{i}" for i in range(matrix.shape[1])]
 
-        return X.drop(corpus, axis=1)
+        if X.shape[1] == 1:
+            # If corpus is the only column, return as sparse df
+            return to_df(matrix, index=X.index, columns=columns)
+        else:
+            X = X.drop(corpus, axis=1)
+            if not is_sparse(X):
+                # If there are more columns than just corpus and they are
+                # not all sparse, the matrix is converted to its full array
+                self.log(
+                    " --> Not all columns in the dataset (besides corpus) are "
+                    "sparse. Converting the vectorized output to a full array.", 2
+                )
+                matrix = matrix.toarray()
+                for i, col in enumerate(columns):
+                    # If the column name already exists, add _[strategy]
+                    col_name = f"{col}_{self.strategy.lower()}" if col in X else col
+                    X[col_name] = matrix[:, i]
+
+            return X

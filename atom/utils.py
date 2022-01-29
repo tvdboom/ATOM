@@ -27,6 +27,7 @@ from sklearn.preprocessing import (
     MaxAbsScaler,
     RobustScaler,
 )
+
 from sklearn.ensemble import IsolationForest
 from sklearn.covariance import EllipticEnvelope
 from sklearn.neighbors import LocalOutlierFactor
@@ -119,21 +120,6 @@ DF_ATTRS = (
     "iat",
 )
 
-# List of available distributions
-DISTRIBUTIONS = (
-    "beta",
-    "expon",
-    "gamma",
-    "invgauss",
-    "lognorm",
-    "norm",
-    "pearson3",
-    "triang",
-    "uniform",
-    "weibull_min",
-    "weibull_max",
-)
-
 # List of custom metrics for the evaluate method
 CUSTOM_METRICS = (
     "cm",
@@ -223,7 +209,7 @@ BALANCING_STRATS = dict(
     smoten=SMOTEN,
     adasyn=ADASYN,
     borderlinesmote=BorderlineSMOTE,
-    kmanssmote=KMeansSMOTE,
+    kmeanssmote=KMeansSMOTE,
     svmsmote=SVMSMOTE,
     smoteenn=SMOTEENN,
     smotetomek=SMOTETomek,
@@ -280,7 +266,12 @@ def variable_return(X, y):
 
 def is_multidim(df):
     """Check if the dataframe contains a multidimensional column."""
-    return df.columns[0] == "Multidimensional feature" and len(df.columns) <= 2
+    return df.columns[0] == "multidim feature" and len(df.columns) <= 2
+
+
+def is_sparse(df):
+    """Check if the dataframe contains any sparse columns."""
+    return any(pd.api.types.is_sparse(df[col]) for col in df)
 
 
 def check_dim(cls, method):
@@ -335,8 +326,8 @@ def check_scaling(X):
 def get_corpus(X):
     """Get text column from dataframe."""
     try:
-        return [col for col in X if col.lower() == "corpus"][0]
-    except IndexError:
+        return next(col for col in X if col.lower() == "corpus")
+    except StopIteration:
         raise ValueError("The provided dataset does not contain a text corpus!")
 
 
@@ -402,17 +393,17 @@ def to_df(data, index=None, columns=None, dtypes=None):
 
     Parameters
     ----------
-    data: list, tuple, dict, np.array, sps.matrix, pd.DataFrame or None
-        Dataset to convert to a dataframe.  If already a dataframe
-        or None, return unchanged.
+    data: list, tuple, dict, np.array, sp.matrix, pd.DataFrame or None
+        Dataset to convert to a dataframe.  If None or already a
+        dataframe, return unchanged.
 
-    index: sequence or Index
+    index: sequence or pd.Index
         Values for the dataframe's index.
 
     columns: sequence or None, optional (default=None)
         Name of the columns. Use None for automatic naming.
 
-    dtypes: str, dict, np.dtype or None, optional (default=None)
+    dtypes: str, dict, dtype or None, optional (default=None)
         Data types for the output columns. If None, the types are
         inferred from the data.
 
@@ -422,13 +413,20 @@ def to_df(data, index=None, columns=None, dtypes=None):
         Transformed dataframe.
 
     """
-    if data is not None and not isinstance(data, pd.DataFrame):
-        if not isinstance(data, dict):  # Dict already has column names
-            if sparse.issparse(data):
-                data = data.toarray()
-            if columns is None:
-                columns = [f"Feature {str(i)}" for i in range(1, len(data[0]) + 1)]
-        data = pd.DataFrame(data, index=index, columns=columns)
+    # Get number of columns (list/tuple have no shape and sp.matrix has no index)
+    n_cols = lambda data: data.shape[1] if hasattr(data, "shape") else len(data[0])
+
+    if not isinstance(data, pd.DataFrame) and data is not None:
+        # Assign default column names (dict already has column names)
+        if not isinstance(data, dict) and columns is None:
+            columns = [f"feature {str(i)}" for i in range(1, n_cols(data) + 1)]
+
+        # Create dataframe from sparse matrix or directly from data
+        if sparse.issparse(data):
+            data = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
+        else:
+            data = pd.DataFrame(data, index, columns)
+
         if dtypes is not None:
             data = data.astype(dtypes)
 
@@ -468,10 +466,10 @@ def to_series(data, index=None, name="target", dtype=None):
 def arr(df):
     """From dataframe to multidimensional array.
 
-    When the data consist of more than 2 dimensions, ATOM stores
-    it in a df with a single column, "Multidimensional feature".
-    This function extracts the arrays from every row and returns
-    them stacked.
+    When the data consist of more than 2 dimensions, ATOM
+    stores it in a df with a single column, "multidim feature".
+    This function extracts the arrays from every row and
+    returns them stacked.
 
     Parameters
     ----------
@@ -485,7 +483,7 @@ def arr(df):
 
     """
     if is_multidim(df):
-        return np.stack(df["Multidimensional feature"].values)
+        return np.stack(df["multidim feature"].values)
     else:
         return df
 
@@ -625,7 +623,7 @@ def create_acronym(fullname):
         return acronym
 
 
-def names_from_estimator(cls, estimator):
+def names_from_estimator(cls, est):
     """Get the model's acronym and fullname from an estimator.
 
     Parameters
@@ -633,8 +631,8 @@ def names_from_estimator(cls, estimator):
     cls: class
         Trainer from which the function is called.
 
-    estimator: class
-        Estimator instance to get the information from.
+    est: Estimator
+        Model to get the information from.
 
     Returns
     -------
@@ -647,14 +645,13 @@ def names_from_estimator(cls, estimator):
     """
     from .models import MODELS
 
-    get_name = lambda est: est.__class__.__name__
     for key, value in MODELS.items():
-        model = value(cls)
-        if get_name(model.get_estimator()) == get_name(estimator):
-            return model.acronym, model.fullname
+        model = value(cls, fast_intialization=True)
+        if model.est_class.__name__ == est.__class__.__name__:
+            return key, model.fullname
 
     # If it's not any of the predefined models, create a new acronym
-    return create_acronym(get_name(estimator)), get_name(estimator)
+    return create_acronym(est.__class__.__name__), est.__class__.__name__
 
 
 def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
@@ -885,12 +882,14 @@ def name_cols(array, original_df, col_names):
 
     # If columns were added or removed
     temp_cols = []
-    for i, col in enumerate(array.T, start=1):
-        mask = original_df.apply(lambda c: all(c == col))
+    for i, col in enumerate(array.T, start=2):
+        mask = original_df.apply(lambda c: np.array_equal(c, col, equal_nan=True))
         if any(mask) and mask[mask].index.values[0] not in temp_cols:
+            # If the column is equal, use the existing name
             temp_cols.append(mask[mask].index.values[0])
         else:
-            temp_cols.append(f"Feature {i + original_df.shape[1] - len(col_names)}")
+            # If the column is new, use a default name
+            temp_cols.append(f"feature {i + original_df.shape[1] - len(col_names)}")
 
     return temp_cols
 
@@ -914,6 +913,14 @@ def reorder_cols(df, original_df, col_names):
         Names of the columns used in the transformer.
 
     """
+    # Check if columns returned by the transformer are already in the dataset
+    for col in df.columns:
+        if col in original_df.columns and col not in col_names:
+            raise RuntimeError(
+                f"Column '{col}' returned by the transformer "
+                "already exists in the original dataset."
+            )
+
     temp_df = pd.DataFrame(index=df.index)
     for col in dict.fromkeys(list(original_df.columns) + list(df.columns)):
         if col in df.columns:
@@ -922,16 +929,15 @@ def reorder_cols(df, original_df, col_names):
             if len(df) != len(original_df):
                 raise ValueError(
                     f"Length of values ({len(df)}) does not match length of index "
-                    f"({len(original_df)}). This might happen when transformations "
+                    f"({len(original_df)}). This usually happens when transformations "
                     "that drop rows aren't applied on all the columns."
                 )
 
-            temp_df[col] = original_df[col].tolist()  # Make list to adapt to index
+            temp_df[col] = original_df[col].values  # Take values to adapt to new index
 
         # Derivative cols are added after original (e.g. for one-hot encoding)
         for col_derivative in df.columns:
-            # Exclude cols with default naming (Feature 1 -> Feature 10, etc...)
-            if col_derivative.startswith(col) and not col.startswith("Feature"):
+            if col_derivative.startswith(f"{col}_"):
                 temp_df[col_derivative] = df[col_derivative]
 
     return temp_df
@@ -963,24 +969,30 @@ def transform_one(transformer, X=None, y=None):
 
         # Convert to pandas and assign proper column names
         if not isinstance(out, pd.DataFrame):
-            if sparse.issparse(out):
-                out = out.toarray()
-
             out = to_df(out, index=X.index, columns=name_cols(out, X, use_cols))
 
-        # Reorder columns in case only a subset was used
-        return reorder_cols(out, X, use_cols)
+        # Reorder columns if only a subset was used
+        if len(use_cols) != X.shape[1]:
+            return reorder_cols(out, X, use_cols)
+        else:
+            return out
 
     X = to_df(X, index=getattr(y, "index", None))
     y = to_series(y, index=getattr(X, "index", None))
 
     args = []
     transform_params = signature(transformer.transform).parameters
-    if "X" in transform_params and X is not None:
-        inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
-        args.append(X[inc or [c for c in X.columns if c not in exc]])
-    if "y" in transform_params and y is not None:
-        args.append(y)
+    if "X" in transform_params:
+        if X is not None:
+            inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
+            args.append(X[inc or [c for c in X.columns if c not in exc]])
+        else:  # If X is None and needed in the transformer, skip it
+            return X, y
+    if "y" in transform_params:
+        if y is not None:
+            args.append(y)
+        elif "X" not in transform_params:
+            return X, y  # If y is None and needed, and no X in transformer, skip it
     output = transformer.transform(*args)
 
     # Transform can return X, y or both
@@ -1198,25 +1210,6 @@ def plot_from_model(f):
     return wrapper
 
 
-def score_decorator(f):
-    """Decorator for sklearn's _score function.
-
-    Special `hack` for sklearn.model_selection._validation._score
-    in order to score pipelines that drop samples during transforming.
-
-    """
-
-    def wrapper(*args, **kwargs):
-        args = list(args)  # Convert to list for item assignment
-        if len(args[0]) > 1:  # Has transformers
-            args[1], args[2] = args[0][:-1].transform(args[1], args[2])
-
-        # Return f(final_estimator, X_transformed, y_transformed, ...)
-        return f(args[0][-1], *tuple(args[1:]), **kwargs)
-
-    return wrapper
-
-
 # Custom scorers =================================================== >>
 
 def true_negatives(y_true, y_pred):
@@ -1305,6 +1298,8 @@ class Table:
     """
 
     def __init__(self, headers, spaces, default_pos="right"):
+        assert len(headers) == len(spaces)
+
         self.headers = []
         self.positions = []
         for header in headers:
@@ -1569,7 +1564,7 @@ class ShapExplanation:
         """Get shap interaction values from the Explanation object."""
         return self.explainer.shap_interaction_values(df)
 
-    def get_expected_value(self, target=1, return_int=True):
+    def get_expected_value(self, target=1, return_one=True):
         """Get the expected value of the training set."""
         if self._expected_value is None:
             # Some explainers like Permutation don't have expected_value attr
@@ -1581,11 +1576,11 @@ class ShapExplanation:
                     getattr(self.T, f"{get_proba_attr(self.T)}_train")
                 )
 
-        if return_int:
-            # Select the target expected value or return all
-            if isinstance(self._expected_value, (list, np.ndarray)):
-                if len(self._expected_value) == self.T.y.nunique():
-                    return self._expected_value[target]
+        if return_one and isinstance(self._expected_value, (list, np.ndarray)):
+            if len(self._expected_value) == self.T.y.nunique():
+                return self._expected_value[target]  # Return target expected value
+        if not return_one and not isinstance(self._expected_value, (list, np.ndarray)):
+            return [1 - self._expected_value, self._expected_value]  # Must be binary
 
         return self._expected_value
 
@@ -1593,14 +1588,14 @@ class ShapExplanation:
 class CustomDict(MutableMapping):
     """Custom ordered dictionary.
 
-    Custom dictionary for the _models and _metric private attributes
-    of the trainers. the main differences with the Python dictionary
-    are:
+    The main differences with the Python dictionary are:
         - It has ordered entries.
         - It allows getting an item from an index position.
         - It can insert key value pairs at a specific position.
         - Key requests are case-insensitive.
         - Returns a subset of itself using getitem with a list of keys.
+        - Replace method to change a value only if key exists.
+        - Min method to return all elements except one.
 
     """
 
@@ -1613,6 +1608,8 @@ class CustomDict(MutableMapping):
             if self._conv(k) == self._conv(key):
                 return k
 
+        raise KeyError(key)
+
     def __init__(self, iterable_or_mapping=None, **kwargs):
         """Class initializer.
 
@@ -1621,8 +1618,8 @@ class CustomDict(MutableMapping):
         unless you want the order to be arbitrary.
 
         """
-        self.__data = {}
         self.__keys = []
+        self.__data = {}
 
         if iterable_or_mapping is not None:
             try:
@@ -1640,25 +1637,23 @@ class CustomDict(MutableMapping):
 
     def __getitem__(self, key):
         if isinstance(key, list):
-            return self.__class__(
-                {self._get_key(k): self[k] for k in key if self._get_key(k)}
-            )
-
-        try:
+            return self.__class__({self._get_key(k): self[k] for k in key})
+        elif self._conv(key) in self.__data:
             return self.__data[self._conv(key)]  # From key
-        except KeyError as e:
+        else:
             try:
                 return self.__data[self._conv(self.__keys[key])]  # From index
             except (TypeError, IndexError):
-                raise e
+                raise KeyError(key)
 
     def __setitem__(self, key, value):
-        self.__keys.append(key)
+        if key not in self:
+            self.__keys.append(key)
         self.__data[self._conv(key)] = value
 
     def __delitem__(self, key):
-        del self.__data[self._conv(key)]
         self.__keys.remove(self._get_key(key))
+        del self.__data[self._conv(key)]
 
     def __iter__(self):
         yield from self.keys()
@@ -1667,10 +1662,7 @@ class CustomDict(MutableMapping):
         return len(self.__keys)
 
     def __contains__(self, key):
-        if self._get_key(key) is None:
-            return False
-        else:
-            return True
+        return self._conv(key) in self.__data
 
     def __repr__(self):
         return str(dict(self))
@@ -1695,14 +1687,14 @@ class CustomDict(MutableMapping):
             self.__data[self._conv(new_key)] = value
 
     def get(self, key, default=None):
-        try:
+        if key in self:
             return self[key]
-        except KeyError:
+        else:
             return default
 
     def pop(self, key, default=None):
-        value = self.get(key)
-        if value:
+        if key in self:
+            value = self[key]
             self.__delitem__(key)
             return value
         else:
@@ -1726,24 +1718,26 @@ class CustomDict(MutableMapping):
                 iterable = iterable_or_mapping
 
             for key, value in iterable:
-                if key not in self:
-                    self.__keys.append(key)
-                self.__data[self._conv(key)] = value
+                self[key] = value
 
         for key, value in kwargs.items():
-            if key not in self:
-                self.__keys.append(key)
-            self.__data[self._conv(key)] = value
+            self[key] = value
 
     def setdefault(self, key, default=None):
-        try:
+        if key in self:
             return self[key]
-        except KeyError:
+        else:
             self[key] = default
-            return self[key]
+            return default
 
     def index(self, key):
-        try:
-            return self.__keys.index(self._get_key(key))
-        except ValueError:
-            raise KeyError(key)
+        return self.__keys.index(self._get_key(key))
+
+    def replace(self, key, value):
+        if key in self:
+            self[key] = value
+
+    def min(self, key):
+        return self.__class__(
+            {k: v for k, v in self.items() if self._conv(k) != self._conv(key)}
+        )

@@ -24,20 +24,20 @@ from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg
 
 def test_name():
     """Assert that the name is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="hub")
-    assert model.acronym == "hub"
+    model = ATOMModel(HuberRegressor(), acronym="huber")
+    assert model.acronym == "huber"
 
 
 def test_fullname():
     """Assert that the fullname is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="hub", fullname="Hubber")
-    assert model.fullname == "Hubber"
+    model = ATOMModel(HuberRegressor(), acronym="huber", fullname="Hubber Regression")
+    assert model.fullname == "Hubber Regression"
 
 
 def test_needs_scaling():
     """Assert that the needs_scaling is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="hub", needs_scaling=True)
-    assert model.needs_scaling
+    model = ATOMModel(HuberRegressor(), acronym="huber", needs_scaling=True)
+    assert model.needs_scaling is True
 
 
 # Test ATOMLoader ================================================== >>

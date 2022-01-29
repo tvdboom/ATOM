@@ -20,7 +20,7 @@ packages to use machine learning estimators not provided by sklearn.
 
 ### Required
 
-* **[numpy](https://numpy.org/)** (>=1.19.5)
+* **[numpy](https://numpy.org/)** (~=1.21.0)
 * **[scipy](https://www.scipy.org/)** (>=1.4.1)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.0)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=2.3.0)

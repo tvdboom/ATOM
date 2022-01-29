@@ -17,7 +17,7 @@
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
     
     
-  <title>Dummy - ATOM</title>
+  <title>Dummy Estimator - ATOM</title>
 
     
       <link rel="stylesheet" href="../../../assets/stylesheets/main.a57b2b03.min.css">
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dummy-classificationregression-dummy" class="md-skip">
+        <a href="#dummy-estimator-dummy" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Dummy
+              Dummy Estimator
             
           </span>
         </div>
@@ -218,6 +218,18 @@
   
 
 
+  <li class="md-tabs__item">
+    <a href="../../../release_history/" class="md-tabs__link">
+      Release history
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
   
   
   
@@ -227,18 +239,6 @@
       </a>
     </li>
   
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../../../release_history/" class="md-tabs__link">
-      Release history
-    </a>
-  </li>
 
       
         
@@ -417,22 +417,37 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../../release_history/" class="md-nav__link">
+        Release history
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3">
+        <label class="md-nav__link" for="__nav_4">
           User guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="User guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_3">
+        <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           User guide
         </label>
@@ -608,21 +623,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../release_history/" class="md-nav__link">
-        Release history
-      </a>
     </li>
   
 
@@ -1202,12 +1202,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Dummy
+          Dummy Estimator
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Dummy
+        Dummy Estimator
       </a>
       
         
@@ -1395,7 +1395,7 @@
   
     <li class="md-nav__item">
       <a href="../ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1409,7 +1409,7 @@
   
     <li class="md-nav__item">
       <a href="../lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1423,7 +1423,21 @@
   
     <li class="md-nav__item">
       <a href="../en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1452,6 +1466,34 @@
     <li class="md-nav__item">
       <a href="../ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2832,7 +2874,7 @@
               
                 
                 
-                <h1 id="dummy-classificationregression-dummy">Dummy Classification/Regression (Dummy)</h1>
+                <h1 id="dummy-estimator-dummy">Dummy Estimator (Dummy)</h1>
 <hr />
 <p>When doing supervised learning, a simple sanity check consists of
 comparing one's estimator against simple rules of thumb. The
@@ -2853,7 +2895,6 @@ to compare with other models.</p>
 <li>By default, the estimator adopts the default parameters provided by
   its package. See the <a href="../../../user_guide/training/#parameter-customization">user guide</a>
   on how to customize them.</li>
-<li>The <code>quantile</code> parameter is only used with DummyRegressor.</li>
 <li>The <code>random_state</code> parameter is set equal to that of the trainer.</li>
 </ul>
 <table style="font-size:16px">
@@ -2863,14 +2904,10 @@ to compare with other models.</p>
 <strong>strategy: str</strong><br>
 <ul style="line-height:1.5em;margin-top:5px">
 <li>classifier: default="prior"<br>
-Categorical(["stratified", "most_frequent", "prior", "uniform"], name="strategy")</li>
+Categorical(["most_frequent", "prior", "stratified", "uniform"], name="strategy")</li>
 <li>regressor: default="mean"<br>
-Categorical(["mean", "median", "quantile"], name="strategy")</li>
+Categorical(["mean", "median"], name="strategy")</li>
 </ul>
-<p>
-<strong>quantile: float, default=0.5</strong><br>
-Real(0.0, 1.0, name="quantile")
-</p>
 </td>
 </tr>
 </table>
@@ -2962,6 +2999,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
@@ -3346,7 +3387,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -3482,11 +3523,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>
@@ -3560,7 +3601,7 @@ Transformed target column. Only returned if provided.
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            © Copyright 2019-2021, by Mavs.
+            © Copyright 2019-2022, by Mavs.
           </div>
         
         

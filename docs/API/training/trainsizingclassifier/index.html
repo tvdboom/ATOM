@@ -218,6 +218,18 @@
   
 
 
+  <li class="md-tabs__item">
+    <a href="../../../release_history/" class="md-tabs__link">
+      Release history
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
   
   
   
@@ -227,18 +239,6 @@
       </a>
     </li>
   
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../../../release_history/" class="md-tabs__link">
-      Release history
-    </a>
-  </li>
 
       
         
@@ -417,22 +417,37 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../../release_history/" class="md-nav__link">
+        Release history
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3">
+        <label class="md-nav__link" for="__nav_4">
           User guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="User guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_3">
+        <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           User guide
         </label>
@@ -608,21 +623,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../release_history/" class="md-nav__link">
-        Release history
-      </a>
     </li>
   
 
@@ -1283,7 +1283,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1395,7 +1395,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1409,7 +1409,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1423,7 +1423,21 @@
   
     <li class="md-nav__item">
       <a href="../../models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1452,6 +1466,34 @@
     <li class="md-nav__item">
       <a href="../../models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2957,10 +2999,10 @@ value applies to the n-th model.
 <p>
 <strong>est_params: dict, optional (default=None)</strong><br>
 Additional parameters for the estimators. See the corresponding
-documentation for the available options. For multiple models, use
-the acronyms as key and a dictionary of the parameters as value.
-Add _fit to the parameter's name to pass it to the fit method instead
-of the initializer.
+documentation for the available options. For multiple models,
+use the acronyms as key (or 'all' for all models) and a dict
+of the parameters as value. Add _fit to the parameter's name
+to pass it to the fit method instead of the initializer.
 </p>
 <strong>bo_params: dict, optional (default=None)</strong><br>
 Additional parameters to for the BO. These can include:
@@ -2984,9 +3026,10 @@ will stop if the model didn't improve in last <code>early_stopping</code> rounds
 fraction of rounds from the total. If None, no early stopping is performed. Only
 available for models that allow in-training evaluation.</li>
 <li><b>callback: callable or list of callables, optional (default=None)</b><br>Callbacks for the BO.</li>
-<li><b>dimensions: dict, array or None, optional (default=None)</b><br>Custom hyperparameter
-space for the bayesian optimization. Can be an array to share dimensions across
-models or a dictionary with the model's name as key. If None, ATOM's predefined dimensions are used.</li>
+<li><b>dimensions: dict, list or None, optional (default=None)</b><br>Custom hyperparameter
+space for the bayesian optimization. Can be a list to share dimensions across
+models or a dict with the model's name as key (or 'all' for all models). If None,
+ATOM's predefined dimensions are used.</li>
 <li><b>plot: bool, optional (default=False)</b><br>Whether to plot the BO's progress as it runs.
 Creates a canvas with two plots: the first plot shows the score of every trial
 and the second shows the distance between the last consecutive steps.</li>
@@ -3047,7 +3090,7 @@ elements faster.</p>
 <ul>
 <li><strong>__len__:</strong> Returns the length of the dataset.</li>
 <li><strong>__contains__:</strong> Checks if the provided item is a column in the dataset.</li>
-<li><strong>__getitem__:</strong> Access a model, a column or a subset of the dataset.</li>
+<li><strong>__getitem__:</strong> Access a model, column or subset of the dataset.</li>
 </ul>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
@@ -3276,7 +3319,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">available_models</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L486">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L496">[source]</a>
 </span>
 </div>
 <p>Give an overview of the available predefined models.</p>
@@ -3284,7 +3327,7 @@ Fontsize for the ticks along the plot's axes.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>overview: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Information about the predefined models available for the current task.
 Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -3293,6 +3336,7 @@ Columns include:
 <li><b>estimator:</b> The model's underlying estimator.</li>
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
+<li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
 </ul>
 </td>
 </tr>
@@ -3347,7 +3391,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">clear</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L520">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L531">[source]</a>
 </span>
 </div>
 <p>Reset all model attributes to their initial state, deleting potentially
@@ -3363,7 +3407,7 @@ the class. The cleared attributes per model are:</p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L535">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L546">[source]</a>
 </span>
 </div>
 <p>Delete models from the trainer. If all models are removed, the metric
@@ -3385,7 +3429,7 @@ Models to delete. If None, delete them all.
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
 dataset="test", threshold=0.5)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L562">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L573">[source]</a>
 </span>
 </div>
 <p>Get all the models' scores for the provided metrics.</p>
@@ -3416,7 +3460,7 @@ to class labels. Only used when:
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>scores: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Scores of the models.
 </td>
 </tr>
@@ -3426,7 +3470,7 @@ Scores of the models.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L602">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L613">[source]</a>
 </span>
 </div>
 <p>Return class weights for a balanced data set. Statistically, the class
@@ -3443,7 +3487,7 @@ Data set from which to get the weights. Choose from: "train", "test" or "dataset
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>class_weights: dict</strong><br>
+<strong>dict</strong><br>
 Classes with the corresponding weights.
 </td>
 </tr>
@@ -3471,7 +3515,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -3481,7 +3525,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3505,7 +3549,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L637">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L648">[source]</a>
 </span>
 </div>
 <p>Merge another trainer into this one. Branches, models, metrics and
@@ -3570,7 +3614,7 @@ Training and test set (and optionally a holdout set). Allowed formats are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto", save_data=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file. Remember that the class contains
@@ -3612,7 +3656,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: TrainSizingClassifier</strong><br>
+<strong>TrainSizingClassifier</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -3623,7 +3667,7 @@ Estimator instance.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(name="Stack",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L705">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L715">[source]</a>
 </span>
 </div>
 <p>Add a <a href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
@@ -3655,7 +3699,7 @@ acronyms can be used for the <code>final_estimator</code> parameter.
 <em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L765">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L775">[source]</a>
 </span>
 </div>
 <p>Add a <a href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
@@ -3752,7 +3796,7 @@ instance.
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            © Copyright 2019-2021, by Mavs.
+            © Copyright 2019-2022, by Mavs.
           </div>
         
         

@@ -51,10 +51,17 @@ def test_internal_attrs_are_saved(pipeline):
     assert pl.steps[-2][1]._train_only is True
 
 
-def test_transform_only_y(pipeline):
-    """Assert that the pipeline can transform the target column only."""
-    pl = Pipeline(steps=[("label_encoder", LabelEncoder())])
-    assert isinstance(pl.fit_transform(y=y_bin), pd.Series)
+def test_transform_only_X_or_y(pipeline):
+    """Assert that the pipeline can transform only X or y."""
+    pl = Pipeline(
+        steps=[
+            ("label_encoder", LabelEncoder()),
+            ("scaler", StandardScaler()),
+        ]
+    )
+    pl.fit(X_bin, y_bin)
+    assert isinstance(pl.transform(y=y_bin), pd.Series)
+    assert isinstance(pl.transform(X=X_bin), pd.DataFrame)
 
 
 def test_fit_transform(pipeline):

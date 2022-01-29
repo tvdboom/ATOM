@@ -52,8 +52,8 @@ from .training import (
 from .models import CustomModel, MODELS_ENSEMBLES
 from .plots import ATOMPlotter
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
-    lst, divide, infer_task, check_dim, check_scaling, is_multidim,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, flt, lst, divide,
+    infer_task, check_dim, check_scaling, is_multidim, is_sparse,
     get_pl_name, names_from_estimator, check_is_fitted, variable_return,
     fit_one, delete, custom_transform, method_to_log, composed, crash,
     Table, CustomDict,
@@ -82,14 +82,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.holdout_size = holdout_size
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
-        # Branching attributes
-        self._branches = CustomDict(
-            og=Branch(self, "og"),  # Original branch saves provided dataset
-            master=Branch(self, "master"),  # Main branch
-        )
-        self._current = "master"  # Keeps track of the current branch
+        self._current = "master"  # Keeps track of the branch the user is in
+        self._branches = CustomDict({self._current: Branch(self, self._current)})
 
-        # Training attributes
         self._models = CustomDict()
         self._metric = CustomDict()
         self._errors = CustomDict()
@@ -98,10 +93,6 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Prepare the provided data
         self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays, y=y)
-
-        # Attach the data to the original branch
-        self.og.data = self.branch.data.copy(deep=True)
-        self.og.idx = self.branch.idx.copy()
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
@@ -122,10 +113,10 @@ class ATOM(BasePredictor, ATOMPlotter):
     def __repr__(self):
         out = f"{self.__class__.__name__}"
         out += f"\n --> Branches:"
-        if len(self._branches) - 1 == 1:
+        if len(self._branches.min("og")) == 1:
             out += f" {self._current}"
         else:
-            for branch in [b for b in self._branches if b != "og"]:
+            for branch in self._branches.min("og"):
                 out += f"\n   >>> {branch}{' !' if branch == self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
@@ -135,29 +126,6 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     def __iter__(self):
         yield from self.pipeline.values
-
-    def __getitem__(self, item):
-        if isinstance(item, int):
-            return self.pipeline.iloc[item]  # Get estimator from pipeline
-        elif isinstance(item, str):
-            if item in self._branches:
-                return self._branches[item]  # Get branch
-            elif item in self._models:
-                return self._models[item]  # Get model
-            elif item in self.dataset:
-                return self.dataset[item]  # Get column from dataset
-            else:
-                raise ValueError(
-                    f"{self.__class__.__name__} object has no "
-                    f"branch, model or column called {item}."
-                )
-        elif isinstance(item, list):
-            return self.dataset[item]  # Get subset of dataset
-        else:
-            raise TypeError(
-                f"{self.__class__.__name__} is only "
-                "subscriptable with types int, str or list."
-            )
 
     # Utility properties =========================================== >>
 
@@ -207,7 +175,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def scaled(self):
         """Whether the feature set is scaled."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             est_names = [est.__class__.__name__.lower() for est in self.pipeline]
             return check_scaling(self.X) or any("scaler" in name for name in est_names)
 
@@ -220,7 +188,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def nans(self):
         """Columns with the number of missing values in them."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum()
             return nans[nans > 0]
@@ -228,7 +196,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_nans(self):
         """Number of samples containing missing values."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum(axis=1)
             return len(nans[nans > 0])
@@ -260,7 +228,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def outliers(self):
         """Columns in training set with amount of outlier values."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=num_and_target)
@@ -269,7 +237,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_outliers(self):
         """Number of samples in the training set containing outliers."""
-        if not is_multidim(self.X):
+        if not is_multidim(self.X) and not is_sparse(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
@@ -289,7 +257,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_classes(self):
         """Number of classes in the target column."""
-        return len(self.y.unique())
+        return self.y.nunique(dropna=False)
 
     # Utility methods =============================================== >>
 
@@ -363,46 +331,79 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
 
     @composed(crash, typechecked)
-    def distribution(self, columns: Union[int, str] = 0):
-        """Get statistics on a column's distribution.
+    def distribution(
+        self,
+        distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+    ):
+        """Get statistics on column distributions.
 
-        Compute the KS-statistic for various distributions against
-        a column in the dataset.
+        Compute the Kolmogorov-Smirnov test for various distributions
+        against columns in the dataset. Only for numerical columns.
+        Missing values are ignored.
 
         Parameters
         ----------
-        columns: int or str, optional (default=0)
-            Index or name of the column to get the statistics from.
-            Only numerical columns are accepted.
+        distributions: str, sequence or None, optional (default=None)
+            Names of the distributions in `scipy.stats` to get the
+            statistics on. If None, a selection of the most common
+            ones is used.
+
+        columns: int, str, slice, sequence or None, optional (default=None)
+            Names, indices or dtypes of the columns in the dataset to
+            perform the test on. If None, select all numerical columns.
 
         Returns
         -------
-        df: pd.DataFrame
-            Dataframe with the statistic results.
+        pd.DataFrame
+            Statistic results with multiindex levels:
+                - dist: Name of the distribution.
+                - stat: Statistic results:
+                    - score: KS-test score.
+                    - p_value: Corresponding p-value.
 
         """
-        if isinstance(columns, int):
-            columns = self.columns[columns]
+        if distributions is None:
+            distributions = [
+                "beta",
+                "expon",
+                "gamma",
+                "invgauss",
+                "lognorm",
+                "norm",
+                "pearson3",
+                "triang",
+                "uniform",
+                "weibull_min",
+                "weibull_max",
+            ]
+        else:
+            distributions = lst(distributions)
 
-        if columns in self.categorical:
-            raise ValueError(
-                "Invalid value for the columns parameter. Column should "
-                f"be numerical, got categorical column {columns}."
-            )
+        columns = self._get_columns(columns, only_numerical=True)
 
-        # Drop missing values from the column before fitting
-        X = self[columns].replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
+        df = pd.DataFrame(
+            index=pd.MultiIndex.from_product(
+                iterables=(distributions, ["score", "p_value"]),
+                names=["dist", "stat"],
+            ),
+            columns=columns,
+        )
 
-        df = pd.DataFrame(columns=["ks", "p_value"])
-        for dist in DISTRIBUTIONS:
-            # Get KS-statistic with fitted distribution parameters
-            param = getattr(stats, dist).fit(X)
-            stat = stats.kstest(X, dist, args=param)
+        for col in columns:
+            # Drop missing values from the column before fitting
+            X = self[col].replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
 
-            # Add as row to the dataframe
-            df.loc[dist] = {"ks": round(stat[0], 4), "p_value": round(stat[1], 4)}
+            for dist in distributions:
+                # Get KS-statistic with fitted distribution parameters
+                param = getattr(stats, dist).fit(X)
+                stat = stats.kstest(X, dist, args=param)
 
-        return df.sort_values("ks")
+                # Add as column to the dataframe
+                df.loc[(dist, "score"), col] = round(stat[0], 4)
+                df.loc[(dist, "p_value"), col] = round(stat[1], 4)
+
+        return df
 
     @composed(crash, typechecked)
     def export_pipeline(
@@ -439,7 +440,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Returns
         -------
-        pipeline: Pipeline
+        Pipeline
             Current branch as a sklearn-like Pipeline object.
 
         """
@@ -509,7 +510,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Returns
         -------
-        profile: ProfileReport
+        ProfileReport
             Created report object.
 
         """
@@ -536,16 +537,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         to its form after initialization.
 
         """
-        # Delete all models and branches
+        # Delete all models in the instance
         delete(self, self._get_models())
-        for name in [b for b in self._branches if b != "og"]:
-            self._branches.pop(name)
 
-        # Re-create the master branch from original
-        self._branches["master"] = Branch(self, "master", parent="og")
+        # Recreate the master branch from original (and drop rest)
         self._current = "master"
+        self._branches = CustomDict({self._current: self._get_og_branches()[0]})
 
-        self.log("The instance is successfully reset.", 1)
+        self.log(f"{self.__class__.__name__} successfully reset.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = "auto", dataset: str = "dataset"):
@@ -571,30 +570,39 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def shrink(
         self,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         obj2cat: bool = True,
-        int2uint: bool = False
+        int2uint: bool = False,
+        dense2sparse: bool = False,
+        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
     ):
-        """Converts the dataset's columns to the smallest possible dtype.
+        """Converts the columns to the smallest possible matching dtype.
 
-        Use this method for memory optimization. Note that applying
-        transformers to the data may alter the dtypes again.
-        From: https://github.com/fastai/fastai/blob/master/fastai/tabular/core.py
+        Examples are: float64 -> float32, int64 -> int8, etc... Sparse
+        arrays also transform their non-fill value. Use this method for
+        memory optimization. Note that applying transformers to the
+        data may alter the types again.
+
+        Partially from: https://github.com/fastai/fastai/blob/master/
+        fastai/tabular/core.py
 
         Parameters
         ----------
-        columns: int, str, slice, sequence or None, optional (default=None)
-            Names, indices or dtypes of the columns in the dataset to
-            shrink. If None, transform all columns.
-
         obj2cat: bool, optional (default=True)
             Whether to convert `object` to `category`. Only if the
             number of categories would be less than 30% of the length
             of the column.
 
         int2uint: bool, optional (default=False)
-            Whether to convert `int` to `uint`. Only if the values are
-            strictly positive.
+            Whether to convert `int` to `uint` (unsigned integer). Only if
+            the values in the column are strictly positive.
+
+        dense2sparse: bool, optional (default=False)
+            Whether to convert all features to sparse format. The element
+            that is compressed is always zero.
+
+        columns: int, str, slice, sequence or None, optional (default=None)
+            Names, indices or dtypes of the columns in the dataset to
+            shrink. If None, transform all columns.
 
         """
         check_dim(self, "shrink")
@@ -618,30 +626,54 @@ class ATOM(BasePredictor, ATOMPlotter):
             exclude_types += ["object"]
 
         new_dtypes = {}
-        for c, old_t in {k: v for k, v in self.dtypes.items() if k in columns}.items():
-            if old_t.name in exclude_types:
+        for name, column in self.dataset.items():
+            old_t = column.dtype
+            if name not in columns or old_t.name in exclude_types:
                 continue
 
-            t = next((v for k, v in type_map.items() if old_t.name.startswith(k)))
+            if pd.api.types.is_sparse(column):
+                t = next(
+                    v for k, v in type_map.items() if old_t.subtype.name.startswith(k)
+                )
+            else:
+                t = next(
+                    v for k, v in type_map.items() if old_t.name.startswith(k)
+                )
+
             if isinstance(t, list):
                 # Use uint if values are strictly positive
-                if int2uint and t == type_map["int"] and self[c].min() >= 0:
+                if int2uint and t == type_map["int"] and column.min() >= 0:
                     t = type_map["uint"]
 
                 # Find the smallest type that fits
                 new_t = next(
-                    (r[0] for r in t if r[1] <= self[c].min() and r[2] >= self[c].max())
+                    r[0] for r in t if r[1] <= column.min() and r[2] >= column.max()
                 )
                 if new_t and new_t == old_t:
                     new_t = None  # Keep as is
             else:
                 # Convert to category if number of categories less than 30% of column
-                new_t = t if self[c].nunique() <= int(len(self[c]) * 0.3) else "object"
+                new_t = t if column.nunique() <= int(len(column) * 0.3) else "object"
 
             if new_t:
-                new_dtypes[c] = new_t
+                if pd.api.types.is_sparse(column):
+                    new_dtypes[name] = pd.SparseDtype(new_t, old_t.fill_value)
+                else:
+                    new_dtypes[name] = new_t
 
         self.branch.data = self.branch.data.astype(new_dtypes)
+
+        if dense2sparse:
+            new_cols = {}
+            for name, column in self.X.items():
+                new_cols[name] = pd.arrays.SparseArray(
+                    data=column,
+                    fill_value=0,
+                    dtype=column.dtype,
+                )
+
+            self.branch.X = pd.DataFrame(new_cols, index=self.y.index)
+
         self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
@@ -658,34 +690,46 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(f"Shape: {self.shape}", _vb)
 
         if not is_multidim(self.X):
-            nans = self.nans.sum()
-            n_categorical = self.n_categorical
-            outliers = self.outliers.sum()
-            duplicates = self.dataset.duplicated().sum()
+            if is_sparse(self.X):
+                self.log("Sparse: True", _vb)
+                if hasattr(self.X, "sparse"):  # All columns are sparse
+                    self.log(f"Density: {100. * self.X.sparse.density:.2f}%", _vb)
+                else:  # Not all columns are sparse
+                    n_sparse = sum([pd.api.types.is_sparse(self.X[c]) for c in self.X])
+                    n_dense = self.n_features - n_sparse
+                    p_sparse = round(100 * n_sparse / self.n_features, 1)
+                    p_dense = round(100 * n_dense / self.n_features, 1)
+                    self.log(f"Dense features: {n_dense} ({p_dense}%)", _vb)
+                    self.log(f"Sparse features: {n_sparse} ({p_sparse}%)", _vb)
+            else:
+                nans = self.nans.sum()
+                n_categorical = self.n_categorical
+                outliers = self.outliers.sum()
+                duplicates = self.dataset.duplicated().sum()
 
-            self.log(f"Scaled: {self.scaled}", _vb)
-            if self.nans.sum():
-                p_nans = round(100 * nans / self.dataset.size, 1)
-                self.log(f"Missing values: {nans} ({p_nans}%)", _vb)
-            if n_categorical:
-                p_cat = round(100 * n_categorical / self.n_features, 1)
-                self.log(f"Categorical features: {n_categorical} ({p_cat}%)", _vb)
-            if outliers:
-                p_out = round(100 * outliers / self.train.size, 1)
-                self.log(f"Outlier values: {outliers} ({p_out}%)", _vb)
-            if duplicates:
-                p_dup = round(100 * duplicates / len(self.dataset), 1)
-                self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
+                self.log(f"Scaled: {self.scaled}", _vb)
+                if nans:
+                    p_nans = round(100 * nans / self.dataset.size, 1)
+                    self.log(f"Missing values: {nans} ({p_nans}%)", _vb)
+                if n_categorical:
+                    p_cat = round(100 * n_categorical / self.n_features, 1)
+                    self.log(f"Categorical features: {n_categorical} ({p_cat}%)", _vb)
+                if outliers:
+                    p_out = round(100 * outliers / self.train.size, 1)
+                    self.log(f"Outlier values: {outliers} ({p_out}%)", _vb)
+                if duplicates:
+                    p_dup = round(100 * duplicates / len(self.dataset), 1)
+                    self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
 
         self.log("-" * 37, _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
         self.log(f"Test set size: {len(self.test)}", _vb)
         if self.holdout is not None:
             self.log(f"Holdout set size: {len(self.holdout)}", _vb)
-        self.log("-" * 37, _vb)
 
         # Print count and balance of classes
         if self.task != "regression":
+            self.log("-" * 37, _vb)
             cls = self.classes
             spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * len(cls.columns))
             func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
@@ -733,10 +777,10 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed feature set.
 
-        y: pd.Series
+        pd.Series
             Transformed target column. Only returned if provided.
 
         """
@@ -817,11 +861,16 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             fit_one(estimator, self.X_train, self.y_train, **fit_params)
 
+        # Create an og branch before transforming (if it doesn't exist already)
+        if self._get_og_branches() == [self.branch]:
+            self._branches.insert(0, "og", Branch(self, "og", parent=self.branch))
+
         custom_transform(estimator, self.branch, verbose=self.verbose)
 
         # Add the estimator to the pipeline
-        self.branch.pipeline = self.pipeline.append(
-            pd.Series([estimator], name=self._current), ignore_index=True
+        self.branch.pipeline = pd.concat(
+            [self.pipeline, pd.Series([estimator], name=self._current)],
+            ignore_index=True,
         )
 
     @composed(crash, method_to_log, typechecked)
@@ -1201,7 +1250,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Transformations include normalizing characters and dropping
         noise from the text (emails, HTML tags, URLs, etc...). The
-        transformations are applied on the column named `Corpus`, in
+        transformations are applied on the column named `corpus`, in
         the same order the parameters are presented. If there is no
         column with that name, an exception is raised.
 
@@ -1209,6 +1258,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_dim(self, "nlpclean")
+        columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, TextCleaner().get_params())
         textcleaner = TextCleaner(
             decode=decode,
@@ -1227,7 +1277,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        self._add_transformer(textcleaner)
+        self._add_transformer(textcleaner, columns=columns)
 
         setattr(self.branch, "drops", getattr(textcleaner, "drops"))
 
@@ -1244,13 +1294,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         Convert documents into sequences of words. Additionally,
         create n-grams (represented by words united with underscores,
         e.g. "New_York") based on their frequency in the corpus. The
-        transformations are applied on the column named `Corpus`. If
+        transformations are applied on the column named `corpus`. If
         there is no column with that name, an exception is raised.
 
         See nlp.py for a description of the parameters.
 
         """
         check_dim(self, "tokenize")
+        columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Tokenizer().get_params())
         tokenizer = Tokenizer(
             bigram_freq=bigram_freq,
@@ -1259,7 +1310,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        self._add_transformer(tokenizer)
+        self._add_transformer(tokenizer, columns=columns)
 
         self.branch.bigrams = tokenizer.bigrams
         self.branch.trigrams = tokenizer.trigrams
@@ -1277,7 +1328,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Normalize the corpus.
 
         Convert words to a more uniform standard. The transformations
-        are applied on the column named `Corpus`, in the same order the
+        are applied on the column named `corpus`, in the same order the
         parameters are presented. If there is no column with that name,
         an exception is raised.
 
@@ -1285,6 +1336,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_dim(self, "normalize")
+        columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
         normalizer = Normalizer(
             stopwords=stopwords,
@@ -1294,24 +1346,25 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        self._add_transformer(normalizer)
+        self._add_transformer(normalizer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def vectorize(self, strategy: str = "BOW", **kwargs):
         """Vectorize the corpus.
 
         Transform the corpus into meaningful vectors of numbers. The
-        transformation is applied on the column named `Corpus`. If
+        transformation is applied on the column named `corpus`. If
         there is no column with that name, an exception is raised.
 
         See nlp.py for a description of the parameters.
 
         """
         check_dim(self, "normalize")
+        columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
         vectorizer = Vectorizer(strategy=strategy, **kwargs)
 
-        self._add_transformer(vectorizer)
+        self._add_transformer(vectorizer, columns=columns)
 
         # Attach the estimator attribute to atom's branch
         for attr in ("bow", "tfidf", "hashing"):
@@ -1474,7 +1527,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Returns
         -------
-        metric: str, function, scorer or sequence
+        str, function, scorer or sequence
             Metric for the run. Should be the same as previous run.
 
         """
@@ -1510,13 +1563,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         Parameters
         ----------
         trainer: class
-            Trainer instance to run.
+            Initialized trainer to run.
 
         """
         try:
             trainer._tracking_params = self._tracking_params
-            trainer._branches = {"og": self.og, self._current: self.branch}
             trainer._current = self._current
+            trainer._branches = self._branches
             trainer.scaled = self.scaled
             trainer.run()
         finally:

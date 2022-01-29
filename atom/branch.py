@@ -37,9 +37,6 @@ class Branch:
 
     Attributes
     ----------
-    pipeline: pd.Series or None, optional (default=None)
-        Estimators fitted on the data in the branch.
-
     data: pd.DataFrame or None, optional (default=None)
         Dataset coupled to the branch.
 
@@ -48,6 +45,9 @@ class Branch:
 
     mapping: dict or None, optional (default=None)
         Target values mapped to their respective encoded integer.
+
+    pipeline: pd.Series or None, optional (default=None)
+        Estimators fitted on the data in the branch.
 
     feature_importance: list, optional (default=None)
         Features ordered by most to least important.
@@ -66,7 +66,7 @@ class Branch:
                 parent = self.T._branches[parent]
 
             # Copy the branch attrs and point to the rest
-            for attr in ("pipeline", "data", "idx", "mapping", "feature_importance"):
+            for attr in ("data", "idx", "mapping", "pipeline", "feature_importance"):
                 setattr(self, attr, copy(getattr(parent, attr)))
             for attr in vars(parent):
                 if not hasattr(self, attr):  # If not already assigned...
@@ -118,11 +118,9 @@ class Branch:
                 "The og branch is an internal branch and can not be deleted!"
             )
         elif name not in self.T._branches:
-            raise ValueError(f"Branch {name} not found in {self.T.__class__.__name__}!")
-        elif len(self.T._branches) <= 2:
-            raise PermissionError(
-                f"Can't delete the last branch in {self.T.__class__.__name__}!"
-            )
+            raise ValueError(f"Branch {name} not found!")
+        elif len(self.T._branches.min("og")) == 1:
+            raise PermissionError("Can't delete the last branch!")
         else:
             branch = self.T._branches[name]
 
@@ -131,9 +129,13 @@ class Branch:
             if depending_models:
                 self.T.delete(depending_models)
 
+            # If this is the last og branch, create a new one
+            if self.T._get_og_branches() == [branch]:
+                self.T._branches.insert(0, "og", Branch(self.T, "og", parent=self))
+
             # Reset the current branch
             if branch.name == self.T._current:
-                self.T._current = list(self.T._branches)[1]  # 0 is og
+                self.T._current = list(self.T._branches.min("og"))[0]
 
             self.T._branches.pop(branch.name)
             self.T.log(f"Branch {branch.name} successfully deleted.", 1)

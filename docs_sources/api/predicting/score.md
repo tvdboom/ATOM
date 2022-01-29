@@ -5,14 +5,15 @@
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
 y, metric=None, sample_weights=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L244">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L250">[source]</a>
 </span>
 </div>
 
-Transform new data through the current branch and return a metric score.
-Transformers that are only applied on the training set are skipped.
-If called from a trainer, the best model in the pipeline (under the
-`winner` attribute) is used. If called from a model, that model is used.
+Get a metric score on unseen data. New data is first transformed
+through the model's pipeline. Transformers that are only applied
+on the training set are skipped. If called from a trainer, the best
+model in the pipeline (under the `winner` attribute) is used. If
+called from a model, that model is used.
 
 <table style="font-size:16px">
 <tr>
@@ -48,7 +49,7 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>score: np.float64</strong><br>
+<strong>np.float64</strong><br>
 Metric score of X with respect to y.
 </td>
 </tr>

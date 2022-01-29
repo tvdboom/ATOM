@@ -216,6 +216,18 @@
         
   
   
+
+
+  <li class="md-tabs__item">
+    <a href="../../release_history/" class="md-tabs__link">
+      Release history
+    </a>
+  </li>
+
+      
+        
+  
+  
     
   
 
@@ -229,18 +241,6 @@
       </a>
     </li>
   
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../../release_history/" class="md-tabs__link">
-      Release history
-    </a>
-  </li>
 
       
         
@@ -416,6 +416,21 @@
 
   
   
+  
+    <li class="md-nav__item">
+      <a href="../../release_history/" class="md-nav__link">
+        Release history
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
     
   
   
@@ -423,18 +438,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_3">
+        <label class="md-nav__link" for="__nav_4">
           User guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="User guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_3">
+        <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           User guide
         </label>
@@ -532,6 +547,13 @@
         <li class="md-nav__item">
   <a href="#indexing" class="md-nav__link">
     Indexing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sparse-matrices" class="md-nav__link">
+    Sparse matrices
   </a>
   
 </li>
@@ -687,21 +709,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../release_history/" class="md-nav__link">
-        Release history
-      </a>
     </li>
   
 
@@ -1268,7 +1275,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1380,7 +1387,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1394,7 +1401,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1408,7 +1415,21 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1437,6 +1458,34 @@
     <li class="md-nav__item">
       <a href="../../API/models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -2764,6 +2813,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#sparse-matrices" class="md-nav__link">
+    Sparse matrices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#branches" class="md-nav__link">
     Branches
   </a>
@@ -2859,6 +2915,11 @@ following formats:</p>
 <li>(X_train, y_train), (X_test, y_test)</li>
 <li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
 </ul>
+<p>The input data is always converted internally to a <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html">pandas dataframe</a>,
+if it isn't one already. The column names should always be strings. If
+they are not, atom changes their type at initialization. If no column
+names are provided, default names are given of the form <code>feature n</code>,
+where n stands for the n-th feature.</p>
 <p><br></p>
 <h2 id="indexing">Indexing</h2>
 <p>By default, atom resets the dataframe's <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html">index</a>
@@ -2871,6 +2932,22 @@ To avoid this, specify the <code>index</code> parameter. If the dataset has an
 <li><a href="../predicting">Predictions</a> of specific rows can be accessed through
   their index.</li>
 </ul>
+<p><br></p>
+<h2 id="sparse-matrices">Sparse matrices</h2>
+<p>If atom is initialized using a scipy sparse matrix, it is converted
+internally to a dataframe of sparse columns. Read more about pandas'
+sparse data structures <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html">here</a>.
+The same conversion takes place when a transformer returns a sparse
+matrix, like, for example, the <a href="../../API/NLP/vectorizer">Vectorizer</a>.</p>
+<p>Note that ATOM considers a dataset to be sparse if any of the columns
+is sparse. A dataset can only benefit from sparsity when all its
+columns are sparse, hence mixing sparse and non-sparse columns is
+not recommended and can cause estimators to decrease their training
+speed or even crash. Use the <a href="../../API/ATOM/atomclassifier/#shrink">shrink</a>
+method to convert dense features to sparse and the <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
+method to check which models have native support for sparse matrices.</p>
+<p>Click <a href="../../examples/nlp">here</a> to see an example that uses sparse
+data.</p>
 <p><br></p>
 <h2 id="branches">Branches</h2>
 <p>You might want to compare how a model performs on a dataset transformed
@@ -2972,25 +3049,23 @@ prints the same information as the __repr__ and also saves it to the
 logger.
 <br /><br /><br /></p>
 <h2 id="memory-considerations">Memory considerations</h2>
-<p>Atom stores one copy of the dataframe in each branch. Note that there
-are always at least two branches in the instance: master (or another
-user defined branch) and one additional branch that stores the
-dataframe with which the class was initialized. This internal branch
-is called <code>og</code> (original) and can not be accessed by the user.</p>
+<p>An atom instance stores one copy of the dataframe in each branch, and
+one copy of the initial dataset with which the instance is initialized
+(this copy is necessary to avoid data leakage during hyperparameter
+tuning and for some specific methods like <a href="../../API/models/gnb/#cross-validate">cross_validate</a>
+and <a href="../../API/ATOM/atomclassifier/#reset">reset</a>). This initial copy
+is created as soon as there are no branches in the initial state (usually
+after calling the first data transformation) and it's stored in an
+internal branch called <code>og</code> (original). The og branch is not accessible
+by the user.</p>
 <p>Apart from the dataset itself, the model's <a href="./predicting">predictions</a>
 (e.g. <code>predict_proba_train</code>), metric scores and <a href="./plots/#shap">shap values</a>
 are also stored as attributes of the model to avoid having to recalculate
-them every time they are needed. All this data can occupy a considerable
-amount memory for large datasets. You can delete all these attributes
+them every time they are needed. This data can occupy a considerable
+amount of memory for large datasets. You can delete all these attributes
 using the <a href="../../API/ATOM/atomclassifier/#clear">clear</a> method in order
 to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
 the class.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Sparse matrices fed to atom or an <a href="../../API/ATOM/atomclassifier/#export-pipeline">exported pipeline</a>
-are converted internally to the full array. Note that this can fill
-large spaces in memory.</p>
-</div>
 <p><br></p>
 <h2 id="data-transformations">Data transformations</h2>
 <p>Performing data transformations is a common requirement of many
@@ -3084,7 +3159,7 @@ to its default parameters, the method can take a very long time to finish!</p>
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            © Copyright 2019-2021, by Mavs.
+            © Copyright 2019-2022, by Mavs.
           </div>
         
         

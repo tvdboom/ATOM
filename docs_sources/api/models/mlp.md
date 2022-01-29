@@ -24,7 +24,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/n
 * By default, the estimator adopts the default parameters provided by
   its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
-* The MLP optimizes between one and three hidden layers with the BO. For more layers, use the `est_params` parameter.
+* The MLP optimizes three hidden layers by default, but any number of hidden
+  layers can be tuned adding `hidden_layer_n` to the [custom dimensions](../../../user_guide/training/#hyperparameter-tuning).
 * The `learning_rate` and `power_t` parameters are only used when solver="lbfgs".
 * The `learning_rate_init` parameter is only used when solver!="lbfgs".
 * The `random_state` parameter is set equal to that of the trainer.
@@ -34,7 +35,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/n
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Dimensions:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>hidden_layer_sizes: tuple, default=(100,)</strong><br>
+<strong>hidden_layer_[n]: tuple, default=(100,)</strong><br>
 Integer(10, 100, name="hidden_layer_1")<br>
 Integer(0, 100, name="hidden_layer_2")<br>
 Integer(0, 100, name="hidden_layer_3")
@@ -52,8 +53,8 @@ Categorical(["lbfgs", "sgd", "adam"], name="solver")
 Real(1e-4, 0.1, "log-uniform", name="alpha")
 </p>
 <p>
-<strong>batch_size: int, default=200</strong><br>
-Integer(8, 250, name="batch_size")
+<strong>batch_size: str or int, default="auto"</strong><br>
+["auto", 8, 16, 32, 64, 128, 256]
 </p>
 <p>
 <strong>learning_rate: str, default="constant"</strong><br>
@@ -169,6 +170,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
@@ -575,7 +580,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -721,11 +726,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>

@@ -218,6 +218,18 @@
   
 
 
+  <li class="md-tabs__item">
+    <a href="../../../release_history/" class="md-tabs__link">
+      Release history
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
   
   
   
@@ -227,18 +239,6 @@
       </a>
     </li>
   
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../../../release_history/" class="md-tabs__link">
-      Release history
-    </a>
-  </li>
 
       
         
@@ -417,22 +417,37 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../../release_history/" class="md-nav__link">
+        Release history
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3">
+        <label class="md-nav__link" for="__nav_4">
           User guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="User guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_3">
+        <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           User guide
         </label>
@@ -608,21 +623,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../release_history/" class="md-nav__link">
-        Release history
-      </a>
     </li>
   
 
@@ -1193,7 +1193,7 @@
   
     <li class="md-nav__item">
       <a href="../dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1305,7 +1305,7 @@
   
     <li class="md-nav__item">
       <a href="../ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1319,7 +1319,7 @@
   
     <li class="md-nav__item">
       <a href="../lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1333,7 +1333,21 @@
   
     <li class="md-nav__item">
       <a href="../en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1453,6 +1467,34 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../perc/" class="md-nav__link">
+        Perceptron
+      </a>
     </li>
   
 
@@ -2861,19 +2903,19 @@ Integer(100, 1000, name="n_iter")
 </p>
 <p>
 <strong>alpha_1: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_1")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1")
 </p>
 <p>
 <strong>alpha_2: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="alpha_2")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_2")
 </p>
 <p>
 <strong>lambda_1: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_1")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_1")
 </p>
 <p>
 <strong>lambda_2: float, default=1e-6</strong><br>
-Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_2")
+Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_2")
 </p>
 </td>
 </tr>
@@ -2966,6 +3008,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
@@ -3294,7 +3340,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -3430,11 +3476,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>
@@ -3487,13 +3533,13 @@ Transformed target column. Only returned if provided.
       
       
         
-        <a href="../lr/" class="md-footer__link md-footer__link--next" aria-label="Next: Logistic Regression" rel="next">
+        <a href="../huber/" class="md-footer__link md-footer__link--next" aria-label="Next: Huber Regression" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Logistic Regression
+              Huber Regression
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -3508,7 +3554,7 @@ Transformed target column. Only returned if provided.
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            © Copyright 2019-2021, by Mavs.
+            © Copyright 2019-2022, by Mavs.
           </div>
         
         

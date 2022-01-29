@@ -16,13 +16,14 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from copy import deepcopy
-from inspect import signature
 from datetime import datetime
 from pickle import PickleError
+from unittest.mock import patch
 from typeguard import typechecked
 from typing import Optional, Union
-from joblib import Parallel, delayed
 from joblib.memory import Memory
+from joblib import Parallel, delayed
+from inspect import Parameter, signature
 from mlflow.tracking import MlflowClient
 
 # Sklearn
@@ -31,9 +32,11 @@ from sklearn.utils import resample
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
+from sklearn.model_selection._validation import _score, cross_validate
 
 # Others
-from skopt.utils import use_named_args
+from skopt.space.transformers import LabelEncoder
+from skopt.space.space import Categorical, check_dimension
 from skopt.optimizer import (
     base_minimize,
     gp_minimize,
@@ -45,18 +48,19 @@ from skopt.optimizer import (
 from .data_cleaning import Scaler
 from .pipeline import Pipeline
 from .plots import BaseModelPlotter
+from .patches import inverse_transform, fit, transform, score
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst, it, arr,
     merge, time_to_str, get_best_score, get_custom_scorer, get_pl_name,
     variable_return, custom_transform, composed, crash, method_to_log,
-    score_decorator, Table, ShapExplanation, CustomDict,
+    Table, ShapExplanation, CustomDict,
 )
 
 
 class BaseModel(BaseModelPlotter):
     """Base class for all models."""
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.T = args[0]  # Trainer instance
         self.name = self.acronym if len(args) == 1 else args[1]
         self.scaler = None
@@ -73,13 +77,12 @@ class BaseModel(BaseModelPlotter):
         self._shap = ShapExplanation(self)
 
         # BO attributes
-        self.params = {}
         self._iter = 0
         self._stopped = ("---", "---")
         self._early_stopping = None
         self._dimensions = []
         self.bo = pd.DataFrame(
-            columns=["call", "params", "model", "score", "time", "total_time"],
+            columns=["call", "params", "estimator", "score", "time", "total_time"],
         )
 
         # Parameter attributes
@@ -90,6 +93,7 @@ class BaseModel(BaseModelPlotter):
         self._n_bootstrap = 0
 
         # Results attributes
+        self.best_call = None
         self.best_params = None
         self.metric_bo = None
         self.time_bo = None
@@ -100,11 +104,11 @@ class BaseModel(BaseModelPlotter):
         self.time_bootstrap = None
         self.time = None
 
-        # Skip if called from FeatureSelector
-        if hasattr(self.T, "_branches"):
+        # Skip this (slower) part if not called for the estimator
+        if not kwargs.get("fast_init"):
             self.branch = self.T.branch
             self._train_idx = len(self.branch.idx[0])  # Can change for sh and ts
-            if getattr(self, "needs_scaling", None) and not self.T.scaled:
+            if getattr(self, "needs_scaling", None) and self.T.scaled is False:
                 self.scaler = Scaler().fit(self.X_train)
 
     def __repr__(self):
@@ -139,6 +143,11 @@ class BaseModel(BaseModelPlotter):
                 "only subscriptable with types str or list."
             )
 
+    @property
+    def _dims(self):
+        """Get the names of the hyperparameter dimension space."""
+        return [d.name for d in self._dimensions]
+
     def _check_est_params(self):
         """Make sure the parameters are valid keyword argument for the estimator."""
         signature_init = signature(self.est_class.__init__).parameters
@@ -161,6 +170,66 @@ class BaseModel(BaseModelPlotter):
                     f"estimator {self.get_estimator().__class__.__name__}."
                 )
 
+    def _get_dimension(self, dimension):
+        """Check the validity of the hyperparameter dimensions."""
+        if isinstance(dimension, str):
+            # If it's a name, use the predefined dimension
+            try:
+                return next(d for d in self.get_dimensions() if d.name == dimension)
+            except StopIteration:
+                raise ValueError(
+                    "Invalid value for the dimensions parameter. Dimension "
+                    f"{dimension} is not a predefined hyperparameter of the "
+                    f"{self.fullname} model. See the model's documentation "
+                    "for an overview of the available hyperparameter and "
+                    "their dimensions."
+                )
+        else:
+            return check_dimension(dimension)
+
+    def _get_default_params(self):
+        """Get the estimator's default parameters for the BO dimensions."""
+        x0 = CustomDict()
+        params = signature(self.est_class.__init__).parameters
+        for dim in self._dimensions:
+            # Special case for MLP, layers are different from default
+            if dim.name == "hidden_layer_1":
+                x0[dim.name] = 100
+            elif dim.name.startswith("hidden_layer"):
+                x0[dim.name] = 0
+            elif dim.name in params and params[dim.name].default is not Parameter.empty:
+                x0[dim.name] = params[dim.name].default
+            else:
+                # Return random value in dimension if it's not possible to
+                # extract a default value. This can happen when the value
+                # is not present in the parameter list (with kwargs) or when
+                # the parameter has no default value
+                x0[dim.name] = dim.rvs(1, random_state=self.T.random_state)[0]
+                self.T.log(
+                    " --> Couldn't find a default value for parameter "
+                    f"{dim.name}. Using a random initialization.", 2
+                )
+
+        # If default value isn't in dimension space, get a random value
+        for (name, value), dimension in zip(x0.items(), self._dimensions):
+            try:
+                is_valid = value in dimension
+            except TypeError:  # Can fail when e.g. checking None in Integer
+                is_valid = False
+            finally:
+                if not is_valid:
+                    x0[name] = dimension.rvs(1, random_state=self.T.random_state)[0]
+                    self.T.log(
+                        f" --> The default value of parameter {name} doesn't lie "
+                        "within the dimension space. Using a random initialization", 2
+                    )
+
+        return x0
+
+    def _get_param(self, params, parameter):
+        """Get the estimator's parameter from est_params or BO."""
+        return params.get(parameter) or self._est_params.get(parameter)
+
     def _get_early_stopping_rounds(self, params, max_iter):
         """Get the number of rounds for early stopping."""
         if "early_stopping_rounds" in params:
@@ -170,27 +239,14 @@ class BaseModel(BaseModelPlotter):
         elif self._early_stopping < 1:
             return int(max_iter * self._early_stopping)
 
-    def get_params(self, x):
-        """Get a dictionary of the model's hyperparameters.
-
-        For numerical parameters, the second arg in value indicates
-        if the number should have decimals and how many.
-
-        Parameters
-        ----------
-        x: list
-            Hyperparameters returned by the BO in order of self.params.
-
-        """
-        params = {}
-        for i, (key, value) in enumerate(self.params.items()):
-            params[key] = round(x[i], value[1]) if value[1] else x[i]
-
-        return params
-
-    def get_init_values(self):
-        """Return the default values of the model's hyperparameters."""
-        return [value[0] for value in self.params.values()]
+    def get_parameters(self, x):
+        """Get a dictionary of the model's hyperparameters."""
+        return CustomDict(
+            {
+                p: round(v, 4) if np.issubdtype(type(v), np.floating) else v
+                for p, v in zip([d.name for d in self._dimensions], x)
+            }
+        )
 
     def bayesian_optimization(self):
         """Run the bayesian optimization algorithm.
@@ -242,15 +298,15 @@ class BaseModel(BaseModelPlotter):
 
                 """
                 # Define subsets from original dataset
-                X_subtrain = self.T.og.dataset.iloc[train_idx, :-1]
-                y_subtrain = self.T.og.dataset.iloc[train_idx, -1]
-                X_val = self.T.og.dataset.iloc[val_idx, :-1]
-                y_val = self.T.og.dataset.iloc[val_idx, -1]
+                branch = self.T._get_og_branches()[0]
+                X_subtrain = branch.dataset.iloc[train_idx, :-1]
+                y_subtrain = branch.dataset.iloc[train_idx, -1]
+                X_val = branch.dataset.iloc[val_idx, :-1]
+                y_val = branch.dataset.iloc[val_idx, -1]
 
                 # Transform subsets if there is a pipeline
-                pl = self.export_pipeline(verbose=0)
-                if len(pl) > 1:
-                    pl = pl[:-1]  # Drop the estimator
+                if not self.T.pipeline.empty:
+                    pl = self.export_pipeline(verbose=0)[:-1]  # Drop the estimator
                     X_subtrain, y_subtrain = pl.fit_transform(X_subtrain, y_subtrain)
                     X_val, y_val = pl.transform(X_val, y_val)
 
@@ -267,7 +323,7 @@ class BaseModel(BaseModelPlotter):
                         est=est,
                         train=(X_subtrain, y_subtrain),
                         validation=(X_val, y_val),
-                        params=est_copy,
+                        **est_copy,
                     )
                 else:
                     est.fit(arr(X_subtrain), y_subtrain, **est_copy)
@@ -289,7 +345,7 @@ class BaseModel(BaseModelPlotter):
             if pbar:
                 pbar.set_description(call)
 
-            est = self.get_estimator({**self._est_params, **params})
+            est = self.get_estimator(**{**self._est_params, **params})
 
             # Skip if the eval function has already been evaluated at this point
             if params not in self.bo["params"].values:
@@ -341,25 +397,23 @@ class BaseModel(BaseModelPlotter):
                 score = lst(self.bo.loc[self.bo["params"] == params, "score"].values[0])
                 self._stopped = ("---", "---")
 
-            # Append row to the bo attribute
-            t = time_to_str(t_iter)
-            t_tot = time_to_str(init_bo)
-            self.bo = self.bo.append(
+            # Add row to the bo attribute
+            row = pd.Series(
                 {
                     "call": call,
                     "params": params,
                     "estimator": est,
                     "score": flt(score),
-                    "time": t,
-                    "total_time": t_tot,
-                },
-                ignore_index=True,
+                    "time": time_to_str(t_iter),
+                    "total_time": time_to_str(init_bo),
+                }
             )
+            self.bo.loc[self._iter - 1] = row
 
             # Save BO calls to experiment as nested runs
             if self.T.log_bo:
                 with mlflow.start_run(run_name=f"{self.name} - {call}", nested=True):
-                    mlflow.set_tag("time", t)
+                    mlflow.set_tag("time", row["time"])
                     mlflow.log_params(params)
                     for i, m in enumerate(self.T._metric):
                         mlflow.log_metric(m, score[i])
@@ -381,7 +435,7 @@ class BaseModel(BaseModelPlotter):
                 sequence.update(
                     {"early_stopping": f"{self._stopped[0]}/{self._stopped[1]}"}
                 )
-            sequence.update({"time": t, "total_time": t_tot})
+            sequence.update({"time": row["time"], "total_time": row["total_time"]})
             self.T.log(table.print(sequence), 2)
 
             return -score[0]  # Negative since skopt tries to minimize
@@ -394,119 +448,113 @@ class BaseModel(BaseModelPlotter):
                 f"should be >n_initial_points, got {self._n_calls}."
             )
 
-        self._check_est_params()  # Check validity of parameters
+        # Check validity of parameters (not in basetrainer to skip if error)
+        self._check_est_params()
 
         init_bo = datetime.now()  # Track the BO's duration
 
         self.T.log(f"\n\nRunning BO for {self.fullname}...", 1)
 
+        # Assign proper dimensions format or predefined
+        if self._dimensions:
+            self._dimensions = [self._get_dimension(d) for d in self._dimensions]
+        else:
+            self._dimensions = self.get_dimensions()
+
+        # Drop hyperparameter if already defined in est_params
+        self._dimensions = [
+            d for d in self._dimensions if d.name not in self._est_params
+        ]
+
+        # If no hyperparameters to optimize, skip BO
+        if not self._dimensions:
+            self.T.log(" --> Skipping BO. No hyperparameters to optimize.", 2)
+            return
+
         pbar = None
         if self.T.verbose == 1:
             pbar = tqdm(total=self._n_calls, desc="Initial point 1")
 
-        # Drop dimensions from BO if already in est_params
-        for param in self._est_params:
-            if param in self.params:
-                self.params.pop(param)
+        # If only 1 initial point, use the model's default parameters
+        x0 = self._get_default_params() if self._n_initial_points == 1 else {}
 
-        # Specify model dimensions
-        def pre_defined_hyperparameters(x):
-            return optimize(**self.get_params(x))
-
-        # Get custom dimensions (if provided)
-        if self._dimensions:
-            @use_named_args(self._dimensions)
-            def custom_hyperparameters(**x):
-                return optimize(**x)
-
-            dimensions = self._dimensions
-            func = custom_hyperparameters  # Use custom hyperparameters
-
-        else:  # If there were no custom dimensions, use the default
-            dimensions = self.get_dimensions()
-            func = pre_defined_hyperparameters  # Default optimization func
-
-        # If no hyperparameters left to optimize, skip BO
-        if not dimensions:
-            self.T.log(" --> Skipping BO. No hyperparameters found to optimize.", 2)
-            return
-
-        # Start with the table output
-        sequence = [("call", "left")] + [dim.name for dim in dimensions]
+        # Initialize the BO table
+        headers = [("call", "left")] + self._dims
         for m in self.T._metric.values():
-            sequence.extend([m.name, "best_" + m.name])
+            headers.extend([m.name, "best_" + m.name])
         if self._early_stopping and self.T._bo["cv"] == 1:
-            sequence.append("early_stopping")
-        sequence.extend(["time", "total_time"])
-        table = Table(sequence, [max(7, len(str(text))) for text in sequence])
+            headers.append("early_stopping")
+        headers.extend(["time", "total_time"])
+
+        # Define the width op every column in the table
+        spaces = [len(str(headers[0]))]
+        for dim in self._dimensions:
+            # If the dimension has categories, take the mean of the widths
+            # Else take the max of 7 (a minimum) and the width of the name
+            if hasattr(dim, "categories"):
+                options = np.mean([len(str(cat)) for cat in dim.categories], dtype=int)
+            else:
+                options = 0
+            spaces.append(max(7, len(dim.name), options))
+        spaces.extend([max(7, len(t)) for t in headers[1 + len(self._dimensions):]])
+
+        table = Table(headers, spaces)
         self.T.log(table.print_header(), 2)
         self.T.log(table.print_line(), 2)
-
-        # If only 1 initial point, use the model's default parameters
-        x0 = None
-        if self._n_initial_points == 1 and hasattr(self, "get_init_values"):
-            x0 = self.get_init_values()
 
         # Prepare keyword arguments for the optimizer
         bo_kwargs = self.T._bo.copy()  # Don't pop params from trainer
         kwargs = dict(
-            func=func,
-            dimensions=dimensions,
+            func=lambda x: optimize(**self.get_parameters(x)),
+            dimensions=self._dimensions,
             n_calls=self._n_calls,
             n_initial_points=self._n_initial_points,
-            x0=bo_kwargs.pop("x0", x0),
+            x0=bo_kwargs.pop("x0", list(x0.values()) or None),
             callback=self.T._bo["callback"],
             n_jobs=bo_kwargs.pop("n_jobs", self.T.n_jobs),
             random_state=bo_kwargs.pop("random_state", self.T.random_state),
             **bo_kwargs["kwargs"],
         )
 
-        if isinstance(self.T._bo["base_estimator"], str):
-            if self.T._bo["base_estimator"].lower() == "gp":
-                optimizer = gp_minimize(**kwargs)
-            elif self.T._bo["base_estimator"].lower() == "et":
-                optimizer = forest_minimize(base_estimator="ET", **kwargs)
-            elif self.T._bo["base_estimator"].lower() == "rf":
-                optimizer = forest_minimize(base_estimator="RF", **kwargs)
-            elif self.T._bo["base_estimator"].lower() == "gbrt":
-                optimizer = gbrt_minimize(**kwargs)
-        else:
-            optimizer = base_minimize(
-                base_estimator=self.T._bo["base_estimator"],
-                **kwargs,
-            )
+        # Monkey patch skopt objects to fix bug with str and num in Categorical
+        with patch.object(Categorical, "inverse_transform", inverse_transform):
+            with patch.object(LabelEncoder, "fit", fit):
+                with patch.object(LabelEncoder, "transform", transform):
+                    base_estimator = self.T._bo["base_estimator"]
+                    if isinstance(base_estimator, str):
+                        if base_estimator.lower() == "gp":
+                            gp_minimize(**kwargs)
+                        elif base_estimator.lower() == "et":
+                            forest_minimize(base_estimator="ET", **kwargs)
+                        elif base_estimator.lower() == "rf":
+                            forest_minimize(base_estimator="RF", **kwargs)
+                        elif base_estimator.lower() == "gbrt":
+                            gbrt_minimize(**kwargs)
+                    else:
+                        base_minimize(base_estimator=base_estimator, **kwargs)
 
         if pbar:
             pbar.close()
 
-        # Optimal parameters found by the BO
-        # Return from skopt wrapper to get dict of custom hyperparameter space
-        if func is pre_defined_hyperparameters:
-            self.best_params = self.get_params(optimizer.x)
-        else:
+        # Get optimal row. If duplicate scores, select the shortest training
+        best = self.bo.copy()
+        best["score"] = self.bo["score"].apply(lambda x: lst(x)[0])
+        best_idx = best.sort_values(["score", "time"], ascending=False).index[0]
 
-            @use_named_args(dimensions)
-            def get_custom_params(**x):
-                return x
-
-            self.best_params = get_custom_params(optimizer.x)
-
-        # Optimal call and score found by the BO
-        # Drop duplicates in case the best value is repeated through calls
-        best = self.bo["score"].apply(lambda x: lst(x)[0]).drop_duplicates().idxmax()
-        best_call = self.bo.loc[best, "call"]
-        self.metric_bo = self.bo.loc[best, "score"]
+        # Optimal call, params and score to attrs
+        self.best_call = self.bo.loc[best_idx, "call"]
+        self.best_params = self.bo.loc[best_idx, "params"]
+        self.metric_bo = self.bo.loc[best_idx, "score"]
 
         # Save best model (not yet fitted)
-        self.estimator = self.get_estimator({**self._est_params, **self.best_params})
+        self.estimator = self.get_estimator(**{**self._est_params, **self.best_params})
 
         # Get the BO duration
         self.time_bo = time_to_str(init_bo)
 
         # Print results
-        self.T.log(f"\nResults for {self.fullname}:{' ':9s}", 1)
         self.T.log(f"Bayesian Optimization {'-' * 27}", 1)
-        self.T.log(f"Best call --> {best_call}", 1)
+        self.T.log(f"Best call --> {self.best_call}", 1)
         self.T.log(f"Best parameters --> {self.best_params}", 1)
         out = [
             f"{m.name}: {round(lst(self.metric_bo)[i], 4)}"
@@ -520,13 +568,13 @@ class BaseModel(BaseModelPlotter):
         t_init = datetime.now()
 
         if self.bo.empty:
-            self.T.log(f"Results for {self.fullname}:", 1)
+            self.T.log(f"\n\nResults for {self.fullname}:", 1)
         self.T.log(f"Fit {'-' * 45}", 1)
 
         # In case the bayesian_optimization method wasn't called
         if self.estimator is None:
             self._check_est_params()
-            self.estimator = self.get_estimator(self._est_params)
+            self.estimator = self.get_estimator(**self._est_params)
 
         # Fit the selected model on the complete training set
         if hasattr(self, "custom_fit"):
@@ -534,7 +582,7 @@ class BaseModel(BaseModelPlotter):
                 est=self.estimator,
                 train=(self.X_train, self.y_train),
                 validation=(self.X_test, self.y_test),
-                params=self._est_params_fit,
+                **self._est_params_fit,
             )
         else:
             self.estimator.fit(arr(self.X_train), self.y_train, **self._est_params_fit)
@@ -601,12 +649,7 @@ class BaseModel(BaseModelPlotter):
 
             # Fit on bootstrapped set and predict on the independent test set
             if hasattr(self, "custom_fit"):
-                self.custom_fit(
-                    est=estimator,
-                    train=(sample_x, sample_y),
-                    validation=None,
-                    params=self._est_params_fit,
-                )
+                self.custom_fit(estimator, (sample_x, sample_y), **self._est_params_fit)
             else:
                 estimator.fit(arr(sample_x), sample_y, **self._est_params_fit)
 
@@ -681,16 +724,17 @@ class BaseModel(BaseModelPlotter):
         verbose=None,
         method="predict"
     ):
-        """Get predictions on new data or from existing row(s).
+        """Get predictions on unseen data or rows in the dataset.
 
-        For new data, transform it first and then apply the method.
-        The model should have the provided method.
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The model should have the provided method.
 
         Parameters
         ----------
         X: int, str, slice, sequence or dataframe-like
-            Index name or position in the dataset or unseen feature set
-            with shape=(n_samples, n_features).
+            Index names or positions of rows in the dataset, or unseen
+            feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
             - If None: y is ignored.
@@ -716,8 +760,8 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        pred: float or np.array
-            Prediction from the new data or row(s).
+        float or np.array
+            Calculated prediction.
 
         """
         if not hasattr(self.estimator, method):
@@ -1012,7 +1056,7 @@ class BaseModel(BaseModelPlotter):
         mlflow.set_tag("branch", self.branch.name)
 
         # Only save params for children of BaseEstimator
-        if hasattr(self, "get_params"):
+        if hasattr(self.estimator, "get_params"):
             # Mlflow only accepts params with char length <250
             pars = self.estimator.get_params()
             mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
@@ -1154,15 +1198,11 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        score: dict
+        dict
             Return of sklearn's cross_validate function.
 
         """
-        from sklearn.model_selection import _validation
-
-        # Adopt params from the trainer if not specified
-        kwargs["n_jobs"] = kwargs.get("n_jobs", self.T.n_jobs)
-        kwargs["verbose"] = kwargs.get("verbose", self.T.verbose)
+        # Assign scoring from predefined or trainer if not specified
         if kwargs.get("scoring"):
             scoring = get_custom_scorer(kwargs.pop("scoring"))
             scoring = {scoring.name: scoring}
@@ -1170,21 +1210,21 @@ class BaseModel(BaseModelPlotter):
         else:
             scoring = dict(self.T._metric)
 
-        # Get the complete pipeline
-        pl = self.export_pipeline(verbose=0)
-
-        # Use the untransformed dataset (in the og branch)
-        og = getattr(self.T, "og", self.T._current)
-
         self.T.log("Applying cross-validation...", 1)
 
-        # Workaround the _score function to allow for pipelines
-        # that drop samples during transformation
-        og_score = deepcopy(_validation._score)
-        _validation._score = score_decorator(og_score)
-
-        cv = _validation.cross_validate(pl, og.X, og.y, scoring=scoring, **kwargs)
-        _validation._score = og_score  # Reset _score to og value
+        # Monkey patch the _score function to allow for
+        # pipelines that drop samples during transformation
+        with patch("sklearn.model_selection._validation._score", score(_score)):
+            branch = self.T._get_og_branches()[0]
+            cv = cross_validate(
+                estimator=self.export_pipeline(verbose=0),
+                X=branch.X,
+                y=branch.y,
+                scoring=scoring,
+                n_jobs=kwargs.pop("n_jobs", self.T.n_jobs),
+                verbose=kwargs.pop("verbose", 0),
+                **kwargs,
+            )
 
         # Output mean and std of metric
         mean = [np.mean(cv[f"test_{m}"]) for m in scoring]
@@ -1231,7 +1271,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        dashboard: ExplainerDashboard
+        ExplainerDashboard
             Created dashboard object.
 
         """
@@ -1267,12 +1307,14 @@ class BaseModel(BaseModelPlotter):
 
         # Add shap values from the internal ShapExplanation object
         explainer.set_shap_values(
-            base_value=self._shap.get_expected_value(return_int=False),
+            base_value=self._shap.get_expected_value(return_one=False),
             shap_values=self._shap.get_shap_values(X, return_all_classes=True),
         )
-        explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
 
-        # Initialize dashboard
+        # Some explainers (like Linear) don't have interaction values
+        if hasattr(self._shap.explainer, "shap_interaction_values"):
+            explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
+
         dashboard = ExplainerDashboard(
             explainer=explainer,
             mode=kwargs.pop("mode", "external"),
@@ -1329,7 +1371,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        score: pd.Series
+        pd.Series
             Scores of the model.
 
         """
@@ -1418,7 +1460,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        pipeline: Pipeline
+        Pipeline
             Current branch as a sklearn-like Pipeline object.
 
         """
@@ -1472,11 +1514,7 @@ class BaseModel(BaseModelPlotter):
             X, y = self.X, self.y
 
         if hasattr(self, "custom_fit"):
-            self.custom_fit(
-                est=self.estimator,
-                train=(X, y),
-                params=self._est_params_fit,
-            )
+            self.custom_fit(self.estimator, (X, y), **self._est_params_fit)
         else:
             self.estimator.fit(arr(X), y, **self._est_params_fit)
 
@@ -1583,7 +1621,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Transformed feature set.
 
         y: pd.Series

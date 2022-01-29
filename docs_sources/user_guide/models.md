@@ -3,17 +3,17 @@
 
 ## Predefined models
 
-ATOM provides 33 models for classification and regression tasks that
-can be used to fit the data in the pipeline. After fitting, a class
-containing the underlying estimator is attached to the trainer as an
-attribute. We refer to these "subclasses" as models. Apart from the
-estimator, the models contain a variety of attributes and methods to
-help you understand how the underlying estimator performed. They can
-be accessed using their acronyms, e.g. `atom.LGB` to access the
+ATOM provides many models for classification and regression tasks
+that can be used to fit the data in the pipeline. After fitting, a
+class containing the underlying estimator is attached to the trainer
+as an attribute. We refer to these "subclasses" as models. Apart from
+the estimator, the models contain a variety of attributes and methods
+to help you understand how the underlying estimator performed. They
+can be accessed using their acronyms, e.g. `atom.LGB` to access the
 LightGBM's model. The available models and their corresponding
-acronyms are: 
+acronyms are:
 
-* "Dummy" for [Dummy Classification/Regression](../../API/models/dummy)
+* "Dummy" for [Dummy Estimator](../../API/models/dummy)
 * "GP" for [Gaussian Process](../../API/models/gp)
 * "GNB" for [Gaussian Naive Bayes](../../API/models/gnb)
 * "MNB" for [Multinomial Naive Bayes](../../API/models/mnb)
@@ -21,11 +21,14 @@ acronyms are:
 * "CatNB" for [Categorical Naive Bayes](../../API/models/catnb)
 * "CNB" for [Complement Naive Bayes](../../API/models/cnb)
 * "OLS" for [Ordinary Least Squares](../../API/models/ols)
-* "Ridge" for [Ridge Classification/Regression](../../API/models/ridge)
+* "Ridge" for [Ridge Estimator](../../API/models/ridge)
 * "Lasso" for [Lasso Regression](../../API/models/lasso)
-* "EN" for [Elastic Net](../../API/models/en)
+* "EN" for [ElasticNet Regression](../../API/models/en)
+* "Lars" for [Least Angle Regression](../../API/models/lars)
 * "BR" for [Bayesian Ridge](../../API/models/br)
 * "ARD" for [Automated Relevance Determination](../../API/models/ard)
+* "Huber" for [Huber Regression](../../API/models/huber)
+* "Perc" for [Perceptron](../../API/models/perc)
 * "LR" for [Logistic Regression](../../API/models/lr)
 * "LDA" for [Linear Discriminant Analysis](../../API/models/lda)
 * "QDA" for [Quadratic Discriminant Analysis](../../API/models/qda)
@@ -61,7 +64,7 @@ acronyms are:
 ## Custom models
 
 It is also possible to create your own models in ATOM's pipeline. For
-example, imagine we want to use sklearn's [Lars](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lars.html)
+example, imagine we want to use sklearn's [RANSACRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RANSACRegressor.html)
 estimator (note that is not included in ATOM's [predefined models](#predefined-models)).
 There are two ways to achieve this:
 
@@ -69,13 +72,18 @@ There are two ways to achieve this:
 approach you can pass the required model characteristics to the pipeline.
 
 ```python
-from sklearn.linear_model import Lars
 from atom import ATOMRegressor, ATOMModel
+from sklearn.linear_model import RANSACRegressor
 
-model = ATOMModel(models=Lars, fullname="Lars Regression", needs_scaling=True)
+ransac = ATOMModel(
+    models=RANSACRegressor,
+    acronym="RANSAC",
+    fullname="Random Sample Consensus",
+    needs_scaling=True,
+)
 
 atom = ATOMRegressor(X, y)
-atom.run(model)
+atom.run(ransac)
 ```
 
 * Using the estimator's class or an instance of the class. This approach will
@@ -83,17 +91,17 @@ also call [ATOMModel](../../API/ATOM/atommodel) under the hood, but it will
 leave its parameters to their default values.
 
 ```python
-from sklearn.linear_model import Lars
-from atom import ATOMRegressor, ATOMModel
+from atom import ATOMRegressor
+from sklearn.linear_model import RANSACRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run(Lars)
+atom.run(RANSACRegressor)
 ```
 
 Additional things to take into account:
 
 * Custom models can be accessed through their acronym like any other model, e.g.
-  `atom.lars` in the example above.
+  `atom.ransac` in the example above.
 * Custom models are not restricted to sklearn estimators, but they should
   follow [sklearn's API](https://scikit-learn.org/stable/developers/develop.html),
   i.e. have a fit and predict method.
@@ -123,7 +131,7 @@ with more than 2 dimensions, e.g. image data can have shape (n_samples,
 length, width, rgb). These data structures are not intended to store in
 a two-dimensional pandas dataframe, but, since ATOM requires a dataframe
 for its internal API, datasets with more than two dimensions are stored
-in a single column called "Multidimensional feature", where every row
+in a single column called "multidim feature", where every row
 contains one (multidimensional) sample. Note that the [data cleaning](../data_cleaning),
 [feature engineering](../feature_engineering) and some of the [plotting](../plots)
 methods are unavailable when this is the case.

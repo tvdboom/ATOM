@@ -169,10 +169,10 @@ class BaseTransformer:
 
         Returns
         -------
-        X: pd.DataFrame
+        pd.DataFrame
             Feature dataset.
 
-        y: pd.Series
+        pd.Series
             Target column corresponding to X.
 
         """
@@ -180,13 +180,16 @@ class BaseTransformer:
         # create a dataframe with one multidimensional column
         array = np.array(X)
         if array.ndim > 2 and not isinstance(array[0, 0, 0], str):
-            X = pd.DataFrame({"Multidimensional feature": [row for row in X]})
+            X = pd.DataFrame({"multidim feature": [row for row in X]})
         else:
             X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
-            # If text dataset, change the name of the column to Corpus
-            if X.shape[1] == 1 and X[X.columns[0]].dtype == "object":
-                X = X.rename(columns={X.columns[0]: "Corpus"})
+            # If text dataset, change the name of the column to corpus
+            if list(X.columns) == ["feature 1"] and X[X.columns[0]].dtype == "object":
+                X = X.rename(columns={X.columns[0]: "corpus"})
+
+            # Convert all column names to str
+            X.columns = [str(col) for col in X.columns]
 
         # Prepare target column
         if isinstance(y, (dict, *SEQUENCE)):
@@ -268,13 +271,13 @@ class BaseTransformer:
 
         Returns
         -------
-        data: pd.DataFrame
+        pd.DataFrame
             Dataset containing the train and test sets.
 
-        idx: list
+        list
             Sizes of the train and test sets.
 
-        holdout: pd.DataFrame or None
+        pd.DataFrame or None
             Holdout data set. Returns None if not specified.
 
         """
@@ -319,14 +322,14 @@ class BaseTransformer:
 
             # Define test set size
             if self.test_size < 1:
-                test_size = int(self.test_size * len(data))
+                test_size = max(1, int(self.test_size * len(data)))
             else:
                 test_size = self.test_size
 
             if self.holdout_size:
                 # Define holdout set size
                 if self.holdout_size < 1:
-                    holdout_size = int(self.holdout_size * len(data))
+                    holdout_size = max(1, int(self.holdout_size * len(data)))
                 else:
                     holdout_size = self.holdout_size
 
@@ -431,7 +434,7 @@ class BaseTransformer:
             data, idx, holdout = _no_data_sets(data)
 
         elif len(arrays) == 2:
-            if len(arrays[0]) == len(arrays[1]) == 2:
+            if isinstance(arrays[0], tuple) and len(arrays[0]) == len(arrays[1]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test))
                 train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
                 test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))

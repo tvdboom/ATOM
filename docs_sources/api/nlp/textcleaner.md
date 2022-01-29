@@ -15,7 +15,7 @@ drop_punctuation=True, verbose=0, logger=None)
 Applies standard text cleaning to the corpus. Transformations include
 normalizing characters and dropping noise from the text (emails, HTML
 tags, URLs, etc...). The transformations are applied on the column
-named `Corpus`, in the same order the parameters are presented. If
+named `corpus`, in the same order the parameters are presented. If
 there is no column with that name, an exception is raised. This class
 can be accessed from atom through the [textclean](../../ATOM/atomclassifier/#textclean)
 method. Read more in the [user guide](../../../user_guide/nlp/#text-cleaning).
@@ -103,6 +103,7 @@ Verbosity level of the class. Possible values are:
 <br>
 
 
+
 ## Attributes
 
 <table style="font-size:16px">
@@ -116,6 +117,7 @@ the document index from which the occurrence was dropped.
 </tr>
 </table>
 <br>
+
 
 
 ## Methods
@@ -210,7 +212,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -222,7 +224,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -248,7 +250,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -282,7 +284,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: TextCleaner</strong><br>
+<strong>TextCleaner</strong><br>
 Estimator instance.
 </td>
 </tr>

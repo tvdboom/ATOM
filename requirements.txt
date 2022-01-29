@@ -1,4 +1,4 @@
-numpy>=1.19.5
+numpy~=1.21
 scipy>=1.4.1
 pandas>=1.3.0
 pandas-profiling>=2.3.0

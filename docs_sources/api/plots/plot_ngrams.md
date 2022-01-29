@@ -5,12 +5,12 @@
 <em>method</em> <strong style="color:#008AB8">plot_ngrams</strong>(ngram="words",
 index=None, show=10, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4118">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4123">[source]</a>
 </span>
 </div>
 
 Plot n-gram frequencies. The text for the plot is extracted from
-the column named `Corpus`. If there is no column with that name,
+the column named `corpus`. If there is no column with that name,
 an exception is raised. If the documents are not tokenized, the
 words are separated by spaces.
 
@@ -56,7 +56,7 @@ Whether to render the plot. If None, it returns the matplotlib figure.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>fig: matplotlib.figure.Figure</strong><br>
+<strong>matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>

@@ -123,10 +123,10 @@ value applies to the n-th model.
 <p>
 <strong>est_params: dict, optional (default=None)</strong><br>
 Additional parameters for the estimators. See the corresponding
-documentation for the available options. For multiple models, use
-the acronyms as key and a dictionary of the parameters as value.
-Add _fit to the parameter's name to pass it to the fit method instead
-of the initializer.
+documentation for the available options. For multiple models,
+use the acronyms as key (or 'all' for all models) and a dict
+of the parameters as value. Add _fit to the parameter's name
+to pass it to the fit method instead of the initializer.
 </p>
 <strong>bo_params: dict, optional (default=None)</strong><br>
 Additional parameters to for the BO. These can include:
@@ -150,9 +150,10 @@ will stop if the model didn't improve in last <code>early_stopping</code> rounds
 fraction of rounds from the total. If None, no early stopping is performed. Only
 available for models that allow in-training evaluation.</li>
 <li><b>callback: callable or list of callables, optional (default=None)</b><br>Callbacks for the BO.</li>
-<li><b>dimensions: dict, array or None, optional (default=None)</b><br>Custom hyperparameter
-space for the bayesian optimization. Can be an array to share dimensions across
-models or a dictionary with the model's name as key. If None, ATOM's predefined dimensions are used.</li>
+<li><b>dimensions: dict, list or None, optional (default=None)</b><br>Custom hyperparameter
+space for the bayesian optimization. Can be a list to share dimensions across
+models or a dict with the model's name as key (or 'all' for all models). If None,
+ATOM's predefined dimensions are used.</li>
 <li><b>plot: bool, optional (default=False)</b><br>Whether to plot the BO's progress as it runs.
 Creates a canvas with two plots: the first plot shows the score of every trial
 and the second shows the distance between the last consecutive steps.</li>
@@ -217,7 +218,7 @@ elements faster.
 
 * **\__len__:** Returns the length of the dataset.
 * **\__contains__:** Checks if the provided item is a column in the dataset.
-* **\__getitem__:** Access a model, a column or a subset of the dataset.
+* **\__getitem__:** Access a model, column or subset of the dataset.
 
 <br>
 
@@ -460,7 +461,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">available_models</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L486">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L496">[source]</a>
 </span>
 </div>
 Give an overview of the available predefined models.
@@ -468,7 +469,7 @@ Give an overview of the available predefined models.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>overview: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Information about the predefined models available for the current task.
 Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -477,6 +478,7 @@ Columns include:
 <li><b>estimator:</b> The model's underlying estimator.</li>
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
+<li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
 </ul>
 </td>
 </tr>
@@ -535,7 +537,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">clear</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L520">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L531">[source]</a>
 </span>
 </div>
 Reset all model attributes to their initial state, deleting potentially
@@ -553,7 +555,7 @@ the class. The cleared attributes per model are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L535">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L546">[source]</a>
 </span>
 </div>
 Delete models from the trainer. If all models are removed, the metric
@@ -577,7 +579,7 @@ Models to delete. If None, delete them all.
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
 dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L562">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L573">[source]</a>
 </span>
 </div>
 Get all the models' scores for the provided metrics.
@@ -600,7 +602,7 @@ Data set on which to calculate the metric. Choose from: "train",
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>scores: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Scores of the models.
 </td>
 </tr>
@@ -612,7 +614,7 @@ Scores of the models.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L602">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L613">[source]</a>
 </span>
 </div>
 Return class weights for a balanced data set. Statistically, the class
@@ -629,7 +631,7 @@ Data set from which to get the weights. Choose from: "train", "test" or "dataset
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>class_weights: dict</strong><br>
+<strong>dict</strong><br>
 Classes with the corresponding weights.
 </td>
 </tr>
@@ -659,7 +661,7 @@ subobjects that are estimators.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>params: dict</strong><br>
+<strong>dict</strong><br>
 Parameter names mapped to their values.
 </td>
 </tr>
@@ -671,7 +673,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L484">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -697,7 +699,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L637">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L648">[source]</a>
 </span>
 </div>
 Merge another trainer into this one. Branches, models, metrics and
@@ -768,7 +770,7 @@ Training and test set (and optionally a holdout set). Allowed formats are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto", save_data=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L505">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file. Remember that the class contains
@@ -812,7 +814,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>self: TrainSizingRegressor</strong><br>
+<strong>TrainSizingRegressor</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -825,7 +827,7 @@ Estimator instance.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(name="Stack",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L705">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L715">[source]</a>
 </span>
 </div>
 Add a [Stacking](../../../user_guide/models/#stacking) model to the pipeline.
@@ -859,7 +861,7 @@ acronyms can be used for the <code>final_estimator</code> parameter.
 <em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L765">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L775">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/models/#voting) model to the pipeline.

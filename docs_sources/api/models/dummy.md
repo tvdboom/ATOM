@@ -1,5 +1,5 @@
-# Dummy Classification/Regression (Dummy)
------------------------------------------
+# Dummy Estimator (Dummy)
+-------------------------
 
 When doing supervised learning, a simple sanity check consists of
 comparing one's estimator against simple rules of thumb. The
@@ -23,7 +23,6 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/m
 * By default, the estimator adopts the default parameters provided by
   its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
-* The `quantile` parameter is only used with DummyRegressor.
 * The `random_state` parameter is set equal to that of the trainer.
 
 <table style="font-size:16px">
@@ -33,14 +32,10 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/m
 <strong>strategy: str</strong><br>
 <ul style="line-height:1.5em;margin-top:5px">
 <li>classifier: default="prior"<br>
-Categorical(["stratified", "most_frequent", "prior", "uniform"], name="strategy")</li>
+Categorical(["most_frequent", "prior", "stratified", "uniform"], name="strategy")</li>
 <li>regressor: default="mean"<br>
-Categorical(["mean", "median", "quantile"], name="strategy")</li>
+Categorical(["mean", "median"], name="strategy")</li>
 </ul>
-<p>
-<strong>quantile: float, default=0.5</strong><br>
-Real(0.0, 1.0, name="quantile")
-</p>
 </td>
 </tr>
 </table>
@@ -139,6 +134,10 @@ Information of every step taken by the BO. Columns include:
 <li><b>time</b>: Time spent on this iteration.</li>
 <li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
+<p>
+<strong>best_call: str</strong><br>
+Name of the best call in the BO.
+</p>
 <p>
 <strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
@@ -545,7 +544,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: Pipeline</strong><br>
+<strong>Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -691,11 +690,11 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: pd.DataFrame</strong><br>
+<strong>pd.DataFrame</strong><br>
 Transformed feature set.
 </p>
 <p>
-<strong>y: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Transformed target column. Only returned if provided.
 </p>
 </td>

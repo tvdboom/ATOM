@@ -22,31 +22,14 @@ Overview
 &nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png?raw=true" alt="Slack" height=14 width=14 draggable="false"/> Slack</a>
 
+<br>
 
-#### Repository:
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![Conda Recipe](https://img.shields.io/badge/recipe-atom--ml-green.svg)](https://anaconda.org/conda-forge/atom-ml)
-[![Python 3.7|3.8|3.9](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue?logo=python)](https://www.python.org)
-[![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
-[![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/atom-ml.svg)](https://anaconda.org/conda-forge/atom-ml)
-
-
-#### Release info:
-[![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
-[![Conda Version](https://img.shields.io/conda/vn/conda-forge/atom-ml.svg)](https://anaconda.org/conda-forge/atom-ml)
-[![Downloads](https://pepy.tech/badge/atom-ml)](https://pepy.tech/project/atom-ml)
-
-
-#### Build status:
-[![Build Status](https://github.com/tvdboom/ATOM/workflows/ATOM/badge.svg)](https://github.com/tvdboom/ATOM/actions)
-[![Azure Pipelines](https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/atom-ml-feedstock?branchName=master)](https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=10822&branchName=master)
-[![codecov](https://codecov.io/gh/tvdboom/ATOM/branch/master/graph/badge.svg)](https://codecov.io/gh/tvdboom/ATOM)
-
-
-#### Code analysis:
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/context:python)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/alerts/)
+**General Information** | |
+--- | ---
+**Repository** | [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![Conda Recipe](https://img.shields.io/badge/recipe-atom--ml-green.svg)](https://anaconda.org/conda-forge/atom-ml) [![Python 3.7\|3.8\|3.9](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue?logo=python)](https://www.python.org) [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT) [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/atom-ml.svg)](https://anaconda.org/conda-forge/atom-ml)
+**Release** | [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/) [![Conda Version](https://img.shields.io/conda/vn/conda-forge/atom-ml.svg)](https://anaconda.org/conda-forge/atom-ml) [![Downloads](https://pepy.tech/badge/atom-ml)](https://pepy.tech/project/atom-ml)
+**Build status** | [![Build Status](https://github.com/tvdboom/ATOM/workflows/ATOM/badge.svg)](https://github.com/tvdboom/ATOM/actions) [![Azure Pipelines](https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/atom-ml-feedstock?branchName=master)](https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=10822&branchName=master) [![codecov](https://codecov.io/gh/tvdboom/ATOM/branch/master/graph/badge.svg)](https://codecov.io/gh/tvdboom/ATOM)
+**Code analysis** | [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/context:python) [![Total alerts](https://img.shields.io/lgtm/alerts/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/alerts/)
 
 
 <br><br>
@@ -168,4 +151,15 @@ atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
 Documentation
 -----------------
   
-For further information, please see the project's [documentation](https://tvdboom.github.io/ATOM).
+**Relevant links** | |
+--- | ---
+⭐ **[About](https://tvdboom.github.io/ATOM/release_history/)** | Learn more about the package.
+💡 **[Getting started](https://tvdboom.github.io/ATOM/getting_started/)** | New to ATOM? Here's how to get you started!
+📢 **[Release history](https://tvdboom.github.io/ATOM/release_history/)** | What are the new features of the latest release?
+👨‍💻 **[User guide](https://tvdboom.github.io/ATOM/user_guide/introduction/)** | How to use ATOM and its features.
+🎛️ **[API Reference](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/)** | The detailed reference for ATOM's API.
+📋 **[Examples](https://tvdboom.github.io/ATOM/examples/binary_classification/)** | Example notebooks show you what can be done and how.
+❔ **[FAQ](https://tvdboom.github.io/ATOM/faq/)** | Get answers to frequently asked questions.
+🛠️ **[Contributing](https://tvdboom.github.io/ATOM/contributing/)** | Do you wan to contribute to the project? Read this before creating a PR.
+🌳 **[Dependencies](https://tvdboom.github.io/ATOM/dependencies/)** | Which other packages does ATOM depend on?
+📃 **[License](https://tvdboom.github.io/ATOM/license/)** | Copyright and permissions under the MIT license.

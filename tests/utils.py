@@ -50,6 +50,15 @@ X_train = X_train.reshape(60000, 28, 28, 1)
 X_test = X_test.reshape(10000, 28, 28, 1)
 mnist = (X_train, y_train), (X_test, y_test)
 
+# Sparse data
+X_sparse = pd.DataFrame(
+    data={
+        "feature 1": pd.arrays.SparseArray([1, 0, 0, 0, 0, 0, 1, 0, 1, 0]),
+        "feature 2": pd.arrays.SparseArray([1, 0, 1, 0, 0, 1, 0, 0, 1, 0]),
+        "feature 3": pd.arrays.SparseArray([1, 1, 1, 0, 0, 0, 1, 0, 0, 0]),
+    }
+)
+
 # Text data
 X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir 12"]]
 y_text = [0, 1, 1, 0]
@@ -88,16 +97,16 @@ X10_nan = [
 
 # Dataset with categorical column
 X10_str = [
-    [2, 0, "a"],
-    [2, 3, "a"],
-    [5, 2, "b"],
-    [1, 2, "a"],
-    [1, 2, "c"],
-    [2, 0, "d"],
-    [2, 3, "d"],
-    [5, 2, "d"],
-    [1, 2, "a"],
-    [1, 2, "d"],
+    [2, 0, "a", 2],
+    [2, 3, "a", 1],
+    [5, 2, "b", 5],
+    [1, 2, "a", 1],
+    [1, 2, "c", 7],
+    [2, 0, "d", 5],
+    [2, 3, "d", 1],
+    [5, 2, "d", 2],
+    [1, 2, "a", 3],
+    [1, 2, "d", 2],
 ]
 
 # Dataset with categorical column (only two classes)

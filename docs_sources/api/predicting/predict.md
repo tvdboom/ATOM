@@ -4,23 +4,25 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">predict</strong>(X, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L220">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L226">[source]</a>
 </span>
 </div>
 
-Transform new data through the current branch and return class
-predictions. Transformers that are only applied on the training set
-are skipped. If called from a trainer, the best model in the pipeline
-(under the `winner` attribute) is used. If called from a model, that
-model is used. The estimator must have a `predict` method.
+Get class predictions on unseen data or rows in the dataset. New data
+is first transformed through the model's pipeline. Transformers that
+are only applied on the training set are skipped. If called from a
+trainer, the best model in the pipeline (under the `winner` attribute)
+is used. If called from a model, that model is used. The estimator
+must have a `predict` method.
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like</strong><br>
-Feature set with shape=(n_samples, n_features).
+<strong>X: int, str, slice, sequence or dataframe-like</strong><br>
+Index names or positions of rows in the dataset, or unseen feature
+set with shape=(n_samples, n_features).
 </p>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
@@ -31,7 +33,7 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>p: np.array</strong><br>
+<strong>np.array</strong><br>
 Predicted targets with shape=(n_samples,).
 </td>
 </tr>

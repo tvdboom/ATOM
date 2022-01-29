@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(model=None,
 show_params=True, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4232">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4237">[source]</a>
 </span>
 </div>
 
@@ -47,7 +47,7 @@ Whether to render the plot. If None, it returns the matplotlib figure.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>fig: matplotlib.figure.Figure</strong><br>
+<strong>matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>

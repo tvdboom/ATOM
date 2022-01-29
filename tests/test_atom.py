@@ -34,9 +34,9 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.data_cleaning import Scaler, Pruner
 from atom.utils import check_scaling
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_text,
-    y_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10, y10_str,
-    y10_sn, X20_out,
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_sparse,
+    X_text, y_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10,
+    y10_str, y10_sn, X20_out,
 )
 
 
@@ -89,23 +89,6 @@ def test_iter():
     atom.clean()
     atom.impute()
     assert [item for item in atom][1] == atom.pipeline[1]
-
-
-def test_getitem():
-    """Assert that atom is subscriptable."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.impute()
-    atom.run("LDA")
-    assert atom[1].__class__.__name__ == "Imputer"
-    assert atom["og"] is atom.og
-    assert atom["LDA"] is atom["lda"] is atom.lda
-    assert atom["mean radius"] is atom.dataset["mean radius"]
-    assert isinstance(atom[["mean radius", "mean texture"]], pd.DataFrame)
-    with pytest.raises(ValueError, match=r".*has no branch, model or column.*"):
-        print(atom["invalid"])
-    with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
-        print(atom[2.3])
 
 
 # Test utility properties =========================================== >>
@@ -202,19 +185,19 @@ def test_n_nans():
 def test_numerical():
     """Assert that numerical returns the names of the numerical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.numerical == ["Feature 1", "Feature 2"]
+    assert atom.numerical == ["feature 1", "feature 2", "feature 4"]
 
 
 def test_n_numerical():
     """Assert that n_categorical returns the number of numerical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.n_numerical == 2
+    assert atom.n_numerical == 3
 
 
 def test_categorical():
     """Assert that categorical returns the names of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.categorical == ["Feature 3"]
+    assert atom.categorical == ["feature 3"]
 
 
 def test_n_categorical():
@@ -296,16 +279,17 @@ def test_automl_invalid_scoring():
     """Assert that an error is raised when the provided scoring is invalid."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree", metric="mse")
-    pytest.raises(ValueError, atom.automl, scoring="r2")
+    with pytest.raises(ValueError, match=r".*scoring parameter.*"):
+        atom.automl(scoring="r2")
 
 
-@pytest.mark.parametrize("column", ["Feature 1", 1])
-def test_distribution(column):
+@pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
+@pytest.mark.parametrize("columns", ["feature 1", 1, None])
+def test_distribution(distributions, columns):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    pytest.raises(ValueError, atom.distribution, columns="Feature 3")
-    df = atom.distribution(columns=column)
-    assert len(df) == 11
+    df = atom.distribution(distributions=distributions, columns=columns)
+    assert isinstance(df, pd.DataFrame)
 
 
 def test_export_pipeline_empty():
@@ -367,12 +351,14 @@ def test_report(cls):
 
 def test_reset():
     """Assert that the reset method deletes models and branches."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom.scale()
     atom.branch = "2"
+    atom.encode()
     atom.run("LR")
     atom.reset()
-    assert not atom.models and len(atom._branches) == 2
-    assert atom.dataset.equals(atom.og.dataset)
+    assert not atom.models and len(atom._branches) == 1
+    assert atom["feature 3"].dtype.name == "object"  # Is reset back to str
 
 
 def test_save_data():
@@ -382,23 +368,10 @@ def test_save_data():
     assert glob.glob(FILE_DIR + "ATOMClassifier_dataset.csv")
 
 
-def test_shrink_dtypes():
-    """Assert that the dtypes are optimized to save memory."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert not atom.dtypes.equals(X_bin.dtypes)
-
-
-def test_shrink_exclude_columns():
-    """Assert that columns can be excluded."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.shrink(columns=-1)
-    assert atom.dtypes[0].name != "float32"
-    assert atom.dtypes[-1].name == "int8"
-
-
 def test_shrink_dtypes_excluded():
     """Assert that some dtypes are excluded from changing."""
     atom = ATOMClassifier(X10_str2, y10, random_state=1)
+    assert atom.dtypes[3].name == "bool"
     atom.shrink()
     assert atom.dtypes[3].name == "bool"
 
@@ -416,18 +389,54 @@ def test_shrink_obj2cat():
 def test_shrink_int2uint():
     """Assert that the int2uint parameter works as intended."""
     atom = ATOMClassifier(X10_str2, y10, random_state=1)
+    assert atom.dtypes[0].name == "int64"
     atom.shrink()
     assert atom.dtypes[0].name == "int8"
 
+    assert atom.dtypes[0].name == "int8"
     atom.shrink(int2uint=True)
     assert atom.dtypes[0].name == "uint8"
+
+
+def test_shrink_sparse_arrays():
+    """Assert that sparse arrays are also transformed."""
+    atom = ATOMClassifier(X_sparse, y10, random_state=1)
+    assert atom.dtypes[0].name == "Sparse[int64, 0]"
+    atom.shrink()
+    assert atom.dtypes[0].name == "Sparse[int8, 0]"
 
 
 def test_shrink_dtypes_unchanged():
     """Assert that optimal dtypes are left unchanged."""
     atom = ATOMClassifier(X_bin.astype("float32"), y_bin, random_state=1)
+    assert atom.dtypes[3].name == "float32"
     atom.shrink()
     assert atom.dtypes[3].name == "float32"
+
+
+def test_shrink_dense2sparse():
+    """Assert that the dataset can be converted to sparse."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.dtypes[0].name == "float64"
+    atom.shrink(dense2sparse=True)
+    assert atom.dtypes[0].name == "Sparse[float32, 0]"
+
+
+def test_shrink_exclude_columns():
+    """Assert that columns can be excluded."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.dtypes[0].name == "float64"
+    assert atom.dtypes[-1].name != "int8"
+    atom.shrink(columns=-1)
+    assert atom.dtypes[0].name == "float64"
+    assert atom.dtypes[-1].name == "int8"
+
+
+def test_stats_mixed_sparse_dense():
+    """Assert that stats show new information for mixed datasets."""
+    atom = ATOMClassifier(X_sparse, y10, random_state=1)
+    atom.apply(lambda x: 1, columns="new_column")
+    atom.stats()
 
 
 def test_status():
@@ -440,7 +449,7 @@ def test_transform_method():
     """ Assert that the transform method works as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
-    assert atom.transform(X10_str)["Feature 3"].dtype.kind in "ifu"
+    assert atom.transform(X10_str)["feature 3"].dtype.kind in "ifu"
 
 
 def test_transform_not_train_only():
@@ -535,11 +544,19 @@ def test_add_transformer_only_y():
     assert np.all((atom["target"] == 0) | (atom["target"] == 1))
 
 
+def test_returned_column_already_exists():
+    """Assert that an error is raised if an existing column is returned."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.apply(lambda x: 1, columns="new")
+    with pytest.raises(RuntimeError, match=r".*already exists in the original.*"):
+        atom.vectorize(columns="corpus")
+
+
 def test_add_sparse_matrices():
-    """Assert that transformers that return sparse mtx are accepted."""
+    """Assert that transformers that return sp.matrix are accepted."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.add(OneHotEncoder(handle_unknown="ignore"), columns=2)
-    assert atom.shape == (10, 7)  # Creates 4 extra columns
+    assert atom.shape == (10, 8)  # Creates 4 extra columns
 
 
 def test_add_keep_column_names():
@@ -567,8 +584,8 @@ def test_raise_length_mismatch():
 def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.encode()
-    assert atom.columns[2].startswith("Feature 3")
+    atom.encode(columns="feature 3")
+    assert atom.columns[2:5] == ["feature 3_a", "feature 3_b", "feature 3_c"]
 
 
 def test_add_sets_are_kept_equal():
@@ -719,7 +736,7 @@ def test_textclean():
     """Assert that the textclean method cleans the corpus."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     atom.textclean()
-    assert atom["Corpus"][0] == "yes sir "
+    assert atom["corpus"][0] == "yes sir "
     assert hasattr(atom, "drops")
 
 
@@ -727,21 +744,21 @@ def test_tokenize():
     """Assert that the tokenize method tokenizes the corpus."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     atom.tokenize()
-    assert atom["Corpus"][0] == ["yes", "sir", "12"]
+    assert atom["corpus"][0] == ["yes", "sir", "12"]
 
 
 def test_normalize():
     """Assert that the normalize method normalizes the corpus."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     atom.normalize(stopwords=False, custom_stopwords=["yes"])
-    assert atom["Corpus"][0] == ["sir", "12"]
+    assert atom["corpus"][0] == ["sir", "12"]
 
 
 def test_vectorize():
-    """Assert that the vectorize method vectorizes the corpus."""
+    """Assert that the vectorize method converts the corpus to numerical."""
     atom = ATOMClassifier(X_text, y_text, test_size=0.25, random_state=1)
     atom.vectorize(strategy="hashing", n_features=5)
-    assert "Corpus" not in atom
+    assert "corpus" not in atom
     assert atom.shape == (4, 6)
     assert hasattr(atom, "hashing")
 
@@ -872,7 +889,7 @@ def test_models_and_metric_are_updated():
 def test_errors_are_removed():
     """Assert that the errors are removed if subsequent runs are successful."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["BNB", "Tree"], bo_params={"dimensions": {"Tree": 2}})  # Invalid dims
+    atom.run(["BNB", "Tree"], n_initial_points=(2, 7))  # Invalid value for Tree
     atom.run("Tree")  # Runs correctly
     assert not atom.errors  # Errors should be empty
 

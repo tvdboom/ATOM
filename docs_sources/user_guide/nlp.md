@@ -8,7 +8,7 @@ ready to be ingested by a model. ATOM uses the [nltk](https://www.nltk.org/index
 library for the majority of its NLP processes.
 
 The text documents are expected to be provided in a column of the
-dataframe named `Corpus` (the name is case-insensitive). Only the
+dataframe named `corpus` (the name is case-insensitive). Only the
 corpus is changed by the transformers, leaving the rest of the columns
 as is. This approach allows datasets to combine other features with the
 documents. If an array is provided as input, it should consist of only

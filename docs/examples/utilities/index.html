@@ -218,6 +218,18 @@
   
 
 
+  <li class="md-tabs__item">
+    <a href="../../release_history/" class="md-tabs__link">
+      Release history
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
   
   
   
@@ -227,18 +239,6 @@
       </a>
     </li>
   
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../../release_history/" class="md-tabs__link">
-      Release history
-    </a>
-  </li>
 
       
         
@@ -417,22 +417,37 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../release_history/" class="md-nav__link">
+        Release history
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3">
+        <label class="md-nav__link" for="__nav_4">
           User guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="User guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_3">
+        <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           User guide
         </label>
@@ -608,21 +623,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../release_history/" class="md-nav__link">
-        Release history
-      </a>
     </li>
   
 
@@ -1189,7 +1189,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/dummy/" class="md-nav__link">
-        Dummy
+        Dummy Estimator
       </a>
     </li>
   
@@ -1301,7 +1301,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ridge/" class="md-nav__link">
-        Ridge
+        Ridge Estimator
       </a>
     </li>
   
@@ -1315,7 +1315,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lasso/" class="md-nav__link">
-        Lasso
+        Lasso Regression
       </a>
     </li>
   
@@ -1329,7 +1329,21 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/en/" class="md-nav__link">
-        Elastic Net
+        ElasticNet Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/lars/" class="md-nav__link">
+        Least Angle Regression
       </a>
     </li>
   
@@ -1358,6 +1372,34 @@
     <li class="md-nav__item">
       <a href="../../API/models/ard/" class="md-nav__link">
         Automated Relevance Determination
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/huber/" class="md-nav__link">
+        Huber Regression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/models/perc/" class="md-nav__link">
+        Perceptron
       </a>
     </li>
   
@@ -3845,7 +3887,7 @@ Test set size: 11270
         
         <div class="CodeMirror cm-s-jupyter">
     <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Check which distribution fits a column best</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">distribution</span><span class="p">(</span><span class="s2">&quot;MinTemp&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">distribution</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;Rainfall&quot;</span><span class="p">)</span>
 </pre></div>
 
         </div>
@@ -3885,64 +3927,113 @@ Test set size: 11270
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>ks</th>
-      <th>p_value</th>
+      <th></th>
+      <th>Rainfall</th>
+    </tr>
+    <tr>
+      <th>dist</th>
+      <th>stat</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>beta</th>
-      <td>0.0296</td>
+      <th rowspan="2" valign="top">beta</th>
+      <th>score</th>
+      <td>0.6506</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>weibull_min</th>
-      <td>0.0331</td>
+      <th rowspan="2" valign="top">expon</th>
+      <th>score</th>
+      <td>0.6506</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>weibull_max</th>
-      <td>0.0341</td>
+      <th rowspan="2" valign="top">gamma</th>
+      <th>score</th>
+      <td>0.6465</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>lognorm</th>
-      <td>0.0344</td>
+      <th rowspan="2" valign="top">invgauss</th>
+      <th>score</th>
+      <td>0.6134</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>gamma</th>
-      <td>0.0345</td>
+      <th rowspan="2" valign="top">lognorm</th>
+      <th>score</th>
+      <td>0.6443</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>pearson3</th>
-      <td>0.0345</td>
+      <th rowspan="2" valign="top">norm</th>
+      <th>score</th>
+      <td>0.3807</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>norm</th>
-      <td>0.0369</td>
+      <th rowspan="2" valign="top">pearson3</th>
+      <th>score</th>
+      <td>0.6506</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>invgauss</th>
-      <td>0.0445</td>
+      <th rowspan="2" valign="top">triang</th>
+      <th>score</th>
+      <td>0.7191</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>triang</th>
-      <td>0.0814</td>
+      <th rowspan="2" valign="top">uniform</th>
+      <th>score</th>
+      <td>0.8914</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>uniform</th>
-      <td>0.2175</td>
+      <th rowspan="2" valign="top">weibull_min</th>
+      <th>score</th>
+      <td>0.6506</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>expon</th>
-      <td>0.3492</td>
+      <th rowspan="2" valign="top">weibull_max</th>
+      <th>score</th>
+      <td>0.8896</td>
+    </tr>
+    <tr>
+      <th>p_value</th>
       <td>0.0</td>
     </tr>
   </tbody>
@@ -3965,8 +4056,8 @@ Test set size: 11270
         
         <div class="CodeMirror cm-s-jupyter">
     <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Investigate a column&#39;s distribution</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">plot_distribution</span><span class="p">(</span><span class="s2">&quot;MinTemp&quot;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;beta&quot;</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">plot_qq</span><span class="p">(</span><span class="s2">&quot;MinTemp&quot;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;beta&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">plot_distribution</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;MinTemp&quot;</span><span class="p">,</span> <span class="n">distributions</span><span class="o">=</span><span class="s2">&quot;beta&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">plot_qq</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;MinTemp&quot;</span><span class="p">,</span> <span class="n">distributions</span><span class="o">=</span><span class="s2">&quot;beta&quot;</span><span class="p">)</span>
 </pre></div>
 
         </div>
@@ -4202,15 +4293,17 @@ Name: master, dtype: object</pre>
       <th>estimator</th>
       <th>module</th>
       <th>needs_scaling</th>
+      <th>accepts_sparse</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>0</th>
       <td>Dummy</td>
-      <td>Dummy Classification</td>
+      <td>Dummy Estimator</td>
       <td>DummyClassifier</td>
       <td>sklearn.dummy</td>
+      <td>False</td>
       <td>False</td>
     </tr>
     <tr>
@@ -4220,6 +4313,7 @@ Name: master, dtype: object</pre>
       <td>GaussianProcessClassifier</td>
       <td>sklearn.gaussian_process._gpc</td>
       <td>False</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>2</th>
@@ -4227,6 +4321,7 @@ Name: master, dtype: object</pre>
       <td>Gaussian Naive Bayes</td>
       <td>GaussianNB</td>
       <td>sklearn.naive_bayes</td>
+      <td>False</td>
       <td>False</td>
     </tr>
     <tr>
@@ -4236,6 +4331,7 @@ Name: master, dtype: object</pre>
       <td>MultinomialNB</td>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>4</th>
@@ -4244,6 +4340,7 @@ Name: master, dtype: object</pre>
       <td>BernoulliNB</td>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>5</th>
@@ -4252,6 +4349,7 @@ Name: master, dtype: object</pre>
       <td>CategoricalNB</td>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>6</th>
@@ -4260,173 +4358,204 @@ Name: master, dtype: object</pre>
       <td>ComplementNB</td>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>7</th>
       <td>Ridge</td>
-      <td>Ridge Classification</td>
+      <td>Ridge Estimator</td>
       <td>RidgeClassifier</td>
       <td>sklearn.linear_model._ridge</td>
+      <td>True</td>
       <td>True</td>
     </tr>
     <tr>
       <th>8</th>
+      <td>Perc</td>
+      <td>Perceptron</td>
+      <td>Perceptron</td>
+      <td>sklearn.linear_model._perceptron</td>
+      <td>True</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>9</th>
       <td>LR</td>
       <td>Logistic Regression</td>
       <td>LogisticRegression</td>
       <td>sklearn.linear_model._logistic</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>9</th>
+      <th>10</th>
       <td>LDA</td>
       <td>Linear Discriminant Analysis</td>
       <td>LinearDiscriminantAnalysis</td>
       <td>sklearn.discriminant_analysis</td>
       <td>False</td>
+      <td>False</td>
     </tr>
     <tr>
-      <th>10</th>
+      <th>11</th>
       <td>QDA</td>
       <td>Quadratic Discriminant Analysis</td>
       <td>QuadraticDiscriminantAnalysis</td>
       <td>sklearn.discriminant_analysis</td>
       <td>False</td>
+      <td>False</td>
     </tr>
     <tr>
-      <th>11</th>
+      <th>12</th>
       <td>KNN</td>
       <td>K-Nearest Neighbors</td>
       <td>KNeighborsClassifier</td>
       <td>sklearn.neighbors._classification</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>12</th>
+      <th>13</th>
       <td>RNN</td>
       <td>Radius Nearest Neighbors</td>
       <td>RadiusNeighborsClassifier</td>
       <td>sklearn.neighbors._classification</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>13</th>
+      <th>14</th>
       <td>Tree</td>
       <td>Decision Tree</td>
       <td>DecisionTreeClassifier</td>
       <td>sklearn.tree._classes</td>
       <td>False</td>
-    </tr>
-    <tr>
-      <th>14</th>
-      <td>Bag</td>
-      <td>Bagging Classifier</td>
-      <td>BaggingClassifier</td>
-      <td>sklearn.ensemble._bagging</td>
-      <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>15</th>
+      <td>Bag</td>
+      <td>Bagging</td>
+      <td>BaggingClassifier</td>
+      <td>sklearn.ensemble._bagging</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>16</th>
       <td>ET</td>
       <td>Extra-Trees</td>
       <td>ExtraTreesClassifier</td>
       <td>sklearn.ensemble._forest</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>16</th>
+      <th>17</th>
       <td>RF</td>
       <td>Random Forest</td>
       <td>RandomForestClassifier</td>
       <td>sklearn.ensemble._forest</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>17</th>
+      <th>18</th>
       <td>AdaB</td>
       <td>AdaBoost</td>
       <td>AdaBoostClassifier</td>
       <td>sklearn.ensemble._weight_boosting</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>18</th>
+      <th>19</th>
       <td>GBM</td>
       <td>Gradient Boosting Machine</td>
       <td>GradientBoostingClassifier</td>
       <td>sklearn.ensemble._gb</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>19</th>
+      <th>20</th>
       <td>hGBM</td>
       <td>HistGBM</td>
       <td>HistGradientBoostingClassifier</td>
       <td>sklearn.ensemble._hist_gradient_boosting.gradi...</td>
       <td>False</td>
+      <td>False</td>
     </tr>
     <tr>
-      <th>20</th>
+      <th>21</th>
       <td>XGB</td>
       <td>XGBoost</td>
       <td>XGBClassifier</td>
       <td>xgboost.sklearn</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>21</th>
+      <th>22</th>
       <td>LGB</td>
       <td>LightGBM</td>
       <td>LGBMClassifier</td>
       <td>lightgbm.sklearn</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>22</th>
+      <th>23</th>
       <td>CatB</td>
       <td>CatBoost</td>
       <td>CatBoostClassifier</td>
       <td>catboost.core</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>23</th>
+      <th>24</th>
       <td>lSVM</td>
       <td>Linear-SVM</td>
       <td>LinearSVC</td>
       <td>sklearn.svm._classes</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>24</th>
+      <th>25</th>
       <td>kSVM</td>
       <td>Kernel-SVM</td>
       <td>SVC</td>
       <td>sklearn.svm._classes</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>25</th>
+      <th>26</th>
       <td>PA</td>
       <td>Passive Aggressive</td>
       <td>PassiveAggressiveClassifier</td>
       <td>sklearn.linear_model._passive_aggressive</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>26</th>
+      <th>27</th>
       <td>SGD</td>
       <td>Stochastic Gradient Descent</td>
       <td>SGDClassifier</td>
       <td>sklearn.linear_model._stochastic_gradient</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
-      <th>27</th>
+      <th>28</th>
       <td>MLP</td>
       <td>Multi-layer Perceptron</td>
       <td>MLPClassifier</td>
       <td>sklearn.neural_network._multilayer_perceptron</td>
+      <td>True</td>
       <td>True</td>
     </tr>
   </tbody>
@@ -4486,17 +4615,18 @@ Training ========================= &gt;&gt;
 Models: LR
 Metric: f2
 
+
 Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.5691
 Test evaluation --&gt; f2: 0.5651
-Time elapsed: 0.205s
+Time elapsed: 0.262s
 -------------------------------------------------
-Total time: 0.205s
+Total time: 0.262s
 
 
 Final results ==================== &gt;&gt;
-Duration: 0.205s
+Duration: 0.263s
 -------------------------------------
 Logistic Regression --&gt; f2: 0.5651
 </pre>
@@ -4548,17 +4678,18 @@ Training ========================= &gt;&gt;
 Models: AdaB
 Metric: f2
 
+
 Results for AdaBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.5573
 Test evaluation --&gt; f2: 0.5465
-Time elapsed: 2.275s
+Time elapsed: 2.318s
 -------------------------------------------------
-Total time: 2.275s
+Total time: 2.318s
 
 
 Final results ==================== &gt;&gt;
-Duration: 2.275s
+Duration: 2.318s
 -------------------------------------
 AdaBoost --&gt; f2: 0.5465
 </pre>
@@ -4657,37 +4788,34 @@ Models: Tree
 Metric: f2
 
 
-
 Running BO for Decision Tree...
 | call             | max_depth | min_samples_split | max_features |      f2 | best_f2 |    time | total_time |
 | ---------------- | --------- | ----------------- | ------------ | ------- | ------- | ------- | ---------- |
-| Initial point 1  |         9 |                19 |          0.5 |  0.4283 |  0.4283 |  0.658s |     0.658s |
-| Initial point 2  |         9 |                 6 |          0.6 |  0.5419 |  0.5419 |  0.676s |     1.508s |
-| Initial point 3  |         3 |                14 |          0.9 |  0.5034 |  0.5419 |  0.630s |     2.200s |
-| Iteration 4      |         9 |                 6 |          0.6 |  0.5419 |  0.5419 |  0.016s |     2.418s |
-| Iteration 5      |      None |                 6 |          0.8 |   0.442 |  0.5419 |  0.724s |     3.373s |
-| Iteration 6      |         9 |                 6 |          0.6 |  0.5419 |  0.5419 |  0.000s |     3.614s |
-| Iteration 7      |      None |                 4 |          0.6 |  0.5419 |  0.5419 |  0.682s |     4.549s |
-| Iteration 8      |         7 |                 8 |         None |  0.5054 |  0.5419 |  0.658s |     5.430s |
-| Iteration 9      |         7 |                11 |          0.7 |  0.5255 |  0.5419 |  0.644s |     6.294s |
-| Iteration 10     |      None |                20 |          0.6 |  0.5399 |  0.5419 |  0.682s |     7.207s |
-
-Results for Decision Tree:         
+| Initial point 1  |         9 |                19 |         sqrt |  0.4283 |  0.4283 |  0.653s |     0.668s |
+| Initial point 2  |         9 |                 6 |          0.5 |  0.5419 |  0.5419 |  0.676s |     1.542s |
+| Initial point 3  |         3 |                14 |          0.9 |  0.5034 |  0.5419 |  0.655s |     2.258s |
+| Iteration 4      |         9 |                 6 |          0.5 |  0.5419 |  0.5419 |  0.000s |     2.457s |
+| Iteration 5      |         1 |                 6 |          0.7 |   0.442 |  0.5419 |  0.626s |     3.326s |
+| Iteration 6      |         2 |                 7 |         None |  0.4455 |  0.5419 |  0.623s |     4.162s |
+| Iteration 7      |         9 |                 6 |          0.5 |  0.5419 |  0.5419 |  0.000s |     4.423s |
+| Iteration 8      |         9 |                 6 |          0.5 |  0.5419 |  0.5419 |  0.000s |     4.704s |
+| Iteration 9      |         9 |                 6 |          0.5 |  0.5419 |  0.5419 |  0.001s |     4.958s |
+| Iteration 10     |         9 |                 6 |         None |  0.5399 |  0.5419 |  0.697s |     6.005s |
 Bayesian Optimization ---------------------------
 Best call --&gt; Initial point 2
-Best parameters --&gt; {&#39;max_depth&#39;: 9, &#39;min_samples_split&#39;: 6, &#39;max_features&#39;: 0.6}
+Best parameters --&gt; {&#39;max_depth&#39;: 9, &#39;min_samples_split&#39;: 6, &#39;max_features&#39;: 0.5}
 Best evaluation --&gt; f2: 0.5419
-Time elapsed: 7.535s
+Time elapsed: 6.338s
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.4922
 Test evaluation --&gt; f2: 0.4934
-Time elapsed: 0.233s
+Time elapsed: 0.197s
 -------------------------------------------------
-Total time: 7.768s
+Total time: 6.535s
 
 
 Final results ==================== &gt;&gt;
-Duration: 7.768s
+Duration: 6.535s
 -------------------------------------
 Decision Tree --&gt; f2: 0.4934
 </pre>
@@ -4779,19 +4907,25 @@ Decision Tree --&gt; f2: 0.4934
 Applying data cleaning...
 Imputing missing values...
  --&gt; Dropping 637 samples due to missing values in feature MinTemp.
- --&gt; Dropping 234 samples due to missing values in feature MaxTemp.
- --&gt; Dropping 1236 samples due to missing values in feature Rainfall.
- --&gt; Dropping 59142 samples due to missing values in feature Evaporation.
- --&gt; Dropping 10829 samples due to missing values in feature Sunshine.
- --&gt; Dropping 4154 samples due to missing values in feature WindGustDir.
- --&gt; Dropping 2199 samples due to missing values in feature WindDir9am.
- --&gt; Dropping 208 samples due to missing values in feature WindDir3pm.
- --&gt; Dropping 258 samples due to missing values in feature Humidity9am.
- --&gt; Dropping 56 samples due to missing values in feature Humidity3pm.
- --&gt; Dropping 53 samples due to missing values in feature Pressure9am.
- --&gt; Dropping 20 samples due to missing values in feature Pressure3pm.
- --&gt; Dropping 5361 samples due to missing values in feature Cloud9am.
- --&gt; Dropping 1386 samples due to missing values in feature Cloud3pm.
+ --&gt; Dropping 322 samples due to missing values in feature MaxTemp.
+ --&gt; Dropping 1406 samples due to missing values in feature Rainfall.
+ --&gt; Dropping 60843 samples due to missing values in feature Evaporation.
+ --&gt; Dropping 67816 samples due to missing values in feature Sunshine.
+ --&gt; Dropping 9330 samples due to missing values in feature WindGustDir.
+ --&gt; Dropping 9270 samples due to missing values in feature WindGustSpeed.
+ --&gt; Dropping 10013 samples due to missing values in feature WindDir9am.
+ --&gt; Dropping 3778 samples due to missing values in feature WindDir3pm.
+ --&gt; Dropping 1348 samples due to missing values in feature WindSpeed9am.
+ --&gt; Dropping 2630 samples due to missing values in feature WindSpeed3pm.
+ --&gt; Dropping 1774 samples due to missing values in feature Humidity9am.
+ --&gt; Dropping 3610 samples due to missing values in feature Humidity3pm.
+ --&gt; Dropping 14014 samples due to missing values in feature Pressure9am.
+ --&gt; Dropping 13981 samples due to missing values in feature Pressure3pm.
+ --&gt; Dropping 53657 samples due to missing values in feature Cloud9am.
+ --&gt; Dropping 57094 samples due to missing values in feature Cloud3pm.
+ --&gt; Dropping 904 samples due to missing values in feature Temp9am.
+ --&gt; Dropping 2726 samples due to missing values in feature Temp3pm.
+ --&gt; Dropping 1406 samples due to missing values in feature RainToday.
 Encoding categorical columns...
  --&gt; LeaveOneOut-encoding feature Location. Contains 26 classes.
  --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 classes.
@@ -5094,8 +5228,8 @@ ATOMClassifier successfully loaded.
       <td>None</td>
       <td>0.56908</td>
       <td>0.565051</td>
-      <td>0.205s</td>
-      <td>0.205s</td>
+      <td>0.262s</td>
+      <td>0.262s</td>
     </tr>
     <tr>
       <th>AdaB</th>
@@ -5103,17 +5237,17 @@ ATOMClassifier successfully loaded.
       <td>None</td>
       <td>0.55733</td>
       <td>0.546464</td>
-      <td>2.275s</td>
-      <td>2.275s</td>
+      <td>2.318s</td>
+      <td>2.318s</td>
     </tr>
     <tr>
       <th>Tree</th>
       <td>0.541919</td>
-      <td>7.535s</td>
+      <td>6.338s</td>
       <td>0.49224</td>
       <td>0.493427</td>
-      <td>0.233s</td>
-      <td>7.768s</td>
+      <td>0.197s</td>
+      <td>6.535s</td>
     </tr>
     <tr>
       <th>LGB</th>
@@ -5121,8 +5255,8 @@ ATOMClassifier successfully loaded.
       <td>None</td>
       <td>0.65179</td>
       <td>0.592639</td>
-      <td>1.096s</td>
-      <td>1.096s</td>
+      <td>1.175s</td>
+      <td>1.175s</td>
     </tr>
   </tbody>
 </table>
@@ -5200,7 +5334,7 @@ ATOMClassifier successfully loaded.
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            © Copyright 2019-2021, by Mavs.
+            © Copyright 2019-2022, by Mavs.
           </div>
         
         

@@ -160,8 +160,9 @@ the bayesian optimization and to select the winning model.
 ## Automated feature scaling
 
 Models that require feature scaling will automatically do so before
-training, if the data is not already scaled. The data is considered
-scaled if it has one of the following prerequisites:
+training, unless the data is [sparse](../data_management/#sparse-matrices)
+or already scaled. The data is considered scaled if it has one of
+the following prerequisites:
 
 * The mean value over the mean of all columns is <0.05 and the mean of
   the standard deviation over all columns lies between 0.93 and 1.07.
@@ -183,20 +184,21 @@ By default, the parameters every estimator uses are the same default
 parameters they get from their respective packages. To select different
 ones, use `est_params`. There are two ways to add custom parameters to
 the models: adding them directly to the dictionary as key-value pairs
-or through various dictionaries with the model names as keys.
+or through dictionaries.
 
-Adding the parameters directly to `est_params` will share them across
-all models in the pipeline. In this example, both the XGBoost and the
-LightGBM model will use n_estimators=200. Make sure all the models do 
-have the specified parameters or an exception will be raised!
+Adding the parameters directly to `est_params` (or using a dict with
+the key 'all') shares them across all models in the pipeline. In
+this example, both the XGBoost and the LightGBM model use
+`n_estimators=200`. Make sure all the models do have the specified
+parameters or an exception will be raised!
 
 ```python
 atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
 ```
 
 To specify parameters per model, use the model name as key and a dict
-of the parameters as value. In this example, the XGBoost model will
-use n_estimators=200 and the Multi-layer Perceptron will use one hidden
+of the parameters as value. In this example, the XGBoost model uses
+`n_estimators=200` and the Multi-layer Perceptron uses one hidden
 layer with 75 neurons.
 
 ```python
@@ -219,7 +221,8 @@ atom.run(models="XGB", est_params={"verbose_fit": True})
 
 !!! note
     If a parameter is specified through `est_params`, it is
-    ignored by the bayesian optimization! 
+    ignored by the bayesian optimization, even if it's added
+    manually to `bo_params["dimensions"]`!
 
 
 <br>
@@ -241,8 +244,10 @@ estimator), but it ensures maximal use of the provided data. However,
 the leakage is not present in the independent test set, thus the final
 score of every model is unbiased. Note that, if the dataset is relatively
 small, the BO's best score can consistently be lower than the final score
-on the test set due to the considerable fewer instances on which it is
-trained.
+on the test set due to the considerable lower fraction of instances on
+which it is trained. After running the BO, the parameters that resulted
+in the best score (in case of a tie, the call with the shortest training
+time is selected) are used to train the model on the complete training set.
 
 There are many possibilities to tune the BO to your liking. Use
 `n_calls` and `n_initial_points` to determine the number of iterations
@@ -276,20 +281,52 @@ Other settings can be changed through the `bo_params` parameter, a
 dictionary where every key-value combination can be used to further
 customize the BO.
 
-By default, the hyperparameters and corresponding dimensions per model
-are predefined by ATOM. Use the `dimensions` key to use custom ones.
-Just like with `est_params`, you can share the same dimensions across
-models or use a dictionary with the model names as keys to specify the
-dimensions for every individual model. Note that the provided search
-space dimensions must be compliant with skopt's API.
+By default, which hyperparameters are tuned and their corresponding
+dimensions are predefined by ATOM. Use the 'dimensions' key to customize
+these. Just like with `est_params`, you can share the same parameters
+across models or use a dictionary with the model name as key to specify
+the parameters for every individual model. Use the key 'all' to tune some
+hyperparameters for all models when you also want to tune other parameters
+only for specific ones. The following example tunes the `n_estimators`
+parameter for both models but the `max_depth` parameter only for the Random
+Forest.
 
 ```python
 atom.run(
-    models="LR",
+    models=["ET", "RF"],
     n_calls=30,
-    bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]},
+    bo_params={"dimensions": {"all": "n_estimators", "RF": "max_depth"}},
 )
 ```
+
+If just the parameter name is provided, the predefined dimension space
+is used. It's also possible to provide custom dimension spaces, but make
+sure the dimensions are compliant with [skopt's API](https://scikit-optimize.github.io/stable/modules/classes.html).
+See every model's individual documentation in the API section for an
+overview of their hyperparameters and dimensions.
+
+```python
+from skopt.space.space import Categorical, Integer
+
+atom.run(
+    models=["ET", "RF"],
+    n_calls=30,
+    bo_params={
+        "dimensions": {
+            "all": Integer(10, 100, name="n_estimators"),
+            "RF": [
+                Integer(1, 10, name="max_depth"),
+                Categorical([None, "sqrt", "log2", 0.7], name="max_features"),
+            ],
+        },
+    },
+)
+```
+
+!!! note
+    When specifying dimension spaces manually, make sure to import the
+    dimension types from scikit-optimize: `from skopt.space.space import
+    Real, Categorical, Integer`.
 
 !!! warning
     Keras' models can only use hyperparameter tuning when `n_jobs=1` or
