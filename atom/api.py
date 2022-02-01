@@ -54,7 +54,7 @@ def ATOMModel(
 
     Returns
     -------
-    estimator: sklearn estimator
+    sklearn estimator
         Clone of the provided estimator with custom attributes.
 
     """
@@ -123,7 +123,7 @@ def ATOMLoader(
 
     Returns
     -------
-    cls: class instance
+    class instance
         Unpickled instance.
 
     """

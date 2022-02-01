@@ -689,6 +689,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
 
+        memory = self.dataset.memory_usage(deep=True).sum()
+        if memory < 1e6:
+            self.log(f"Memory: {memory / 1e3:.2f} kB", _vb)
+        else:
+            self.log(f"Memory: {memory / 1e6:.2f} MB", _vb)
+
         if not is_multidim(self.X):
             if is_sparse(self.X):
                 self.log("Sparse: True", _vb)
@@ -1411,8 +1417,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         strategy: str = "DFS",
         n_features: Optional[int] = None,
-        generations: int = 20,
-        population: int = 500,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
@@ -1432,8 +1436,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         feature_generator = FeatureGenerator(
             strategy=strategy,
             n_features=n_features,
-            generations=generations,
-            population=population,
             operators=operators,
             **kwargs,
         )

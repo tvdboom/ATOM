@@ -599,6 +599,15 @@ def test_evaluate_threshold():
     assert not pred_1.equals(pred_2)
 
 
+def test_evaluate_sample_weight():
+    """Assert that the sample_weight parameter changes the predictions."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("RF")
+    pred_1 = atom.rf.evaluate(sample_weight=None)
+    pred_2 = atom.rf.evaluate(sample_weight=list(range(len(atom.y_test))))
+    assert not pred_1.equals(pred_2)
+
+
 def test_export_pipeline():
     """Assert that the pipeline can be retrieved from the model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

@@ -1576,7 +1576,7 @@ description of the parameters.
 <a name="feature-generation"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="DFS",
-n_features=None, generations=20, population=500, operators=None)
+n_features=None, operators=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1410">[source]</a>
 </span>

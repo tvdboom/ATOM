@@ -26,7 +26,7 @@ def inverse_transform(self, Xt):
 
     Returns
     -------
-    Xt: array-like, shape=(n_samples, n_categories)
+    array-like, shape=(n_samples, n_categories)
         The integer categories.
 
     """
@@ -69,7 +69,7 @@ def transform(self, X):
 
     Returns
     -------
-    Xt: array-like, shape=(n_samples, n_categories)
+    array-like, shape=(n_samples, n_categories)
         The integer categories.
 
     """

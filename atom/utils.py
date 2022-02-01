@@ -372,7 +372,7 @@ def time_to_str(t_init):
 
     Returns
     -------
-    time: str
+    str
         Time representation.
 
     """
@@ -409,7 +409,7 @@ def to_df(data, index=None, columns=None, dtypes=None):
 
     Returns
     -------
-    df: pd.DataFrame or None
+    pd.DataFrame or None
         Transformed dataframe.
 
     """
@@ -453,7 +453,7 @@ def to_series(data, index=None, name="target", dtype=None):
 
     Returns
     -------
-    series: pd.Series or None
+    pd.Series or None
         Transformed series.
 
     """
@@ -478,7 +478,7 @@ def arr(df):
 
     Returns
     -------
-    df: pd.DataFrame
+    pd.DataFrame
         Stacked dataframe.
 
     """
@@ -505,7 +505,7 @@ def prepare_logger(logger, class_name):
 
     Returns
     -------
-    logger: class
+    class
         Logger object.
 
     """
@@ -560,7 +560,7 @@ def check_is_fitted(estimator, exception=True, attributes=None):
 
     Returns
     -------
-    is_fitted: bool
+    bool
         Whether the estimator is fitted.
 
     """
@@ -610,7 +610,7 @@ def create_acronym(fullname):
 
     Returns
     -------
-    acronym:str
+    str
         Created acronym.
 
     """
@@ -636,10 +636,10 @@ def names_from_estimator(cls, est):
 
     Returns
     -------
-    acronym: str
+    str
         Model's acronym.
 
-    fullname: str
+    str
         Model's complete name.
 
     """
@@ -654,7 +654,12 @@ def names_from_estimator(cls, est):
     return create_acronym(est.__class__.__name__), est.__class__.__name__
 
 
-def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
+def get_custom_scorer(
+    metric,
+    greater_is_better=True,
+    needs_proba=False,
+    needs_threshold=False,
+):
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -664,7 +669,7 @@ def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False
     metric: str, func or scorer
         Name, metric or scorer to get ATOM's scorer from.
 
-    gib: bool, optional (default=True)
+    greater_is_better: bool, optional (default=True)
         whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
         better. Is ignored if the metric is a string or a scorer.
@@ -679,7 +684,7 @@ def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False
 
     Returns
     -------
-    scorer: scorer
+    scorer
         Custom sklearn scorer with name attribute.
 
     """
@@ -718,7 +723,7 @@ def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False
     else:  # Scoring is a function with signature metric(y, y_pred)
         scorer = make_scorer(
             score_func=metric,
-            greater_is_better=gib,
+            greater_is_better=greater_is_better,
             needs_proba=needs_proba,
             needs_threshold=needs_threshold,
         )
@@ -743,7 +748,7 @@ def infer_task(y, goal="class"):
 
     Returns
     -------
-    task: str
+    str
         Inferred task.
 
     """
@@ -770,10 +775,10 @@ def partial_dependence(estimator, X, features):
 
     Parameters
     ----------
-    estimator : class
+    estimator: class
         Model estimator to use.
 
-    X : pd.DataFrame
+    X: pd.DataFrame
         Feature set used to generate a grid of values for the target
         features (where the partial dependence is evaluated), and
         also to generate values for the complement features.
@@ -784,13 +789,13 @@ def partial_dependence(estimator, X, features):
 
     Returns
     -------
-    avg_pred: np.array
+    np.array
         Average of the predictions.
 
-    pred: np.array
+    np.array
         All predictions.
 
-    values: list
+    list
         Values used for the predictions.
 
     """
@@ -825,7 +830,7 @@ def get_feature_importance(est, attributes=None):
 
     Returns
     -------
-    data: np.array
+    np.array
         Estimator's feature importance.
 
     """

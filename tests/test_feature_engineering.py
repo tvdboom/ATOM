@@ -115,27 +115,6 @@ def test_n_features_parameter_negative():
         generator.fit(X_bin, y_bin)
 
 
-def test_population_parameter():
-    """Assert that an error is raised when population is invalid."""
-    generator = FeatureGenerator(strategy="gfg", population=30)
-    with pytest.raises(ValueError, match=r".*the population parameter.*"):
-        generator.fit(X_reg, y_reg)
-
-
-def test_generations_parameter():
-    """Assert that an error is raised when generations is invalid."""
-    generator = FeatureGenerator(strategy="gfg", generations=0)
-    with pytest.raises(ValueError, match=r".*the generations parameter.*"):
-        generator.fit(X_bin, y_bin)
-
-
-def test_n_features_parameter_not_one_percent():
-    """Assert that the n_features parameter is within 1% of population."""
-    generator = FeatureGenerator(strategy="gfg", n_features=23, population=200)
-    with pytest.raises(ValueError, match=r".*should be <1%.*"):
-        generator.fit(X_bin, y_bin)
-
-
 def test_strategy_parameter():
     """Assert that the strategy parameter is either "DFS", "GFG" or "genetic"."""
     generator = FeatureGenerator(strategy="invalid")
@@ -151,8 +130,13 @@ def test_operators_parameter():
 
 
 def test_n_features_above_maximum():
-    """Assert that n_features becomes maximum if more than maximum for "DFS"."""
-    generator = FeatureGenerator(n_features=1000, operators="log", random_state=1)
+    """Assert that n_features becomes maximum if more than maximum."""
+    generator = FeatureGenerator(
+        strategy="dfs",
+        n_features=1000,
+        operators="log",
+        random_state=1,
+    )
     X = generator.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 60  # 30 og + 30 log
 
@@ -162,7 +146,7 @@ def test_genetic_non_improving_features():
     generator = FeatureGenerator(
         strategy="gfg",
         generations=5,
-        population=300,
+        population_size=300,
         operators="sqrt",
         random_state=1,
     )
@@ -175,24 +159,11 @@ def test_attribute_genetic_features():
     generator = FeatureGenerator(
         strategy="gfg",
         generations=3,
-        population=200,
+        population_size=200,
         random_state=1,
     )
     _ = generator.fit_transform(X_bin, y_bin)
     assert not generator.genetic_features.empty
-
-
-def test_genetic_maximum_features():
-    """Assert that the features are 1% of the population for n_features=None."""
-    generator = FeatureGenerator(
-        strategy="gfg",
-        n_features=None,
-        generations=4,
-        population=400,
-        random_state=1,
-    )
-    X = generator.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == X_bin.shape[1] + 4
 
 
 def test_updated_dataset():
@@ -201,7 +172,7 @@ def test_updated_dataset():
         strategy="gfg",
         n_features=1,
         generations=4,
-        population=1000,
+        population_size=1000,
         random_state=1,
     )
     X = generator.fit_transform(X_bin, y_bin)

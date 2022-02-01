@@ -8,9 +8,9 @@ Description: Module containing the feature engineering transformers.
 """
 
 # Standard packages
-import random
 import numpy as np
 import pandas as pd
+from random import sample
 from typeguard import typechecked
 from typing import Optional, Union
 
@@ -243,16 +243,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             - "GFG" or "genetic" to use Genetic Feature Generation.
 
     n_features: int or None, optional (default=None)
-        Number of newly generated features to add to the dataset (no
-        more than 1% of the population for the genetic strategy). If
-        None, select all created features.
-
-    generations: int, optional (default=20)
-        Number of generations to evolve. Only for the genetic strategy.
-
-    population: int, optional (default=500)
-        Number of programs in each generation. Only for the genetic
-        strategy.
+        Maximum number of newly generated features to add to the
+        dataset. If None, select all created features.
 
     operators: str, sequence or None, optional (default=None)
         Mathematical operators to apply on the features. None for all.
@@ -279,6 +271,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
 
+    **kwargs
+        Additional keyword arguments for the SymbolicTransformer
+        instance. Only for the genetic strategy.
+
     Attributes
     ----------
     symbolic_transformer: SymbolicTransformer
@@ -298,13 +294,12 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "DFS",
         n_features: Optional[int] = None,
-        generations: int = 20,
-        population: int = 500,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
         random_state: Optional[int] = None,
+        **kwargs,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -314,14 +309,13 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         )
         self.strategy = strategy
         self.n_features = n_features
-        self.generations = generations
-        self.population = population
         self.operators = operators
+        self.kwargs = kwargs
 
         self.symbolic_transformer = None
         self.genetic_features = None
         self._operators = None
-        self._dfs_features = None
+        self._dfs = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -345,32 +339,16 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
+        if self.strategy.lower() not in ("dfs", "gfg", "genetic"):
+            raise ValueError(
+                "Invalid value for the strategy parameter. Value "
+                f"should be either 'dfs' or 'genetic', got {self.strategy}."
+            )
+
         if self.n_features is not None and self.n_features <= 0:
             raise ValueError(
                 "Invalid value for the n_features parameter."
                 f"Value should be >0, got {self.n_features}."
-            )
-
-        if self.strategy.lower() in ("gfg", "genetic"):
-            if self.population < 100:
-                raise ValueError(
-                    "Invalid value for the population parameter."
-                    f"Value should be >100, got {self.population}."
-                )
-            if self.generations < 1:
-                raise ValueError(
-                    "Invalid value for the generations parameter."
-                    f"Value should be >100, got {self.generations}."
-                )
-            if self.n_features and self.n_features > int(0.01 * self.population):
-                raise ValueError(
-                    "Invalid value for the n_features parameter. Value "
-                    f"should be <1% of the population, got {self.n_features}."
-                )
-        elif self.strategy.lower() != "dfs":
-            raise ValueError(
-                "Invalid value for the strategy parameter. Value "
-                f"should be either 'dfs' or 'genetic', got {self.strategy}."
             )
 
         default = ["add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan"]
@@ -410,7 +388,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Run deep feature synthesis with transformation primitives
             es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
-            self._dfs_features = ft.dfs(
+            self._dfs = ft.dfs(
                 target_dataframe_name="X",
                 entityset=es,
                 trans_primitives=trans_primitives,
@@ -419,47 +397,29 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 ignore_columns={"X": ["_index"]},
             )
 
-            # Since dfs doesn't return a specific feature order, we
-            # enforce order by name to be deterministic
-            new_dfs = []
-            for feature in sorted(map(str, self._dfs_features[X.shape[1] - 1:])):
-                for fx in self._dfs_features:
-                    if feature == str(fx):
-                        new_dfs.append(fx)
-                        break
-            self._dfs_features = self._dfs_features[: X.shape[1] - 1] + new_dfs
-
-            # Make sure there are enough features (-1 because of index)
-            max_features = len(self._dfs_features) - (X.shape[1] - 1)
-            if not self.n_features or self.n_features > max_features:
-                n_final_features = max_features
-            else:
-                n_final_features = self.n_features
-
-            # Get random indices from the feature list
-            idx_old = range(X.shape[1] - 1)
-            idx_new = random.sample(
-                range(X.shape[1] - 1, len(self._dfs_features)), n_final_features
-            )
-            idx = list(idx_old) + list(idx_new)
+            # Select the new features (dfs also returns originals)
+            self._dfs = self._dfs[X.shape[1] - 1:]
 
             # Get random selection of features
-            self._dfs_features = [
-                value for i, value in enumerate(self._dfs_features) if i in idx
-            ]
+            if self.n_features and self.n_features < len(self._dfs):
+                self._dfs = sample(self._dfs, self.n_features)
+
+            # Order the features alphabetically
+            self._dfs = sorted(self._dfs, key=lambda x: x._name)
 
         else:
+            kwargs = self.kwargs.copy()  # Copy in case of repeated fit
             self.symbolic_transformer = SymbolicTransformer(
-                generations=self.generations,
-                population_size=self.population,
-                hall_of_fame=int(0.1 * self.population),
-                n_components=int(0.01 * self.population),
-                init_depth=(1, 2),
+                hall_of_fame=kwargs.pop("hall_of_fame", max(100, self.n_features or 100)),
+                n_components=self.n_features or 100,
+                init_depth=kwargs.pop("init_depth", (1, 2)),
+                const_range=kwargs.pop("const_range", None),
                 function_set=self._operators,
                 feature_names=X.columns,
-                verbose=0 if self.verbose < 2 else 1,
-                n_jobs=self.n_jobs,
-                random_state=self.random_state,
+                verbose=kwargs.pop("verbose", 0 if self.verbose < 2 else 1),
+                n_jobs=kwargs.pop("n_jobs", self.n_jobs),
+                random_state=kwargs.pop("random_state", self.random_state),
+                **kwargs,
             ).fit(X, y)
 
         self._is_fitted = True
@@ -491,81 +451,58 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         if self.strategy.lower() == "dfs":
             index = X.index
             es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
-            X = ft.calculate_feature_matrix(
-                    features=self._dfs_features,
+            dfs = ft.calculate_feature_matrix(
+                    features=self._dfs,
                     entityset=es,
                     n_jobs=self.n_jobs,
                 )
+
+            # Add the new features to the feature set
+            X = pd.concat([X.drop("index", axis=1), dfs], axis=1)
             X.index = index
 
-            self.log(
-                f" --> {len(self._dfs_features)} new "
-                "features were added to the dataset.", 2
-            )
+            self.log(f" --> {len(self._dfs)} new features were added.", 2)
 
         else:
-            new_features = self.symbolic_transformer.transform(X)
-
-            # ix = indices of new fxs that are not in the original set
-            # descript = operators applied to create the new features
-            # fitness = list of fitness scores of the new features
-            ix, descript, fitness = [], [], []
+            # Get the names and fitness of the new features
+            names, fitness = [], []
             for i, program in enumerate(self.symbolic_transformer):
-                if str(program) not in X.columns:
-                    ix.append(i)
-                descript.append(str(program))
-                fitness.append(program.fitness_)
+                # Drop duplicates and unchanged cols
+                if str(program) not in X.columns and str(program) not in names:
+                    names.append(str(program))
+                    fitness.append(program.fitness_)
 
-            # Remove all identical features to those in the dataset
-            new_features = new_features[:, ix]
-            descript = [item for i, item in enumerate(descript) if i in ix]
-            fitness = [item for i, item in enumerate(fitness) if i in ix]
-
-            # Indices of all non duplicate elements in list
-            ix = [ix for ix, v in enumerate(descript) if v not in descript[:ix]]
-
-            # Remove all duplicate elements
-            new_features = new_features[:, ix]
-            descript = [item for i, item in enumerate(descript) if i in ix]
-            fitness = [item for i, item in enumerate(fitness) if i in ix]
-
-            # Check if any new features remain in the loop
-            if len(descript) == 0:
+            # Check if any new features remain
+            if len(names) == 0:
                 self.log(
-                    " --> WARNING! The genetic algorithm couldn't "
-                    "find any improving non-linear features.", 1
+                    " --> The genetic algorithm didn't find any improving features.", 2
                 )
                 return X
-
-            # Get indices of the best features
-            if self.n_features and len(descript) > self.n_features:
-                index = np.argpartition(fitness, -self.n_features)[-self.n_features:]
-            else:
-                index = range(len(descript))
-
-            # Select best features only
-            new_features = new_features[:, index]
-
-            # Create the genetic_features attribute
-            features_df = pd.DataFrame(columns=["name", "description", "fitness"])
-            for i, idx in enumerate(index):
-                features_df = features_df.append(
-                    {
-                        "name": "feature " + str(1 + i + len(X.columns)),
-                        "description": descript[idx],
-                        "fitness": fitness[idx],
-                    },
-                    ignore_index=True,
+            elif len(names) != len(self.symbolic_transformer):
+                self.log(
+                    f" --> Dropping {len(self.symbolic_transformer) - len(names)}"
+                    " features due to repetition.", 2
                 )
-            self.genetic_features = features_df
 
-            self.log(
-                f" --> {len(self.genetic_features)} new "
-                "features were added to the dataset.", 2
+            # Select the n best features
+            if self.n_features and len(names) > self.n_features:
+                best_idx = np.argpartition(names, -self.n_features)[-self.n_features:]
+            else:
+                best_idx = list(range(len(names)))
+
+            # Create the features and select the best ones
+            new_features = self.symbolic_transformer.transform(X)[:, best_idx]
+
+            df = []
+            for idx, array in zip(best_idx, new_features.T):
+                X[f"feature {X.shape[1] + 1}"] = array  # Add new feature to X
+                df.append([f"feature {X.shape[1] + 1}", names[idx], fitness[idx]])
+
+            self.log(f" --> {len(best_idx)} new features were added.", 2)
+            self.genetic_features = pd.DataFrame(
+                data=df,
+                columns=["name", "description", "fitness"],
             )
-
-            cols = list(X.columns) + list(self.genetic_features["name"])
-            X = pd.DataFrame(np.hstack((X, new_features)), index=X.index, columns=cols)
 
         return X
 

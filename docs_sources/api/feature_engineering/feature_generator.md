@@ -3,8 +3,8 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="DFS",
-n_features=None, generations=20, population=500, operators=None,
-n_jobs=1, verbose=0, logger=None, random_state=None)
+n_features=None, operators=None, n_jobs=1, verbose=0, logger=None,
+random_state=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L231">[source]</a>
 </span>
@@ -28,17 +28,8 @@ Strategy to crate new features. Choose from:
 </ul>
 <p>
 <strong>n_features: int or None, optional (default=None)</strong><br>
-Number of newly generated features to add to the dataset (no
-more than 1% of the population for the genetic strategy). If
+Maximum number of newly generated features to add to the dataset. If
 None, select all created features.
-</p>
-<p>
-<strong>generations: int, optional (default=20)</strong><br>
-Number of generations to evolve. Only for the genetic strategy.
-</p>
-<p>
-<strong>population: int, optional (default=500)</strong><br>
-Number of programs in each generation. Only for the genetic strategy.
 </p>
 <p>
 <strong>operators: str, list, tuple or None, optional (default=None)</strong><br>
@@ -65,9 +56,16 @@ Verbosity level of the class. Possible values are:
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
+<p>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>np.random</code>.
+</p>
+<p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments for the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
+instance. Only for the genetic strategy.
+</p>
 </td>
 </tr>
 </table>

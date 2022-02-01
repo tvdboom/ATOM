@@ -268,7 +268,7 @@ class BaseModel(BaseModelPlotter):
 
             Returns
             -------
-            score: float
+            float
                 Score achieved by the model.
 
             """
@@ -293,7 +293,7 @@ class BaseModel(BaseModelPlotter):
 
                 Returns
                 -------
-                score: float
+                float
                     Score of the fitted model on the validation set.
 
                 """
@@ -808,11 +808,7 @@ class BaseModel(BaseModelPlotter):
                 else:
                     metric = get_custom_scorer(metric)
 
-                kwargs = {}
-                if sample_weight is not None:
-                    kwargs["sample_weight"] = sample_weight
-
-                return metric(self.estimator, X, y, **kwargs)
+                return metric(self.estimator, X, y, sample_weight)
 
     @composed(crash, method_to_log, typechecked)
     def predict(
@@ -1075,7 +1071,7 @@ class BaseModel(BaseModelPlotter):
             pl = self.export_pipeline()
             mlflow.sklearn.log_model(pl, f"pipeline_{self.name}")
 
-    def _calculate_score(self, scorer, dataset="test", threshold=0.5):
+    def _calculate_score(self, scorer, dataset, threshold=0.5, sample_weight=None):
         """Calculate a metric score using the prediction attributes."""
         has_pred_proba = hasattr(self.estimator, "predict_proba")
         has_dec_func = hasattr(self.estimator, "decision_function")
@@ -1098,11 +1094,19 @@ class BaseModel(BaseModelPlotter):
             if scorer.__class__.__name__ == "_PredictScorer":
                 y_pred = (y_pred > threshold).astype("int")
 
-        self._scores[dataset][scorer.name] = scorer._sign * float(
-            scorer._score_func(
+        if "sample_weight" in signature(scorer._score_func).parameters:
+            score = scorer._score_func(
+                getattr(self, f"y_{dataset}"),
+                y_pred,
+                sample_weight=sample_weight,
+                **scorer._kwargs,
+            )
+        else:
+            score = scorer._score_func(
                 getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs
             )
-        )
+
+        self._scores[dataset][scorer.name] = scorer._sign * float(score)
 
         if self._run:  # Log metric to mlflow run
             MlflowClient().log_metric(
@@ -1349,6 +1353,7 @@ class BaseModel(BaseModelPlotter):
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         threshold: float = 0.5,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
     ):
         """Get the model's scores for the provided metrics.
 
@@ -1368,6 +1373,9 @@ class BaseModel(BaseModelPlotter):
                 - The task is binary classification.
                 - The model has a `predict_proba` method.
                 - The metric evaluates predicted target values.
+
+        sample_weight: sequence or None, optional (default=None)
+            Sample weights corresponding to y in `dataset`.
 
         Returns
         -------
@@ -1424,10 +1432,19 @@ class BaseModel(BaseModelPlotter):
             scorer = get_custom_scorer(met)
 
             # Skip if the scorer has already been calculated
-            if scorer.name in self._scores[dataset] and threshold == 0.5:
+            if (
+                scorer.name in self._scores[dataset]
+                and threshold == 0.5
+                and sample_weight is None
+            ):
                 scores[scorer.name] = self._scores[dataset][scorer.name]
             else:
-                scores[scorer.name] = self._calculate_score(scorer, dataset, threshold)
+                scores[scorer.name] = self._calculate_score(
+                    scorer=scorer,
+                    dataset=dataset,
+                    threshold=threshold,
+                    sample_weight=sample_weight,
+                )
 
         return scores
 

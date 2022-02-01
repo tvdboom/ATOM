@@ -1,6 +1,13 @@
 # Release history
 -----------------
 
+<a name="v4111"></a>
+### Version 4.11.1
+
+* Refactor of the [FeatureGenerator](../API/feature_engineering/feature_generator) class.
+* Added the `sample_weight` parameter to the [evaluate](../API/models/gnb/#evaluate) method.
+
+
 <a name="v4110"></a>
 ### Version 4.11.0
 
