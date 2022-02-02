@@ -575,6 +575,7 @@ class BasePredictor:
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         threshold: float = 0.5,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
     ):
         """Get all models' scores for the provided metrics.
 
@@ -595,6 +596,9 @@ class BasePredictor:
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
 
+        sample_weight: sequence or None, optional (default=None)
+            Sample weights corresponding to y in `dataset`.
+
         Returns
         -------
         pd.DataFrame
@@ -605,7 +609,9 @@ class BasePredictor:
 
         scores = pd.DataFrame()
         for m in self._models.values():
-            scores = scores.append(m.evaluate(metric, dataset, threshold))
+            scores = scores.append(
+                m.evaluate(metric, dataset, threshold, sample_weight)
+            )
 
         return scores
 

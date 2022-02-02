@@ -3302,7 +3302,7 @@ Created dashboard object.
 <p><a name="evaluate"></a></p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
-dataset="test", threshold=0.5)
+dataset="test", threshold=0.5, sample_weight=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1120">[source]</a>
 </span>
@@ -3330,6 +3330,10 @@ to class labels. Only used when:
 <li>The model has a <code>predict_proba</code> method.</li>
 <li>The metric evaluates predicted target values.</li>
 </ul>
+<p>
+<strong>sample_weight: sequence or None, optional (default=None)</strong><br>
+Sample weights corresponding to y in <code>dataset</code>.
+</p>
 </td>
 </tr>
 <tr>
@@ -3440,53 +3444,6 @@ name of the corresponding run is also changed.</p>
 <td width="80%" class="td_params">
 <strong>name: str or None, optional (default=None)</strong><br>
 New tag for the model. If None, the tag is removed.
-</table>
-<p><br /></p>
-<p><a name="evaluate"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">evaluate</strong>
-(metric=None, dataset="test")
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L322">[source]</a>
-</span>
-</div>
-<p>Get the model's score for the provided metrics.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>metric: str or None, optional (default=None)</strong><br>
-Name of the metric to calculate. If None, returns the models' final
-results (ignoring the <code>dataset</code> parameter). Choose from any
-of sklearn's classification <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>
-or one of the following custom metrics:
-<ul style="line-height:1.2em;margin-top:5px">
-<li>"cm" for the confusion matrix.</li>
-<li>"tn" for true negatives.</li>
-<li>"fp" for false positives.</li>
-<li>"fn" for false negatives.</li>
-<li>"tp" for true positives.</li>
-<li>"fpr" for the false positive rate.</li>
-<li>"tpr" for the true positive rate.</li>
-<li>"fnr" for the false negative rate.</li>
-<li>"tnr" for the true negative rate.</li>
-<li>"sup" for the support metric.</li>
-<li>"lift" for the lift metric.</li>
-</ul>
-<p>
-<strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Choose from: "train",
-"test" or "holdout".
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>score: float or np.array</strong><br>
-Model's score for the selected metric.
-</td>
-</tr>
 </table>
 <p><br /></p>
 <p><a name="save-estimator"></a></p>

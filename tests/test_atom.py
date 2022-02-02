@@ -775,14 +775,14 @@ def test_feature_extraction():
 def test_feature_generation():
     """Assert that the feature_generation method creates extra features."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_generation(n_features=2, generations=5, population=200)
+    atom.feature_generation(n_features=2)
     assert atom.X.shape[1] == X_bin.shape[1] + 2
 
 
 def test_feature_generation_attributes():
     """Assert that the attrs from feature_generation are passed to atom."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_generation("GFG", n_features=2, generations=5, population=200)
+    atom.feature_generation("GFG", n_features=2)
     assert hasattr(atom, "symbolic_transformer")
     assert hasattr(atom, "genetic_features")
 

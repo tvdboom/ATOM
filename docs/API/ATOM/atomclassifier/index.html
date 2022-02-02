@@ -3758,7 +3758,7 @@ Names or indices of the columns to drop.
 <p><a name="evaluate"></a></p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
-dataset="test", threshold=0.5)
+dataset="test", threshold=0.5, sample_weight=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L573">[source]</a>
 </span>
@@ -3786,6 +3786,10 @@ to class labels. Only used when:
 <li>The model has a <code>predict_proba</code> method.</li>
 <li>The metric evaluates predicted target values.</li>
 </ul>
+<p>
+<strong>sample_weight: sequence or None, optional (default=None)</strong><br>
+Sample weights corresponding to y in <code>dataset</code>.
+</p>
 </td>
 </tr>
 <tr>
