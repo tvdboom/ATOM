@@ -775,8 +775,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-            Feature set with shape=(n_samples, n_features).
-
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
             estimator's own verbosity.
