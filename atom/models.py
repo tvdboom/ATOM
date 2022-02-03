@@ -700,7 +700,7 @@ class Perceptron(BaseModel):
         return Perc
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         if self._get_param(params, "penalty") != "elasticnet":
@@ -743,7 +743,7 @@ class LogisticRegression(BaseModel):
         return LR
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         # Limitations on penalty + solver combinations
@@ -803,7 +803,7 @@ class LinearDiscriminantAnalysis(BaseModel):
         return LDA
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         if self._get_param(params, "solver") == "svd":
@@ -1064,7 +1064,7 @@ class ExtraTrees(BaseModel):
             return ExtraTreesRegressor
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         if not self._get_param(params, "bootstrap"):
@@ -1121,7 +1121,7 @@ class RandomForest(BaseModel):
             return RandomForestRegressor
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         if not self._get_param(params, "bootstrap"):
@@ -1218,7 +1218,7 @@ class GradientBoostingMachine(BaseModel):
             return GradientBoostingRegressor
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         if self._get_param(params, "loss") not in ("huber", "quantile"):
@@ -1548,7 +1548,7 @@ class LinearSVM(BaseModel):
             return LinearSVR
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         if self.T.goal == "class":
@@ -1611,7 +1611,7 @@ class KernelSVM(BaseModel):
             return SVR
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         if self.T.goal == "class":
@@ -1717,7 +1717,7 @@ class StochasticGradientDescent(BaseModel):
             return SGDRegressor
 
     def get_parameters(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model's hyperparameters."""
         params = super().get_parameters(x)
 
         if self._get_param(params, "penalty") != "elasticnet":

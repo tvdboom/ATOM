@@ -597,8 +597,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             the values in the column are strictly positive.
 
         dense2sparse: bool, optional (default=False)
-            Whether to convert all features to sparse format. The element
-            that is compressed is always zero.
+            Whether to convert all features to sparse format. The value
+            that is compressed is the most frequent value in the column.
 
         columns: int, str, slice, sequence or None, optional (default=None)
             Names, indices or dtypes of the columns in the dataset to
@@ -668,7 +668,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             for name, column in self.X.items():
                 new_cols[name] = pd.arrays.SparseArray(
                     data=column,
-                    fill_value=0,
+                    fill_value=column.mode(dropna=False)[0],
                     dtype=column.dtype,
                 )
 

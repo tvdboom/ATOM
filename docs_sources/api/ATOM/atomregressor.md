@@ -848,7 +848,7 @@ Names or indices of the columns to drop.
 <a name="evaluate"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
-dataset="test")
+dataset="test", sample_weight=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L573">[source]</a>
 </span>
@@ -867,6 +867,10 @@ metrics per task are used.
 <strong>dataset: str, optional (default="test")</strong><br>
 Data set on which to calculate the metric. Choose from: "train",
 "test" or "holdout".
+</p>
+<p>
+<strong>sample_weight: sequence or None, optional (default=None)</strong><br>
+Sample weights corresponding to y in <code>dataset</code>.
 </p>
 </td>
 </tr>
@@ -1156,8 +1160,8 @@ Only if the values in the column are strictly positive.
 </p>
 <p>
 <strong>dense2sparse: bool, optional (default=False)</strong><br>
-Whether to convert all features to sparse format. The element that is
-compressed is always zero.
+Whether to convert all features to sparse format. The value that is
+compressed is the most frequent value in the column.
 </p>
 <p>
 <strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>

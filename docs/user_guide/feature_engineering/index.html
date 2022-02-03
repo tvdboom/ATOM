@@ -2920,15 +2920,15 @@ it to import the __main__ module before it can do its task.</p>
 <p><strong>Genetic Feature Generation</strong><br>
 Genetic feature generation (GFG) uses <a href="https://en.wikipedia.org/wiki/Genetic_programming">genetic programming</a>,
 a branch of evolutionary programming, to determine which features
-are successful and create new ones based on them. Where DFS can be
+are successful and create new ones based on those. Where DFS can be
 seen as some kind of "brute force" for feature engineering, GFG tries
 to improve its features with every generation of the algorithm. GFG
 uses the same operators as DFS, but instead of only applying the
-transformations once, it evolves them further, creating complicated
-non-linear combinations of features with many transformations. The
-new features are given the name <code>Feature N</code> for the N-th feature. You
-can access the genetic feature's fitness and description (how they are
-calculated) through the <code>genetic_features</code> attribute.</p>
+transformations once, it evolves them further, creating nested
+structures of combinations of features. The new features are given the
+name <code>feature n</code>, where n stands for the n-th feature in the dataset.
+You can access the genetic feature's fitness and description (how they
+are calculated) through the <code>genetic_features</code> attribute.</p>
 <p>ATOM uses the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
  class from the <a href="https://gplearn.readthedocs.io/en/stable/index.html">gplearn</a>
  package for the genetic algorithm. Read more about this implementation

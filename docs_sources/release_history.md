@@ -4,6 +4,7 @@
 <a name="v4111"></a>
 ### Version 4.11.1
 
+* Support for [python 3.10](https://www.python.org/downloads/release/python-3100/).
 * Refactor of the [FeatureGenerator](../API/feature_engineering/feature_generator) class.
 * Added the `sample_weight` parameter to the [evaluate](../API/ATOM/atomclassifier/#evaluate) method.
 * Added memory usage to the [stats](../API/ATOM/atomclassifier/#stats) method.
@@ -313,7 +314,7 @@
 * Added the [Deep learning](../examples/deep_learning), 
   [Ensembles](../examples/ensembles) and
   [Utilities](../examples/utilities) example notebooks.
-* Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
+* Support for [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 
 <a name="v410"></a>

@@ -223,7 +223,9 @@ and [reset](../../API/ATOM/atomclassifier/#reset)). This initial copy
 is created as soon as there are no branches in the initial state (usually
 after calling the first data transformation) and it's stored in an
 internal branch called `og` (original). The og branch is not accessible
-by the user.
+by the user. If the dataset is occupying too much memory, consider
+using the [shrink](../../API/ATOM/atomclassifier/#shrink) method to
+convert the dtypes to their smallest possible matching dtype.
 
 Apart from the dataset itself, the model's [predictions](./predicting)
 (e.g. `predict_proba_train`), metric scores and [shap values](./plots/#shap)

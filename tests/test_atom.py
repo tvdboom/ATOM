@@ -419,7 +419,7 @@ def test_shrink_dense2sparse():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.dtypes[0].name == "float64"
     atom.shrink(dense2sparse=True)
-    assert atom.dtypes[0].name == "Sparse[float32, 0]"
+    assert atom.dtypes[0].name.startswith("Sparse[float32")
 
 
 def test_shrink_exclude_columns():
