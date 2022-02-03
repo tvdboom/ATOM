@@ -27,13 +27,12 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install --upgrade setuptools
-        pip install --upgrade codecov
-        pip install -r requirements.txt
-        pip install -r requirements-optional.txt
-        pip install -r requirements-test.txt
-        pip install -U dill
+        pip install --user -U pip
+        pip install --user -U setuptools
+        pip install --user -U codecov
+        pip install --user -r requirements.txt
+        pip install --user -r requirements-optional.txt
+        pip install --user -r requirements-test.txt
     - name: Run tests
       run: pytest
     - name: Get coverage
