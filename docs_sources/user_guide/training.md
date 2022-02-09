@@ -299,6 +299,16 @@ atom.run(
 )
 ```
 
+Like the `columns` parameter in atom's methods, you can exclude parameters
+from the BO adding `!` before its name. It's possible to exclude multiple
+parameters, but not to combine inclusion and exclusion for the same model.
+For example, to optimize a Random Forest using all its predefined parameters
+except `n_estimators`, run:
+
+```python
+atom.run(models="ET", n_calls=15, bo_params={"dimensions": "!n_estimators"})
+```
+
 If just the parameter name is provided, the predefined dimension space
 is used. It's also possible to provide custom dimension spaces, but make
 sure the dimensions are compliant with [skopt's API](https://scikit-optimize.github.io/stable/modules/classes.html).

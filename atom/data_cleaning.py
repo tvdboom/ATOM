@@ -985,6 +985,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.frac_to_other = frac_to_other
         self.kwargs = kwargs
 
+        self.mapping = {}
         self._cat_cols = None
         self._max_onehot = None
         self._frac_to_other = None
@@ -1079,17 +1080,19 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                         X[name] = column.replace(category, "other")
 
             # Get the unique categories before fitting
-            self._categories[name] = column.unique().tolist()
+            self._categories[name] = sorted(column.unique().tolist())
 
             # Perform encoding type dependent on number of unique values
-            ordinal = self.ordinal or {}
-            if name in ordinal or len(self._categories[name]) == 2:
+            ordi = self.ordinal or {}
+            if name in ordi or len(self._categories[name]) == 2:
                 # Create custom mapping from 0 to N - 1
-                mapp = {v: i for i, v in enumerate(ordinal.get(name, column.unique()))}
-                mapp.setdefault(np.NaN, -1)  # Encoder always needs mapping of NaN
+                mapping = {
+                    v: i for i, v in enumerate(ordi.get(name, self._categories[name]))
+                }
+                mapping.setdefault(np.NaN, -1)  # Encoder always needs mapping of NaN
 
                 self._encoders[name] = OrdinalEncoder(
-                    mapping=[{"col": name, "mapping": mapp}],
+                    mapping=[{"col": name, "mapping": mapping}],
                     handle_missing="return_nan",
                     handle_unknown="value",
                 ).fit(X[[name]])

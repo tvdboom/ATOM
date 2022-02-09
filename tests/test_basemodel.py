@@ -13,6 +13,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from unittest.mock import patch
+from skopt.space.space import Integer
 from skopt.learning import GaussianProcessRegressor
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, r2_score, recall_score
@@ -92,6 +93,57 @@ def test_bo_with_no_hyperparameters():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(models="BNB", n_calls=10, est_params={"alpha": 1.0, "fit_prior": True})
     assert atom.bnb.bo.empty
+
+
+def test_custom_dimensions_is_name():
+    """Assert that the parameters to tune can be set by name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="LR",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": "max_iter"},
+    )
+    assert list(atom.lr.best_params) == ["max_iter"]
+
+
+def test_custom_dimensions_is_name_excluded():
+    """Assert that the parameters to tune can be excluded by name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="LR",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": "!max_iter"},
+    )
+    assert list(atom.lr.best_params) == ["penalty", "solver"]
+
+
+def test_custom_dimensions_name_is_invalid():
+    """Assert that an error is raised when an invalid parameter is provided."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*is not a predefined hyperparameter.*"):
+        atom.run("LR", n_calls=5, bo_params={"dimensions": "invalid"})
+
+
+def test_custom_dimensions_is_dim():
+    """Assert that the custom dimensions are for all models if dimension."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="LR",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": Integer(10, 20, name="max_iter")},
+        random_state=1,
+    )
+    assert list(atom.lr.best_params) == ["max_iter"]
+
+
+def test_custom_dimensions_include_and_excluded():
+    """Assert that an error is raised when parameters are included and excluded."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*either include or exclude.*"):
+        atom.run("LR", n_calls=5, bo_params={"dimensions": ["!max_iter", "penalty"]})
 
 
 def test_default_parameters():

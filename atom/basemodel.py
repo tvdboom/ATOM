@@ -170,23 +170,6 @@ class BaseModel(BaseModelPlotter):
                     f"estimator {self.get_estimator().__class__.__name__}."
                 )
 
-    def _get_dimension(self, dimension):
-        """Check the validity of the hyperparameter dimensions."""
-        if isinstance(dimension, str):
-            # If it's a name, use the predefined dimension
-            try:
-                return next(d for d in self.get_dimensions() if d.name == dimension)
-            except StopIteration:
-                raise ValueError(
-                    "Invalid value for the dimensions parameter. Dimension "
-                    f"{dimension} is not a predefined hyperparameter of the "
-                    f"{self.fullname} model. See the model's documentation "
-                    "for an overview of the available hyperparameter and "
-                    "their dimensions."
-                )
-        else:
-            return check_dimension(dimension)
-
     def _get_default_params(self):
         """Get the estimator's default parameters for the BO dimensions."""
         x0 = CustomDict()
@@ -455,9 +438,42 @@ class BaseModel(BaseModelPlotter):
 
         self.T.log(f"\n\nRunning BO for {self.fullname}...", 1)
 
-        # Assign proper dimensions format or predefined
+        # Assign proper dimensions format or use predefined
         if self._dimensions:
-            self._dimensions = [self._get_dimension(d) for d in self._dimensions]
+            # Some models (e.g. OLS) don't have predefined dimensions (and
+            # thus no get_dimensions method), but can accept user defined ones
+            dims = getattr(self, "get_dimensions", None)
+
+            inc, exc = [], []
+            for dim in self._dimensions:
+                if isinstance(dim, str):
+                    # If it's a name, use the predefined dimension
+                    try:
+                        if dim.startswith("!"):
+                            exc.append(next(d.name for d in dims if d.name == dim[1:]))
+                        else:
+                            inc.append(next(d for d in dims if d.name == dim))
+                    except StopIteration:
+                        raise ValueError(
+                            "Invalid value for the dimensions parameter. Dimension "
+                            f"{dim} is not a predefined hyperparameter of the "
+                            f"{self.fullname} model. See the model's documentation "
+                            "for an overview of the available hyperparameters and "
+                            "their dimensions."
+                        )
+                else:
+                    inc.append(check_dimension(dim))
+
+            if inc and exc:
+                raise ValueError(
+                    "Invalid value for the dimensions parameter. You can either "
+                    "include or exclude parameters, not combinations of these."
+                )
+            elif exc:
+                # If dimensions were excluded with `!`, select all but those
+                self._dimensions = [d for d in dims if d.name not in exc]
+            elif inc:
+                self._dimensions = inc
         else:
             self._dimensions = self.get_dimensions()
 

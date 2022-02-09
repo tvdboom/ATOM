@@ -7,6 +7,7 @@
 * Support for [python 3.10](https://www.python.org/downloads/release/python-3100/).
 * Refactor of the [FeatureGenerator](../API/feature_engineering/feature_generator) class.
 * Added the `sample_weight` parameter to the [evaluate](../API/ATOM/atomclassifier/#evaluate) method.
+* Possibility to exclude hyperparameters from the BO adding `!` before the name.
 * Added memory usage to the [stats](../API/ATOM/atomclassifier/#stats) method.
 
 
