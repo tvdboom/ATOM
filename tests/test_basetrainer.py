@@ -177,13 +177,6 @@ def test_default_metric():
     assert trainer.metric == "r2"
 
 
-def test_default_mapping_assignment():
-    """Assert that a default mapping is assigned."""
-    trainer = DirectClassifier("LR", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.mapping == {"0": 0, "1": 1}
-
-
 def test_sequence_parameters_invalid_length():
     """Assert that an error is raised when the length is invalid."""
     trainer = DirectClassifier("LR", n_calls=(2, 2), random_state=1)

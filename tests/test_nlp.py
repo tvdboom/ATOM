@@ -14,7 +14,7 @@ import pandas as pd
 # Own modules
 from atom import ATOMClassifier
 from atom.nlp import TextCleaner, Tokenizer, Normalizer, Vectorizer
-from .utils import X_bin, X_text, y_text
+from .utils import X_bin, X_text, y10
 
 
 # Test TextCleaner ================================================= >>
@@ -164,14 +164,14 @@ def test_invalid_strategy():
 def test_strategies(strategy):
     """Assert that the BOW and TF-IDF strategies works as intended."""
     X = Vectorizer(strategy=strategy).fit_transform(X_text)
-    assert X.shape == (4, 11)
+    assert X.shape == (10, 20)
     assert "york" in X
 
 
 def test_hashing():
     """Assert that the Hashing strategy works as intended."""
     X = Vectorizer(strategy="Hashing", n_features=10).fit_transform(X_text)
-    assert X.shape == (4, 10)
+    assert X.shape == (10, 10)
     assert "hash_1" in X
 
 
@@ -183,7 +183,7 @@ def test_returns_sparse():
 
 def test_sparse_with_dense():
     """Assert that the output is dense when mixed with non-sparse columns."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(lambda x: 1, columns="new")  # Create dense column
     atom.vectorize(strategy="BOW")
     assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)

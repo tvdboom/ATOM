@@ -156,7 +156,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
             if column.dtype.name == "datetime64[ns]":
                 col_dt = column
                 self.log(f" --> Extracting features from datetime column {name}.", 1)
-            elif name in X.select_dtypes(exclude="number").columns:
+            else:
                 col_dt = pd.to_datetime(
                     arg=column,
                     errors="coerce",  # Converts to NaT if he can't format

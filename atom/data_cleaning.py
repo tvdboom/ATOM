@@ -9,6 +9,7 @@ Description: Module containing the data cleaning transformers.
 
 # Standard packages
 import numpy as np
+import pandas as pd
 from inspect import signature
 from scipy.stats import zscore
 from typeguard import typechecked
@@ -149,7 +150,7 @@ class DropTransformer(BaseTransformer):
 
     def transform(self, X, y=None):
         """Drop columns from the dataset."""
-        self.log(f"Applying DropTransformer...", 1)
+        self.log("Applying DropTransformer...", 1)
         for col in self.columns:
             self.log(f" --> Dropping column {col} from the dataset.", 2)
             X = X.drop(col, axis=1)
@@ -601,7 +602,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             # Label-encode the target column
             if self.encode_target:
                 encoder = LabelEncoder()
-                y = to_series(encoder.fit_transform(y), y.index, y.name)
+                y = to_series(encoder.fit_transform(y), index=y.index, name=y.name)
                 self.mapping = {str(it(v)): i for i, v in enumerate(encoder.classes_)}
 
                 # Only print if the target column wasn't already encoded
@@ -965,6 +966,13 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     **kwargs
         Additional keyword arguments for the `strategy` estimator.
 
+    Attributes
+    ----------
+    mapping: dict of dicts
+        Encoded values and their respective mapping. The column name is
+        the key to its mapping dictionary. Only for columns mapped to
+        a single column (e.g. Ordinal, Leave-one-out, etc...).
+
     """
 
     @typechecked
@@ -1068,6 +1076,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Fitting Encoder...", 1)
 
         # Reset internal attrs in case of repeated fit
+        self.mapping = {}
         self._to_other = defaultdict(list)
         self._categories, self._encoders = {}, {}
 
@@ -1080,7 +1089,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                         X[name] = column.replace(category, "other")
 
             # Get the unique categories before fitting
-            self._categories[name] = sorted(column.unique().tolist())
+            self._categories[name] = column.sort_values().unique().tolist()
 
             # Perform encoding type dependent on number of unique values
             ordi = self.ordinal or {}
@@ -1090,6 +1099,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                     v: i for i, v in enumerate(ordi.get(name, self._categories[name]))
                 }
                 mapping.setdefault(np.NaN, -1)  # Encoder always needs mapping of NaN
+                self.mapping[name] = mapping
 
                 self._encoders[name] = OrdinalEncoder(
                     mapping=[{"col": name, "mapping": mapping}],
@@ -1109,6 +1119,22 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 if "y" in signature(estimator.fit).parameters:
                     args.append(y)
                 self._encoders[name] = clone(estimator).fit(*args)
+
+                # Create encoding of unique values for mapping
+                data = self._encoders[name].transform(
+                    pd.Series(
+                        data=self._categories[name],
+                        index=self._categories[name],
+                        name=name,
+                        dtype="object",
+                    )
+                )
+
+                # Only mapping 1 - 1 column
+                if data.shape[1] == 1:
+                    self.mapping[name] = {}
+                    for idx, value in data[name].items():
+                        self.mapping[name][idx] = value
 
         self._is_fitted = True
         return self
@@ -1511,9 +1537,9 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             for key, value in self.mapping.items():
                 diff = counts[key] - np.sum(y == value)
                 if diff > 0:
-                    self.log(f" --> Removing {diff} samples from class: {key}.", 2)
+                    self.log(f" --> Removing {diff} samples from class {key}.", 2)
                 elif diff < 0:
-                    self.log(f" --> Adding {-diff} samples to class: {key}.", 2)
+                    self.log(f" --> Adding {-diff} samples to class {key}.", 2)
 
         X, y = self._prepare_input(X, y)
 
@@ -1537,7 +1563,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         # Create dict of class counts in y
         counts = {}
         if not self.mapping:
-            self.mapping = {str(i): v for i, v in enumerate(y.unique())}
+            self.mapping = {str(v): v for v in y.sort_values().unique()}
         for key, value in self.mapping.items():
             counts[key] = np.sum(y == value)
 

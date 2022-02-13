@@ -1,12 +1,15 @@
 # Release history
 -----------------
 
-<a name="v4111"></a>
-### Version 4.11.1
+<a name="v4120"></a>
+### Version 4.12.0
 
-* Support for [python 3.10](https://www.python.org/downloads/release/python-3100/).
+* Support for [Python 3.10](https://www.python.org/downloads/release/python-3100/).
 * Refactor of the [FeatureGenerator](../API/feature_engineering/feature_generator) class.
+* The `mapping` attribute now shows all encoded features.
 * Added the `sample_weight` parameter to the [evaluate](../API/ATOM/atomclassifier/#evaluate) method.
+* [ATOMClassifier](../API/ATOM/atomclassifier) has now a `stratify` parameter
+  to split the data sets in a [stratified fashion](https://en.wikipedia.org/wiki/Stratified_sampling).
 * Possibility to exclude hyperparameters from the BO adding `!` before the name.
 * Added memory usage to the [stats](../API/ATOM/atomclassifier/#stats) method.
 

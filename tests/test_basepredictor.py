@@ -229,7 +229,7 @@ def test_winner_property():
     """Assert that the winner property returns the best model in the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "Tree", "LGB"], n_calls=0)
-    assert atom.winner is atom.lgb
+    assert atom.winner is atom.lr
 
 
 def test_results_property():
@@ -380,7 +380,7 @@ def test_get_columns_slice():
 def test_get_columns_by_index():
     """Assert that columns can be retrieved by index."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*length of columns is.*"):
+    with pytest.raises(ValueError, match=r".*out of range for a dataset.*"):
         atom._get_columns(columns=40)
     assert atom._get_columns(columns=0) == ["mean radius"]
 
@@ -439,7 +439,7 @@ def test_get_model_name_winner():
     """Assert that the winner is returned when used as name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"])
-    assert atom._get_model_name("winner") == ["LGB"]
+    assert atom._get_model_name("winner") == ["LR"]
 
 
 def test_get_model_name_exact_name():
@@ -460,7 +460,7 @@ def test_get_model_name_digits():
     """Assert that a list of models is returned if using digits."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.successive_halving(["OLS", "ET", "RF", "LGB"])
-    assert atom._get_model_name("2") == ["OLS2", "ET2"]
+    assert atom._get_model_name("2") == ["ET2", "RF2"]
 
 
 def test_get_model_name_invalid():

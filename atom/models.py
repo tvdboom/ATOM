@@ -754,13 +754,13 @@ class LogisticRegression(BaseModel):
         cond_3 = penalty == "elasticnet" and solver != "saga"
 
         if cond_1 or cond_2 or cond_3:
-            params.replace("penalty", "l2")  # Change to default value
+            params.replace_value("penalty", "l2")  # Change to default value
 
         if self._get_param(params, "penalty") != "elasticnet":
             params.pop("l1_ratio", None)
         elif self._get_param(params, "l1_ratio") is None:
             # l1_ratio can't be None with elasticnet (select value randomly)
-            params.replace("l1_ratio", np.random.choice(zero_to_one_exc))
+            params.replace_value("l1_ratio", np.random.choice(zero_to_one_exc))
 
         if self._get_param(params, "penalty") == "none":
             params.pop("C", None)
@@ -933,7 +933,7 @@ class RadiusNearestNeighbors(BaseModel):
         x0 = super()._get_default_params()
 
         # Replace sklearn's default value for the mean of the distances
-        x0.replace("radius", np.mean(self.distances))
+        x0.replace_value("radius", np.mean(self.distances))
 
         return x0
 
@@ -1554,15 +1554,15 @@ class LinearSVM(BaseModel):
         if self.T.goal == "class":
             if self._get_param(params, "loss") == "hinge":
                 # l1 regularization can't be combined with hinge
-                params.replace("penalty", "l2")
+                params.replace_value("penalty", "l2")
                 # l2 regularization can't be combined with hinge when dual=False
-                params.replace("dual", True)
+                params.replace_value("dual", True)
             elif self._get_param(params, "loss") == "squared_hinge":
                 # l1 regularization can't be combined with squared_hinge when dual=True
                 if self._get_param(params, "penalty") == "l1":
-                    params.replace("dual", False)
+                    params.replace_value("dual", False)
         elif self._get_param(params, "loss") == "epsilon_insensitive":
-            params.replace("dual", True)
+            params.replace_value("dual", True)
 
         return params
 
@@ -1619,7 +1619,7 @@ class KernelSVM(BaseModel):
 
         kernel = self._get_param(params, "kernel")
         if kernel == "poly":
-            params.replace("gamma", "scale")  # Crashes in combination with "auto"
+            params.replace_value("gamma", "scale")  # Crashes in combination with "auto"
         else:
             params.pop("degree", None)
 

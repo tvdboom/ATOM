@@ -136,7 +136,7 @@ def ATOMLoader(
                 "Data is provided but the class is not a "
                 f"trainer, got {cls.__class__.__name__}."
             )
-        elif any(branch.data is not None for branch in cls._branches.values()):
+        elif any(branch._data is not None for branch in cls._branches.values()):
             raise ValueError(
                 f"The loaded {cls.__class__.__name__} instance already contains data!"
             )
@@ -150,8 +150,8 @@ def ATOMLoader(
             branch = cls._branches[b1]
 
             # Provide the input data if not already filled from another branch
-            if branch.data is None:
-                branch.data, branch.idx = data, idx
+            if branch._data is None:
+                branch._data, branch._idx = data, idx
 
             if transform_data:
                 if not v1.pipeline.empty:
@@ -165,8 +165,8 @@ def ATOMLoader(
                         for b2, v2 in cls._branches.items():
                             if b1 != b2 and v2.pipeline.get(i) is est1:
                                 # Update the data and step for the other branch
-                                cls._branches[b2].data = deepcopy(branch.data)
-                                cls._branches[b2].idx = deepcopy(branch.idx)
+                                cls._branches[b2]._data = deepcopy(branch._data)
+                                cls._branches[b2]._idx = deepcopy(branch._idx)
                                 step[b2] = i
 
     cls.log(f"{cls.__class__.__name__} successfully loaded.", 1)
@@ -215,18 +215,6 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If str: Name of the column to use as index.
         - If sequence: Index column with shape=(n_samples,).
 
-    shuffle: bool, optional (default=True)
-        Whether to shuffle the dataset before splitting the train and
-        test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of the target classes over the sets.
-
-    n_rows: int or float, optional (default=1)
-        Random subsample of the provided dataset to use. The default
-        value selects all the rows.
-        - If <=1: Select this fraction of the dataset.
-        - If >1: Select this exact number of rows. Only if the input
-                 doesn't already specify the data sets (i.e. X or X, y).
-
     test_size: int or float, optional (default=0.2)
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
@@ -241,6 +229,27 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
         This parameter is ignored if the holdout set is provided
         through `arrays`.
+
+    shuffle: bool, optional (default=True)
+        Whether to shuffle the dataset before splitting the train and
+        test set. Be aware that not shuffling the dataset can cause
+        an unequal distribution of target classes over the sets.
+
+    stratify: bool, int, str or sequence, optional (default=True)
+        - If False: The data sets are split randomly.
+        - If True: The data sets are stratified over the target column.
+        - Else: Indices or names of the columns to stratify by. The
+                columns can not contain `NaN` values.
+
+        This parameter is ignored if `shuffle=False` or if the test
+        set is provided through `arrays.
+
+    n_rows: int or float, optional (default=1)
+        Random subsample of the provided dataset to use. The default
+        value selects all the rows.
+        - If <=1: Select this fraction of the dataset.
+        - If >1: Select this exact number of rows. Only if the input
+                 doesn't already specify the data sets (i.e. X or X, y).
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -267,7 +276,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        Note that warnings will not be saved to the logger.
+        Note that warnings are not saved to the logger.
 
     experiment: str or None, optional (default=None)
         Name of the mlflow experiment to use for tracking. If None,
@@ -286,6 +295,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         y: Y_TYPES = -1,
         index: Union[bool, int, str, SEQUENCE_TYPES] = False,
         shuffle: bool = True,
+        stratify: Union[bool, int, str, SEQUENCE_TYPES] = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
@@ -306,7 +316,17 @@ class ATOMClassifier(BaseTransformer, ATOM):
         )
 
         self.goal = "class"
-        ATOM.__init__(self, arrays, y, index, shuffle, n_rows, test_size, holdout_size)
+        ATOM.__init__(
+            self,
+            arrays=arrays,
+            y=y,
+            index=index,
+            test_size=test_size,
+            holdout_size=holdout_size,
+            shuffle=shuffle,
+            stratify=stratify,
+            n_rows=n_rows,
+        )
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
@@ -348,18 +368,6 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If str: Name of the column to use as index.
         - If sequence: Index column with shape=(n_samples,).
 
-    shuffle: bool, optional (default=True)
-        Whether to shuffle the dataset before splitting the train and
-        test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of the target classes over the sets.
-
-    n_rows: int or float, optional (default=1)
-        Random subsample of the provided dataset to use. The default
-        value selects all the rows.
-        - If <=1: Select this fraction of the dataset.
-        - If >1: Select this exact number of rows. Only if the input
-                 doesn't already specify the data sets (i.e. X or X, y).
-
     test_size: int or float, optional (default=0.2)
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
@@ -374,6 +382,18 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
         This parameter is ignored if the holdout set is provided
         through `arrays`.
+
+    shuffle: bool, optional (default=True)
+        Whether to shuffle the dataset before splitting the train and
+        test set. Be aware that not shuffling the dataset can cause
+        an unequal distribution of the target classes over the sets.
+
+    n_rows: int or float, optional (default=1)
+        Random subsample of the provided dataset to use. The default
+        value selects all the rows.
+        - If <=1: Select this fraction of the dataset.
+        - If >1: Select this exact number of rows. Only if the input
+                 doesn't already specify the data sets (i.e. X or X, y).
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -400,7 +420,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        Note that warnings will not be saved to the logger.
+        Note that warnings are not saved to the logger.
 
     experiment: str or None, optional (default=None)
         Name of the mlflow experiment to use for tracking. If None,
@@ -439,4 +459,14 @@ class ATOMRegressor(BaseTransformer, ATOM):
         )
 
         self.goal = "reg"
-        ATOM.__init__(self, arrays, y, index, shuffle, n_rows, test_size, holdout_size)
+        ATOM.__init__(
+            self,
+            arrays=arrays,
+            y=y,
+            index=index,
+            test_size=test_size,
+            holdout_size=holdout_size,
+            shuffle=shuffle,
+            stratify=False,
+            n_rows=n_rows,
+        )

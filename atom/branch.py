@@ -18,33 +18,37 @@ from typing import Optional
 from .basetransformer import BaseTransformer
 from .models import MODELS_ENSEMBLES
 from .utils import (
-    X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
-    is_multidim, custom_transform, composed, crash, method_to_log,
+    X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series, is_multidim,
+    custom_transform, composed, crash, method_to_log, CustomDict,
 )
 
 
 class Branch:
     """Contains all information corresponding to a branch.
 
+    All properties and attributes of the branch (except the private
+    ones, starting with underscore) can be accessed from the trainer.
+
     Parameters
     ----------
     *args
         Parent class (from which the branch is called) and name.
 
-    parent: str, Branch or None, optional (default=None)
-        Name or branch from which to split. If None, create an
-        empty branch.
+    parent: Branch or None, optional (default=None)
+        Branch from which to split. If None, create an empty branch.
 
     Attributes
     ----------
-    data: pd.DataFrame or None, optional (default=None)
-        Dataset coupled to the branch.
+    T: class
+        Trainer from which the branch is initialized.
 
-    idx: tuple or None, optional (default=None)
-        Train and test sizes.
+    name: str
+        Name of the branch.
 
-    mapping: dict or None, optional (default=None)
-        Target values mapped to their respective encoded integer.
+    mapping: CustomDict, optional (default={})
+        Encoded values and their respective mapping. The column name is
+        the key to its mapping dictionary. Only for columns mapped to
+        a single column (e.g. Ordinal, Leave-one-out, etc...).
 
     pipeline: pd.Series or None, optional (default=None)
         Estimators fitted on the data in the branch.
@@ -55,18 +59,22 @@ class Branch:
     """
 
     def __init__(self, *args, parent=None):
-        self.T, self.name = args[0], args[1]
-        self._holdout = None  # Always reset holdout calculation
-        if not parent:
-            self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
-            for attr in ("data", "idx", "mapping", "feature_importance"):
-                setattr(self, attr, None)
-        else:
-            if isinstance(parent, str):
-                parent = self.T._branches[parent]
+        self.T = args[0]
+        self.name = args[1]
+        self.mapping = CustomDict()
+        self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
+        self.feature_importance = None
 
+        self._data = None
+        self._idx = None
+        self._holdout = None
+
+        # If a parent branch is provided, copy its attrs to this one
+        # _holdout is always reset since it wouldn't recalculate if
+        # changes were made to the pipeline
+        if parent:
             # Copy the branch attrs and point to the rest
-            for attr in ("data", "idx", "mapping", "pipeline", "feature_importance"):
+            for attr in ("_data", "_idx", "mapping", "pipeline", "feature_importance"):
                 setattr(self, attr, copy(getattr(parent, attr)))
             for attr in vars(parent):
                 if not hasattr(self, attr):  # If not already assigned...
@@ -96,7 +104,7 @@ class Branch:
         attrs = []
         for p in dir(self):
             if (
-                p in vars(self) and p not in ("T", "name", "data", "idx", "_holdout")
+                p in vars(self) and p not in ("T", "name", "_data", "_idx", "_holdout")
                 or isinstance(getattr(Branch, p, None), property)
             ):
                 attrs.append(p)
@@ -268,36 +276,36 @@ class Branch:
     @property
     def dataset(self):
         """Complete data set."""
-        return self.data
+        return self._data
 
     @dataset.setter
     @typechecked
     def dataset(self, value: X_TYPES):
-        self.data = self._check_setter("dataset", value)
+        self._data = self._check_setter("dataset", value)
 
     @property
     def train(self):
         """Training set."""
-        return self.data.loc[self.idx[0], :]
+        return self._data.loc[self._idx[0], :]
 
     @train.setter
     @typechecked
     def train(self, value: X_TYPES):
         df = self._check_setter("train", value)
-        self.data = self.T._set_index(pd.concat([df, self.test]))
-        self.idx[0] = self.data.index[:len(df)]
+        self._data = self.T._set_index(pd.concat([df, self.test]))
+        self._idx[0] = self._data.index[:len(df)]
 
     @property
     def test(self):
         """Test set."""
-        return self.data.loc[self.idx[1], :]
+        return self._data.loc[self._idx[1], :]
 
     @test.setter
     @typechecked
     def test(self, value: X_TYPES):
         df = self._check_setter("test", value)
-        self.data = self.T._set_index(pd.concat([self.train, df]))
-        self.idx[1] = self.data.index[-len(df):]
+        self._data = self.T._set_index(pd.concat([self.train, df]))
+        self._idx[1] = self._data.index[-len(df):]
 
     @property
     def holdout(self):
@@ -315,24 +323,24 @@ class Branch:
     @property
     def X(self):
         """Feature set."""
-        return self.data.drop(self.target, axis=1)
+        return self._data.drop(self.target, axis=1)
 
     @X.setter
     @typechecked
     def X(self, value: X_TYPES):
         df = self._check_setter("X", value)
-        self.data = merge(df, self.y)
+        self._data = merge(df, self.y)
 
     @property
     def y(self):
         """Target column."""
-        return self.data[self.target]
+        return self._data[self.target]
 
     @y.setter
     @typechecked
     def y(self, value: SEQUENCE_TYPES):
         series = self._check_setter("y", value)
-        self.data = merge(self.data.drop(self.target, axis=1), series)
+        self._data = merge(self._data.drop(self.target, axis=1), series)
 
     @property
     def X_train(self):
@@ -343,7 +351,7 @@ class Branch:
     @typechecked
     def X_train(self, value: X_TYPES):
         df = self._check_setter("X_train", value)
-        self.data = pd.concat([merge(df, self.train[self.target]), self.test])
+        self._data = pd.concat([merge(df, self.train[self.target]), self.test])
 
     @property
     def X_test(self):
@@ -354,7 +362,7 @@ class Branch:
     @typechecked
     def X_test(self, value: X_TYPES):
         df = self._check_setter("X_test", value)
-        self.data = pd.concat([self.train, merge(df, self.test[self.target])])
+        self._data = pd.concat([self.train, merge(df, self.test[self.target])])
 
     @property
     def y_train(self):
@@ -365,7 +373,7 @@ class Branch:
     @typechecked
     def y_train(self, value: SEQUENCE_TYPES):
         series = self._check_setter("y_train", value)
-        self.data = pd.concat([merge(self.X_train, series), self.test])
+        self._data = pd.concat([merge(self.X_train, series), self.test])
 
     @property
     def y_test(self):
@@ -376,20 +384,20 @@ class Branch:
     @typechecked
     def y_test(self, value: SEQUENCE_TYPES):
         series = self._check_setter("y_test", value)
-        self.data = pd.concat([self.train, merge(self.X_test, series)])
+        self._data = pd.concat([self.train, merge(self.X_test, series)])
 
     @property
     def shape(self):
         """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
         if not is_multidim(self.X):
-            return self.data.shape
+            return self._data.shape
         else:
-            return len(self.data), self.X.iloc[0, 0].shape, 2
+            return len(self._data), self.X.iloc[0, 0].shape, 2
 
     @property
     def columns(self):
         """Name of all the columns."""
-        return list(self.data.columns)
+        return list(self._data.columns)
 
     @property
     def n_columns(self):

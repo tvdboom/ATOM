@@ -165,7 +165,7 @@ or already scaled. The data is considered scaled if it has one of
 the following prerequisites:
 
 * The mean value over the mean of all columns is <0.05 and the mean of
-  the standard deviation over all columns lies between 0.93 and 1.07.
+  the standard deviation over all columns lies between 0.9 and 1.1.
 * There is a transformer in the pipeline whose \__name__ contains the
   word `scaler`.
 

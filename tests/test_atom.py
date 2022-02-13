@@ -35,8 +35,8 @@ from atom.data_cleaning import Scaler, Pruner
 from atom.utils import check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_sparse,
-    X_text, y_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10,
-    y10_str, y10_sn, X20_out,
+    X_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10, y10_str,
+    y10_sn, X20_out,
 )
 
 
@@ -58,18 +58,6 @@ def test_raise_one_target_value():
     """Assert that error raises when there is only 1 target value."""
     y = [1 for _ in range(len(y_bin))]  # All targets are equal to 1
     pytest.raises(ValueError, ATOMClassifier, X_bin, y, random_state=1)
-
-
-def test_mapping_assignment():
-    """Assert that the mapping attribute is created."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.mapping == {"0": 0, "1": 1}
-
-
-def test_mapping_with_nans():
-    """Assert that the mapping attribute is created when str and nans are mixed."""
-    atom = ATOMClassifier(X10, y10_sn, random_state=1)
-    assert atom.mapping == {"n": "n", "nan": np.NaN, "y": "y"}
 
 
 # Test magic methods =============================================== >>
@@ -546,7 +534,7 @@ def test_add_transformer_only_y():
 
 def test_returned_column_already_exists():
     """Assert that an error is raised if an existing column is returned."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(lambda x: 1, columns="new")
     with pytest.raises(RuntimeError, match=r".*already exists in the original.*"):
         atom.vectorize(columns="corpus")
@@ -685,10 +673,10 @@ def test_gauss():
 
 def test_clean():
     """Assert that the clean method cleans the dataset."""
-    atom = ATOMClassifier(X10, y10_sn, random_state=1)
+    atom = ATOMClassifier(X10, y10_sn, stratify=False, random_state=1)
     atom.clean()
     assert len(atom.dataset) == 9
-    assert atom.mapping == {"n": 0, "y": 1}
+    assert atom.mapping == {"target": {"n": 0, "y": 1}}
 
 
 def test_impute():
@@ -726,7 +714,6 @@ def test_balance():
     length = (atom.y_train == 1).sum()
     atom.balance(strategy="NearMiss")
     assert (atom.y_train == 1).sum() != length
-    assert atom.pipeline[0].mapping == atom.mapping
     assert hasattr(atom, "nearmiss")
 
 
@@ -734,32 +721,32 @@ def test_balance():
 
 def test_textclean():
     """Assert that the textclean method cleans the corpus."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
     atom.textclean()
-    assert atom["corpus"][0] == "yes sir "
+    assert atom["corpus"][0] == "i am in new york"
     assert hasattr(atom, "drops")
 
 
 def test_tokenize():
     """Assert that the tokenize method tokenizes the corpus."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
     atom.tokenize()
-    assert atom["corpus"][0] == ["yes", "sir", "12"]
+    assert atom["corpus"][0] == ["I", "àm", "in", "ne", "'", "w", "york"]
 
 
 def test_normalize():
     """Assert that the normalize method normalizes the corpus."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
     atom.normalize(stopwords=False, custom_stopwords=["yes"])
-    assert atom["corpus"][0] == ["sir", "12"]
+    assert atom["corpus"][0] == ["I", "àm", "in", "ne'w", "york"]
 
 
 def test_vectorize():
     """Assert that the vectorize method converts the corpus to numerical."""
-    atom = ATOMClassifier(X_text, y_text, test_size=0.25, random_state=1)
+    atom = ATOMClassifier(X_text, y10, test_size=0.25, random_state=1)
     atom.vectorize(strategy="hashing", n_features=5)
     assert "corpus" not in atom
-    assert atom.shape == (4, 6)
+    assert atom.shape == (10, 6)
     assert hasattr(atom, "hashing")
 
 
@@ -767,8 +754,8 @@ def test_vectorize():
 
 def test_feature_extraction():
     """Assert that the feature_extraction method creates datetime features."""
-    atom = ATOMClassifier(X10_dt, y10, random_state=1)
-    atom.feature_extraction()
+    atom = ATOMClassifier(X10_dt, y10, verbose=2, random_state=1)
+    atom.feature_extraction(fmt="%d/%m/%Y")
     assert atom.X.shape[1] == 6
 
 

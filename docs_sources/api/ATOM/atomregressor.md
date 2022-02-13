@@ -3,10 +3,11 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.api.<strong style="color:#008AB8">ATOMRegressor</strong>(*arrays,
-y=-1, shuffle=True, n_rows=1, test_size=0.2, holdout_size=None, n_jobs=1,
-verbose=0, warnings=True, logger=None, experiment=None, random_state=None)
+y=-1, index=False, test_size=0.2, holdout_size=None, shuffle=True,
+n_rows=1, n_jobs=1, verbose=0, warnings=True, logger=None, experiment=None,
+random_state=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L312">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L331">[source]</a>
 </span>
 </div>
 
@@ -38,7 +39,8 @@ Dataset containing features and target. Allowed formats are:
 </ul>
 X, train, test: dataframe-like<br>
 <p style="margin-top:0;margin-left:15px">
-Feature set with shape=(n_samples, n_features).</p>
+Feature set with shape=(n_samples, n_features).
+</p>
 y: int, str or sequence<br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If int: Position of the target column in X.</li>
@@ -55,11 +57,38 @@ y: int, str or sequence<br>
 This parameter is ignored if the target column is provided
 through <code>arrays</code>.
 </p>
+<strong>index: bool, int, str or sequence, optional (default=False)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Reset to <a href="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html">RangeIndex</a>.</li>
+<li>If True: Use the current index.</li>
+<li>If int: Index of the column to use as index.</li>
+<li>If str: Name of the column to use as index.</li>
+<li>If sequence: Index column with shape=(n_samples,).</li>
+</ul>
+<strong>test_size: int or float, optional (default=0.2)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
+<li>If <=1: Fraction of the dataset to include in the test set.</li>
+<li>If >1: Number of rows to include in the test set.</li>
+</ul>
+<p style="margin-top:5px">
+This parameter is ignored if the test set is provided through
+<code>arrays</code>.
+</p>
+<strong>holdout_size: int, float or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
+<li>If None: No holdout data set is kept apart.</li>
+<li>If <=1: Fraction of the dataset to include in the holdout set.</li>
+<li>If >1: Number of rows to include in the holdout set.</li>
+</ul>
+<p style="margin-top:5px">
+This parameter is ignored if the holdout set is provided through
+<code>arrays</code>.
+</p>
 <p>
 <strong>shuffle: bool, optional (default=True)</strong><br>
 Whether to shuffle the dataset before splitting the train and
 test set. Be aware that not shuffling the dataset can cause
-an unequal distribution of the target classes over the sets.
+an unequal distribution of target classes over the sets.
 </p>
 <strong>n_rows: int or float, optional (default=1)</strong><br>
 Random subsample of the provided dataset to use. The default
@@ -69,23 +98,6 @@ value selects all the rows.
 <li>If >1: Select this exact number of rows. Only if the input
 doesn't already specify the data sets (i.e. X or X, y).</li>
 </ul>
-<strong>test_size: int or float, optional (default=0.2)</strong><br>
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If <=1: Fraction of the dataset to include in the test set.</li>
-<li>If >1: Number of rows to include in the test set.</li>
-</ul>
-<p style="margin-top:5px">
-This parameter is ignored if the test set is provided through
-<code>arrays</code>.</p>
-<strong>holdout_size: int, float or None, optional (default=None)</strong><br>
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If None: No holdout data set is kept apart.</li>
-<li>If <=1: Fraction of the dataset to include in the holdout set.</li>
-<li>If >1: Number of rows to include in the holdout set.</li>
-</ul>
-<p style="margin-top:5px">
-This parameter is ignored if the holdout set is provided through
-<code>arrays</code>.</p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
@@ -95,7 +107,8 @@ Number of cores to use for parallel processing.
 </ul>
 <p style="margin-top:5px">
 Beware that using multiple processes on the same machine may cause
-memory issues for large datasets.</p>
+memory issues for large datasets.
+</p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -111,7 +124,8 @@ Verbosity level of the class. Possible values are:
 </ul>
 <p style="margin-top:5px">
 Changing this parameter affects the <code>PYTHONWARNINGS</code> environment.
-<br>ATOM can't manage warnings that go directly from C/C++ code to stdout.</p>
+<br>ATOM can't manage warnings that go directly from C/C++ code to stdout.
+</p>
 <strong>logger: str, Logger or None, optional (default=None)</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
@@ -239,6 +253,12 @@ Number of features in the dataset.
 <p>
 <strong>target: str</strong><br>
 Name of the target column.
+</p>
+<p>
+<strong>mapping: dict of dicts</strong><br>
+Encoded values and their respective mapping. The column name is
+the key to its mapping dictionary. Only for columns mapped to
+a single column (e.g. Ordinal, Leave-one-out, etc...).
 </p>
 <p>
 <strong>scaled: bool or None</strong><br>

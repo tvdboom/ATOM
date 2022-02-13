@@ -60,8 +60,18 @@ X_sparse = pd.DataFrame(
 )
 
 # Text data
-X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir 12"]]
-y_text = [0, 1, 1, 0]
+X_text = [
+    ["I àm in ne'w york"],
+    ["New york is nice"],
+    ["hi new york"],
+    ["hi hello test"],
+    ["oui si 12"],
+    ["new york vs washington"],
+    ["this is a random test"],
+    ["test is random this"],
+    ["nice random test"],
+    ["test script for text"],
+]
 
 # Dataset wth string indices
 X_idx = X_bin.set_index(pd.Index([f"index_{i}" for i in range(len(X_bin))]))
@@ -97,7 +107,7 @@ X10_nan = [
 
 # Dataset with categorical column
 X10_str = [
-    [2, 0, "a", 2],
+    [2, 0, "b", 2],
     [2, 3, "a", 1],
     [5, 2, "b", 5],
     [1, 2, "a", 1],

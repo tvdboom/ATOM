@@ -107,7 +107,7 @@ class BaseModel(BaseModelPlotter):
         # Skip this (slower) part if not called for the estimator
         if not kwargs.get("fast_init"):
             self.branch = self.T.branch
-            self._train_idx = len(self.branch.idx[0])  # Can change for sh and ts
+            self._train_idx = len(self.branch._idx[0])  # Can change for sh and ts
             if getattr(self, "needs_scaling", None) and self.T.scaled is False:
                 self.scaler = Scaler().fit(self.X_train)
 
@@ -373,7 +373,7 @@ class BaseModel(BaseModelPlotter):
                         raise PickleError(
                             f"Could not pickle the {self.acronym} model to send "
                             "it to the workers. Try using one of the predefined "
-                            "models or use n_jobs=1 or bo_params={'cv': 1}."
+                            "models, or use n_jobs=1 or bo_params={'cv': 1}."
                         )
             else:
                 # Get same score as previous evaluation
@@ -442,7 +442,7 @@ class BaseModel(BaseModelPlotter):
         if self._dimensions:
             # Some models (e.g. OLS) don't have predefined dimensions (and
             # thus no get_dimensions method), but can accept user defined ones
-            dims = getattr(self, "get_dimensions", None)
+            dims = self.get_dimensions() if hasattr(self, "get_dimensions") else []
 
             inc, exc = [], []
             for dim in self._dimensions:
@@ -1596,8 +1596,7 @@ class BaseModel(BaseModelPlotter):
             raise PermissionError(f"There already exists a model named {name}!")
 
         # Replace the model in the _models attribute
-        self.T._models.insert(self.name, name, self)
-        self.T._models.pop(self.name)
+        self.T._models.replace_key(self.name, name)
         self.T.log(f"Model {self.name} successfully renamed to {name}.", 1)
         self.name = name
 

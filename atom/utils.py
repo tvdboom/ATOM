@@ -320,7 +320,7 @@ def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
     mean = X.mean(numeric_only=True).mean()
     std = X.std(numeric_only=True).mean()
-    return True if mean < 0.05 and 0.93 < std < 1.07 else False
+    return True if mean < 0.05 and 0.9 < std < 1.1 else False
 
 
 def get_corpus(X):
@@ -755,10 +755,9 @@ def infer_task(y, goal="class"):
     if goal == "reg":
         return "regression"
 
-    unique = y.unique()
-    if len(unique) == 1:
-        raise ValueError(f"Only found 1 target value: {unique[0]}")
-    elif len(unique) == 2:
+    if y.nunique() == 1:
+        raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
+    elif y.nunique() == 2:
         return "binary classification"
     else:
         return "multiclass classification"
@@ -887,14 +886,21 @@ def name_cols(array, original_df, col_names):
 
     # If columns were added or removed
     temp_cols = []
-    for i, col in enumerate(array.T, start=2):
+    for i, col in enumerate(array.T, start=1):
         mask = original_df.apply(lambda c: np.array_equal(c, col, equal_nan=True))
         if any(mask) and mask[mask].index.values[0] not in temp_cols:
             # If the column is equal, use the existing name
             temp_cols.append(mask[mask].index.values[0])
         else:
             # If the column is new, use a default name
-            temp_cols.append(f"feature {i + original_df.shape[1] - len(col_names)}")
+            counter = 1
+            while True:
+                name = f"feature {i + counter + original_df.shape[1] - len(col_names)}"
+                if name not in original_df:
+                    temp_cols.append(name)
+                    break
+                else:
+                    counter += 1
 
     return temp_cols
 
@@ -1090,17 +1096,17 @@ def custom_transform(transformer, branch, data=None, verbose=None):
         if transformer._train_only:
             branch.train = merge(X, branch.y_train if y is None else y)
         else:
-            branch.data = merge(X, branch.y if y is None else y)
+            branch._data = merge(X, branch.y if y is None else y)
 
             # Since rows can be removed from train and test, reset indices
-            branch.idx[0] = [idx for idx in branch.idx[0] if idx in X.index]
-            branch.idx[1] = [idx for idx in branch.idx[1] if idx in X.index]
+            branch._idx[0] = [idx for idx in branch._idx[0] if idx in X.index]
+            branch._idx[1] = [idx for idx in branch._idx[1] if idx in X.index]
 
         if branch.T.index is False:
-            branch.data = branch.dataset.reset_index(drop=True)
-            branch.idx = [
-                branch.data.index[:len(branch.idx[0])],
-                branch.data.index[-len(branch.idx[1]):],
+            branch._data = branch.dataset.reset_index(drop=True)
+            branch._idx = [
+                branch._data.index[:len(branch._idx[0])],
+                branch._data.index[-len(branch._idx[1]):],
             ]
 
     # Back to the original verbosity
@@ -1595,11 +1601,11 @@ class CustomDict(MutableMapping):
 
     The main differences with the Python dictionary are:
         - It has ordered entries.
-        - It allows getting an item from an index position.
-        - It can insert key value pairs at a specific position.
         - Key requests are case-insensitive.
         - Returns a subset of itself using getitem with a list of keys.
-        - Replace method to change a value only if key exists.
+        - It allows getting an item from an index position.
+        - It can insert key value pairs at a specific position.
+        - Replace method to change a key or value if key exists.
         - Min method to return all elements except one.
 
     """
@@ -1672,6 +1678,9 @@ class CustomDict(MutableMapping):
     def __repr__(self):
         return str(dict(self))
 
+    def __reversed__(self):
+        yield from reversed(list(self.keys()))
+
     def keys(self):
         yield from self.__keys
 
@@ -1684,12 +1693,11 @@ class CustomDict(MutableMapping):
             yield self.__data[self._conv(key)]
 
     def insert(self, pos, new_key, value):
-        try:
-            self.__keys.insert(self.__keys.index(self._get_key(pos)), new_key)
-        except (ValueError, KeyError):
-            self.__keys.insert(pos, new_key)
-        finally:
-            self.__data[self._conv(new_key)] = value
+        # If key already exists, remove old first
+        if new_key in self:
+            self.__delitem__(new_key)
+        self.__keys.insert(pos, new_key)
+        self.__data[self._conv(new_key)] = value
 
     def get(self, key, default=None):
         if key in self:
@@ -1709,7 +1717,7 @@ class CustomDict(MutableMapping):
         try:
             return self.__data.pop(self._conv(self.__keys.pop()))
         except IndexError:
-            raise KeyError(f"{self.__class__.__name__} is empty")
+            raise KeyError(f"{self.__class__.__name__} is empty.")
 
     def clear(self):
         self.__keys = []
@@ -1738,7 +1746,12 @@ class CustomDict(MutableMapping):
     def index(self, key):
         return self.__keys.index(self._get_key(key))
 
-    def replace(self, key, value):
+    def replace_key(self, key, new_key):
+        if key in self:
+            self.insert(self.__keys.index(self._get_key(key)), new_key, self[key])
+            self.__delitem__(key)
+
+    def replace_value(self, key, value=None):
         if key in self:
             self[key] = value
 

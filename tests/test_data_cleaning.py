@@ -470,6 +470,7 @@ def test_ordinal_encoder():
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
     assert np.all((X["feature 3"] == 0) | (X["feature 3"] == 1))
+    assert list(encoder.mapping) == ["feature 3", "feature 4"]
 
 
 def test_ordinal_features():

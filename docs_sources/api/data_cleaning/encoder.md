@@ -82,6 +82,22 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <br>
 
 
+## Attributes
+
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
+<strong>mapping: dict of dicts</strong><br>
+Encoded values and their respective mapping. The column name is
+the key to its mapping dictionary. Only for columns mapped to
+a single column (e.g. Ordinal, Leave-one-out, etc...).
+</td>
+</tr>
+</table>
+<br>
+
+
 
 ## Methods
 

@@ -453,8 +453,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#version-4111" class="md-nav__link">
-    Version 4.11.1
+  <a href="#version-4120" class="md-nav__link">
+    Version 4.12.0
   </a>
   
 </li>
@@ -2881,8 +2881,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#version-4111" class="md-nav__link">
-    Version 4.11.1
+  <a href="#version-4120" class="md-nav__link">
+    Version 4.12.0
   </a>
   
 </li>
@@ -3028,12 +3028,16 @@
                 
                 <h1 id="release-history">Release history</h1>
 <hr />
-<p><a name="v4111"></a></p>
-<h3 id="version-4111">Version 4.11.1</h3>
+<p><a name="v4120"></a></p>
+<h3 id="version-4120">Version 4.12.0</h3>
 <ul>
-<li>Support for <a href="https://www.python.org/downloads/release/python-3100/">python 3.10</a>.</li>
+<li>Support for <a href="https://www.python.org/downloads/release/python-3100/">Python 3.10</a>.</li>
 <li>Refactor of the <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a> class.</li>
+<li>The <code>mapping</code> attribute now shows all encoded features.</li>
 <li>Added the <code>sample_weight</code> parameter to the <a href="../API/ATOM/atomclassifier/#evaluate">evaluate</a> method.</li>
+<li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a> has now a <code>stratify</code> parameter
+  to split the data sets in a <a href="https://en.wikipedia.org/wiki/Stratified_sampling">stratified fashion</a>.</li>
+<li>Possibility to exclude hyperparameters from the BO adding <code>!</code> before the name.</li>
 <li>Added memory usage to the <a href="../API/ATOM/atomclassifier/#stats">stats</a> method.</li>
 </ul>
 <p><a name="v4110"></a></p>

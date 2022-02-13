@@ -3031,7 +3031,7 @@ or already scaled. The data is considered scaled if it has one of
 the following prerequisites:</p>
 <ul>
 <li>The mean value over the mean of all columns is &lt;0.05 and the mean of
-  the standard deviation over all columns lies between 0.93 and 1.07.</li>
+  the standard deviation over all columns lies between 0.9 and 1.1.</li>
 <li>There is a transformer in the pipeline whose __name__ contains the
   word <code>scaler</code>.</li>
 </ul>
@@ -3143,6 +3143,13 @@ Forest.</p>
     <span class="n">n_calls</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
     <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="s2">&quot;n_estimators&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="s2">&quot;max_depth&quot;</span><span class="p">}},</span>
 <span class="p">)</span>
+</code></pre></div>
+<p>Like the <code>columns</code> parameter in atom's methods, you can exclude parameters
+from the BO adding <code>!</code> before its name. It's possible to exclude multiple
+parameters, but not to combine inclusion and exclusion for the same model.
+For example, to optimize a Random Forest using all its predefined parameters
+except <code>n_estimators</code>, run:</p>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">})</span>
 </code></pre></div>
 <p>If just the parameter name is provided, the predefined dimension space
 is used. It's also possible to provide custom dimension spaces, but make

@@ -530,7 +530,7 @@ Transformed feature set.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(stratgey="pca", n_features=12, whiten=True)
+atom.feature_selection(strategy="pca", n_features=12, whiten=True)
 
 atom.plot_pca(filename="pca", figsize=(8, 5))
 ```
@@ -538,7 +538,7 @@ or
 ```python
 from atom.feature_engineering import FeatureSelector
 
-feature_selector = FeatureSelector(stratgey="pca", n_features=12, whiten=True)
+feature_selector = FeatureSelector(strategy="pca", n_features=12, whiten=True)
 feature_selector.fit(X_train, y_train)
 X = feature_selector.transform(X, y)
 

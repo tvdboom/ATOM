@@ -296,7 +296,7 @@ class BasePredictor:
             indices += list(branch.holdout.index)
 
         if index is None:
-            inc = list(branch.idx[1]) if return_test else list(branch.X.index)
+            inc = list(branch._idx[1]) if return_test else list(branch.X.index)
         elif isinstance(index, slice):
             inc = indices[index]
         else:
@@ -391,8 +391,8 @@ class BasePredictor:
                         inc.append(df.columns[col])
                     except IndexError:
                         raise ValueError(
-                            f"Invalid value for the columns parameter, got {col} "
-                            f"but length of columns is {len(df.columns)}."
+                            f"Invalid value for the columns parameter. Value {col} "
+                            f"is out of range for a dataset with {df.shape[1]} columns."
                         )
                 else:
                     if col not in df.columns:
@@ -559,7 +559,7 @@ class BasePredictor:
         """
         models = self._get_models(models)
         if not models:
-            self.log(f"No models to delete.", 1)
+            self.log("No models to delete.", 1)
         else:
             delete(self, models)
             if len(models) == 1:
@@ -665,7 +665,7 @@ class BasePredictor:
         Parameters
         ----------
         other: trainer
-            Trainer instance with which to merge.
+            Class instance with which to merge.
 
         suffix: str, optional (default="2")
             Conflicting branches and models are merged adding `suffix`
@@ -679,7 +679,9 @@ class BasePredictor:
             )
 
         # Check that both instances have the same original dataset
-        if not self._get_og_branches()[0].data.equals(other._get_og_branches()[0].data):
+        current_og = self._get_og_branches()[0]
+        other_og = other._get_og_branches()[0]
+        if not current_og._data.equals(other_og._data):
             raise ValueError(
                 "Invalid value for the other parameter. The provided trainer "
                 "was initialized with a different dataset than this one."
