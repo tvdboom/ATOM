@@ -1083,7 +1083,7 @@ class BaseModelPlotter(BasePlotter):
         metric = self._get_metric(metric)
 
         # Check there is at least one model that run the BO
-        if all([m.bo.empty for m in models]):
+        if all(m.bo.empty for m in models):
             raise PermissionError(
                 "The plot_bo method is only available for models that "
                 "ran the bayesian optimization hyperparameter tuning!"

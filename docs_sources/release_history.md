@@ -5,6 +5,7 @@
 ### Version 4.12.0
 
 * Support for [Python 3.10](https://www.python.org/downloads/release/python-3100/).
+* New [Discretizer](../API/data_cleaning/discretizer) class to bin numerical features.
 * Refactor of the [FeatureGenerator](../API/feature_engineering/feature_generator) class.
 * The `mapping` attribute now shows all encoded features.
 * Added the `sample_weight` parameter to the [evaluate](../API/ATOM/atomclassifier/#evaluate) method.

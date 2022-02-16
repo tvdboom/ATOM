@@ -1386,6 +1386,11 @@ method on the dataset in the pipeline.
 </tr>
 
 <tr>
+<td><a href="#impute">discretize</a></td>
+<td>Bin continuous data into intervals.</td>
+</tr>
+
+<tr>
 <td><a href="#encode">encode</a></td>
 <td>Encode categorical features.</td>
 </tr>
@@ -1473,6 +1478,20 @@ values". See [Imputer](../data_cleaning/imputer.md) for a description
 of the parameters. Note that since the Imputer can remove rows from
 both the train and test set, the size of the sets may change after
 the transformation.
+<br /><br /><br />
+
+
+<a name="discretize"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">discretize</strong>(strategy="quantile",
+bins=5, labels=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1090">[source]</a>
+</span>
+</div>
+Bin continuous data into intervals. For each feature, the bin edges are
+computed during fit and, together with the number of bins, they will
+define the intervals. Ignores numerical columns.
 <br /><br /><br />
 
 

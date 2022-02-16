@@ -11,7 +11,7 @@ Description: Utility variables for the tests.
 import os
 import numpy as np
 import pandas as pd
-from tensorflow.keras.datasets import mnist
+from tensorflow import keras
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import (
     load_breast_cancer,
@@ -45,7 +45,7 @@ class_train, class_test = train_test_split(merge(X_class, y_class), **kwargs)
 reg_train, reg_test = train_test_split(merge(X_reg, y_reg), **kwargs)
 
 # Image data
-(X_train, y_train), (X_test, y_test) = mnist.load_data()
+(X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
 X_train = X_train.reshape(60000, 28, 28, 1)
 X_test = X_test.reshape(10000, 28, 28, 1)
 mnist = (X_train, y_train), (X_test, y_test)

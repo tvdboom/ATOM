@@ -9,6 +9,7 @@ Description: Module containing utility constants, functions and classes.
 
 # Standard packages
 import math
+import pprint
 import logging
 import numpy as np
 import pandas as pd
@@ -581,7 +582,7 @@ def check_is_fitted(estimator, exception=True, attributes=None):
             if v.endswith("_") and not v.startswith("__"):
                 is_fitted = True
                 break
-    elif not all([check_attr(attr) for attr in lst(attributes)]):
+    elif not all(check_attr(attr) for attr in lst(attributes)):
         is_fitted = True
 
     if not is_fitted:
@@ -1676,7 +1677,7 @@ class CustomDict(MutableMapping):
         return self._conv(key) in self.__data
 
     def __repr__(self):
-        return str(dict(self))
+        return pprint.pformat(dict(self), sort_dicts=False)
 
     def __reversed__(self):
         yield from reversed(list(self.keys()))

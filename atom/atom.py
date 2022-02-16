@@ -30,6 +30,7 @@ from .data_cleaning import (
     FuncTransformer,
     Cleaner,
     Gauss,
+    Discretizer,
     Scaler,
     Imputer,
     Encoder,
@@ -893,7 +894,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         train_only: bool = False,
         **fit_params,
     ):
-        """Add a estimator to the current branch.
+        """Add an estimator to the current branch.
 
         If the estimator is not fitted, it is fitted on the complete
         training set. Afterwards, the data set is transformed and the
@@ -1042,6 +1043,28 @@ class ATOM(BasePredictor, ATOMPlotter):
         for attr in ("yeojohnson", "boxcox", "quantile"):
             if hasattr(gauss, attr):
                 setattr(self.branch, attr, getattr(gauss, attr))
+
+    @composed(crash, method_to_log)
+    def discretize(
+        self,
+        strategy: str = "quantile",
+        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
+        labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
+        **kwargs,
+    ):
+        """Bin continuous data into intervals.
+
+        Ignores numerical columns.
+
+        See data_cleaning.py for a description of the parameters.
+
+        """
+        check_dim(self, "discretize")
+        columns = kwargs.pop("columns", None)
+        kwargs = self._prepare_kwargs(kwargs, Discretizer().get_params())
+        discretizer = Discretizer(strategy=strategy, bins=bins, labels=labels, **kwargs)
+
+        self._add_transformer(discretizer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def clean(

@@ -18,6 +18,8 @@ from typing import Union, Optional, Dict, Any
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import (
+    FunctionTransformer,
+    KBinsDiscretizer,
     PowerTransformer,
     QuantileTransformer,
     LabelEncoder,
@@ -204,6 +206,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self.strategy = strategy
         self.kwargs = kwargs
 
+        self._num_cols = None
         self._estimator = None
         self._is_fitted = False
 
@@ -226,6 +229,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._num_cols = list(X.select_dtypes(include="number").columns)
 
         if self.strategy.lower() in SCALING_STRATS:
             self._estimator = SCALING_STRATS[self.strategy.lower()](**self.kwargs)
@@ -238,7 +242,8 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
                 "Choose from: standard, minmax, maxabs, robust."
             )
 
-        self._estimator.fit(X.select_dtypes(include="number"))
+        self.log("Fitting Scaler...", 1)
+        self._estimator.fit(X[self._num_cols])
         self._is_fitted = True
         return self
 
@@ -264,11 +269,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         self.log("Scaling features...", 1)
-        X_numerical = X.select_dtypes(include=["number"])
-        X_transformed = self._estimator.transform(X_numerical)
+        X_transformed = self._estimator.transform(X[self._num_cols])
 
         # Replace the numerical columns with the transformed values
-        for i, col in enumerate(X_numerical):
+        for i, col in enumerate(self._num_cols):
             X[col] = X_transformed[:, i]
 
         return X
@@ -335,6 +339,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
         self.strategy = strategy
         self.kwargs = kwargs
 
+        self._num_cols = None
         self._estimator = None
         self._is_fitted = False
 
@@ -357,6 +362,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._num_cols = list(X.select_dtypes(include="number").columns)
 
         if self.strategy.lower() in ("yeo-johnson", "yeojohnson"):
             self.yeojohnson = self._estimator = PowerTransformer(
@@ -382,7 +388,8 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
                 "Choose from: yeo-johnson, box-cox, quantile."
             )
 
-        self._estimator.fit(X.select_dtypes(include="number"))
+        self.log("Fitting Gauss...", 1)
+        self._estimator.fit(X[self._num_cols])
         self._is_fitted = True
         return self
 
@@ -408,12 +415,10 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         self.log(f"Making features Gaussian-like...", 1)
-
-        X_numerical = X.select_dtypes(include=["number"])
-        X_transformed = self._estimator.transform(X_numerical)
+        X_transformed = self._estimator.transform(X[self._num_cols])
 
         # Replace the numerical columns with the transformed values
-        for i, col in enumerate(X_numerical):
+        for i, col in enumerate(self._num_cols):
             X[col] = X_transformed[:, i]
 
         return X
@@ -911,6 +916,212 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         return variable_return(X, y)
 
 
+class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Bin continuous data into intervals.
+
+    For each feature, the bin edges are computed during fit and,
+    together with the number of bins, they will define the intervals.
+    Ignores numerical columns.
+
+    Note that if strategy=custom, the columns can contain NaNs if the
+    values lie outside the specified bins.
+
+    Note that the class returns columns of dtype object. Use encoder to
+    encode to numerical types.
+
+    Parameters
+    ----------
+    strategy: str, optional (default="quantile")
+        Strategy used to define the widths of the bins. Choose from:
+            - "uniform": All bins have identical widths.
+            - "quantile": All bins have the same number of points.
+            - "kmeans": Values in each bin have the same nearest center
+                        of a 1D k-means cluster.
+            - "custom": Use custom bin edges provided through `bins`.
+
+    bins: int, sequence or dict, optional (default=5)
+        - If int: Number of bins to produce for all columns. Not allowed
+                  if strategy="custom".
+        - If sequence:
+            - If strategy="custom": Bin edges, with length=n_bins + 1.
+            - Else: Number of bins per column, where the n-th value
+                    corresponds to the n-th column that is transformed.
+        - If dict: One of the aforementioned options per column, where
+                   the key is the column's name.
+
+    labels: sequence, dict or None, optional (default=None)
+        - If None: Use default labels of the form [min_edge-max_edge].
+        - If sequence: Labels to use for all columns.
+        - If dict: Labels per column, where the key is the column's name.
+
+    verbose: int, optional (default=0)
+        Verbosity level of the class. Possible values are:
+            - 0 to not print anything.
+            - 1 to print basic information.
+            - 2 to print detailed information.
+
+    logger: str, Logger or None, optional (default=None)
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    """
+
+    @typechecked
+    def __init__(
+        self,
+        strategy: str = "quantile",
+        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
+        labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
+        verbose: int = 0,
+        logger: Optional[Union[str, callable]] = None,
+    ):
+        super().__init__(verbose=verbose, logger=logger)
+        self.strategy = strategy
+        self.bins = bins
+        self.labels = labels
+
+        self._num_cols = None
+        self._discretizers = {}
+        self._labels = {}
+        self._is_fitted = False
+
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Fit to data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        Discretizer
+            Fitted instance of self.
+
+        """
+
+        def get_labels(labels, bins):
+            """Get labels for the specified bins."""
+            if isinstance(labels, dict):
+                default = [
+                    f"{round(bins[i], 2)}-{round(bins[i+1], 1)}"
+                    for i in range(len(bins[:-1]))
+                ]
+                labels = labels.get(col, default)
+
+            if len(bins) - 1 != len(labels):
+                raise ValueError(
+                    "Invalid value for the labels parameter. The length of "
+                    "the bins does not match the length of the labels, got "
+                    f"len(bins)={len(bins) - 1} and len(labels)={len(labels)}."
+                )
+
+            return labels
+
+        X, y = self._prepare_input(X, y)
+        self._num_cols = list(X.select_dtypes(include="number").columns)
+
+        if self.strategy.lower() not in ("uniform", "quantile", "kmeans", "custom"):
+            raise ValueError(
+                f"Invalid value for the strategy parameter, got {self.strategy}. "
+                "Choose from: uniform, quantile, kmeans, custom."
+            )
+
+        self.log("Fitting Discretizer...", 1)
+
+        labels = {} if self.labels is None else self.labels
+        for i, col in enumerate(self._num_cols):
+            # Assign the proper bins for this column
+            if isinstance(self.bins, dict):
+                if col in self.bins:
+                    bins = self.bins[col]
+                else:
+                    raise ValueError(
+                        "Invalid value for the bins parameter. Column "
+                        f"{col} not found in the dictionary."
+                    )
+            else:
+                bins = self.bins
+
+            if self.strategy.lower() != "custom":
+                if isinstance(bins, SEQUENCE_TYPES):
+                    try:
+                        bins = bins[i]  # Fet the i-th n_bins for the i-th column
+                    except IndexError:
+                        raise ValueError(
+                            "Invalid value for the bins parameter. The length of "
+                            "the bins does not match the length of the columns, got "
+                            f"len(bins)={len(bins) } and len(columns)={len(X.columns)}."
+                        )
+
+                self._discretizers[col] = KBinsDiscretizer(
+                    n_bins=bins,
+                    encode="ordinal",
+                    strategy=self.strategy.lower(),
+                ).fit(X[[col]])
+
+                # Save labels for transform method
+                self._labels[col] = get_labels(
+                    labels=labels,
+                    bins=self._discretizers[col].bin_edges_[0],
+                )
+
+            else:
+                if not isinstance(bins, SEQUENCE_TYPES):
+                    raise TypeError(
+                        f"Invalid type for the bins parameter, got {bins}. Only "
+                        "a sequence of bin edges is accepted when strategy='custom'."
+                    )
+
+                # Make of pd.cut a transformer
+                self._discretizers[col] = FunctionTransformer(
+                    func=pd.cut,
+                    kw_args={"bins": bins, "labels": get_labels(labels, bins)},
+                ).fit(X[[col]])
+
+        self._is_fitted = True
+        return self
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Bin the data into intervals.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed dataframe.
+
+        """
+        X, y = self._prepare_input(X, y)
+
+        self.log("Binning the features...", 1)
+
+        for col in self._num_cols:
+            if self.strategy.lower() == "custom":
+                X[col] = self._discretizers[col].transform(X[col])
+            else:
+                X[col] = self._discretizers[col].transform(X[[col]])[:, 0]
+
+                # Replace cluster values with labels
+                for i, label in enumerate(self._labels[col]):
+                    X[col] = X[col].replace(i, label)
+
+        return X
+
+
 class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     """Perform encoding of categorical features.
 
@@ -1042,7 +1253,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 handle_unknown="value",
                 **self.kwargs,
             )
-        elif not all([hasattr(self.strategy, attr) for attr in ("fit", "transform")]):
+        elif not all(hasattr(self.strategy, attr) for attr in ("fit", "transform")):
             raise TypeError(
                 "Invalid type for the strategy parameter. A custom"
                 "estimator must have a fit and transform method."
@@ -1141,7 +1352,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Apply the transformations to the data.
+        """Encode the data.
 
         Parameters
         ----------

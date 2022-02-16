@@ -105,6 +105,7 @@ nav:
              - Gauss: API/data_cleaning/gauss.md
              - Cleaner: API/data_cleaning/cleaner.md
              - Imputer: API/data_cleaning/imputer.md
+             - Discretizer: API/data_cleaning/discretizer.md
              - Encoder: API/data_cleaning/encoder.md
              - Pruner: API/data_cleaning/pruner.md
              - Balancer: API/data_cleaning/balancer.md

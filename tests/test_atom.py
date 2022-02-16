@@ -686,11 +686,18 @@ def test_impute():
     assert atom.dataset.isna().sum().sum() == 0
 
 
+def test_discretize():
+    """Assert that the discretize method bins the numerical columns."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.discretize()
+    assert all(dtype.name == "object" for dtype in atom.X.dtypes)
+
+
 def test_encode():
     """Assert that the encode method encodes all categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode()
-    assert all([atom.X[col].dtype.kind in "ifu" for col in atom.X.columns])
+    assert all(atom.X[col].dtype.kind in "ifu" for col in atom.X.columns)
 
 
 def test_prune():
