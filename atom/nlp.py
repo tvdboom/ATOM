@@ -269,7 +269,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 func = lambda row: [str(w).translate(trans_table) for w in row]
             X[corpus] = X[corpus].apply(func)
-            self.log(f" --> Dropping punctuation from the text.", 2)
+            self.log(" --> Dropping punctuation from the text.", 2)
 
         # Concatenate all drops to one dataframe attribute
         self.drops = pd.concat([series for series in drops.values()], axis=1)

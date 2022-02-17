@@ -453,10 +453,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             index = X.index
             es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
             dfs = ft.calculate_feature_matrix(
-                    features=self._dfs,
-                    entityset=es,
-                    n_jobs=self.n_jobs,
-                )
+                features=self._dfs,
+                entityset=es,
+                n_jobs=self.n_jobs,
+            )
 
             # Add the new features to the feature set
             X = pd.concat([X.drop("index", axis=1), dfs], axis=1)
