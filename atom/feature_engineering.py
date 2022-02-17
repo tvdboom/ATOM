@@ -409,9 +409,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         else:
             kwargs = self.kwargs.copy()  # Copy in case of repeated fit
+            hall_of_fame = kwargs.pop("hall_of_fame", max(100, self.n_features or 100))
             self.symbolic_transformer = SymbolicTransformer(
-                hall_of_fame=kwargs.pop("hall_of_fame", max(100, self.n_features or 100)),
-                n_components=self.n_features or 100,
+                hall_of_fame=hall_of_fame,
+                n_components=self.n_features or hall_of_fame,
                 init_depth=kwargs.pop("init_depth", (1, 2)),
                 const_range=kwargs.pop("const_range", None),
                 function_set=self._operators,
@@ -465,10 +466,11 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         else:
             # Get the names and fitness of the new features
-            names, fitness = [], []
+            idx, names, fitness = [], [], []
             for i, program in enumerate(self.symbolic_transformer):
                 # Drop duplicates and unchanged cols
                 if str(program) not in X.columns and str(program) not in names:
+                    idx.append(i)
                     names.append(str(program))
                     fitness.append(program.fitness_)
 
@@ -484,21 +486,13 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                     " features due to repetition.", 2
                 )
 
-            # Select the n best features
-            if self.n_features and len(names) > self.n_features:
-                best_idx = np.argpartition(names, -self.n_features)[-self.n_features:]
-            else:
-                best_idx = list(range(len(names)))
-
-            # Create the features and select the best ones
-            new_features = self.symbolic_transformer.transform(X)[:, best_idx]
-
             df = []
-            for idx, array in zip(best_idx, new_features.T):
+            results = self.symbolic_transformer.transform(X)[:, idx]
+            for i, array in enumerate(results.T):
                 X[f"feature {X.shape[1] + 1}"] = array  # Add new feature to X
-                df.append([f"feature {X.shape[1] + 1}", names[idx], fitness[idx]])
+                df.append([f"feature {X.shape[1] + 1}", names[i], fitness[i]])
 
-            self.log(f" --> {len(best_idx)} new features were added.", 2)
+            self.log(f" --> {len(names)} new features were added.", 2)
             self.genetic_features = pd.DataFrame(
                 data=df,
                 columns=["name", "description", "fitness"],

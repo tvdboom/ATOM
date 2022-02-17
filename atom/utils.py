@@ -889,7 +889,7 @@ def name_cols(array, original_df, col_names):
 
     # If columns were added or removed
     temp_cols = []
-    for i, col in enumerate(array.T, start=1):
+    for i, col in enumerate(array.T):
         mask = original_df.apply(lambda c: np.array_equal(c, col, equal_nan=True))
         if any(mask) and mask[mask].index.values[0] not in temp_cols:
             # If the column is equal, use the existing name
@@ -898,9 +898,9 @@ def name_cols(array, original_df, col_names):
             # If the column is new, use a default name
             counter = 1
             while True:
-                name = f"feature {i + counter + original_df.shape[1] - len(col_names)}"
-                if name not in original_df:
-                    temp_cols.append(name)
+                n = f"feature {i + counter + original_df.shape[1] - len(col_names)}"
+                if (n not in original_df or n in col_names) and n not in temp_cols:
+                    temp_cols.append(n)
                     break
                 else:
                     counter += 1
