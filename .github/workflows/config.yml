@@ -29,11 +29,12 @@ jobs:
       run: |
         pip install -U pip
         pip install -U setuptools
+        pip install -U coverage
         pip install -U codecov
         pip install -r requirements.txt
         pip install -r requirements-optional.txt
         pip install -r requirements-test.txt
     - name: Run tests
-      run: pytest
+      run: coverage run -m pytest
     - name: Get coverage
       run: codecov

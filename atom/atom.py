@@ -1054,7 +1054,9 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Bin continuous data into intervals.
 
-        Ignores numerical columns.
+        For each feature, the bin edges are computed during fit
+        and, together with the number of bins, they will define the
+        intervals. Ignores numerical columns.
 
         See data_cleaning.py for a description of the parameters.
 
