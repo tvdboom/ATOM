@@ -1044,30 +1044,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             if hasattr(gauss, attr):
                 setattr(self.branch, attr, getattr(gauss, attr))
 
-    @composed(crash, method_to_log)
-    def discretize(
-        self,
-        strategy: str = "quantile",
-        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
-        labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
-        **kwargs,
-    ):
-        """Bin continuous data into intervals.
-
-        For each feature, the bin edges are computed during fit
-        and, together with the number of bins, they will define the
-        intervals. Ignores numerical columns.
-
-        See data_cleaning.py for a description of the parameters.
-
-        """
-        check_dim(self, "discretize")
-        columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, Discretizer().get_params())
-        discretizer = Discretizer(strategy=strategy, bins=bins, labels=labels, **kwargs)
-
-        self._add_transformer(discretizer, columns=columns)
-
     @composed(crash, method_to_log, typechecked)
     def clean(
         self,
@@ -1149,6 +1125,30 @@ class ATOM(BasePredictor, ATOMPlotter):
         imputer.missing = self.missing
 
         self._add_transformer(imputer, columns=columns)
+
+    @composed(crash, method_to_log)
+    def discretize(
+        self,
+        strategy: str = "quantile",
+        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
+        labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
+        **kwargs,
+    ):
+        """Bin continuous data into intervals.
+
+        For each feature, the bin edges are computed during fit
+        and, together with the number of bins, they will define the
+        intervals. Ignores numerical columns.
+
+        See data_cleaning.py for a description of the parameters.
+
+        """
+        check_dim(self, "discretize")
+        columns = kwargs.pop("columns", None)
+        kwargs = self._prepare_kwargs(kwargs, Discretizer().get_params())
+        discretizer = Discretizer(strategy=strategy, bins=bins, labels=labels, **kwargs)
+
+        self._add_transformer(discretizer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def encode(

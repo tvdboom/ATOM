@@ -414,7 +414,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
-        self.log(f"Making features Gaussian-like...", 1)
+        self.log("Making features Gaussian-like...", 1)
         X_transformed = self._estimator.transform(X[self._num_cols])
 
         # Replace the numerical columns with the transformed values
