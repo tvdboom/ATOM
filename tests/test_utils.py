@@ -8,6 +8,8 @@ Description: Unit tests for utils.py
 """
 
 # Standard packages
+import sys
+
 import pytest
 import pandas as pd
 from datetime import datetime, timedelta
@@ -58,6 +60,7 @@ def test_custom_dict_key_request():
         print(cd[1.2])
 
 
+@pytest.mark.skipif(sys.version_info[1] < 8, reason="Requires Python 3.8 or higher.")
 def test_custom_dict_manipulations():
     """Assert that the custom dictionary accepts inserts and pops."""
     cd = CustomDict({"a": 0, "b": 1})
