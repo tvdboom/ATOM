@@ -40,4 +40,4 @@ jobs:
     - name: Get coverage
       run: codecov
     - name: Run linting
-      run: flake8 atom
+      run: flake8 --show-source --statistics atom

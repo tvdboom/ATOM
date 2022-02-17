@@ -101,7 +101,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._metric = CustomDict()
         self._errors = CustomDict()
 
-        self.log("<< ================== ATOM ================== >>", 1)
+        self.log(f"<< ================== ATOM ================== >>", 1)
 
         # Prepare the provided data
         self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays, y=y)
