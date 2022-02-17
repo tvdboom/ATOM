@@ -440,7 +440,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         pd.DataFrame
-            Dataset containing the newly generated features.
+            Transformed feature set.
 
         """
         check_is_fitted(self)

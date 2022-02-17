@@ -24,9 +24,9 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#making-
 <strong>strategy: str, optional (default="yeo-johnson")</strong><br>
 The transforming strategy. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">yeo-johnson</a></li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">box-cox</a> (only works with strictly positive values)</li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html">quantile</a> (non-linear transformation)</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">yeo-johnson</a>"</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">box-cox</a>" (only works with strictly positive values)</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html">quantile</a>" (non-linear transformation)</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:

@@ -1491,7 +1491,8 @@ bins=5, labels=None)
 </div>
 Bin continuous data into intervals. For each feature, the bin edges are
 computed during fit and, together with the number of bins, they will
-define the intervals. Ignores numerical columns.
+define the intervals. Ignores numerical columns. See
+[Discretizer](../data_cleaning/discretizer.md) for a description of the parameters.
 <br /><br /><br />
 
 

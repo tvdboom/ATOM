@@ -30,7 +30,7 @@ from category_encoders.one_hot import OneHotEncoder
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS,
+    SEQUENCE, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS,
     ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS, lst, it,
     variable_return, to_series, merge, check_is_fitted, composed,
     crash, method_to_log,
@@ -94,7 +94,7 @@ class TransformerMixin:
         Returns
         -------
         pd.DataFrame
-            Transformed dataframe.
+            Transformed feature set.
 
         pd.Series
             Target column corresponding to X. Only returned if provided.
@@ -169,10 +169,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     strategy: str, optional (default="standard")
         Strategy with which to scale the data. Choose from:
-            - standard
-            - minmax
-            - maxabs
-            - robust
+            - "standard": Remove mean and scale to unit variance.
+            - "minmax": Scale features to a given range.
+            - "maxabs": Scale features by their maximum absolute value.
+            - "robust": Scale using statistics that are robust to outliers.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -298,9 +298,9 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     strategy: str, optional (default="yeo-johnson")
         The transforming strategy. Choose from:
-            - yeo-johnson
-            - box-cox (only works with strictly positive values)
-            - quantile (non-linear transformation)
+            - "yeo-johnson"
+            - "box-cox" (only works with strictly positive values)
+            - "quantile": Transform features using quantiles information.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -535,7 +535,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         pd.DataFrame
-            Transformed dataframe.
+            Transformed feature set.
 
         pd.Series
             Target column corresponding to X. Only returned if provided.
@@ -923,12 +923,6 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     together with the number of bins, they will define the intervals.
     Ignores numerical columns.
 
-    Note that if strategy=custom, the columns can contain NaNs if the
-    values lie outside the specified bins.
-
-    Note that the class returns columns of dtype object. Use encoder to
-    encode to numerical types.
-
     Parameters
     ----------
     strategy: str, optional (default="quantile")
@@ -942,15 +936,16 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     bins: int, sequence or dict, optional (default=5)
         - If int: Number of bins to produce for all columns. Not allowed
                   if strategy="custom".
-        - If sequence:
-            - If strategy="custom": Bin edges, with length=n_bins + 1.
-            - Else: Number of bins per column, where the n-th value
-                    corresponds to the n-th column that is transformed.
+        - If sequence: Number of bins per column, where the n-th value
+                       corresponds to the n-th column that is transformed.
+                       If strategy="custom", it's the bin edges with length=
+                       n_bins + 1.
         - If dict: One of the aforementioned options per column, where
                    the key is the column's name.
 
     labels: sequence, dict or None, optional (default=None)
-        - If None: Use default labels of the form [min_edge-max_edge].
+        Label names with which to replace the binned intervals.
+        - If None: Use default labels of the form [min_edge]-[max_edge].
         - If sequence: Labels to use for all columns.
         - If dict: Labels per column, where the key is the column's name.
 
@@ -1049,7 +1044,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 bins = self.bins
 
             if self.strategy.lower() != "custom":
-                if isinstance(bins, SEQUENCE_TYPES):
+                if isinstance(bins, SEQUENCE):
                     try:
                         bins = bins[i]  # Fet the i-th n_bins for the i-th column
                     except IndexError:
@@ -1072,7 +1067,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
 
             else:
-                if not isinstance(bins, SEQUENCE_TYPES):
+                if not isinstance(bins, SEQUENCE):
                     raise TypeError(
                         f"Invalid type for the bins parameter, got {bins}. Only "
                         "a sequence of bin edges is accepted when strategy='custom'."
@@ -1102,7 +1097,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         pd.DataFrame
-            Transformed dataframe.
+            Transformed feature set.
 
         """
         X, y = self._prepare_input(X, y)
@@ -1514,7 +1509,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         pd.DataFrame
-            Transformed dataframe.
+            Transformed feature set.
 
         pd.Series
             Target column corresponding to X. Only returned if provided.

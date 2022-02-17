@@ -21,10 +21,10 @@ This class can be accessed from atom through the
 <strong>strategy: str, optional (default="standard")</strong><br>
 Strategy with which to scale the data. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">standard</a></li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">minmax</a></li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">maxabs</a></li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">robust</a></li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">standard</a>": Remove mean and scale to unit variance.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">minmax</a>": Scale features to a given range.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">maxabs</a>": Scale features by their maximum absolute value.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">robust</a>": Scale using statistics that are robust to outliers.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:

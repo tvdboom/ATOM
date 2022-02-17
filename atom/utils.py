@@ -11,6 +11,8 @@ Description: Module containing utility constants, functions and classes.
 import math
 import pprint
 import logging
+import sys
+
 import numpy as np
 import pandas as pd
 from copy import copy
@@ -1677,7 +1679,9 @@ class CustomDict(MutableMapping):
         return self._conv(key) in self.__data
 
     def __repr__(self):
-        return pprint.pformat(dict(self), sort_dicts=False)
+        # The sort_dicts parameter is introduced in Python 3.8
+        kwargs = {} if sys.version_info[1] < 8 else {"sort_dicts": False}
+        return pprint.pformat(dict(self), **kwargs)
 
     def __reversed__(self):
         yield from reversed(list(self.keys()))

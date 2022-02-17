@@ -594,6 +594,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#binning-numerical-features" class="md-nav__link">
+    Binning numerical features
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#encoding-categorical-features" class="md-nav__link">
     Encoding categorical features
   </a>
@@ -918,7 +925,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/discretizer.md" class="md-nav__link">
+      <a href="../../API/data_cleaning/discretizer/" class="md-nav__link">
         Discretizer
       </a>
     </li>
@@ -2841,6 +2848,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#binning-numerical-features" class="md-nav__link">
+    Binning numerical features
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#encoding-categorical-features" class="md-nav__link">
     Encoding categorical features
   </a>
@@ -2956,6 +2970,20 @@ method.</p>
 <p>Use atom's <a href="../../API/ATOM/atomclassifier/#data-attributes">missing</a> attribute
 to check the amount of missing values per column.</p>
 </div>
+<p><br></p>
+<h2 id="binning-numerical-features">Binning numerical features</h2>
+<p>Discretization (otherwise known as quantization or binning) provides
+a way to partition continuous features into discrete values. Certain
+datasets with continuous features may benefit from discretization,
+because discretization can transform the dataset of continuous
+attributes to one with only nominal attributes. Discretization is
+similar to constructing histograms for continuous data. However,
+histograms focus on counting features which fall into particular bins,
+whereas discretization focuses on assigning feature values to these
+bins. The <a href="../../API/data_cleaning/discretizer">Discretizer</a> class can
+be used to bin continuous data into intervals. It can be accessed from
+atom through the <a href="../../API/ATOM/atomclassifier/#discretize">discretize</a>
+method.</p>
 <p><br></p>
 <h2 id="encoding-categorical-features">Encoding categorical features</h2>
 <p>Many datasets contain categorical features. Their variables are
