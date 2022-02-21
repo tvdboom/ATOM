@@ -1512,7 +1512,7 @@ class ShapExplanation:
 
         return self._explainer
 
-    def get_explanation(self, df, target=1, feature=None):
+    def get_explanation(self, df, target=1, feature=None, only_one=False):
         """Get an Explanation object.
 
         Parameters
@@ -1526,6 +1526,9 @@ class ShapExplanation:
 
         feature: int or str
             Index or name of the feature to look at.
+
+        only_one: bool, optional (default=False)
+            Whether only one row is accepted.
 
         Returns
         -------
@@ -1557,7 +1560,7 @@ class ShapExplanation:
         # Select the target values from the array
         if self._explanation.values.ndim > 2:
             self._explanation = self._explanation[:, :, target]
-        if self._explanation.shape[0] == 1:  # Rows is a df with one row only
+        if only_one:  # Rows should be a df with one row only
             self._explanation = self._explanation[0]
 
         if feature is None:

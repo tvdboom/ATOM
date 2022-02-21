@@ -409,10 +409,11 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         else:
             kwargs = self.kwargs.copy()  # Copy in case of repeated fit
-            hall_of_fame = kwargs.pop("hall_of_fame", max(100, self.n_features or 100))
+            hall_of_fame = kwargs.pop("hall_of_fame", max(400, self.n_features or 400))
             self.symbolic_transformer = SymbolicTransformer(
+                population_size=kwargs.pop("population_size", 2000),
                 hall_of_fame=hall_of_fame,
-                n_components=self.n_features or hall_of_fame,
+                n_components=hall_of_fame,
                 init_depth=kwargs.pop("init_depth", (1, 2)),
                 const_range=kwargs.pop("const_range", None),
                 function_set=self._operators,
@@ -466,37 +467,43 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         else:
             # Get the names and fitness of the new features
-            idx, names, fitness = [], [], []
-            for i, program in enumerate(self.symbolic_transformer):
-                # Drop duplicates and unchanged cols
-                if str(program) not in X.columns and str(program) not in names:
-                    idx.append(i)
-                    names.append(str(program))
-                    fitness.append(program.fitness_)
+            df = pd.DataFrame(columns=["name", "description", "fitness"])
+            for i, fx in enumerate(self.symbolic_transformer):
+                if str(fx) not in X.columns:  # Drop unchanged features
+                    df.loc[i] = ["", str(fx), fx.fitness_]
 
             # Check if any new features remain
-            if len(names) == 0:
+            if len(df) == 0:
                 self.log(
                     " --> The genetic algorithm didn't find any improving features.", 2
                 )
                 return X
-            elif len(names) != len(self.symbolic_transformer):
-                self.log(
-                    f" --> Dropping {len(self.symbolic_transformer) - len(names)}"
-                    " features due to repetition.", 2
-                )
 
-            df = []
-            results = self.symbolic_transformer.transform(X)[:, idx]
+            # Select the n_features with the highest fitness
+            df = df.drop_duplicates()
+            if self.n_features and len(df) > self.n_features:
+                df = df.nlargest(self.n_features, columns="fitness")
+
+            # If there are not enough features remaining, notify the user
+            if len(df) != self.n_features:
+                n = (self.n_features or len(self.symbolic_transformer)) - len(df)
+                self.log(f" --> Dropping {n} features due to repetition.", 2)
+
+            results = self.symbolic_transformer.transform(X)[:, df.index]
             for i, array in enumerate(results.T):
-                X[f"feature {X.shape[1] + 1}"] = array  # Add new feature to X
-                df.append([f"feature {X.shape[1] + 1}", names[i], fitness[i]])
+                # If the column is new, use a default name
+                counter = 0
+                while True:
+                    name = f"feature {X.shape[1] + 1 + counter}"
+                    if name not in X:
+                        X[name] = array  # Add new feature to X
+                        df.iloc[i, 0] = name
+                        break
+                    else:
+                        counter += 1
 
-            self.log(f" --> {len(names)} new features were added.", 2)
-            self.genetic_features = pd.DataFrame(
-                data=df,
-                columns=["name", "description", "fitness"],
-            )
+            self.log(f" --> {len(df)} new features were added.", 2)
+            self.genetic_features = df.reset_index(drop=True)
 
         return X
 

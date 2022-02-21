@@ -147,6 +147,7 @@ def test_genetic_non_improving_features():
         strategy="gfg",
         generations=5,
         population_size=300,
+        hall_of_fame=100,
         operators="sqrt",
         random_state=1,
     )
@@ -159,7 +160,7 @@ def test_attribute_genetic_features():
     generator = FeatureGenerator(
         strategy="gfg",
         generations=3,
-        population_size=200,
+        population_size=400,
         random_state=1,
     )
     _ = generator.fit_transform(X_bin, y_bin)
@@ -181,6 +182,17 @@ def test_updated_dataset():
     generator = FeatureGenerator(strategy="dfs", n_features=None, random_state=1)
     X = generator.fit_transform(X_bin, y_bin)
     assert X.shape[1] > X_bin.shape[1]
+
+
+def test_default_feature_names():
+    """Assert that the new features get correct default names."""
+    X = X_bin.copy()
+    X["feature 32"] = range(len(X))
+
+    generator = FeatureGenerator(strategy="gfg", n_features=2, random_state=1)
+    X = generator.fit_transform(X, y_bin)
+    assert "feature 31" not in X
+    assert "feature 34" in X and "feature 33" in X
 
 
 # Test FeatureSelector ============================================= >>

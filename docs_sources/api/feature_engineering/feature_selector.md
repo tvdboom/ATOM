@@ -6,7 +6,7 @@
 solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
 **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L504">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L511">[source]</a>
 </span>
 </div>
 
@@ -271,7 +271,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L664">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L671">[source]</a>
 </span>
 </div>
 Fit to data. Note that the univariate, SFM (when model is not fitted),
@@ -495,7 +495,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L945">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L952">[source]</a>
 </span>
 </div>
 Transform the data.

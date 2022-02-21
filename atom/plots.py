@@ -3569,7 +3569,7 @@ class BaseModelPlotter(BasePlotter):
             from a model, e.g. `atom.xgb.waterfall_plot()`.
 
         index: int, str or None, optional (default=None)
-            Index or position of the row in the dataset to plot.
+            Index name or position of the row in the dataset to plot.
             If None, it selects the first row in the test set. The
             waterfall plot does not support plotting multiple
             samples.
@@ -3609,7 +3609,7 @@ class BaseModelPlotter(BasePlotter):
         rows = m.X.loc[[self._get_rows(index, branch=m.branch)[0]]]
         show = self._get_show(show, m)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(rows, target)
+        explanation = m._shap.get_explanation(rows, target, only_one=True)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
