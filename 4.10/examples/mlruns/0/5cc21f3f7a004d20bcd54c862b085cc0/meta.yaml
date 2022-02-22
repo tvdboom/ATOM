@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/Mavs/Documents/Python/ATOM/docs_sources/examples/mlruns/0/5cc21f3f7a004d20bcd54c862b085cc0/artifacts
+end_time: 1645537626951
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+name: ''
+run_id: 5cc21f3f7a004d20bcd54c862b085cc0
+run_uuid: 5cc21f3f7a004d20bcd54c862b085cc0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1645537626933
+status: 3
+tags: []
+user_id: Mavs
