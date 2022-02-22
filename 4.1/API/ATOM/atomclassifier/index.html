@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="tvdboom">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/4.1/API/ATOM/atomclassifier/">
+        <link rel="shortcut icon" href="../../../img/favicon.ico">
+        <title>ATOMClassifier - ATOM</title>
+        <link href="../../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../../../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/color-brewer.min.css">
+        <link href="../../../css/version-select.css" rel="stylesheet">
+
+        <script src="../../../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../../../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../../..">ATOM</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../../../getting_started/" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../user_guide/" class="nav-link">User guide</a>
+                            </li>
+                            <li class="dropdown active">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">ATOM</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="./" class="dropdown-item active">ATOMClassifier</a>
+</li>
+            
+<li>
+    <a href="../atomregressor/" class="dropdown-item">ATOMRegressor</a>
+</li>
+            
+<li>
+    <a href="../atomloader/" class="dropdown-item">ATOMLoader</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Data cleaning</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../data_cleaning/scaler/" class="dropdown-item">Scaler</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/imputer/" class="dropdown-item">Imputer</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/encoder/" class="dropdown-item">Encoder</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/balancer/" class="dropdown-item">Balancer</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Feature engineering</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
+</li>
+            
+<li>
+    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Training</a>
+    <ul class="dropdown-menu">
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Trainer</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+</li>
+            
+<li>
+    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">SuccessiveHalving</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../training/successivehalvingclassifier/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">TrainSizing</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../training/trainsizingclassifier/" class="dropdown-item">TrainSizingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../training/trainsizingregressor/" class="dropdown-item">TrainSizingRegressor</a>
+</li>
+    </ul>
+  </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Models</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../models/gp/" class="dropdown-item">Gaussian Process</a>
+</li>
+            
+<li>
+    <a href="../../models/gnb/" class="dropdown-item">Gaussian Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/mnb/" class="dropdown-item">Multinomial Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/bnb/" class="dropdown-item">Bernoulli Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/catnb/" class="dropdown-item">Categorical Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/cnb/" class="dropdown-item">Complement Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/ols/" class="dropdown-item">Ordinary Least Squares</a>
+</li>
+            
+<li>
+    <a href="../../models/ridge/" class="dropdown-item">Ridge</a>
+</li>
+            
+<li>
+    <a href="../../models/lasso/" class="dropdown-item">Lasso</a>
+</li>
+            
+<li>
+    <a href="../../models/en/" class="dropdown-item">Elastic Net</a>
+</li>
+            
+<li>
+    <a href="../../models/br/" class="dropdown-item">Bayesian Ridge</a>
+</li>
+            
+<li>
+    <a href="../../models/ard/" class="dropdown-item">Automated Relevance Determination</a>
+</li>
+            
+<li>
+    <a href="../../models/lr/" class="dropdown-item">Logistic Regression</a>
+</li>
+            
+<li>
+    <a href="../../models/lda/" class="dropdown-item">Linear Discriminant Analysis</a>
+</li>
+            
+<li>
+    <a href="../../models/qda/" class="dropdown-item">Quadratic Discriminant Analysis</a>
+</li>
+            
+<li>
+    <a href="../../models/knn/" class="dropdown-item">K-Nearest Neighbors</a>
+</li>
+            
+<li>
+    <a href="../../models/rnn/" class="dropdown-item">Radius Nearest Neighbors</a>
+</li>
+            
+<li>
+    <a href="../../models/tree/" class="dropdown-item">Decision Tree</a>
+</li>
+            
+<li>
+    <a href="../../models/bag/" class="dropdown-item">Bagging</a>
+</li>
+            
+<li>
+    <a href="../../models/et/" class="dropdown-item">Extra-Trees</a>
+</li>
+            
+<li>
+    <a href="../../models/rf/" class="dropdown-item">Random Forest</a>
+</li>
+            
+<li>
+    <a href="../../models/adab/" class="dropdown-item">AdaBoost</a>
+</li>
+            
+<li>
+    <a href="../../models/gbm/" class="dropdown-item">Gradient Boosting Machine</a>
+</li>
+            
+<li>
+    <a href="../../models/xgb/" class="dropdown-item">XGBoost</a>
+</li>
+            
+<li>
+    <a href="../../models/lgb/" class="dropdown-item">LightGBM</a>
+</li>
+            
+<li>
+    <a href="../../models/catb/" class="dropdown-item">CatBoost</a>
+</li>
+            
+<li>
+    <a href="../../models/lsvm/" class="dropdown-item">Linear-SVM</a>
+</li>
+            
+<li>
+    <a href="../../models/ksvm/" class="dropdown-item">Kernel-SVM</a>
+</li>
+            
+<li>
+    <a href="../../models/pa/" class="dropdown-item">Passive Aggressive</a>
+</li>
+            
+<li>
+    <a href="../../models/sgd/" class="dropdown-item">Stochastic Gradient Descent</a>
+</li>
+            
+<li>
+    <a href="../../models/mlp/" class="dropdown-item">Multi-layer Perceptron</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Predicting</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Plots</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_pca/" class="dropdown-item">plot_pca</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_components/" class="dropdown-item">plot_components</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_bo/" class="dropdown-item">plot_bo</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_evals/" class="dropdown-item">plot_evals</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_roc/" class="dropdown-item">plot_roc</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_prc/" class="dropdown-item">plot_prc</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_residuals/" class="dropdown-item">plot_residuals</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_gains/" class="dropdown-item">plot_gains</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+            
+<li>
+    <a href="../../plots/force_plot/" class="dropdown-item">force_plot</a>
+</li>
+            
+<li>
+    <a href="../../plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
+</li>
+            
+<li>
+    <a href="../../plots/summary_plot/" class="dropdown-item">summary_plot</a>
+</li>
+            
+<li>
+    <a href="../../plots/decision_plot/" class="dropdown-item">decision_plot</a>
+</li>
+    </ul>
+  </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../dependencies/" class="nav-link">Dependencies</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../license/" class="nav-link">License</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../../../user_guide/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../atomregressor/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#atomclassifier" class="nav-link">ATOMClassifier</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#attributes" class="nav-link">Attributes</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#utility-methods" class="nav-link">Utility methods</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#data-cleaning" class="nav-link">Data cleaning</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#feature-engineering" class="nav-link">Feature engineering</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#training" class="nav-link">Training</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#example" class="nav-link">Example</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="atomclassifier">ATOMClassifier</h1>
+<hr />
+<p><a name="atom"></a></p>
+<pre><em>class</em> atom.api.<strong style="color:#008AB8">ATOMClassifier</strong>(X, y=-1, n_rows=1, test_size=0.2, logger=None,
+                              n_jobs=1, warnings=True, verbose=0, random_state=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L116">[source]</a></div></pre>
+<div style="padding-left:3%">
+ATOMClassifier is ATOM's wrapper for binary and multiclass classification tasks. Use
+ this class to easily apply all data transformations and model management provided by
+ the package on a given dataset. Note that contrary to scikit-learn's API, the
+ ATOMClassifier object already contains the dataset on which we want to perform the
+ analysis. Calling a method will automatically apply it on the dataset it contains.
+ The class initializer always calls [StandardCleaner](../data_cleaning/standard_cleaner.md)
+ with default parameters. The following data types can't (yet) be handled properly
+ and are therefore removed: 'datetime64', 'datetime64[ns]', 'timedelta[ns]'. 
+
+You can [predict](../../../user_guide/#predicting), [plot](../../../user_guide/#plots)
+ and call any [`model`](../../../user_guide/#models) from the ATOMClassifier instance.
+ Read more in the [user guide](../../../user_guide/#first-steps).
+<br />
+<table>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Dataset containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>y: int, str, sequence, np.array or pd.Series, optional (default=-1)</strong>
+<blockquote>
+<ul>
+<li>If int: Position of the target column in X. The default value selects the last column.</li>
+<li>If string: Name of the target column in X</li>
+<li>Else: Data target column with shape=(n_samples,)</li>
+</ul>
+</blockquote>
+<strong>n_rows: int or float, optional (default=1)</strong>
+<blockquote>
+<ul>
+<li>if <=1: Fraction of the data to use.</li>
+<li>if >1: Number of rows to use.</li>
+</ul>
+</blockquote>
+<strong>test_size: float, optional (default=0.2)</strong>
+<blockquote>
+Split fraction for the training and test set.
+</blockquote>
+<strong>n_jobs: int, optional (default=1)</strong>
+<blockquote>
+Number of cores to use for parallel processing.
+<ul>
+<li>If >0: Number of cores to use.</li>
+<li>If -1: Use all available cores.</li>
+<li>If <-1: Use available_cores - 1 + n_jobs.</li>
+</ul>
+Beware that using multiple processes on the same machine may cause
+memory issues for large datasets.
+</blockquote>
+<strong>verbose: int, optional (default=0)</strong>
+<blockquote>
+Verbosity level of the class. Possible values are:
+<ul>
+<li>0 to not print anything.</li>
+<li>1 to print basic information.</li>
+<li>2 to print detailed information.</li>
+</ul>
+</blockquote>
+<strong>warnings: bool or str, optional (default=True)</strong>
+<blockquote>
+<ul>
+<li>If True: Default warning action (equal to 'default' when string).</li>
+<li>If False: Suppress all warnings (equal to 'ignore' when string).</li>
+<li>If str: One of the possible actions in python's warnings environment.</li>
+</ul>
+Note that changing this parameter will affect the `PYTHONWARNINGS` environment.<br>
+ Note that ATOM can't manage warnings that go directly from C++ code to the
+ stdout/stderr.
+</blockquote>
+<strong>logger: bool, str, class or None, optional (default=None)</strong>
+<blockquote>
+<ul>
+<li>If None: Doesn't save a logging file.</li>
+<li>If bool: True for logging file with default name. False for no logger.</li>
+<li>If str: Name of the logging file. 'auto' for default name.</li>
+<li>If class: python `Logger` object.</li>
+</ul>
+Note that warnings will not be saved to the logger in any case.
+</blockquote>
+<strong>random_state: int or None, optional (default=None)</strong>
+<blockquote>
+Seed used by the random number generator. If None, the random number
+ generator is the `RandomState` instance used by `numpy.random`.
+</blockquote>
+</td>
+</tr>
+</table>
+</div>
+<p><br></p>
+<h2 id="attributes">Attributes</h2>
+<hr />
+<h3 id="data-attributes">Data attributes</h3>
+<p>The dataset can be accessed at any time through multiple properties, e.g. calling
+ <code>atom.train</code> will return the training set. The data can also be changed through
+ these properties, e.g. <code>atom.test = atom.test.drop(0)</code> will drop the first row
+ from the test set. This will also update the other data attributes.</p>
+<p><a name="atom"></a></p>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>dataset: pd.DataFrame</strong>
+<blockquote>
+Complete dataset in the pipeline.
+</blockquote>
+<strong>train: pd.DataFrame</strong>
+<blockquote>
+Training set.
+</blockquote>
+<strong>test: pd.DataFrame</strong>
+<blockquote>
+Test set.
+</blockquote>
+<strong>X: pd.DataFrame</strong>
+<blockquote>
+Feature set.
+</blockquote>
+<strong>y: pd.Series</strong>
+<blockquote>
+Target column.
+</blockquote>
+<strong>X_train: pd.DataFrame</strong>
+<blockquote>
+Training features.
+</blockquote>
+<strong>y_train: pd.Series</strong>
+<blockquote>
+Training target.
+</blockquote>
+<strong>X_test: pd.DataFrame</strong>
+<blockquote>
+Test features.
+</blockquote>
+<strong>y_test: pd.Series</strong>
+<blockquote>
+Test target.
+</blockquote>
+<strong>shape: tuple</strong>
+<blockquote>
+Dataset's shape in the form (rows x columns).
+</blockquote>
+<strong>columns: list</strong>
+<blockquote>
+List of columns in the dataset.
+</blockquote>
+<strong>target: str</strong>
+<blockquote>
+Name of the target column.
+</blockquote>
+<strong>categories: list</strong>
+<blockquote>
+Sorted list of the unique categories in the target column.
+</blockquote>
+<strong>n_categories: int</strong>
+<blockquote>
+Number of unique categories in the target column.
+</blockquote>
+<strong>mapping: dict</strong>
+<blockquote>
+Dictionary of the target categories mapped to their respective encoded integer.
+</blockquote>
+<strong>missing: pd.Series</strong>
+<blockquote>
+Returns columns with number of missing values.
+</blockquote>
+<strong>n_missing: int</strong>
+<blockquote>
+Number of columns with missing values.
+</blockquote>
+<strong>categorical: list</strong>
+<blockquote>
+Returns columns with categorical features.
+</blockquote>
+<strong>n_categorical: int</strong>
+<blockquote>
+Number of columns with categorical features.
+</blockquote>
+<strong>scaled: bool</strong>
+<blockquote>
+Returns whether the feature set is scaled.
+</blockquote>
+</td></tr>
+</table>
+<p><br></p>
+<h3 id="utility-attributes">Utility attributes</h3>
+<p><a name="atom"></a></p>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>profile: ProfileReport</strong>
+<blockquote>
+Profile created by pandas-profiling after calling the report method.
+</blockquote>
+<strong>genetic_features: pd.DataFrame</strong>
+<blockquote>
+Dataframe of the non-linear features created by the <a href="#atomclassifier-feature-generation">feature_generation</a> method.
+ Columns include:
+<ul>
+<li><b>name:</b> Name of the feature (automatically created).</li>
+<li><b>description:</b> Operators used to create this feature.</li>
+<li><b>fitness:</b> Fitness score.</li>
+</ul>
+</blockquote>
+<strong>collinear: pd.DataFrame</strong>
+<blockquote>
+Dataframe of the collinear features removed by the <a href="#atomclassifier-feature-selection">feature_selection</a> method.
+ Columns include:
+<ul>
+<li><b>drop_feature:</b> name of the feature dropped by the method.</li>
+<li><b>correlated feature:</b> Name of the correlated feature(s).</li>
+<li><b>correlation_value:</b> Pearson correlation coefficient(s) of the feature pairs.</li>
+</ul>
+</blockquote>
+<strong>models: list</strong>
+<blockquote>
+List of models in the pipeline.
+</blockquote>
+<strong>metric: str or list</strong>
+<blockquote>
+Metric(s) used to fit the models.
+</blockquote>
+<strong>errors: dict</strong>
+<blockquote>
+Dictionary of the encountered exceptions (if any).
+</blockquote>
+<strong>winner: [`model`](../../../user_guide/#models)</strong>
+<blockquote>
+Model subclass that performed best on the test set.
+</blockquote>
+<strong>pipeline: pd.Series</strong>
+<blockquote>
+Series containing all classes fitted in the pipeline. Use this attribute only to
+ access the individual classes. To visualize the pipeline, use `atom`'s \_\_repr__
+ or [plot_pipeline](../../plots/plot_pipeline).
+</blockquote>
+<strong>results: pd.DataFrame</strong>
+<blockquote>
+Dataframe of the training results. Columns can include:
+<ul>
+<li><b>metric_bo:</b> Best score achieved during the BO.</li>
+<li><b>time_bo:</b> Time spent on the BO.</li>
+<li><b>metric_train:</b> Metric score on the training set.</li>
+<li><b>metric_test:</b> Metric score on the test set.</li>
+<li><b>time_fit:</b> Time spent fitting and evaluating.</li>
+<li><b>mean_bagging:</b> Mean score of the bagging's results.</li>
+<li><b>std_bagging:</b> Standard deviation score of the bagging's results.</li>
+<li><b>time_bagging:</b> Time spent on the bagging algorithm.</li>
+<li><b>time:</b> Total time spent on the whole run.</li>
+</ul>
+</blockquote>
+</td>
+</tr>
+</table>
+<p><br></p>
+<h3 id="plot-attributes">Plot attributes</h3>
+<p><a name="atom"></a></p>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>style: str</strong>
+<blockquote>
+Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
+</blockquote>
+<strong>palette: str</strong>
+<blockquote>
+Color palette. See seaborn's <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
+</blockquote>
+<strong>title_fontsize: int</strong>
+<blockquote>
+Fontsize for the plot's title.
+</blockquote>
+<strong>label_fontsize: int</strong>
+<blockquote>
+Fontsize for labels and legends.
+</blockquote>
+<strong>tick_fontsize: int</strong>
+<blockquote>
+Fontsize for the ticks along the plot's axes.
+</blockquote>
+</td></tr>
+</table>
+<p><br><br></p>
+<h2 id="utility-methods">Utility methods</h2>
+<hr />
+<p>The ATOM class contains a variety of methods to help you handle the data and
+inspect the pipeline.</p>
+<table>
+<tr>
+<td><a href="#atomclassifier-calibrate">calibrate</a></td>
+<td>Calibrate the winning model.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#atomclassifier-clear">clear</a></td>
+<td>Remove a model from the pipeline.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#atomclassifier-log">log</a></td>
+<td>Save information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-report">report</a></td>
+<td>Get an extensive profile analysis of the data.</td>
+</tr>
+
+
+<tr>
+<td><a href="#atomclassifier-save">save</a></td>
+<td>Save the ATOMClassifier instance to a pickle file.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-scoring">scoring</a></td>
+<td>Returns the scores of the models for a specific metric.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#atomclassifier-stats">stats</a></td>
+<td>Print out a list of basic statistics on the dataset.</td>
+</tr>
+
+</table>
+<p><br></p>
+<p><a name="atomclassifier-calibrate"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(\*\*kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L116">[source]</a></div></pre>
+<div style="padding-left:3%">
+Applies probability calibration on the winning model. The calibration is done with the
+ [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
+ class from sklearn. The model will be trained via cross-validation on a subset
+ of the training data, using the rest to fit the calibrator. The new classifier will
+ replace the `estimator` attribute. After calibrating, all prediction attributes of
+ the winning model will reset.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>**kwargs</strong>
+<blockquote>
+Additional keyword arguments for the [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
+ instance. Using cv='prefit' will use the trained model and fit the calibrator on the
+ test set. Note that doing this will result in data leakage in the test set. Use this
+ only if you have another, independent set for testing.
+</blockquote>
+</tr>
+</table>
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-clear"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models='all')
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
+<div style="padding-left:3%">
+Removes all traces of a model in the pipeline (except for the `errors`
+ attribute). If all models in the pipeline are removed, the metric is reset.
+ Use this method to remove unwanted models from the pipeline or to clear
+ memory before saving the instance. 
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>models: str or sequence, optional (default='all')</strong>
+<blockquote>
+Model(s) to clear from the pipeline. If 'all', clear all models.
+</blockquote>
+</tr>
+</table>
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-log"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
+<div style="padding-left:3%">
+Write a message to the logger and print it to stdout.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>msg: str</strong>
+<blockquote>
+Message to write to the logger and print to stdout.
+</blockquote>
+<strong>level: int, optional (default=0)</strong>
+<blockquote>
+Minimum verbosity level in order to print the message.
+</blockquote>
+</tr>
+</table>
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-report"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">report</strong>(dataset='dataset', n_rows=None, filename=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L260">[source]</a></div></pre>
+<div style="padding-left:3%">
+Get an extensive profile analysis of the data. The report is rendered
+ in HTML5 and CSS3 and saved to the `profile` attribute. Note that this method
+ can be slow for `n_rows` > 10k.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>dataset: str, optional (default='dataset')</strong>
+<blockquote>
+Name of the data set to get the profile from.
+</blockquote>
+<strong>n_rows: int or None, optional (default=None)</strong>
+<blockquote>
+Number of (randomly picked) rows to process. None for all rows.
+</blockquote>
+<strong>filename: str or None, optional (default=None)</strong>
+<blockquote>
+Name of the file when saved (as .html). None to not save anything.
+</blockquote>
+</tr>
+</table>
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-save"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None, save_data=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
+<div style="padding-left:3%">
+Save the instance to a pickle file. Remember that the class contains the complete
+ dataset as property, so the file can become large for big datasets! To avoid this,
+ use `save_data=False`.
+<br><br>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>filename: str or None, optional (default=None)</strong>
+<blockquote>
+Name to save the file with. If None or 'auto', use the name of the class.
+</blockquote>
+<strong>save_data: bool, optional (default=True)</strong>
+<blockquote>
+Whether to save the data as an attribute of the instance. If False, remember to
+ update the data immediately after loading the pickle using the dataset's `@setter`.
+</blockquote>
+</tr>
+</table>
+</div>
+<p><br></p>
+<p><a name="atomclassifier-scoring"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L152">[source]</a></div></pre>
+<div style="padding-left:3%">
+Returns the scores of the models for a specific metric. If a model
+ shows a `XXX`, it means the metric failed for that specific model. This
+ can happen if either the metric is unavailable for the task or if the
+ model does not have a `predict_proba` method while the metric requires it.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>metric: str or None, optional (default=None)</strong>
+<blockquote>
+Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
+ or one of the following custom metrics:
+<ul>
+<li>'cm' or 'confusion_matrix' for an array of the confusion matrix.</li>
+<li>'tn' for true negatives.</li>
+<li>'fp' for false positives.</li>
+<li>'fn' for false negatives.</li>
+<li>'lift' for the lift metric.</li>
+<li>'fpr' for the false positive rate.</li>
+<li>'tpr' for true positive rate.</li>
+<li>'sup' for the support metric.</li>
+</ul>
+If None, returns the models' final results (ignores the `dataset` parameter).
+</blockquote>
+<strong>dataset: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the metric. Options are 'train' or 'test'.
+</blockquote>
+</tr>
+</table>
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-stats"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">stats</strong>()
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L178">[source]</a></div></pre>
+<div style="padding-left:3%">
+Print out a list of basic information on the dataset.
+</div>
+<p><br /><br /></p>
+<h2 id="data-cleaning">Data cleaning</h2>
+<hr />
+<p>ATOM provides data cleaning methods to scale your features and handle missing values,
+ categorical columns, outliers and unbalanced datasets. Calling on one of them
+ will automatically apply the method on the dataset in the pipeline.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="#atomclassifier-report">report</a> method to examine the data and help you
+determine suitable parameters for the data cleaning methods.</p>
+</div>
+<table>
+<tr>
+<td><a href="#atomclassifier-scale">scale</a></td>
+<td>Scale all the features to mean=1 and std=0.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-impute">impute</a></td>
+<td>Handle missing values in the dataset.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-encode">encode</a></td>
+<td>Encode categorical features.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-outliers">outliers</a></td>
+<td>Remove or replace outliers in the training set.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-balance">balance</a></td>
+<td>Balance the target categories in the training set.</td>
+</tr>
+</table>
+<p><br></p>
+<p><a name="atomclassifier-scale"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">scale</strong>()
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L358">[source]</a></div></pre>
+<div style="padding-left:3%">
+Scale the features to mean=1 and std=0.
+</div>
+<p><br /><br /></p>
+<p><a name="atomclassifier-impute"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5, min_frac_cols=0.5, missing=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L373">[source]</a></div></pre>
+<div style="padding-left:3%">
+Handle missing values according to the selected strategy. Also removes rows and
+ columns with too many missing values. The imputer is fitted only on the training set
+ to avoid data leakage. See [Imputer](../data_cleaning/imputer.md) for a description
+ of the parameters. Note that since the Imputer can remove rows from both train and
+ test set, the set's sizes may change to keep ATOM's `test_size` ratio.
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-encode"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">encode</strong>(strategy='LeaveOneOut', max_onehot=10, frac_to_other=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L409">[source]</a></div></pre>
+<div style="padding-left:3%">
+Perform encoding of categorical features. The encoding type depends on the
+ number of unique values in the column:
+<ul>
+<li>If n_unique=2, use Label-encoding.</li>
+<li>If 2 < n_unique <= max_onehot, use OneHot-encoding.</li>
+<li>If n_unique > max_onehot, use `strategy`-encoding.</li>
+</ul>
+Also replaces classes with low occurrences with the value 'other' in
+ order to prevent too high cardinality. Categorical features are defined as
+ all columns whose dtype.kind not in 'ifu'. Will raise an error if it encounters
+ missing values or unknown categories when transforming. The encoder is fitted only
+ on the training set to avoid data leakage. See [Encoder](../data_cleaning/encoder.md)
+ for a description of the parameters.
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-outliers"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy='drop', max_sigma=3, include_target=False) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L443">[source]</a></div></pre>
+<div style="padding-left:3%">
+Remove or replace outliers in the training set. Outliers are defined as values that
+ lie further than `max_sigma` * standard_deviation away from the mean of the column.
+ Only outliers from the training set are removed to maintain an original sample of
+ target values in the test set. Ignores categorical columns. See
+ [Outliers](../data_cleaning/outliers.md) for a description of the parameters.
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-balance"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">balance</strong>(strategy='ADASYN', **kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L473">[source]</a></div></pre>
+<div style="padding-left:3%">
+Balance the number of instances per target category in the training set.
+ Only the training set is balanced in order to maintain the original distribution
+ of target categories in the test set. See [Balancer](../data_cleaning/balancer.md)
+ for a description of the parameters.
+</div>
+<p><br></p>
+<h2 id="feature-engineering">Feature engineering</h2>
+<hr />
+<p>To further pre-process the data you can create new non-linear features transforming
+ the existing ones or, if your dataset is too large, remove features using one
+ of the provided strategies.</p>
+<table>
+<tr>
+<td><a href="#atomclassifier-feature-generation">feature_generation</a></td>
+<td>Create new features from combinations of existing ones.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-feature-selection">feature_selection</a></td>
+<td>Remove features according to the selected strategy.</td>
+</tr>
+</table>
+<p><br></p>
+<p><a name="atomclassifier-feature-generation"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy='DFS', n_features=None, generations=20, population=500, operators=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L507">[source]</a></div></pre>
+<div style="padding-left:3%">
+Use Deep feature Synthesis or a genetic algorithm to create new combinations
+ of existing features to capture the non-linear relations between the original
+ features. See [FeatureGenerator](../feature_engineering/feature_generator.md) for
+ a description of the parameters. Attributes created by the class are attached to
+ the ATOM instance.
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-feature-selection"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">feature_selection</strong>(strategy=None, solver=None, n_features=None,
+                         max_frac_repeated=1., max_correlation=1., **kwargs) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L543">[source]</a></div></pre>
+<div style="padding-left:3%">
+Remove features according to the selected strategy. Ties between
+ features with equal scores will be broken in an unspecified way. Also
+ removes features with too low variance and finds pairs of collinear features
+ based on the Pearson correlation coefficient. For each pair above the specified
+ limit (in terms of absolute value), it removes one of the two.
+ See [FeatureSelector](../feature_engineering/feature_selector.md) for a description of the parameters.
+ Plotting methods and attributes created by the class are attached to the instance.
+
+!!! note
+    <ul>
+    <li>When strategy='univariate' and solver=None, [f_classif](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html)
+        will be used as default solver.</li>
+    <li>When strategy is one of 'SFM', 'RFE' or 'RFECV' and the solver is one of 
+        ATOM's models, the algorithm will automatically select the classifier (no need to add `_class` to the solver).</li>
+    <li>When strategy is one of 'SFM', 'RFE' or 'RFECV' and solver=None, ATOM will
+         use the winning model (if it exists) as solver.</li>
+    <li>When strategy='RFECV', ATOM will use the metric in the pipeline (if it exists)
+        as the scoring parameter (only if not specified manually).</li>
+
+</div>
+<p><br></p>
+<h2 id="training">Training</h2>
+<hr />
+<p>The training methods are where the models are fitted to the data and their
+ performance is evaluated according to the selected metric. ATOMClassifier contains
+ three methods to call the training classes from the ATOM package. All relevant
+ attributes and methods from the training classes are attached to ATOMClassifier for
+ convenience. These include the errors, winner and results attributes, the <code>models</code>,
+ and the <a href="../../../user_guide/#predicting">prediction</a> and <a href="#plots">plotting</a> methods.</p>
+<table>
+<tr>
+<td><a href="#atomclassifier-run">run</a></td>
+<td>Fit the models to the data in a direct fashion.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-successive-halving">successive_halving</a></td>
+<td>Fit the models to the data in a successive halving fashion.</td>
+</tr>
+
+<tr>
+<td><a href="#atomclassifier-train-sizing">train_sizing</a></td>
+<td>Fit the models to the data in a train sizing fashion.</td>
+</tr>
+</table>
+<p><br></p>
+<p><a name="atomclassifier-run"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
+           n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L698">[source]</a></div></pre>
+<div style="padding-left:3%">
+Runs a [TrainerClassifier](../training/trainerclassifier.md) instance.
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-successive-halving"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
+                          needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
+                          est_params={}, bo_params={}, bagging=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L736">[source]</a></div></pre>
+<div style="padding-left:3%">
+Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md) instance.
+</div>
+<p><br /></p>
+<p><a name="atomclassifier-train-sizing"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
+                    needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0,
+                    n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L785">[source]</a></div></pre>
+<div style="padding-left:3%">
+Runs a [TrainSizingClassifier](../training/trainsizingclassifier.md) instance.
+</div>
+<p><br /></p>
+<h2 id="example">Example</h2>
+<hr />
+<pre><code class="language-python">from sklearn.datasets import load_breast_cancer
+from atom import ATOMClassifier
+
+X, y = load_breast_cancer(return_X_y=True)
+
+# Initialize class
+atom = ATOMClassifier(X, y, logger='auto', n_jobs=2, verbose=2)
+
+# Apply data cleaning methods
+atom.outliers(strategy='min_max', max_sigma=2)
+atom.balance(strategy='smote', sampling_strategy=0.7)
+
+# Fit the models to the data
+atom.run(
+    models=['QDA', 'CatB'],
+    metric='precision',
+    n_calls=25,
+    n_initial_points=10,
+    bo_params={'cv': 1},
+    bagging=4
+)
+
+# Analyze the results
+print(f&quot;The winning model is: {atom.winner.name}&quot;)
+print(atom.results)
+
+# Make some plots
+atom.palette = 'Blues'
+atom.plot_roc(figsize=(9, 6), filename='roc.png')  
+atom.CatB.plot_feature_importance(filename='catboost_feature_importance.png')
+
+# Run an extra model
+atom.run(
+    models='LR',
+    metric='precision',
+    n_calls=25,
+    n_initial_points=10,
+    bo_params={'cv': 1},
+    bagging=4
+)
+
+# Get the predictions for the best model on new data
+predictions = atom.predict(X_new)
+</code></pre></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>© Copyright 2020, by tvdboom.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "../../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../../js/base.js" defer></script>
+        <script src="../../../search/main.js" defer></script>
+        <script src="../../../js/version-select.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
