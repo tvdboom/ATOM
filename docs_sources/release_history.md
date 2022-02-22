@@ -15,7 +15,7 @@
 * Added memory usage to the [stats](../API/ATOM/atomclassifier/#stats) method.
 * Fixed a bug where [decision_plot](../API/plots/decision_plot) could fail when
   only one row was plotted.
-* Documentation improvements.
+* Added versioning to the documentation.
 
 
 <a name="v4110"></a>
