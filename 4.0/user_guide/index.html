@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="tvdboom">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/4.0/user_guide/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>User guide - ATOM</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/color-brewer.min.css">
+        <link href="../css/version-select.css" rel="stylesheet">
+
+        <script src="../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">ATOM</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../getting_started/" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="navitem active">
+                                <a href="./" class="nav-link">User guide</a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">ATOM</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
+</li>
+            
+<li>
+    <a href="../API/ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
+</li>
+            
+<li>
+    <a href="../API/ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Data cleaning</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/data_cleaning/scaler/" class="dropdown-item">Scaler</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/imputer/" class="dropdown-item">Imputer</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/encoder/" class="dropdown-item">Encoder</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/balancer/" class="dropdown-item">Balancer</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Feature engineering</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
+</li>
+            
+<li>
+    <a href="../API/feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Training</a>
+    <ul class="dropdown-menu">
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Trainer</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+</li>
+            
+<li>
+    <a href="../API/training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">SuccessiveHalving</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/training/successivehalvingclassifier/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+            
+<li>
+    <a href="../API/training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">TrainSizing</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/training/trainsizingclassifier/" class="dropdown-item">TrainSizingClassifier</a>
+</li>
+            
+<li>
+    <a href="../API/training/trainsizingregressor/" class="dropdown-item">TrainSizingRegressor</a>
+</li>
+    </ul>
+  </li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../API/models/" class="dropdown-item">Models</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Predicting</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/predicting/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../API/predicting/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../API/predicting/predict_proba/" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../API/predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../API/predicting/decision_function/" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../API/predicting/score/" class="dropdown-item">score</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Plots</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_components/" class="dropdown-item">plot_components</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_bo/" class="dropdown-item">plot_bo</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_evals/" class="dropdown-item">plot_evals</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_roc/" class="dropdown-item">plot_roc</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_prc/" class="dropdown-item">plot_prc</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_residuals/" class="dropdown-item">plot_residuals</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_gains/" class="dropdown-item">plot_gains</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+            
+<li>
+    <a href="../API/plots/force_plot/" class="dropdown-item">force_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/summary_plot/" class="dropdown-item">summary_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/decision_plot/" class="dropdown-item">decision_plot</a>
+</li>
+    </ul>
+  </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+</li>
+                                    
+<li>
+    <a href="../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+</li>
+                                    
+<li>
+    <a href="../examples/regression/regression/" class="dropdown-item">Regression</a>
+</li>
+                                    
+<li>
+    <a href="../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+</li>
+                                    
+<li>
+    <a href="../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+</li>
+                                    
+<li>
+    <a href="../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+</li>
+                                    
+<li>
+    <a href="../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="navitem">
+                                <a href="../dependencies/" class="nav-link">Dependencies</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../license/" class="nav-link">License</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../getting_started/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../API/ATOM/atomclassifier/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#introduction" class="nav-link">Introduction</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#nomenclature" class="nav-link">Nomenclature</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#first-steps" class="nav-link">First steps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#data-cleaning" class="nav-link">Data cleaning</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#feature-engineering" class="nav-link">Feature engineering</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#training" class="nav-link">Training</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#predicting" class="nav-link">Predicting</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#plots" class="nav-link">Plots</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="introduction">Introduction</h1>
+<hr />
+<p>There is no magic formula in data science that can tell us which type of machine
+ learning algorithm will perform best for a specific use-case. Different models
+ are better suited for different types of data and different problems. At best,
+ you can follow some <a href="https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html">rough guide</a>
+ on how to approach problems with regard to which model to try on your data, but
+ these are often more confusing than helpful. Best practices tell
+ us to start with a simple model (e.g. linear regression) and build up to more
+ complicated models (e.g. logistic regression -&gt; random forest -&gt; multilayer perceptron)
+ if you are not satisfied with the results. Unfortunately, different models require
+ different data cleaning steps, different type/amount of features, tuning a new set
+ of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
+ and time consuming. Because of this, many data scientists end up just using the model
+ best known to them and fine-tuning this particular model without ever trying different
+ ones. This can result in poor performance (because the model is just not the right one
+ for the task) or in poor time management (because you could have achieved a similar
+ performance with a simpler/faster model).</p>
+<p>ATOM is here to help us solve these issues. With just a few lines of code, you can
+ perform basic data cleaning steps, select relevant features and compare the performance
+ of multiple models on a given dataset. ATOM should be able to provide quick insights
+ on which algorithms perform best for the task at hand and provide an indication of
+ the feasibility of the ML solution.</p>
+<p>It is important to realize that ATOM is not here to replace all the work a data
+ scientist has to do before getting his model into production. ATOM doesn't spit out
+ production-ready models just by tuning some parameters in its API. After helping you
+ to determine the right model, you will most probably need to fine-tune it using
+ use-case specific features and data cleaning steps in order to achieve maximum performance.</p>
+<p>So, this sounds a bit like AutoML, how is ATOM different than 
+ <a href="https://automl.github.io/auto-sklearn/master/">auto-sklearn</a> or <a href="http://epistasislab.github.io/tpot/">TPOT</a>?
+ Well, ATOM does AutoML in the sense that it helps you find the best model for a
+ specific task, but contrary to the aforementioned packages, it does not actively
+ search for the best model. It simply runs all of them and let you pick the one that
+ you think suites you best. AutoML packages are often black boxes: if you provide
+ data, it will magically return a working model. Although it works great, they often
+ produce complicated pipelines with low explainability, hard to sell to the business.
+ In this, ATOM excels. Every step of the pipeline is accounted for, and using the
+ provided plotting methods, it’s easy to demonstrate why a model is better/worse than
+ the other.</p>
+<p><br><br></p>
+<h1 id="nomenclature">Nomenclature</h1>
+<hr />
+<p>In this documentation we will consistently use terms to refer to certain concepts
+ related to the ATOM package.</p>
+<ul>
+<li><strong>ATOM</strong>: Refers to this package.</li>
+<li><strong>task</strong>: Refers to one of the three supervised machine learning approaches that ATOM supports:<ul>
+<li><a href="https://en.wikipedia.org/wiki/Binary_classification">binary classification</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Multiclass_classification">multiclass classification</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
+</ul>
+</li>
+<li><strong>category</strong>: Refers to one of the unique values in a column, i.e. a binary classifier has 2 categories in the target column.</li>
+<li><strong>missing values</strong>: Refers to <code>None</code>, <code>NaN</code> and <code>inf</code> values.</li>
+<li><strong>categorical columns</strong>: Refers to all columns with dtype.kind not in <code>ifu</code>.</li>
+<li><code>atom</code>: Refers to an <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or
+ <a href="../API/ATOM/atomregressor">ATOMRegressor</a> instance (note that all examples
+ use it as variable name for the instance).</li>
+<li><code>model</code>: Refers to one of the <a href="../API/models/">model</a> instances.</li>
+<li><strong>estimator</strong>: Actual estimator corresponding to a model. Implemented by an external package.</li>
+<li><strong>BO</strong>: Bayesian optimization algorithm used for hyperparameter optimization.</li>
+<li><code>training</code>: Refers to an instance of one of the classes that train and evaluate the
+ models. The classes are:<ul>
+<li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a></li>
+<li><a href="../API/ATOM/atomregressor">ATOMRegressor</a></li>
+<li><a href="../API/training/trainerclassifier">TrainerClassifier</a></li>
+<li><a href="../API/training/trainerregressor">TrainerRegressor</a></li>
+<li><a href="../API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a></li>
+<li><a href="../API/training/successivehalvingregressor">SuccessiveHavingRegressor</a></li>
+<li><a href="../API/training/trainsizingclassifier">TrainSizingClassifier</a></li>
+<li><a href="../API/training/trainsizingregressor">TrainSizingRegressor</a></li>
+</ul>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that <code>atom</code> instances are also <code>training</code> instances!</p>
+</div>
+<p><br><br></p>
+<h1 id="first-steps">First steps</h1>
+<hr />
+<p>You can quickly install atom using <code>pip</code> or <code>conda</code>, see the <a href="../getting_started/#installation">installation guide</a>.
+ ATOM contains a variety of classes to perform data cleaning, feature engineering,
+ model training and much more. The easiest way to use all these classes on the same
+ dataset is through one of the main classes:</p>
+<ul>
+<li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a> for binary or multiclass classification tasks.</li>
+<li><a href="../API/ATOM/atomregressor">ATOMRegressor</a> for regression tasks.</li>
+</ul>
+<p>These two classes are convenient wrappers for all the possibilities this package
+ provides. Like a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
+ they assemble several steps that can be cross-validated together while setting
+ different parameters. There are some important differences with sklearn's API:</p>
+<ol>
+<li><code>atom</code> is initialized with the data you want to manipulate. This data can be accessed
+ at any moment through <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-properties">data attributes</a>.</li>
+<li>The classes in ATOM's API are reached through <code>atom</code>'s methods. For example, calling
+ the <a href="../API/ATOM/atomclassifier/#atomclassifier-encode">encode</a> method, will initialize
+ an <a href="../API/data_cleaning/encoder">Encoder</a> instance, fit it on the training set and
+ transform the whole dataset.</li>
+<li>The transformations are applied immediately after calling the method (there is no
+ fit method). This approach gives the user a clearer overview and more control over
+ every step in the pipeline.</li>
+<li>The pipeline does not have to end with an estimator. ATOM can be just for data
+ cleaning or feature engineering purposes only.</li>
+</ol>
+<p>Let's get started with an example!</p>
+<p>First, initialize <code>atom</code> and provide it the data you want to use.</p>
+<pre><code>atom = ATOMClassifier(X, y)
+</code></pre>
+<p>Apply data cleaning methods through the class. For example, calling the
+ <a href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> method will
+ handle all missing values in the dataset.</p>
+<pre><code>atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.1)
+</code></pre>
+<p>Select the best hyperparameters and fit a Random Forest and AdaBoost model.</p>
+<pre><code>atom.run(['RF', 'AdaB'], metric='accuracy', n_calls=25, n_initial_points=10)
+</code></pre>
+<p>Analyze the results:</p>
+<pre><code>atom.feature_importances(show=10, filename='feature_importance_plot')
+atom.plot_prc(title='Precision-recall curve comparison plot')
+</code></pre>
+<p><br><br></p>
+<h1 id="data-cleaning">Data cleaning</h1>
+<hr />
+<p>More often than not, you need to do some data cleaning before fitting your dataset
+ to a model.  Usually, this involves importing different libraries and writing many
+ lines of code. Since ATOM is all about fast exploration and experimentation, it
+ provides various data cleaning classes to apply the most common transformations fast
+ and easy.</p>
+<p><br></p>
+<h3 id="scaling-the-feature-set">Scaling the feature set</h3>
+<p>Standardization of a dataset is a common requirement for many machine learning
+ estimators: they might behave badly if the individual features do not more or less
+ look like standard normally distributed data (e.g. Gaussian with 0 mean and unit
+ variance). The <a href="../API/data_cleaning/scaler/">Scaler</a> class scales data to mean=0 and
+ std=1. It can be accessed from <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-scale">scale</a>
+ method. </p>
+<p><br></p>
+<h3 id="standard-data-cleaning">Standard data cleaning</h3>
+<p>There are many data cleaning steps that are useful to perform on any dataset before
+ modelling. These are general rules that apply on every use-case and every task. The
+ <a href="../API/data_cleaning/standard_cleaner/">StandardCleaner</a> class is a convenient tool
+ to apply such steps. It is automatically called when initializing <code>atom</code>. Use the
+ class' parameters to choose which transformations to perform. The available steps are:</p>
+<ul>
+<li>Remove columns with prohibited data types.</li>
+<li>Strip categorical features from white spaces.</li>
+<li>Remove categorical columns with maximal cardinality.</li>
+<li>Remove columns with minimum cardinality.</li>
+<li>Remove rows with missing values in the target column.</li>
+<li>Label-encode the target column.</li>
+</ul>
+<p><br> </p>
+<h3 id="imputing-missing-values">Imputing missing values</h3>
+<p>For various reasons, many real world datasets contain missing values, often encoded
+ as blanks, NaNs or other placeholders. Such datasets however are incompatible with
+ ATOM's models which assume that all values in an array are numerical, and that all
+ have and hold meaning. The <a href="../API/data_cleaning/imputer/">Imputer</a> class handles
+ missing values in the dataset by either dropping or imputing the value. It can be
+ accessed from <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a>
+ method.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-attributes">missing</a> attribute
+for an overview of the missing values in the dataset.</p>
+</div>
+<p><br></p>
+<h3 id="encoding-categorical-features">Encoding categorical features</h3>
+<p>Many datasets will contain categorical features. Their variables are typically stored
+ as text values which represent various traits. Some examples include color (“Red”,
+ “Yellow”, “Blue”), size (“Small”, “Medium”, “Large”) or geographic designations
+ (city or country). Regardless of what the value is used for, the challenge is
+ determining how to use this data in the analysis. ATOM's models don't support
+ direct manipulation of this kind of data. Use the <a href="../API/data_cleaning/encoder/">Encoder</a>
+ class to encode categorical features to numerical values. It can be accessed from
+ <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-encode">encode</a> method.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-attributes">categorical</a> attribute
+for a list of the categorical columns in the dataset.</p>
+</div>
+<p><br> </p>
+<h3 id="handling-outliers">Handling outliers</h3>
+<p>When modeling, it is important to clean the data sample to ensure that the observations
+ best represent the problem. Sometimes a dataset can contain extreme values that are
+ outside the range of what is expected and unlike the other data. These are called
+ outliers. Often, machine learning modeling and model skill in general can be improved
+ by understanding and even removing these outlier values. The <a href="../API/data_cleaning/outliers/">Outliers</a> 
+ class can drop or impute outliers in the dataset. It can be accessed from <code>atom</code>
+ through the <a href="../API/ATOM/atomclassifier/#atomclassifier-outliers">outliers</a> method.</p>
+<p><br> </p>
+<h3 id="balancing-the-data">Balancing the data</h3>
+<p>One of the common issues found in datasets that are used for classification is
+ imbalanced classes. Data imbalance usually reflects an unequal distribution of
+ classes within a dataset. For example, in a credit card fraud detection dataset,
+ most of the transactions are non-fraud and a very few cases are fraud. This leaves
+ us with a very unbalanced ratio of fraud vs non-fraud cases. The
+ <a href="../API/data_cleaning/balancer/">Balancer</a> class can oversample the minority category
+ or undersample the majority category. It can be accessed from <code>atom</code> through the
+ <a href="../API/ATOM/atomclassifier/#atomclassifier-balance">balance</a> method.</p>
+<p><br><br></p>
+<h1 id="feature-engineering">Feature engineering</h1>
+<hr />
+<p><cite></p>
+<div align="center">
+"Applied machine learning" is basically feature engineering. ~ Andrew Ng.
+</div>
+<p></cite></p>
+<p><br>
+Feature engineering is the process of creating new features from the existing ones,
+ in order to capture relationships with the target column that the first set of
+ features didn't had on their own. This process is very important to improve the
+ performance of machine learning algorithms. Although feature engineering works best
+ when the data scientist applies use-case specific transformations, there are ways to
+ do this in an automated manner, without prior domain knowledge. One of the problems
+ of creating new features without human expert intervention, is that many of the newly
+ created features can be useless, i.e. they do not help the algorithm to make better
+ predictions. Even worse, having useless features can drop your performance. To avoid
+ this, we perform feature selection, a process in which we select the relevant features 
+ in the dataset. See <a href="../examples/feature_engineering/feature_engineering/">here</a> an example.</p>
+<p><br></p>
+<h3 id="generating-new-features">Generating new features</h3>
+<p>The <a href="../API/feature_engineering/feature_generator/">FeatureGenerator</a> class creates
+ new non-linear features based on the original feature set. It can be accessed from
+ <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-generation">feature_generation</a>
+ method. You can choose between two strategies: Deep Feature Synthesis and Genetic
+ Feature Generation.</p>
+<p><strong>Deep Feature Synthesis</strong><br>
+Deep feature synthesis (DFS) applies the selected operators on the features in
+ the dataset. For example, if the operator is 'log', it will create the new feature
+ <code>LOG(old_feature)</code> and if the operator is 'mul', it will create the new feature
+ <code>old_feature_1 x old_feature_2</code>. The operators can be chosen through the <code>operators</code>
+ parameter. Available options are:</p>
+<ul>
+<li><b>add: </b>Sum two features together.</li>
+<li><b>sub: </b>Subtract two features from each other.</li>
+<li><b>mul: </b>Multiply two features with each other.</li>
+<li><b>div: </b>Divide two features with each other.</li>
+<li><b>srqt: </b>Take the square root of a feature.</li>
+<li><b>log: </b>Take the logarithm of a feature.</li>
+<li><b>sin: </b>Calculate the sine of a feature.</li>
+<li><b>cos: </b>Calculate the cosine of a feature.</li>
+<li><b>tan: </b>Calculate the tangent of a feature.</li>
+</ul>
+
+<p>ATOM's implementation of DFS uses the <a href="https://www.featuretools.com/">featuretools</a> package.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>DFS can create many new features and not all of them will be useful. Use
+<a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> to reduce
+the number of features!</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Using the div, log or sqrt operators can return new features with <code>inf</code> or
+<code>NaN</code> values. Check the warnings that may pop up or use <code>atom</code>'s
+<a href="/API/ATOM/atomclassifier/#properties">missing</a> property.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When using DFS with <code>n_jobs&gt;1</code>, make sure to protect your code with <code>if __name__
+== "__main__"</code>. Featuretools uses <a href="https://dask.org/">dask</a>, which uses python
+multiprocessing for parallelization. The spawn method on multiprocessing starts
+a new python process, which requires it to import the __main__ module before it
+can do its task.</p>
+</div>
+<p><br></p>
+<p><strong>Genetic Feature Generation</strong><br>
+Genetic feature generation (GFG) uses <a href="https://en.wikipedia.org/wiki/Genetic_programming">genetic programming</a>,
+ a branch of evolutionary programming, to determine which features are successful and
+ create new ones based on those. Where DFS' method can be seen as some kind of "brute
+ force" for feature engineering, GFG tries to improve its features with every
+ generation of the algorithm. GFG uses the same operators as DFS, but instead of only
+ applying the transformations once, it evolves them further, creating complicated
+ non-linear combinations of features with many transformations. The new features are
+ given the name <code>Feature N</code> for the N-th feature. You can access the genetic feature's
+ fitness and description (how they are calculated) through the <code>genetic_features</code>
+ attribute.</p>
+<p>ATOM uses the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
+ class from the <a href="https://gplearn.readthedocs.io/en/stable/index.html">gplearn</a> package
+ for the genetic algorithm. Read more about this implementation
+ <a href="https://gplearn.readthedocs.io/en/stable/intro.html#transformer">here</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>GFG can be slow for very large populations!</p>
+</div>
+<p><br></p>
+<h3 id="selecting-useful-features">Selecting useful features</h3>
+<p>The <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class provides
+ tooling to select the relevant features from a dataset. It can be accessed from <code>atom</code>
+ through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-selection">feature_selection</a>
+ method. The following strategies are implemented: univariate, PCA, SFM, RFE and RFECV.</p>
+<p><strong>Univariate</strong><br>
+Univariate feature selection works by selecting the best features based on univariate statistical F-test.
+ The test is provided via the <code>solver</code> parameter. It takes any function taking two arrays (X, y),
+ and returning arrays (scores, p-values).</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</p>
+<p><strong>Principal Components Analysis</strong><br>
+Applying PCA will reduce the dimensionality of the dataset by maximizing the variance of each dimension.
+ The new features will be called Component 0, Component 1, etc... The dataset will be
+ scaled before applying the transformation (if it wasn't already).</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#pca">documentation</a>.</p>
+<p><strong>Selection from model</strong><br>
+SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</code> attributes to select the
+ best features in a dataset based on importance weights. The estimator is provided
+ through the <code>solver</code> parameter and can be already fitted. ATOM allows you to use one
+ its pre-defined <a href="#models">models</a>, e.g. <code>solver='RF'</code>. If you didn't call the
+ FeatureSeletor through <code>atom</code>, don't forget to indicate the estimator's task adding
+ <code>_class</code> or <code>_reg</code> after the name, e.g. <code>RF_class</code> to use a random forest classifier.</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
+<p><strong>Recursive feature elimination</strong><br>
+Select features by recursively considering smaller and smaller sets of features.
+ First, the estimator is trained on the initial set of features and the importance
+ of each feature is obtained either through a <code>coef_</code> attribute or through a
+ <code>feature_importances_</code> attribute. Then, the least important features are pruned from
+ current set of features. That procedure is recursively repeated on the pruned set
+ until the desired number of features to select is eventually reached. Note that, since
+ RFE needs to fit the model again every iteration, this method can be fairly slow.</p>
+<p>RFECV applies the same algorithm as RFE but uses a cross-validated metric (under the
+ scoring parameter, see <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html#sklearn.feature_selection.RFECV">RFECV</a>)
+ to assess every step's performance. Also, where RFE returns the number of features selected
+ by <code>n_features</code>, RFECV returns the number of features that achieved the optimal score
+ on the specified metric. Note that this is not always equal to the amount specified
+ by <code>n_features</code>.</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination">documentation</a>.</p>
+<p><strong>Removing features with low variance</strong><br>
+Variance is the expectation of the squared deviation of a random variable from its mean.
+ Features with low variance have many values repeated, which means the model will not
+ learn much from them. <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a>
+ removes all features where the same value is repeated in at least <code>max_frac_repeated</code>
+ fraction of the rows. The default option is to remove a feature if all values in it
+ are the same.</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance">documentation</a>.</p>
+<p><strong>Removing features with multi-collinearity</strong><br>
+Two features that are highly correlated are redundant, i.e. two will not contribute more
+ to the model than only one of them. <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a>
+ will drop a feature that has a Pearson correlation coefficient larger than
+ <code>max_correlation</code> with another feature. A correlation of 1 means the two columns
+ are equal. A dataframe of the removed features and their correlation values can
+ be accessed through the <code>collinear</code> attribute.</p>
+<p><br></p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="../API/plots/plot_feature_importance/">plot_feature_importance</a> method to
+examine how much a specific feature contributes to the final predictions. If the
+model doesn't have a <code>feature_importances_</code> attribute, use 
+<a href="../API/plots/plot_permutation_importance/">plot_permutation_importance</a> instead.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The RFE and RFECV strategies don't work when the solver is a 
+<a href="https://catboost.ai/">CatBoost</a> model due to incompatibility of the APIs.</p>
+</div>
+<p><br><br></p>
+<h1 id="training">Training</h1>
+<hr />
+<p>The training phase is where the models are fitted and evaluated. After this, the
+ <code>models</code> are attached to the <code>training</code> instance and you can use the <a href="#plots">plotting</a>
+ and <a href="#predicting">predicting</a> methods.  The pipeline applies the following steps
+ iteratively for all models:</p>
+<ol>
+<li>The <a href="#hyperparameter-optimization">optimal hyperparameters</a> are selected.</li>
+<li>The model is trained on the training set and evaluated on the test set.</li>
+<li>The <a href="#bagging">bagging</a> algorithm is applied.</li>
+</ol>
+<p>There are three approaches to run the training.</p>
+<ul>
+<li>Direct training:<ul>
+<li><a href="../API/training/trainerclassifier">TrainerClassifier</a></li>
+<li><a href="../API/training/trainerregressor">TrainerRegressor</a></li>
+</ul>
+</li>
+<li>Training via <a href="#successive-halving">successive halving</a>:<ul>
+<li><a href="../API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a></li>
+<li><a href="../API/training/successivehalvingregressor">SuccessiveHavingRegressor</a></li>
+</ul>
+</li>
+<li>Training via <a href="#train-sizing">train sizing</a>:<ul>
+<li><a href="../API/training/trainsizingclassifier">TrainSizingClassifier</a></li>
+<li><a href="../API/training/trainsizingregressor">TrainSizingRegressor</a></li>
+</ul>
+</li>
+</ul>
+<p>The direct fashion repeats the aforementioned steps only once, while the other two
+ approaches repeats them more than once. Every approach can be directly called from
+ <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-run">run</a>,
+ <a href="../API/ATOM/atomclassifier/#atomclassifier-successive-halving">successive_halving</a>
+ and <a href="../API/ATOM/atomclassifier/#atomclassifier-train-sizing">train_sizing</a> methods
+ respectively.
+<br></p>
+<p>Additional information:</p>
+<ul>
+<li>If an exception is encountered while fitting an estimator, the pipeline will
+  automatically skip the model and jump to the next model and save the exception
+  in the <code>errors</code> attribute. Note that in that case there will be no <code>model</code> for
+  that estimator.</li>
+<li>When showing the final results, a <code>!!</code> indicates the highest score and a <code>~</code>
+  indicates that the model is possibly overfitting (training set has a score at
+  least 20% higher than the test set).</li>
+<li>The winning <code>model</code> (the one with the highest <code>mean_bagging</code> or <code>metric_test</code>)
+  will be attached to the <code>winner</code> attribute.</li>
+</ul>
+<p><br></p>
+<h3 id="models">Models</h3>
+<p>ATOM provides 27 models for classification and regression tasks that can be used
+ to fit the data in the pipeline. After fitting, every <a href="../API/models/"><code>model</code></a> is
+ attached to the <code>training</code> instance as an attribute. Models are called through the
+ <code>models</code> parameter using their corresponding acronym's, e.g. <code>atom.run(models='RF')</code>
+ to run a Random forest model.</p>
+<p><br></p>
+<h3 id="metric">Metric</h3>
+<p>ATOM uses sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">scorers</a>
+ for model selection and evaluation. A scorer consists of a metric function and some
+ parameters that define the scorer's properties such as it's a score or loss function
+ or if the function needs probability estimates or rounded predictions (see
+ <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html">make_scorer</a>).
+ ATOM lets you define the scorer for the pipeline in three ways:</p>
+<ul>
+<li>The <code>metric</code> parameter is one of sklearn's predefined scorers (as string).</li>
+<li>The <code>metric</code> parameter is a score (or loss) function with signature metric(y, y_pred, **kwargs). In
+ this case, use the <code>greater_is_better</code>, <code>needs_proba</code> and <code>needs_threshold</code> parameters
+ to specify the scorer's properties.</li>
+<li>The <code>metric</code> parameter is a scorer object.</li>
+</ul>
+<p>Note that all scorers follow the convention that higher return values are better than
+ lower return values. Thus metrics which measure the distance between the model and
+ the data (i.e. loss functions), like <code>max_error</code> or <code>mean_squared_error</code>, will return
+ the negated value of the metric.</p>
+<p><strong>Custom scorer acronyms</strong><br>
+Since some of sklearn's scorers have quite long names and ATOM is all about <s>lazy</s>fast
+ experimentation, the package provides acronyms for some of the most commonly used ones.
+ These acronyms are case insensitive can be used for the <code>metric</code> parameter instead of the
+ scorer's full name, e.g. <code>atom.run('LR', metric='BA')</code> will use <code>balanced_accuracy</code>.
+ The available acronyms are:</p>
+<ul>
+<li>'AP' for 'average_precision'</li>
+<li>'BA' for 'balanced_accuracy'</li>
+<li>'AUC' for 'roc_auc'</li>
+<li>'EV' for 'explained_variance'</li>
+<li>'ME' for 'max_error'</li>
+<li>'MAE' for 'neg_mean_absolute_error'</li>
+<li>'MSE' for 'neg_mean_squared_error'</li>
+<li>'RMSE' for 'neg_root_mean_squared_error'</li>
+<li>'MSLE' for 'neg_mean_squared_log_error'</li>
+<li>'MEDAE' for 'neg_median_absolute_error'</li>
+<li>'POISSON' for 'neg_mean_poisson_deviance'</li>
+<li>'GAMMA' for 'neg_mean_gamma_deviance'</li>
+</ul>
+<p><strong>Multi-metric runs</strong><br>
+Sometimes it is useful to measure the performance of the models in more than one way.
+ ATOM lets you run the pipeline with multiple metrics at the same time. To do so,
+ provide the <code>metric</code> parameter with a list of desired metrics, e.g. <code>atom.run('LDA', metric=['r2', 'mse'])</code>.
+ If you provide metric functions, don't forget to also provide lists to the
+ <code>greater_is_better</code>, <code>needs_proba</code> and <code>needs_threshold</code> parameters, where the n-th
+ value in the list corresponds to the n-th function. If you leave them as a single value,
+ that value will apply to every provided metric.</p>
+<p>When fitting multi-metric runs, the resulting scores will return a list of metrics. For
+ example, if you provided three metrics to the pipeline, <code>atom.knn.metric_bo</code> could return
+ [0.8734, 0.6672, 0.9001]. It is also important to note that only the first metric of
+ a multi-metric run is used to evaluate every step of the bayesian optimization and to
+ select the winning model.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Some plots let you choose which of the metrics to show using the <code>metric</code> parameter.</p>
+</div>
+<p><br></p>
+<h3 id="hyperparameter-optimization">Hyperparameter optimization</h3>
+<p>In order to achieve maximum performance, we need to tune an estimator's hyperparameters
+ before training it. ATOM provides <a href="https://en.wikipedia.org/wiki/Hyperparameter_optimization">hyperparameter tuning</a>
+ using a <a href="https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.">bayesian optimization</a>
+ (BO) approach implemented by <a href="https://scikit-optimize.github.io/stable/">skopt</a>. The
+ BO is optimized on the first metric provided with the <code>metric</code> parameter. Each step
+ is either computed by cross-validation on the complete training set or by randomly
+ splitting the training set every iteration into a (sub) training set and a validation
+ set. This process can create some data leakage but ensures maximal use of the provided
+ data. The test set, however, does not contain any leakage and will be used to
+ determine the final score of every model. Note that, if the dataset is relatively
+ small, the BO's best score can consistently be lower than the final score on the
+ test set (despite the leakage) due to the considerable fewer instances on which it
+ is trained.</p>
+<p>There are many possibilities to tune the BO to your liking. Use <code>n_calls</code> and
+ <code>n_initial_points</code> to determine the number of iterations that are performed
+ randomly at the start (exploration) and the number of iterations spent optimizing
+ (exploitation). If <code>n_calls</code> is equal to <code>n_initial_points</code>, every iteration of the
+ BO will select its hyperparameters randomly. This means the algorithm is technically
+ performing a <a href="https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf">random search</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>n_calls</code> parameter includes the iterations in <code>n_initial_points</code>. Calling
+<code>atom.run('LR', n_calls=20, n_intial_points=10)</code> will run 20 iterations of which
+the first 10 are random.</p>
+</div>
+<p>Other settings can be changed through the <code>bo_params</code> parameter, a dictionary where
+ every key-value combination can be used to further customize the BO.</p>
+<p>By default, the hyperparameters and corresponding dimensions per model are predefined
+ by ATOM. Use the <code>dimensions</code> key to use custom ones. Use an array for only one model
+ and a dictionary with the model names as keys if there are multiple models in the
+ pipeline. Note that the provided search space dimensions must be compliant with
+ skopt's API.</p>
+<pre><code>atom.run('LR', n_calls=10, bo_params={'dimensions': [Integer(100, 1000, name='max_iter')]})
+</code></pre>
+<p>The majority of skopt's callbacks to stop the optimizer early can be accessed
+ through <code>bo_params</code>. You can include other callbacks using the <code>callbacks</code> key.</p>
+<pre><code>atom.run('LR', n_calls=10, bo_params={'max_time': 1000, 'callbacks': custom_callback()})
+</code></pre>
+<p>You can also include other optimizer's parameters as key-value pairs.</p>
+<pre><code>atom.run('LR', n_calls=10, bo_params={'acq_func': 'EI'})
+</code></pre>
+<p><br></p>
+<h3 id="bagging">Bagging</h3>
+<p>After fitting the estimator, you can asses the robustness of the model using
+ <a href="https://en.wikipedia.org/wiki/Bootstrap_aggregating">bootstrap aggregating</a>
+ (bagging). This technique creates several new data sets selecting random samples
+ from the training set (with replacement) and evaluates them on the test set. This
+ way we get a distribution of the performance of the model. The number of sets can
+ be chosen through the <code>bagging</code> parameter.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="../API/plots/plot_bagging">plot_bagging</a> method to plot the bagging scores
+in a convenient boxplot.</p>
+</div>
+<p><br></p>
+<h3 id="early-stopping">Early stopping</h3>
+<p><a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html">XGBoost</a>,
+ <a href="https://lightgbm.readthedocs.io/en/latest/">LighGBM</a> and
+ <a href="https://catboost.ai/">CatBoost</a> allow in-training evaluation. This means that the
+ estimator is evaluated after every round of the training. Use the <code>early_stopping</code>
+ key in <code>bo_params</code> to stop the training early if it didn't improve in the last
+ <code>early_stopping</code> rounds. This can save the pipeline much time that would otherwise
+ be wasted on an estimator that is unlikely to improve further. Note that this
+ technique will be applied both during the BO and at the final fit on the complete
+ training set. After fitting, the <code>model</code> will get the <code>evals</code> attribute, a
+ dictionary of the train and test performances per round (also if early stopping 
+ wasn't applied).</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="../API/plots/plot_evals">plot_evals</a> method to plot the in-training
+evaluation on the train and test set.</p>
+</div>
+<p><br></p>
+<h3 id="successive-halving">Successive halving</h3>
+<p>Successive halving is a bandit-based algorithm that fits N models to 1/N of the data.
+ The best half are selected to go to the next iteration where the process is repeated.
+ This continues until only one model remains, which is fitted on the complete dataset.
+ Beware that a model's performance can depend greatly on the amount of data on which
+ it is trained. For this reason, we recommend only to use this technique with similar
+ models, e.g. only using tree-based models.</p>
+<p>Use successive halving through the <a href="../API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a>/
+ <a href="../API/training/successivehalvingregressor">SuccessiveHalvingRegressor</a> classes
+ or from <code>atom</code> via the <a href="../API/ATOM/atomclassifier/#atomclassifier-successive-halving">successive_halving</a>
+ method. After running the pipeline, the <code>results</code> attribute will be multi-index,
+ where the first index indicates the iteration and the second the model's acronym.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="../API/plots/plot_successive_halving">plot_successive_halving</a> method to
+see every model's performance per iteration of the successive halving.</p>
+</div>
+<p><br></p>
+<h3 id="train-sizing">Train sizing</h3>
+<p>When training models, there is usually a trade-off between model performance and
+ computation time that is regulated by the number of samples in the training set.
+ Train sizing can be used to create insights in this trade-off and help determine
+ the optimal size of the training set, fitting the models multiple times, ever
+ increasing the number of samples in the training set.</p>
+<p>Use train sizing through the <a href="../API/training/trainsizingclassifier">TrainSizingClassifier</a>/
+<a href="../API/training/trainsizingregressor">TrainSizingRegressor</a> classes or from <code>atom</code>
+ via the <a href="../API/ATOM/atomclassifier/#atomclassifier-train-sizing">train_sizing</a>
+ method. The number of iterations and the number of samples per training can be
+ specified with the <code>train_sizes</code> parameter. After running the pipeline, the <code>results</code>
+ attribute will be multi-index, where the first index indicates the iteration and the
+ second the model's acronym.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="../API/plots/plot_learning_curve">plot_learning_curve</a> method to see
+the model's performance per size of the training set.</p>
+</div>
+<p><br><br></p>
+<h1 id="predicting">Predicting</h1>
+<hr />
+<p>After running a successful pipeline, it is possible you would like to apply all
+ used transformations onto new data, or make predictions using one of the trained
+ models. Just like a sklearn estimator, you can call the prediction methods from a
+ fitted <code>training</code> instance, e.g. <code>atom.predict(X)</code>. Calling the method without
+ specifying a model will use the winning model in the pipeline (under attribute
+ <code>winner</code>). To use a different model, simply call the method from a <code>model</code>,
+ e.g. <code>atom.KNN.predict(X)</code>.</p>
+<p>If called from <code>atom</code>, the prediction methods will transform the provided data through
+ all the transformers in the pipeline before making the predictions. By default, this
+ excludes outlier handling and balancing the dataset since these steps should only
+ be applied on the training set. Use the method's kwargs to select which transformations
+ to use in every call.</p>
+<p>The available prediction methods are a selection of the most common methods for
+ estimators in sklearn's API:</p>
+<table>
+<tr>
+<td width="15%"><a href="../API/predicting/transform">transform</a></td>
+<td>Transform new data through all the pre-processing steps in the pipeline.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/predict">predict</a></td>
+<td>Transform the data and make predictions on new data.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/predict_proba">predict_proba</a></td>
+<td>Transform the data and make probabilistic predictions on new data.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/predict_log_proba">predict_log_proba</a></td>
+<td>Transform the data and make logarithmic probability predictions on new data.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/decision_function">decision_function</a></td>
+<td>Transform the data and evaluate the decision function on new data.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/score">score</a></td>
+<td>Transform the data and return the model's score on new data.</td>
+</tr>
+</table>
+
+<p>Except for transform, the prediction methods can be calculated on the train and test
+ set. You can access them through the <code>model</code>'s <a href="../API/models/#prediction-attributes">prediction attributes</a>,
+ e.g. <code>atom.mnb.predict_train</code> or <code>atom.mnb.predict_test</code>. Keep in mind that the
+ results are not calculated until the attribute is called for the first time. This
+ mechanism avoids having to calculate attributes that are never used, saving time
+ and memory.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Many of the <a href="#plots">plots</a> use the prediction attributes. This can considerably
+increase the size of the class for large datasets. Use the <a href="../API/models/#models-reset-prediction-attributes">reset_prediction_attributes</a>
+method if you need to free some memory!</p>
+</div>
+<p><br><br></p>
+<h1 id="plots">Plots</h1>
+<hr />
+<p>After fitting the models to the data, it's time to analyze the results. ATOM provides
+ many plotting methods to compare the model performances. Descriptions and examples
+ can be found in the API section. ATOM uses the packages <a href="https://matplotlib.org/">matplotlib</a>,
+ <a href="https://seaborn.pydata.org/">seaborn</a> and <a href="https://github.com/slundberg/shap">shap</a>
+ for plotting.</p>
+<p>The plot methods can be called from a <code>training</code> directly, e.g. <code>atom.plot_roc()</code>,
+ or from one of the <code>models</code>, e.g. <code>atom.LGB.plot_roc()</code>. If called from <code>training</code>,
+ it will make the plot for all models in the pipeline. This can be useful to compare
+ the results of multiple models. If called from a <code>model</code>, it will make the plot for
+ only that model. Use this option if you want information just for that specific
+ model or to make a plot less crowded.</p>
+<p><br></p>
+<h3 id="parameters">Parameters</h3>
+<p>Apart from the plot-specific parameters they may have, all plots have four parameters
+ in common:</p>
+<ul>
+<li>The <code>title</code> parameter allows you to add a custom title to the plot.</li>
+<li>The <code>figsize</code> parameter adjust the plot's size.</li>
+<li>The <code>filename</code> parameter is used to save the plot.</li>
+<li>The <code>display</code> parameter determines whether the plot is rendered.</li>
+</ul>
+<p><br></p>
+<h3 id="aesthetics">Aesthetics</h3>
+<p>The plot aesthetics can be customized using the plot attributes, e.g.
+ <code>atom.style = 'white'</code>. These attributes can be called from any instance with
+ plotting methods. Note that the plot attributes are attached to the class and not
+ the instance. This means that changing the attribute will also change it for all
+ other instances in the module. ATOM's default values are:</p>
+<ul>
+<li>style: 'darkgrid'</li>
+<li>palette: 'GnBu_r_d'</li>
+<li>title_fontsize: 20</li>
+<li>label_fontsize: 16</li>
+<li>tick_fontsize: 12</li>
+</ul>
+<p><br></p>
+<h3 id="shap">SHAP</h3>
+<p>The <a href="https://github.com/slundberg/shap">SHAP</a> (SHapley Additive exPlanations) python
+ package uses a game theoretic approach to explain the output of any machine
+ learning model. It connects optimal credit allocation with local explanations
+ using the classic Shapley values from game theory and their related extensions.
+ ATOM implements methods to plot 4 of shap's plotting functions directly from its
+ API. The explainer will be chosen automatically based on the model's type. For 
+ kernelExplainer, the data used to estimate the expected values is the complete
+ training set when &lt;100 rows, else its summarized with a set of 10 weighted K-means,
+ each weighted by the number of points they represent.
+ The four plots are: <a href="../API/plots/force_plot">force_plot</a>,
+ <a href="../API/plots/dependence_plot">dependence_plot</a>, <a href="../API/plots/summary_plot">summary_plot</a>
+ and <a href="../API/plots/decision_plot">decision_plot</a>.</p>
+<p>Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
+ Selecting more than one model will raise an exception. To avoid this, call the plot
+ from a <code>model</code>, e.g. <code>atom.xgb.force_plot()</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can recognize the SHAP plots by the fact that they end (instead of start)
+with plot.</p>
+</div>
+<p><br></p>
+<h3 id="available-plots">Available plots</h3>
+<p>A list of available plots can be find hereunder. Note that not all plots can be
+ called from every class and that their availability can depend on the task at hand.</p>
+<table>
+<tr>
+<td width="15%"><a href="../API/plots/plot_correlation">plot_correlation</a></td>
+<td>Plot the data's correlation matrix.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_pipeline">plot_pipeline</a></td>
+<td>Plot a diagram of every estimator in atom's pipeline.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_pca">plot_pca</a></td>
+<td>Plot the explained variance ratio vs the number of components.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_components">plot_components</a></td>
+<td>Plot the explained variance ratio per components.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_rfecv">plot_rfecv</a></td>
+<td>Plot the RFECV results.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_successive_halving">plot_successive_halving</a></td>
+<td>Plot of the models' scores per iteration of the successive halving.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_learning_curve">plot_learning_curve</a></td>
+<td>Plot the model's learning curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_bagging">plot_bagging</a></td>
+<td>Plot a boxplot of the bagging's results.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_bo">plot_bo</a></td>
+<td>Plot the bayesian optimization scoring.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_evals">plot_evals</a></td>
+<td>Plot evaluation curves for the train and test set.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_roc">plot_roc</a></td>
+<td>Plot the Receiver Operating Characteristics curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_prc">plot_prc</a></td>
+<td>Plot the precision-recall curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_permutation_importance">plot_permutation_importance</a></td>
+<td>Plot the feature permutation importance of models.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_feature_importance">plot_feature_importance</a></td>
+<td>Plot a tree-based model's feature importance.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_partial_dependence">plot_partial_dependence</a></td>
+<td>Plot the partial dependence of features.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_errors">plot_errors</a></td>
+<td>Plot a model's prediction errors.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_residuals">plot_residuals</a></td>
+<td>Plot a model's residuals.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_confusion_matrix">plot_confusion_matrix</a></td>
+<td>Plot a model's confusion matrix.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_threshold">plot_threshold</a></td>
+<td>Plot a metric's performance against threshold values.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_probabilities">plot_probabilities</a></td>
+<td>Plot the probability distribution of the categories in the target column.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_calibration">plot_calibration</a></td>
+<td>Plot the calibration curve for a binary classifier.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_gains">plot_gains</a></td>
+<td>Plot the cumulative gains curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_lift">plot_lift</a></td>
+<td>Plot the lift curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/force_plot">force_plot</a></td>
+<td>Plot SHAP's force plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/dependence_plot">dependence_plot</a></td>
+<td>Plot SHAP's dependence plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/summary_plot">summary_plot</a></td>
+<td>Plot SHAP's summary plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/decision_plot">decision_plot</a></td>
+<td>Plot SHAP's decision plot.</td>
+</tr>
+</table></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>© Copyright 2020, by tvdboom.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js" defer></script>
+        <script src="../search/main.js" defer></script>
+        <script src="../js/version-select.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

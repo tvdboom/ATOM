@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="tvdboom">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/4.0/API/feature_engineering/feature_selector/">
+        <link rel="shortcut icon" href="../../../img/favicon.ico">
+        <title>FeatureSelector - ATOM</title>
+        <link href="../../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../../../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/color-brewer.min.css">
+        <link href="../../../css/version-select.css" rel="stylesheet">
+
+        <script src="../../../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../../../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../../..">ATOM</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../../../getting_started/" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../user_guide/" class="nav-link">User guide</a>
+                            </li>
+                            <li class="dropdown active">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">ATOM</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
+</li>
+            
+<li>
+    <a href="../../ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
+</li>
+            
+<li>
+    <a href="../../ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Data cleaning</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../data_cleaning/scaler/" class="dropdown-item">Scaler</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/imputer/" class="dropdown-item">Imputer</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/encoder/" class="dropdown-item">Encoder</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+</li>
+            
+<li>
+    <a href="../../data_cleaning/balancer/" class="dropdown-item">Balancer</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Feature engineering</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../feature_generator/" class="dropdown-item">FeatureGenerator</a>
+</li>
+            
+<li>
+    <a href="./" class="dropdown-item active">FeatureSelector</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Training</a>
+    <ul class="dropdown-menu">
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Trainer</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+</li>
+            
+<li>
+    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">SuccessiveHalving</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../training/successivehalvingclassifier/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">TrainSizing</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../training/trainsizingclassifier/" class="dropdown-item">TrainSizingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../training/trainsizingregressor/" class="dropdown-item">TrainSizingRegressor</a>
+</li>
+    </ul>
+  </li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../../models/" class="dropdown-item">Models</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Predicting</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Plots</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_pca/" class="dropdown-item">plot_pca</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_components/" class="dropdown-item">plot_components</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_bo/" class="dropdown-item">plot_bo</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_evals/" class="dropdown-item">plot_evals</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_roc/" class="dropdown-item">plot_roc</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_prc/" class="dropdown-item">plot_prc</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_residuals/" class="dropdown-item">plot_residuals</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_gains/" class="dropdown-item">plot_gains</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+            
+<li>
+    <a href="../../plots/force_plot/" class="dropdown-item">force_plot</a>
+</li>
+            
+<li>
+    <a href="../../plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
+</li>
+            
+<li>
+    <a href="../../plots/summary_plot/" class="dropdown-item">summary_plot</a>
+</li>
+            
+<li>
+    <a href="../../plots/decision_plot/" class="dropdown-item">decision_plot</a>
+</li>
+    </ul>
+  </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../dependencies/" class="nav-link">Dependencies</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../license/" class="nav-link">License</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../feature_generator/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../../training/trainerclassifier/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#featureselector" class="nav-link">FeatureSelector</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#attributes" class="nav-link">Attributes</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#methods" class="nav-link">Methods</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#example" class="nav-link">Example</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="featureselector">FeatureSelector</h1>
+<hr />
+<p><a name="atom"></a></p>
+<pre><em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureSelector</strong>(strategy=None, solver=None, n_features=None, max_frac_repeated=1.,
+                                               max_correlation=1., n_jobs=1, verbose=0, logger=None,
+                                               random_state=None, \*\*kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L376">[source]</a></div></pre>
+<div style="padding-left:3%">
+Remove features according to the selected strategy. Ties between
+ features with equal scores will be broken in an unspecified way.
+ Additionally, removes features with too low variance and finds pairs of
+ collinear features based on the Pearson correlation coefficient. For
+ each pair above the specified limit (in terms of absolute value), it
+ removes one of the two. This class can be accessed from `atom`
+ through the [feature_selection](../../ATOM/atomclassifier/#atomclassifier-feature-selection)
+ method. Read more in the [user guide](../../../user_guide/#selecting-useful-features).
+<br /><br />
+<table>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>strategy: string or None, optional (default=None)</strong>
+<blockquote>
+Feature selection strategy to use. Choose from:
+<ul>
+<li>None: Do not perform any feature selection algorithm.</li>
+<li>'univariate': Select best features according to a univariate F-test.</li>
+<li>'PCA': Perform principal component analysis.</li>
+<li>'SFM': Select best features according to a model.</li>
+<li>'RFE': Perform recursive feature elimination.</li>
+<li>'RFECV': Perform RFE with cross-validated selection.</li>
+</ul>
+</blockquote>
+<strong>solver: string, callable or None, optional (default=None)</strong>
+<blockquote>
+Solver or model to use for the feature selection strategy. See the
+sklearn documentation for an extended description of the choices.
+Select None for the default option per strategy (not applicable
+for SFM, RFE and RFECV).
+<ul>
+<li>for 'univariate', choose from:
+    <ul>
+    <li>'f_classif'</li>
+    <li>'f_regression'</li>
+    <li>'mutual_info_classif'</li>
+    <li>'mutual_info_regression'</li>
+    <li>'chi2'</li>
+    <li>Any function taking two arrays (X, y), and returning
+        arrays (scores, p-values). See the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</li>
+    </ul></li>
+<li>for 'PCA', choose from:
+    <ul>
+    <li>'auto' (default)</li>
+    <li>'full'</li>
+    <li>'arpack'</li>
+    <li>'randomized'</li>
+    </ul></li>
+<li>for 'SFM', 'RFE' and 'RFECV:<br>
+Estimator with either a `feature_importances_` or `coef_` attribute after fitting.
+ You can use one of ATOM's pre-defined [models](../../../user_guide/#models). Add
+ `_class` or `_reg` after the model's name to specify a classification or regression
+ task, e.g. `solver='LGB_reg'` (not necessary if called from an `atom` instance. No
+ default option.</li>
+</ul>
+</blockquote>
+<strong>n_features: int, float or None, optional (default=None)</strong>
+<blockquote>
+Number of features to select. Choose from:
+<ul>
+<li>if None: Select all features.</li>
+<li>if < 1: Fraction of the total features to select.</li>
+<li>if >= 1: Number of features to select.</li>
+</ul>
+If strategy='SFM' and the threshold parameter is not specified, the threshold will be
+ set to `-np.inf` in order to make this parameter the number of features to select.<br>
+If strategy='RFECV', it's the minimum number of features to select.
+</blockquote>
+<strong>max_frac_repeated: float or None, optional (default=1.)</strong>
+<blockquote>
+Remove features with the same value in at least this fraction of
+ the total rows. The default is to keep all features with non-zero
+ variance, i.e. remove the features that have the same value in all
+ samples. None to skip this step.
+</blockquote>
+<strong>max_correlation: float or None, optional (default=1.)</strong>
+<blockquote>
+Minimum value of the Pearson correlation coefficient to identify
+ correlated features. A value of 1 removes on of 2 equal columns. A dataframe
+ of the removed features and their correlation values can be accessed
+ through the collinear attribute. None to skip this step.
+</blockquote>
+<strong>n_jobs: int, optional (default=1)</strong>
+<blockquote>
+Number of cores to use for parallel processing.
+<ul>
+<li>If >0: Number of cores to use.</li>
+<li>If -1: Use all available cores.</li>
+<li>If <-1: Use available_cores - 1 + n_jobs.</li>
+</ul>
+Beware that using multiple processes on the same machine may cause
+memory issues for large datasets.
+</blockquote>
+<strong>verbose: int, optional (default=0)</strong>
+<blockquote>
+Verbosity level of the class. Possible values are:
+<ul>
+<li>0 to not print anything.</li>
+<li>1 to print basic information.</li>
+<li>2 to print detailed information.</li>
+</ul>
+</blockquote>
+<strong>logger: bool, str, class or None, optional (default=None)</strong>
+<blockquote>
+<ul>
+<li>If None: Doesn't save a logging file.</li>
+<li>If bool: True for logging file with default name. False for no logger.</li>
+<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If class: python `Logger` object.</li>
+</ul>
+</blockquote>
+<strong>random_state: int or None, optional (default=None)</strong>
+<blockquote>
+Seed used by the random number generator. If None, the random number
+ generator is the `RandomState` instance used by `numpy.random`.
+</blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
+ See the corresponding sklearn documentation for the available options.
+</blockquote>
+</td>
+</tr>
+</table>
+</div>
+<p><br></p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="../../plots/plot_feature_importance/">plot_feature_importance</a> method to
+examine how much a specific feature contributes to the final predictions. If the
+model doesn't have a <code>feature_importances_</code> attribute, use 
+<a href="../../plots/plot_permutation_importance/">plot_permutation_importance</a> instead.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The RFE and RFECV strategies don't work when the solver is a 
+<a href="https://catboost.ai/">CatBoost</a> model due to incompatibility of the APIs.</p>
+</div>
+<p><br></p>
+<h2 id="attributes">Attributes</h2>
+<hr />
+<h3 id="utility-attributes">Utility attributes</h3>
+<p><a name="atom"></a></p>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>collinear: pd.DataFrame</strong>
+<blockquote>
+Dataframe of the removed collinear features.
+ Columns include:
+<ul>
+<li><b>drop_feature:</b> name of the feature dropped by the method.</li>
+<li><b>correlated feature:</b> Name of the correlated feature(s).</li>
+<li><b>correlation_value:</b> Pearson correlation coefficient(s) of the feature pairs.</li>
+</ul>
+</blockquote>
+<strong>feature_importance: list</strong>
+<blockquote>
+Remaining features ordered by importance. Only if strategy in ['univariate', 'SFM,
+ 'RFE', 'RFECV']. For RFE and RFECV, the importance is extracted from the external
+ estimator fitted on the reduced set. 
+</blockquote>
+<strong>univariate: class</strong>
+<blockquote>
+[SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)
+ instance used to fit the estimator. Only if strategy='univariate'.
+</blockquote>
+<strong>scaler: class</strong>
+<blockquote>
+[Scaler](../../data_cleaning/scaler/) instance used to scale the data.
+ Only if strategy='PCA' and the data was not already scaled.
+</blockquote>
+<strong>pca: class</strong>
+<blockquote>
+[PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
+ instance used to fit the estimator. Only if strategy='PCA'.
+</blockquote>
+<strong>sfm: class</strong>
+<blockquote>
+[SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)
+ instance used to fit the estimator. Only if strategy='SFM'.
+</blockquote>
+<strong>rfe: class</strong>
+<blockquote>
+[RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)
+ instance used to fit the estimator. Only if strategy='RFE'.
+</blockquote>
+<strong>rfecv: class</strong>
+<blockquote>
+[RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)
+ instance used to fit the estimator. Only if strategy='RFECV'.
+</blockquote>
+</td>
+</tr>
+</table>
+<p><br></p>
+<h3 id="plot-attributes">Plot attributes</h3>
+<p><a name="atom"></a></p>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>style: str</strong>
+<blockquote>
+Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
+</blockquote>
+<strong>palette: str</strong>
+<blockquote>
+Color palette. See seaborn's <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
+</blockquote>
+<strong>title_fontsize: int</strong>
+<blockquote>
+Fontsize for the plot's title.
+</blockquote>
+<strong>label_fontsize: int</strong>
+<blockquote>
+Fontsize for labels and legends.
+</blockquote>
+<strong>tick_fontsize: int</strong>
+<blockquote>
+Fontsize for the ticks along the plot's axes.
+</blockquote>
+</td></tr>
+</table>
+<p><br><br><br></p>
+<h2 id="methods">Methods</h2>
+<hr />
+<table width="100%">
+<tr>
+<td><a href="#featureselector-fit">fit</a></td>
+<td>Fit the class.</td>
+</tr>
+
+<tr>
+<td><a href="#featureselector-fit-transform">fit_transform</a></td>
+<td>Fit the class and return the transformed data.</td>
+</tr>
+
+<tr>
+<td><a href="#featureselector-get-params">get_params</a></td>
+<td>Get parameters for this estimator.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#featureselector-log">log</a></td>
+<td>Write information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
+<td><a href="#featureselector-plot-pca">plot_pca</a></td>
+<td>Plot the explained variance ratio vs the number of components.</td>
+</tr>
+
+<tr>
+<td><a href="#featureselector-plot-components">plot_components</a></td>
+<td>Plot the explained variance ratio per component.</td>
+</tr>
+
+<tr>
+<td><a href="#featureselector-plot-rfecv">plot_rfecv</a></td>
+<td>Plot the scores obtained by the estimator on the RFECV.</td>
+</tr>
+
+<tr>
+<td><a href="#featureselector-save">save</a></td>
+<td>Save the instance to a pickle file.</td>
+</tr>
+
+<tr>
+<td><a href="#featureselector-set-params">set_params</a></td>
+<td>Set the parameters of this estimator.</td>
+</tr>
+
+<tr>
+<td><a href="#featureselector-transform">transform</a></td>
+<td>Transform the data.</td>
+</tr>
+
+</table>
+<p><br></p>
+<p><a name="featureselector-fit"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L517">[source]</a></div></pre>
+<div style="padding-left:3%">
+Fit the class. Note that the univariate, sfm (when model is not fitted), rfe and
+ rfecv strategies all need a target column. Leaving it None will raise an exception.
+<br><br>
+</div>
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<blockquote>
+<ul>
+<li>If None: y is ignored in the transformation.</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
+</ul>
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>self: FeatureSelector</strong>
+<blockquote>
+Fitted instance of self.
+</blockquote>
+</tr>
+</table>
+<p><br /></p>
+<p><a name="featureselector-fit-transform"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
+<div style="padding-left:3%">
+Fit the FeatureSelector and return the transformed feature set. Note that the
+ univariate, sfm (when model is not fitted), rfe and rfecv strategies need a target
+ column. Leaving it None will raise an exception.
+<br><br>
+</div>
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<blockquote>
+<ul>
+<li>If None: y is ignored in the transformation.</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
+</ul>
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: pd.DataFrame</strong>
+<blockquote>
+Transformed feature set.
+</blockquote>
+</tr>
+</table>
+<p><br /></p>
+<p><a name="featureselector-get-params"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
+<div style="padding-left:3%">
+Get parameters for this estimator.
+<br><br>
+</div>
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>deep: bool, default=True</strong>
+<blockquote>
+If True, will return the parameters for this estimator and contained subobjects that are estimators.
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>params: dict</strong>
+<blockquote>
+Dictionary of the parameter names mapped to their values.
+</blockquote>
+</tr>
+</table>
+<p><br /></p>
+<p><a name="featureselector-log"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
+<div style="padding-left:3%">
+Write a message to the logger and print it to stdout.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>msg: str</strong>
+<blockquote>
+Message to write to the logger and print to stdout.
+</blockquote>
+<strong>level: int, optional (default=0)</strong>
+<blockquote>
+Minimum verbosity level in order to print the message.
+</blockquote>
+</tr>
+</table>
+</div>
+<p><br /></p>
+<p><a name="featureselector-plot-pca"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L344">[source]</a></div></pre>
+<div style="padding-left:3%">
+Plot the explained variance ratio vs the number of components.
+See [plot_pca](../../plots/plot_pca) for a description of the parameters.
+</div>
+<p><br /></p>
+<p><a name="featureselector-plot-components"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None, title=None, figsize=None, filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L399">[source]</a></div></pre>
+<div style="padding-left:3%">
+Plot the explained variance ratio per components.
+See [plot_components](../../plots/plot_components) for a description of the parameters.
+</div>
+<p><br /></p>
+<p><a name="featureselector-plot-rfecv"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L461">[source]</a></div></pre>
+<div style="padding-left:3%">
+Plot the scores obtained by the estimator fitted on every subset of
+ the data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the parameters.
+</div>
+<p><br /></p>
+<p><a name="featureselector-save"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
+<div style="padding-left:3%">
+Save the instance to a pickle file.
+<br><br>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>filename: str or None, optional (default=None)</strong>
+<blockquote>
+Name to save the file with. None to save with default name.
+</blockquote>
+</tr>
+</table>
+</div>
+<p><br></p>
+<p><a name="featureselector-set-params"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
+<div style="padding-left:3%">
+Set the parameters of this estimator.
+<br><br>
+</div>
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>\*\*params: dict</strong>
+<blockquote>
+Estimator parameters.
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>self: FeatureSelector</strong>
+<blockquote>
+Estimator instance.
+</blockquote>
+</tr>
+</table>
+<p><br /></p>
+<p><a name="featureselector-transform"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L734">[source]</a></div></pre>
+<div style="padding-left:3%">
+Transform the feature set.
+<br><br>
+</div>
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<blockquote>
+Does nothing. Implemented for continuity of the API.
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: pd.DataFrame</strong>
+<blockquote>
+Transformed feature set.
+</blockquote>
+</tr>
+</table>
+<p><br /></p>
+<h2 id="example">Example</h2>
+<hr />
+<pre><code class="language-python">from atom import ATOMClassifier
+
+atom = ATOMClassifier(X, y)
+atom.feature_selection(stratgey='pca', n_features=12, whiten=True, max_correlation=0.96)
+
+atom.plot_pca(filename='pca', figsize=(8, 5))
+</code></pre>
+<p>or</p>
+<pre><code class="language-python">from atom.feature_engineering import FeatureSelector
+
+feature_selector = FeatureSelector(stratgey='pca', n_features=12, whiten=True, max_correlation=0.96)
+feature_selector.fit(X_train, y_train)
+X = feature_selector.transform(X, y)
+
+feature_selector.plot_pca(filename='pca', figsize=(8, 5))
+</code></pre></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>© Copyright 2020, by tvdboom.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "../../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../../js/base.js" defer></script>
+        <script src="../../../search/main.js" defer></script>
+        <script src="../../../js/version-select.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

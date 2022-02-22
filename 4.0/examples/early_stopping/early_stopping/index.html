@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="tvdboom">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/4.0/examples/early_stopping/early_stopping/">
+        <link rel="shortcut icon" href="../../../img/favicon.ico">
+        <title>Early stopping - ATOM</title>
+        <link href="../../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../../../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/color-brewer.min.css">
+        <link href="../../../css/version-select.css" rel="stylesheet">
+
+        <script src="../../../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../../../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../../..">ATOM</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../../../getting_started/" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../user_guide/" class="nav-link">User guide</a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">ATOM</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
+</li>
+            
+<li>
+    <a href="../../../API/ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Data cleaning</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/data_cleaning/scaler/" class="dropdown-item">Scaler</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/imputer/" class="dropdown-item">Imputer</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/encoder/" class="dropdown-item">Encoder</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/balancer/" class="dropdown-item">Balancer</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Feature engineering</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
+</li>
+            
+<li>
+    <a href="../../../API/feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Training</a>
+    <ul class="dropdown-menu">
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Trainer</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">SuccessiveHalving</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/successivehalvingclassifier/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">TrainSizing</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/trainsizingclassifier/" class="dropdown-item">TrainSizingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/trainsizingregressor/" class="dropdown-item">TrainSizingRegressor</a>
+</li>
+    </ul>
+  </li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../../../API/models/" class="dropdown-item">Models</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Predicting</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/predicting/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../../../API/predicting/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../../../API/predicting/predict_proba/" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../../../API/predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../../../API/predicting/decision_function/" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../../../API/predicting/score/" class="dropdown-item">score</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Plots</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_components/" class="dropdown-item">plot_components</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_bo/" class="dropdown-item">plot_bo</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_evals/" class="dropdown-item">plot_evals</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_roc/" class="dropdown-item">plot_roc</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_prc/" class="dropdown-item">plot_prc</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_residuals/" class="dropdown-item">plot_residuals</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_gains/" class="dropdown-item">plot_gains</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/force_plot/" class="dropdown-item">force_plot</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/summary_plot/" class="dropdown-item">summary_plot</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/decision_plot/" class="dropdown-item">decision_plot</a>
+</li>
+    </ul>
+  </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown active">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+</li>
+                                    
+<li>
+    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+</li>
+                                    
+<li>
+    <a href="../../regression/regression/" class="dropdown-item">Regression</a>
+</li>
+                                    
+<li>
+    <a href="../../successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+</li>
+                                    
+<li>
+    <a href="../../train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+</li>
+                                    
+<li>
+    <a href="../../feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active">Early stopping</a>
+</li>
+                                    
+<li>
+    <a href="../../calibration/calibration/" class="dropdown-item">Calibration</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../dependencies/" class="nav-link">Dependencies</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../license/" class="nav-link">License</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../../multi_metric/multi_metric/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../../calibration/calibration/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#early-stopping" class="nav-link">Early stopping</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#load-the-data" class="nav-link">Load the data</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#run-the-pipeline" class="nav-link">Run the pipeline</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#analyze-the-results" class="nav-link">Analyze the results</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="early-stopping">Early stopping</h1>
+<hr />
+<p>This example shows how we can use early stopping to reduce the time it takes to run the pipeline. This option is only available for models that allow in-training evaluation (XGBoost, LightGBM and CatBoost).</p>
+<p>Import the breast cancer dataset from <a href="https://scikit-learn.org/stable/datasets/index.html#wine-dataset">sklearn.datasets</a>. This is a small and easy to train dataset whose goal is to predict whether a patient has breast cancer or not.</p>
+<h2 id="load-the-data">Load the data</h2>
+<pre><code class="language-python"># Import packages
+from sklearn.datasets import load_breast_cancer
+from atom import ATOMClassifier
+</code></pre>
+<pre><code class="language-python"># Get the dataset's features and targets
+X, y = load_breast_cancer(return_X_y=True)
+</code></pre>
+<h2 id="run-the-pipeline">Run the pipeline</h2>
+<pre><code class="language-python"># Start ATOM and fit the models using early stopping
+# An early stopping of 0.1 means that the model will stop if it
+# didn't improve in the last 10% of it's iterations.
+atom = ATOMClassifier(X, y, n_jobs=2, verbose=2, warnings=False, random_state=1)
+atom.run('LGB', metric='ap', n_calls=7, n_initial_points=3, bo_params={'early_stopping': 0.1, 'cv': 1})
+</code></pre>
+<pre><code>&lt;&lt; ================== ATOM ================== &gt;&gt;
+Algorithm task: binary classification.
+Parallel processing with 2 cores.
+Applying data cleaning...
+
+Dataset stats ================= &gt;&gt;
+Shape: (569, 31)
+Scaled: False
+----------------------------------
+Train set size: 456
+Test set size: 113
+----------------------------------
+Train set balance: 0:1 &lt;==&gt; 0.6:1.0
+Test set balance: 0:1 &lt;==&gt; 0.7:1.0
+----------------------------------
+Instances in target per class:
+|    |    total |    train_set |    test_set |
+|---:|---------:|-------------:|------------:|
+|  0 |      212 |          167 |          45 |
+|  1 |      357 |          289 |          68 |
+
+
+Running pipeline ============================= &gt;&gt;
+Models in pipeline: LGB
+Metric: average_precision
+
+
+Running BO for LightGBM...
+Random start 1 ----------------------------------
+Parameters --&gt; {'n_estimators': 499, 'learning_rate': 0.73, 'max_depth': 2, 'num_leaves': 40, 'min_child_weight': 5, 'min_child_samples': 18, 'subsample': 0.7, 'colsample_bytree': 0.8, 'reg_alpha': 100.0, 'reg_lambda': 10.0}
+Early stop at iteration 50 of 499.
+Evaluation --&gt; average_precision: 0.6304  Best average_precision: 0.6304
+Time iteration: 0.031s   Total time: 0.047s
+Random start 2 ----------------------------------
+Parameters --&gt; {'n_estimators': 170, 'learning_rate': 0.11, 'max_depth': 5, 'num_leaves': 25, 'min_child_weight': 11, 'min_child_samples': 28, 'subsample': 0.7, 'colsample_bytree': 0.6, 'reg_alpha': 100.0, 'reg_lambda': 10.0}
+Early stop at iteration 18 of 170.
+Evaluation --&gt; average_precision: 0.6304  Best average_precision: 0.6304
+Time iteration: 0.028s   Total time: 0.075s
+Random start 3 ----------------------------------
+Parameters --&gt; {'n_estimators': 364, 'learning_rate': 0.4, 'max_depth': 2, 'num_leaves': 30, 'min_child_weight': 17, 'min_child_samples': 27, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0.0, 'reg_lambda': 1.0}
+Early stop at iteration 42 of 364.
+Evaluation --&gt; average_precision: 0.9819  Best average_precision: 0.9819
+Time iteration: 0.020s   Total time: 0.099s
+Iteration 4 -------------------------------------
+Parameters --&gt; {'n_estimators': 238, 'learning_rate': 0.49, 'max_depth': 3, 'num_leaves': 29, 'min_child_weight': 18, 'min_child_samples': 25, 'subsample': 0.9, 'colsample_bytree': 0.4, 'reg_alpha': 0.0, 'reg_lambda': 10.0}
+Early stop at iteration 30 of 238.
+Evaluation --&gt; average_precision: 0.9911  Best average_precision: 0.9911
+Time iteration: 0.016s   Total time: 1.343s
+Iteration 5 -------------------------------------
+Parameters --&gt; {'n_estimators': 31, 'learning_rate': 0.07, 'max_depth': 6, 'num_leaves': 21, 'min_child_weight': 18, 'min_child_samples': 28, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0.0, 'reg_lambda': 100.0}
+Evaluation --&gt; average_precision: 0.9920  Best average_precision: 0.9920
+Time iteration: 0.016s   Total time: 1.762s
+Iteration 6 -------------------------------------
+Parameters --&gt; {'n_estimators': 20, 'learning_rate': 1.0, 'max_depth': 3, 'num_leaves': 40, 'min_child_weight': 20, 'min_child_samples': 10, 'subsample': 0.8, 'colsample_bytree': 0.3, 'reg_alpha': 0.0, 'reg_lambda': 100.0}
+Early stop at iteration 12 of 20.
+Evaluation --&gt; average_precision: 0.9953  Best average_precision: 0.9953
+Time iteration: 0.016s   Total time: 2.178s
+Iteration 7 -------------------------------------
+Parameters --&gt; {'n_estimators': 69, 'learning_rate': 0.17, 'max_depth': 7, 'num_leaves': 26, 'min_child_weight': 17, 'min_child_samples': 14, 'subsample': 0.5, 'colsample_bytree': 0.8, 'reg_alpha': 0.01, 'reg_lambda': 1.0}
+Early stop at iteration 22 of 69.
+Evaluation --&gt; average_precision: 0.9978  Best average_precision: 0.9978
+Time iteration: 0.016s   Total time: 2.499s
+
+Results for LightGBM:         
+Bayesian Optimization ---------------------------
+Best parameters --&gt; {'n_estimators': 69, 'learning_rate': 0.17, 'max_depth': 7, 'num_leaves': 26, 'min_child_weight': 17, 'min_child_samples': 14, 'subsample': 0.5, 'colsample_bytree': 0.8, 'reg_alpha': 0.01, 'reg_lambda': 1.0}
+Best evaluation --&gt; average_precision: 0.9978
+Time elapsed: 2.912s
+Fitting -----------------------------------------
+Early stop at iteration 27 of 69.
+Score on the train set --&gt; average_precision: 0.9962
+Score on the test set  --&gt; average_precision: 0.9712
+Time elapsed: 0.016s
+-------------------------------------------------
+Total time: 2.928s
+
+
+Final results ========================= &gt;&gt;
+Duration: 2.928s
+------------------------------------------
+LightGBM --&gt; average_precision: 0.971
+</code></pre>
+<h2 id="analyze-the-results">Analyze the results</h2>
+<pre><code class="language-python"># For these models, we can plot the evaluation on the train and test set during training
+# Note that the metric is provided by the model's library, not ATOM!
+atom.lgb.plot_evals(title=&quot;LightGBM's evaluation curve&quot;, figsize=(11, 9))
+</code></pre>
+<p><img alt="png" src="../output_7_0.png" /></p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>© Copyright 2020, by tvdboom.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "../../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../../js/base.js" defer></script>
+        <script src="../../../search/main.js" defer></script>
+        <script src="../../../js/version-select.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
