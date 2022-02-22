@@ -41,12 +41,12 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://tvdboom.github.io/ATOM/4.9/API/ATOM/ATOMLoader/</loc>
+         <loc>https://tvdboom.github.io/ATOM/4.9/API/ATOM/atomclassifier/</loc>
          <lastmod>2022-02-22</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://tvdboom.github.io/ATOM/4.9/API/ATOM/atomclassifier/</loc>
+         <loc>https://tvdboom.github.io/ATOM/4.9/API/ATOM/atomloader/</loc>
          <lastmod>2022-02-22</lastmod>
          <changefreq>daily</changefreq>
     </url>
