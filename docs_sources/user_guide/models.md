@@ -122,9 +122,9 @@ Additional things to take into account:
 
 Deep learning models can be used through ATOM's [custom models](#custom-models)
 as long as they follow [sklearn's API](https://scikit-learn.org/stable/developers/develop.html).
-For example, models implemented with the Keras package should use the sklearn wrappers
-[KerasClassifier](https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier)
-or [KerasRegressor](https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor).
+For example, models implemented with the Keras package should use the scikeras
+wrappers [KerasClassifier](https://www.adriangb.com/scikeras/refs/heads/master/generated/scikeras.wrappers.KerasClassifier.html#scikeras.wrappers.KerasClassifier)
+or [KerasRegressor](https://www.adriangb.com/scikeras/refs/heads/master/generated/scikeras.wrappers.KerasRegressor.html#scikeras.wrappers.KerasRegressor).
 
 Many deep learning use cases, for example in computer vision, use datasets
 with more than 2 dimensions, e.g. image data can have shape (n_samples,
@@ -133,7 +133,7 @@ a two-dimensional pandas dataframe, but, since ATOM requires a dataframe
 for its internal API, datasets with more than two dimensions are stored
 in a single column called "multidim feature", where every row
 contains one (multidimensional) sample. Note that the [data cleaning](../data_cleaning),
-[feature engineering](../feature_engineering) and some of the [plotting](../plots)
+[feature engineering](../feature_engineering) and some [plotting](../plots)
 methods are unavailable when this is the case.
 
 See in this [example](../../examples/deep_learning) how to use ATOM to train

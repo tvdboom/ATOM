@@ -3,3 +3,10 @@
 {% block htmltitle %}
   <title>{% if page.title and page.title != config.site_name %}{{ page.title }} - {% endif %}{{ config.site_name }}</title>
 {% endblock %}
+
+{% block outdated %}
+  You're not viewing the latest version.
+  <a href="{{ '../' ~ base_url }}">
+    <strong>Click here to go to latest.</strong>
+  </a>
+{% endblock %}

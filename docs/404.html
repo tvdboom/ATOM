@@ -7,21 +7,20 @@
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
       
-      
         <meta name="author" content="Mavs">
       
       
-      <link rel="icon" href="/ATOM/img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.6">
+      <link rel="icon" href="/ATOM/4.12/img/favicon.ico">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.1">
     
     
   <title>ATOM</title>
 
     
-      <link rel="stylesheet" href="/ATOM/assets/stylesheets/main.a57b2b03.min.css">
+      <link rel="stylesheet" href="/ATOM/4.12/assets/stylesheets/main.e8d9bf0c.min.css">
       
         
-        <link rel="stylesheet" href="/ATOM/assets/stylesheets/palette.3f5d1f46.min.css">
+        <link rel="stylesheet" href="/ATOM/4.12/assets/stylesheets/palette.e6a45f82.min.css">
         
       
     
@@ -31,16 +30,15 @@
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
-        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
     
+      <link rel="stylesheet" href="/ATOM/4.12/stylesheets/extra.css">
     
-      <link rel="stylesheet" href="/ATOM/stylesheets/extra.css">
-    
+    <script>__md_scope=new URL("/ATOM/4.12",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
-
 
     
     
@@ -57,9 +55,8 @@
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
   
     
-    <script>function __prefix(e){return new URL("/ATOM/",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
     
-      <script>var palette=__get("__palette");if(null!==palette&&"object"==typeof palette.color)for(var key in palette.color)document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -71,15 +68,32 @@
       
     </div>
     
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You're not viewing the latest version.
+  <a href="..//ATOM/4.12">
+    <strong>Click here to go to latest.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),outdated=__md_get("__outdated",sessionStorage);!0===outdated&&el&&(el.hidden=!1)</script>
+          
+        </aside>
+      </div>
+    
+    
       
 
   
 
 <header class="md-header md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/ATOM/." title="ATOM" class="md-header__button md-logo" aria-label="ATOM" data-md-component="logo">
+    <a href="/ATOM/4.12/." title="ATOM" class="md-header__button md-logo" aria-label="ATOM" data-md-component="logo">
       
-  <img src="/ATOM/img/icon_white.png" alt="logo">
+  <img src="/ATOM/4.12/img/icon_white.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -129,8 +143,7 @@
       <label class="md-header__button md-icon" for="__search">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
       </label>
-      
-<div class="md-search" data-md-component="search" role="dialog">
+      <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
@@ -162,11 +175,10 @@
     
     
       <div class="md-header__source">
-        
-<a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     tvdboom/ATOM
@@ -188,7 +200,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="/ATOM/about/" class="md-tabs__link">
+    <a href="/ATOM/4.12/about/" class="md-tabs__link">
       About
     </a>
   </li>
@@ -200,7 +212,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="/ATOM/getting_started/" class="md-tabs__link">
+    <a href="/ATOM/4.12/getting_started/" class="md-tabs__link">
       Getting started
     </a>
   </li>
@@ -212,7 +224,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="/ATOM/release_history/" class="md-tabs__link">
+    <a href="/ATOM/4.12/release_history/" class="md-tabs__link">
       Release history
     </a>
   </li>
@@ -227,7 +239,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="/ATOM/user_guide/introduction/" class="md-tabs__link">
+      <a href="/ATOM/4.12/user_guide/introduction/" class="md-tabs__link">
         User guide
       </a>
     </li>
@@ -248,7 +260,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="/ATOM/API/ATOM/atomclassifier/" class="md-tabs__link">
+      <a href="/ATOM/4.12/API/ATOM/atomclassifier/" class="md-tabs__link">
         API
       </a>
     </li>
@@ -266,7 +278,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="/ATOM/examples/automl/" class="md-tabs__link">
+      <a href="/ATOM/4.12/examples/automl/" class="md-tabs__link">
         Examples
       </a>
     </li>
@@ -279,7 +291,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="/ATOM/faq/" class="md-tabs__link">
+    <a href="/ATOM/4.12/faq/" class="md-tabs__link">
       FAQ
     </a>
   </li>
@@ -291,7 +303,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="/ATOM/contributing/" class="md-tabs__link">
+    <a href="/ATOM/4.12/contributing/" class="md-tabs__link">
       Contributing
     </a>
   </li>
@@ -303,7 +315,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="/ATOM/dependencies/" class="md-tabs__link">
+    <a href="/ATOM/4.12/dependencies/" class="md-tabs__link">
       Dependencies
     </a>
   </li>
@@ -315,7 +327,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="/ATOM/license/" class="md-tabs__link">
+    <a href="/ATOM/4.12/license/" class="md-tabs__link">
       License
     </a>
   </li>
@@ -348,20 +360,19 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/ATOM/." title="ATOM" class="md-nav__button md-logo" aria-label="ATOM" data-md-component="logo">
+    <a href="/ATOM/4.12/." title="ATOM" class="md-nav__button md-logo" aria-label="ATOM" data-md-component="logo">
       
-  <img src="/ATOM/img/icon_white.png" alt="logo">
+  <img src="/ATOM/4.12/img/icon_white.png" alt="logo">
 
     </a>
     ATOM
   </label>
   
     <div class="md-nav__source">
-      
-<a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     tvdboom/ATOM
@@ -379,7 +390,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/about/" class="md-nav__link">
+      <a href="/ATOM/4.12/about/" class="md-nav__link">
         About
       </a>
     </li>
@@ -394,7 +405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/getting_started/" class="md-nav__link">
+      <a href="/ATOM/4.12/getting_started/" class="md-nav__link">
         Getting started
       </a>
     </li>
@@ -409,7 +420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/release_history/" class="md-nav__link">
+      <a href="/ATOM/4.12/release_history/" class="md-nav__link">
         Release history
       </a>
     </li>
@@ -450,7 +461,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/introduction/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/introduction/" class="md-nav__link">
         Introduction
       </a>
     </li>
@@ -464,7 +475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/nomenclature/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/nomenclature/" class="md-nav__link">
         Nomenclature
       </a>
     </li>
@@ -478,7 +489,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/first_steps/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/first_steps/" class="md-nav__link">
         First steps
       </a>
     </li>
@@ -492,7 +503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/data_management/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
     </li>
@@ -506,7 +517,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/logging/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/logging/" class="md-nav__link">
         Logging & Tracking
       </a>
     </li>
@@ -520,7 +531,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/data_cleaning/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/data_cleaning/" class="md-nav__link">
         Data cleaning
       </a>
     </li>
@@ -534,7 +545,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/nlp/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/nlp/" class="md-nav__link">
         NLP
       </a>
     </li>
@@ -548,7 +559,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/feature_engineering/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/feature_engineering/" class="md-nav__link">
         Feature engineering
       </a>
     </li>
@@ -562,7 +573,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/models/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/models/" class="md-nav__link">
         Models
       </a>
     </li>
@@ -576,7 +587,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/training/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/training/" class="md-nav__link">
         Training
       </a>
     </li>
@@ -590,7 +601,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/predicting/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/predicting/" class="md-nav__link">
         Predicting
       </a>
     </li>
@@ -604,7 +615,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/user_guide/plots/" class="md-nav__link">
+      <a href="/ATOM/4.12/user_guide/plots/" class="md-nav__link">
         Plots
       </a>
     </li>
@@ -678,7 +689,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/ATOM/atomclassifier/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/ATOM/atomclassifier/" class="md-nav__link">
         ATOMClassifier
       </a>
     </li>
@@ -692,7 +703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/ATOM/atomregressor/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/ATOM/atomregressor/" class="md-nav__link">
         ATOMRegressor
       </a>
     </li>
@@ -706,7 +717,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/ATOM/atomloader/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/ATOM/atomloader/" class="md-nav__link">
         ATOMLoader
       </a>
     </li>
@@ -720,7 +731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/ATOM/atommodel/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/ATOM/atommodel/" class="md-nav__link">
         ATOMModel
       </a>
     </li>
@@ -767,7 +778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/data_cleaning/scaler/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/data_cleaning/scaler/" class="md-nav__link">
         Scaler
       </a>
     </li>
@@ -781,7 +792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/data_cleaning/gauss/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/data_cleaning/gauss/" class="md-nav__link">
         Gauss
       </a>
     </li>
@@ -795,7 +806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/data_cleaning/cleaner/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/data_cleaning/cleaner/" class="md-nav__link">
         Cleaner
       </a>
     </li>
@@ -809,7 +820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/data_cleaning/imputer/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/data_cleaning/imputer/" class="md-nav__link">
         Imputer
       </a>
     </li>
@@ -823,7 +834,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/data_cleaning/discretizer/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/data_cleaning/discretizer/" class="md-nav__link">
         Discretizer
       </a>
     </li>
@@ -837,7 +848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/data_cleaning/encoder/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/data_cleaning/encoder/" class="md-nav__link">
         Encoder
       </a>
     </li>
@@ -851,7 +862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/data_cleaning/pruner/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/data_cleaning/pruner/" class="md-nav__link">
         Pruner
       </a>
     </li>
@@ -865,7 +876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/data_cleaning/balancer/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/data_cleaning/balancer/" class="md-nav__link">
         Balancer
       </a>
     </li>
@@ -912,7 +923,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/nlp/textcleaner/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/nlp/textcleaner/" class="md-nav__link">
         TextCleaner
       </a>
     </li>
@@ -926,7 +937,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/nlp/tokenizer/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/nlp/tokenizer/" class="md-nav__link">
         Tokenizer
       </a>
     </li>
@@ -940,7 +951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/nlp/normalizer/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/nlp/normalizer/" class="md-nav__link">
         Normalizer
       </a>
     </li>
@@ -954,7 +965,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/nlp/vectorizer/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/nlp/vectorizer/" class="md-nav__link">
         Vectorizer
       </a>
     </li>
@@ -1001,7 +1012,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/feature_engineering/feature_extractor/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/feature_engineering/feature_extractor/" class="md-nav__link">
         FeatureExtractor
       </a>
     </li>
@@ -1015,7 +1026,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/feature_engineering/feature_generator/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/feature_engineering/feature_generator/" class="md-nav__link">
         FeatureGenerator
       </a>
     </li>
@@ -1029,7 +1040,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/feature_engineering/feature_selector/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/feature_engineering/feature_selector/" class="md-nav__link">
         FeatureSelector
       </a>
     </li>
@@ -1076,7 +1087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/training/directclassifier/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/training/directclassifier/" class="md-nav__link">
         DirectClassifier
       </a>
     </li>
@@ -1090,7 +1101,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/training/directregressor/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/training/directregressor/" class="md-nav__link">
         DirectRegressor
       </a>
     </li>
@@ -1104,7 +1115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/training/successivehalvingclassifier/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/training/successivehalvingclassifier/" class="md-nav__link">
         SuccessiveHalvingClassifier
       </a>
     </li>
@@ -1118,7 +1129,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/training/successivehalvingregressor/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/training/successivehalvingregressor/" class="md-nav__link">
         SuccessiveHalvingRegressor
       </a>
     </li>
@@ -1132,7 +1143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/training/trainsizingclassifier/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/training/trainsizingclassifier/" class="md-nav__link">
         TrainSizingClassifier
       </a>
     </li>
@@ -1146,7 +1157,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/training/trainsizingregressor/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/training/trainsizingregressor/" class="md-nav__link">
         TrainSizingRegressor
       </a>
     </li>
@@ -1193,7 +1204,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/dummy/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/dummy/" class="md-nav__link">
         Dummy Estimator
       </a>
     </li>
@@ -1207,7 +1218,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/gp/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/gp/" class="md-nav__link">
         Gaussian Process
       </a>
     </li>
@@ -1221,7 +1232,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/gnb/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/gnb/" class="md-nav__link">
         Gaussian Naive Bayes
       </a>
     </li>
@@ -1235,7 +1246,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/mnb/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/mnb/" class="md-nav__link">
         Multinomial Naive Bayes
       </a>
     </li>
@@ -1249,7 +1260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/bnb/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/bnb/" class="md-nav__link">
         Bernoulli Naive Bayes
       </a>
     </li>
@@ -1263,7 +1274,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/catnb/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/catnb/" class="md-nav__link">
         Categorical Naive Bayes
       </a>
     </li>
@@ -1277,7 +1288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/cnb/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/cnb/" class="md-nav__link">
         Complement Naive Bayes
       </a>
     </li>
@@ -1291,7 +1302,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/ols/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/ols/" class="md-nav__link">
         Ordinary Least Squares
       </a>
     </li>
@@ -1305,7 +1316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/ridge/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/ridge/" class="md-nav__link">
         Ridge Estimator
       </a>
     </li>
@@ -1319,7 +1330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/lasso/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/lasso/" class="md-nav__link">
         Lasso Regression
       </a>
     </li>
@@ -1333,7 +1344,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/en/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/en/" class="md-nav__link">
         ElasticNet Regression
       </a>
     </li>
@@ -1347,7 +1358,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/lars/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/lars/" class="md-nav__link">
         Least Angle Regression
       </a>
     </li>
@@ -1361,7 +1372,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/br/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/br/" class="md-nav__link">
         Bayesian Ridge
       </a>
     </li>
@@ -1375,7 +1386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/ard/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/ard/" class="md-nav__link">
         Automated Relevance Determination
       </a>
     </li>
@@ -1389,7 +1400,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/huber/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/huber/" class="md-nav__link">
         Huber Regression
       </a>
     </li>
@@ -1403,7 +1414,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/perc/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/perc/" class="md-nav__link">
         Perceptron
       </a>
     </li>
@@ -1417,7 +1428,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/lr/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/lr/" class="md-nav__link">
         Logistic Regression
       </a>
     </li>
@@ -1431,7 +1442,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/lda/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/lda/" class="md-nav__link">
         Linear Discriminant Analysis
       </a>
     </li>
@@ -1445,7 +1456,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/qda/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/qda/" class="md-nav__link">
         Quadratic Discriminant Analysis
       </a>
     </li>
@@ -1459,7 +1470,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/knn/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/knn/" class="md-nav__link">
         K-Nearest Neighbors
       </a>
     </li>
@@ -1473,7 +1484,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/rnn/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/rnn/" class="md-nav__link">
         Radius Nearest Neighbors
       </a>
     </li>
@@ -1487,7 +1498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/tree/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/tree/" class="md-nav__link">
         Decision Tree
       </a>
     </li>
@@ -1501,7 +1512,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/bag/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/bag/" class="md-nav__link">
         Bagging
       </a>
     </li>
@@ -1515,7 +1526,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/et/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/et/" class="md-nav__link">
         Extra-Trees
       </a>
     </li>
@@ -1529,7 +1540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/rf/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/rf/" class="md-nav__link">
         Random Forest
       </a>
     </li>
@@ -1543,7 +1554,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/adab/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/adab/" class="md-nav__link">
         AdaBoost
       </a>
     </li>
@@ -1557,7 +1568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/gbm/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/gbm/" class="md-nav__link">
         Gradient Boosting Machine
       </a>
     </li>
@@ -1571,7 +1582,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/hgbm/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/hgbm/" class="md-nav__link">
         HistGBM
       </a>
     </li>
@@ -1585,7 +1596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/xgb/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/xgb/" class="md-nav__link">
         XGBoost
       </a>
     </li>
@@ -1599,7 +1610,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/lgb/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/lgb/" class="md-nav__link">
         LightGBM
       </a>
     </li>
@@ -1613,7 +1624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/catb/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/catb/" class="md-nav__link">
         CatBoost
       </a>
     </li>
@@ -1627,7 +1638,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/lsvm/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/lsvm/" class="md-nav__link">
         Linear-SVM
       </a>
     </li>
@@ -1641,7 +1652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/ksvm/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/ksvm/" class="md-nav__link">
         Kernel-SVM
       </a>
     </li>
@@ -1655,7 +1666,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/pa/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/pa/" class="md-nav__link">
         Passive Aggressive
       </a>
     </li>
@@ -1669,7 +1680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/sgd/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/sgd/" class="md-nav__link">
         Stochastic Gradient Descent
       </a>
     </li>
@@ -1683,7 +1694,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/models/mlp/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/models/mlp/" class="md-nav__link">
         Multi-layer Perceptron
       </a>
     </li>
@@ -1730,7 +1741,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/predicting/transform/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/predicting/transform/" class="md-nav__link">
         transform
       </a>
     </li>
@@ -1744,7 +1755,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/predicting/predict/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/predicting/predict/" class="md-nav__link">
         predict
       </a>
     </li>
@@ -1758,7 +1769,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/predicting/predict_proba/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/predicting/predict_proba/" class="md-nav__link">
         predict_proba
       </a>
     </li>
@@ -1772,7 +1783,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/predicting/predict_log_proba/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/predicting/predict_log_proba/" class="md-nav__link">
         predict_log_proba
       </a>
     </li>
@@ -1786,7 +1797,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/predicting/decision_function/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/predicting/decision_function/" class="md-nav__link">
         decision_function
       </a>
     </li>
@@ -1800,7 +1811,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/predicting/score/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/predicting/score/" class="md-nav__link">
         score
       </a>
     </li>
@@ -1847,7 +1858,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_correlation/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_correlation/" class="md-nav__link">
         plot_correlation
       </a>
     </li>
@@ -1861,7 +1872,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_scatter_matrix/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_scatter_matrix/" class="md-nav__link">
         plot_scatter_matrix
       </a>
     </li>
@@ -1875,7 +1886,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_distribution/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_distribution/" class="md-nav__link">
         plot_distribution
       </a>
     </li>
@@ -1889,7 +1900,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_qq/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_qq/" class="md-nav__link">
         plot_qq
       </a>
     </li>
@@ -1903,7 +1914,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_wordcloud/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_wordcloud/" class="md-nav__link">
         plot_wordcloud
       </a>
     </li>
@@ -1917,7 +1928,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_ngrams/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_ngrams/" class="md-nav__link">
         plot_ngrams
       </a>
     </li>
@@ -1931,7 +1942,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_pipeline/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
     </li>
@@ -1945,7 +1956,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_pca/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
     </li>
@@ -1959,7 +1970,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_components/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_components/" class="md-nav__link">
         plot_components
       </a>
     </li>
@@ -1973,7 +1984,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_rfecv/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
       </a>
     </li>
@@ -1987,7 +1998,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_successive_halving/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_successive_halving/" class="md-nav__link">
         plot_successive_halving
       </a>
     </li>
@@ -2001,7 +2012,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_learning_curve/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
     </li>
@@ -2015,7 +2026,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_results/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_results/" class="md-nav__link">
         plot_results
       </a>
     </li>
@@ -2029,7 +2040,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_bo/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_bo/" class="md-nav__link">
         plot_bo
       </a>
     </li>
@@ -2043,7 +2054,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_evals/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_evals/" class="md-nav__link">
         plot_evals
       </a>
     </li>
@@ -2057,7 +2068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_roc/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_roc/" class="md-nav__link">
         plot_roc
       </a>
     </li>
@@ -2071,7 +2082,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_prc/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_prc/" class="md-nav__link">
         plot_prc
       </a>
     </li>
@@ -2085,7 +2096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_det/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_det/" class="md-nav__link">
         plot_det
       </a>
     </li>
@@ -2099,7 +2110,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_gains/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_gains/" class="md-nav__link">
         plot_gains
       </a>
     </li>
@@ -2113,7 +2124,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_lift/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_lift/" class="md-nav__link">
         plot_lift
       </a>
     </li>
@@ -2127,7 +2138,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_errors/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_errors/" class="md-nav__link">
         plot_errors
       </a>
     </li>
@@ -2141,7 +2152,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_residuals/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_residuals/" class="md-nav__link">
         plot_residuals
       </a>
     </li>
@@ -2155,7 +2166,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_feature_importance/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_feature_importance/" class="md-nav__link">
         plot_feature_importance
       </a>
     </li>
@@ -2169,7 +2180,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_permutation_importance/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_permutation_importance/" class="md-nav__link">
         plot_permutation_importance
       </a>
     </li>
@@ -2183,7 +2194,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_partial_dependence/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_partial_dependence/" class="md-nav__link">
         plot_partial_dependence
       </a>
     </li>
@@ -2197,7 +2208,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_parshap/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_parshap/" class="md-nav__link">
         plot_parshap
       </a>
     </li>
@@ -2211,7 +2222,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_confusion_matrix/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
     </li>
@@ -2225,7 +2236,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_threshold/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_threshold/" class="md-nav__link">
         plot_threshold
       </a>
     </li>
@@ -2239,7 +2250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_probabilities/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_probabilities/" class="md-nav__link">
         plot_probabilities
       </a>
     </li>
@@ -2253,7 +2264,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/plot_calibration/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/plot_calibration/" class="md-nav__link">
         plot_calibration
       </a>
     </li>
@@ -2267,7 +2278,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/bar_plot/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/bar_plot/" class="md-nav__link">
         bar_plot
       </a>
     </li>
@@ -2281,7 +2292,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/beeswarm_plot/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/beeswarm_plot/" class="md-nav__link">
         beeswarm_plot
       </a>
     </li>
@@ -2295,7 +2306,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/decision_plot/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/decision_plot/" class="md-nav__link">
         decision_plot
       </a>
     </li>
@@ -2309,7 +2320,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/force_plot/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/force_plot/" class="md-nav__link">
         force_plot
       </a>
     </li>
@@ -2323,7 +2334,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/heatmap_plot/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/heatmap_plot/" class="md-nav__link">
         heatmap_plot
       </a>
     </li>
@@ -2337,7 +2348,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/scatter_plot/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/scatter_plot/" class="md-nav__link">
         scatter_plot
       </a>
     </li>
@@ -2351,7 +2362,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/API/plots/waterfall_plot/" class="md-nav__link">
+      <a href="/ATOM/4.12/API/plots/waterfall_plot/" class="md-nav__link">
         waterfall_plot
       </a>
     </li>
@@ -2406,7 +2417,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/automl/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/automl/" class="md-nav__link">
         AutoML
       </a>
     </li>
@@ -2420,7 +2431,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/binary_classification/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/binary_classification/" class="md-nav__link">
         Binary classification
       </a>
     </li>
@@ -2434,7 +2445,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/calibration/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/calibration/" class="md-nav__link">
         Calibration
       </a>
     </li>
@@ -2448,7 +2459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/deep_learning/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/deep_learning/" class="md-nav__link">
         Deep learning
       </a>
     </li>
@@ -2462,7 +2473,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/early_stopping/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/early_stopping/" class="md-nav__link">
         Early stopping
       </a>
     </li>
@@ -2476,7 +2487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/ensembles/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/ensembles/" class="md-nav__link">
         Ensembles
       </a>
     </li>
@@ -2490,7 +2501,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/feature_engineering/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/feature_engineering/" class="md-nav__link">
         Feature engineering
       </a>
     </li>
@@ -2504,7 +2515,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/holdout_set/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/holdout_set/" class="md-nav__link">
         Holdout set
       </a>
     </li>
@@ -2518,7 +2529,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/imbalanced_datasets/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
       </a>
     </li>
@@ -2532,7 +2543,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/multiclass_classification/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/multiclass_classification/" class="md-nav__link">
         Multiclass classification
       </a>
     </li>
@@ -2546,7 +2557,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/multi_metric/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
     </li>
@@ -2560,7 +2571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/nlp/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2574,7 +2585,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/regression/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/regression/" class="md-nav__link">
         Regression
       </a>
     </li>
@@ -2588,7 +2599,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/successive_halving/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/successive_halving/" class="md-nav__link">
         Successive halving
       </a>
     </li>
@@ -2602,7 +2613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/train_sizing/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/train_sizing/" class="md-nav__link">
         Train sizing
       </a>
     </li>
@@ -2616,7 +2627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/examples/utilities/" class="md-nav__link">
+      <a href="/ATOM/4.12/examples/utilities/" class="md-nav__link">
         Utilities
       </a>
     </li>
@@ -2638,7 +2649,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/faq/" class="md-nav__link">
+      <a href="/ATOM/4.12/faq/" class="md-nav__link">
         FAQ
       </a>
     </li>
@@ -2653,7 +2664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/contributing/" class="md-nav__link">
+      <a href="/ATOM/4.12/contributing/" class="md-nav__link">
         Contributing
       </a>
     </li>
@@ -2668,7 +2679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/dependencies/" class="md-nav__link">
+      <a href="/ATOM/4.12/dependencies/" class="md-nav__link">
         Dependencies
       </a>
     </li>
@@ -2683,7 +2694,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/ATOM/license/" class="md-nav__link">
+      <a href="/ATOM/4.12/license/" class="md-nav__link">
         License
       </a>
     </li>
@@ -2703,7 +2714,6 @@
               
   <h1>404 - Not found</h1>
 
-              
             </article>
           </div>
         </div>
@@ -2715,54 +2725,52 @@
         
       </main>
       
-        
-<footer class="md-footer">
+        <footer class="md-footer">
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-          <div class="md-footer-copyright__highlight">
-            © Copyright 2019-2022, by Mavs.
-          </div>
-        
-        
-          Made with
-          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-            Material for MkDocs
-          </a>
-        
-        
-      </div>
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      © Copyright 2019-2022, by Mavs.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
       
-  <div class="md-footer-social">
+        <div class="md-social">
+  
     
-      
-      
-      <a href="https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3" target="_blank" rel="noopener" title="Slack" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
-      </a>
     
-      
-      
-      <a href="https://github.com/tvdboom/ATOM" target="_blank" rel="noopener" title="GitHub" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
-      </a>
+    <a href="https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3" target="_blank" rel="noopener" title="Slack" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
+    </a>
+  
     
-      
-      
-      <a href="https://tvdboom.medium.com/" target="_blank" rel="noopener" title="Medium" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 32v448h448V32H0zm372.2 106.1-24 23c-2.1 1.6-3.1 4.2-2.7 6.7v169.3c-.4 2.6.6 5.2 2.7 6.7l23.5 23v5.1h-118V367l24.3-23.6c2.4-2.4 2.4-3.1 2.4-6.7V199.8l-67.6 171.6h-9.1L125 199.8v115c-.7 4.8 1 9.7 4.4 13.2l31.6 38.3v5.1H71.2v-5.1l31.6-38.3c3.4-3.5 4.9-8.4 4.1-13.2v-133c.4-3.7-1-7.3-3.8-9.8L75 138.1V133h87.3l67.4 148L289 133.1h83.2v5z"/></svg>
-      </a>
     
-      
-      
-      <a href="mailto:m.524687@gmail.com" target="_blank" rel="noopener" title="Email" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M502.3 190.8c3.9-3.1 9.7-.2 9.7 4.7V400c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V195.6c0-5 5.7-7.8 9.7-4.7 22.4 17.4 52.1 39.5 154.1 113.6 21.1 15.4 56.7 47.8 92.2 47.6 35.7.3 72-32.8 92.3-47.6 102-74.1 131.6-96.3 154-113.7zM256 320c23.2.4 56.6-29.2 73.4-41.4 132.7-96.3 142.8-104.7 173.4-128.7 5.8-4.5 9.2-11.5 9.2-18.9v-19c0-26.5-21.5-48-48-48H48C21.5 64 0 85.5 0 112v19c0 7.4 3.4 14.3 9.2 18.9 30.6 23.9 40.7 32.4 173.4 128.7 16.8 12.2 50.2 41.8 73.4 41.4z"/></svg>
-      </a>
+    <a href="https://github.com/tvdboom/ATOM" target="_blank" rel="noopener" title="GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
     
-  </div>
-
+    
+    <a href="https://tvdboom.medium.com/" target="_blank" rel="noopener" title="Medium" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M180.5 74.262C80.813 74.262 0 155.633 0 256s80.819 181.738 180.5 181.738S361 356.373 361 256 280.191 74.262 180.5 74.262zm288.25 10.646c-49.845 0-90.245 76.619-90.245 171.095s40.406 171.1 90.251 171.1 90.251-76.619 90.251-171.1H559c0-94.503-40.4-171.095-90.248-171.095zm139.506 17.821c-17.526 0-31.735 68.628-31.735 153.274s14.2 153.274 31.735 153.274S640 340.631 640 256c0-84.649-14.215-153.271-31.742-153.271z"/></svg>
+    </a>
+  
+    
+    
+    <a href="mailto:m.524687@gmail.com" target="_blank" rel="noopener" title="Email" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M256 352c-16.53 0-33.06-5.422-47.16-16.41L0 173.2V400c0 26.5 21.49 48 48 48h416c26.51 0 48-21.49 48-48V173.2L303.2 335.7C289.1 346.6 272.5 352 256 352zM16.29 145.3l212.2 165.1c16.19 12.6 38.87 12.6 55.06 0l212.2-165.1C505.1 137.3 512 125 512 112c0-26.51-21.5-48-48-48H48C21.49 64 0 85.49 0 112c0 13 6.01 25.3 16.29 33.3z"/></svg>
+    </a>
+  
+</div>
+      
     </div>
   </div>
 </footer>
@@ -2771,12 +2779,12 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "/ATOM/", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "/ATOM/assets/javascripts/workers/search.fcfe8b6d.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "/ATOM/4.12", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "/ATOM/4.12/assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
     
     
-      <script src="/ATOM/assets/javascripts/bundle.b1047164.min.js"></script>
+      <script src="/ATOM/4.12/assets/javascripts/bundle.8aa65030.min.js"></script>
       
-        <script src="/ATOM/stylesheets/extra.js"></script>
+        <script src="/ATOM/4.12/stylesheets/extra.js"></script>
       
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
       

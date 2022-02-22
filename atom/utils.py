@@ -8,11 +8,10 @@ Description: Module containing utility constants, functions and classes.
 """
 
 # Standard packages
+import sys
 import math
 import pprint
 import logging
-import sys
-
 import numpy as np
 import pandas as pd
 from copy import copy

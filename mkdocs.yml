@@ -18,6 +18,7 @@ theme:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.top
+    - navigation.tracking
   palette:
     # Light mode
     - amber: "(prefers-color-scheme: light)"
@@ -38,6 +39,8 @@ theme:
         name: Switch to light mode
 
 extra:
+  version:
+    provider: mike
   social:
     - icon: fontawesome/brands/slack
       link: https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3

@@ -13,6 +13,9 @@
   to split the data sets in a [stratified fashion](https://en.wikipedia.org/wiki/Stratified_sampling).
 * Possibility to exclude hyperparameters from the BO adding `!` before the name.
 * Added memory usage to the [stats](../API/ATOM/atomclassifier/#stats) method.
+* Fixed a bug where [decision_plot](../API/plots/decision_plot) could fail when
+  only one row was plotted.
+* Documentation improvements.
 
 
 <a name="v4110"></a>
