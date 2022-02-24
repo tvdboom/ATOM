@@ -1,7 +1,50 @@
 # Contributing
 --------------
 
-## Project layout
+Are you interested in contributing to ATOM? Do you want to report a bug?
+Do you have a question? Before you do, please read the following guidelines.
+
+<br>
+
+
+## Submission context
+
+### Question or problem?
+
+For quick questions there's no need to open an issue. Check first if the
+question isn't already answered on the [FAQ](https://tvdboom.github.io/ATOM/faq/)
+section. If not, reach us through the [discussions](https://github.com/tvdboom/ATOM/discussions)
+page or on the [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)
+channel.
+
+
+### Report a bug?
+
+If you found a bug in the source code, you can help by submitting an issue
+to the [issue tracker](https://github.com/tvdboom/ATOM/issues) in the GitHub
+repository. Even better, you can submit a Pull Request with a fix. However,
+before doing so, please read the [submission guidelines](#submission-guidelines).
+
+
+### Missing a feature?
+
+You can request a new feature by submitting an [issue](https://github.com/tvdboom/ATOM/issues)
+to the GitHub Repository. If you would like to implement a new feature,
+please submit an issue with a proposal for your work first. Please consider
+what kind of change it is:
+
+* For a **major feature**, first open an issue and outline your proposal so
+  that it can be discussed. This will also allow us to better coordinate our
+  efforts, prevent duplication of work, and help you to craft the change so
+  that it is successfully accepted into the project.
+
+* **Small features and bugs** can be crafted and directly submitted as a Pull
+  Request. However, there is no guarantee that your feature will make it into
+  `master`, as it's always a matter of opinion whether if benefits the
+  overall functionality of the project.
+
+
+### Project layout
 
 The latest stable release of ATOM is on the `master` branch, whereas the
 latest version of ATOM in development is on the `development` branch. Make
@@ -26,7 +69,22 @@ major contributions, and especially make sure to send all code changes to the
 
 <br><br>
 
-## Submitting a pull request
+
+## Submission guidelines
+
+### Submitting an issue
+
+Before you submit an issue, please search the [issue tracker](https://github.com/tvdboom/ATOM/issues),
+maybe an issue for your problem already exists and the discussion
+might inform you of workarounds readily available.
+
+We want to fix all the issues as soon as possible, but before fixing a
+bug we need to reproduce and confirm it. In order to reproduce bugs we
+will systematically ask you to provide a minimal reproduction scenario
+using the custom issue template.
+
+
+### Submitting a pull request
 
 Before you submit a pull request, please work through this checklist to
 make sure that you have done everything necessary so we can efficiently
@@ -40,7 +98,7 @@ If your contribution changes ATOM in any way:
 If your contribution involves any code changes:
 
 * Adhere to [PEP 8](https://www.python.org/dev/peps/pep-0008/) standards.
-* Use a maximum of 88 characters per line. Try to keep comments and
+* Use a maximum of 89 characters per line. Try to keep comments and
   docstrings below 72 characters.
 * Update the project unit tests to test your code changes as thoroughly
   as possible.
@@ -50,7 +108,7 @@ If your contribution involves any code changes:
 If your contribution requires a new library dependency:
 
 * Double-check that the new dependency is easy to install via pip and Anaconda.
-* The library should support Python 3.6 and higher.
+* The library should support Python 3.7 and higher.
 * Make sure the code works with the latest version of the library.
 * Update the dependencies in the documentation.
 * Add the library with the minimum required version to `requirements.txt`
@@ -58,5 +116,5 @@ If your contribution requires a new library dependency:
 
 After submitting your pull request, GitHub will automatically run the tests
 on your changes and make sure that the updated code builds successfully.
-The tests are checked on Python 3.7, 3.8, 3.9 and 3.10, on the latest Ubuntu
-and Windows builds. We also use services that automatically run test coverage.
+The checks are run on Python 3.7, 3.8 and 3.9, on Ubuntu and Windows.
+We also use services that automatically check code style and test coverage.

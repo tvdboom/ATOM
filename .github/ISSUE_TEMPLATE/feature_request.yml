@@ -1,0 +1,29 @@
+name: \u2728 Feature request
+description: Suggest a new idea for this project.
+labels: [enhancement]
+body:
+  - type: checkboxes
+    attributes:
+      label: Contribution guidelines
+      description: Make sure that your request fulfills all the following requirements.
+      options:
+      - label: I've read the [contribution guidelines](https://tvdboom.github.io/ATOM/contributing/).
+        required: true
+      - label: The documentation does not mention anything about this feature.
+      - label: There are no open or closed issues that are related to this feature.
+  - type: textarea
+    attributes:
+      label: Description
+      description: |
+        A clear and concise description of what you want to happen, ideally
+        taking into consideration the existing toolbox design, classes and methods.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Use Cases
+      description: Please describe how your idea would benefit you and other users.
+  - type: textarea
+    attributes:
+      label: Screenshots / Mockups
+      description: If applicable, provide mockups or screenshots. You can drag-and-drop images here, or link to external assets.

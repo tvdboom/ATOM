@@ -1,0 +1,22 @@
+name: \U0001F4D6 Documentation improvement
+description: Create a suggestion to help us improve the documentation.
+labels: [documentation]
+body:
+  - type: checkboxes
+    attributes:
+      label: Contribution guidelines
+      description: Make sure that your request fulfills all the following requirements.
+      options:
+      - label: I've read the [contribution guidelines](https://tvdboom.github.io/ATOM/contributing/).
+        required: true
+      - label: There are no open or closed issues that are related to my suggestion.
+  - type: textarea
+    attributes:
+      label: Description
+      description: Describe shortly the missing or confusing part in the documentation.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Potential alternative/fix
+      description: Explain how we could improve the documentation in this regard.
