@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-
+      
         <meta name="author" content="Mavs">
       
       
@@ -35,11 +35,11 @@
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
-
+    
       <link rel="stylesheet" href="../../stylesheets/extra.css">
     
     <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
-
+    
       
 
     
@@ -56,7 +56,7 @@
     
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
   
-
+    
     
       <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
@@ -74,12 +74,12 @@
     <div data-md-component="announce">
       
     </div>
-
+    
       <div data-md-component="outdated" hidden>
         <aside class="md-banner md-banner--warning">
-
+          
             <div class="md-banner__inner md-grid md-typeset">
-
+              
   You're not viewing the latest version.
   <a href="../../..">
     <strong>Click here to go to latest.</strong>
@@ -87,11 +87,11 @@
 
             </div>
             <script>var el=document.querySelector("[data-md-component=outdated]"),outdated=__md_get("__outdated",sessionStorage);!0===outdated&&el&&(el.hidden=!1)</script>
-
+          
         </aside>
       </div>
-
-
+    
+    
       
 
   
@@ -847,15 +847,15 @@
         Discretizer
       </a>
     </li>
+  
 
-
-
-
-
-
-
-
-
+            
+          
+            
+              
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../API/data_cleaning/encoder/" class="md-nav__link">
         Encoder
@@ -3912,7 +3912,7 @@ Licensed under the Apache License, Version 2.0.
 from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
 from atom import ATOMClassifier</div>
-
+    
         </div>
     </div>
 
@@ -3946,7 +3946,7 @@ from atom import ATOMClassifier</div>
 </pre></div>
 <div id="cell-2" class="clipboard-copy-txt"># Load the data
 X, y = load_breast_cancer(return_X_y=True)</div>
-
+    
         </div>
     </div>
 
@@ -3989,7 +3989,7 @@ X, y = load_breast_cancer(return_X_y=True)</div>
             <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 <div id="cell-3" class="clipboard-copy-txt">atom = ATOMClassifier(X, y, n_jobs=6, verbose=2, warnings=False, random_state=1)</div>
-
+    
         </div>
     </div>
 
@@ -4063,7 +4063,7 @@ Test set size: 113
 </pre></div>
 <div id="cell-4" class="clipboard-copy-txt"># It's possible to add custom estimators to the pipeline
 atom.add(StandardScaler())</div>
-
+    
         </div>
     </div>
 
@@ -4121,7 +4121,7 @@ Applying StandardScaler to the dataset...
 </pre></div>
 <div id="cell-5" class="clipboard-copy-txt"># Check that the scaling worked
 atom.scaled</div>
-
+    
         </div>
     </div>
 
@@ -4188,7 +4188,7 @@ atom.automl(
     max_time_mins=5,
     template="Transformer-Transformer-Classifier",
 )</div>
-
+    
         </div>
     </div>
 
@@ -4222,16 +4222,8 @@ atom.automl(
 
 
 
-
-
-
-<div id="e2ed1bda-1b84-46f4-811b-d3e28529286d" class="jupyter-widgets jp-OutputArea-output ">
-<script type="text/javascript">
-var element = document.getElementById('e2ed1bda-1b84-46f4-811b-d3e28529286d');
-</script>
-<script type="application/vnd.jupyter.widget-view+json">
-{"version_major": 2, "version_minor": 0, "model_id": "c1381d990f0b42449c3e6696ec3e135e"}
-</script>
+<div class="jp-RenderedText jp-OutputArea-output " data-mime-type="text/plain">
+<pre>Optimization Progress:   0%|          | 0/100 [00:00&lt;?, ?pipeline/s]</pre>
 </div>
 
 </div>
@@ -4311,7 +4303,7 @@ Adding model XGBoost (XGB) to the pipeline...
 </pre></div>
 <div id="cell-7" class="clipboard-copy-txt"># The tpot estimator can be accessed for further analysis
 atom.tpot</div>
-
+    
         </div>
     </div>
 
@@ -4371,7 +4363,7 @@ atom.tpot</div>
 </pre></div>
 <div id="cell-8" class="clipboard-copy-txt"># Check the new transformers in the branch
 atom.branch.status()</div>
-
+    
         </div>
     </div>
 
@@ -4443,7 +4435,7 @@ atom.branch.status()</div>
 </pre></div>
 <div id="cell-9" class="clipboard-copy-txt"># Or draw the pipeline
 atom.plot_pipeline()</div>
-
+    
         </div>
     </div>
 
@@ -4506,7 +4498,7 @@ class="
 </pre></div>
 <div id="cell-10" class="clipboard-copy-txt"># Note that the model is also merged with atom
 atom.xgb</div>
-
+    
         </div>
     </div>
 
@@ -4569,7 +4561,7 @@ atom.xgb</div>
 <div id="cell-11" class="clipboard-copy-txt"># The pipeline can be exported to a sklearn-like pipeline
 pl = atom.export_pipeline(model="xgb")
 print(pl)</div>
-
+    
         </div>
     </div>
 
@@ -4673,47 +4665,47 @@ print(pl)</div>
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
-
+  
     <div class="md-copyright__highlight">
       © Copyright 2019-2022, by Mavs.
     </div>
-
-
+  
+  
     Made with
     <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
       Material for MkDocs
     </a>
-
+  
 </div>
       
         <div class="md-social">
-
-
-
+  
+    
+    
     <a href="https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3" target="_blank" rel="noopener" title="Slack" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
     </a>
-
-
-
+  
+    
+    
     <a href="https://github.com/tvdboom/ATOM" target="_blank" rel="noopener" title="GitHub" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
     </a>
-
-
-
+  
+    
+    
     <a href="https://tvdboom.medium.com/" target="_blank" rel="noopener" title="Medium" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M180.5 74.262C80.813 74.262 0 155.633 0 256s80.819 181.738 180.5 181.738S361 356.373 361 256 280.191 74.262 180.5 74.262zm288.25 10.646c-49.845 0-90.245 76.619-90.245 171.095s40.406 171.1 90.251 171.1 90.251-76.619 90.251-171.1H559c0-94.503-40.4-171.095-90.248-171.095zm139.506 17.821c-17.526 0-31.735 68.628-31.735 153.274s14.2 153.274 31.735 153.274S640 340.631 640 256c0-84.649-14.215-153.271-31.742-153.271z"/></svg>
     </a>
-
-
-
+  
+    
+    
     <a href="mailto:m.524687@gmail.com" target="_blank" rel="noopener" title="Email" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M256 352c-16.53 0-33.06-5.422-47.16-16.41L0 173.2V400c0 26.5 21.49 48 48 48h416c26.51 0 48-21.49 48-48V173.2L303.2 335.7C289.1 346.6 272.5 352 256 352zM16.29 145.3l212.2 165.1c16.19 12.6 38.87 12.6 55.06 0l212.2-165.1C505.1 137.3 512 125 512 112c0-26.51-21.5-48-48-48H48C21.49 64 0 85.49 0 112c0 13 6.01 25.3 16.29 33.3z"/></svg>
     </a>
-
+  
 </div>
-
+      
     </div>
   </div>
 </footer>
