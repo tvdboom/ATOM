@@ -1,4 +1,4 @@
-name: \U0001F41B Bug Report
+name: ":bug: Bug Report"
 description: Report a bug.
 labels: [bug]
 body:
@@ -32,7 +32,7 @@ body:
   - type: textarea
     attributes:
       label: Python and package version
-      description: Provide the used versions, i.e. run the commands in the console.
+      description: Provide the used versions, i.e. run the following commands in the console.
       value: |
         - Python: `import sys; sys.version`
-        - MkDocs: `import atom; atom.__version__`
+        - ATOM: `import atom; atom.__version__`

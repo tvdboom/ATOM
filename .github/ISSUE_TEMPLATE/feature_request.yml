@@ -1,4 +1,4 @@
-name: \u2728 Feature request
+name: ":rocket: Feature request"
 description: Suggest a new idea for this project.
 labels: [enhancement]
 body:
@@ -14,9 +14,7 @@ body:
   - type: textarea
     attributes:
       label: Description
-      description: |
-        A clear and concise description of what you want to happen, ideally
-        taking into consideration the existing toolbox design, classes and methods.
+      description: A clear and concise description of what you want to happen, ideally taking into consideration the existing toolbox design, classes and methods.
     validations:
       required: true
   - type: textarea

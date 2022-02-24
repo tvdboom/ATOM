@@ -6,19 +6,19 @@ regularly. If you have any other questions, don't hesitate to post
 them on the [slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)! 
 
 
-* [Is this package related to the text editor?](#q1)
-* [How does ATOM relate to AutoML?](#q2)
-* [Is it possible to run deep learning models?](#q3)
-* [Can I run atom's methods on just a subset of the columns?](#q4)
-* [How can I compare the same model on different datasets?](#q5)
-* [Can I train models through atom using a GPU?](#q6)
-* [How are numerical and categorical columns differentiated?](#q7)
-* [Can I run unsupervised learning pipelines?](#q8)
-* [Is there a way to plot multiple models in the same shap plot?](#q9)
-* [Can I merge a sklearn pipeline with atom?](#q10)
-* [Is it possible to initialize atom with an existing train and test set?](#q11)
-* [Can I train the models using cross-validation?](#q12)
-* [Is there a way to process datetime features?](#q13)
+1. [Is this package related to the text editor?](#q1)
+2. [How does ATOM relate to AutoML?](#q2)
+3. [Is it possible to run deep learning models?](#q3)
+4. [Can I run atom's methods on just a subset of the columns?](#q4)
+5. [How can I compare the same model on different datasets?](#q5)
+6. [Can I train models through atom using a GPU?](#q6)
+7. [How are numerical and categorical columns differentiated?](#q7)
+8. [Can I run unsupervised learning pipelines?](#q8)
+9. [Is there a way to plot multiple models in the same shap plot?](#q9)
+10. [Can I merge a sklearn pipeline with atom?](#q10)
+11. [Is it possible to initialize atom with an existing train and test set?](#q11)
+12. [Can I train the models using cross-validation?](#q12)
+13. [Is there a way to process datetime features?](#q13)
 
 
 <br>
@@ -26,7 +26,7 @@ them on the [slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/
 ------
 
 <a name="q1"></a>
-### Is this package related to the text editor?
+### 1. Is this package related to the text editor?
 
 There is, indeed, a text editor with the same name and a similar logo as this
 package. Is this a shameless copy? No. When I started the project, I didn't
@@ -37,7 +37,7 @@ an atom.
 <br>
 
 <a name="q2"></a>
-### How does ATOM relate to AutoML?
+### 2. How does ATOM relate to AutoML?
 
 ATOM is not an AutoML tool since it does not automate the search for
 an optimal pipeline like well known AutoML tools such as
@@ -52,7 +52,7 @@ possible to integrate a TPOT pipeline with atom through the
 <br>
 
 <a name="q3"></a>
-### Is it possible to run deep learning models?
+### 3. Is it possible to run deep learning models?
 
 Yes. Deep learning models can be added as custom models to the pipeline
 as long as they follow [sklearn's API](https://scikit-learn.org/stable/developers/contributing.html#apis-of-scikit-learn-objects).
@@ -64,7 +64,7 @@ a subset of atom's methods will work. For more information, see the
 <br>
 
 <a name="q4"></a>
-### Can I run atom's methods on just a subset of the columns?
+### 4. Can I run atom's methods on just a subset of the columns?
 
 Yes, all [data cleaning](../user_guide/data_cleaning) and
 [feature engineering](../user_guide/feature_engineering) methods accept
@@ -76,7 +76,7 @@ accepts column names, column indices, dtypes or a slice object.
 <br>
 
 <a name="q5"></a>
-### How can I compare the same model on different datasets?
+### 5. How can I compare the same model on different datasets?
 
 In many occasions you might want to test how a model performs on datasets
 processed with different pipelines. For this, atom has the [branch system](../user_guide/data_management/#branches).
@@ -86,7 +86,7 @@ methods to compare all models, independent of the branch it was trained on.
 <br>
 
 <a name="q6"></a>
-### Can I train models through atom using a GPU?
+### 6. Can I train models through atom using a GPU?
 
 ATOM doesn't fit the models himself. The models' underlying package does.
 Since the majority of predefined models are implemented through sklearn
@@ -98,7 +98,7 @@ train on the GPU like it would do without using ATOM.
 <br>
 
 <a name="q7"></a>
-### How are numerical and categorical columns differentiated?
+### 7. How are numerical and categorical columns differentiated?
 
 The columns are separated using a dataframe's [select_dtypes](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html)
 method. Numerical columns are selected using `include="number"`
@@ -107,7 +107,7 @@ whereas categorical columns are selected using `exclude="number"`.
 <br>
 
 <a name="q8"></a>
-### Can I run unsupervised learning pipelines?
+### 8. Can I run unsupervised learning pipelines?
 
 No. As for now, ATOM only supports supervised machine learning pipelines.
 However, various unsupervised algorithms can be chosen as strategy in the
@@ -117,7 +117,7 @@ from the dataset.
 <br>
 
 <a name="q9"></a>
-### Is there a way to plot multiple models in the same shap plot?
+### 9. Is there a way to plot multiple models in the same shap plot?
 
 No. Unfortunately, there is no way to plot multiple models in the same
 [shap plot](../user_guide/plots/#shap) since the plots are made by the [shap](https://github.com/slundberg/shap)
@@ -128,7 +128,7 @@ utility.
 <br>
 
 <a name="q10"></a>
-### Can I merge a sklearn pipeline with atom?
+### 10. Can I merge a sklearn pipeline with atom?
 
 Yes. Like any other transformer, it is possible to add a sklearn
 pipeline to atom using the [add](../API/ATOM/atomclassifier/#add)
@@ -140,7 +140,7 @@ pipeline using `atom.add(pipeline[:-1])`.
 <br>
 
 <a name="q11"></a>
-### Is it possible to initialize atom with an existing train and test set?
+### 11. Is it possible to initialize atom with an existing train and test set?
 
 Yes. If you already have a separated train and test set you can initialize
 atom in two ways:
@@ -155,7 +155,7 @@ is ignored.
 <br>
 
 <a name="q12"></a>
-### Can I train the models using cross-validation?
+### 12. Can I train the models using cross-validation?
 It is not possible to train models using cross-validation, but for a
 good reason. Applying cross-validation would mean transforming every
 step of the pipeline multiple times, each with different results. This
@@ -184,7 +184,7 @@ the final metric results.
 <br>
 
 <a name="q13"></a>
-### Is there a way to process datetime features?
+### 13. Is there a way to process datetime features?
 Yes, the [FeatureExtractor](../API/feature_engineering/feature_extractor)
 class can automatically extract useful features (day, month, year, etc...)
 from datetime columns. The extracted features are always encoded to numerical
