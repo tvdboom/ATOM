@@ -8,6 +8,8 @@ Description: Unit tests for utils.py
 """
 
 # Standard packages
+import sys
+
 import pytest
 import pandas as pd
 from datetime import datetime, timedelta
@@ -21,7 +23,7 @@ from atom.utils import (
 
 def test_time_to_string():
     """Assert that the time strings are formatted properly."""
-    assert time_to_str(datetime.now() - timedelta(seconds=17)) == "17.000s"
+    assert time_to_str(datetime.now() - timedelta(seconds=17)).startswith("17.00")
     assert time_to_str(datetime.now() - timedelta(minutes=1, seconds=2)) == "1m:02s"
     assert time_to_str(datetime.now() - timedelta(hours=3, minutes=8)) == "3h:08m:00s"
 
@@ -58,18 +60,20 @@ def test_custom_dict_key_request():
         print(cd[1.2])
 
 
+@pytest.mark.skipif(sys.version_info[1] < 8, reason="Requires Python 3.8 or higher.")
 def test_custom_dict_manipulations():
     """Assert that the custom dictionary accepts inserts and pops."""
     cd = CustomDict({"a": 0, "b": 1})
+    assert [k for k in reversed(cd)] == ["b", "a"]
     cd.insert(1, "c", 2)
     assert str(cd) == "{'a': 0, 'c': 2, 'b': 1}"
-    cd.insert("a", "d", 3)
-    assert str(cd) == "{'d': 3, 'a': 0, 'c': 2, 'b': 1}"
+    cd.insert(0, "c", 3)
+    assert str(cd) == "{'c': 3, 'a': 0, 'b': 1}"
     cd.popitem()
-    assert str(cd) == "{'d': 3, 'a': 0, 'c': 2}"
-    assert cd.setdefault("d", 5) == 3
-    cd.setdefault("e", 5)
-    assert cd["e"] == 5
+    assert str(cd) == "{'c': 3, 'a': 0}"
+    assert cd.setdefault("c", 5) == 3
+    cd.setdefault("d", 5)
+    assert cd["d"] == 5
     cd.clear()
     pytest.raises(KeyError, cd.popitem)
     pytest.raises(KeyError, cd.index, "f")
@@ -79,7 +83,7 @@ def test_custom_dict_manipulations():
     assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'd': 3}"
     cd.update(e=4)
     assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4}"
-    cd.replace("e", 5)
-    assert cd["e"] == 5
-    cd.replace("f", 6)
-    assert "f" not in cd
+    cd.replace_key("d", "f")
+    assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'f': 3, 'e': 4}"
+    cd.replace_value("f", 6)
+    assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'f': 6, 'e': 4}"

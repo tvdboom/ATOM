@@ -171,7 +171,7 @@ The branch class has the following methods.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L106">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L119">[source]</a>
 </span>
 </div>
 Delete the branch and all the models in it. Same as executing `del atom.branch`.
@@ -182,7 +182,7 @@ Delete the branch and all the models in it. Same as executing `del atom.branch`.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L128">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L152">[source]</a>
 </span>
 </div>
 Change the name of the branch.
@@ -204,7 +204,7 @@ New name for the branch. Can not be empty nor equal to an existing branch.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">status</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L152">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L174">[source]</a>
 </span>
 </div>
 Get an overview of the pipeline and models in the branch. This method
@@ -223,7 +223,9 @@ and [reset](../../API/ATOM/atomclassifier/#reset)). This initial copy
 is created as soon as there are no branches in the initial state (usually
 after calling the first data transformation) and it's stored in an
 internal branch called `og` (original). The og branch is not accessible
-by the user.
+by the user. If the dataset is occupying too much memory, consider
+using the [shrink](../../API/ATOM/atomclassifier/#shrink) method to
+convert the dtypes to their smallest possible matching dtype.
 
 Apart from the dataset itself, the model's [predictions](./predicting)
 (e.g. `predict_proba_train`), metric scores and [shap values](./plots/#shap)

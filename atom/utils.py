@@ -8,7 +8,9 @@ Description: Module containing utility constants, functions and classes.
 """
 
 # Standard packages
+import sys
 import math
+import pprint
 import logging
 import numpy as np
 import pandas as pd
@@ -320,7 +322,7 @@ def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
     mean = X.mean(numeric_only=True).mean()
     std = X.std(numeric_only=True).mean()
-    return True if mean < 0.05 and 0.93 < std < 1.07 else False
+    return True if mean < 0.05 and 0.9 < std < 1.1 else False
 
 
 def get_corpus(X):
@@ -372,7 +374,7 @@ def time_to_str(t_init):
 
     Returns
     -------
-    time: str
+    str
         Time representation.
 
     """
@@ -409,7 +411,7 @@ def to_df(data, index=None, columns=None, dtypes=None):
 
     Returns
     -------
-    df: pd.DataFrame or None
+    pd.DataFrame or None
         Transformed dataframe.
 
     """
@@ -453,7 +455,7 @@ def to_series(data, index=None, name="target", dtype=None):
 
     Returns
     -------
-    series: pd.Series or None
+    pd.Series or None
         Transformed series.
 
     """
@@ -478,7 +480,7 @@ def arr(df):
 
     Returns
     -------
-    df: pd.DataFrame
+    pd.DataFrame
         Stacked dataframe.
 
     """
@@ -505,7 +507,7 @@ def prepare_logger(logger, class_name):
 
     Returns
     -------
-    logger: class
+    class
         Logger object.
 
     """
@@ -560,7 +562,7 @@ def check_is_fitted(estimator, exception=True, attributes=None):
 
     Returns
     -------
-    is_fitted: bool
+    bool
         Whether the estimator is fitted.
 
     """
@@ -581,7 +583,7 @@ def check_is_fitted(estimator, exception=True, attributes=None):
             if v.endswith("_") and not v.startswith("__"):
                 is_fitted = True
                 break
-    elif not all([check_attr(attr) for attr in lst(attributes)]):
+    elif not all(check_attr(attr) for attr in lst(attributes)):
         is_fitted = True
 
     if not is_fitted:
@@ -610,7 +612,7 @@ def create_acronym(fullname):
 
     Returns
     -------
-    acronym:str
+    str
         Created acronym.
 
     """
@@ -636,10 +638,10 @@ def names_from_estimator(cls, est):
 
     Returns
     -------
-    acronym: str
+    str
         Model's acronym.
 
-    fullname: str
+    str
         Model's complete name.
 
     """
@@ -654,7 +656,12 @@ def names_from_estimator(cls, est):
     return create_acronym(est.__class__.__name__), est.__class__.__name__
 
 
-def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
+def get_custom_scorer(
+    metric,
+    greater_is_better=True,
+    needs_proba=False,
+    needs_threshold=False,
+):
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -664,7 +671,7 @@ def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False
     metric: str, func or scorer
         Name, metric or scorer to get ATOM's scorer from.
 
-    gib: bool, optional (default=True)
+    greater_is_better: bool, optional (default=True)
         whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
         better. Is ignored if the metric is a string or a scorer.
@@ -679,7 +686,7 @@ def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False
 
     Returns
     -------
-    scorer: scorer
+    scorer
         Custom sklearn scorer with name attribute.
 
     """
@@ -718,7 +725,7 @@ def get_custom_scorer(metric, gib=True, needs_proba=False, needs_threshold=False
     else:  # Scoring is a function with signature metric(y, y_pred)
         scorer = make_scorer(
             score_func=metric,
-            greater_is_better=gib,
+            greater_is_better=greater_is_better,
             needs_proba=needs_proba,
             needs_threshold=needs_threshold,
         )
@@ -743,17 +750,16 @@ def infer_task(y, goal="class"):
 
     Returns
     -------
-    task: str
+    str
         Inferred task.
 
     """
     if goal == "reg":
         return "regression"
 
-    unique = y.unique()
-    if len(unique) == 1:
-        raise ValueError(f"Only found 1 target value: {unique[0]}")
-    elif len(unique) == 2:
+    if y.nunique() == 1:
+        raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
+    elif y.nunique() == 2:
         return "binary classification"
     else:
         return "multiclass classification"
@@ -770,10 +776,10 @@ def partial_dependence(estimator, X, features):
 
     Parameters
     ----------
-    estimator : class
+    estimator: class
         Model estimator to use.
 
-    X : pd.DataFrame
+    X: pd.DataFrame
         Feature set used to generate a grid of values for the target
         features (where the partial dependence is evaluated), and
         also to generate values for the complement features.
@@ -784,13 +790,13 @@ def partial_dependence(estimator, X, features):
 
     Returns
     -------
-    avg_pred: np.array
+    np.array
         Average of the predictions.
 
-    pred: np.array
+    np.array
         All predictions.
 
-    values: list
+    list
         Values used for the predictions.
 
     """
@@ -825,7 +831,7 @@ def get_feature_importance(est, attributes=None):
 
     Returns
     -------
-    data: np.array
+    np.array
         Estimator's feature importance.
 
     """
@@ -882,14 +888,21 @@ def name_cols(array, original_df, col_names):
 
     # If columns were added or removed
     temp_cols = []
-    for i, col in enumerate(array.T, start=2):
+    for i, col in enumerate(array.T):
         mask = original_df.apply(lambda c: np.array_equal(c, col, equal_nan=True))
         if any(mask) and mask[mask].index.values[0] not in temp_cols:
             # If the column is equal, use the existing name
             temp_cols.append(mask[mask].index.values[0])
         else:
             # If the column is new, use a default name
-            temp_cols.append(f"feature {i + original_df.shape[1] - len(col_names)}")
+            counter = 1
+            while True:
+                n = f"feature {i + counter + original_df.shape[1] - len(col_names)}"
+                if (n not in original_df or n in col_names) and n not in temp_cols:
+                    temp_cols.append(n)
+                    break
+                else:
+                    counter += 1
 
     return temp_cols
 
@@ -1085,17 +1098,17 @@ def custom_transform(transformer, branch, data=None, verbose=None):
         if transformer._train_only:
             branch.train = merge(X, branch.y_train if y is None else y)
         else:
-            branch.data = merge(X, branch.y if y is None else y)
+            branch._data = merge(X, branch.y if y is None else y)
 
             # Since rows can be removed from train and test, reset indices
-            branch.idx[0] = [idx for idx in branch.idx[0] if idx in X.index]
-            branch.idx[1] = [idx for idx in branch.idx[1] if idx in X.index]
+            branch._idx[0] = [idx for idx in branch._idx[0] if idx in X.index]
+            branch._idx[1] = [idx for idx in branch._idx[1] if idx in X.index]
 
         if branch.T.index is False:
-            branch.data = branch.dataset.reset_index(drop=True)
-            branch.idx = [
-                branch.data.index[:len(branch.idx[0])],
-                branch.data.index[-len(branch.idx[1]):],
+            branch._data = branch.dataset.reset_index(drop=True)
+            branch._idx = [
+                branch._data.index[:len(branch._idx[0])],
+                branch._data.index[-len(branch._idx[1]):],
             ]
 
     # Back to the original verbosity
@@ -1498,7 +1511,7 @@ class ShapExplanation:
 
         return self._explainer
 
-    def get_explanation(self, df, target=1, feature=None):
+    def get_explanation(self, df, target=1, feature=None, only_one=False):
         """Get an Explanation object.
 
         Parameters
@@ -1512,6 +1525,9 @@ class ShapExplanation:
 
         feature: int or str
             Index or name of the feature to look at.
+
+        only_one: bool, optional (default=False)
+            Whether only one row is accepted.
 
         Returns
         -------
@@ -1543,7 +1559,7 @@ class ShapExplanation:
         # Select the target values from the array
         if self._explanation.values.ndim > 2:
             self._explanation = self._explanation[:, :, target]
-        if self._explanation.shape[0] == 1:  # Rows is a df with one row only
+        if only_one:  # Rows should be a df with one row only
             self._explanation = self._explanation[0]
 
         if feature is None:
@@ -1590,11 +1606,11 @@ class CustomDict(MutableMapping):
 
     The main differences with the Python dictionary are:
         - It has ordered entries.
-        - It allows getting an item from an index position.
-        - It can insert key value pairs at a specific position.
         - Key requests are case-insensitive.
         - Returns a subset of itself using getitem with a list of keys.
-        - Replace method to change a value only if key exists.
+        - It allows getting an item from an index position.
+        - It can insert key value pairs at a specific position.
+        - Replace method to change a key or value if key exists.
         - Min method to return all elements except one.
 
     """
@@ -1665,7 +1681,12 @@ class CustomDict(MutableMapping):
         return self._conv(key) in self.__data
 
     def __repr__(self):
-        return str(dict(self))
+        # The sort_dicts parameter is introduced in Python 3.8
+        kwargs = {} if sys.version_info[1] < 8 else {"sort_dicts": False}
+        return pprint.pformat(dict(self), **kwargs)
+
+    def __reversed__(self):
+        yield from reversed(list(self.keys()))
 
     def keys(self):
         yield from self.__keys
@@ -1679,12 +1700,11 @@ class CustomDict(MutableMapping):
             yield self.__data[self._conv(key)]
 
     def insert(self, pos, new_key, value):
-        try:
-            self.__keys.insert(self.__keys.index(self._get_key(pos)), new_key)
-        except (ValueError, KeyError):
-            self.__keys.insert(pos, new_key)
-        finally:
-            self.__data[self._conv(new_key)] = value
+        # If key already exists, remove old first
+        if new_key in self:
+            self.__delitem__(new_key)
+        self.__keys.insert(pos, new_key)
+        self.__data[self._conv(new_key)] = value
 
     def get(self, key, default=None):
         if key in self:
@@ -1704,7 +1724,7 @@ class CustomDict(MutableMapping):
         try:
             return self.__data.pop(self._conv(self.__keys.pop()))
         except IndexError:
-            raise KeyError(f"{self.__class__.__name__} is empty")
+            raise KeyError(f"{self.__class__.__name__} is empty.")
 
     def clear(self):
         self.__keys = []
@@ -1733,7 +1753,12 @@ class CustomDict(MutableMapping):
     def index(self, key):
         return self.__keys.index(self._get_key(key))
 
-    def replace(self, key, value):
+    def replace_key(self, key, new_key):
+        if key in self:
+            self.insert(self.__keys.index(self._get_key(key)), new_key, self[key])
+            self.__delitem__(key)
+
+    def replace_value(self, key, value=None):
         if key in self:
             self[key] = value
 

@@ -30,6 +30,7 @@ from .data_cleaning import (
     FuncTransformer,
     Cleaner,
     Gauss,
+    Discretizer,
     Scaler,
     Imputer,
     Encoder,
@@ -74,9 +75,20 @@ class ATOM(BasePredictor, ATOMPlotter):
     """
 
     @composed(crash, method_to_log)
-    def __init__(self, arrays, y, index, shuffle, n_rows, test_size, holdout_size):
+    def __init__(
+        self,
+        arrays,
+        y=-1,
+        index=False,
+        shuffle=True,
+        stratify=True,
+        n_rows=1,
+        test_size=0.2,
+        holdout_size=None,
+    ):
         self.index = index
         self.shuffle = shuffle
+        self.stratify = stratify
         self.n_rows = n_rows
         self.test_size = test_size
         self.holdout_size = holdout_size
@@ -92,19 +104,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("<< ================== ATOM ================== >>", 1)
 
         # Prepare the provided data
-        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays, y=y)
+        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays, y=y)
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
-
-        # Assign mapping
-        try:  # Can fail if str and NaN in target column
-            classes = sorted(self.y.unique())
-        except TypeError:
-            classes = self.y.unique()
-        self.branch.mapping = {str(value): value for value in classes}
 
         self.log("", 1)  # Add empty rows around stats for cleaner look
         self.stats(1)
@@ -112,7 +117,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     def __repr__(self):
         out = f"{self.__class__.__name__}"
-        out += f"\n --> Branches:"
+        out += "\n --> Branches:"
         if len(self._branches.min("og")) == 1:
             out += f" {self._current}"
         else:
@@ -139,22 +144,20 @@ class ATOM(BasePredictor, ATOMPlotter):
                 self._current = self._branches[name].name
                 self.log(f"Switched to branch {self._current}.", 1)
         else:
-            # Branch can be created from current or another
+            # Branch can be created from current or another one
             if "_from_" in name:
-                new_branch, from_branch = name.split("_from_")
+                new, old = name.split("_from_")
             else:
-                new_branch, from_branch = name, self._current
+                new, old = name, self._current
 
             # Check if the new name is valid
-            if not new_branch:
+            if not new:
                 raise ValueError("A branch can't have an empty name!")
-            elif new_branch in self._branches:  # Can happen when using _from_
-                raise ValueError(
-                    f"Branch {self._branches[new_branch].name} already exists!"
-                )
+            elif new in self._branches:  # Can happen when using _from_
+                raise ValueError(f"Branch {self._branches[new].name} already exists!")
             else:
                 for model in MODELS_ENSEMBLES.values():
-                    if new_branch.lower().startswith(model.acronym.lower()):
+                    if new.lower().startswith(model.acronym.lower()):
                         raise ValueError(
                             "Invalid name for the branch. The name of a branch may "
                             f"not begin with a model's acronym, and {model.acronym} "
@@ -162,14 +165,14 @@ class ATOM(BasePredictor, ATOMPlotter):
                         )
 
             # Check if the parent branch exists
-            if from_branch not in self._branches:
+            if old not in self._branches:
                 raise ValueError(
                     "The selected branch to split from does not exist! Use "
                     "atom.status() for an overview of the available branches."
                 )
 
-            self._branches[new_branch] = Branch(self, new_branch, parent=from_branch)
-            self._current = new_branch
+            self._branches[new] = Branch(self, new, parent=self._branches[old])
+            self._current = new
             self.log(f"New branch {self._current} successfully created.", 1)
 
     @property
@@ -251,7 +254,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 "train": self.y_train.value_counts(sort=False, dropna=False),
                 "test": self.y_test.value_counts(sort=False, dropna=False),
             },
-            index=self.mapping.values(),
+            index=self.mapping.get(self.target, self.y.sort_values().unique()),
         ).fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
@@ -597,8 +600,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             the values in the column are strictly positive.
 
         dense2sparse: bool, optional (default=False)
-            Whether to convert all features to sparse format. The element
-            that is compressed is always zero.
+            Whether to convert all features to sparse format. The value
+            that is compressed is the most frequent value in the column.
 
         columns: int, str, slice, sequence or None, optional (default=None)
             Names, indices or dtypes of the columns in the dataset to
@@ -661,14 +664,14 @@ class ATOM(BasePredictor, ATOMPlotter):
                 else:
                     new_dtypes[name] = new_t
 
-        self.branch.data = self.branch.data.astype(new_dtypes)
+        self.branch.dataset = self.branch.dataset.astype(new_dtypes)
 
         if dense2sparse:
             new_cols = {}
             for name, column in self.X.items():
                 new_cols[name] = pd.arrays.SparseArray(
                     data=column,
-                    fill_value=0,
+                    fill_value=column.mode(dropna=False)[0],
                     dtype=column.dtype,
                 )
 
@@ -688,6 +691,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
+
+        memory = self.dataset.memory_usage(deep=True).sum()
+        if memory < 1e6:
+            self.log(f"Memory: {memory / 1e3:.2f} kB", _vb)
+        else:
+            self.log(f"Memory: {memory / 1e6:.2f} MB", _vb)
 
         if not is_multidim(self.X):
             if is_sparse(self.X):
@@ -731,10 +740,16 @@ class ATOM(BasePredictor, ATOMPlotter):
         if self.task != "regression":
             self.log("-" * 37, _vb)
             cls = self.classes
-            spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * len(cls.columns))
             func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
 
-            table = Table([("", "left"), *cls.columns], spaces)
+            # Create custom Table object and print the content
+            table = Table(
+                headers=[("", "left"), *cls.columns],
+                spaces=(
+                    max(cls.index.astype(str).str.len()),
+                    *[len(str(max(cls["dataset"]))) + 8] * len(cls.columns),
+                )
+            )
             self.log(table.print_header(), _vb + 1)
             self.log(table.print_line(), _vb + 1)
             for i, row in cls.iterrows():
@@ -768,8 +783,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
-
-            Feature set with shape=(n_samples, n_features).
 
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
@@ -881,7 +894,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         train_only: bool = False,
         **fit_params,
     ):
-        """Add a estimator to the current branch.
+        """Add an estimator to the current branch.
 
         If the estimator is not fitted, it is fitted on the complete
         training set. Afterwards, the data set is transformed and the
@@ -1076,9 +1089,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         self._add_transformer(cleaner, columns=columns)
 
-        # Assign mapping (if it changed)
         if cleaner.mapping:
-            self.branch.mapping = cleaner.mapping
+            self.branch.mapping.insert(-1, self.target, cleaner.mapping)
 
     @composed(crash, method_to_log, typechecked)
     def impute(
@@ -1113,6 +1125,30 @@ class ATOM(BasePredictor, ATOMPlotter):
         imputer.missing = self.missing
 
         self._add_transformer(imputer, columns=columns)
+
+    @composed(crash, method_to_log)
+    def discretize(
+        self,
+        strategy: str = "quantile",
+        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
+        labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
+        **kwargs,
+    ):
+        """Bin continuous data into intervals.
+
+        For each feature, the bin edges are computed during fit
+        and, together with the number of bins, they will define the
+        intervals. Ignores numerical columns.
+
+        See data_cleaning.py for a description of the parameters.
+
+        """
+        check_dim(self, "discretize")
+        columns = kwargs.pop("columns", None)
+        kwargs = self._prepare_kwargs(kwargs, Discretizer().get_params())
+        discretizer = Discretizer(strategy=strategy, bins=bins, labels=labels, **kwargs)
+
+        self._add_transformer(discretizer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def encode(
@@ -1152,6 +1188,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         self._add_transformer(encoder, columns=columns)
+
+        # Add mapping of the encoded columns to the branch
+        for key, value in encoder.mapping.items():
+            self.branch.mapping.insert(-1, key, value)
 
     @composed(crash, method_to_log, typechecked)
     def prune(
@@ -1218,8 +1258,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         kwargs = self._prepare_kwargs(kwargs, Balancer().get_params())
         balancer = Balancer(strategy=strategy, **kwargs)
 
-        # Add mapping from atom to balancer for cleaner printing
-        balancer.mapping = self.mapping
+        # Add target column mapping for cleaner printing
+        balancer.mapping = self.mapping.get(self.target, {})
 
         self._add_transformer(balancer, columns=columns, train_only=True)
 
@@ -1411,8 +1451,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         strategy: str = "DFS",
         n_features: Optional[int] = None,
-        generations: int = 20,
-        population: int = 500,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
@@ -1432,8 +1470,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         feature_generator = FeatureGenerator(
             strategy=strategy,
             n_features=n_features,
-            generations=generations,
-            population=population,
             operators=operators,
             **kwargs,
         )

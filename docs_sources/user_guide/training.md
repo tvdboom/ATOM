@@ -165,7 +165,7 @@ or already scaled. The data is considered scaled if it has one of
 the following prerequisites:
 
 * The mean value over the mean of all columns is <0.05 and the mean of
-  the standard deviation over all columns lies between 0.93 and 1.07.
+  the standard deviation over all columns lies between 0.9 and 1.1.
 * There is a transformer in the pipeline whose \__name__ contains the
   word `scaler`.
 
@@ -297,6 +297,16 @@ atom.run(
     n_calls=30,
     bo_params={"dimensions": {"all": "n_estimators", "RF": "max_depth"}},
 )
+```
+
+Like the `columns` parameter in atom's methods, you can exclude parameters
+from the BO adding `!` before its name. It's possible to exclude multiple
+parameters, but not to combine inclusion and exclusion for the same model.
+For example, to optimize a Random Forest using all its predefined parameters
+except `n_estimators`, run:
+
+```python
+atom.run(models="ET", n_calls=15, bo_params={"dimensions": "!n_estimators"})
 ```
 
 If just the parameter name is provided, the predefined dimension space

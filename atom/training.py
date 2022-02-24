@@ -59,7 +59,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
+        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._prepare_parameters()
 
@@ -112,7 +112,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
+        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._prepare_parameters()
 
@@ -211,7 +211,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self.branch.data, self.branch.idx, self.holdout = self._get_data(arrays)
+        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._prepare_parameters()
 

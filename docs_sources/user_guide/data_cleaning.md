@@ -91,6 +91,23 @@ method.
 
 <br>
 
+## Binning numerical features
+
+Discretization (otherwise known as quantization or binning) provides
+a way to partition continuous features into discrete values. Certain
+datasets with continuous features may benefit from discretization,
+because discretization can transform the dataset of continuous
+attributes to one with only nominal attributes. Discretization is
+similar to constructing histograms for continuous data. However,
+histograms focus on counting features which fall into particular bins,
+whereas discretization focuses on assigning feature values to these
+bins. The [Discretizer](../../API/data_cleaning/discretizer) class can
+be used to bin continuous data into intervals. It can be accessed from
+atom through the [discretize](../../API/ATOM/atomclassifier/#discretize)
+method.
+
+<br>
+
 ## Encoding categorical features
 
 Many datasets contain categorical features. Their variables are

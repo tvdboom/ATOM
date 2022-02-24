@@ -12,12 +12,11 @@ on:
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest ]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ['3.7', '3.8', '3.9']
 
     steps:
     - uses: actions/checkout@v2
@@ -27,10 +26,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install --upgrade setuptools
-        pip install --upgrade coverage
-        pip install --upgrade codecov
+        pip install -U pip
+        pip install -U setuptools
+        pip install -U coverage
+        pip install -U codecov
+        pip install -U flake8
         pip install -r requirements.txt
         pip install -r requirements-optional.txt
         pip install -r requirements-test.txt
@@ -38,3 +38,5 @@ jobs:
       run: coverage run -m pytest
     - name: Get coverage
       run: codecov
+    - name: Run linting
+      run: flake8 --show-source --statistics atom

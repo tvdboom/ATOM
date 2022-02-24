@@ -1,6 +1,23 @@
 # Release history
 -----------------
 
+<a name="v4120"></a>
+### Version 4.12.0
+
+* Support for [Python 3.10](https://www.python.org/downloads/release/python-3100/).
+* New [Discretizer](../API/data_cleaning/discretizer) class to bin numerical features.
+* Refactor of the [FeatureGenerator](../API/feature_engineering/feature_generator) class.
+* The `mapping` attribute now shows all encoded features.
+* Added the `sample_weight` parameter to the [evaluate](../API/ATOM/atomclassifier/#evaluate) method.
+* [ATOMClassifier](../API/ATOM/atomclassifier) has now a `stratify` parameter
+  to split the data sets in a [stratified fashion](https://en.wikipedia.org/wiki/Stratified_sampling).
+* Possibility to exclude hyperparameters from the BO adding `!` before the name.
+* Added memory usage to the [stats](../API/ATOM/atomclassifier/#stats) method.
+* Fixed a bug where [decision_plot](../API/plots/decision_plot) could fail when
+  only one row was plotted.
+* Added versioning to the documentation.
+
+
 <a name="v4110"></a>
 ### Version 4.11.0
 
@@ -305,7 +322,7 @@
 * Added the [Deep learning](../examples/deep_learning), 
   [Ensembles](../examples/ensembles) and
   [Utilities](../examples/utilities) example notebooks.
-* Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
+* Support for [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 
 <a name="v410"></a>

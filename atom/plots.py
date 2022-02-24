@@ -326,17 +326,17 @@ class BasePlotter:
     def _get_target(self, target):
         """Check and return the provided target's index."""
         if isinstance(target, str):
-            if target not in self.mapping:
+            try:
+                return self.mapping[self.target][target]
+            except (TypeError, KeyError):
                 raise ValueError(
                     f"Invalid value for the target parameter. Value {target} "
                     "not found in the mapping of the target column."
                 )
-            return self.mapping[target]
-
-        elif not 0 <= target < len(self.y.unique()):
+        elif not 0 <= target < self.y.nunique(dropna=False):
             raise ValueError(
                 "Invalid value for the target parameter. There are "
-                f"{len(self.y.unique())} classes, got {target}."
+                f"{self.y.nunique(dropna=False)} classes, got {target}."
             )
 
         return target
@@ -794,7 +794,7 @@ class BaseModelPlotter(BasePlotter):
         # Not using sns hue parameter because of legend formatting
         lines = defaultdict(pd.DataFrame)
         for m in models:
-            n_models = len(m.branch.idx[0]) // m._train_idx  # Number of models in iter
+            n_models = len(m.branch._idx[0]) // m._train_idx  # Number of models in iter
             if m.metric_bootstrap is None:
                 values = {"x": [n_models], "y": [get_best_score(m, metric)]}
             else:
@@ -1083,7 +1083,7 @@ class BaseModelPlotter(BasePlotter):
         metric = self._get_metric(metric)
 
         # Check there is at least one model that run the BO
-        if all([m.bo.empty for m in models]):
+        if all(m.bo.empty for m in models):
             raise PermissionError(
                 "The plot_bo method is only available for models that "
                 "ran the bayesian optimization hyperparameter tuning!"
@@ -1362,8 +1362,7 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
                 plt.plot(rec, prec, lw=2, label=label)
 
-        dum = len(m.y_test[m.y_test == m.mapping[list(m.mapping)[1]]]) / len(m.y_test)
-        self._draw_line(ax=ax, x=dum)
+        self._draw_line(ax=ax, x=m.y_test.sort_values().iloc[-1] / len(m.y_test))
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -2489,7 +2488,7 @@ class BaseModelPlotter(BasePlotter):
                 ax=ax,
             )
             cbar.set_label(
-                label=f"Normalized feature importance",
+                label="Normalized feature importance",
                 labelpad=15,
                 fontsize=self.label_fontsize,
                 rotation=270,
@@ -2616,8 +2615,8 @@ class BaseModelPlotter(BasePlotter):
                 ax.set(
                     xticks=np.arange(cm.shape[1]),
                     yticks=np.arange(cm.shape[0]),
-                    xticklabels=self.mapping.keys(),
-                    yticklabels=self.mapping.keys(),
+                    xticklabels=m.mapping.get(m.target, m.y.sort_values().unique()),
+                    yticklabels=m.mapping.get(m.target, m.y.sort_values().unique()),
                 )
 
                 # Loop over data dimensions and create text annotations
@@ -2834,7 +2833,7 @@ class BaseModelPlotter(BasePlotter):
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             for set_ in dataset:
-                for key, value in self.mapping.items():
+                for value in m.y.sort_values().unique():
                     # Get indices per class
                     idx = np.where(getattr(m, f"y_{set_}") == value)[0]
 
@@ -2843,7 +2842,7 @@ class BaseModelPlotter(BasePlotter):
                         data=getattr(m, f"predict_proba_{set_}")[idx, target],
                         kde=True,
                         bins=50,
-                        label=label + f" ({self.target}={key})",
+                        label=label + f" ({self.target}={value})",
                         color=next(palette),
                         ax=ax,
                     )
@@ -3570,7 +3569,7 @@ class BaseModelPlotter(BasePlotter):
             from a model, e.g. `atom.xgb.waterfall_plot()`.
 
         index: int, str or None, optional (default=None)
-            Index or position of the row in the dataset to plot.
+            Index name or position of the row in the dataset to plot.
             If None, it selects the first row in the test set. The
             waterfall plot does not support plotting multiple
             samples.
@@ -3610,7 +3609,7 @@ class BaseModelPlotter(BasePlotter):
         rows = m.X.loc[[self._get_rows(index, branch=m.branch)[0]]]
         show = self._get_show(show, m)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(rows, target)
+        explanation = m._shap.get_explanation(rows, target, only_one=True)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)

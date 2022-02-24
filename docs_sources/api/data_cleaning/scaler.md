@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(strategy="standard",
 verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L160">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L163">[source]</a>
 </span>
 </div>
 
@@ -21,10 +21,10 @@ This class can be accessed from atom through the
 <strong>strategy: str, optional (default="standard")</strong><br>
 Strategy with which to scale the data. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">standard</a></li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">minmax</a></li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">maxabs</a></li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">robust</a></li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">standard</a>": Remove mean and scale to unit variance.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">minmax</a>": Scale features to a given range.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">maxabs</a>": Scale features by their maximum absolute value.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">robust</a>": Scale using statistics that are robust to outliers.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -113,7 +113,7 @@ Object instance with which the data is scaled.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L210">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L214">[source]</a>
 </span>
 </div>
 Compute the mean and std to be used for scaling.
@@ -145,7 +145,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
 </span>
 </div>
 Fit to data, then transform it.
@@ -207,7 +207,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -233,7 +233,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -279,7 +279,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L245">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L251">[source]</a>
 </span>
 </div>
 Perform standardization by centering and scaling.

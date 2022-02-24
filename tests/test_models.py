@@ -151,6 +151,18 @@ def test_CatNB():
     assert hasattr(atom, "CatNB")
 
 
+def test_LR():
+    """Assert that elasticnet doesn't crash with default l1_ratio."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="LR",
+        n_calls=2,
+        n_initial_points=1,
+        est_params={"penalty": "elasticnet", "solver": "saga"},
+    )
+    assert atom.lr.bo["params"][0]["l1_ratio"] is not None
+
+
 def test_RNN():
     """Assert that the RNN model works when called just for the estimator."""
     with pytest.raises(ValueError):

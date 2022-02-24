@@ -24,10 +24,10 @@ with open("requirements-test.txt", encoding="utf8") as f:
 
 setuptools.setup(
     name="atom-ml",
-    version="4.11.0",
+    version="4.12.0",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url=f"https://github.com/tvdboom/ATOM/archive/v4.11.0.tar.gz",
+    download_url=f"https://github.com/tvdboom/ATOM/archive/v4.12.0.tar.gz",
     url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",
@@ -39,6 +39,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",

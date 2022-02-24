@@ -234,9 +234,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     def _prepare_parameters(self):
         """Check the validity of the input parameters."""
-        if self.mapping is None:
-            self.mapping = {str(v): v for v in sorted(self.y.unique())}
-
         if self.scaled is None and not is_multidim(self.X) and not is_sparse(self.X):
             self.scaled = check_scaling(self.X)
 

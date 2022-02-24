@@ -12,7 +12,7 @@ import pytest
 import pandas as pd
 
 # Own modules
-from atom import ATOMClassifier
+from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import merge
 from .utils import X_bin, y_bin, X_class, X_bin_array, y_bin_array, mnist
 
@@ -30,7 +30,7 @@ def test_attrs_are_passed():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
     atom.branch = "b2"
-    assert atom.b2.idx is not atom.master.idx
+    assert atom.b2._idx is not atom.master._idx
     assert atom.b2.adasyn is atom.master.adasyn
 
 
@@ -149,7 +149,7 @@ def test_status_method():
 def test_dataset_property():
     """Assert that the dataset property returns the data in the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.branch.dataset is atom.branch.data
+    assert atom.branch.dataset is atom.branch._data
 
 
 def test_train_property():
@@ -248,7 +248,7 @@ def test_n_features_property():
 
 def test_target_property():
     """Assert that the target property returns the last column in the dataset."""
-    atom = ATOMClassifier(X_bin, "mean radius", random_state=1)
+    atom = ATOMRegressor(X_bin, "mean radius", random_state=1)
     assert atom.branch.target == "mean radius"
 
 
@@ -296,9 +296,9 @@ def test_X_setter():
 def test_y_setter():
     """Assert that the y setter changes the target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y[0] == 1  # First value is 1 in original
-    atom.y = [0] + list(y_bin.values[1:])
-    assert atom.y[0] == 0  # First value changed to 0
+    assert atom.y[0] == 0  # First value is 1 in original
+    atom.y = [1] + list(y_bin.values[1:])
+    assert atom.y[0] == 1  # First value changed to 0
 
 
 def test_X_train_setter():
@@ -323,17 +323,17 @@ def test_X_test_setter():
 def test_y_train_setter():
     """Assert that the y_train setter changes the training target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_train.iloc[0] == 1  # First value is 1 in original
-    atom.y_train = [0] + list(atom.y_train.values[1:])
-    assert atom.y_train.iloc[0] == 0  # First value changed to 0
+    assert atom.y_train.iloc[0] == 0  # First value is 1 in original
+    atom.y_train = [1] + list(atom.y_train.values[1:])
+    assert atom.y_train.iloc[0] == 1  # First value changed to 0
 
 
 def test_y_test_setter():
     """Assert that the y_test setter changes the training target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_test.iloc[0] == 0  # First value is 0 in original
-    atom.y_test = [1] + list(atom.y_test.values[1:])
-    assert atom.y_test.iloc[0] == 1  # First value changed to 1
+    assert atom.y_test.iloc[0] == 1  # First value is 0 in original
+    atom.y_test = [0] + list(atom.y_test.values[1:])
+    assert atom.y_test.iloc[0] == 0  # First value changed to 1
 
 
 def test_data_properties_to_df():

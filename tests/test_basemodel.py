@@ -13,6 +13,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from unittest.mock import patch
+from skopt.space.space import Integer
 from skopt.learning import GaussianProcessRegressor
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, r2_score, recall_score
@@ -65,6 +66,8 @@ def test_getitem():
     """Assert that the models are subscriptable."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("Tree")
+    print(atom.dataset["alcohol"])
+    print(atom.tree["alcohol"])
     assert atom.tree["alcohol"].equals(atom.dataset["alcohol"])
     assert isinstance(atom.tree[["alcohol", "ash"]], pd.DataFrame)
     with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
@@ -92,6 +95,57 @@ def test_bo_with_no_hyperparameters():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(models="BNB", n_calls=10, est_params={"alpha": 1.0, "fit_prior": True})
     assert atom.bnb.bo.empty
+
+
+def test_custom_dimensions_is_name():
+    """Assert that the parameters to tune can be set by name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="LR",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": "max_iter"},
+    )
+    assert list(atom.lr.best_params) == ["max_iter"]
+
+
+def test_custom_dimensions_is_name_excluded():
+    """Assert that the parameters to tune can be excluded by name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="CNB",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": "!fit_prior"},
+    )
+    assert list(atom.cnb.best_params) == ["alpha", "norm"]
+
+
+def test_custom_dimensions_name_is_invalid():
+    """Assert that an error is raised when an invalid parameter is provided."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*is not a predefined hyperparameter.*"):
+        atom.run("LR", n_calls=5, bo_params={"dimensions": "invalid"})
+
+
+def test_custom_dimensions_is_dim():
+    """Assert that the custom dimensions are for all models if dimension."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(
+        models="LR",
+        n_calls=2,
+        n_initial_points=2,
+        bo_params={"dimensions": Integer(10, 20, name="max_iter")},
+        random_state=1,
+    )
+    assert list(atom.lr.best_params) == ["max_iter"]
+
+
+def test_custom_dimensions_include_and_excluded():
+    """Assert that an error is raised when parameters are included and excluded."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*either include or exclude.*"):
+        atom.run("LR", n_calls=5, bo_params={"dimensions": ["!max_iter", "penalty"]})
 
 
 def test_default_parameters():
@@ -367,7 +421,7 @@ def test_test_property():
 
 def test_holdout_property():
     """Assert that the holdout property is calculated."""
-    atom = ATOMClassifier(X10_str, y10, holdout_size=0.1, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, holdout_size=0.3, random_state=1)
     atom.encode()
     atom.run(["LR", "Tree"])
     assert not atom.lr.holdout.equals(atom.tree.holdout)  # Scaler vs no scaler
@@ -510,15 +564,14 @@ def test_dashboard_invalid_dataset():
         atom.rf.dashboard(dataset="invalid")
 
 
-# TODO: Fails when explainerdashboard with pandas>=3.4.0
-# @patch("explainerdashboard.ExplainerDashboard.run")
-# @pytest.mark.parametrize("dataset", ["train", "both", "holdout"])
-# def test_dashboard(func, dataset):
-#     """Assert that an error is raised when dataset is invalid."""
-#     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-#     atom.run("RF")
-#     atom.rf.dashboard(dataset=dataset)
-#     func.assert_called_once()
+@patch("explainerdashboard.ExplainerDashboard.run")
+@pytest.mark.parametrize("dataset", ["train", "both", "holdout"])
+def test_dashboard(func, dataset):
+    """Assert that an error is raised when dataset is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("RF")
+    atom.rf.dashboard(dataset=dataset)
+    func.assert_called_once()
 
 
 @patch("explainerdashboard.ExplainerDashboard.run")
@@ -596,6 +649,15 @@ def test_evaluate_threshold():
     atom.run("RF")
     pred_1 = atom.rf.evaluate(threshold=0.01)
     pred_2 = atom.rf.evaluate(threshold=0.99)
+    assert not pred_1.equals(pred_2)
+
+
+def test_evaluate_sample_weight():
+    """Assert that the sample_weight parameter changes the predictions."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("RF")
+    pred_1 = atom.rf.evaluate(sample_weight=None)
+    pred_2 = atom.rf.evaluate(sample_weight=list(range(len(atom.y_test))))
     assert not pred_1.equals(pred_2)
 
 

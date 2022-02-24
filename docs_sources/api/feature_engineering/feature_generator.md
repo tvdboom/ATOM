@@ -3,8 +3,8 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="DFS",
-n_features=None, generations=20, population=500, operators=None,
-n_jobs=1, verbose=0, logger=None, random_state=None)
+n_features=None, operators=None, n_jobs=1, verbose=0, logger=None,
+random_state=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L231">[source]</a>
 </span>
@@ -28,17 +28,8 @@ Strategy to crate new features. Choose from:
 </ul>
 <p>
 <strong>n_features: int or None, optional (default=None)</strong><br>
-Number of newly generated features to add to the dataset (no
-more than 1% of the population for the genetic strategy). If
+Maximum number of newly generated features to add to the dataset. If
 None, select all created features.
-</p>
-<p>
-<strong>generations: int, optional (default=20)</strong><br>
-Number of generations to evolve. Only for the genetic strategy.
-</p>
-<p>
-<strong>population: int, optional (default=500)</strong><br>
-Number of programs in each generation. Only for the genetic strategy.
 </p>
 <p>
 <strong>operators: str, list, tuple or None, optional (default=None)</strong><br>
@@ -65,9 +56,16 @@ Verbosity level of the class. Possible values are:
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
+<p>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>np.random</code>.
+</p>
+<p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments for the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
+instance. Only for the genetic strategy.
+</p>
 </td>
 </tr>
 </table>
@@ -162,7 +160,7 @@ strategy. Columns include:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L328">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L322">[source]</a>
 </span>
 </div>
 Fit to data.
@@ -195,7 +193,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
 </span>
 </div>
 Fit to data, then transform it.
@@ -258,7 +256,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L487">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -284,7 +282,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L508">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -330,7 +328,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L469">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L431">[source]</a>
 </span>
 </div>
 Generate new features.

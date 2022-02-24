@@ -19,11 +19,12 @@ import multiprocessing
 from copy import deepcopy
 from typeguard import typechecked
 from typing import Union, Optional
+from sklearn.model_selection import train_test_split
 
 # Own modules
 from .utils import (
-    SEQUENCE, X_TYPES, Y_TYPES, to_df, to_series, merge, prepare_logger,
-    composed, crash, method_to_log,
+    SEQUENCE, X_TYPES, Y_TYPES, lst, to_df, to_series, merge,
+    prepare_logger, composed, crash, method_to_log,
 )
 
 
@@ -255,6 +256,35 @@ class BaseTransformer:
 
         return df
 
+    def _get_stratify_columns(self, df):
+        """Get columns to stratify by."""
+        # Stratification is not possible when the data can not change order
+        if self.shuffle is False or self.stratify is False:
+            return None
+        elif self.stratify is True:
+            return df.iloc[:, -1]
+        else:
+            inc = []
+            for col in lst(self.stratify):
+                if isinstance(col, int):
+                    if -df.shape[1] <= col <= df.shape[1]:
+                        inc.append(df.columns[col])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for the stratify parameter. Value {col} "
+                            f"is out of range for a dataset with {df.shape[1]} columns."
+                        )
+                elif isinstance(col, str):
+                    if col in df:
+                        inc.append(col)
+                    else:
+                        raise ValueError(
+                            "Invalid value for the stratify parameter. "
+                            f"Column {col} not found in the dataset."
+                        )
+
+            return df[inc]
+
     def _get_data(self, arrays, y=-1, use_n_rows=True):
         """Get the data sets and indices from a sequence of indexables.
 
@@ -302,16 +332,15 @@ class BaseTransformer:
                     )
 
                 # Select subset of the data
-                n = self.n_rows if self.n_rows > 1 else len(data) * self.n_rows
-                if self.shuffle:
-                    data = data.sample(n=int(n), random_state=self.random_state)
+                if self.n_rows > 1:
+                    data = data.iloc[:int(self.n_rows), :]
                 else:
-                    data = data.iloc[:int(n), :]
+                    data = data.iloc[:int(len(data) * self.n_rows), :]
 
-            if len(data) < 2:
+            if len(data) < 5:
                 raise ValueError(
                     "Invalid value for the n_rows parameter. The "
-                    f"length of the dataset can't be <2, got {self.n_rows}."
+                    f"length of the dataset can't be <5, got {self.n_rows}."
                 )
 
             if not 0 < self.test_size < len(data):
@@ -326,8 +355,8 @@ class BaseTransformer:
             else:
                 test_size = self.test_size
 
+            # Define holdout set size
             if self.holdout_size:
-                # Define holdout set size
                 if self.holdout_size < 1:
                     holdout_size = max(1, int(self.holdout_size * len(data)))
                 else:
@@ -340,18 +369,27 @@ class BaseTransformer:
                         f"got {self.holdout_size}."
                     )
 
-                holdout = self._set_index(data.iloc[-holdout_size:, :])
-                data = self._set_index(data.iloc[:-holdout_size, :])
-                idx = [data.index[:-test_size], data.index[-test_size:]]
-
-                return data, idx, holdout
-
+                data, holdout = train_test_split(
+                    data,
+                    test_size=holdout_size,
+                    random_state=self.random_state,
+                    shuffle=self.shuffle,
+                    stratify=self._get_stratify_columns(data),
+                )
+                holdout = self._set_index(holdout)
             else:
                 holdout = None
-                data = self._set_index(data)
-                idx = [data.index[:-test_size], data.index[-test_size:]]
 
-                return data, idx, holdout
+            train, test = train_test_split(
+                data,
+                test_size=test_size,
+                random_state=self.random_state,
+                shuffle=self.shuffle,
+                stratify=self._get_stratify_columns(data),
+            )
+            data = self._set_index(pd.concat([train, test]))
+
+            return data, [data.index[:-test_size], data.index[-test_size:]], holdout
 
         def _has_data_sets(train, test, holdout=None):
             """Path to follow when data sets are provided."""
@@ -420,13 +458,13 @@ class BaseTransformer:
         # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
-            if self.branch.data is None:
+            if self.branch._data is None:
                 raise ValueError(
                     "The data arrays are empty! Provide the data to run the pipeline "
                     "successfully. See the documentation for the allowed formats."
                 )
             else:
-                return self.branch.data, self.branch.idx, self.holdout
+                return self.branch._data, self.branch._idx, self.holdout
 
         elif len(arrays) == 1:
             # arrays=(X,)
@@ -523,8 +561,8 @@ class BaseTransformer:
             data = {"holdout": deepcopy(self.holdout)}  # Store data to reattach later
             self.holdout = None
             for key, value in self._branches.items():
-                data[key] = deepcopy(value.data)
-                value.data = None
+                data[key] = deepcopy(value._data)
+                value._data = None
 
         if filename.endswith("auto"):
             filename = filename.replace("auto", self.__class__.__name__)
@@ -536,6 +574,6 @@ class BaseTransformer:
         if not save_data and hasattr(self, "dataset"):
             self.holdout = data["holdout"]
             for key, value in self._branches.items():
-                value.data = data[key]
+                value._data = data[key]
 
         self.log(f"{self.__class__.__name__} successfully saved.", 1)

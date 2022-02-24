@@ -177,13 +177,6 @@ def test_default_metric():
     assert trainer.metric == "r2"
 
 
-def test_default_mapping_assignment():
-    """Assert that a default mapping is assigned."""
-    trainer = DirectClassifier("LR", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.mapping == {"0": 0, "1": 1}
-
-
 def test_sequence_parameters_invalid_length():
     """Assert that an error is raised when the length is invalid."""
     trainer = DirectClassifier("LR", n_calls=(2, 2), random_state=1)
@@ -368,56 +361,17 @@ def test_invalid_early_stopping():
         trainer.run(bin_train, bin_test)
 
 
-def test_custom_dimensions_is_name():
-    """Assert that the parameters to tune can be set by name."""
-    trainer = DirectClassifier(
-        models="LR1",
-        n_calls=2,
-        n_initial_points=2,
-        bo_params={"dimensions": "max_iter"},
-        random_state=1,
-    )
-    trainer.run(bin_train, bin_test)
-    assert list(trainer.lr1.best_params) == ["max_iter"]
-
-
-def test_custom_dimensions_name_is_invalid():
-    """Assert that an error is raised when an invalid parameter is provided."""
-    trainer = DirectClassifier(
-        models="LR1",
-        n_calls=2,
-        n_initial_points=2,
-        bo_params={"dimensions": "invalid"},
-        random_state=1,
-    )
-    with pytest.raises(ValueError, match=r".*is not a predefined hyperparameter.*"):
-        trainer.run(bin_train, bin_test)
-
-
-def test_custom_dimensions_is_dim():
-    """Assert that the custom dimensions are for all models if dimension."""
-    trainer = DirectClassifier(
-        models="LR1",
-        n_calls=2,
-        n_initial_points=2,
-        bo_params={"dimensions": Integer(10, 20, name="max_iter")},
-        random_state=1,
-    )
-    trainer.run(bin_train, bin_test)
-    assert list(trainer.lr1.best_params) == ["max_iter"]
-
-
 def test_custom_dimensions_is_list():
     """Assert that the custom dimensions are for all models if list."""
     trainer = DirectClassifier(
-        models="LR1",
+        models="LR",
         n_calls=2,
         n_initial_points=2,
         bo_params={"dimensions": [Integer(10, 20, name="max_iter")]},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert list(trainer.lr1.best_params) == ["max_iter"]
+    assert list(trainer.lr.best_params) == ["max_iter"]
 
 
 def test_custom_dimensions_is_all():

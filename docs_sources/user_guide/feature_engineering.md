@@ -125,15 +125,15 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 **Genetic Feature Generation**<br>
 Genetic feature generation (GFG) uses [genetic programming](https://en.wikipedia.org/wiki/Genetic_programming),
 a branch of evolutionary programming, to determine which features
-are successful and create new ones based on them. Where DFS can be
+are successful and create new ones based on those. Where DFS can be
 seen as some kind of "brute force" for feature engineering, GFG tries
 to improve its features with every generation of the algorithm. GFG
 uses the same operators as DFS, but instead of only applying the
-transformations once, it evolves them further, creating complicated
-non-linear combinations of features with many transformations. The
-new features are given the name `Feature N` for the N-th feature. You
-can access the genetic feature's fitness and description (how they are
-calculated) through the `genetic_features` attribute.
+transformations once, it evolves them further, creating nested
+structures of combinations of features. The new features are given the
+name `feature n`, where n stands for the n-th feature in the dataset.
+You can access the genetic feature's fitness and description (how they
+are calculated) through the `genetic_features` attribute.
 
 ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer)
  class from the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html)

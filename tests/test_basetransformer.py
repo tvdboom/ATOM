@@ -10,19 +10,20 @@ Description: Unit tests for basetransformer.py
 # Standard packages
 import glob
 import pytest
+import numpy as np
 import pandas as pd
 import multiprocessing
 from unittest.mock import patch
 from pandas.testing import assert_frame_equal
 
 # Own modules
-from atom import ATOMClassifier
+from atom import ATOMClassifier, ATOMRegressor
 from atom.training import DirectClassifier
 from atom.basetransformer import BaseTransformer
 from atom.utils import merge
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_idx, y_idx, X_bin_array, y_bin_array,
-    mnist, X_sparse, X_text, y_text, X10, y10, bin_train, bin_test,
+    mnist, X_sparse, X_text, X10, y10, bin_train, bin_test,
 )
 
 
@@ -137,7 +138,7 @@ def test_multidimensional_X():
 
 def test_text_to_corpus():
     """Assert that for text data the column is named corpus."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y10, random_state=1)
     assert atom.X.columns == ["corpus"]
 
 
@@ -256,7 +257,7 @@ def test_index_is_str():
 def test_index_is_target():
     """Assert that an error is raised when the index is the target column."""
     with pytest.raises(ValueError, match=r".*same as the target column.*"):
-        ATOMClassifier(X_bin, index="worst fractal dimension", random_state=1)
+        ATOMRegressor(X_bin, index="worst fractal dimension", random_state=1)
 
 
 def test_index_is_sequence_no_data_sets_invalid_length():
@@ -269,7 +270,7 @@ def test_index_is_sequence_no_data_sets():
     """Assert that a sequence is set as index when provided."""
     index = [f"index_{i}" for i in range(len(X_bin))]
     atom = ATOMClassifier(X_bin, y_bin, index=index, random_state=1)
-    assert atom.dataset.index[0] == "index_421"
+    assert atom.dataset.index[0] == "index_190"
 
 
 def test_index_is_sequence_has_data_sets_invalid_length():
@@ -286,6 +287,29 @@ def test_index_is_sequence_has_data_sets():
     assert atom.holdout.index[0] == "index_661"
 
 
+# Test _get_stratify_columns======================================== >>
+
+@pytest.mark.parametrize("stratify", [False, True, -1, "target", [-1]])
+def test_stratify_options(stratify):
+    """Assert that the data can be stratified among data sets."""
+    atom = ATOMClassifier(X_bin, y_bin, stratify=stratify, random_state=1)
+    train_balance = atom.classes["train"][0] / atom.classes["train"][1]
+    test_balance = atom.classes["test"][0] / atom.classes["test"][1]
+    np.testing.assert_almost_equal(train_balance, test_balance, decimal=2)
+
+
+def test_stratify_invalid_column_int():
+    """Assert that an error is raised when the value is invalid."""
+    with pytest.raises(ValueError, match=r".*out of range for a dataset.*"):
+        ATOMClassifier(X_bin, y_bin, stratify=100, random_state=1)
+
+
+def test_stratify_invalid_column_str():
+    """Assert that an error is raised when the value is invalid."""
+    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+        ATOMClassifier(X_bin, y_bin, stratify="invalid", random_state=1)
+
+
 # Test _get_data =================================================== >>
 
 def test_empty_data_arrays():
@@ -300,19 +324,19 @@ def test_data_already_set():
     trainer.run(bin_train, bin_test)
     trainer.run()
     assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
-    assert trainer.branch.idx[0].equals(bin_train.index)
-    assert trainer.branch.idx[1].equals(bin_test.index)
+    assert trainer.branch._idx[0].equals(bin_train.index)
+    assert trainer.branch._idx[1].equals(bin_test.index)
 
 
 def test_input_is_X():
     """Assert that input X works."""
-    atom = ATOMClassifier(X_bin, random_state=1)
+    atom = ATOMRegressor(X_bin, random_state=1)
     assert atom.dataset.shape == X_bin.shape
 
 
 def test_input_is_X_with_parameter_y():
     """Assert that input X can be combined with parameter y."""
-    atom = ATOMClassifier(X_bin, y="mean texture", random_state=1)
+    atom = ATOMRegressor(X_bin, y="mean texture", random_state=1)
     assert atom.target == "mean texture"
 
 
@@ -325,7 +349,7 @@ def test_input_invalid_holdout():
 @pytest.mark.parametrize("holdout_size", [0.1, 40])
 def test_input_is_X_with_holdout(holdout_size):
     """Assert that input X can be combined with a holdout set."""
-    atom = ATOMClassifier(X_bin, holdout_size=holdout_size, random_state=1)
+    atom = ATOMRegressor(X_bin, holdout_size=holdout_size, random_state=1)
     assert isinstance(atom.holdout, pd.DataFrame)
 
 

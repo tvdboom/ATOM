@@ -22,6 +22,7 @@ from atom.data_cleaning import (
     Gauss,
     Cleaner,
     Imputer,
+    Discretizer,
     Encoder,
     Pruner,
     Balancer,
@@ -64,7 +65,8 @@ def test_scaler_check_is_fitted():
 def test_scaler_invalid_strategy():
     """Assert that an error is raised when strategy is invalid."""
     scaler = Scaler(strategy="invalid")
-    pytest.raises(ValueError, scaler.fit, X_bin)
+    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+        scaler.fit(X_bin)
 
 
 @pytest.mark.parametrize("strategy", SCALING_STRATS)
@@ -118,7 +120,8 @@ def test_gauss_check_is_fitted():
 def test_invalid_strategy():
     """Assert that an error is raised when strategy is invalid."""
     gauss = Gauss(strategy="invalid")
-    pytest.raises(ValueError, gauss.fit, X_bin)
+    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+        gauss.fit(X_bin)
 
 
 @pytest.mark.parametrize("strategy", ["yeo-johnson", "box-cox", "quantile"])
@@ -249,19 +252,22 @@ def test_target_mapping():
 def test_strat_num_parameter():
     """Assert that the strat_num parameter is set correctly."""
     imputer = Imputer(strat_num="invalid")
-    pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*Unknown strategy for the strat_num.*"):
+        imputer.fit(X_bin, y_bin)
 
 
 def test_invalid_max_nan_rows():
     """Assert that an error is raised for invalid max_nan_rows."""
     imputer = Imputer(max_nan_rows=-2)
-    pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*value for the max_nan_rows.*"):
+        imputer.fit(X_bin, y_bin)
 
 
 def test_invalid_max_nan_cols():
     """Assert that an error is raised for invalid max_nan_cols."""
     imputer = Imputer(max_nan_cols=-5)
-    pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*value for the max_nan_cols.*"):
+        imputer.fit(X_bin, y_bin)
 
 
 def test_imputer_check_is_fitted():
@@ -395,12 +401,104 @@ def test_imputing_non_numeric_most_frequent():
     assert X.isna().sum().sum() == 0
 
 
+# Test Discretizer ================================================= >>
+
+def test_strategy_parameter_discretizer():
+    """Assert that the strategy parameter is set correctly."""
+    discretizer = Discretizer(strategy="invalid")
+    with pytest.raises(ValueError, match=r".*value for the strategy parameter.*"):
+        discretizer.fit(X_bin)
+
+
+def test_invalid_bins_missing_column():
+    """Assert that an error is raised when a column is missing."""
+    discretizer = Discretizer(strategy="uniform", bins={"invalid": 5})
+    with pytest.raises(ValueError, match=r".*not found in the dictionary.*"):
+        discretizer.fit(X_bin)
+
+
+def test_invalid_bins_custom_strategy():
+    """Assert that an error is raised when bins are not a sequence."""
+    discretizer = Discretizer(strategy="custom", bins=5)
+    with pytest.raises(TypeError, match=r".*a sequence of bin edges.*"):
+        discretizer.fit(X_bin)
+
+
+def test_invalid_length_labels():
+    """Assert that an error is raised when len(bins) != len(labels)."""
+    discretizer = Discretizer(strategy="custom", bins=[5, 10, 15], labels=["label"])
+    with pytest.raises(ValueError, match=r".*length of the bins does not match.*"):
+        discretizer.fit(X_bin)
+
+
+def test_invalid_bins_to_column_length():
+    """Assert that an error is raised when len(bins) != len(columns)."""
+    discretizer = Discretizer(strategy="uniform", bins=[5, 10])
+    with pytest.raises(ValueError, match=r".*length of the bins does not match.*"):
+        discretizer.fit(X_bin)
+
+
+@pytest.mark.parametrize("strategy", ["uniform", "quantile", "kmeans"])
+def test_discretizer_strategies(strategy):
+    """Assert that custom binning can be performed."""
+    discretizer = Discretizer(strategy=strategy, bins=5)
+    X = discretizer.fit_transform(X_bin)
+    assert all(X[col].dtype.name == "object" for col in X)
+
+
+def test_custom_strategy():
+    """Assert that custom binning can be performed."""
+    discretizer = Discretizer(strategy="custom", bins=[0, 25, 50])
+    X = discretizer.fit_transform(X_bin)
+    assert X["mean texture"].unique().tolist() == ["0-25", "25-50"]
+
+
+def test_bins_is_sequence():
+    """Assert that bins can be provided as sequence."""
+    discretizer = Discretizer(strategy="uniform", bins=[5, 6, 7])
+    X = discretizer.fit_transform(X_bin.iloc[:, :3])
+    assert X[X.columns[0]].nunique() == 5
+    assert X[X.columns[1]].nunique() == 6
+    assert X[X.columns[2]].nunique() == 7
+
+
+def test_bins_is_dict():
+    """Assert that bins can be provided as dict."""
+    discretizer = Discretizer(
+        strategy="uniform",
+        bins={X_bin.columns[0]: 5, X_bin.columns[1]: 6, X_bin.columns[2]: 7},
+    )
+    X = discretizer.fit_transform(X_bin.iloc[:, :3])
+    assert X[X.columns[0]].nunique() == 5
+    assert X[X.columns[1]].nunique() == 6
+    assert X[X.columns[2]].nunique() == 7
+
+
+def test_labels_non_custom_strategy():
+    """Assert that custom labels can be added to strategy != custom."""
+    discretizer = Discretizer(strategy="uniform", bins=3, labels=["l1", "l2", "l3"])
+    X = discretizer.fit_transform(X_bin)
+    assert X["mean texture"].unique().tolist() == ["l1", "l2", "l3"]
+
+
+def test_labels_custom_strategy():
+    """Assert that custom labels can be added to the custom strategy."""
+    discretizer = Discretizer(
+        strategy="custom",
+        bins=[0, 10, 20, 50],
+        labels={"mean texture": ["l1", "l2", "l3"]},
+    )
+    X = discretizer.fit_transform(X_bin)
+    assert X["mean texture"].unique().tolist() == ["l2", "l3", "l1"]
+
+
 # Test Encoder ===================================================== >>
 
 def test_strategy_parameter_encoder():
     """Assert that the strategy parameter is set correctly."""
     encoder = Encoder(strategy="invalid")
-    pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+        encoder.fit(X10_str, y10)
 
 
 def test_strategy_with_encoder_at_end():
@@ -413,13 +511,15 @@ def test_strategy_with_encoder_at_end():
 def test_max_onehot_parameter():
     """Assert that the max_onehot parameter is set correctly."""
     encoder = Encoder(max_onehot=-2)
-    pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*value for the max_onehot.*"):
+        encoder.fit(X10_str, y10)
 
 
 def test_frac_to_other_parameter():
     """Assert that the frac_to_other parameter is set correctly."""
     encoder = Encoder(frac_to_other=-2)
-    pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*value for the frac_to_other.*"):
+        encoder.fit(X10_str, y10)
 
 
 @pytest.mark.parametrize("frac_to_other", [3, 0.3])
@@ -433,7 +533,8 @@ def test_frac_to_other(frac_to_other):
 def test_encoder_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
     encoder = Encoder(strategy=RandomForestClassifier())
-    pytest.raises(TypeError, encoder.fit_transform, X10_str, y10)
+    with pytest.raises(TypeError, match=r".*type for the strategy.*"):
+        encoder.fit_transform(X10_str, y10)
 
 
 def test_encoder_custom_estimator():
@@ -470,6 +571,7 @@ def test_ordinal_encoder():
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
     assert np.all((X["feature 3"] == 0) | (X["feature 3"] == 1))
+    assert list(encoder.mapping) == ["feature 3", "feature 4"]
 
 
 def test_ordinal_features():
@@ -491,7 +593,7 @@ def test_all_encoder_types(strategy):
     """Assert that all estimators work as intended."""
     encoder = Encoder(strategy=strategy, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert all([X[col].dtype.kind in "ifu" for col in X])
+    assert all(X[col].dtype.kind in "ifu" for col in X)
 
 
 def test_kwargs_parameters():
@@ -506,25 +608,29 @@ def test_kwargs_parameters():
 def test_invalid_strategy_parameter():
     """Assert that an error is raised for an invalid strategy parameter."""
     pruner = Pruner(strategy="invalid")
-    pytest.raises(ValueError, pruner.transform, X_bin)
+    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+        pruner.transform(X_bin)
 
 
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
     pruner = Pruner(strategy="iforest", method="min_max")
-    pytest.raises(ValueError, pruner.transform, X_bin)
+    with pytest.raises(ValueError, match=r".*accepts another method.*"):
+        pruner.transform(X_bin)
 
 
 def test_invalid_method_parameter():
     """Assert that an error is raised for an invalid method parameter."""
     pruner = Pruner(method="invalid")
-    pytest.raises(ValueError, pruner.transform, X_bin)
+    with pytest.raises(ValueError, match=r".*value for the method parameter.*"):
+        pruner.transform(X_bin)
 
 
 def test_invalid_max_sigma_parameter():
     """Assert that an error is raised for an invalid max_sigma parameter."""
     pruner = Pruner(max_sigma=0)
-    pytest.raises(ValueError, pruner.transform, X_bin)
+    with pytest.raises(ValueError, match=r".*value for the max_sigma.*"):
+        pruner.transform(X_bin)
 
 
 def test_max_sigma_functionality():
@@ -577,7 +683,7 @@ def test_drop_outlier_in_target():
 
 
 @pytest.mark.parametrize("strategy", PRUNING_STRATS)
-def test_strategies(strategy):
+def test_pruner_strategies(strategy):
     """Assert that all estimator requiring strategies work."""
     pruner = Pruner(strategy=strategy)
     X, y = pruner.transform(X_bin, y_bin)
@@ -620,13 +726,15 @@ def test_pruner_attach_attribute():
 def test_balancer_strategy_unknown_str():
     """Assert that an error is raised when strategy is unknown."""
     balancer = Balancer(strategy="invalid")
-    pytest.raises(ValueError, balancer.transform, X_bin, y_bin)
+    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+        balancer.transform(X_bin, y_bin)
 
 
 def test_balancer_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
     balancer = Balancer(strategy=StandardScaler())
-    pytest.raises(TypeError, balancer.transform, X_bin, y_bin)
+    with pytest.raises(TypeError, match=r".*type for the strategy.*"):
+        balancer.transform(X_bin, y_bin)
 
 
 def test_balancer_custom_estimator():

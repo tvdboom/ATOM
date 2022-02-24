@@ -107,7 +107,7 @@ class BaseModel(BaseModelPlotter):
         # Skip this (slower) part if not called for the estimator
         if not kwargs.get("fast_init"):
             self.branch = self.T.branch
-            self._train_idx = len(self.branch.idx[0])  # Can change for sh and ts
+            self._train_idx = len(self.branch._idx[0])  # Can change for sh and ts
             if getattr(self, "needs_scaling", None) and self.T.scaled is False:
                 self.scaler = Scaler().fit(self.X_train)
 
@@ -169,23 +169,6 @@ class BaseModel(BaseModelPlotter):
                     f"unknown parameter {param} for the fit method of "
                     f"estimator {self.get_estimator().__class__.__name__}."
                 )
-
-    def _get_dimension(self, dimension):
-        """Check the validity of the hyperparameter dimensions."""
-        if isinstance(dimension, str):
-            # If it's a name, use the predefined dimension
-            try:
-                return next(d for d in self.get_dimensions() if d.name == dimension)
-            except StopIteration:
-                raise ValueError(
-                    "Invalid value for the dimensions parameter. Dimension "
-                    f"{dimension} is not a predefined hyperparameter of the "
-                    f"{self.fullname} model. See the model's documentation "
-                    "for an overview of the available hyperparameter and "
-                    "their dimensions."
-                )
-        else:
-            return check_dimension(dimension)
 
     def _get_default_params(self):
         """Get the estimator's default parameters for the BO dimensions."""
@@ -268,7 +251,7 @@ class BaseModel(BaseModelPlotter):
 
             Returns
             -------
-            score: float
+            float
                 Score achieved by the model.
 
             """
@@ -293,7 +276,7 @@ class BaseModel(BaseModelPlotter):
 
                 Returns
                 -------
-                score: float
+                float
                     Score of the fitted model on the validation set.
 
                 """
@@ -390,7 +373,7 @@ class BaseModel(BaseModelPlotter):
                         raise PickleError(
                             f"Could not pickle the {self.acronym} model to send "
                             "it to the workers. Try using one of the predefined "
-                            "models or use n_jobs=1 or bo_params={'cv': 1}."
+                            "models, or use n_jobs=1 or bo_params={'cv': 1}."
                         )
             else:
                 # Get same score as previous evaluation
@@ -455,9 +438,42 @@ class BaseModel(BaseModelPlotter):
 
         self.T.log(f"\n\nRunning BO for {self.fullname}...", 1)
 
-        # Assign proper dimensions format or predefined
+        # Assign proper dimensions format or use predefined
         if self._dimensions:
-            self._dimensions = [self._get_dimension(d) for d in self._dimensions]
+            # Some models (e.g. OLS) don't have predefined dimensions (and
+            # thus no get_dimensions method), but can accept user defined ones
+            dims = self.get_dimensions() if hasattr(self, "get_dimensions") else []
+
+            inc, exc = [], []
+            for dim in self._dimensions:
+                if isinstance(dim, str):
+                    # If it's a name, use the predefined dimension
+                    try:
+                        if dim.startswith("!"):
+                            exc.append(next(d.name for d in dims if d.name == dim[1:]))
+                        else:
+                            inc.append(next(d for d in dims if d.name == dim))
+                    except StopIteration:
+                        raise ValueError(
+                            "Invalid value for the dimensions parameter. Dimension "
+                            f"{dim} is not a predefined hyperparameter of the "
+                            f"{self.fullname} model. See the model's documentation "
+                            "for an overview of the available hyperparameters and "
+                            "their dimensions."
+                        )
+                else:
+                    inc.append(check_dimension(dim))
+
+            if inc and exc:
+                raise ValueError(
+                    "Invalid value for the dimensions parameter. You can either "
+                    "include or exclude parameters, not combinations of these."
+                )
+            elif exc:
+                # If dimensions were excluded with `!`, select all but those
+                self._dimensions = [d for d in dims if d.name not in exc]
+            elif inc:
+                self._dimensions = inc
         else:
             self._dimensions = self.get_dimensions()
 
@@ -808,11 +824,7 @@ class BaseModel(BaseModelPlotter):
                 else:
                     metric = get_custom_scorer(metric)
 
-                kwargs = {}
-                if sample_weight is not None:
-                    kwargs["sample_weight"] = sample_weight
-
-                return metric(self.estimator, X, y, **kwargs)
+                return metric(self.estimator, X, y, sample_weight)
 
     @composed(crash, method_to_log, typechecked)
     def predict(
@@ -1075,7 +1087,7 @@ class BaseModel(BaseModelPlotter):
             pl = self.export_pipeline()
             mlflow.sklearn.log_model(pl, f"pipeline_{self.name}")
 
-    def _calculate_score(self, scorer, dataset="test", threshold=0.5):
+    def _calculate_score(self, scorer, dataset, threshold=0.5, sample_weight=None):
         """Calculate a metric score using the prediction attributes."""
         has_pred_proba = hasattr(self.estimator, "predict_proba")
         has_dec_func = hasattr(self.estimator, "decision_function")
@@ -1098,11 +1110,19 @@ class BaseModel(BaseModelPlotter):
             if scorer.__class__.__name__ == "_PredictScorer":
                 y_pred = (y_pred > threshold).astype("int")
 
-        self._scores[dataset][scorer.name] = scorer._sign * float(
-            scorer._score_func(
+        if "sample_weight" in signature(scorer._score_func).parameters:
+            score = scorer._score_func(
+                getattr(self, f"y_{dataset}"),
+                y_pred,
+                sample_weight=sample_weight,
+                **scorer._kwargs,
+            )
+        else:
+            score = scorer._score_func(
                 getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs
             )
-        )
+
+        self._scores[dataset][scorer.name] = scorer._sign * float(score)
 
         if self._run:  # Log metric to mlflow run
             MlflowClient().log_metric(
@@ -1349,6 +1369,7 @@ class BaseModel(BaseModelPlotter):
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         threshold: float = 0.5,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
     ):
         """Get the model's scores for the provided metrics.
 
@@ -1368,6 +1389,9 @@ class BaseModel(BaseModelPlotter):
                 - The task is binary classification.
                 - The model has a `predict_proba` method.
                 - The metric evaluates predicted target values.
+
+        sample_weight: sequence or None, optional (default=None)
+            Sample weights corresponding to y in `dataset`.
 
         Returns
         -------
@@ -1424,10 +1448,19 @@ class BaseModel(BaseModelPlotter):
             scorer = get_custom_scorer(met)
 
             # Skip if the scorer has already been calculated
-            if scorer.name in self._scores[dataset] and threshold == 0.5:
+            if (
+                scorer.name in self._scores[dataset]
+                and threshold == 0.5
+                and sample_weight is None
+            ):
                 scores[scorer.name] = self._scores[dataset][scorer.name]
             else:
-                scores[scorer.name] = self._calculate_score(scorer, dataset, threshold)
+                scores[scorer.name] = self._calculate_score(
+                    scorer=scorer,
+                    dataset=dataset,
+                    threshold=threshold,
+                    sample_weight=sample_weight,
+                )
 
         return scores
 
@@ -1563,8 +1596,7 @@ class BaseModel(BaseModelPlotter):
             raise PermissionError(f"There already exists a model named {name}!")
 
         # Replace the model in the _models attribute
-        self.T._models.insert(self.name, name, self)
-        self.T._models.pop(self.name)
+        self.T._models.replace_key(self.name, name)
         self.T.log(f"Model {self.name} successfully renamed to {name}.", 1)
         self.name = name
 

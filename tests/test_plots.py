@@ -20,7 +20,7 @@ from atom.plots import BasePlotter
 from atom.utils import NotFittedError
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_sparse, X_text, y_text, X10, X10_str, y10, y10_str,
+    X_sparse, X_text, X10, X10_str, y10, y10_str,
 )
 
 
@@ -194,7 +194,7 @@ def test_plot_qq():
 
 def test_plot_wordcloud():
     """Assert that the plot_wordcloud method work as intended."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.plot_wordcloud(display=False)  # When corpus is str
     atom.tokenize()
     atom.plot_wordcloud(display=False)  # When corpus are tokens
@@ -203,7 +203,7 @@ def test_plot_wordcloud():
 @pytest.mark.parametrize("ngram", [1, 2, 3, 4])
 def test_plot_ngrams(ngram):
     """Assert that the plot_ngrams method work as intended."""
-    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom = ATOMClassifier(X_text, y10, random_state=1)
     pytest.raises(ValueError, atom.plot_ngrams, ngram=6)
     atom.plot_ngrams(ngram=ngram, display=False)  # When corpus is str
     atom.tokenize()
