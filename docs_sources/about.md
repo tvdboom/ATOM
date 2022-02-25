@@ -21,54 +21,70 @@ the icons to read more about its main functionalities.
 
 <div class="row">
   <div class="column">
-    <a href="../user_guide/data_cleaning" draggable="false">
-      <img src="../img/icons/icon_1.svg" alt="Data cleaning" width="100px" height="100px" draggable="false">
-      <figcaption style="margin-top: -8px"><strong>Data cleaning</strong></figcaption>
-    </a>
+    <div class="icon">
+      <a href="../user_guide/data_cleaning" draggable="false">
+        <img src="../img/icons/icon_1.svg" alt="Data cleaning" draggable="false">
+        <figcaption style="margin-top: -8px"><strong>Data cleaning</strong></figcaption>
+      </a>
+    </div>
   </div>
   <div class="column">
-    <a href="../user_guide/feature_engineering" draggable="false">
-        <img src="../img/icons/icon_2.svg" alt="Feature engineering" width="100px" height="100px" draggable="false">
-        <figcaption style="margin-top: -8px"><strong>Feature engineering</strong></figcaption>
-    </a>
+    <div class="icon">
+      <a href="../user_guide/feature_engineering" draggable="false">
+          <img src="../img/icons/icon_2.svg" alt="Feature engineering" draggable="false">
+          <figcaption style="margin-top: -8px"><strong>Feature engineering</strong></figcaption>
+      </a>
+    </div>
   </div>
   <div class="column">
-    <a href="../user_guide/models" draggable="false">
-      <img src="../img/icons/icon_3.svg" alt="Model selection" width="100px" height="100px" draggable="false">
-      <figcaption style="margin-top: -8px"><strong>Model selection</strong></figcaption>
-    </a>
+    <div class="icon">
+      <a href="../user_guide/models" draggable="false">
+        <img src="../img/icons/icon_3.svg" alt="Model selection" draggable="false">
+        <figcaption style="margin-top: -8px"><strong>Model selection</strong></figcaption>
+      </a>
+    </div>
   </div>
   <div class="column">
-    <a href="../user_guide/training/#hyperparameter-tuning" draggable="false">
-      <img src="../img/icons/icon_4.svg" alt="Hyperparameter tuning" width="100px" height="100px" draggable="false">
-      <figcaption style="margin-top: -8px"><strong>Hyperparameter<br>tuning</strong></figcaption>
-    </a>
+    <div class="icon">
+      <a href="../user_guide/training/#hyperparameter-tuning" draggable="false">
+        <img src="../img/icons/icon_4.svg" alt="Hyperparameter tuning" draggable="false">
+        <figcaption style="margin-top: -8px"><strong>Hyperparameter<br>tuning</strong></figcaption>
+      </a>
+    </div>
   </div>
 </div>
 <div class="row">
   <div class="column">
-    <a href="../user_guide/training" draggable="false">
-      <img src="../img/icons/icon_5.svg" alt="Model training" width="100px" height="100px" draggable="false">
-      <figcaption style="margin-top: -8px"><strong>Model training</strong></figcaption>
-    </a>
+    <div class="icon">
+      <a href="../user_guide/training" draggable="false">
+        <img src="../img/icons/icon_5.svg" alt="Model training" draggable="false">
+        <figcaption style="margin-top: -8px"><strong>Model training</strong></figcaption>
+      </a>
+    </div>
   </div>
   <div class="column">
-    <a href="../user_guide/predicting" draggable="false">
-      <img src="../img/icons/icon_6.svg" alt="Model predictions" width="100px" height="100px" draggable="false">
-      <figcaption style="margin-top: -8px"><strong>Model predictions</strong></figcaption>
-    </a>
+    <div class="icon">
+      <a href="../user_guide/predicting" draggable="false">
+        <img src="../img/icons/icon_6.svg" alt="Model predictions" draggable="false">
+        <figcaption style="margin-top: -8px"><strong>Model predictions</strong></figcaption>
+      </a>
+    </div>
   </div>
   <div class="column">
-    <a href="../user_guide/logging" draggable="false">
-      <img src="../img/icons/icon_7.svg" alt="Experiment logging" width="100px" height="100px" draggable="false">
-      <figcaption style="margin-top: -8px"><strong>Experiment logging</strong></figcaption>
-    </a>
+    <div class="icon">
+      <a href="../user_guide/logging" draggable="false">
+        <img src="../img/icons/icon_7.svg" alt="Experiment logging" draggable="false">
+        <figcaption style="margin-top: -8px"><strong>Experiment logging</strong></figcaption>
+      </a>
+    </div>
   </div>
   <div class="column">
-    <a href="../user_guide/plots" draggable="false">
-      <img src="../img/icons/icon_8.svg" alt="Analysis and Interpretability" width="100px" height="100px" draggable="false">
-      <figcaption style="margin-top: -8px"><strong>Analysis &<br>Interpretability</strong></figcaption>
-    </a>
+    <div class="icon">
+      <a href="../user_guide/plots" draggable="false">
+        <img src="../img/icons/icon_8.svg" alt="Analysis and Interpretability" draggable="false">
+        <figcaption style="margin-top: -8px"><strong>Analysis &<br>Interpretability</strong></figcaption>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -93,7 +109,7 @@ the icons to read more about its main functionalities.
 ## Citing ATOM
 
 If you use ATOM in a scientific publication, please consider citing this
-documentation page as the resource.  ATOM’s first stable release v2.0.3
+documentation page as the resource. ATOM’s first stable release v2.0.3
 was made publicly available in November 2019. A formatted version of the
 citation would look like this:
 
