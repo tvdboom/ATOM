@@ -39,6 +39,15 @@
 .column .icon a:hover {
     color: #009485;
 }
+.column .icon a:active {
+    color: #009485;
+}
+.column .icon a:visited {
+    color: #009485;
+}
+.column .icon a:link {
+    color: #009485;
+}
 
 
 

@@ -90,13 +90,7 @@ Before you submit a pull request, please work through this checklist to
 make sure that you have done everything necessary so we can efficiently
 review and accept your changes.
 
-If your contribution changes ATOM in any way:
-
 * Update the documentation so all of your changes are reflected there.
-* Update the README if anything there has changed.
-
-If your contribution involves any code changes:
-
 * Adhere to [PEP 8](https://www.python.org/dev/peps/pep-0008/) standards.
 * Use a maximum of 89 characters per line. Try to keep comments and
   docstrings below 72 characters.
