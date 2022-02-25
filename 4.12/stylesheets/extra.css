@@ -1,28 +1,43 @@
+/* Reset title fontweight */
+.md-ellipsis {
+    font-weight: normal;
+}
+
+
+/* Table format for about page*/
 .md-typeset__table {
    min-width: 100%;
 }
-
 .md-typeset table:not([class]) {
     display: table;
 }
-
 .column {
   float: left;
   width: 25%;
   padding: 2px;
   text-align: center;
 }
-
 .row {
     margin-top: 30px;
 }
-
-/* Clear floats after image containers */
-.row::after {
-  content: "";
-  clear: both;
-  display: table;
+.row::after {  /* Clear floats after image containers */
+    content: "";
+    clear: both;
+    display: table;
 }
+.column a img {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+.column .icon:hover {
+    transform: scale(1.1);
+}
+.column .icon a:hover {
+    color: #009485;
+}
+
+
 
 /* Parameter tables layout */
 .td_title {
