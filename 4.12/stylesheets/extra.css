@@ -25,6 +25,9 @@
     clear: both;
     display: table;
 }
+.column .icon {
+    width: 70%;
+}
 .column a img {
     position: relative;
     width: 100px;
@@ -34,6 +37,15 @@
     transform: scale(1.1);
 }
 .column .icon a:hover {
+    color: #009485;
+}
+.column .icon a:active {
+    color: #009485;
+}
+.column .icon a:visited {
+    color: #009485;
+}
+.column .icon a:link {
     color: #009485;
 }
 
