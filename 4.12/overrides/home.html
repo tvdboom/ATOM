@@ -1,4 +1,7 @@
-<link rel="stylesheet" href="../stylesheets/extra.css">{% extends "main.html" %}
+<script src="../stylesheets/extra.js"></script>
+<link rel="stylesheet" href="../stylesheets/extra.css">
+
+{% extends "main.html" %}
 
 <!-- Override footer -->
 {% block footer %}
@@ -9,7 +12,7 @@
 
 <style>
 
-    .md-content{display:none}  /*Drop title from index.html */
+    .md-content{display:none}  /*Drop default page content */
 
     section {
         padding-bottom: 5em;
@@ -242,6 +245,7 @@
         h1 {font-size: 2em}
         .logo {width: 300px; height: 80px}
         .description {font-size: 1.5em; width: 90%; margin-left: -45%}
+        .slack-button {font-size: 2.0em; width: 90%; margin-left: -45%}
     }
 
 </style>
