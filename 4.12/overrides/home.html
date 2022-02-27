@@ -1,5 +1,5 @@
-<!--<script src="../stylesheets/extra.js"></script>-->
-<!--<link rel="stylesheet" href="../stylesheets/extra.css">-->
+<script src="../stylesheets/extra.js"></script>
+<link rel="stylesheet" href="../stylesheets/extra.css">
 
 {% extends "main.html" %}
 
@@ -7,8 +7,8 @@
 {% block footer %}
 {% endblock %}
 
-<!--{% block tabs %}-->
-<!--{% endblock %}-->
+{% block tabs %}
+{{ super() }}
 
 <style>
 
@@ -371,3 +371,5 @@
         </div>
     </div>
 </section>
+
+{% endblock %}
