@@ -3,255 +3,243 @@
 {% block tabs %}
 {{ super() }}
 
-
 <style>
+
     section {
         padding-bottom: 5em;
     }
-    
+
+    h1 {
+        padding: 1em;
+        background-color: rgba(255, 255, 255, 0.0);
+        text-align: center;
+        font-weight: 600;
+        font-size: 3em;
+        color: #2a978d;
+        margin-top: 15px;
+        margin-bottom: 45px;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+    }
+
+    .logo {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 3rem;
+      width: 700px;
+      height: 180px;
+    }
+
+    .description {
+        position: relative;
+        left: 50%;
+        margin-left: -350px;
+        padding-bottom: 2rem;
+        width: 700px;
+        font-size: 2em;
+        text-align: left;
+    }
+
+    .button {
+        color: #FFF;
+        background: #2a978d;
+        padding: 12px 18px;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+        border: 2px solid #2a978d;
+        font-weight: 700;
+        font-size: 1em;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+        -webkit-transition: all 0.25s ease;
+        -o-transition: all 0.25s ease;
+        transition: all 0.25s ease;
+    }
+   
+   /* .button:hover {*/
+   /*     background: white;*/
+   /*     color: #2a978d;*/
+   /*     border: 2px solid #2a978d;*/
+   /* }*/
+
+   /* [data-md-color-scheme="slate"] .button:hover {*/
+   /*     background: var(--md-default-bg-color);*/
+   /* }*/
+
+   /* .button-secondary {*/
+   /*     color: #2a978d;*/
+   /*     background: white;*/
+   /*     border: 2px solid #2a978d;*/
+   /* }*/
+
+   /* [data-md-color-scheme="slate"] .button-secondary {*/
+   /*     background: var(--md-default-bg-color);*/
+   /* }*/
+
+   /* .button-secondary:hover {*/
+   /*     background: #2a978d;*/
+   /*     color: white;*/
+   /* }*/
+
+   /* [data-md-color-scheme="slate"] .button-secondary:hover {*/
+   /*     background: #2a978d;*/
+   /*     color: white;*/
+   /* }*/
+
+   /* .slack-button {*/
+   /*     position: relative;*/
+   /*     left: 50%;*/
+   /*     margin-left: -225px;*/
+   /*     width: 450px;*/
+   /*     height: 120px;*/
+   /*     background-color: rgba(255, 255, 255, 0.0);*/
+   /*     text-align: center;*/
+   /*     font-weight: 600;*/
+   /*     font-size: 3em;*/
+   /*     color: #2a978d;*/
+   /*     margin-top: 15px;*/
+   /*     margin-bottom: 45px;*/
+   /*     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);*/
+   /*     border: 3px solid #2a978d;*/
+   /*     background-color: #fff;*/
+   /*     border-radius: 25px;*/
+   /*     box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);*/
+   /*     cursor: pointer;display: flex;*/
+   /*     padding-left: 45px;*/
+   /* }*/
+
+   /* .slack-container {*/
+   /*     position: relative;*/
+   /*     display: flex;*/
+   /*     height: 100%;*/
+   /*     width: 100%;*/
+   /*     align-items: center;*/
+   /*     justify-content: center;*/
+   /* }*/
+
+   /* .slack-img {*/
+   /*     position: relative;*/
+   /*     width: 80px;*/
+   /*     height: 80px;*/
+   /* }*/
+
+   /* .slack-text {*/
+   /*     position: relative;*/
+   /*     margin-left: 15px;*/
+   /* }*/
+
+   /* .story-wrapper {*/
+   /*     position: relative;*/
+   /*     display: flex;*/
+   /*     justify-content: center;*/
+   /*     flex-wrap: wrap;*/
+   /*     width: 100%;*/
+   /* }*/
+
+   /*.story {*/
+   /*     margin: 15px;*/
+   /*     text-align: center;*/
+   /*     width: 500px;*/
+   /*     float: left;*/
+   /*     background-color: white;*/
+   /*     color: black;*/
+   /*     -webkit-box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);*/
+   /*     box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);*/
+   /*     -webkit-transition: all 0.25s ease;*/
+   /*     -o-transition: all 0.25s ease;*/
+   /*     transition: all 0.25s ease;*/
+   /* }*/
+
+   /*[data-md-color-scheme="slate"] .story {*/
+   /*     background: #355876;*/
+   /*     color: #dfe1f2;*/
+   /* }*/
+
+   /*.story:hover {*/
+   /*     -webkit-transform: scale(1.06);*/
+   /*     -ms-transform: scale(1.06);*/
+   /*     -o-transform: scale(1.06);*/
+   /*     transform: scale(1.06);*/
+   /* }*/
+
+   /*.story-title {*/
+   /*     padding: 20px 20px 0 20px;*/
+   /*     background-color: white;*/
+   /*     text-align: center;*/
+   /*     font-weight: 400;*/
+   /*     font-size: 2em;*/
+   /*     color: #2a978d;*/
+   /*     margin-top: 15px;*/
+   /*     margin-bottom: 45px;*/
+   /*     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);*/
+   /* }*/
+
+   /* [data-md-color-scheme="slate"] .story-title {*/
+   /*     background: #355876;*/
+   /* }*/
+
+   /*.story-text {*/
+   /*     padding: 0 30px 0 30px;*/
+   /*     color: #4c4c54;*/
+   /*     text-align: left;*/
+   /*     font-size: 1.5em;*/
+   /* }*/
+
+   /*[data-md-color-scheme="slate"] .story-text {*/
+   /*     color: #dfe1f2;*/
+   /* }*/
+
+   /* .story-read {*/
+   /*     background: #FFF;*/
+   /*     padding: 15px;*/
+   /*     text-align: left;*/
+   /*     overflow: hidden;*/
+   /* }*/
+
+   /* [data-md-color-scheme="slate"] .story-read {*/
+   /*     background: #355876;*/
+   /* }*/
+
+   /* .story-read .read-more {*/
+   /*     float: right;*/
+   /*     color: #FFF;*/
+   /*     background: #355876;*/
+   /*     padding: 12px 18px;*/
+   /*     -webkit-border-radius: 2px;*/
+   /*     -moz-border-radius: 2px;*/
+   /*     border: 2px solid #355876;*/
+   /*     font-weight: 700;*/
+   /*     font-size: 1.6em;*/
+   /*     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);*/
+   /*     -webkit-transition: all 0.25s ease;*/
+   /*     -o-transition: all 0.25s ease;*/
+   /*     transition: all 0.25s ease;*/
+   /* }*/
+
+   /* .story-read .read-more:hover {*/
+   /*     background: white;*/
+   /*     color: #355876;*/
+   /* }*/
+
+   /* [data-md-color-scheme="slate"] .story-read .read-more {*/
+   /*     border-color: white;*/
+   /*     background: #355876;*/
+   /*     color: white;*/
+   /* }*/
+
+   /* [data-md-color-scheme="slate"] .story-read .read-more:hover {*/
+   /*     background: white;*/
+   /*     color: #355876;*/
+   /* }*/
+
+   /* @media only screen and (max-width: 720px) {*/
+   /*     section {padding-bottom: 2em}*/
+   /*     h1 {font-size: 2em}*/
+   /*     .logo {width: 300px; height: 80px}*/
+   /*     .description {font-size: 1.5em; width: 90%; margin-left: -45%}*/
+   /*     .slack-button {font-size: 2.0em; width: 90%; margin-left: -45%}*/
+   /* }*/
+
 </style>
-
-
-
-<!--<style>-->
-
-<!--    .md-content{display:none}  /*Drop default page content */-->
-
-<!--    section {-->
-<!--        padding-bottom: 5em;-->
-<!--    }-->
-
-<!--    h1 {-->
-<!--        padding: 1em;-->
-<!--        background-color: rgba(255, 255, 255, 0.0);-->
-<!--        text-align: center;-->
-<!--        font-weight: 600;-->
-<!--        font-size: 3em;-->
-<!--        color: #2a978d;-->
-<!--        margin-top: 15px;-->
-<!--        margin-bottom: 45px;-->
-<!--        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);-->
-<!--    }-->
-
-<!--    .logo {-->
-<!--      display: block;-->
-<!--      margin-left: auto;-->
-<!--      margin-right: auto;-->
-<!--      margin-top: 3rem;-->
-<!--      width: 700px;-->
-<!--      height: 180px;-->
-<!--    }-->
-
-<!--    .description {-->
-<!--        position: relative;-->
-<!--        left: 50%;-->
-<!--        margin-left: -350px;-->
-<!--        padding-bottom: 2rem;-->
-<!--        width: 700px;-->
-<!--        font-size: 2em;-->
-<!--        text-align: left;-->
-<!--    }-->
-
-<!--    .button {-->
-<!--        color: #FFF;-->
-<!--        background: #2a978d;-->
-<!--        padding: 12px 18px;-->
-<!--        -webkit-border-radius: 2px;-->
-<!--        -moz-border-radius: 2px;-->
-<!--        border: 2px solid #2a978d;-->
-<!--        font-weight: 700;-->
-<!--        font-size: 1em;-->
-<!--        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);-->
-<!--        -webkit-transition: all 0.25s ease;-->
-<!--        -o-transition: all 0.25s ease;-->
-<!--        transition: all 0.25s ease;-->
-<!--    }-->
-
-<!--    .button:hover {-->
-<!--        background: white;-->
-<!--        color: #2a978d;-->
-<!--        border: 2px solid #2a978d;-->
-<!--    }-->
-
-<!--    [data-md-color-scheme="slate"] .button:hover {-->
-<!--        background: var(&#45;&#45;md-default-bg-color);-->
-<!--    }-->
-
-<!--    .button-secondary {-->
-<!--        color: #2a978d;-->
-<!--        background: white;-->
-<!--        border: 2px solid #2a978d;-->
-<!--    }-->
-
-<!--    [data-md-color-scheme="slate"] .button-secondary {-->
-<!--        background: var(&#45;&#45;md-default-bg-color);-->
-<!--    }-->
-
-<!--    .button-secondary:hover {-->
-<!--        background: #2a978d;-->
-<!--        color: white;-->
-<!--    }-->
-
-<!--    [data-md-color-scheme="slate"] .button-secondary:hover {-->
-<!--        background: #2a978d;-->
-<!--        color: white;-->
-<!--    }-->
-
-<!--    .slack-button {-->
-<!--        position: relative;-->
-<!--        left: 50%;-->
-<!--        margin-left: -225px;-->
-<!--        width: 450px;-->
-<!--        height: 120px;-->
-<!--        background-color: rgba(255, 255, 255, 0.0);-->
-<!--        text-align: center;-->
-<!--        font-weight: 600;-->
-<!--        font-size: 3em;-->
-<!--        color: #2a978d;-->
-<!--        margin-top: 15px;-->
-<!--        margin-bottom: 45px;-->
-<!--        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);-->
-<!--        border: 3px solid #2a978d;-->
-<!--        background-color: #fff;-->
-<!--        border-radius: 25px;-->
-<!--        box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);-->
-<!--        cursor: pointer;display: flex;-->
-<!--        padding-left: 45px;-->
-<!--    }-->
-
-<!--    .slack-container {-->
-<!--        position: relative;-->
-<!--        display: flex;-->
-<!--        height: 100%;-->
-<!--        width: 100%;-->
-<!--        align-items: center;-->
-<!--        justify-content: center;-->
-<!--    }-->
-
-<!--    .slack-img {-->
-<!--        position: relative;-->
-<!--        width: 80px;-->
-<!--        height: 80px;-->
-<!--    }-->
-
-<!--    .slack-text {-->
-<!--        position: relative;-->
-<!--        margin-left: 15px;-->
-<!--    }-->
-
-<!--    .story-wrapper {-->
-<!--        position: relative;-->
-<!--        display: flex;-->
-<!--        justify-content: center;-->
-<!--        flex-wrap: wrap;-->
-<!--        width: 100%;-->
-<!--    }-->
-
-<!--   .story {-->
-<!--        margin: 15px;-->
-<!--        text-align: center;-->
-<!--        width: 500px;-->
-<!--        float: left;-->
-<!--        background-color: white;-->
-<!--        color: black;-->
-<!--        -webkit-box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);-->
-<!--        box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);-->
-<!--        -webkit-transition: all 0.25s ease;-->
-<!--        -o-transition: all 0.25s ease;-->
-<!--        transition: all 0.25s ease;-->
-<!--    }-->
-
-<!--   [data-md-color-scheme="slate"] .story {-->
-<!--        background: #355876;-->
-<!--        color: #dfe1f2;-->
-<!--    }-->
-
-<!--   .story:hover {-->
-<!--        -webkit-transform: scale(1.06);-->
-<!--        -ms-transform: scale(1.06);-->
-<!--        -o-transform: scale(1.06);-->
-<!--        transform: scale(1.06);-->
-<!--    }-->
-
-<!--   .story-title {-->
-<!--        padding: 20px 20px 0 20px;-->
-<!--        background-color: white;-->
-<!--        text-align: center;-->
-<!--        font-weight: 400;-->
-<!--        font-size: 2em;-->
-<!--        color: #2a978d;-->
-<!--        margin-top: 15px;-->
-<!--        margin-bottom: 45px;-->
-<!--        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);-->
-<!--    }-->
-
-<!--    [data-md-color-scheme="slate"] .story-title {-->
-<!--        background: #355876;-->
-<!--    }-->
-
-<!--   .story-text {-->
-<!--        padding: 0 30px 0 30px;-->
-<!--        color: #4c4c54;-->
-<!--        text-align: left;-->
-<!--        font-size: 1.5em;-->
-<!--    }-->
-
-<!--   [data-md-color-scheme="slate"] .story-text {-->
-<!--        color: #dfe1f2;-->
-<!--    }-->
-
-<!--    .story-read {-->
-<!--        background: #FFF;-->
-<!--        padding: 15px;-->
-<!--        text-align: left;-->
-<!--        overflow: hidden;-->
-<!--    }-->
-
-<!--    [data-md-color-scheme="slate"] .story-read {-->
-<!--        background: #355876;-->
-<!--    }-->
-
-<!--    .story-read .read-more {-->
-<!--        float: right;-->
-<!--        color: #FFF;-->
-<!--        background: #355876;-->
-<!--        padding: 12px 18px;-->
-<!--        -webkit-border-radius: 2px;-->
-<!--        -moz-border-radius: 2px;-->
-<!--        border: 2px solid #355876;-->
-<!--        font-weight: 700;-->
-<!--        font-size: 1.6em;-->
-<!--        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);-->
-<!--        -webkit-transition: all 0.25s ease;-->
-<!--        -o-transition: all 0.25s ease;-->
-<!--        transition: all 0.25s ease;-->
-<!--    }-->
-
-<!--    .story-read .read-more:hover {-->
-<!--        background: white;-->
-<!--        color: #355876;-->
-<!--    }-->
-
-<!--    [data-md-color-scheme="slate"] .story-read .read-more {-->
-<!--        border-color: white;-->
-<!--        background: #355876;-->
-<!--        color: white;-->
-<!--    }-->
-
-<!--    [data-md-color-scheme="slate"] .story-read .read-more:hover {-->
-<!--        background: white;-->
-<!--        color: #355876;-->
-<!--    }-->
-
-<!--    @media only screen and (max-width: 720px) {-->
-<!--        section {padding-bottom: 2em}-->
-<!--        h1 {font-size: 2em}-->
-<!--        .logo {width: 300px; height: 80px}-->
-<!--        .description {font-size: 1.5em; width: 90%; margin-left: -45%}-->
-<!--        .slack-button {font-size: 2.0em; width: 90%; margin-left: -45%}-->
-<!--    }-->
-
-<!--</style>-->
 
 
 <section>
