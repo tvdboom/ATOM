@@ -16,10 +16,12 @@ from typing import Optional, Union
 
 # Other packages
 import featuretools as ft
+from zoofs import ParticleSwarmOptimization
 from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator
 from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.metrics import mean_squared_error, log_loss
 from sklearn.feature_selection import (
     f_classif,
     f_regression,
@@ -44,6 +46,16 @@ from .utils import (
     get_feature_importance, composed, crash, method_to_log,
 )
 
+
+def regression_objective_function_topass(model, X_train, y_train, X_valid, y_valid):  
+    model.fit(X_train,y_train)  
+    metric = mean_squared_error(y_valid,model.predict(X_valid))
+    return metric
+
+def classification_objective_function_topass(model, X_train, y_train, X_valid, y_valid):      
+    model.fit(X_train,y_train)  
+    metric = log_loss(y_valid ,model.predict_proba(X_valid))
+    return metric
 
 class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     """Extract features from datetime columns.
@@ -767,12 +779,13 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         # Check parameters
         if isinstance(self.strategy, str):
-            strats = ["univariate", "pca", "sfm", "sfs", "rfe", "rfecv"]
+            strats = ["univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso"]
 
             if self.strategy.lower() not in strats:
                 raise ValueError(
                     "Invalid value for the strategy parameter. Choose "
-                    "from: univariate, PCA, SFM, RFE or RFECV."
+                    "from: univariate, PCA, SFM, RFE or RFECV. "
+                    "Or from zoofs algos: pso."
                 )
 
             elif self.strategy.lower() == "univariate":
@@ -987,6 +1000,36 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 n_features_to_select=self._n_features,
                 **self._kwargs,
             ).fit(X, y)
+
+        elif self.strategy.lower() == "pso":
+            check_y()
+            pso_initialization_params = ['n_iteration','timeout','population_size','minimize','c1','c2','w' ]
+
+            if 'objective_function' in self.kwargs:
+                objective_function = self.kwargs['objective_function']
+            else:
+                if isinstance(self.solver, str):
+                    if hasattr(self._solver, "predict_proba"):
+                        objective_function = classification_objective_function_topass
+                    else:
+                        objective_function = regression_objective_function_topass
+ 
+            initialization_params_from_kwargs = {k: v for k, v in self.kwargs.items() if k in pso_initialization_params}
+            self.pso = ParticleSwarmOptimization(objective_function=objective_function,
+                                                 **initialization_params_from_kwargs)
+
+            if ("X_valid" in self.kwargs.keys()) and ("y_valid" in self.kwargs.keys()):
+                X_valid, y_valid = self._prepare_input(X_valid, y_valid)
+            else:
+                 X_valid, y_valid = X, y
+
+            self.pso.fit(model = self._solver,
+                         X_train = X,
+                         y_train = y,
+                         X_valid = X_valid,
+                         y_valid = y_valid,
+                         verbose = False if self.verbose==0 else True )
+            
 
         else:
             check_y()
