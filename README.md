@@ -154,13 +154,13 @@ Documentation
   
 **Relevant links** | |
 --- | ---
-⭐ **[About](https://tvdboom.github.io/ATOM/release_history/)** | Learn more about the package.
-💡 **[Getting started](https://tvdboom.github.io/ATOM/getting_started/)** | New to ATOM? Here's how to get you started!
-📢 **[Release history](https://tvdboom.github.io/ATOM/release_history/)** | What are the new features of the latest release?
-👨‍💻 **[User guide](https://tvdboom.github.io/ATOM/user_guide/introduction/)** | How to use ATOM and its features.
-🎛️ **[API Reference](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/)** | The detailed reference for ATOM's API.
-📋 **[Examples](https://tvdboom.github.io/ATOM/examples/binary_classification/)** | Example notebooks show you what can be done and how.
-❔ **[FAQ](https://tvdboom.github.io/ATOM/faq/)** | Get answers to frequently asked questions.
-🛠️ **[Contributing](https://tvdboom.github.io/ATOM/contributing/)** | Do you wan to contribute to the project? Read this before creating a PR.
-🌳 **[Dependencies](https://tvdboom.github.io/ATOM/dependencies/)** | Which other packages does ATOM depend on?
-📃 **[License](https://tvdboom.github.io/ATOM/license/)** | Copyright and permissions under the MIT license.
+⭐ **[About](https://tvdboom.github.io/ATOM/latest/release_history/)** | Learn more about the package.
+💡 **[Getting started](https://tvdboom.github.io/ATOM/latest/getting_started/)** | New to ATOM? Here's how to get you started!
+📢 **[Release history](https://tvdboom.github.io/ATOM/latest/release_history/)** | What are the new features of the latest release?
+👨‍💻 **[User guide](https://tvdboom.github.io/ATOM/latest/user_guide/introduction/)** | How to use ATOM and its features.
+🎛️ **[API Reference](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomclassifier/)** | The detailed reference for ATOM's API.
+📋 **[Examples](https://tvdboom.github.io/ATOM/latest/examples/binary_classification/)** | Example notebooks show you what can be done and how.
+❔ **[FAQ](https://tvdboom.github.io/ATOM/latest/faq/)** | Get answers to frequently asked questions.
+🛠️ **[Contributing](https://tvdboom.github.io/ATOM/latest/contributing/)** | Do you wan to contribute to the project? Read this before creating a PR.
+🌳 **[Dependencies](https://tvdboom.github.io/ATOM/latest/dependencies/)** | Which other packages does ATOM depend on?
+📃 **[License](https://tvdboom.github.io/ATOM/latest/license/)** | Copyright and permissions under the MIT license.

@@ -6,7 +6,7 @@ repo_url: https://github.com/tvdboom/ATOM
 edit_uri: ""
 docs_dir: docs_sources/
 site_dir: docs/
-copyright: © Copyright 2019-2022, by Mavs.
+copyright: Copyright &copy; 2022, by Mavs.
 
 theme:
   name: material
@@ -39,6 +39,9 @@ theme:
         name: Switch to light mode
 
 extra:
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
   version:
     provider: mike
   social:
@@ -48,6 +51,9 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/tvdboom/ATOM
       name: GitHub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/atom-ml/
+      name: Pypi
     - icon: fontawesome/brands/medium
       link: https://tvdboom.medium.com/
       name: Medium
@@ -71,6 +77,8 @@ markdown_extensions:
     - pymdownx.snippets
     - pymdownx.arithmatex:
         generic: true
+    - pymdownx.tabbed:
+        alternate_style: true
 
 extra_css:
     - stylesheets/extra.css

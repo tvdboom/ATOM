@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="../stylesheets/extra.css">
+
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/4.12/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/">
       
       <link rel="icon" href="img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.1">
@@ -41,6 +41,13 @@
     <script>__md_scope=new URL(".",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
+  
+
+
+  
+  
+
+
 
     
     
@@ -67,6 +74,20 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+  <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g">
+      <div style="font-size: 1.2em; text-align: center">
+          Stay engaged with the community and join us on &nbsp;
+          <img src="img/icons/slack.png" alt="Slack" height=15 width=15 draggable="false"/>
+          <strong>Slack</strong>!
+      </div>
+  </a>
+
+          </div>
+        </aside>
       
     </div>
     
@@ -351,8 +372,6 @@
 
 <style>
 
-    .md-content{display:none}  /*Drop title from index.html */
-
     section {
         padding-bottom: 5em;
     }
@@ -433,48 +452,6 @@
         color: white;
     }
 
-    .slack-button {
-        position: relative;
-        left: 50%;
-        margin-left: -225px;
-        width: 450px;
-        height: 120px;
-        background-color: rgba(255, 255, 255, 0.0);
-        text-align: center;
-        font-weight: 600;
-        font-size: 3em;
-        color: #2a978d;
-        margin-top: 15px;
-        margin-bottom: 45px;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
-        border: 3px solid #2a978d;
-        background-color: #fff;
-        border-radius: 25px;
-        box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
-        cursor: pointer;display: flex;
-        padding-left: 45px;
-    }
-
-    .slack-container {
-        position: relative;
-        display: flex;
-        height: 100%;
-        width: 100%;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .slack-img {
-        position: relative;
-        width: 80px;
-        height: 80px;
-    }
-
-    .slack-text {
-        position: relative;
-        margin-left: 15px;
-    }
-
     .story-wrapper {
         position: relative;
         display: flex;
@@ -503,9 +480,6 @@
     }
 
    .story:hover {
-        -webkit-transform: scale(1.06);
-        -ms-transform: scale(1.06);
-        -o-transform: scale(1.06);
         transform: scale(1.06);
     }
 
@@ -523,6 +497,12 @@
 
     [data-md-color-scheme="slate"] .story-title {
         background: #355876;
+    }
+
+    .story-image {
+        height: 300px;
+        width: 100%;
+        margin-top: -5px;
     }
 
    .story-text {
@@ -624,17 +604,6 @@
 </section>
 
 <section>
-    <div class="slack-button button-secondary">
-        <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" target="_blank" draggable="false">
-            <div class="slack-container">
-                <img src="img/slack.png" alt="slack" class="slack-img" draggable="false">
-                <div class="slack-text">Join us on slack!</div>
-            </div>
-        </a>
-    </div>
-</section>
-
-<section>
     <h1 style="margin-bottom: -10px">Why you should use ATOM</h1>
     <div class="description" style="display: flex; justify-content: center;">
         <ul>
@@ -655,7 +624,7 @@
     <div class="story-wrapper">
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_1.jpg" alt="story_1" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_1.jpg" draggable="false">
             <p class="story-title">ATOM: A Python package for fast exploration of machine learning pipelines</p>
             <p class="story-text">
                 During the exploration phase of a project, a data scientist tries
@@ -674,7 +643,7 @@
 
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_2.jpg" alt="story_2" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_2.jpg" draggable="=False">
             <p class="story-title">How to test multiple machine learning pipelines with just a few lines of Python</p>
             <p class="story-text">
                 Since it's nearly impossible to know beforehand which transformations
@@ -691,7 +660,7 @@
         </div>
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_3.jpg" alt="story_3" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_3.jpg" draggable="false">
             <p class="story-title">From raw data to web app deployment with ATOM and Streamlit</p>
             <p class="story-text">
                 In this article we will show you how to create a simple web app,
@@ -705,6 +674,53 @@
             <div class="story-read">
                 <a href="https://towardsdatascience.com/from-raw-data-to-web-app-deployment-with-atom-and-streamlit-d8df381aa19f"
                    draggable="false" class="read-more">Read more</a>
+            </div>
+        </div>
+        <div class="story-wrapper">
+            <div class="story">
+                <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+                <img class="story-image" src="img/stories/story_4.jpg" draggable="false">
+                <p class="story-title">Exploration of Deep Learning pipelines made easy</p>
+                <p class="story-text">
+                    During the exploration phase of a project, a data scientist tries
+                    to find the optimal pipeline for his specific use case. In this
+                    story, I’ll explain how to use the ATOM package to quickly help you
+                    train and evaluate a deep learning model on any given dataset...
+                </p>
+
+                <div class="story-read">
+                    <a href="https://towardsdatascience.com/exploration-of-deep-learning-pipelines-made-easy-e1cf649892bc"
+                       draggable="false" class="read-more">Read more</a>
+                </div>
+            </div>
+
+            <div class="story">
+                <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+                <img class="story-image" src="img/stories/story_5.jpg" draggable="false">
+                <p class="story-title">Deep Feature Synthesis vs Genetic Feature Generation</p>
+                <p class="story-text">
+                    Feature engineering is the process of creating new features from the
+                    existing ones, in order to capture relationships with the target
+                    column that the first set of features didn't have on their own. This
+                    process is very important to improve the performance of machine...
+                </p>
+
+                <div class="story-read">
+                    <a href="https://towardsdatascience.com/deep-feature-synthesis-vs-genetic-feature-generation-6ba4d05a6ca5"
+                       draggable="false" class="read-more">Read more</a>
+                </div>
+            </div>
+            <div class="story">
+                <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+                <img class="story-image" src="img/stories/story_6.jpg" draggable="false">
+                <p class="story-title">From raw text to model prediction in under 50 lines of Python</p>
+                <p class="story-text">
+                    <br><br><br><br><br>
+                </p>
+
+                <div class="story-read">
+                    <div class="read-more">Coming soon...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -3078,14 +3094,6 @@
           <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
               
-                
-
-
-  <h1>ATOM</h1>
-
-
-
-              
             </article>
           </div>
         </div>
@@ -3097,7 +3105,62 @@
         
       </main>
       
-
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2022, by Mavs.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    <a href="https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3" target="_blank" rel="noopener" title="Slack" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
+    </a>
+  
+    
+    
+    <a href="https://github.com/tvdboom/ATOM" target="_blank" rel="noopener" title="GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    <a href="https://pypi.org/project/atom-ml/" target="_blank" rel="noopener" title="Pypi" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6zM286.2 404c11.1 0 20.1 9.1 20.1 20.3 0 11.3-9 20.4-20.1 20.4-11 0-20.1-9.2-20.1-20.4.1-11.3 9.1-20.3 20.1-20.3zM167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4zm-6.7-142.6c-11.1 0-20.1-9.1-20.1-20.3.1-11.3 9-20.4 20.1-20.4 11 0 20.1 9.2 20.1 20.4s-9 20.3-20.1 20.3z"/></svg>
+    </a>
+  
+    
+    
+    <a href="https://tvdboom.medium.com/" target="_blank" rel="noopener" title="Medium" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M180.5 74.262C80.813 74.262 0 155.633 0 256s80.819 181.738 180.5 181.738S361 356.373 361 256 280.191 74.262 180.5 74.262zm288.25 10.646c-49.845 0-90.245 76.619-90.245 171.095s40.406 171.1 90.251 171.1 90.251-76.619 90.251-171.1H559c0-94.503-40.4-171.095-90.248-171.095zm139.506 17.821c-17.526 0-31.735 68.628-31.735 153.274s14.2 153.274 31.735 153.274S640 340.631 640 256c0-84.649-14.215-153.271-31.742-153.271z"/></svg>
+    </a>
+  
+    
+    
+    <a href="mailto:m.524687@gmail.com" target="_blank" rel="noopener" title="Email" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M256 352c-16.53 0-33.06-5.422-47.16-16.41L0 173.2V400c0 26.5 21.49 48 48 48h416c26.51 0 48-21.49 48-48V173.2L303.2 335.7C289.1 346.6 272.5 352 256 352zM16.29 145.3l212.2 165.1c16.19 12.6 38.87 12.6 55.06 0l212.2-165.1C505.1 137.3 512 125 512 112c0-26.51-21.5-48-48-48H48C21.49 64 0 85.49 0 112c0 13 6.01 25.3 16.29 33.3z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
     </div>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>

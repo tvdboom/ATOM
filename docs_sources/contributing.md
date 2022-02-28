@@ -12,8 +12,8 @@ Do you have a question? Before you do, please read the following guidelines.
 ### Question or problem?
 
 For quick questions there's no need to open an issue. Check first if the
-question isn't already answered on the [FAQ](https://tvdboom.github.io/ATOM/faq/)
-section. If not, reach us through the [discussions](https://github.com/tvdboom/ATOM/discussions)
+question isn't already answered on the [FAQ](../faq) section. If not, reach
+us through the [discussions](https://github.com/tvdboom/ATOM/discussions)
 page or on the [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)
 channel.
 

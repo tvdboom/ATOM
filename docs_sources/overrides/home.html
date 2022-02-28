@@ -1,15 +1,19 @@
-<link rel="stylesheet" href="../stylesheets/extra.css">{% extends "main.html" %}
+{% extends "main.html" %}
 
-<!-- Override footer -->
-{% block footer %}
+{% block announce %}
+  <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g">
+      <div style="font-size: 1.2em; text-align: center">
+          Stay engaged with the community and join us on &nbsp;
+          <img src="img/icons/slack.png" alt="Slack" height=15 width=15 draggable="false"/>
+          <strong>Slack</strong>!
+      </div>
+  </a>
 {% endblock %}
 
 {% block tabs %}
 {{ super() }}
 
 <style>
-
-    .md-content{display:none}  /*Drop title from index.html */
 
     section {
         padding-bottom: 5em;
@@ -91,48 +95,6 @@
         color: white;
     }
 
-    .slack-button {
-        position: relative;
-        left: 50%;
-        margin-left: -225px;
-        width: 450px;
-        height: 120px;
-        background-color: rgba(255, 255, 255, 0.0);
-        text-align: center;
-        font-weight: 600;
-        font-size: 3em;
-        color: #2a978d;
-        margin-top: 15px;
-        margin-bottom: 45px;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
-        border: 3px solid #2a978d;
-        background-color: #fff;
-        border-radius: 25px;
-        box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
-        cursor: pointer;display: flex;
-        padding-left: 45px;
-    }
-
-    .slack-container {
-        position: relative;
-        display: flex;
-        height: 100%;
-        width: 100%;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .slack-img {
-        position: relative;
-        width: 80px;
-        height: 80px;
-    }
-
-    .slack-text {
-        position: relative;
-        margin-left: 15px;
-    }
-
     .story-wrapper {
         position: relative;
         display: flex;
@@ -161,9 +123,6 @@
     }
 
    .story:hover {
-        -webkit-transform: scale(1.06);
-        -ms-transform: scale(1.06);
-        -o-transform: scale(1.06);
         transform: scale(1.06);
     }
 
@@ -181,6 +140,12 @@
 
     [data-md-color-scheme="slate"] .story-title {
         background: #355876;
+    }
+
+    .story-image {
+        height: 300px;
+        width: 100%;
+        margin-top: -5px;
     }
 
    .story-text {
@@ -282,17 +247,6 @@
 </section>
 
 <section>
-    <div class="slack-button button-secondary">
-        <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" target="_blank" draggable="false">
-            <div class="slack-container">
-                <img src="img/slack.png" alt="slack" class="slack-img" draggable="false">
-                <div class="slack-text">Join us on slack!</div>
-            </div>
-        </a>
-    </div>
-</section>
-
-<section>
     <h1 style="margin-bottom: -10px">Why you should use ATOM</h1>
     <div class="description" style="display: flex; justify-content: center;">
         <ul>
@@ -313,7 +267,7 @@
     <div class="story-wrapper">
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_1.jpg" alt="story_1" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_1.jpg" draggable="false">
             <p class="story-title">ATOM: A Python package for fast exploration of machine learning pipelines</p>
             <p class="story-text">
                 During the exploration phase of a project, a data scientist tries
@@ -332,7 +286,7 @@
 
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_2.jpg" alt="story_2" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_2.jpg" draggable="=False">
             <p class="story-title">How to test multiple machine learning pipelines with just a few lines of Python</p>
             <p class="story-text">
                 Since it's nearly impossible to know beforehand which transformations
@@ -349,7 +303,7 @@
         </div>
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_3.jpg" alt="story_3" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_3.jpg" draggable="false">
             <p class="story-title">From raw data to web app deployment with ATOM and Streamlit</p>
             <p class="story-text">
                 In this article we will show you how to create a simple web app,
@@ -365,7 +319,56 @@
                    draggable="false" class="read-more">Read more</a>
             </div>
         </div>
+        <div class="story-wrapper">
+            <div class="story">
+                <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+                <img class="story-image" src="img/stories/story_4.jpg" draggable="false">
+                <p class="story-title">Exploration of Deep Learning pipelines made easy</p>
+                <p class="story-text">
+                    During the exploration phase of a project, a data scientist tries
+                    to find the optimal pipeline for his specific use case. In this
+                    story, I’ll explain how to use the ATOM package to quickly help you
+                    train and evaluate a deep learning model on any given dataset...
+                </p>
+
+                <div class="story-read">
+                    <a href="https://towardsdatascience.com/exploration-of-deep-learning-pipelines-made-easy-e1cf649892bc"
+                       draggable="false" class="read-more">Read more</a>
+                </div>
+            </div>
+
+            <div class="story">
+                <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+                <img class="story-image" src="img/stories/story_5.jpg" draggable="false">
+                <p class="story-title">Deep Feature Synthesis vs Genetic Feature Generation</p>
+                <p class="story-text">
+                    Feature engineering is the process of creating new features from the
+                    existing ones, in order to capture relationships with the target
+                    column that the first set of features didn't have on their own. This
+                    process is very important to improve the performance of machine...
+                </p>
+
+                <div class="story-read">
+                    <a href="https://towardsdatascience.com/deep-feature-synthesis-vs-genetic-feature-generation-6ba4d05a6ca5"
+                       draggable="false" class="read-more">Read more</a>
+                </div>
+            </div>
+            <div class="story">
+                <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+                <img class="story-image" src="img/stories/story_6.jpg" draggable="false">
+                <p class="story-title">From raw text to model prediction in under 50 lines of Python</p>
+                <p class="story-text">
+                    <br><br><br><br><br>
+                </p>
+
+                <div class="story-read">
+                    <div class="read-more">Coming soon...</div>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
 {% endblock %}
+
+{% block content %}{% endblock %}

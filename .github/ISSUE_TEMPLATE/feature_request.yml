@@ -7,7 +7,7 @@ body:
       label: Contribution guidelines
       description: Make sure that your request fulfills all the following requirements.
       options:
-      - label: I've read the [contribution guidelines](https://tvdboom.github.io/ATOM/contributing/).
+      - label: I've read the [contribution guidelines](https://tvdboom.github.io/ATOM/latest/contributing/).
         required: true
       - label: The documentation does not mention anything about this feature.
       - label: There are no open or closed issues that are related to this feature.
