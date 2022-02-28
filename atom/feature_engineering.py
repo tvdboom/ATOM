@@ -1019,7 +1019,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                                                  **initialization_params_from_kwargs)
 
             if ("X_valid" in self.kwargs.keys()) and ("y_valid" in self.kwargs.keys()):
-                X_valid, y_valid = self._prepare_input(self.kwargs[X_valid], self.kwargs[y_valid])
+                X_valid, y_valid = self._prepare_input(self.kwargs["X_valid"], self.kwargs["y_valid"] )
             else:
                  X_valid, y_valid = X, y
 
