@@ -1,5 +1,15 @@
 {% extends "main.html" %}
 
+{% block announce %}
+  <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g">
+    Join us on
+    <span class="twemoji twitter">
+      <img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png?raw=true" alt="Slack" height=14 width=14 draggable="false"/>
+    </span>
+    <strong>Slack</strong>
+  </a>
+{% endblock %}
+
 {% block tabs %}
 {{ super() }}
 
@@ -177,6 +187,12 @@
         background: #355876;
     }
 
+    .story-image {
+        height: 300px;
+        width: 100%;
+        margin-top: -5px;
+    }
+
    .story-text {
         padding: 0 30px 0 30px;
         color: #4c4c54;
@@ -308,7 +324,7 @@
     <div class="story-wrapper">
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_1.jpg" alt="story_1" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_1.jpg" draggable="false">
             <p class="story-title">ATOM: A Python package for fast exploration of machine learning pipelines</p>
             <p class="story-text">
                 During the exploration phase of a project, a data scientist tries
@@ -327,7 +343,7 @@
 
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_2.jpg" alt="story_2" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_2.jpg" draggable="=False">
             <p class="story-title">How to test multiple machine learning pipelines with just a few lines of Python</p>
             <p class="story-text">
                 Since it's nearly impossible to know beforehand which transformations
@@ -344,8 +360,60 @@
         </div>
         <div class="story">
             <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
-            <img src="img/stories/story_3.jpg" alt="story_3" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <img class="story-image" src="img/stories/story_3.jpg" draggable="false">
             <p class="story-title">From raw data to web app deployment with ATOM and Streamlit</p>
+            <p class="story-text">
+                In this article we will show you how to create a simple web app,
+                capable of helping a data scientist to quickly perform a basic
+                analysis on the performance of predictive models on a provided
+                dataset. The user will be able to upload his own dataset and tweak
+                the machine learning pipeline in two ways: selecting which data
+                cleaning steps to apply...
+            </p>
+
+            <div class="story-read">
+                <a href="https://towardsdatascience.com/from-raw-data-to-web-app-deployment-with-atom-and-streamlit-d8df381aa19f"
+                   draggable="false" class="read-more">Read more</a>
+            </div>
+        </div>
+        <div class="story-wrapper">
+        <div class="story">
+            <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+            <img class="story-image" src="img/stories/story_4.jpg" draggable="false">
+            <p class="story-title">Exploration of Deep Learning pipelines made easy</p>
+            <p class="story-text">
+                During the exploration phase of a project, a data scientist tries
+                to find the optimal pipeline for his specific use case. In this
+                story, I’ll explain how to use the ATOM package to quickly help you
+                train and evaluate a deep learning model on any given dataset...
+            </p>
+
+            <div class="story-read">
+                <a href="https://towardsdatascience.com/exploration-of-deep-learning-pipelines-made-easy-e1cf649892bc"
+                   draggable="false" class="read-more">Read more</a>
+            </div>
+        </div>
+
+        <div class="story">
+            <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+            <img class="story-image" src="img/stories/story_2.jpg" draggable="false">
+            <p class="story-title">Deep Feature Synthesis vs Genetic Feature Generation</p>
+            <p class="story-text">
+                Feature engineering is the process of creating new features from the
+                existing ones, in order to capture relationships with the target
+                column that the first set of features didn't have on their own. This
+                process is very important to improve the performance of machine...
+            </p>
+
+            <div class="story-read">
+                <a href="https://towardsdatascience.com/deep-feature-synthesis-vs-genetic-feature-generation-6ba4d05a6ca5"
+                   draggable="false" class="read-more">Read more</a>
+            </div>
+        </div>
+        <div class="story">
+            <img src="img/stories/tds.jpeg" alt="tds" height="90px" width="100%">
+            <img class="story-image" src="img/stories/story_6.jpg" draggable="false">
+            <p class="story-title">From raw text to model prediction in under 50 lines of Python</p>
             <p class="story-text">
                 In this article we will show you how to create a simple web app,
                 capable of helping a data scientist to quickly perform a basic
@@ -366,4 +434,3 @@
 {% endblock %}
 
 {% block content %}{% endblock %}
-{% block footer %}{% endblock %}
