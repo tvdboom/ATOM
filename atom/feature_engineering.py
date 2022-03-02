@@ -789,7 +789,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 raise ValueError(
                     "Invalid value for the strategy parameter. Choose "
                     "from: univariate, PCA, SFM, RFE or RFECV. "
-                    "Or from zoofs algos: pso."
+                    "Or from zoofs algos: pso, gwo, dfo, geneo, hho."
                 )
 
             elif self.strategy.lower() == "univariate":
