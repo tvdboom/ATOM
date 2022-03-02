@@ -1010,11 +1010,13 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() in ["pso", "gwo", "dfo", "geneo", "hho"]:
             check_y()
-            algo_mapper = {"pso": ParticleSwarmOptimization,
+            algo_mapper = {"pso": ParticleSwarmOptimization, # mapper to avoide code repetition
                            "gwo": GreyWolfOptimization,
                            "dfo": DragonFlyOptimization,
                            "geneo": GeneticOptimization,
                            "hho": HarrisHawkOptimization}
+            
+            # initialization_params catches all params requied for zoofs algos
             initialization_params = {"pso": ['n_iteration', 'timeout', 'population_size', 'minimize', 'c1', 'c2', 'w'],
                                      "gwo": ['n_iteration', 'timeout', 'population_size', 'minimize', 'method'],
                                      "dfo": ['n_iteration', 'timeout', 'population_size', 'minimize', 'method'],
@@ -1026,15 +1028,16 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             params_for_objective_function = {k: v for k, v in self.kwargs.items(
             ) if k not in initialization_params+['objective_function']}
 
-            if self.kwargs.get("objective_function"):
+            
+            if self.kwargs.get("objective_function"): # zoofs-native objective_function choice
                 objective_function = self.kwargs['objective_function']
 
-            elif self.kwargs.get("scoring"):
+            elif self.kwargs.get("scoring"): # atom-native scoring method can be chosen 
                 params_for_objective_function = {
                     "scorer": get_custom_scorer(self.kwargs["scoring"])}
                 objective_function = custom_function_for_scorer
 
-            else:
+            else: # default scoring method is chosen if nothing is provided
                 params_for_objective_function = {"scorer": get_custom_scorer("neg_log_loss") if hasattr(
                     self._solver, "predict_proba") else get_custom_scorer("neg_mean_squared_error")}
                 objective_function = custom_function_for_scorer
@@ -1047,7 +1050,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                                                            **initialization_params_from_kwargs,
                                                            **params_for_objective_function)
 
-            if ("X_valid" in self.kwargs.keys()) and ("y_valid" in self.kwargs.keys()):
+            if ("X_valid" in self.kwargs.keys()) and ("y_valid" in self.kwargs.keys()): # catching X_valid if provided
                 X_valid, y_valid = self._prepare_input(
                     self.kwargs["X_valid"], self.kwargs["y_valid"])
             else:
