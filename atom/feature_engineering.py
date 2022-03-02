@@ -47,15 +47,10 @@ from .utils import (
 )
 
 
-def regression_objective_function_topass(model, X_train, y_train, X_valid, y_valid):  
+def custom_function_for_scorer(model, X_train, y_train, X_valid, y_valid, scorer):  
     model.fit(X_train,y_train)  
-    metric = mean_squared_error(y_valid,model.predict(X_valid))
-    return metric
+    return scorer(model, X_valid, y_valid)
 
-def classification_objective_function_topass(model, X_train, y_train, X_valid, y_valid):      
-    model.fit(X_train,y_train)  
-    metric = log_loss(y_valid ,model.predict_proba(X_valid))
-    return metric
 
 class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     """Extract features from datetime columns.
@@ -1004,19 +999,25 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         elif self.strategy.lower() == "pso":
             check_y()
             pso_initialization_params = ['n_iteration','timeout','population_size','minimize','c1','c2','w' ]
-
-            if 'objective_function' in self.kwargs:
-                objective_function = self.kwargs['objective_function']
-            else:
-                if isinstance(self.solver, str):
-                    if hasattr(self._solver, "predict_proba"):
-                        objective_function = classification_objective_function_topass
-                    else:
-                        objective_function = regression_objective_function_topass
- 
             initialization_params_from_kwargs = {k: v for k, v in self.kwargs.items() if k in pso_initialization_params}
+
+            if self.kwargs.get("objective_function"):
+                objective_function = self.kwargs['objective_function']
+
+            elif self.kwargs.get("scoring"):
+                params_for_objective_function = {"scorer" : get_custom_scorer(self.kwargs["scoring"])}
+                objective_function = custom_function_for_scorer
+
+            else:
+                params_for_objective_function = {"scorer" : get_custom_scorer("neg_log_loss") if hasattr(self._solver, "predict_proba") else get_custom_scorer("neg_mean_squared_error") }
+                objective_function = custom_function_for_scorer 
+ 
+            if 'minimize' not in initialization_params_from_kwargs.keys():
+                initialization_params_from_kwargs['minimize'] = False
+
             self.pso = ParticleSwarmOptimization(objective_function=objective_function,
-                                                 **initialization_params_from_kwargs)
+                                                 **initialization_params_from_kwargs,
+                                                 **params_for_objective_function)
 
             if ("X_valid" in self.kwargs.keys()) and ("y_valid" in self.kwargs.keys()):
                 X_valid, y_valid = self._prepare_input(self.kwargs["X_valid"], self.kwargs["y_valid"] )
