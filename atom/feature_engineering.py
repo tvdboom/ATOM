@@ -783,7 +783,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         # Check parameters
         if isinstance(self.strategy, str):
-            strats = ["univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso"]
+            strats = ["univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso", "gwo", "dfo", "geneo", "hho"]
 
             if self.strategy.lower() not in strats:
                 raise ValueError(
