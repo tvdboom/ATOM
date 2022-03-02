@@ -41,7 +41,7 @@ month, year, hour...) from the columns. It can be accessed from atom
 through the [feature_extraction](../../API/ATOM/atomclassifier/#feature-extraction)
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
-they create, e.g. `Feature 1_day` for the day element of `Feature 1`.
+they create, e.g. `feature_1_day` for the day element of `feature_1`.
 
 Note that many time features have a cyclic pattern, e.g. after Sunday
 comes Monday. This means that if we would encode the days of the week
@@ -58,7 +58,7 @@ x_{cos} = cos\left(\frac{2\pi * x}{max(x)}\right)
 $$
 
 The resulting features have their names followed by sin or cos, e.g.
-`Feature 1_day_sin` and `Feature 1_day_cos`. The datetime elements
+`feature_1_day_sin` and `feature_1_day_cos`. The datetime elements
 that can be encoded in a cyclic fashion are: microsecond, second,
 minute, hour, weekday, day, day_of_year, month and quarter. Note that
 decision trees based algorithms build their split rules according to
@@ -85,11 +85,10 @@ and Genetic Feature Generation.
 
 **Deep Feature Synthesis**<br>
 Deep feature synthesis (DFS) applies the selected operators on the
-features in the dataset. For example, if the operator is "log",
-it will create the new feature `LOG(old_feature)` and if the
-operator is "mul", it will create the new feature `old_feature_1 x old_feature_2`.
-The operators can be chosen through the `operators` parameter.
-Choose from:
+features in the dataset. For example, if the operator is "log", it will
+create the new feature `LOG(old_feature)` and if the operator is "mul",
+it will create the new feature `old_feature_1 x old_feature_2`. The
+operators can be chosen through the `operators` parameter. Choose from:
 
 * **add**: Sum two features together.
 * **sub:** Subtract two features from each other.</li>
@@ -131,7 +130,7 @@ to improve its features with every generation of the algorithm. GFG
 uses the same operators as DFS, but instead of only applying the
 transformations once, it evolves them further, creating nested
 structures of combinations of features. The new features are given the
-name `feature n`, where n stands for the n-th feature in the dataset.
+name `feature_n`, where n stands for the n-th feature in the dataset.
 You can access the genetic feature's fitness and description (how they
 are calculated) through the `genetic_features` attribute.
 

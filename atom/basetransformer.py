@@ -186,7 +186,7 @@ class BaseTransformer:
             X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
             # If text dataset, change the name of the column to corpus
-            if list(X.columns) == ["feature 1"] and X[X.columns[0]].dtype == "object":
+            if list(X.columns) == ["feature_1"] and X[X.columns[0]].dtype == "object":
                 X = X.rename(columns={X.columns[0]: "corpus"})
 
             # Convert all column names to str

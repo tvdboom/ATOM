@@ -11,15 +11,25 @@ or via `conda`:
 
     $ conda install -c conda-forge atom-ml
 
-Note that these commands will also install all [required dependencies](../dependencies/#required).
+These commands will install ATOM and all [required dependencies](../dependencies/#required).
 To install the [optional dependencies](../dependencies/#optional) as well, add [models]
 after the package's name.
 
     $ pip install -U atom-ml[models]
 
-!!! info
+!!! note
     Since atom was already taken, download the package under the name `atom-ml`!
 
+Sometimes, new features and bug fixes are already implemented in the
+`development` branch, but waiting for the next release to be made
+available. If you can't wait for that, it's possible to install the
+package directly from git.
+
+    $ pip install git+https://github.com/tvdboom/ATOM.git@development#egg=atom-ml
+
+Don't forget to include `#egg=atom-ml` to explicitly name the project,
+this way pip can track metadata for it without having to have run the
+`setup.py` script.
 
 <br><br>
 
@@ -31,7 +41,7 @@ Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want
 from sklearn.datasets import load_breast_cancer
 from atom import ATOMClassifier
 
-X, y = load_breast_cancer(return_X_y)
+X, y = load_breast_cancer(return_X_y=True)
 atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
 ```
 

@@ -43,42 +43,42 @@ def test_wrongly_converted_columns_are_ignored():
     """Assert that columns converted unsuccessfully are skipped."""
     extractor = FeatureExtractor()
     X = extractor.transform(X10_str)
-    assert "feature 3" in X.columns
+    assert "feature_3" in X.columns
 
 
 def test_datetime_features_are_used():
     """Assert that datetime64 features are used as is."""
     X = to_df(X10_dt.copy())
-    X["feature 3"] = pd.to_datetime(X["feature 3"])
+    X["feature_3"] = pd.to_datetime(X["feature_3"])
 
     extractor = FeatureExtractor(features="day")
     X = extractor.transform(X)
-    assert "feature 3_day" in X.columns
-    assert "feature 3" not in X.columns
+    assert "feature_3_day" in X.columns
+    assert "feature_3" not in X.columns
 
 
 def test_wrongly_converted_features_are_ignored():
     """Assert that wrongly converted features are ignored."""
     extractor = FeatureExtractor(features=["tz", "is_leap_year", "day"])
     X = extractor.transform(X10_dt)
-    assert "feature 2_tz" not in X.columns  # Not pd.Series.dt
+    assert "feature_2_tz" not in X.columns  # Not pd.Series.dt
 
 
 def test_ordinal_features():
     """Assert that ordinal features are created."""
     extractor = FeatureExtractor(features="day")
     X = extractor.transform(X10_dt)
-    assert "feature 3_day" in X.columns
-    assert "feature 3" not in X.columns
+    assert "feature_3_day" in X.columns
+    assert "feature_3" not in X.columns
 
 
 def test_order_features():
     """Assert that the new features are in the order provided."""
     extractor = FeatureExtractor()
     X = extractor.transform(X10_dt)
-    assert X.columns.get_loc("feature 3_day") == 2
-    assert X.columns.get_loc("feature 3_month") == 3
-    assert X.columns.get_loc("feature 3_year") == 4
+    assert X.columns.get_loc("feature_3_day") == 2
+    assert X.columns.get_loc("feature_3_month") == 3
+    assert X.columns.get_loc("feature_3_year") == 4
 
 
 @pytest.mark.parametrize("fxs", [
@@ -103,7 +103,7 @@ def test_features_are_not_dropped():
     """Assert that features are kept when drop_columns=False."""
     extractor = FeatureExtractor(drop_columns=False)
     X = extractor.transform(X10_dt)
-    assert "feature 3" in X.columns
+    assert "feature_3" in X.columns
 
 
 # Test FeatureGenerator ============================================ >>
@@ -187,12 +187,12 @@ def test_updated_dataset():
 def test_default_feature_names():
     """Assert that the new features get correct default names."""
     X = X_bin.copy()
-    X["feature 32"] = range(len(X))
+    X["feature_32"] = range(len(X))
 
     generator = FeatureGenerator(strategy="gfg", n_features=2, random_state=1)
     X = generator.fit_transform(X, y_bin)
-    assert "feature 31" not in X
-    assert "feature 34" in X and "feature 33" in X
+    assert "feature_31" not in X
+    assert "feature_34" in X and "feature_33" in X
 
 
 # Test FeatureSelector ============================================= >>

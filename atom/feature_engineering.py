@@ -494,7 +494,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 # If the column is new, use a default name
                 counter = 0
                 while True:
-                    name = f"feature {X.shape[1] + 1 + counter}"
+                    name = f"feature_{X.shape[1] + 1 + counter}"
                     if name not in X:
                         X[name] = array  # Add new feature to X
                         df.iloc[i, 0] = name

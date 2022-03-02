@@ -280,12 +280,10 @@ class BaseModel(BaseModelPlotter):
                     Score of the fitted model on the validation set.
 
                 """
-                # Define subsets from original dataset
-                branch = self.T._get_og_branches()[0]
-                X_subtrain = branch.dataset.iloc[train_idx, :-1]
-                y_subtrain = branch.dataset.iloc[train_idx, -1]
-                X_val = branch.dataset.iloc[val_idx, :-1]
-                y_val = branch.dataset.iloc[val_idx, -1]
+                X_subtrain = og.dataset.iloc[train_idx, :-1]
+                y_subtrain = og.dataset.iloc[train_idx, -1]
+                X_val = og.dataset.iloc[val_idx, :-1]
+                y_val = og.dataset.iloc[val_idx, -1]
 
                 # Transform subsets if there is a pipeline
                 if not self.T.pipeline.empty:
@@ -328,7 +326,11 @@ class BaseModel(BaseModelPlotter):
             if pbar:
                 pbar.set_description(call)
 
+            # Get estimator instance with call specific hyperparameters
             est = self.get_estimator(**{**self._est_params, **params})
+
+            # Get original branch to define subsets
+            og = self.T._get_og_branches()[0]
 
             # Skip if the eval function has already been evaluated at this point
             if params not in self.bo["params"].values:
@@ -346,12 +348,12 @@ class BaseModel(BaseModelPlotter):
                     # Get the ShuffleSplit cross-validator object
                     fold = split(
                         n_splits=1,
-                        test_size=len(self.test) / self.shape[0],
+                        test_size=len(og.test) / og.shape[0],
                         random_state=rs,
                     )
 
                     # Fit model just on the one fold
-                    score = fit_model(*next(fold.split(self.X_train, self.y_train)))
+                    score = fit_model(*next(fold.split(og.X_train, og.y_train)))
 
                 else:  # Use cross validation to get the score
                     if self.T.goal == "class":
@@ -366,7 +368,7 @@ class BaseModel(BaseModelPlotter):
                         # Parallel loop over fit_model
                         jobs = Parallel(self.T.n_jobs)(
                             delayed(fit_model)(i, j)
-                            for i, j in k_fold.split(self.X_train, self.y_train)
+                            for i, j in k_fold.split(og.X_train, og.y_train)
                         )
                         score = list(np.mean(jobs, axis=0))
                     except PickleError:

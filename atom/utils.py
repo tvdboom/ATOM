@@ -421,7 +421,7 @@ def to_df(data, index=None, columns=None, dtypes=None):
     if not isinstance(data, pd.DataFrame) and data is not None:
         # Assign default column names (dict already has column names)
         if not isinstance(data, dict) and columns is None:
-            columns = [f"feature {str(i)}" for i in range(1, n_cols(data) + 1)]
+            columns = [f"feature_{str(i)}" for i in range(1, n_cols(data) + 1)]
 
         # Create dataframe from sparse matrix or directly from data
         if sparse.issparse(data):
@@ -897,7 +897,7 @@ def name_cols(array, original_df, col_names):
             # If the column is new, use a default name
             counter = 1
             while True:
-                n = f"feature {i + counter + original_df.shape[1] - len(col_names)}"
+                n = f"feature_{i + counter + original_df.shape[1] - len(col_names)}"
                 if (n not in original_df or n in col_names) and n not in temp_cols:
                     temp_cols.append(n)
                     break

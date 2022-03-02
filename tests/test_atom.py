@@ -173,7 +173,7 @@ def test_n_nans():
 def test_numerical():
     """Assert that numerical returns the names of the numerical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.numerical == ["feature 1", "feature 2", "feature 4"]
+    assert atom.numerical == ["feature_1", "feature_2", "feature_4"]
 
 
 def test_n_numerical():
@@ -185,7 +185,7 @@ def test_n_numerical():
 def test_categorical():
     """Assert that categorical returns the names of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.categorical == ["feature 3"]
+    assert atom.categorical == ["feature_3"]
 
 
 def test_n_categorical():
@@ -272,7 +272,7 @@ def test_automl_invalid_scoring():
 
 
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
-@pytest.mark.parametrize("columns", ["feature 1", 1, None])
+@pytest.mark.parametrize("columns", ["feature_1", 1, None])
 def test_distribution(distributions, columns):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -346,7 +346,7 @@ def test_reset():
     atom.run("LR")
     atom.reset()
     assert not atom.models and len(atom._branches) == 1
-    assert atom["feature 3"].dtype.name == "object"  # Is reset back to str
+    assert atom["feature_3"].dtype.name == "object"  # Is reset back to str
 
 
 def test_save_data():
@@ -437,7 +437,7 @@ def test_transform_method():
     """ Assert that the transform method works as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
-    assert atom.transform(X10_str)["feature 3"].dtype.kind in "ifu"
+    assert atom.transform(X10_str)["feature_3"].dtype.kind in "ifu"
 
 
 def test_transform_not_train_only():
@@ -572,8 +572,8 @@ def test_raise_length_mismatch():
 def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.encode(columns="feature 3")
-    assert atom.columns[2:5] == ["feature 3_a", "feature 3_b", "feature 3_c"]
+    atom.encode(columns="feature_3")
+    assert atom.columns[2:5] == ["feature_3_a", "feature_3_b", "feature_3_c"]
 
 
 def test_add_sets_are_kept_equal():
