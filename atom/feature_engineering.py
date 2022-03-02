@@ -1034,6 +1034,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 initialization_params_from_kwargs['minimize'] = False
 
             self.pso = ParticleSwarmOptimization(objective_function=objective_function,
+                                                 logger=self.logger,
                                                  **initialization_params_from_kwargs,
                                                  **params_for_objective_function)
 
