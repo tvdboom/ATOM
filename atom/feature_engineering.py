@@ -1000,7 +1000,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             check_y()
             pso_initialization_params = ['n_iteration','timeout','population_size','minimize','c1','c2','w' ]
             initialization_params_from_kwargs = {k: v for k, v in self.kwargs.items() if k in pso_initialization_params}
-            params_for_objective_function = {k: v for k, v in self.kwargs.items() if k not in pso_initialization_params}
+            params_for_objective_function = {k: v for k, v in self.kwargs.items() if k not in pso_initialization_params+['objective_function']}
 
             if self.kwargs.get("objective_function"):
                 objective_function = self.kwargs['objective_function']
