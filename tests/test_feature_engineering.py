@@ -248,6 +248,46 @@ def test_solver_parameter_empty_SFM():
     with pytest.raises(ValueError, match=r".*can't be None.*"):
         selector.fit(X_reg, y_reg)
 
+def test_solver_parameter_empty_zoofs():
+    """Assert scoring , in absence of any specified scoring."""
+
+    # For classification tasks
+    from atom.utils import get_custom_scorer
+    selector = FeatureSelector(strategy="pso", solver = "LGB_class", n_iteration = 2, population_size=2)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.algo.kwargs['scorer'].name == get_custom_scorer("neg_log_loss").name
+
+    # For regression tasks
+    selector = FeatureSelector(strategy="pso", solver = "LGB_reg", n_iteration = 2, population_size=2)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.algo.kwargs['scorer'].name == get_custom_scorer("neg_mean_squared_error").name
+
+    # test scoring
+    selector = FeatureSelector(strategy="pso", solver = "LGB_class", n_iteration = 2, scoring='neg_log_loss')
+    selector.fit(X_bin, y_bin)
+    assert selector.algo.kwargs['scorer'].name == get_custom_scorer("neg_log_loss").name
+
+def test_transform_zoofs():
+    """test transform for zoofs."""
+
+    selector = FeatureSelector(strategy="pso", solver = "LGB_class", n_iteration = 2, population_size=2)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.algo.best_feature_list == list(selector.transform(X_reg).columns)
+
+def test_objective_function_zoofs():
+    """Assert objective_function."""
+
+    from sklearn.metrics import log_loss
+    def objective_function_topass(model,X_train, y_train, X_valid, y_valid):      
+        model.fit(X_train,y_train)  
+        P=log_loss(y_valid,model.predict_proba(X_valid))
+        return P
+
+    from atom.utils import get_custom_scorer
+    selector = FeatureSelector(strategy="pso", solver = "LGB_class", n_iteration = 2, population_size=2, 
+                                        objective_function = objective_function_topass)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.algo.objective_function == objective_function_topass
 
 def test_goal_attribute():
     """Assert that the goal is deduced from the model's name."""
