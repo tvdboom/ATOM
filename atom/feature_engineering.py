@@ -607,6 +607,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - "SFS"" Sequential Feature Selection.
             - "RFE": Recursive Feature Elimination.
             - "RFECV": RFE with cross-validated selection.
+            - "PSO" : Perform binary-particle swarm optimization for feature selection
+            - "HHO" : Perform binary-harrison hawk optimization for feature selection
+            - "GWO" : Perform binary-grey wolf optimization for feature selection
+            - "DFO" : Perform binary-dragon fly optimization for feature selection
+            - "GENEO" : Perform binary-genetic optimization for feature selection
+
 
         Note that the SFS, RFE and RFECV strategies don't work when the
         solver is a CatBoost model due to incompatibility of the APIs.
@@ -629,7 +635,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 + "full" (not available for sparse data)
                 + "arpack"
                 + "randomized" (default for sparse data)
-            - for "SFM", "SFS", "RFE" and "RFECV":
+            - for "SFM", "SFS", "RFE","RFECV", "PSO", "HHO", "GWO", "DFO" and "GENEO" :
                 The base estimator. For SFM, RFE and RFECV, it should
                 have either a `feature_importances_` or `coef_`
                 attribute after fitting. You can use one of ATOM's
