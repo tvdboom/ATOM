@@ -993,7 +993,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                           y_train=y,
                           X_valid=X_valid,
                           y_valid=y_valid,
-                          verbose=False if self.verbose == 0 else True)
+                          verbose=True if self.verbose >=2 else False)
 
         else:
             check_y()
