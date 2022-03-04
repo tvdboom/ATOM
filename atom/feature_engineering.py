@@ -16,7 +16,13 @@ from typing import Optional, Union
 
 # Other packages
 import featuretools as ft
-from zoofs import *
+from zoofs import (
+    ParticleSwarmOptimization,
+    GreyWolfOptimization,
+    DragonFlyOptimization,
+    GeneticOptimization,
+    HarrisHawkOptimization,
+    )
 from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator
