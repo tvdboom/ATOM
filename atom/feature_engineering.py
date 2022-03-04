@@ -21,8 +21,9 @@ from zoofs import (
     GreyWolfOptimization,
     DragonFlyOptimization,
     GeneticOptimization,
-    HarrisHawkOptimization,
-    )
+    HarrisHawkOptimization
+)
+
 from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator
@@ -52,12 +53,15 @@ from .utils import (
     get_feature_importance, composed, crash, method_to_log,
 )
 
+
 def custom_function_for_scorer(model, X_train, y_train, X_valid, y_valid, scorer):
     model.fit(X_train, y_train)
     return scorer(model, X_valid, y_valid)
 
-def custom_cross_valid_function_for_scorer(model, X_train, y_train, X_valid, y_valid, scorer):
-    return np.mean(cross_val_score(model, X_train, y_train, cv=3, scoring= scorer))
+
+def custom_cross_valid_function_for_scorer(model, X_train, y_train, X_valid, y_valid,
+                                           scorer):
+    return np.mean(cross_val_score(model, X_train, y_train, cv=3, scoring=scorer))
 
 
 class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
@@ -170,12 +174,14 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         for name, column in X.select_dtypes(exclude="number").items():
             if column.dtype.name == "datetime64[ns]":
                 col_dt = column
-                self.log(f" --> Extracting features from datetime column {name}.", 1)
+                self.log(
+                    f" --> Extracting features from datetime column {name}.", 1)
             else:
                 col_dt = pd.to_datetime(
                     arg=column,
                     errors="coerce",  # Converts to NaT if he can't format
-                    format=self.fmt[i] if isinstance(self.fmt, SEQUENCE) else self.fmt,
+                    format=self.fmt[i] if isinstance(
+                        self.fmt, SEQUENCE) else self.fmt,
                     infer_datetime_format=True,
                 )
 
@@ -221,7 +227,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                         min_val, max_val = 1, col_dt.dt.daysinmonth
                     elif fx in ("dayofyear", "day_of_year"):
                         min_val = 1
-                        max_val = [365 if i else 366 for i in col_dt.dt.is_leap_year]
+                        max_val = [
+                            365 if i else 366 for i in col_dt.dt.is_leap_year]
                     elif fx == "month":
                         min_val, max_val = 1, 12
                     elif fx == "quarter":
@@ -366,7 +373,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 f"Value should be >0, got {self.n_features}."
             )
 
-        default = ["add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan"]
+        default = ["add", "sub", "mul", "div",
+                   "sqrt", "log", "sin", "cos", "tan"]
         if not self.operators:  # None or empty list
             self._operators = default
         else:
@@ -402,7 +410,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
             # Run deep feature synthesis with transformation primitives
-            es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
+            es = ft.EntitySet(
+                dataframes={"X": (X, "_index", None, None, None, True)})
             self._dfs = ft.dfs(
                 target_dataframe_name="X",
                 entityset=es,
@@ -424,7 +433,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         else:
             kwargs = self.kwargs.copy()  # Copy in case of repeated fit
-            hall_of_fame = kwargs.pop("hall_of_fame", max(400, self.n_features or 400))
+            hall_of_fame = kwargs.pop(
+                "hall_of_fame", max(400, self.n_features or 400))
             self.symbolic_transformer = SymbolicTransformer(
                 population_size=kwargs.pop("population_size", 2000),
                 hall_of_fame=hall_of_fame,
@@ -467,7 +477,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.strategy.lower() == "dfs":
             index = X.index
-            es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
+            es = ft.EntitySet(
+                dataframes={"X": (X, "index", None, None, None, True)})
             dfs = ft.calculate_feature_matrix(
                 features=self._dfs,
                 entityset=es,
@@ -725,7 +736,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         # Check parameters
         if isinstance(self.strategy, str):
-            strats = ["univariate", "pca", "sfm", "sfs", "rfe", "rfecv", "pso", "gwo", "dfo", "geneo", "hho"]
+            strats = ["univariate", "pca", "sfm", "sfs", "rfe",
+                      "rfecv", "pso", "gwo", "dfo", "geneo", "hho"]
 
             if self.strategy.lower() not in strats:
                 raise ValueError(
@@ -796,7 +808,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self._solver = self.solver
 
         elif self.kwargs:
-            kwargs = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
+            kwargs = ", ".join(
+                [f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
             raise ValueError(
                 f"Keyword arguments ({kwargs}) are specified for "
                 f"the strategy estimator but no strategy is selected."
@@ -854,7 +867,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             corr_features, corr_values = [], []
             for col in to_drop:
                 corr_features.append(list(upper.index[abs(upper[col]) >= max_]))
-                corr_values.append(list(round(upper[col][abs(upper[col]) >= max_], 5)))
+                corr_values.append(
+                    list(round(upper[col][abs(upper[col]) >= max_], 5)))
 
             self.collinear = pd.DataFrame(
                 data={
@@ -891,7 +905,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     X = self.scaler.transform(X)
 
                 self.pca = PCA(
-                    n_components=X.shape[1] - 1,  # All -1 because of the pca plot
+                    # All -1 because of the pca plot
+                    n_components=X.shape[1] - 1,
                     svd_solver=self._solver,
                     random_state=self.random_state,
                     **self.kwargs,
@@ -948,19 +963,26 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() in ["pso", "gwo", "dfo", "geneo", "hho"]:
             check_y()
-            algo_mapper = {"pso": ParticleSwarmOptimization,  # mapper to avoide code repetition
+            # mapper to avoide code repetition
+            algo_mapper = {"pso": ParticleSwarmOptimization,  
                            "gwo": GreyWolfOptimization,
                            "dfo": DragonFlyOptimization,
                            "geneo": GeneticOptimization,
                            "hho": HarrisHawkOptimization}
 
             # initialization_params catches all params requied for zoofs algos
-            initialization_params = {"pso": ['n_iteration', 'timeout', 'population_size', 'minimize', 'c1', 'c2', 'w'],
-                                     "gwo": ['n_iteration', 'timeout', 'population_size', 'minimize', 'method'],
-                                     "dfo": ['n_iteration', 'timeout', 'population_size', 'minimize', 'method'],
-                                     "geneo": ['n_iteration', 'timeout', 'population_size', 'minimize', 'selective_pressure',
+            initialization_params = {"pso": ['n_iteration', 'timeout', 'population_size',
+                                             'minimize', 'c1', 'c2', 'w'],
+                                     "gwo": ['n_iteration', 'timeout', 'population_size',
+                                             'minimize', 'method'],
+                                     "dfo": ['n_iteration', 'timeout', 'population_size',
+                                             'minimize', 'method'],
+                                     "geneo": ['n_iteration', 'timeout',
+                                               'population_size', 'minimize',
+                                               'selective_pressure',
                                                'elitism', 'mutation_rate'],
-                                     "hho": ['n_iteration', 'timeout', 'population_size', 'minimize', 'beta']}[self.strategy.lower()]
+                                     "hho": ['n_iteration', 'timeout', 'population_size',
+                                             'minimize', 'beta']}[self.strategy.lower()]
 
             initialization_params_from_kwargs = {
                 k: v for k, v in self.kwargs.items() if k in initialization_params}
@@ -973,8 +995,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                         self.kwargs["X_valid"], self.kwargs["y_valid"])
                     objective_function = custom_function_for_scorer
                 else:
-                    raise ValueError("Invalid value for the y_valid parameter. Value cannot "
-                                     f"be absent in the presence of  X_valid.")
+                    raise ValueError("Invalid value for the y_valid parameter. Value "
+                                     "cannot be absent in the presence of  X_valid.")
 
             else:
                 X_valid, y_valid = X, y
@@ -990,18 +1012,22 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     "scorer": get_custom_scorer(self.kwargs["scoring"])}
 
             else:  # default scoring method is chosen if nothing is provided
-                params_for_objective_function = {"scorer": (get_custom_scorer("f1")
-                                                            if y.nunique() <= 2 else get_custom_scorer("f1_weighted"))
-                                                 if hasattr(self._solver, "predict_proba")
+                params_for_objective_function = {"scorer":
+                                                 (get_custom_scorer("f1")
+                                                  if y.nunique() <= 2 else
+                                                     get_custom_scorer("f1_weighted"))
+                                                 if hasattr(self._solver,
+                                                            "predict_proba")
                                                  else get_custom_scorer("r2")}
 
             if 'minimize' not in initialization_params_from_kwargs.keys():
                 initialization_params_from_kwargs['minimize'] = False
 
-            self.algo = algo_mapper[self.strategy.lower()](objective_function=objective_function,
-                                                           logger=self.logger,
-                                                           **initialization_params_from_kwargs,
-                                                           **params_for_objective_function)
+            self.algo = algo_mapper[
+                self.strategy.lower()](objective_function=objective_function,
+                                       logger=self.logger,
+                                       **initialization_params_from_kwargs,
+                                       **params_for_objective_function)
             self.algo.fit(model=self._solver,
                           X_train=X,
                           y_train=y,
@@ -1014,7 +1040,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             # Both RFECV and SFS use the scoring parameter
             if self.kwargs.get("scoring"):
-                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+                self._kwargs["scoring"] = get_custom_scorer(
+                    self.kwargs["scoring"])
 
             if self.strategy.lower() == "rfecv":
                 # Invert n_features to select them all (default option)
@@ -1103,11 +1130,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             X = to_df(
                 data=self.pca.transform(X)[:, :self._n_features],
                 index=X.index,
-                columns=[f"component {str(i)}" for i in range(1, self._n_features + 1)],
+                columns=[f"component {str(i)}" for i in range(
+                    1, self._n_features + 1)],
             )
 
-            var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
-            self.log(f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
+            var = np.array(self.pca.explained_variance_ratio_[
+                           :self._n_features])
+            self.log(
+                f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == "sfm":
             # Here we use columns since some cols could be removed before by
@@ -1169,8 +1199,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() in ["pso", "gwo", "dfo", "geneo", "hho"]:
             self.log(
-                f" --> {self.strategy.lower()} selected { len(self.algo.best_feature_list) }"
-                " features from the dataset.", 2
+                f" --> {self.strategy.lower()} selected"
+                f" { len(self.algo.best_feature_list) } features from the dataset.", 2
             )
 
             for n, column in enumerate(X):
