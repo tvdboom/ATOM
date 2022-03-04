@@ -555,10 +555,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - "SFS"" Sequential Feature Selection.
             - "RFE": Recursive Feature Elimination.
             - "RFECV": RFE with cross-validated selection.
-            - "PSO" : Perform binary-particle swarm optimization for feature selection 
-            - "HHO" : Perform binary-harrison hawk optimization for feature selection 
-            - "GWO" : Perform binary-grey wolf optimization for feature selection 
-            - "DFO" : Perform binary-dragon fly optimization for feature selection 
+            - "PSO" : Perform binary-particle swarm optimization for feature selection
+            - "HHO" : Perform binary-harrison hawk optimization for feature selection
+            - "GWO" : Perform binary-grey wolf optimization for feature selection
+            - "DFO" : Perform binary-dragon fly optimization for feature selection
             - "GENEO" : Perform binary-genetic optimization for feature selection
 
         Note that the SFS, RFE and RFECV strategies don't work when the
@@ -964,7 +964,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         elif self.strategy.lower() in ["pso", "gwo", "dfo", "geneo", "hho"]:
             check_y()
             # mapper to avoide code repetition
-            algo_mapper = {"pso": ParticleSwarmOptimization,  
+            algo_mapper = {"pso": ParticleSwarmOptimization,
                            "gwo": GreyWolfOptimization,
                            "dfo": DragonFlyOptimization,
                            "geneo": GeneticOptimization,
