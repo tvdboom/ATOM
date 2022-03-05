@@ -174,14 +174,12 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         for name, column in X.select_dtypes(exclude="number").items():
             if column.dtype.name == "datetime64[ns]":
                 col_dt = column
-                self.log(
-                    f" --> Extracting features from datetime column {name}.", 1)
+                self.log(f" --> Extracting features from datetime column {name}.", 1)
             else:
                 col_dt = pd.to_datetime(
                     arg=column,
                     errors="coerce",  # Converts to NaT if he can't format
-                    format=self.fmt[i] if isinstance(
-                        self.fmt, SEQUENCE) else self.fmt,
+                    format=self.fmt[i] if isinstance(self.fmt, SEQUENCE) else self.fmt,
                     infer_datetime_format=True,
                 )
 
@@ -227,8 +225,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                         min_val, max_val = 1, col_dt.dt.daysinmonth
                     elif fx in ("dayofyear", "day_of_year"):
                         min_val = 1
-                        max_val = [
-                            365 if i else 366 for i in col_dt.dt.is_leap_year]
+                        max_val = [365 if i else 366 for i in col_dt.dt.is_leap_year]
                     elif fx == "month":
                         min_val, max_val = 1, 12
                     elif fx == "quarter":
@@ -373,8 +370,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 f"Value should be >0, got {self.n_features}."
             )
 
-        default = ["add", "sub", "mul", "div",
-                   "sqrt", "log", "sin", "cos", "tan"]
+        default = ["add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan"]
         if not self.operators:  # None or empty list
             self._operators = default
         else:
@@ -410,8 +406,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
             # Run deep feature synthesis with transformation primitives
-            es = ft.EntitySet(
-                dataframes={"X": (X, "_index", None, None, None, True)})
+            es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
             self._dfs = ft.dfs(
                 target_dataframe_name="X",
                 entityset=es,
@@ -433,8 +428,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         else:
             kwargs = self.kwargs.copy()  # Copy in case of repeated fit
-            hall_of_fame = kwargs.pop(
-                "hall_of_fame", max(400, self.n_features or 400))
+            hall_of_fame = kwargs.pop("hall_of_fame", max(400, self.n_features or 400))
             self.symbolic_transformer = SymbolicTransformer(
                 population_size=kwargs.pop("population_size", 2000),
                 hall_of_fame=hall_of_fame,
@@ -477,8 +471,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.strategy.lower() == "dfs":
             index = X.index
-            es = ft.EntitySet(
-                dataframes={"X": (X, "index", None, None, None, True)})
+            es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
             dfs = ft.calculate_feature_matrix(
                 features=self._dfs,
                 entityset=es,
@@ -808,8 +801,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self._solver = self.solver
 
         elif self.kwargs:
-            kwargs = ", ".join(
-                [f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
+            kwargs = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
             raise ValueError(
                 f"Keyword arguments ({kwargs}) are specified for "
                 f"the strategy estimator but no strategy is selected."
@@ -867,8 +859,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             corr_features, corr_values = [], []
             for col in to_drop:
                 corr_features.append(list(upper.index[abs(upper[col]) >= max_]))
-                corr_values.append(
-                    list(round(upper[col][abs(upper[col]) >= max_], 5)))
+                corr_values.append(list(round(upper[col][abs(upper[col]) >= max_], 5)))
 
             self.collinear = pd.DataFrame(
                 data={
@@ -905,8 +896,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     X = self.scaler.transform(X)
 
                 self.pca = PCA(
-                    # All -1 because of the pca plot
-                    n_components=X.shape[1] - 1,
+                    n_components=X.shape[1] - 1,  # All -1 because of the pca plot
                     svd_solver=self._solver,
                     random_state=self.random_state,
                     **self.kwargs,
@@ -1040,8 +1030,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             # Both RFECV and SFS use the scoring parameter
             if self.kwargs.get("scoring"):
-                self._kwargs["scoring"] = get_custom_scorer(
-                    self.kwargs["scoring"])
+                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
             if self.strategy.lower() == "rfecv":
                 # Invert n_features to select them all (default option)
@@ -1130,14 +1119,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             X = to_df(
                 data=self.pca.transform(X)[:, :self._n_features],
                 index=X.index,
-                columns=[f"component {str(i)}" for i in range(
-                    1, self._n_features + 1)],
+                columns=[f"component {str(i)}" for i in range(1, self._n_features + 1)],
             )
 
             var = np.array(self.pca.explained_variance_ratio_[
                            :self._n_features])
-            self.log(
-                f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
+            self.log(f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == "sfm":
             # Here we use columns since some cols could be removed before by
