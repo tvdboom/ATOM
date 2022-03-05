@@ -1122,8 +1122,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 columns=[f"component {str(i)}" for i in range(1, self._n_features + 1)],
             )
 
-            var = np.array(self.pca.explained_variance_ratio_[
-                           :self._n_features])
+            var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
             self.log(f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == "sfm":
