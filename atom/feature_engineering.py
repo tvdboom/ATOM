@@ -1006,8 +1006,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                                                  (get_custom_scorer("f1")
                                                   if y.nunique() <= 2 else
                                                      get_custom_scorer("f1_weighted"))
-                                                 if hasattr(self._solver,
-                                                            "predict_proba")
+                                                 if (hasattr(self._solver,
+                                                             "predict_proba")
+                                                     or hasattr(self._solver,
+                                                                "decision_function"))
                                                  else get_custom_scorer("r2")}
 
             if 'minimize' not in initialization_params_from_kwargs.keys():
