@@ -16,10 +16,19 @@ from typing import Optional, Union
 
 # Other packages
 import featuretools as ft
+from zoofs import (
+    ParticleSwarmOptimization,
+    GreyWolfOptimization,
+    DragonFlyOptimization,
+    GeneticOptimization,
+    HarrisHawkOptimization
+)
+
 from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator
 from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import (
     f_classif,
     f_regression,
@@ -43,6 +52,16 @@ from .utils import (
     is_sparse, get_custom_scorer, check_scaling, check_is_fitted,
     get_feature_importance, composed, crash, method_to_log,
 )
+
+
+def custom_function_for_scorer(model, X_train, y_train, X_valid, y_valid, scorer):
+    model.fit(X_train, y_train)
+    return scorer(model, X_valid, y_valid)
+
+
+def custom_cross_valid_function_for_scorer(model, X_train, y_train, X_valid, y_valid,
+                                           scorer):
+    return np.mean(cross_val_score(model, X_train, y_train, cv=3, scoring=scorer))
 
 
 class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
@@ -529,6 +548,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - "SFS"" Sequential Feature Selection.
             - "RFE": Recursive Feature Elimination.
             - "RFECV": RFE with cross-validated selection.
+            - "PSO" : Perform binary-particle swarm optimization for feature selection
+            - "HHO" : Perform binary-harrison hawk optimization for feature selection
+            - "GWO" : Perform binary-grey wolf optimization for feature selection
+            - "DFO" : Perform binary-dragon fly optimization for feature selection
+            - "GENEO" : Perform binary-genetic optimization for feature selection
 
         Note that the SFS, RFE and RFECV strategies don't work when the
         solver is a CatBoost model due to incompatibility of the APIs.
@@ -705,7 +729,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         # Check parameters
         if isinstance(self.strategy, str):
-            strats = ["univariate", "pca", "sfm", "sfs", "rfe", "rfecv"]
+            strats = ["univariate", "pca", "sfm", "sfs", "rfe",
+                      "rfecv", "pso", "gwo", "dfo", "geneo", "hho"]
 
             if self.strategy.lower() not in strats:
                 raise ValueError(
@@ -926,6 +951,82 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 **self._kwargs,
             ).fit(X, y)
 
+        elif self.strategy.lower() in ["pso", "gwo", "dfo", "geneo", "hho"]:
+            check_y()
+            # mapper to avoide code repetition
+            algo_mapper = {"pso": ParticleSwarmOptimization,
+                           "gwo": GreyWolfOptimization,
+                           "dfo": DragonFlyOptimization,
+                           "geneo": GeneticOptimization,
+                           "hho": HarrisHawkOptimization}
+
+            # initialization_params catches all params requied for zoofs algos
+            initialization_params = {"pso": ['n_iteration', 'timeout', 'population_size',
+                                             'minimize', 'c1', 'c2', 'w'],
+                                     "gwo": ['n_iteration', 'timeout', 'population_size',
+                                             'minimize', 'method'],
+                                     "dfo": ['n_iteration', 'timeout', 'population_size',
+                                             'minimize', 'method'],
+                                     "geneo": ['n_iteration', 'timeout',
+                                               'population_size', 'minimize',
+                                               'selective_pressure',
+                                               'elitism', 'mutation_rate'],
+                                     "hho": ['n_iteration', 'timeout', 'population_size',
+                                             'minimize', 'beta']}[self.strategy.lower()]
+
+            initialization_params_from_kwargs = {
+                k: v for k, v in self.kwargs.items() if k in initialization_params}
+            params_for_objective_function = {k: v for k, v in self.kwargs.items(
+            ) if k not in initialization_params + ['objective_function']}
+
+            if ("X_valid" in self.kwargs.keys()):
+                if ("y_valid" in self.kwargs.keys()):
+                    X_valid, y_valid = self._prepare_input(
+                        self.kwargs["X_valid"], self.kwargs["y_valid"])
+                    objective_function = custom_function_for_scorer
+                else:
+                    raise ValueError("Invalid value for the y_valid parameter. Value "
+                                     "cannot be absent in the presence of  X_valid.")
+
+            else:
+                X_valid, y_valid = X, y
+                objective_function = custom_cross_valid_function_for_scorer
+
+            # zoofs-native objective_function choice
+            if self.kwargs.get("objective_function"):
+                objective_function = self.kwargs['objective_function']
+
+            # atom-native scoring method can be chosen
+            elif self.kwargs.get("scoring"):
+                params_for_objective_function = {
+                    "scorer": get_custom_scorer(self.kwargs["scoring"])}
+
+            else:  # default scoring method is chosen if nothing is provided
+                params_for_objective_function = {"scorer":
+                                                 (get_custom_scorer("f1")
+                                                  if y.nunique() <= 2 else
+                                                     get_custom_scorer("f1_weighted"))
+                                                 if (hasattr(self._solver,
+                                                             "predict_proba")
+                                                     or hasattr(self._solver,
+                                                                "decision_function"))
+                                                 else get_custom_scorer("r2")}
+
+            if 'minimize' not in initialization_params_from_kwargs.keys():
+                initialization_params_from_kwargs['minimize'] = False
+
+            self.algo = algo_mapper[
+                self.strategy.lower()](objective_function=objective_function,
+                                       logger=self.logger,
+                                       **initialization_params_from_kwargs,
+                                       **params_for_objective_function)
+            self.algo.fit(model=self._solver,
+                          X_train=X,
+                          y_train=y,
+                          X_valid=X_valid,
+                          y_valid=y_valid,
+                          verbose=True if self.verbose >= 2 else False)
+
         else:
             check_y()
 
@@ -1083,5 +1184,16 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             idx = np.argsort(get_feature_importance(self.rfecv.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
+
+        elif self.strategy.lower() in ["pso", "gwo", "dfo", "geneo", "hho"]:
+            self.log(
+                f" --> {self.strategy.lower()} selected"
+                f" { len(self.algo.best_feature_list) } features from the dataset.", 2
+            )
+
+            for n, column in enumerate(X):
+                if column not in self.algo.best_feature_list:
+                    self.log(f"   >>> Dropping feature {column}.", 2)
+                    X = X.drop(column, axis=1)
 
         return X
