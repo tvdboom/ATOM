@@ -297,16 +297,18 @@ Transformed corpus.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.tokenize(bigram_freq=0.01)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.tokenize(bigram_freq=0.01)
-```
-or
-```python
-from atom.nlp import Tokenizer
-
-tokenizer = Tokenizer(bigram_freq=0.01)
-X = tokenizer.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.nlp import Tokenizer
+    
+    tokenizer = Tokenizer(bigram_freq=0.01)
+    X = tokenizer.transform(X)
+    ```

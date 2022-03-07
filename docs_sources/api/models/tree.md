@@ -1,6 +1,8 @@
 # Decision Tree (Tree)
 ----------------------
 
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+
 A single decision tree classifier/regressor.
 
 Corresponding estimators are:

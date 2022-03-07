@@ -310,17 +310,19 @@ Scaled feature set.
 
 ## Example
 
-```python
-from atom import ATOMRegressor
+=== "atom"
+    ```python
+    from atom import ATOMRegressor
+    
+    atom = ATOMRegressor(X, y)
+    atom.scale()
+    ```
 
-atom = ATOMRegressor(X, y)
-atom.scale()
-```
-or
-```python
-from atom.data_cleaning import Scaler
-
-scaler = Scaler()
-scaler.fit(X_train)
-X = scaler.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Scaler
+    
+    scaler = Scaler()
+    scaler.fit(X_train)
+    X = scaler.transform(X)
+    ```

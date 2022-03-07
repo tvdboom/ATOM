@@ -1,6 +1,8 @@
 # Bayesian Ridge (BR)
 ---------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+
 Bayesian regression techniques can be used to include regularization
 parameters in the estimation procedure: the regularization parameter
 is not set in a hard sense but tuned to the data at hand.

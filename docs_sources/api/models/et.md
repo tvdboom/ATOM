@@ -1,6 +1,8 @@
 # Extra-Trees (ET)
 ------------------
 
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+
 Extra-Trees use a meta estimator that fits a number of randomized
 decision trees (a.k.a. extra-trees) on various sub-samples of the
 dataset and uses averaging to improve the predictive accuracy and

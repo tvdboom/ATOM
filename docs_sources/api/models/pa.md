@@ -1,6 +1,9 @@
 # Passive Aggressive (PA)
 -------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+
 The passive-aggressive algorithms are a family of algorithms for
 large-scale learning. They are similar to the Perceptron in that they
 do not require a learning rate. However, contrary to the Perceptron,

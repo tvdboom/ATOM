@@ -1,6 +1,10 @@
 # Ordinary Least Squares (OLS)
 ------------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+
 Ordinary Least Squares is just linear regression without any
 regularization. It fits a linear model with coefficients w=(w1, …, wp)
 to minimize the residual sum of squares between the observed targets in

@@ -329,16 +329,18 @@ Transformed corpus.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.textclean()
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.textclean()
-```
-or
-```python
-from atom.nlp import TextCleaner
-
-cleaner = TextCleaner()
-X = cleaner.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.nlp import TextCleaner
+    
+    cleaner = TextCleaner()
+    X = cleaner.transform(X)
+    ```

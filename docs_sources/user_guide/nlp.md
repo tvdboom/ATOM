@@ -7,14 +7,14 @@ classes that help to convert raw text to meaningful numeric values,
 ready to be ingested by a model. ATOM uses the [nltk](https://www.nltk.org/index.html)
 library for the majority of its NLP processes.
 
-The text documents are expected to be provided in a column of the
-dataframe named `corpus` (the name is case-insensitive). Only the
-corpus is changed by the transformers, leaving the rest of the columns
-as is. This approach allows datasets to combine other features with the
-documents. If an array is provided as input, it should consist of only
-one feature containing the text (one document per row). ATOM will then
-automatically convert the array to a dataframe with the desired column
-name. Documents are expected to be strings or sequences of words. Click
+The text documents are expected to be provided in a column of the dataframe
+named `corpus` (the name is case-insensitive). Only the corpus is changed
+by the transformers, leaving the rest of the columns as is. This mechanism
+allows atom to combine datasets containing a text corpus with other non-text
+features. If an array is provided as input, it should consist of only one
+feature containing the text (one document per row). ATOM will then
+automatically convert the array to a dataframe with the desired column name.
+Documents are expected to be strings or sequences of words. Click
 [here](../../../examples/nlp) for an example using text data.
 
 !!! note
@@ -108,7 +108,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/f
 In a large text corpus, some words will be very present (e.g. “the”,
 “a”, “is” in English), hence carrying very little meaningful information
 about the actual contents of the document. If we were to feed the direct
-count data directly to a classifier those very frequent terms would
+count data directly to a classifier, those very frequent terms would
 shadow the frequencies of rarer, yet more interesting, terms. Use the
 TF-IDF strategy to re-weight the count features into floating point values.
 The created columns are named with the words they are counting. Read more

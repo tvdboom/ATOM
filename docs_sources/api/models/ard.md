@@ -1,6 +1,8 @@
 # Automatic Relevance Determination (ARD)
 -----------------------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+
 Automatic Relevance Determination is very similar to [Bayesian Ridge](../br), but
 can lead to sparser coefficients. Fit the weights of a regression model, using an
 ARD prior. The weights of the regression model are assumed to be in Gaussian

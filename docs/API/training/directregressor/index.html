@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/training/directregressor/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/training/directregressor/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -3350,6 +3350,7 @@ Columns include:
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
 <li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
+<li><b>gpu:</b> Whether the model has GPU support.</li>
 </ul>
 </td>
 </tr>
@@ -3733,12 +3734,12 @@ instance.
 <h2 id="example">Example</h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.training</span> <span class="kn">import</span> <span class="n">DirectRegressor</span>
 
-<span class="n">trainer</span> <span class="o">=</span> <span class="n">DirectRegressor</span><span class="p">([</span><span class="s2">&quot;OLS&quot;</span><span class="p">,</span> <span class="s2">&quot;BR&quot;</span><span class="p">],</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_bootstrap</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">DirectRegressor</span><span class="p">([</span><span class="s2">&quot;OLS&quot;</span><span class="p">,</span> <span class="s2">&quot;BR&quot;</span><span class="p">],</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
 
 <span class="c1"># Analyze the results</span>
-<span class="n">trainer</span><span class="o">.</span><span class="n">plot_results</span><span class="p">()</span>
-<span class="n">trainer</span><span class="o">.</span><span class="n">scoring</span><span class="p">()</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">plot_residuals</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
 </code></pre></div>
 
               

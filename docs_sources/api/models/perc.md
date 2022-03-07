@@ -1,6 +1,8 @@
 # Perceptron (Perc)
 -------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+
 The Perceptron is a simple classification algorithm suitable for large
 scale learning. By default:
 

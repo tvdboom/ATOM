@@ -486,6 +486,7 @@ Columns include:
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
 <li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
+<li><b>gpu:</b> Whether the model has GPU support.</li>
 </ul>
 </td>
 </tr>
@@ -916,4 +917,5 @@ trainer.run(train, test)
 
 # Analyze the results
 trainer.plot_learning_curve()
+print(trainer.results)
 ```

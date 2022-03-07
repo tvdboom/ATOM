@@ -1,6 +1,14 @@
 # Release history
 -----------------
 
+<a name="v4130"></a>
+### Version 4.13.0
+
+* Added the `return_sparse` parameter to the [Vectorizer](../API/NLP/vectorizer) class.
+* Fixed a bug where the BO could crash after [balancing](../user_guide/data_cleaning/#balancing-the-data)
+  the data.
+
+
 <a name="v4120"></a>
 ### Version 4.12.0
 

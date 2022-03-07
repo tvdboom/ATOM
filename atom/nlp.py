@@ -33,7 +33,7 @@ from nltk.collocations import (
 from .data_cleaning import TransformerMixin
 from .basetransformer import BaseTransformer
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, to_df, is_sparse,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, is_sparse, to_df,
     check_is_fitted, get_corpus, composed, crash, method_to_log,
 )
 
@@ -404,10 +404,9 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             if frequency:
                 df = pd.DataFrame(columns=[attr[:-1], "frequency"])
 
-                # Search for all n-grams in the documents
+                # Search for all n-grams in the corpus
                 ngram_fd = finder.from_documents(X[corpus]).ngram_fd
 
-                # Fraction to total number
                 if frequency < 1:
                     frequency = int(frequency * len(ngram_fd))
 
@@ -421,7 +420,9 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
                             {attr[:-1]: ngram, "frequency": freq}, ignore_index=True
                         )
 
-                setattr(self, attr, df.sort_values(by="frequency", ascending=False))
+                # Sort ngrams by frequency and add the dataframe as attribute
+                df = df.sort_values(by="frequency", ascending=False)
+                setattr(self, attr, df.reset_index(drop=True))
 
                 self.log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
 
@@ -585,8 +586,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     there is no column with that name, an exception is raised. The
     transformed columns are named after the word they are embedding
     (if the column is already present in the provided dataset,
-    `_[strategy]` is added behind the name), and returned in sparse
-    format only if all provided columns (except `corpus`) are sparse.
+    `_[strategy]` is added behind the name).
 
     Parameters
     ----------
@@ -595,6 +595,11 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "BOW": Uses a Bag of Words algorithm.
             - "TF-IDF": Uses a TF-IDF algorithm.
             - "Hashing": Uses a hashing algorithm.
+
+    return_sparse: bool, optional (default=True)
+        Whether to return the transformation output as a dataframe
+        of sparse arrays. Must be False when there are other columns
+        in X (besides `corpus`) that are non-sparse.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -622,12 +627,14 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "BOW",
+        return_sparse: bool = True,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
+        self.return_sparse = return_sparse
         self.kwargs = kwargs
 
         self._estimator = None
@@ -713,22 +720,24 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             # Hashing has no words to put as column names
             columns = [f"hash_{i}" for i in range(matrix.shape[1])]
 
-        if X.shape[1] == 1:
-            # If corpus is the only column, return as sparse df
+        X = X.drop(corpus, axis=1)
+
+        if not self.return_sparse:
+            self.log(" --> Converting the output to a full array.", 2)
+            matrix = matrix.toarray()
+        elif not X.empty and not is_sparse(X):
+            # Raise if there are other columns that are non-sparse
+            raise ValueError(
+                "Invalid value for the return_sparse parameter. The value must "
+                "must be False when X contains non-sparse columns (besides corpus)."
+            )
+
+        if X.empty:
+            # X only had 1 column: corpus
             return to_df(matrix, index=X.index, columns=columns)
         else:
-            X = X.drop(corpus, axis=1)
-            if not is_sparse(X):
-                # If there are more columns than just corpus and they are
-                # not all sparse, the matrix is converted to its full array
-                self.log(
-                    " --> Not all columns in the dataset (besides corpus) are "
-                    "sparse. Converting the vectorized output to a full array.", 2
-                )
-                matrix = matrix.toarray()
-                for i, col in enumerate(columns):
-                    # If the column name already exists, add _[strategy]
-                    col_name = f"{col}_{self.strategy.lower()}" if col in X else col
-                    X[col_name] = matrix[:, i]
+            for i, col in enumerate(columns):
+                # If the column name already exists, add _[strategy]
+                X[f"{col}_{self.strategy.lower()}" if col in X else col] = matrix[:, i]
 
-            return X
+        return X

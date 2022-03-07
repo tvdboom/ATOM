@@ -1,6 +1,10 @@
 # Ridge Estimator (Ridge)
 -------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+
 Linear least squares with l2 regularization. If classifier, it first
 converts the target values into {-1, 1} and then treats the problem
 as a regression task.
@@ -13,6 +17,9 @@ Corresponding estimators are:
   for regression tasks.
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/linear_model.html#ridge-regression).
+
+!!! warning
+    The gpu implementation is only available for regression tasks.
 
 
 <br><br>

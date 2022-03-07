@@ -280,16 +280,18 @@ Transformed feature set.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.feature_extraction(features=["day", "month"], fmt="%d/%m/%Y")
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.feature_extraction(features=["day", "month"], fmt="%d/%m/%Y")
-```
-or
-```python
-from atom.feature_engineering import FeatureExtractor
-
-feature_extractor = FeatureExtractor(features=["day", "month"], fmt="%d/%m/%Y")
-X = feature_extractor.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.feature_engineering import FeatureExtractor
+    
+    feature_extractor = FeatureExtractor(features=["day", "month"], fmt="%d/%m/%Y")
+    X = feature_extractor.transform(X)
+    ```

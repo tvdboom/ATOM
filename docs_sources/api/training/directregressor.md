@@ -468,6 +468,7 @@ Columns include:
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
 <li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
+<li><b>gpu:</b> Whether the model has GPU support.</li>
 </ul>
 </td>
 </tr>
@@ -884,10 +885,10 @@ instance.
 ```python
 from atom.training import DirectRegressor
 
-trainer = DirectRegressor(["OLS", "BR"], n_calls=5, n_initial_points=3, n_bootstrap=5)
+trainer = DirectRegressor(["OLS", "BR"], n_calls=5, n_initial_points=3)
 trainer.run(train, test)
 
 # Analyze the results
-trainer.plot_results()
-trainer.scoring()
+trainer.plot_residuals()
+print(trainer.results)
 ```

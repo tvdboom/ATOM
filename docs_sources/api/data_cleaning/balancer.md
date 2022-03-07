@@ -314,16 +314,18 @@ Balanced target column.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.balance(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.balance(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
-```
-or
-```python
-from atom.data_cleaning import Balancer
-
-balancer = Balancer(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
-X_train, y_train = balancer.transform(X_train, y_train)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Balancer
+    
+    balancer = Balancer(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
+    X_train, y_train = balancer.transform(X_train, y_train)
+    ```

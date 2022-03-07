@@ -1,6 +1,10 @@
 # Stochastic Gradient Descent (SGD)
 -----------------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+
 Stochastic Gradient Descent is a simple yet very efficient approach to
 fitting linear classifiers and regressors under convex loss functions.
 Even though SGD has been around in the machine learning community for a
@@ -15,6 +19,9 @@ Corresponding estimators are:
   for regression tasks.
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/sgd.html).
+
+!!! warning
+    The gpu implementation is only available for regression tasks.
 
 
 <br><br>

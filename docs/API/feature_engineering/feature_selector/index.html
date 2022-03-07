@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/feature_engineering/feature_selector/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/feature_engineering/feature_selector/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -3368,14 +3368,18 @@ Transformed feature set.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">atom</span><span class="o">.</span><span class="n">plot_pca</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 </code></pre></div>
-or
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.feature_engineering</span> <span class="kn">import</span> <span class="n">FeatureSelector</span>
 
 <span class="n">feature_selector</span> <span class="o">=</span> <span class="n">FeatureSelector</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -3383,7 +3387,10 @@ or
 <span class="n">X</span> <span class="o">=</span> <span class="n">feature_selector</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
 <span class="n">feature_selector</span><span class="o">.</span><span class="n">plot_pca</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
-</code></pre></div></p>
+</code></pre></div>
+</div>
+</div>
+</div>
 
               
             </article>

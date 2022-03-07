@@ -336,17 +336,19 @@ Transformed feature set.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.encode(strategy="CatBoost", max_onehot=5)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.encode(strategy="CatBoost", max_onehot=5)
-```
-or
-```python
-from atom.data_cleaning import Encoder
-
-encoder = Encoder(strategy="CatBoost", max_onehot=5)
-encoder.fit(X_train, y_train)
-X = encoder.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Encoder
+    
+    encoder = Encoder(strategy="CatBoost", max_onehot=5)
+    encoder.fit(X_train, y_train)
+    X = encoder.transform(X)
+    ```

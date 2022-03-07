@@ -303,21 +303,23 @@ Transformed feature set.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.discretize(strategy="custom", bins=[0, 18, 120], labels=["child", "adult"])
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.discretize(strategy="custom", bins=[0, 18, 120], labels=["child", "adult"])
-```
-or
-```python
-from atom.data_cleaning import Discretizer
-
-discretizer = Discretizer(
-    strategy="custom",
-    bins=[0, 18, 120],
-    labels=["child", "adult"],
-)
-discretizer.fit(X_train)
-X = discretizer.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Discretizer
+    
+    discretizer = Discretizer(
+        strategy="custom",
+        bins=[0, 18, 120],
+        labels=["child", "adult"],
+    )
+    discretizer.fit(X_train)
+    X = discretizer.transform(X)
+    ```

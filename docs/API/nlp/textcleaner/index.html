@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/nlp/textcleaner/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/nlp/textcleaner/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -3142,17 +3142,24 @@ Transformed corpus.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">textclean</span><span class="p">()</span>
 </code></pre></div>
-or
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">TextCleaner</span>
 
 <span class="n">cleaner</span> <span class="o">=</span> <span class="n">TextCleaner</span><span class="p">()</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">cleaner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-</code></pre></div></p>
+</code></pre></div>
+</div>
+</div>
+</div>
 
               
             </article>

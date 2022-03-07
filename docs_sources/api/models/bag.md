@@ -1,6 +1,8 @@
 # Bagging (Bag)
 ---------------
 
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+
 Bagging uses an ensemble meta-estimator that fits base classifiers/regressors
 each on random subsets of the original dataset and then aggregate their
 individual predictions (either by voting or by averaging) to form a final

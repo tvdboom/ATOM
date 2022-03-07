@@ -320,16 +320,18 @@ Transformed target column. Only returned if provided.
 
 ## Example
 
-```python
-from atom import ATOMRegressor
+=== "atom"
+    ```python
+    from atom import ATOMRegressor
+    
+    atom = ATOMRegressor(X, y)
+    atom.prune(strategy="z-score", max_sigma=2, include_target=True)
+    ```
 
-atom = ATOMRegressor(X, y)
-atom.prune(strategy="z-score", max_sigma=2, include_target=True)
-```
-or
-```python
-from atom.data_cleaning import Pruner
-
-pruner = Pruner(strategy="z-score", max_sigma=2, include_target=True)
-X_train, y_train = pruner.transform(X_train, y_train)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Pruner
+    
+    pruner = Pruner(strategy="z-score", max_sigma=2, include_target=True)
+    X_train, y_train = pruner.transform(X_train, y_train)
+    ```

@@ -1,6 +1,9 @@
 # Multinomial Naive Bayes (MNB)
 -------------------------------
 
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+
 Multinomial Naive Bayes implements the Naive Bayes algorithm for
 multinomially distributed data, and is one of the two classic Naive
 Bayes variants used in text classification (where the data are

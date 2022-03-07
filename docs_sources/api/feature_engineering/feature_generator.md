@@ -359,17 +359,19 @@ Feature set with the newly generated features.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.feature_generation(strategy="genetic", n_features=3, generations=30)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.feature_generation(strategy="genetic", n_features=3, generations=30)
-```
-or
-```python
-from atom.feature_engineering import FeatureGenerator
-
-fg = FeatureGenerator(strategy="genetic", n_features=3, generations=30)
-fg.fit(X_train, y_train)
-X = fg.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.feature_engineering import FeatureGenerator
+    
+    fg = FeatureGenerator(strategy="genetic", n_features=3, generations=30)
+    fg.fit(X_train, y_train)
+    X = fg.transform(X)
+    ```

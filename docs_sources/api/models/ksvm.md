@@ -1,6 +1,10 @@
 # Kernel-SVM (kSVM)
 -------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+
 The implementation of the Kernel (non-linear) Support Vector Machine is
 based on libsvm. The fit time scales at least quadratically with the
 number of samples and may be impractical beyond tens of thousands of

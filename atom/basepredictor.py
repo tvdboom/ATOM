@@ -507,6 +507,7 @@ class BasePredictor:
                 - module: The estimator's module.
                 - needs_scaling: Whether the model requires feature scaling.
                 - accepts_sparse: Whether the model supports sparse matrices.
+                - gpu: Whether the model has GPU support.
 
         """
         overview = pd.DataFrame()
@@ -521,6 +522,7 @@ class BasePredictor:
                         "module": m.est_class.__module__,
                         "needs_scaling": str(m.needs_scaling),
                         "accepts_sparse": str(m.accepts_sparse),
+                        "gpu": str(m.gpu),
                     },
                     ignore_index=True,
                 )

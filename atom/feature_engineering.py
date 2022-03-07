@@ -753,7 +753,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                         f"value can't be None for strategy={self.strategy}"
                     )
                 elif isinstance(self.solver, str):
-                    # Assign goal depending on solver's ending
+                    # Assign goal to initialize the predefined model
                     if self.solver[-6:] == "_class":
                         self.goal = "class"
                         self._solver = self.solver[:-6]

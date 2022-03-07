@@ -67,8 +67,9 @@ plugins:
 
 markdown_extensions:
     - tables
-    - fenced_code
+    - attr_list
     - admonition
+    - fenced_code
     - pymdownx.highlight
     - pymdownx.superfences
     - pymdownx.inlinehilite

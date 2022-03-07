@@ -1,6 +1,8 @@
 # Gaussian Naive bayes (GNB)
 ----------------------------
 
+<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+
 Gaussian Naive Bayes implements the Naive Bayes algorithm for
 classification. The likelihood of the features is assumed to
 be Gaussian.

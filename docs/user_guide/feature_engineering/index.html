@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/user_guide/feature_engineering/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/feature_engineering/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -2876,7 +2876,7 @@ month, year, hour...) from the columns. It can be accessed from atom
 through the <a href="../../API/ATOM/atomclassifier/#feature-extraction">feature_extraction</a>
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
-they create, e.g. <code>Feature 1_day</code> for the day element of <code>Feature 1</code>.</p>
+they create, e.g. <code>feature_1_day</code> for the day element of <code>feature_1</code>.</p>
 <p>Note that many time features have a cyclic pattern, e.g. after Sunday
 comes Monday. This means that if we would encode the days of the week
 from 0 to 6, we would lose that relation. A common method used to encode
@@ -2889,7 +2889,7 @@ x_{sin} = sin\left(\frac{2\pi * x}{max(x)}\right)
 x_{cos} = cos\left(\frac{2\pi * x}{max(x)}\right)
 \]</div>
 <p>The resulting features have their names followed by sin or cos, e.g.
-<code>Feature 1_day_sin</code> and <code>Feature 1_day_cos</code>. The datetime elements
+<code>feature_1_day_sin</code> and <code>feature_1_day_cos</code>. The datetime elements
 that can be encoded in a cyclic fashion are: microsecond, second,
 minute, hour, weekday, day, day_of_year, month and quarter. Note that
 decision trees based algorithms build their split rules according to
@@ -2910,11 +2910,10 @@ method. You can choose between two strategies: Deep Feature Synthesis
 and Genetic Feature Generation.</p>
 <p><strong>Deep Feature Synthesis</strong><br>
 Deep feature synthesis (DFS) applies the selected operators on the
-features in the dataset. For example, if the operator is "log",
-it will create the new feature <code>LOG(old_feature)</code> and if the
-operator is "mul", it will create the new feature <code>old_feature_1 x old_feature_2</code>.
-The operators can be chosen through the <code>operators</code> parameter.
-Choose from:</p>
+features in the dataset. For example, if the operator is "log", it will
+create the new feature <code>LOG(old_feature)</code> and if the operator is "mul",
+it will create the new feature <code>old_feature_1 x old_feature_2</code>. The
+operators can be chosen through the <code>operators</code> parameter. Choose from:</p>
 <ul>
 <li><strong>add</strong>: Sum two features together.</li>
 <li><strong>sub:</strong> Subtract two features from each other.</li></li>
@@ -2957,7 +2956,7 @@ to improve its features with every generation of the algorithm. GFG
 uses the same operators as DFS, but instead of only applying the
 transformations once, it evolves them further, creating nested
 structures of combinations of features. The new features are given the
-name <code>feature n</code>, where n stands for the n-th feature in the dataset.
+name <code>feature_n</code>, where n stands for the n-th feature in the dataset.
 You can access the genetic feature's fitness and description (how they
 are calculated) through the <code>genetic_features</code> attribute.</p>
 <p>ATOM uses the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>

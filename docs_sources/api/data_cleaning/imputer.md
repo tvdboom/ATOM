@@ -355,17 +355,19 @@ Transformed target column. Only returned if provided.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.impute(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.impute(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
-```
-or
-```python
-from atom.data_cleaning import Imputer
-
-imputer = Imputer(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
-imputer.fit(X_train, y_train)
-X = imputer.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Imputer
+    
+    imputer = Imputer(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
+    imputer.fit(X_train, y_train)
+    X = imputer.transform(X)
+    ```

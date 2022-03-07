@@ -1,6 +1,9 @@
 # Radius Nearest Neighbors (RNN)
 --------------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+
 Radius Nearest Neighbors implements the nearest neighbors vote, where
 the neighbors are selected from within a given radius. For regression,
 the target is predicted by local interpolation of the targets associated

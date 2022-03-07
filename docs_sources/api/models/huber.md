@@ -1,6 +1,8 @@
 # Huber Regression (Huber)
 --------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+
 Huber is a linear regression model that is robust to outliers. It makes
 sure that the loss function is not heavily influenced by the outliers
 while not completely ignoring their effect.

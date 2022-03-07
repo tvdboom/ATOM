@@ -276,16 +276,18 @@ Transformed corpus.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.normalize()
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.normalize()
-```
-or
-```python
-from atom.nlp import Normalizer
-
-normalizer = Normalizer()
-X = normalizer.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.nlp import Normalizer
+    
+    normalizer = Normalizer()
+    X = normalizer.transform(X)
+    ```

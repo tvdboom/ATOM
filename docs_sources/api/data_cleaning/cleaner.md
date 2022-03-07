@@ -331,16 +331,18 @@ Transformed target column. Only returned if provided.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.clean(maximum_cardinality=False)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.clean(maximum_cardinality=False)
-```
-or
-```python
-from atom.data_cleaning import Cleaner
-
-cleaner = Cleaner(maximum_cardinality=False)
-X, y = cleaner.transform(X, y)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Cleaner
+    
+    cleaner = Cleaner(maximum_cardinality=False)
+    X, y = cleaner.transform(X, y)
+    ```

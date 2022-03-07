@@ -1,6 +1,9 @@
 # Random Forest (RF)
 --------------------
 
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+
 Random forests are an ensemble learning method that operate by
 constructing a multitude of decision trees at training time and
 outputting the class that is the mode of the classes (classification)

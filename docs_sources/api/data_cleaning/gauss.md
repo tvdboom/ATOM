@@ -316,17 +316,19 @@ Transformed feature set.
 
 ## Example
 
-```python
-from atom import ATOMRegressor
+=== "atom"
+    ```python
+    from atom import ATOMRegressor
+    
+    atom = ATOMRegressor(X, y)
+    atom.gauss()
+    ```
 
-atom = ATOMRegressor(X, y)
-atom.gauss()
-```
-or
-```python
-from atom.data_cleaning import Gauss
-
-gauss = Gauss()
-gauss.fit(X_train)
-X = gauss.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Gauss
+    
+    gauss = Gauss()
+    gauss.fit(X_train)
+    X = gauss.transform(X)
+    ```

@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="BOW",
-verbose=0, logger=None, *kwargs)
+return_sparse=True, verbose=0, logger=None, *kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L580">[source]</a>
 </span>
@@ -14,10 +14,9 @@ transformation is applied on the column named `corpus`. If there
 is no column with that name, an exception is raised. The transformed
 columns are named after the word they are embedding (if the column is
 already present in the provided dataset, `_[strategy]` is added behind
-the name), and returned in sparse format only if all provided columns
-(except `corpus`) are sparse. This class can be accessed from atom
-through the [vectorize](../../ATOM/atomclassifier/#vectorize) method.
-Read more in the [user guide](../../../user_guide/nlp/#vectorization).
+the name). This class can be accessed from atom through the
+[vectorize](../../ATOM/atomclassifier/#vectorize) method. Read more in
+the [user guide](../../../user_guide/nlp/#vectorization).
 
 <table style="font-size:16px">
 <tr>
@@ -30,6 +29,12 @@ Strategy with which to vectorize the text. Choose from:
 <li>"TF-IDF": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">TF-IDF</a> algorithm.</li>
 <li>"Hashing": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a> algorithm.</li>
 </ul>
+<p>
+<strong>return_sparse: bool, optional (default=True)</strong><br>
+Whether to return the transformation output as a dataframe
+of sparse arrays. Must be False when there are other columns
+in X (besides <code>corpus</code>) that are non-sparse.
+</p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -52,11 +57,8 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 </table>
 
 !!! warning
-    The returned dataframe is only sparse when all the columns in the
-    provided dataset (except `corpus`) are sparse. Calling this
-    transformer with other non-sparse columns forces the output matrix
-    to be converted to its full array. This is not recommended since the
-    process can be very slow and occupy large chunks of memory.
+    Using `return_sparse=True` can turn the transformation very slow and
+    occupy large chunks of memory when the corpus contains many tokens.
 
 
 <br>
@@ -306,16 +308,18 @@ Transformed corpus.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.vectorize(strategy="TF-IDF")
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.vectorize(strategy="TF-IDF")
-```
-or
-```python
-from atom.nlp import Vectorizer
-
-vectorizer = Vectorizer("TF-IDF")
-X = vectorizer.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.nlp import Vectorizer
+    
+    vectorizer = Vectorizer("TF-IDF")
+    X = vectorizer.transform(X)
+    ```

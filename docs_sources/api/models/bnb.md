@@ -1,6 +1,9 @@
 # Bernoulli Naive Bayes (BNB)
 -----------------------------
 
+<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+
 Bernoulli Naive Bayes implements the Naive Bayes algorithm for multivariate
 Bernoulli models. Like [Multinomial Naive bayes (MNB)](../mnb), this
 classifier is suitable for discrete data. The difference is that while

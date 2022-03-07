@@ -21,7 +21,8 @@ from .utils import X_bin, X_text, y10
 
 def test_corpus_is_not_present():
     """Assert that an error is raised when there is no corpus."""
-    pytest.raises(ValueError, TextCleaner().transform, X_bin)
+    with pytest.raises(ValueError, match=r".*not contain a text corpus.*"):
+        TextCleaner().transform(X_bin)
 
 
 def test_decode():
@@ -157,7 +158,8 @@ def test_vectorizer_space_separation():
 def test_invalid_strategy():
     """Assert that an error is raised when the strategy is invalid."""
     vectorizer = Vectorizer(strategy="invalid")
-    assert pytest.raises(ValueError, vectorizer.fit, X_text)
+    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+        vectorizer.fit(X_text)
 
 
 @pytest.mark.parametrize("strategy", ["bow", "tfidf", "tf-idf"])
@@ -175,16 +177,24 @@ def test_hashing():
     assert "hash_1" in X
 
 
-def test_returns_sparse():
+def test_return_sparse():
     """Assert that the output is sparse."""
-    X = Vectorizer(strategy="bow").fit_transform(X_text)
+    X = Vectorizer(strategy="bow", return_sparse=True).fit_transform(X_text)
     assert all(pd.api.types.is_sparse(X[c]) for c in X.columns)
 
 
-def test_sparse_with_dense():
-    """Assert that the output is dense when mixed with non-sparse columns."""
+def test_error_sparse_with_dense():
+    """Assert that an error is raised when dense and sparse are combined."""
     atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(lambda x: 1, columns="new")  # Create dense column
-    atom.vectorize(strategy="BOW")
+    with pytest.raises(ValueError, match=r".*value for the return_sparse.*"):
+        atom.vectorize(strategy="BOW", return_sparse=True)
+
+
+def test_sparse_with_dense():
+    """Assert that the output is dense when return_sparse=False."""
+    atom = ATOMClassifier(X_text, y10, random_state=1)
+    atom.apply(lambda x: 1, columns="new")  # Create dense column
+    atom.vectorize(strategy="BOW", return_sparse=False)
     assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)
     assert "new_bow" in atom

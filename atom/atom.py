@@ -1370,7 +1370,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         Convert words to a more uniform standard. The transformations
         are applied on the column named `corpus`, in the same order the
         parameters are presented. If there is no column with that name,
-        an exception is raised.
+        an exception is raised. If the provided documents are strings,
+        words are separated by spaces.
 
         See nlp.py for a description of the parameters.
 
@@ -1389,12 +1390,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(normalizer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
-    def vectorize(self, strategy: str = "BOW", **kwargs):
+    def vectorize(self, strategy: str = "BOW", return_sparse: bool = True, **kwargs):
         """Vectorize the corpus.
 
         Transform the corpus into meaningful vectors of numbers. The
         transformation is applied on the column named `corpus`. If
-        there is no column with that name, an exception is raised.
+        there is no column with that name, an exception is raised. The
+        transformed columns are named after the word they are embedding
+        (if the column is already present in the provided dataset,
+        `_[strategy]` is added behind the name).
 
         See nlp.py for a description of the parameters.
 
@@ -1402,7 +1406,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         check_dim(self, "normalize")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
-        vectorizer = Vectorizer(strategy=strategy, **kwargs)
+        vectorizer = Vectorizer(
+            strategy=strategy,
+            return_sparse=return_sparse,
+            **kwargs,
+        )
 
         self._add_transformer(vectorizer, columns=columns)
 

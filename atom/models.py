@@ -271,6 +271,7 @@ class Dummy(BaseModel):
     fullname = "Dummy Estimator"
     needs_scaling = False
     accepts_sparse = False
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -308,6 +309,7 @@ class GaussianProcess(BaseModel):
     fullname = "Gaussian Process"
     needs_scaling = False
     accepts_sparse = False
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -340,6 +342,7 @@ class GaussianNaiveBayes(BaseModel):
     fullname = "Gaussian Naive Bayes"
     needs_scaling = False
     accepts_sparse = False
+    gpu = True
     goal = ["class"]
 
     @property
@@ -359,6 +362,7 @@ class MultinomialNaiveBayes(BaseModel):
     fullname = "Multinomial Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
+    gpu = True
     goal = ["class"]
 
     @property
@@ -386,6 +390,7 @@ class BernoulliNaiveBayes(BaseModel):
     fullname = "Bernoulli Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
+    gpu = True
     goal = ["class"]
 
     @property
@@ -413,6 +418,7 @@ class CategoricalNaiveBayes(BaseModel):
     fullname = "Categorical Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
+    gpu = True
     goal = ["class"]
 
     @property
@@ -440,6 +446,7 @@ class ComplementNaiveBayes(BaseModel):
     fullname = "Complement Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
+    gpu = False
     goal = ["class"]
 
     @property
@@ -468,6 +475,7 @@ class OrdinaryLeastSquares(BaseModel):
     fullname = "Ordinary Least Squares"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["reg"]
 
     @property
@@ -487,6 +495,7 @@ class Ridge(BaseModel):
     fullname = "Ridge Estimator"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -521,6 +530,7 @@ class Lasso(BaseModel):
     fullname = "Lasso Regression"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["reg"]
 
     @property
@@ -551,6 +561,7 @@ class ElasticNet(BaseModel):
     fullname = "ElasticNet Regression"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["reg"]
 
     @property
@@ -582,6 +593,7 @@ class LeastAngleRegression(BaseModel):
     fullname = "Least Angle Regression"
     needs_scaling = True
     accepts_sparse = False
+    gpu = True
     goal = ["reg"]
 
     @property
@@ -604,6 +616,7 @@ class BayesianRidge(BaseModel):
     fullname = "Bayesian Ridge"
     needs_scaling = True
     accepts_sparse = False
+    gpu = False
     goal = ["reg"]
 
     @property
@@ -634,6 +647,7 @@ class AutomaticRelevanceDetermination(BaseModel):
     fullname = "Automatic Relevant Determination"
     needs_scaling = True
     accepts_sparse = False
+    gpu = False
     goal = ["reg"]
 
     @property
@@ -664,6 +678,7 @@ class HuberRegression(BaseModel):
     fullname = "Huber Regression"
     needs_scaling = True
     accepts_sparse = False
+    gpu = False
     goal = ["reg"]
 
     @property
@@ -692,6 +707,7 @@ class Perceptron(BaseModel):
     fullname = "Perceptron"
     needs_scaling = True
     accepts_sparse = False
+    gpu = False
     goal = ["class"]
 
     @property
@@ -735,6 +751,7 @@ class LogisticRegression(BaseModel):
     fullname = "Logistic Regression"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class"]
 
     @property
@@ -795,6 +812,7 @@ class LinearDiscriminantAnalysis(BaseModel):
     fullname = "Linear Discriminant Analysis"
     needs_scaling = False
     accepts_sparse = False
+    gpu = False
     goal = ["class"]
 
     @property
@@ -831,6 +849,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     fullname = "Quadratic Discriminant Analysis"
     needs_scaling = False
     accepts_sparse = False
+    gpu = False
     goal = ["class"]
 
     @property
@@ -855,6 +874,7 @@ class KNearestNeighbors(BaseModel):
     fullname = "K-Nearest Neighbors"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -891,6 +911,7 @@ class RadiusNearestNeighbors(BaseModel):
     fullname = "Radius Nearest Neighbors"
     needs_scaling = True
     accepts_sparse = True
+    gpu = False
     goal = ["class", "reg"]
 
     def __init__(self, *args, **kwargs):
@@ -971,6 +992,7 @@ class DecisionTree(BaseModel):
     fullname = "Decision Tree"
     needs_scaling = False
     accepts_sparse = True
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1016,6 +1038,7 @@ class Bagging(BaseModel):
     fullname = "Bagging"
     needs_scaling = False
     accepts_sparse = True
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1053,6 +1076,7 @@ class ExtraTrees(BaseModel):
     fullname = "Extra-Trees"
     needs_scaling = False
     accepts_sparse = True
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1110,6 +1134,7 @@ class RandomForest(BaseModel):
     fullname = "Random Forest"
     needs_scaling = False
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1167,6 +1192,7 @@ class AdaBoost(BaseModel):
     fullname = "AdaBoost"
     needs_scaling = False
     accepts_sparse = True
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1207,6 +1233,7 @@ class GradientBoostingMachine(BaseModel):
     fullname = "Gradient Boosting Machine"
     needs_scaling = False
     accepts_sparse = True
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1272,6 +1299,7 @@ class HistGBM(BaseModel):
     fullname = "HistGBM"
     needs_scaling = False
     accepts_sparse = False
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1317,6 +1345,7 @@ class XGBoost(BaseModel):
     fullname = "XGBoost"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1396,6 +1425,7 @@ class LightGBM(BaseModel):
     fullname = "LightGBM"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1469,6 +1499,7 @@ class CatBoost(BaseModel):
     fullname = "CatBoost"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1537,6 +1568,7 @@ class LinearSVM(BaseModel):
     fullname = "Linear-SVM"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1600,6 +1632,7 @@ class KernelSVM(BaseModel):
     fullname = "Kernel-SVM"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1662,6 +1695,7 @@ class PassiveAggressive(BaseModel):
     fullname = "Passive Aggressive"
     needs_scaling = True
     accepts_sparse = True
+    gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1706,6 +1740,7 @@ class StochasticGradientDescent(BaseModel):
     fullname = "Stochastic Gradient Descent"
     needs_scaling = True
     accepts_sparse = True
+    gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1778,6 +1813,7 @@ class MultilayerPerceptron(BaseModel):
     fullname = "Multi-layer Perceptron"
     needs_scaling = True
     accepts_sparse = True
+    gpu = False
     goal = ["class", "reg"]
 
     @property

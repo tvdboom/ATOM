@@ -584,8 +584,8 @@ is merged independently with atom.
     * The column naming happens as follows. If the transformer returns the
       same number of columns, the names are kept equal. If the number of
       columns change, old columns will keep their name (as long as the column
-      is unchanged) and new columns will receive the name `feature n`, where
-      n stands for the n-th feature. This means that a transformer should
+      is unchanged) and new columns will receive the name `feature_[N]`, where
+      N stands for the n-th feature. This means that a transformer should
       only transform, add or drop columns, not combinations of these.
     * The index remains the same as before the transformation. This means
       that the transformer should not add, remove or shuffle rows unless it
@@ -718,6 +718,7 @@ Columns include:
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
 <li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
+<li><b>gpu:</b> Whether the model has GPU support.</li>
 </ul>
 </td>
 </tr>
@@ -1643,17 +1644,19 @@ custom_stopwords=None, stem=False, lemmatize=True)
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1360">[source]</a>
 </span>
 </div>
-Convert words to a more uniform standard. The transformations are
-applied on the column named `corpus`, in the same order the parameters
-are presented. If there is no column with that name, an exception is
-raised. See the [Normalizer](../nlp/normalizer.md) class for a
-description of the parameters.
+Convert words to a more uniform standard. The transformations
+are applied on the column named `corpus`, in the same order the
+parameters are presented. If there is no column with that name,
+an exception is raised. If the provided documents are strings,
+words are separated by spaces. See the [Normalizer](../nlp/normalizer.md)
+class for a description of the parameters.
 <br /><br /><br />
 
 
 <a name="vectorize"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">vectorize</strong>(strategy="BOW", **kwargs)
+<em>method</em> <strong style="color:#008AB8">vectorize</strong>(strategy="BOW",
+return_sparse=True, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1392">[source]</a>
 </span>
@@ -1661,9 +1664,10 @@ description of the parameters.
 Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named `corpus`. If there
 is no column with that name, an exception is raised. The transformed
-columns are returned in sparse format only if all provided columns
-(except `corpus`) are sparse. See the [Vectorizer](../nlp/vectorizer.md)
-class for a description of the parameters.
+columns are named after the word they are embedding (if the column is
+already present in the provided dataset, `_[strategy]` is added behind
+the name). See the [Vectorizer](../nlp/vectorizer.md) class for a
+description of the parameters.
 <br /><br /><br />
 
 
