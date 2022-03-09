@@ -14,15 +14,15 @@
 📜 Overview 
 -----------
 
-<h3 align="center">
-<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png?raw=true" alt="Author" height=17 width=17 draggable="false" /> Mavs</a>
+<p align="center" style="font-size: 1.3em">
+<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png?raw=true" alt="Author" height=15 width=15 draggable="false" /> Mavs</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/email.png?raw=true" alt="Email" height=15 width=19 draggable="false" /> m.524687@gmail.com</a>
+<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/email.png?raw=true" alt="Email" height=13 width=17 draggable="false" /> m.524687@gmail.com</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=19 width=19 draggable="false" /> Documentation</a>
+<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=17 width=17 draggable="false" /> Documentation</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png?raw=true" alt="Slack" height=18 width=18 draggable="false"/> Slack</a>
-</h3>
+<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png?raw=true" alt="Slack" height=16 width=16 draggable="false"/> Slack</a>
+</p>
 
 <br>
 
@@ -111,47 +111,56 @@ or via `conda`:
 ⚡ Usage
 -------
 
-Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD?urlpath=https%3A%2F%2Fgithub.com%2Ftvdboom%2FATOM%2Fblob%2Fmaster%2Fexamples%2Fbinary_classification.ipynb)
+
+1. Make the necessary imports and load the data.
 
 ```python
-from sklearn.datasets import load_breast_cancer
+import pandas as pd
 from atom import ATOMClassifier
 
-X, y = load_breast_cancer(return_X_y=True)
-atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+X = pd.read_csv("https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv")
+X.head()
 ```
 
-ATOM has multiple data cleaning methods to help you prepare the data for modelling:
+2. Initialize the `ATOMClassifier` or `ATOMRegressor` class.
 
 ```python
-atom.impute(strat_num="knn", strat_cat="most_frequent", max_nan_rows=0.1)  
+atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.25, n_rows=1e3, warnings=False, verbose=2)
+```
+
+3. ATOM has multiple data cleaning methods to help you prepare the data for modelling.
+
+```python
+atom.impute(strat_num="median", strat_cat="most_frequent", max_nan_rows=0.1)  
 atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.05)  
 atom.feature_selection(strategy="PCA", n_features=12)
 ```
 
-Run the pipeline with the models you want to compare:
+4. Run the pipeline with the models you want to compare.
 
 ```python
 atom.run(
-    models=["LR", "LDA", "XGB", "lSVM"],
-    metric="f1",
-    n_calls=25,
-    n_initial_points=10,
+    models=["LR", "RF", "LGB"],
+    metric="auc",
+    n_calls=10,
+    n_initial_points=4,
     n_bootstrap=4,
 )
 ```
 
-Make plots to analyze the results: 
+5. Make plots to analyze the results.
 
 ```python
-atom.plot_results(figsize=(9, 6), filename="bootstrap_results.png")  
-atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
+atom.plot_results()
+atom.plot_roc()
+atom.rf.plot_confusion_matrix(normalize=True)
 ```
 
 <br><br>
 
 
-<img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=26 width=26 draggable="false" /> Documentation
+<img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=28 width=28 draggable="false" /> Documentation
 ----------------
   
 **Relevant links** | |

@@ -48,5 +48,5 @@ packages to use machine learning estimators not provided by sklearn.
 ### Optional
 
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=0.90)
-* **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=2.3.0)
+* **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=0.19.1)
