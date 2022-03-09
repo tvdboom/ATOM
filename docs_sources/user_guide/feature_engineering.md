@@ -182,7 +182,7 @@ the variance of each dimension. The new features are called component
 * If the data is dense (i.e. not sparse), the estimator used is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
   Before fitting the transformer, the data is scaled to mean=0 and std=1
   if it wasn't already. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#pca).
-* If the data is [sparse](../data_management/#sparse-matrices) (often the
+* If the data is [sparse](../data_management/#sparse-data) (often the
   case for term-document matrices, see [Vectorizer](../../API/nlp/vectorizer)),
   the estimator used is [TruncatedSVD](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html).
   Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis).

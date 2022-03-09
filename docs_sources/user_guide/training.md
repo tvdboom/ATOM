@@ -160,7 +160,7 @@ the bayesian optimization and to select the winning model.
 ## Automated feature scaling
 
 Models that require feature scaling will automatically do so before
-training, unless the data is [sparse](../data_management/#sparse-matrices)
+training, unless the data is [sparse](../data_management/#sparse-data)
 or already scaled. The data is considered scaled if it has one of
 the following prerequisites:
 

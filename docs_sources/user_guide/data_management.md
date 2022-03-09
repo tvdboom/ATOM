@@ -78,13 +78,13 @@ To avoid this, specify the `index` parameter. If the dataset has an
 
 <br>
 
-## Sparse matrices
+## Sparse data
 
 If atom is initialized using a scipy sparse matrix, it is converted
 internally to a dataframe of sparse columns. Read more about pandas'
 sparse data structures [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html).
 The same conversion takes place when a transformer returns a sparse
-matrix, like, for example, the [Vectorizer](../../API/NLP/vectorizer).
+matrix, like for example, the [Vectorizer](../../API/NLP/vectorizer).
 
 Note that ATOM considers a dataset to be sparse if any of the columns
 is sparse. A dataset can only benefit from sparsity when all its

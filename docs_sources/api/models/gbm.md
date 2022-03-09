@@ -1,7 +1,7 @@
 # Gradient Boosting Machine (GBM)
 ---------------------------------
 
-<a href="../../../user_guide/data_management/#sparse-matrices" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
 
 A Gradient Boosting Machine builds an additive model in a forward
 stage-wise fashion; it allows for the optimization of arbitrary

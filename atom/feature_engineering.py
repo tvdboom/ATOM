@@ -16,6 +16,7 @@ from typing import Optional, Union
 
 # Other packages
 import featuretools as ft
+from featuretools.primitives.base import transform_primitive_base
 from zoofs import (
     ParticleSwarmOptimization,
     GreyWolfOptimization,
@@ -52,16 +53,6 @@ from .utils import (
     is_sparse, get_custom_scorer, check_scaling, check_is_fitted,
     get_feature_importance, composed, crash, method_to_log,
 )
-
-
-def custom_function_for_scorer(model, X_train, y_train, X_valid, y_valid, scorer):
-    model.fit(X_train, y_train)
-    return scorer(model, X_valid, y_valid)
-
-
-def custom_cross_valid_function_for_scorer(model, X_train, y_train, X_valid, y_valid,
-                                           scorer):
-    return np.mean(cross_val_score(model, X_train, y_train, cv=3, scoring=scorer))
 
 
 class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
@@ -385,18 +376,18 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Fitting FeatureGenerator...", 1)
 
         if self.strategy.lower() == "dfs":
-            trans_primitives = []
+            primitives = []
             for operator in self._operators:
                 if operator.lower() == "add":
-                    trans_primitives.append("add_numeric")
+                    primitives.append("add_numeric")
                 elif operator.lower() == "sub":
-                    trans_primitives.append("subtract_numeric")
+                    primitives.append("subtract_numeric")
                 elif operator.lower() == "mul":
-                    trans_primitives.append("multiply_numeric")
+                    primitives.append("multiply_numeric")
                 elif operator.lower() == "div":
-                    trans_primitives.append("divide_numeric")
+                    primitives.append("divide_numeric")
                 elif operator.lower() in ("sqrt", "log", "sin", "cos", "tan"):
-                    trans_primitives.append(
+                    primitives.append(
                         ft.primitives.make_trans_primitive(
                             function=lambda x: getattr(np, operator.lower())(x),
                             input_types=[ColumnSchema()],
@@ -405,12 +396,15 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                         )
                     )
 
+                    # Save to module to allow pickling custom primitives
+                    setattr(transform_primitive_base, operator.lower(), primitives[-1])
+
             # Run deep feature synthesis with transformation primitives
             es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
             self._dfs = ft.dfs(
                 target_dataframe_name="X",
                 entityset=es,
-                trans_primitives=trans_primitives,
+                trans_primitives=primitives,
                 max_depth=1,
                 features_only=True,
                 ignore_columns={"X": ["_index"]},
@@ -545,21 +539,21 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - "univariate": Univariate F-test.
             - "PCA": Principal Component Analysis.
             - "SFM": Select best features according to a model.
-            - "SFS"" Sequential Feature Selection.
+            - "SFS": Sequential Feature Selection.
             - "RFE": Recursive Feature Elimination.
             - "RFECV": RFE with cross-validated selection.
-            - "PSO" : Perform binary-particle swarm optimization for feature selection
-            - "HHO" : Perform binary-harrison hawk optimization for feature selection
-            - "GWO" : Perform binary-grey wolf optimization for feature selection
-            - "DFO" : Perform binary-dragon fly optimization for feature selection
-            - "GENEO" : Perform binary-genetic optimization for feature selection
+            - "PSO" : Perform binary-particle swarm optimization.
+            - "HHO" : Perform binary-harrison hawk optimization.
+            - "GWO" : Perform binary-grey wolf optimization.
+            - "DFO" : Perform binary-dragon fly optimization.
+            - "GENEO" : Perform binary-genetic optimization.
 
         Note that the SFS, RFE and RFECV strategies don't work when the
         solver is a CatBoost model due to incompatibility of the APIs.
 
     solver: str, estimator or None, optional (default=None)
-        Solver or model to use for the feature selection strategy. See
-        sklearn's documentation for an extended description of the
+        Solver/model to use for the feature selection strategy. See the
+        corresponding documentation for an extended description of the
         choices. Select None for the default option per strategy (only
         for univariate or PCA).
             - for "univariate", choose from:
@@ -725,17 +719,36 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     f"be None for strategy='{self.strategy}'."
                 )
 
+        def custom_function_for_scorer(model, X_train, y_train, X_valid, y_valid, scorer):
+            model.fit(X_train, y_train)
+            return scorer(model, X_valid, y_valid)
+
+        def custom_cross_valid_function_for_scorer(model, X_train, y_train, X_valid, y_valid,
+                                                   scorer):
+            return np.mean(cross_val_score(model, X_train, y_train, cv=3, scoring=scorer))
+
         X, y = self._prepare_input(X, y)
 
         # Check parameters
         if isinstance(self.strategy, str):
-            strats = ["univariate", "pca", "sfm", "sfs", "rfe",
-                      "rfecv", "pso", "gwo", "dfo", "geneo", "hho"]
+            strats = [
+                "univariate",
+                "pca",
+                "sfm",
+                "sfs",
+                "rfe",
+                "rfecv",
+                "pso",
+                "hho",
+                "gwo",
+                "dfo",
+                "genetic",
+            ]
 
             if self.strategy.lower() not in strats:
                 raise ValueError(
-                    "Invalid value for the strategy parameter. Choose "
-                    "from: univariate, PCA, SFM, RFE or RFECV."
+                    "Invalid value for the strategy parameter. Choose from: "
+                    "univariate, PCA, SFM, RFE, RFECV, PSO, HHO, GWO, DFO, genetic."
                 )
 
             elif self.strategy.lower() == "univariate":
@@ -951,23 +964,25 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 **self._kwargs,
             ).fit(X, y)
 
-        elif self.strategy.lower() in ["pso", "gwo", "dfo", "geneo", "hho"]:
+        elif self.strategy.lower() in ["pso", "hho", "gwo", "dfo", "genetic"]:
             check_y()
-            # mapper to avoide code repetition
-            algo_mapper = {"pso": ParticleSwarmOptimization,
-                           "gwo": GreyWolfOptimization,
-                           "dfo": DragonFlyOptimization,
-                           "geneo": GeneticOptimization,
-                           "hho": HarrisHawkOptimization}
 
-            # initialization_params catches all params requied for zoofs algos
+            algo_mapper = {
+                "pso": ParticleSwarmOptimization,
+                "hho": HarrisHawkOptimization,
+                "gwo": GreyWolfOptimization,
+                "dfo": DragonFlyOptimization,
+                "genetic": GeneticOptimization,
+            }
+
+            # initialization_params catches all params required for zoofs algos
             initialization_params = {"pso": ['n_iteration', 'timeout', 'population_size',
                                              'minimize', 'c1', 'c2', 'w'],
                                      "gwo": ['n_iteration', 'timeout', 'population_size',
                                              'minimize', 'method'],
                                      "dfo": ['n_iteration', 'timeout', 'population_size',
                                              'minimize', 'method'],
-                                     "geneo": ['n_iteration', 'timeout',
+                                     "genetic": ['n_iteration', 'timeout',
                                                'population_size', 'minimize',
                                                'selective_pressure',
                                                'elitism', 'mutation_rate'],
@@ -1185,7 +1200,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             idx = np.argsort(get_feature_importance(self.rfecv.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
 
-        elif self.strategy.lower() in ["pso", "gwo", "dfo", "geneo", "hho"]:
+        elif self.strategy.lower() in ["pso", "gwo", "dfo", "genetic", "hho"]:
             self.log(
                 f" --> {self.strategy.lower()} selected"
                 f" { len(self.algo.best_feature_list) } features from the dataset.", 2

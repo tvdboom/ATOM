@@ -773,8 +773,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
                     elif self.strat_num.lower() == "most_frequent":
                         self._imputers[name] = SimpleImputer(
-                            strategy="constant",
-                            fill_value=column.mode()[0],
+                            strategy="most_frequent",
                         ).fit(X[[name]])
 
                     # Strategies mean or median
@@ -786,8 +785,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             # Column is categorical
             elif self.strat_cat.lower() == "most_frequent":
                 self._imputers[name] = SimpleImputer(
-                    strategy="constant",
-                    fill_value=column.mode()[0],
+                    strategy="most_frequent",
                 ).fit(X[[name]])
 
         self._is_fitted = True

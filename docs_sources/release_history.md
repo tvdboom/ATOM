@@ -4,9 +4,12 @@
 <a name="v4130"></a>
 ### Version 4.13.0
 
+* Added advanced [feature selection](../API/feature_engineering/fetaure_selection) strategies.
 * Added the `return_sparse` parameter to the [Vectorizer](../API/NLP/vectorizer) class.
 * Fixed a bug where the BO could crash after [balancing](../user_guide/data_cleaning/#balancing-the-data)
   the data.
+* Fixed a bug where saving the [FeatureGenerator](../API/feature_engineering/feature_generator)
+  class could fail for certain operators.
 
 
 <a name="v4120"></a>
@@ -29,7 +32,7 @@
 <a name="v4110"></a>
 ### Version 4.11.0
 
-* Full support for sparse matrices. Read more in the [user guide](../user_guide/data_management/#sparse-matrices).
+* Full support for sparse matrices. Read more in the [user guide](../user_guide/data_management/#sparse-data).
 * The [shrink](../API/ATOM/atomclassifier/#shrink) method now also handles
   sparse features.
 * Refactor of the [distribution](../API/ATOM/atomclassifier/#distribution) method.

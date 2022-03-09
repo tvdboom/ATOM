@@ -256,6 +256,7 @@ def test_solver_parameter_empty_zoofs():
     assert selector.algo.kwargs['scorer'].name == get_custom_scorer(
         "neg_log_loss").name
 
+
 def test_missing_y_vald_zoofs():
     """Check for raised error for missing y_valid."""
 
@@ -291,12 +292,12 @@ def test_objective_function_zoofs():
     selector = selector.fit(X_reg, y_reg)  
     assert selector.algo.objective_function == objective_function_topass
 
-    from atom.feature_engineering import custom_function_for_scorer
     selector = FeatureSelector(
         strategy="pso", solver="LGB_class", X_valid = X_reg, y_valid = y_reg,
         n_iteration=2, population_size=2)
     selector = selector.fit(X_reg, y_reg)  
-    assert selector.algo.objective_function == custom_function_for_scorer
+    assert selector.algo.objective_function.__name__ == "custom_function_for_scorer"
+
 
 def test_goal_attribute():
     """Assert that the goal is deduced from the model's name."""
