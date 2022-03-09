@@ -14,13 +14,15 @@
 📜 Overview 
 -----------
 
-<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png?raw=true" alt="Author" height=13 width=13 draggable="false" /> Mavs</a>
+<h3 align="center">
+<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png?raw=true" alt="Author" height=17 width=17 draggable="false" /> Mavs</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/email.png?raw=true" alt="Email" height=12 width=15 draggable="false" /> m.524687@gmail.com</a>
+<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/email.png?raw=true" alt="Email" height=15 width=19 draggable="false" /> m.524687@gmail.com</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=14 width=14 draggable="false" /> Documentation</a>
+<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=19 width=19 draggable="false" /> Documentation</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png?raw=true" alt="Slack" height=14 width=14 draggable="false"/> Slack</a>
+<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png?raw=true" alt="Slack" height=18 width=18 draggable="false"/> Slack</a>
+</h3>
 
 <br>
 
@@ -149,7 +151,7 @@ atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
 <br><br>
 
 
-<img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=18 width=18 draggable="false" /> Documentation
+<img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=26 width=26 draggable="false" /> Documentation
 ----------------
   
 **Relevant links** | |
