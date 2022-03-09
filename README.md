@@ -11,8 +11,8 @@
 
 
 
-Overview 
---------
+📜 Overview 
+-----------
 
 <a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png?raw=true" alt="Author" height=13 width=13 draggable="false" /> Mavs</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
@@ -37,8 +37,8 @@ Overview
 
 
 
-Introduction  
-------------
+💡 Introduction  
+---------------
 
 During the exploration phase of a machine learning project, a data
 scientist tries to find the optimal pipeline for his specific use case.
@@ -91,8 +91,8 @@ Example steps taken by ATOM's pipeline:
 <br><br>
 
 
-Installation
-------------
+🛠️ Installation
+---------------
 
 Install ATOM's newest release easily via `pip`:
 
@@ -106,8 +106,8 @@ or via `conda`:
 <br><br>
 
 
-Usage  
------
+⚡ Usage
+-------
 
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
@@ -149,18 +149,18 @@ atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
 <br><br>
 
 
-Documentation
------------------
+<img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=18 width=18 draggable="false" /> Documentation
+----------------
   
 **Relevant links** | |
 --- | ---
 ⭐ **[About](https://tvdboom.github.io/ATOM/latest/release_history/)** | Learn more about the package.
-💡 **[Getting started](https://tvdboom.github.io/ATOM/latest/getting_started/)** | New to ATOM? Here's how to get you started!
+🚀 **[Getting started](https://tvdboom.github.io/ATOM/latest/getting_started/)** | New to ATOM? Here's how to get you started!
 📢 **[Release history](https://tvdboom.github.io/ATOM/latest/release_history/)** | What are the new features of the latest release?
 👨‍💻 **[User guide](https://tvdboom.github.io/ATOM/latest/user_guide/introduction/)** | How to use ATOM and its features.
 🎛️ **[API Reference](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomclassifier/)** | The detailed reference for ATOM's API.
 📋 **[Examples](https://tvdboom.github.io/ATOM/latest/examples/binary_classification/)** | Example notebooks show you what can be done and how.
 ❔ **[FAQ](https://tvdboom.github.io/ATOM/latest/faq/)** | Get answers to frequently asked questions.
-🛠️ **[Contributing](https://tvdboom.github.io/ATOM/latest/contributing/)** | Do you wan to contribute to the project? Read this before creating a PR.
+🔧 **[Contributing](https://tvdboom.github.io/ATOM/latest/contributing/)** | Do you wan to contribute to the project? Read this before creating a PR.
 🌳 **[Dependencies](https://tvdboom.github.io/ATOM/latest/dependencies/)** | Which other packages does ATOM depend on?
 📃 **[License](https://tvdboom.github.io/ATOM/latest/license/)** | Copyright and permissions under the MIT license.
