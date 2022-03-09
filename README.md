@@ -11,16 +11,18 @@
 
 
 
-Overview 
---------
+📜 Overview 
+-----------
 
-<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png?raw=true" alt="Author" height=13 width=13 draggable="false" /> Mavs</a>
+<p align="center" style="font-size: 1.3em">
+<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png?raw=true" alt="Author" height=15 width=15 draggable="false" /> Mavs</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/email.png?raw=true" alt="Email" height=12 width=15 draggable="false" /> m.524687@gmail.com</a>
+<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/email.png?raw=true" alt="Email" height=13 width=17 draggable="false" /> m.524687@gmail.com</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=14 width=14 draggable="false" /> Documentation</a>
+<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=17 width=17 draggable="false" /> Documentation</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png?raw=true" alt="Slack" height=14 width=14 draggable="false"/> Slack</a>
+<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png?raw=true" alt="Slack" height=16 width=16 draggable="false"/> Slack</a>
+</p>
 
 <br>
 
@@ -37,8 +39,8 @@ Overview
 
 
 
-Introduction  
-------------
+💡 Introduction  
+---------------
 
 During the exploration phase of a machine learning project, a data
 scientist tries to find the optimal pipeline for his specific use case.
@@ -91,8 +93,8 @@ Example steps taken by ATOM's pipeline:
 <br><br>
 
 
-Installation
-------------
+🛠️ Installation
+---------------
 
 Install ATOM's newest release easily via `pip`:
 
@@ -106,61 +108,70 @@ or via `conda`:
 <br><br>
 
 
-Usage  
------
+⚡ Usage
+-------
 
-Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD?urlpath=https%3A%2F%2Fgithub.com%2Ftvdboom%2FATOM%2Fblob%2Fmaster%2Fexamples%2Fbinary_classification.ipynb)
+
+1. Make the necessary imports and load the data.
 
 ```python
-from sklearn.datasets import load_breast_cancer
+import pandas as pd
 from atom import ATOMClassifier
 
-X, y = load_breast_cancer(return_X_y=True)
-atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+X = pd.read_csv("https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv")
+X.head()
 ```
 
-ATOM has multiple data cleaning methods to help you prepare the data for modelling:
+2. Initialize the `ATOMClassifier` or `ATOMRegressor` class.
 
 ```python
-atom.impute(strat_num="knn", strat_cat="most_frequent", max_nan_rows=0.1)  
+atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.25, n_rows=1e3, warnings=False, verbose=2)
+```
+
+3. ATOM has multiple data cleaning methods to help you prepare the data for modelling.
+
+```python
+atom.impute(strat_num="median", strat_cat="most_frequent", max_nan_rows=0.1)  
 atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.05)  
 atom.feature_selection(strategy="PCA", n_features=12)
 ```
 
-Run the pipeline with the models you want to compare:
+4. Run the pipeline with the models you want to compare.
 
 ```python
 atom.run(
-    models=["LR", "LDA", "XGB", "lSVM"],
-    metric="f1",
-    n_calls=25,
-    n_initial_points=10,
+    models=["LR", "RF", "LGB"],
+    metric="auc",
+    n_calls=10,
+    n_initial_points=4,
     n_bootstrap=4,
 )
 ```
 
-Make plots to analyze the results: 
+5. Make plots to analyze the results.
 
 ```python
-atom.plot_results(figsize=(9, 6), filename="bootstrap_results.png")  
-atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
+atom.plot_results()
+atom.plot_roc()
+atom.rf.plot_confusion_matrix(normalize=True)
 ```
 
 <br><br>
 
 
-Documentation
------------------
+<img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png?raw=true" alt="Documentation" height=28 width=28 draggable="false" /> Documentation
+----------------
   
 **Relevant links** | |
 --- | ---
 ⭐ **[About](https://tvdboom.github.io/ATOM/latest/release_history/)** | Learn more about the package.
-💡 **[Getting started](https://tvdboom.github.io/ATOM/latest/getting_started/)** | New to ATOM? Here's how to get you started!
+🚀 **[Getting started](https://tvdboom.github.io/ATOM/latest/getting_started/)** | New to ATOM? Here's how to get you started!
 📢 **[Release history](https://tvdboom.github.io/ATOM/latest/release_history/)** | What are the new features of the latest release?
 👨‍💻 **[User guide](https://tvdboom.github.io/ATOM/latest/user_guide/introduction/)** | How to use ATOM and its features.
 🎛️ **[API Reference](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomclassifier/)** | The detailed reference for ATOM's API.
 📋 **[Examples](https://tvdboom.github.io/ATOM/latest/examples/binary_classification/)** | Example notebooks show you what can be done and how.
 ❔ **[FAQ](https://tvdboom.github.io/ATOM/latest/faq/)** | Get answers to frequently asked questions.
-🛠️ **[Contributing](https://tvdboom.github.io/ATOM/latest/contributing/)** | Do you wan to contribute to the project? Read this before creating a PR.
+🔧 **[Contributing](https://tvdboom.github.io/ATOM/latest/contributing/)** | Do you wan to contribute to the project? Read this before creating a PR.
 🌳 **[Dependencies](https://tvdboom.github.io/ATOM/latest/dependencies/)** | Which other packages does ATOM depend on?
 📃 **[License](https://tvdboom.github.io/ATOM/latest/license/)** | Copyright and permissions under the MIT license.
