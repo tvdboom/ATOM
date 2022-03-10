@@ -16,9 +16,9 @@ tests/files/*
 /*.pkl
 /*.png
 
-# Pytest
-.pytest_cache
-.pytest_cache/*
+# IDE
+.pytest_cache/
+.vscode/
 
 # Static Documentation
 site/
@@ -34,7 +34,6 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
-.vscode/
 venv*/
 build/
 develop-eggs/

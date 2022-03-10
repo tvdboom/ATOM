@@ -629,6 +629,33 @@
     Selecting useful features
   </a>
   
+    <nav class="md-nav" aria-label="Selecting useful features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-strategies" class="md-nav__link">
+    Standard strategies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-strategies" class="md-nav__link">
+    Advanced strategies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-selection-methods" class="md-nav__link">
+    Other selection methods
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2819,6 +2846,33 @@
     Selecting useful features
   </a>
   
+    <nav class="md-nav" aria-label="Selecting useful features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-strategies" class="md-nav__link">
+    Standard strategies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-strategies" class="md-nav__link">
+    Advanced strategies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-selection-methods" class="md-nav__link">
+    Other selection methods
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2973,7 +3027,7 @@ are calculated) through the <code>genetic_features</code> attribute.</p>
 provides tooling to select the relevant features from a dataset. It can
 be accessed from atom through the <a href="../../API/ATOM/atomclassifier/#feature-selection">feature_selection</a>
 method. The following strategies are implemented: univariate, PCA, SFM,
-RFE, RFECV and SFS.</p>
+SFS, RFE, RFECV, PSO, HHO, GWO, DFO, genetic.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../../API/plots/plot_feature_importance">plot_feature_importance</a>
@@ -2988,12 +3042,14 @@ attribute, use <a href="../../API/plots/plot_permutation_importance">plot_permut
 of the APIs.</p>
 </div>
 <p><br></p>
+<h3 id="standard-strategies">Standard strategies</h3>
 <p><a name="univariate"></a>
 <strong>Univariate</strong><br>
 Univariate feature selection works by selecting the best features based
 on univariate statistical F-test. The test is provided via the <code>solver</code>
 parameter. It takes any function taking two arrays (X, y), and returning
 arrays (scores, p-values). Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="pca"></a>
 <strong>Principal Components Analysis</strong><br>
 Applying PCA will reduce the dimensionality of the dataset by maximizing
@@ -3008,6 +3064,7 @@ the variance of each dimension. The new features are called component
   the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html">TruncatedSVD</a>.
   Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis">documentation</a>.</li>
 </ul>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="sfm"></a>
 <strong>Selection from model</strong><br>
 SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</code> attributes
@@ -3018,14 +3075,16 @@ e.g. <code>solver="RF"</code>. If you didn't call the FeatureSelector through at
 don't forget to indicate the estimator's task adding <code>_class</code> or <code>_reg</code>
 after the name, e.g. <code>RF_class</code> to use a random forest classifier. Read
 more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="sfs"></a>
 <strong>Sequential Feature Selection</strong><br>
 Sequential feature selection adds (forward selection) or removes (backward
 selection) features to form a feature subset in a greedy fashion. At each
 stage, this estimator chooses the best feature to add or remove based on
 the cross-validation score of an estimator. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#sequential-feature-selection">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="rfe"></a>
-<strong>Recursive feature elimination</strong><br>
+<strong>Recursive Feature Elimination</strong><br>
 Select features by recursively considering smaller and smaller sets of
 features. First, the estimator is trained on the initial set of features,
 and the importance of each feature is obtained either through a <code>coef_</code>
@@ -3041,6 +3100,56 @@ of features selected by <code>n_features</code>, RFECV returns the number of
 features that achieved the optimal score on the specified metric. Note
 that this is not always equal to the amount specified by <code>n_features</code>.
 Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination">documentation</a>.</p>
+<p><br></p>
+<h3 id="advanced-strategies">Advanced strategies</h3>
+<p><a name="pso"></a>
+<strong>Particle Swarm Optimization</strong><br>
+Particle Swarm Optimization (PSO) is a computational method that optimizes
+a problem by iteratively trying to improve a candidate solution with regard
+to a given measure of quality. It solves a problem by having a population of
+candidate solutions (particles), and moving them around in the search-space
+according to simple mathematical formula over the particle's position and
+velocity. Each particle's movement is influenced by its local best known
+position, but is also guided toward the best known positions in the search-space,
+which are updated as better positions are found by other particles. This is
+expected to move the swarm toward the best solutions. Read more <a href="https://link.springer.com/chapter/10.1007/978-3-319-13563-2_51">here</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="hho"></a>
+<strong>Harris Hawks Optimization</strong><br>
+Harris Hawks Optimization (HHO) mimics the action and reaction of Hawk's
+team collaboration hunting in nature and prey escaping to discover the
+solutions of the single-objective problem. Read more <a href="https://link.springer.com/chapter/10.1007/978-981-32-9990-0_12">here</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="gwo"></a>
+<strong>Grey Wolf Optimization</strong><br>
+The Grey Wolf Optimizer (GWO) mimics the leadership hierarchy and hunting
+mechanism of grey wolves in nature. Four types of grey wolves such as alpha,
+beta, delta, and omega are employed for simulating the leadership hierarchy.
+In addition, three main steps of hunting, searching for prey, encircling prey,
+and attacking prey, are implemented to perform optimization. Read more
+<a href="https://www.sciencedirect.com/science/article/abs/pii/S0925231215010504?via%3Dihub">here</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="dfo"></a>
+<strong>Dragonfly Optimization</strong><br>
+The Dragonfly Algorithm (DFO) algorithm originates from static and dynamic
+swarming behaviours. These two swarming behaviours are very similar to the
+two main phases of optimization using meta-heuristics: exploration and
+exploitation. Dragonflies create sub swarms and fly over different areas in
+a static swarm, which is the main objective of the exploration phase. In
+the static swarm, however, dragonflies fly in bigger swarms and along one
+direction, which is favourable in the exploitation phase. Read more
+<a href="https://linkinghub.elsevier.com/retrieve/pii/S0950705120303889">here</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="genetic"></a>
+<strong>Genetic Optimization</strong><br>
+Genetic Optimization is a metaheuristic inspired by the process of natural
+selection that belongs to the larger class of evolutionary algorithms.
+Genetic algorithms are commonly used to generate high-quality solutions to
+optimization and search problems by relying on biologically inspired
+operators such as mutation, crossover and selection. Read more
+<a href="https://ieeexplore.ieee.org/document/953980">here</a>.</p>
+<p><br></p>
+<h3 id="other-selection-methods">Other selection methods</h3>
 <p><strong>Removing features with low variance</strong><br>
 Variance is the expectation of the squared deviation of a random
 variable from its mean. Features with low variance have many values
@@ -3048,15 +3157,18 @@ repeated, which means the model will not learn much from them.
 <a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> removes
 all features where the same value is repeated in at least
 <code>max_frac_repeated</code> fraction of the rows. The default option is to
-remove a feature if all values in it are the same. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance">documentation</a>.</p>
+remove a feature if all values in it are the same. Read more in sklearn's
+<a href="https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><strong>Removing features with multi-collinearity</strong><br>
 Two features that are highly correlated are redundant, i.e. two will
 not contribute more to the model than only one of them.
 <a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> will
-drop a feature that has a Pearson correlation coefficient larger than
-<code>max_correlation</code> with another feature. A correlation of 1 means the
-two columns are equal. A dataframe of the removed features and their
-correlation values can be accessed through the <code>collinear</code> attribute.</p>
+drop a feature that has a <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation coefficient</a>
+larger than <code>max_correlation</code> with another feature. A correlation of 
+1 means the two columns are equal. A dataframe of the removed features
+and their correlation values can be accessed through the <code>collinear</code>
+attribute.</p>
 
               
             </article>

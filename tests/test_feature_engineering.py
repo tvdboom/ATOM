@@ -232,73 +232,6 @@ def test_solver_parameter_empty_SFM():
         selector.fit(X_reg, y_reg)
 
 
-def test_solver_parameter_empty_zoofs():
-    """test scoring , in absence of any specified scoring."""
-
-    # For classification tasks
-    from atom.utils import get_custom_scorer
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)
-    assert selector.algo.kwargs['scorer'].name == get_custom_scorer(
-        "f1_weighted").name
-
-    # For regression tasks
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_reg", n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)
-    assert selector.algo.kwargs['scorer'].name == get_custom_scorer("r2").name
-
-    # test scoring
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", n_iteration=2, scoring='neg_log_loss')
-    selector.fit(X_bin, y_bin)
-    assert selector.algo.kwargs['scorer'].name == get_custom_scorer(
-        "neg_log_loss").name
-
-
-def test_missing_y_vald_zoofs():
-    """Check for raised error for missing y_valid."""
-
-    from atom.utils import get_custom_scorer
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2, X_valid = X_reg)
-    with pytest.raises(ValueError, match=r".*be absent in the presence of  X_valid.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_transform_zoofs():
-    """test transform for zoof algos."""
-
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)
-    assert selector.algo.best_feature_list == list(
-        selector.transform(X_reg).columns)
-
-
-def test_objective_function_zoofs():
-    """test objective_function validity."""
-
-    from sklearn.metrics import log_loss
-
-    def objective_function_topass(model, X_train, y_train, X_valid, y_valid):
-        model.fit(X_train, y_train)
-        return log_loss(y_valid, model.predict_proba(X_valid))
-
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", objective_function = objective_function_topass,
-        n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)  
-    assert selector.algo.objective_function == objective_function_topass
-
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", X_valid = X_reg, y_valid = y_reg,
-        n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)  
-    assert selector.algo.objective_function.__name__ == "custom_function_for_scorer"
-
-
 def test_goal_attribute():
     """Assert that the goal is deduced from the model's name."""
     # For classification tasks
@@ -521,20 +454,92 @@ def test_kwargs_parameter_tol():
         solver="arpack",
         tol=0.001,
         n_features=12,
+        max_frac_repeated=None,
+        max_correlation=None,
         random_state=1,
     )
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 12
 
 
-def test_kwargs_parameter_scoring():
+@pytest.mark.parametrize("strategy", ["SFS", "RFECV"])
+def test_kwargs_parameter_scoring(strategy):
     """Assert that the kwargs parameter works as intended (add scoring acronym)."""
     selector = FeatureSelector(
-        strategy="RFECV",
-        solver="rf_class",
+        strategy=strategy,
+        solver="tree_class",
         scoring="auc",
         n_features=12,
+        max_frac_repeated=None,
+        max_correlation=None,
         random_state=1,
     )
     X = selector.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 14
+    assert X.shape[1] < X_bin.shape[1]
+
+
+def test_solver_parameter_empty_zoofs():
+    """test scoring , in absence of any specified scoring."""
+
+    # For classification tasks
+    from atom.utils import get_custom_scorer
+    selector = FeatureSelector(
+        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.pso.kwargs['scorer'].name == get_custom_scorer(
+        "f1_weighted").name
+
+    # For regression tasks
+    selector = FeatureSelector(
+        strategy="pso", solver="LGB_reg", n_iteration=2, population_size=2)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.pso.kwargs['scorer'].name == get_custom_scorer("r2").name
+
+    # test scoring
+    selector = FeatureSelector(
+        strategy="pso", solver="LGB_class", n_iteration=2, scoring='neg_log_loss')
+    selector.fit(X_bin, y_bin)
+    assert selector.pso.kwargs['scorer'].name == get_custom_scorer(
+        "neg_log_loss").name
+
+
+def test_missing_y_vald_zoofs():
+    """Check for raised error for missing y_valid."""
+
+    from atom.utils import get_custom_scorer
+    selector = FeatureSelector(
+        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2, X_valid = X_reg)
+    with pytest.raises(ValueError, match=r".*be absent in the presence of  X_valid.*"):
+        selector.fit(X_reg, y_reg)
+
+
+def test_transform_zoofs():
+    """test transform for zoof algos."""
+
+    selector = FeatureSelector(
+        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.pso.best_feature_list == list(
+        selector.transform(X_reg).columns)
+
+
+def test_objective_function_zoofs():
+    """test objective_function validity."""
+
+    from sklearn.metrics import log_loss
+
+    def objective_function_topass(model, X_train, y_train, X_valid, y_valid):
+        model.fit(X_train, y_train)
+        return log_loss(y_valid, model.predict_proba(X_valid))
+
+    selector = FeatureSelector(
+        strategy="pso", solver="LGB_class", objective_function = objective_function_topass,
+        n_iteration=2, population_size=2)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.pso.objective_function == objective_function_topass
+
+    selector = FeatureSelector(
+        strategy="pso", solver="LGB_class", X_valid = X_reg, y_valid = y_reg,
+        n_iteration=2, population_size=2)
+    selector = selector.fit(X_reg, y_reg)
+    assert selector.pso.objective_function.__name__ == "custom_function_for_scorer"

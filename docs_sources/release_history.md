@@ -10,6 +10,9 @@
   the data.
 * Fixed a bug where saving the [FeatureGenerator](../API/feature_engineering/feature_generator)
   class could fail for certain operators.
+* Fixed a bug where the [FeatureSelector](../API/feature_engineering/fetaure_selection)
+  class displayed the wrong output.
+* Fixed a bug where the `mapping` attribute was not reordered.
 
 
 <a name="v4120"></a>

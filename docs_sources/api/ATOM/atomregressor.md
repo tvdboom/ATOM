@@ -1646,11 +1646,9 @@ solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., **kwargs
 </span>
 </div>
 Remove features according to the selected strategy. Ties between
-features with equal scores are broken in an unspecified way. Also
-removes features with too low variance and finds pairs of collinear
-features based on the Pearson correlation coefficient. For each pair
-above the specified limit (in terms of absolute value), it removes
-one of the two. See [FeatureSelector](../feature_engineering/feature_selector.md)
+features with equal scores are broken in an unspecified way.
+Additionally, remove multicollinear and low variance features.
+See [FeatureSelector](../feature_engineering/feature_selector.md)
 for a description of the parameters. Plotting methods and attributes
 created by the class are attached to atom.
 

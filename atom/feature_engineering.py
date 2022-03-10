@@ -17,14 +17,6 @@ from typing import Optional, Union
 # Other packages
 import featuretools as ft
 from featuretools.primitives.base import transform_primitive_base
-from zoofs import (
-    ParticleSwarmOptimization,
-    GreyWolfOptimization,
-    DragonFlyOptimization,
-    GeneticOptimization,
-    HarrisHawkOptimization
-)
-
 from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator
@@ -41,6 +33,13 @@ from sklearn.feature_selection import (
     RFE,
     RFECV,
     SequentialFeatureSelector,
+)
+from zoofs import (
+    ParticleSwarmOptimization,
+    HarrisHawkOptimization,
+    GreyWolfOptimization,
+    DragonFlyOptimization,
+    GeneticOptimization,
 )
 
 # Own modules
@@ -396,9 +395,6 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                         )
                     )
 
-                    # Save to module to allow pickling custom primitives
-                    setattr(transform_primitive_base, operator.lower(), primitives[-1])
-
             # Run deep feature synthesis with transformation primitives
             es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
             self._dfs = ft.dfs(
@@ -526,10 +522,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     Remove features according to the selected strategy. Ties between
     features with equal scores are broken in an unspecified way.
-    Additionally, removes features with too low variance and finds
-    pairs of collinear features based on the Pearson correlation
-    coefficient. For each pair above the specified limit (in terms of
-    absolute value), it removes one of the two.
+    Additionally, remove multicollinear and low variance features.
 
     Parameters
     ----------
@@ -542,11 +535,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - "SFS": Sequential Feature Selection.
             - "RFE": Recursive Feature Elimination.
             - "RFECV": RFE with cross-validated selection.
-            - "PSO" : Perform binary-particle swarm optimization.
-            - "HHO" : Perform binary-harrison hawk optimization.
-            - "GWO" : Perform binary-grey wolf optimization.
-            - "DFO" : Perform binary-dragon fly optimization.
-            - "GENEO" : Perform binary-genetic optimization.
+            - "PSO": Particle Swarm Optimization.
+            - "HHO": Harris Hawks Optimization.
+            - "GWO": Grey Wolf Optimization.
+            - "DFO": Dragonfly Optimization.
+            - "Genetic": Genetic Optimization.
 
         Note that the SFS, RFE and RFECV strategies don't work when the
         solver is a CatBoost model due to incompatibility of the APIs.
@@ -569,7 +562,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 + "full" (not available for sparse data)
                 + "arpack"
                 + "randomized" (default for sparse data)
-            - for "SFM", "SFS", "RFE" and "RFECV":
+            - for the remaining strategies:
                 The base estimator. For SFM, RFE and RFECV, it should
                 have either a `feature_importances_` or `coef_`
                 attribute after fitting. You can use one of ATOM's
@@ -599,10 +592,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     max_correlation: float or None, optional (default=1.)
         Minimum Pearson correlation coefficient to identify correlated
-        features. A value of 1 removes one of 2 equal columns. A
-        dataframe of the removed features and their correlation values
-        can be accessed through the collinear attribute. If None, skip
-        this step.
+        features. For each pair above the specified limit (in terms of
+        absolute value), it removes one of the two. The default is to
+        drop one of two equal columns. If None, skip this step.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -680,9 +672,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self.feature_importance = None
         self.scaler = None
         self._solver = None
-        self._kwargs = kwargs.copy()
         self._n_features = None
+        self._kwargs = kwargs.copy()
         self._low_variance = {}
+        self._estimator = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -848,13 +841,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         # Remove features with too low variance
         if self.max_frac_repeated:
-            for n, col in enumerate(X):
-                unique, count = np.unique(X[col], return_counts=True)
-                for u, c in zip(unique, count):
-                    # If count is larger than fraction of total...
-                    if c >= self.max_frac_repeated * len(X):
-                        self._low_variance[col] = [u, c // 100. * len(X)]
-                        X = X.drop(col, axis=1)
+            for name, column in X.items():
+                for category, count in column.value_counts().items():
+                    # If count < fraction of total, drop column
+                    if count >= self.max_frac_repeated * len(X):
+                        self._low_variance[name] = [category, 100 * count / len(X)]
+                        X = X.drop(name, axis=1)
                         break
 
         # Remove features with too high correlation
@@ -890,14 +882,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "univariate":
             check_y()
-            self.univariate = SelectKBest(
+            self._estimator = self.univariate = SelectKBest(
                 score_func=self._solver,
                 k=self._n_features,
             ).fit(X, y)
 
         elif self.strategy.lower() == "pca":
             if is_sparse(X):
-                self.pca = TruncatedSVD(
+                self.pca = self._estimator = TruncatedSVD(
                     n_components=self._n_features,
                     algorithm=self._solver,
                     random_state=self.random_state,
@@ -908,7 +900,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self.scaler = Scaler().fit(X)
                     X = self.scaler.transform(X)
 
-                self.pca = PCA(
+                self.pca = self._estimator = PCA(
                     n_components=X.shape[1] - 1,  # All -1 because of the pca plot
                     svd_solver=self._solver,
                     random_state=self.random_state,
@@ -930,7 +922,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if not self.kwargs.get("threshold"):
                 self._kwargs["threshold"] = -np.inf
 
-            self.sfm = SelectFromModel(
+            self.sfm = self._estimator = SelectFromModel(
                 estimator=self._solver,
                 max_features=self._n_features,
                 prefit=prefit,
@@ -949,7 +941,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 self.sfm.fit(X, y)
 
         elif self.strategy.lower() == "sfs":
-            self.sfs = SequentialFeatureSelector(
+            check_y()
+
+            if self.kwargs.get("scoring"):
+                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+
+            self.sfs = self._estimator = SequentialFeatureSelector(
                 estimator=self._solver,
                 n_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
@@ -958,13 +955,30 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "rfe":
             check_y()
-            self.rfe = RFE(
+            self.rfe = self._estimator = RFE(
                 estimator=self._solver,
                 n_features_to_select=self._n_features,
                 **self._kwargs,
             ).fit(X, y)
 
-        elif self.strategy.lower() in ["pso", "hho", "gwo", "dfo", "genetic"]:
+        elif self.strategy.lower() == "rfecv":
+            check_y()
+
+            if self.kwargs.get("scoring"):
+                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+
+            # Invert n_features to select them all (default option)
+            if self._n_features == X.shape[1]:
+                self._n_features = 1
+
+            self.rfecv = self._estimator = RFECV(
+                estimator=self._solver,
+                min_features_to_select=self._n_features,
+                n_jobs=self.n_jobs,
+                **self._kwargs,
+            ).fit(X, y)
+
+        else:
             check_y()
 
             algo_mapper = {
@@ -1030,36 +1044,20 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if 'minimize' not in initialization_params_from_kwargs.keys():
                 initialization_params_from_kwargs['minimize'] = False
 
-            self.algo = algo_mapper[
-                self.strategy.lower()](objective_function=objective_function,
-                                       logger=self.logger,
-                                       **initialization_params_from_kwargs,
-                                       **params_for_objective_function)
-            self.algo.fit(model=self._solver,
+            self._estimator = algo_mapper[self.strategy.lower()](
+                objective_function=objective_function,
+                logger=self.logger,
+                **initialization_params_from_kwargs,
+                **params_for_objective_function,
+            )
+            self._estimator.fit(model=self._solver,
                           X_train=X,
                           y_train=y,
                           X_valid=X_valid,
                           y_valid=y_valid,
                           verbose=True if self.verbose >= 2 else False)
 
-        else:
-            check_y()
-
-            # Both RFECV and SFS use the scoring parameter
-            if self.kwargs.get("scoring"):
-                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
-
-            if self.strategy.lower() == "rfecv":
-                # Invert n_features to select them all (default option)
-                if self._n_features == X.shape[1]:
-                    self._n_features = 1
-
-                self.rfecv = RFECV(
-                    estimator=self._solver,
-                    min_features_to_select=self._n_features,
-                    n_jobs=self.n_jobs,
-                    **self._kwargs,
-                ).fit(X, y)
+            setattr(self, self.strategy.lower(), self._estimator)
 
         self._is_fitted = True
         return self
@@ -1168,46 +1166,30 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self.log(f"   >>> Dropping feature {column}.", 2)
                     X = X.drop(column, axis=1)
 
-        elif self.strategy.lower() == "rfe":
+        elif self.strategy.lower() in ("rfe", "rfecv"):
             self.log(
-                f" --> RFE selected {self.rfe.n_features_}"
-                " features from the dataset.", 2
+                f" --> {self.strategy.upper()} selected "
+                f"{self._estimator.n_features_} features from the dataset.", 2
             )
             for n, column in enumerate(X):
-                if not self.rfe.support_[n]:
+                if not self._estimator.support_[n]:
                     self.log(
                         f"   >>> Dropping feature {column} "
-                        f"(rank {self.rfe.ranking_[n]}).", 2
+                        f"(rank {self._estimator.ranking_[n]}).", 2
                     )
                     X = X.drop(column, axis=1)
 
-            idx = np.argsort(get_feature_importance(self.rfe.estimator_))
+            idx = np.argsort(get_feature_importance(self._estimator.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
 
-        elif self.strategy.lower() == "rfecv":
+        else:  # Advanced strategies
             self.log(
-                f" --> RFECV selected {self.rfecv.n_features_}"
-                " features from the dataset.", 2
-            )
-            for n, column in enumerate(X):
-                if not self.rfecv.support_[n]:
-                    self.log(
-                        f"   >>> Dropping feature {column} "
-                        f"(rank {self.rfecv.ranking_[n]}).", 2
-                    )
-                    X = X.drop(column, axis=1)
-
-            idx = np.argsort(get_feature_importance(self.rfecv.estimator_))
-            self.feature_importance = list(X.columns[idx][::-1])
-
-        elif self.strategy.lower() in ["pso", "gwo", "dfo", "genetic", "hho"]:
-            self.log(
-                f" --> {self.strategy.lower()} selected"
-                f" { len(self.algo.best_feature_list) } features from the dataset.", 2
+                f" --> {self.strategy} selected {len(self._estimator.best_feature_list)}"
+                f" features from the dataset.", 2
             )
 
-            for n, column in enumerate(X):
-                if column not in self.algo.best_feature_list:
+            for column in X:
+                if column not in self._estimator.best_feature_list:
                     self.log(f"   >>> Dropping feature {column}.", 2)
                     X = X.drop(column, axis=1)
 

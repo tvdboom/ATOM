@@ -150,7 +150,7 @@ The [FeatureSelector](../../API/feature_engineering/feature_selector) class
 provides tooling to select the relevant features from a dataset. It can
 be accessed from atom through the [feature_selection](../../API/ATOM/atomclassifier/#feature-selection)
 method. The following strategies are implemented: univariate, PCA, SFM,
-RFE, RFECV and SFS.
+SFS, RFE, RFECV, PSO, HHO, GWO, DFO, genetic.
 
 !!! tip
     Use the [plot_feature_importance](../../API/plots/plot_feature_importance)
@@ -165,6 +165,8 @@ RFE, RFECV and SFS.
 
 <br>
 
+### Standard strategies
+
 <a name="univariate"></a>
 **Univariate**<br>
 Univariate feature selection works by selecting the best features based
@@ -172,6 +174,7 @@ on univariate statistical F-test. The test is provided via the `solver`
 parameter. It takes any function taking two arrays (X, y), and returning
 arrays (scores, p-values). Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection).
 
+<br style="display: block; margin-top: 2em; content: ' '">
 
 <a name="pca"></a>
 **Principal Components Analysis**<br>
@@ -187,6 +190,7 @@ the variance of each dimension. The new features are called component
   the estimator used is [TruncatedSVD](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html).
   Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis).
 
+<br style="display: block; margin-top: 2em; content: ' '">
 
 <a name="sfm"></a>
 **Selection from model**<br>
@@ -199,7 +203,7 @@ don't forget to indicate the estimator's task adding `_class` or `_reg`
 after the name, e.g. `RF_class` to use a random forest classifier. Read
 more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
 
-
+<br style="display: block; margin-top: 2em; content: ' '">
 
 <a name="sfs"></a>
 **Sequential Feature Selection**<br>
@@ -208,9 +212,10 @@ selection) features to form a feature subset in a greedy fashion. At each
 stage, this estimator chooses the best feature to add or remove based on
 the cross-validation score of an estimator. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#sequential-feature-selection).
 
+<br style="display: block; margin-top: 2em; content: ' '">
 
 <a name="rfe"></a>
-**Recursive feature elimination**<br>
+**Recursive Feature Elimination**<br>
 Select features by recursively considering smaller and smaller sets of
 features. First, the estimator is trained on the initial set of features,
 and the importance of each feature is obtained either through a `coef_`
@@ -228,6 +233,69 @@ features that achieved the optimal score on the specified metric. Note
 that this is not always equal to the amount specified by `n_features`.
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination).
 
+<br>
+
+### Advanced strategies
+
+<a name="pso"></a>
+**Particle Swarm Optimization**<br>
+Particle Swarm Optimization (PSO) is a computational method that optimizes
+a problem by iteratively trying to improve a candidate solution with regard
+to a given measure of quality. It solves a problem by having a population of
+candidate solutions (particles), and moving them around in the search-space
+according to simple mathematical formula over the particle's position and
+velocity. Each particle's movement is influenced by its local best known
+position, but is also guided toward the best known positions in the search-space,
+which are updated as better positions are found by other particles. This is
+expected to move the swarm toward the best solutions. Read more [here](https://link.springer.com/chapter/10.1007/978-3-319-13563-2_51).
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="hho"></a>
+**Harris Hawks Optimization**<br>
+Harris Hawks Optimization (HHO) mimics the action and reaction of Hawk's
+team collaboration hunting in nature and prey escaping to discover the
+solutions of the single-objective problem. Read more [here](https://link.springer.com/chapter/10.1007/978-981-32-9990-0_12).
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="gwo"></a>
+**Grey Wolf Optimization**<br>
+The Grey Wolf Optimizer (GWO) mimics the leadership hierarchy and hunting
+mechanism of grey wolves in nature. Four types of grey wolves such as alpha,
+beta, delta, and omega are employed for simulating the leadership hierarchy.
+In addition, three main steps of hunting, searching for prey, encircling prey,
+and attacking prey, are implemented to perform optimization. Read more
+[here](https://www.sciencedirect.com/science/article/abs/pii/S0925231215010504?via%3Dihub).
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="dfo"></a>
+**Dragonfly Optimization**<br>
+The Dragonfly Algorithm (DFO) algorithm originates from static and dynamic
+swarming behaviours. These two swarming behaviours are very similar to the
+two main phases of optimization using meta-heuristics: exploration and
+exploitation. Dragonflies create sub swarms and fly over different areas in
+a static swarm, which is the main objective of the exploration phase. In
+the static swarm, however, dragonflies fly in bigger swarms and along one
+direction, which is favourable in the exploitation phase. Read more
+[here](https://linkinghub.elsevier.com/retrieve/pii/S0950705120303889).
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="genetic"></a>
+**Genetic Optimization**<br>
+Genetic Optimization is a metaheuristic inspired by the process of natural
+selection that belongs to the larger class of evolutionary algorithms.
+Genetic algorithms are commonly used to generate high-quality solutions to
+optimization and search problems by relying on biologically inspired
+operators such as mutation, crossover and selection. Read more
+[here](https://ieeexplore.ieee.org/document/953980).
+
+
+<br>
+
+### Other selection methods
 
 **Removing features with low variance**<br>
 Variance is the expectation of the squared deviation of a random
@@ -236,14 +304,17 @@ repeated, which means the model will not learn much from them.
 [FeatureSelector](../../API/feature_engineering/feature_selector) removes
 all features where the same value is repeated in at least
 `max_frac_repeated` fraction of the rows. The default option is to
-remove a feature if all values in it are the same. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance).
+remove a feature if all values in it are the same. Read more in sklearn's
+[documentation](https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance).
 
+<br style="display: block; margin-top: 2em; content: ' '">
 
 **Removing features with multi-collinearity**<br>
 Two features that are highly correlated are redundant, i.e. two will
 not contribute more to the model than only one of them.
 [FeatureSelector](../../API/feature_engineering/feature_selector) will
-drop a feature that has a Pearson correlation coefficient larger than
-`max_correlation` with another feature. A correlation of 1 means the
-two columns are equal. A dataframe of the removed features and their
-correlation values can be accessed through the `collinear` attribute.
+drop a feature that has a [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient)
+larger than `max_correlation` with another feature. A correlation of 
+1 means the two columns are equal. A dataframe of the removed features
+and their correlation values can be accessed through the `collinear`
+attribute.

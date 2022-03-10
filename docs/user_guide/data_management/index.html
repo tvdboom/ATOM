@@ -570,7 +570,7 @@
       
         <li class="md-nav__item">
   <a href="#sparse-data" class="md-nav__link">
-    Sparse matrices
+    Sparse data
   </a>
   
 </li>
@@ -2844,7 +2844,7 @@
       
         <li class="md-nav__item">
   <a href="#sparse-data" class="md-nav__link">
-    Sparse matrices
+    Sparse data
   </a>
   
 </li>
@@ -2964,12 +2964,12 @@ To avoid this, specify the <code>index</code> parameter. If the dataset has an
   their index.</li>
 </ul>
 <p><br></p>
-<h2 id="sparse-data">Sparse matrices</h2>
+<h2 id="sparse-data">Sparse data</h2>
 <p>If atom is initialized using a scipy sparse matrix, it is converted
 internally to a dataframe of sparse columns. Read more about pandas'
 sparse data structures <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html">here</a>.
 The same conversion takes place when a transformer returns a sparse
-matrix, like, for example, the <a href="../../API/NLP/vectorizer">Vectorizer</a>.</p>
+matrix, like for example, the <a href="../../API/NLP/vectorizer">Vectorizer</a>.</p>
 <p>Note that ATOM considers a dataset to be sparse if any of the columns
 is sparse. A dataset can only benefit from sparsity when all its
 columns are sparse, hence mixing sparse and non-sparse columns is

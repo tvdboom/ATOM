@@ -2837,6 +2837,7 @@ after the package's name.</p>
 <p class="admonition-title">Note</p>
 <p>Since atom was already taken, download the package under the name <code>atom-ml</code>!</p>
 </div>
+<p><br></p>
 <p>Sometimes, new features and bug fixes are already implemented in the
 <code>development</code> branch, but waiting for the next release to be made
 available. If you can't wait for that, it's possible to install the
@@ -2846,32 +2847,39 @@ package directly from git.</p>
 <p>Don't forget to include <code>#egg=atom-ml</code> to explicitly name the project,
 this way pip can track metadata for it without having to have run the
 <code>setup.py</code> script.</p>
+<p>Click <a href="https://pypi.org/simple/atom-ml/">here</a> for a complete list of
+package files for all versions published on PyPI.</p>
 <p><br><br></p>
 <h2 id="usage">Usage</h2>
-<p>Call the <code>ATOMClassifier</code> or <code>ATOMRegressor</code> class and provide the data you want to use:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<p><a href="https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing"><img alt="Colab" src="https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667" /></a>
+<a href="https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
+<p>Make the necessary imports and load the data.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Load the Australian Weather dataset</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv&quot;</span><span class="p">)</span>
+<span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div>
-<p>ATOM has multiple data cleaning methods to help you prepare the data for modelling:</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;knn&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">,</span> <span class="n">max_nan_rows</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>  
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;LeaveOneOut&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">frac_to_other</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>  
+<p>Initialize the <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or <a href="../API/ATOM/atomregressor">ATOMRegressor</a> class.</p>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="mf">1e3</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<p>Use the data cleaning methods to prepare the data for modelling.</p>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">)</span>  
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;LeaveOneOut&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>  
 <span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;PCA&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 </code></pre></div>
-<p>Train and evaluate the models you want to compare:</p>
+<p>Train and evaluate the models you want to compare.</p>
 <div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="s2">&quot;LDA&quot;</span><span class="p">,</span> <span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;lSVM&quot;</span><span class="p">],</span>
-    <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;f1&quot;</span><span class="p">,</span>
-    <span class="n">n_calls</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
-    <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">n_bootstrap</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">,</span> <span class="s2">&quot;LGB&quot;</span><span class="p">],</span>
+    <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;auc&quot;</span><span class="p">,</span>
+    <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-<p>Make plots to analyze the results: </p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">plot_results</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;bootstrap_results.png&quot;</span><span class="p">)</span>  
-<span class="n">atom</span><span class="o">.</span><span class="n">lda</span><span class="o">.</span><span class="n">plot_confusion_matrix</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;cm.png&quot;</span><span class="p">)</span>
+<p>Make plots to analyze the results.</p>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">plot_roc</span><span class="p">()</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">plot_confusion_matrix</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 
               

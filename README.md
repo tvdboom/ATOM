@@ -14,7 +14,7 @@
 📜 Overview 
 -----------
 
-<p align="center" style="font-size: 1.3em">
+<p align="center" style="font-size: 1.4em">
 <a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png?raw=true" alt="Author" height=15 width=15 draggable="false" /> Mavs</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
 <a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/email.png?raw=true" alt="Email" height=13 width=17 draggable="false" /> m.524687@gmail.com</a>
@@ -111,33 +111,36 @@ or via `conda`:
 ⚡ Usage
 -------
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD?urlpath=https%3A%2F%2Fgithub.com%2Ftvdboom%2FATOM%2Fblob%2Fmaster%2Fexamples%2Fbinary_classification.ipynb)
+[![Colab](https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667)](https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD)
 
-1. Make the necessary imports and load the data.
+Make the necessary imports and load the data.
 
 ```python
 import pandas as pd
 from atom import ATOMClassifier
 
+# Load the Australian Weather dataset
 X = pd.read_csv("https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv")
 X.head()
 ```
 
-2. Initialize the `ATOMClassifier` or `ATOMRegressor` class.
+Initialize the [ATOMClassifier](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomclassifier/)
+or [ATOMRegressor](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomregressor) class.
 
 ```python
-atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.25, n_rows=1e3, warnings=False, verbose=2)
+atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e3, verbose=2)
 ```
 
-3. ATOM has multiple data cleaning methods to help you prepare the data for modelling.
+Use the data cleaning methods to prepare the data for modelling.
 
 ```python
-atom.impute(strat_num="median", strat_cat="most_frequent", max_nan_rows=0.1)  
-atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.05)  
+atom.impute(strat_num="median", strat_cat="most_frequent")  
+atom.encode(strategy="LeaveOneOut", max_onehot=8)  
 atom.feature_selection(strategy="PCA", n_features=12)
 ```
 
-4. Run the pipeline with the models you want to compare.
+Train and evaluate the models you want to compare.
 
 ```python
 atom.run(
@@ -145,14 +148,12 @@ atom.run(
     metric="auc",
     n_calls=10,
     n_initial_points=4,
-    n_bootstrap=4,
 )
 ```
 
-5. Make plots to analyze the results.
+Make plots to analyze the results.
 
 ```python
-atom.plot_results()
 atom.plot_roc()
 atom.rf.plot_confusion_matrix(normalize=True)
 ```

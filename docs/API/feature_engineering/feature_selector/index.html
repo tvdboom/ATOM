@@ -2890,11 +2890,8 @@ solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1
 
 <p>Remove features according to the selected strategy. Ties between
 features with equal scores are broken in an unspecified way.
-Additionally, removes features with too low variance and finds pairs of
-collinear features based on the Pearson correlation coefficient. For
-each pair above the specified limit (in terms of absolute value), it
-removes one of the two. This class can be accessed from atom
-through the <a href="../../ATOM/atomclassifier/#feature-selection">feature_selection</a>
+Additionally, remove multicollinear and low variance features. This
+class can be accessed from atom through the <a href="../../ATOM/atomclassifier/#feature-selection">feature_selection</a>
 method. Read more in the <a href="../../../user_guide/feature_engineering/#selecting-useful-features">user guide</a>.</p>
 <table style="font-size:16px">
 <tr>
@@ -2910,12 +2907,17 @@ Feature selection strategy to use. Choose from:
 <li>"SFS": Sequential Feature Selection.</li>
 <li>"RFE": Recursive Feature Elimination.</li>
 <li>"RFECV": RFE with cross-validated selection.</li>
+<li>"PSO": Particle Swarm Optimization.</li>
+<li>"HHO": Harris Hawks Optimization.</li>
+<li>"GWO": Grey Wolf Optimization.</li>
+<li>"DFO": Dragonfly Optimization.</li>
+<li>"genetic": Genetic Optimization.</li>
 </ul>
 <strong>solver: str, estimator or None, optional (default=None)</strong><br>
-Solver or model to use for the feature selection strategy. See
-sklearn's documentation for an extended description of the choices.
-Select None for the default option per strategy (only for univariate
-and PCA).
+Solver/model to use for the feature selection strategy. See the
+corresponding documentation for an extended description of the
+choices. Select None for the default option per strategy (only for
+univariate or PCA).
 <ul style="line-height:1.2em;margin-top:5px">
 <li>for "univariate", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
@@ -2936,7 +2938,7 @@ and PCA).
     <li>"randomized" (default for sparse data)</li>
     </ul>
 </li>
-<li>for "SFM", "SFS", "RFE" and "RFECV":<br>
+<li>for the remaining strategies:<br>
 <p>The base estimator. For SFM, RFE and RFECV, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
 attribute after fitting. You can use one of ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
@@ -2963,10 +2965,10 @@ variance, i.e. remove the features that have the same value in all
 samples. If None, skip this step.
 <p>
 <strong>max_correlation: float or None, optional (default=1.)</strong><br>
-Minimum value of the Pearson correlation coefficient to identify
-correlated features. A value of 1 removes one of 2 equal columns.
-A dataframe of the removed features and their correlation values can
-be accessed through the collinear attribute. If None, skip this step.
+Minimum <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation coefficient</a>
+to identify correlated features. For each pair above the specified
+limit (in terms of absolute value), it removes one of the two. The
+default is to drop one of two equal columns. If None, skip this step.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.

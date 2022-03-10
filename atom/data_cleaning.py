@@ -1285,7 +1285,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._categories, self._encoders = {}, {}
 
         for name, column in X[self._cat_cols].items():
-            # Group uncommon classes into "other"
+            # Convert uncommon classes to "other"
             if self._frac_to_other:
                 for category, count in column.value_counts().items():
                     if count <= self._frac_to_other:
@@ -1367,8 +1367,9 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Encoding categorical columns...", 1)
 
         for name, column in X[self._cat_cols].items():
-            # Convert classes to "other"
-            X[name] = column.replace(self._to_other[name], "other")
+            # Convert uncommon classes to "other"
+            if self._to_other[name]:
+                X[name] = column.replace(self._to_other[name], "other")
 
             n_classes = len(column.unique())
             self.log(

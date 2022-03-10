@@ -1090,7 +1090,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(cleaner, columns=columns)
 
         if cleaner.mapping:
-            self.branch.mapping.insert(-1, self.target, cleaner.mapping)
+            self.mapping.insert(-1, self.target, cleaner.mapping)
 
     @composed(crash, method_to_log, typechecked)
     def impute(
@@ -1190,8 +1190,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(encoder, columns=columns)
 
         # Add mapping of the encoded columns to the branch
-        for key, value in encoder.mapping.items():
-            self.branch.mapping.insert(-1, key, value)
+        self.mapping.update(encoder.mapping)
+        self.mapping = self.mapping[[c for c in self.columns if c in self.mapping]]
 
     @composed(crash, method_to_log, typechecked)
     def prune(
@@ -1502,13 +1502,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Apply feature selection techniques.
 
         Remove features according to the selected strategy. Ties
-        between features with equal scores are broken in an
-        unspecified way. Additionally, removes features with too low
-        variance and finds pairs of collinear features based on the
-        Pearson correlation coefficient. For each pair above the
-        specified limit (in terms of absolute value), it removes one
-        of the two. Plotting methods and attributes created by the
-        class are attached to atom.
+        between features with equal scores are broken in an unspecified
+        way. Additionally, remove multicollinear and low variance
+        features.
 
         See feature_engineering.py for a description of the parameters.
 
@@ -1517,7 +1513,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         if isinstance(strategy, str):
             if strategy.lower() == "univariate" and solver is None:
                 solver = "f_classif" if self.goal == "class" else "f_regression"
-            elif strategy.lower() in ("sfm", "rfe", "rfecv", "sfs"):
+            elif strategy.lower() not in ("univariate", "pca"):
                 if solver is None and self.winner:
                     solver = self.winner.estimator
                 elif isinstance(solver, str):
