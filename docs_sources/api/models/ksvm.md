@@ -3,7 +3,7 @@
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
 <a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
-<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>gpu</a>
 
 The implementation of the Kernel (non-linear) Support Vector Machine is
 based on libsvm. The fit time scales at least quadratically with the

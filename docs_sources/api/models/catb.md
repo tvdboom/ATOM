@@ -3,7 +3,7 @@
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
 <a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
-<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>gpu</a>
 
 CatBoost is a machine learning method based on gradient boosting over
 decision trees. Main advantages of CatBoost:
@@ -59,12 +59,16 @@ Real(0.01, 1.0, "log-uniform", name="learning_rate")
 Categorical([None, *range(1, 10)], name="max_depth")
 </p>
 <p>
-<strong>subsample: float, default=1.0</strong><br>
-Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
+<strong>max_depth: int, default=31</strong><br>
+Integer(20, 40, name="num_leaves")
 </p>
 <p>
-<strong>colsample_by_level: float, default=1.0</strong><br>
-Categorical(np.linspace(0.4, 1.0, 7), name="colsample_by_level")
+<strong>max_depth: int, default=1</strong><br>
+Integer(1, 30, name="min_child_samples")
+</p>
+<p>
+<strong>subsample: float, default=1.0</strong><br>
+Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
 </p>
 <p>
 <strong>reg_lambda: int, default=0</strong><br>

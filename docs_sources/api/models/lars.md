@@ -2,7 +2,7 @@
 -------------------------------
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
-<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>gpu</a>
 
 Least-angle regression is a regression algorithm for high-dimensional
 data. Lars is similar to forward stepwise regression. At each step, it

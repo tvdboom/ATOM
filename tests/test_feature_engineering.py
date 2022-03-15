@@ -503,14 +503,11 @@ def test_solver_parameter_empty_zoofs():
         "neg_log_loss").name
 
 
-def test_missing_y_vald_zoofs():
-    """Check for raised error for missing y_valid."""
-
-    from atom.utils import get_custom_scorer
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2, X_valid = X_reg)
-    with pytest.raises(ValueError, match=r".*be absent in the presence of  X_valid.*"):
-        selector.fit(X_reg, y_reg)
+def test_exception_missing_y_valid():
+    """Assert that an error is raised when y_valid is missing."""
+    selector = FeatureSelector("pso", solver="LGB_class", X_valid=X_bin)
+    with pytest.raises(ValueError, match=r".*y_valid parameter.*"):
+        selector.fit(X_bin, y_bin)
 
 
 def test_transform_zoofs():

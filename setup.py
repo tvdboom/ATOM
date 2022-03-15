@@ -7,7 +7,7 @@ Description: Package's setup code.
 
 """
 
-import setuptools
+from setuptools import setup
 
 
 with open("README.md", encoding="utf8") as f:
@@ -22,7 +22,7 @@ with open("requirements-optional.txt", encoding="utf8") as f:
 with open("requirements-test.txt", encoding="utf8") as f:
     test_requirements = f.read().splitlines()
 
-setuptools.setup(
+setup(
     name="atom-ml",
     version="4.13.0",
     license="MIT",

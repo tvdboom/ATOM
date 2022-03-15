@@ -105,6 +105,12 @@ def test_experiment_creation(mlflow):
     mlflow.assert_called_once()
 
 
+def test_gpu_setter():
+    """Assert that an error is raised for an invalid gpu value."""
+    with pytest.raises(ValueError, match=r".*gpu parameter.*"):
+        BaseTransformer(gpu="invalid")
+
+
 def test_random_state_setter():
     """Assert that an error is raised for a negative random_state."""
     with pytest.raises(ValueError, match=r".*random_state parameter.*"):

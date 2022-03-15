@@ -90,12 +90,13 @@ create the new feature `LOG(old_feature)` and if the operator is "mul",
 it will create the new feature `old_feature_1 x old_feature_2`. The
 operators can be chosen through the `operators` parameter. Choose from:
 
-* **add**: Sum two features together.
+* **add**: Take the sum of two features.
 * **sub:** Subtract two features from each other.</li>
 * **mul:** Multiply two features with each other.</li>
 * **div:** Divide two features with each other.</li>
-* **srqt:** Take the square root of a feature.</li>
-* **log:** Take the logarithm of a feature.</li>
+* **abs:** Calculate the absolute value of a feature.</li>
+* **srqt:** Calculate the square root of a feature.</li>
+* **log:** Calculate the natural logarithm of a feature.</li>
 * **sin:** Calculate the sine of a feature.</li>
 * **cos:** Calculate the cosine of a feature.</li>
 * **tan:** Calculate the tangent of a feature.</li>

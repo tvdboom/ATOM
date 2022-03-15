@@ -38,12 +38,12 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
-        verbose, warnings, logger, experiment, random_state,
+        verbose, warnings, logger, experiment, gpu, random_state,
     ):
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-            n_jobs, verbose, warnings, logger, experiment, random_state,
+            n_jobs, verbose, warnings, logger, experiment, gpu, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -90,13 +90,13 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         skip_runs, n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-        n_jobs, verbose, warnings, logger, experiment, random_state,
+        n_jobs, verbose, warnings, logger, experiment, gpu, random_state,
     ):
         self.skip_runs = skip_runs
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-            n_jobs, verbose, warnings, logger, experiment, random_state,
+            n_jobs, verbose, warnings, logger, experiment, gpu, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -189,13 +189,13 @@ class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         train_sizes, n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-        n_jobs, verbose, warnings, logger, experiment, random_state
+        n_jobs, verbose, warnings, logger, experiment, gpu, random_state
     ):
         self.train_sizes = train_sizes
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-            n_jobs, verbose, warnings, logger, experiment, random_state,
+            n_jobs, verbose, warnings, logger, experiment, gpu, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -271,13 +271,14 @@ class DirectClassifier(Direct):
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
         experiment: Optional[str] = None,
+        gpu: Union[bool, str] = False,
         random_state: Optional[int] = None,
     ):
         self.goal = "class"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-            n_jobs, verbose, warnings, logger, experiment, random_state,
+            n_jobs, verbose, warnings, logger, experiment, gpu, random_state,
         )
 
 
@@ -302,13 +303,14 @@ class DirectRegressor(Direct):
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
         experiment: Optional[str] = None,
+        gpu: Union[bool, str] = False,
         random_state: Optional[int] = None,
     ):
         self.goal = "reg"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-            n_jobs, verbose, warnings, logger, experiment, random_state,
+            n_jobs, verbose, warnings, logger, experiment, gpu, random_state,
         )
 
 
@@ -334,13 +336,14 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
         experiment: Optional[str] = None,
+        gpu: Union[bool, str] = False,
         random_state: Optional[int] = None,
     ):
         self.goal = "class"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             skip_runs, n_calls, n_initial_points, est_params, bo_params,
-            n_bootstrap, n_jobs, verbose, warnings, logger, experiment,
+            n_bootstrap, n_jobs, verbose, warnings, logger, experiment, gpu,
             random_state,
         )
 
@@ -367,13 +370,14 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
         experiment: Optional[str] = None,
+        gpu: Union[bool, str] = False,
         random_state: Optional[int] = None,
     ):
         self.goal = "reg"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             skip_runs, n_calls, n_initial_points, est_params, bo_params,
-            n_bootstrap, n_jobs, verbose, warnings, logger, experiment,
+            n_bootstrap, n_jobs, verbose, warnings, logger, experiment, gpu,
             random_state,
         )
 
@@ -400,13 +404,14 @@ class TrainSizingClassifier(TrainSizing):
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
         experiment: Optional[str] = None,
+        gpu: Union[bool, str] = False,
         random_state: Optional[int] = None,
     ):
         self.goal = "class"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             train_sizes, n_calls, n_initial_points, est_params, bo_params,
-            n_bootstrap, n_jobs, verbose, warnings, logger, experiment,
+            n_bootstrap, n_jobs, verbose, warnings, logger, experiment, gpu,
             random_state,
         )
 
@@ -433,12 +438,13 @@ class TrainSizingRegressor(TrainSizing):
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
         experiment: Optional[str] = None,
+        gpu: Union[bool, str] = False,
         random_state: Optional[int] = None,
     ):
         self.goal = "reg"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             train_sizes, n_calls, n_initial_points, est_params, bo_params,
-            n_bootstrap, n_jobs, verbose, warnings, logger, experiment,
+            n_bootstrap, n_jobs, verbose, warnings, logger, experiment, gpu,
             random_state,
         )

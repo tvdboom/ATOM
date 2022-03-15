@@ -24,17 +24,17 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>None: Do not perform any feature selection algorithm.</li>
-<li>"univariate": Univariate F-test.</li>
-<li>"PCA": Principal Component Analysis.</li>
-<li>"SFM": Select best features according to a model.</li>
-<li>"SFS": Sequential Feature Selection.</li>
-<li>"RFE": Recursive Feature Elimination.</li>
-<li>"RFECV": RFE with cross-validated selection.</li>
-<li>"PSO": Particle Swarm Optimization.</li>
-<li>"HHO": Harris Hawks Optimization.</li>
-<li>"GWO": Grey Wolf Optimization.</li>
-<li>"DFO": Dragonfly Optimization.</li>
-<li>"genetic": Genetic Optimization.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">univariate</a>": Univariate F-test.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a>": Principal Component Analysis.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">SFM</a>": Select best features according to a model.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html">SFS</a>": Sequential Feature Selection.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">RFE</a>": Recursive Feature Elimination.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">RFECV</a>": RFE with cross-validated selection.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Particle%20Swarm%20Optimization%20Class/">PSO</a>": Particle Swarm Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Harris%20Hawk%20Optimization/">HHO</a>": Harris Hawks Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Grey%20Wolf%20Optimization%20Class/">GWO</a>": Grey Wolf Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Dragon%20Fly%20Optimization%20Class/">DFO</a>": Dragonfly Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Genetic%20Optimization%20Class/">genetic</a>": Genetic Optimization.</li>
 </ul>
 <strong>solver: str, estimator or None, optional (default=None)</strong><br>
 Solver/model to use for the feature selection strategy. See the
@@ -136,8 +136,8 @@ See the corresponding sklearn documentation for the available options.
     [plot_permutation_importance](../plots/plot_permutation_importance.md) instead.
 
 !!! warning
-    The RFE, RFECV AND SFS strategies don't work when the solver is a 
-    [CatBoost](https://catboost.ai/) model due to incompatibility of the APIs.
+    The SFS, RFE and RFECV strategies don't work when the solver is a 
+    [CatBoost](../models/catb) model due to incompatibility of the APIs.
 
 <br>
 

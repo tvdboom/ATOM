@@ -166,6 +166,15 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Name of the mlflow experiment to use for tracking. If None,
         no mlflow tracking is performed.
 
+    gpu: bool or str, optional (default=False)
+        Train estimators on GPU (instead of CPU). Refer to the
+        documentation to check which estimators are supported.
+            - If False: Only use CPU.
+            - If True: Use GPU for algorithms that support it and CPU
+                       otherwise.
+            - If 'force': Use GPU for algorithms that support it and
+                          raise an exception otherwise.
+
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
@@ -175,7 +184,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
-        verbose, warnings, logger, experiment, random_state,
+        verbose, warnings, logger, experiment, gpu, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -183,6 +192,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             warnings=warnings,
             logger=logger,
             experiment=experiment,
+            gpu=gpu,
             random_state=random_state,
         )
 

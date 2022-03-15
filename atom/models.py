@@ -1367,8 +1367,9 @@ class XGBoost(BaseModel):
         return self.est_class(
             use_label_encoder=params.pop("use_label_encoder", False),
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=random_state,
+            tree_method="gpu_hist" if self.T.gpu else None,
             verbosity=params.pop("verbosity", 0),
+            random_state=random_state,
             **params,
         )
 
@@ -1442,6 +1443,7 @@ class LightGBM(BaseModel):
         """Return the model's estimator with unpacked parameters."""
         return self.est_class(
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            device="gpu" if self.T.gpu else "cpu",
             random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
@@ -1484,7 +1486,7 @@ class LightGBM(BaseModel):
             Categorical([-1, *range(1, 10)], name="max_depth"),
             Integer(20, 40, name="num_leaves"),
             Categorical([1e-4, 1e-3, 0.01, 0.1, 1, 10, 100], name="min_child_weight"),
-            Integer(10, 30, name="min_child_samples"),
+            Integer(1, 30, name="min_child_samples"),
             Categorical(half_to_one_inc, name="subsample"),
             Categorical([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], name="colsample_bytree"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_alpha"),
@@ -1519,8 +1521,9 @@ class CatBoost(BaseModel):
             train_dir=params.pop("train_dir", ""),
             allow_writing_files=params.pop("allow_writing_files", False),
             thread_count=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
+            task_type="GPU" if self.T.gpu else "CPU",
             verbose=params.pop("verbose", False),
+            random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
 
@@ -1550,13 +1553,13 @@ class CatBoost(BaseModel):
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
-        # num_leaves and min_child_samples not available for CPU implementation
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
             Categorical([None, *range(1, 10)], name="max_depth"),
+            Integer(20, 40, name="num_leaves"),
+            Integer(1, 30, name="min_child_samples"),
             Categorical(half_to_one_inc, name="subsample"),
-            Categorical([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], name="colsample_bylevel"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda"),
         ]
 

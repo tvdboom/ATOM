@@ -694,6 +694,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#training-on-gpu" class="md-nav__link">
+    Training on GPU
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2891,6 +2898,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#training-on-gpu" class="md-nav__link">
+    Training on GPU
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3314,6 +3328,14 @@ would become model <code>RF08</code>.</p>
 <p>Use the <a href="../../API/plots/plot_learning_curve">plot_learning_curve</a>
 method to see the model's performance per size of the training set.</p>
 </div>
+<p><br></p>
+<h2 id="training-on-gpu">Training on GPU</h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Models trained on GPU not always accept sparse dataframes!</p>
+</div>
+<p>XGBoost: Require a graphics card with compute capability 3.5 or higher, with CUDA toolkits 10.0 or later. 
+CatBoost: Training on GPU requires NVIDIA Driver of version 418.xx or higher.</p>
 
               
             </article>

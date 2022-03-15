@@ -13,13 +13,11 @@ import pandas as pd
 from random import sample
 from typeguard import typechecked
 from typing import Optional, Union
-
-# Other packages
 import featuretools as ft
 from featuretools.primitives.base import transform_primitive_base
 from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, is_regressor
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import (
@@ -50,7 +48,7 @@ from .plots import FSPlotter
 from .utils import (
     SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df,
     is_sparse, get_custom_scorer, check_scaling, check_is_fitted,
-    get_feature_importance, composed, crash, method_to_log,
+    infer_task, get_feature_importance, composed, crash, method_to_log,
 )
 
 
@@ -257,7 +255,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     operators: str, sequence or None, optional (default=None)
         Mathematical operators to apply on the features. None for all.
-        Choose from: add, sub, mul, div, sqrt, log, inv, sin, cos, tan.
+        Choose from: add, sub, mul, div, abs, sqrt, log, inv, sin, cos,
+        tan.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -360,16 +359,16 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 f"Value should be >0, got {self.n_features}."
             )
 
-        default = ["add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan"]
+        ops = ["add", "sub", "mul", "div", "abs", "sqrt", "log", "sin", "cos", "tan"]
         if not self.operators:  # None or empty list
-            self._operators = default
+            self._operators = ops
         else:
             self._operators = lst(self.operators)
             for operator in self._operators:
-                if operator.lower() not in default:
+                if operator.lower() not in ops:
                     raise ValueError(
                         "Invalid value in the operators parameter, got "
-                        f"{operator}. Choose from: {', '.join(default)}."
+                        f"{operator}. Choose from: {', '.join(ops)}."
                     )
 
         self.log("Fitting FeatureGenerator...", 1)
@@ -385,6 +384,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                     primitives.append("multiply_numeric")
                 elif operator.lower() == "div":
                     primitives.append("divide_numeric")
+                elif operator.lower() == "abs":
+                    primitives.append("absolute")
                 elif operator.lower() in ("sqrt", "log", "sin", "cos", "tan"):
                     primitives.append(
                         ft.primitives.make_trans_primitive(
@@ -602,6 +603,15 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
+    gpu: bool or str, optional (default=False)
+        Train estimators on GPU (instead of CPU). Refer to the
+        documentation to check which estimators are supported.
+            - If False: Only use CPU.
+            - If True: Use GPU for algorithms that support it and CPU
+                       otherwise.
+            - If 'force': Use GPU for algorithms that support it and
+                          raise an exception otherwise.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -651,13 +661,18 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         max_frac_repeated: Optional[SCALAR] = 1.0,
         max_correlation: Optional[float] = 1.0,
         n_jobs: int = 1,
+        gpu: Union[bool, str] = False,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
         super().__init__(
-            n_jobs=n_jobs, verbose=verbose, logger=logger, random_state=random_state
+            n_jobs=n_jobs,
+            gpu=gpu,
+            verbose=verbose,
+            logger=logger,
+            random_state=random_state,
         )
         self.strategy = strategy
         self.solver = solver
@@ -712,13 +727,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     f"be None for strategy='{self.strategy}'."
                 )
 
-        def custom_function_for_scorer(model, X_train, y_train, X_valid, y_valid, scorer):
-            model.fit(X_train, y_train)
-            return scorer(model, X_valid, y_valid)
-
-        def custom_cross_valid_function_for_scorer(model, X_train, y_train, X_valid, y_valid,
-                                                   scorer):
-            return np.mean(cross_val_score(model, X_train, y_train, cv=3, scoring=scorer))
+        def objective_function(model, X_train, y_train, X_valid, y_valid, scorer):
+            """Objective function for the advanced optimization strategies."""
+            if X_train.equals(X_valid):
+                cv = cross_val_score(model, X_train, y_train, cv=3, scoring=scorer)
+                return np.mean(cv)
+            else:
+                model.fit(X_train, y_train)
+                return scorer(model, X_valid, y_valid)
 
         X, y = self._prepare_input(X, y)
 
@@ -805,6 +821,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                         self._solver = model.get_estimator()
                 else:
                     self._solver = self.solver
+
+                    # Assign goal to get default scorer for advanced strategies
+                    self.goal = "reg" if is_regressor(self._solver) else "class"
 
         elif self.kwargs:
             kwargs = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
@@ -981,7 +1000,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         else:
             check_y()
 
-            algo_mapper = {
+            strategy_mapping = {
                 "pso": ParticleSwarmOptimization,
                 "hho": HarrisHawkOptimization,
                 "gwo": GreyWolfOptimization,
@@ -989,74 +1008,52 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 "genetic": GeneticOptimization,
             }
 
-            # initialization_params catches all params required for zoofs algos
-            initialization_params = {"pso": ['n_iteration', 'timeout', 'population_size',
-                                             'minimize', 'c1', 'c2', 'w'],
-                                     "gwo": ['n_iteration', 'timeout', 'population_size',
-                                             'minimize', 'method'],
-                                     "dfo": ['n_iteration', 'timeout', 'population_size',
-                                             'minimize', 'method'],
-                                     "genetic": ['n_iteration', 'timeout',
-                                               'population_size', 'minimize',
-                                               'selective_pressure',
-                                               'elitism', 'mutation_rate'],
-                                     "hho": ['n_iteration', 'timeout', 'population_size',
-                                             'minimize', 'beta']}[self.strategy.lower()]
-
-            initialization_params_from_kwargs = {
-                k: v for k, v in self.kwargs.items() if k in initialization_params}
-            params_for_objective_function = {k: v for k, v in self.kwargs.items(
-            ) if k not in initialization_params + ['objective_function']}
-
-            if ("X_valid" in self.kwargs.keys()):
-                if ("y_valid" in self.kwargs.keys()):
+            # Either use a provided validation set or cross-validation over X
+            if "X_valid" in self.kwargs:
+                if "y_valid" in self.kwargs:
                     X_valid, y_valid = self._prepare_input(
-                        self.kwargs["X_valid"], self.kwargs["y_valid"])
-                    objective_function = custom_function_for_scorer
+                        self.kwargs["X_valid"], self.kwargs["y_valid"]
+                    )
                 else:
-                    raise ValueError("Invalid value for the y_valid parameter. Value "
-                                     "cannot be absent in the presence of  X_valid.")
-
+                    raise ValueError(
+                        "Invalid value for the y_valid parameter. The value "
+                        "cannot be absent when X_valid is provided."
+                    )
             else:
                 X_valid, y_valid = X, y
-                objective_function = custom_cross_valid_function_for_scorer
 
-            # zoofs-native objective_function choice
-            if self.kwargs.get("objective_function"):
-                objective_function = self.kwargs['objective_function']
+            # Get a custom objective_function, scoring or use default
+            kwargs = self.kwargs.copy()
+            if kwargs.get("objective_function"):
+                objective_function = kwargs.pop("objective_function")
+            elif kwargs.get("scoring"):
+                kwargs["scorer"] = get_custom_scorer(kwargs.pop("scoring"))
+            else:
+                task = infer_task(y, goal=self.goal)
+                if task.startswith("bin"):
+                    kwargs["scorer"] = get_custom_scorer("f1")
+                elif task.startswith("multi"):
+                    kwargs["scorer"] = get_custom_scorer("f1_weighted")
+                else:
+                    kwargs["scorer"] = get_custom_scorer("r2")
 
-            # atom-native scoring method can be chosen
-            elif self.kwargs.get("scoring"):
-                params_for_objective_function = {
-                    "scorer": get_custom_scorer(self.kwargs["scoring"])}
-
-            else:  # default scoring method is chosen if nothing is provided
-                params_for_objective_function = {"scorer":
-                                                 (get_custom_scorer("f1")
-                                                  if y.nunique() <= 2 else
-                                                     get_custom_scorer("f1_weighted"))
-                                                 if (hasattr(self._solver,
-                                                             "predict_proba")
-                                                     or hasattr(self._solver,
-                                                                "decision_function"))
-                                                 else get_custom_scorer("r2")}
-
-            if 'minimize' not in initialization_params_from_kwargs.keys():
-                initialization_params_from_kwargs['minimize'] = False
-
-            self._estimator = algo_mapper[self.strategy.lower()](
+            self._estimator = strategy_mapping[self.strategy.lower()](
                 objective_function=objective_function,
+                minimize=kwargs.pop("minimize", False),
                 logger=self.logger,
-                **initialization_params_from_kwargs,
-                **params_for_objective_function,
+                **kwargs,
             )
-            self._estimator.fit(model=self._solver,
-                          X_train=X,
-                          y_train=y,
-                          X_valid=X_valid,
-                          y_valid=y_valid,
-                          verbose=True if self.verbose >= 2 else False)
 
+            self._estimator.fit(
+                model=self._solver,
+                X_train=X,
+                y_train=y,
+                X_valid=X_valid,
+                y_valid=y_valid,
+                verbose=True if self.verbose >= 2 else False,
+            )
+
+            # Add the strategy estimator as attribute to the class
             setattr(self, self.strategy.lower(), self._estimator)
 
         self._is_fitted = True
@@ -1183,8 +1180,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             self.feature_importance = list(X.columns[idx][::-1])
 
         else:  # Advanced strategies
+            strat = self.strategy.upper() if len(self.strategy) == 3 else "genetic"
             self.log(
-                f" --> {self.strategy} selected {len(self._estimator.best_feature_list)}"
+                f" --> {strat} selected {len(self._estimator.best_feature_list)}"
                 f" features from the dataset.", 2
             )
 

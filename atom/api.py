@@ -257,6 +257,15 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
+    gpu: bool or str, optional (default=False)
+        Train estimators on GPU (instead of CPU). Refer to the
+        documentation to check which estimators are supported.
+            - If False: Only use CPU.
+            - If True: Use GPU for algorithms that support it and CPU
+                       otherwise.
+            - If 'force': Use GPU for algorithms that support it and
+                          raise an exception otherwise.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -300,6 +309,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
         n_jobs: int = 1,
+        gpu: Union[bool, str] = False,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, Logger]] = None,
@@ -308,6 +318,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
     ):
         super().__init__(
             n_jobs=n_jobs,
+            gpu=gpu,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -401,6 +412,15 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
+    gpu: bool or str, optional (default=False)
+        Train estimators on GPU (instead of CPU). Refer to the
+        documentation to check which estimators are supported.
+            - If False: Only use CPU.
+            - If True: Use GPU for algorithms that support it and CPU
+                       otherwise.
+            - If 'force': Use GPU for algorithms that support it and
+                          raise an exception otherwise.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -443,6 +463,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
         n_jobs: int = 1,
+        gpu: Union[bool, str] = False,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, Logger]] = None,
@@ -451,6 +472,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
     ):
         super().__init__(
             n_jobs=n_jobs,
+            gpu=gpu,
             verbose=verbose,
             warnings=warnings,
             logger=logger,

@@ -4,6 +4,7 @@
 <a name="v4130"></a>
 ### Version 4.13.0
 
+* Added GPU support. Read more in the [user guide](../user_guide/training/#training-on-gpu).
 * Added advanced [feature selection](../API/feature_engineering/fetaure_selection) strategies.
 * Added the `return_sparse` parameter to the [Vectorizer](../API/NLP/vectorizer) class.
 * Fixed a bug where the BO could crash after [balancing](../user_guide/data_cleaning/#balancing-the-data)

@@ -2909,7 +2909,7 @@
 <hr />
 <p><a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
 <a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
-<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a></p>
+<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>gpu</a></p>
 <p>LightGBM is a gradient boosting model that uses tree based learning
 algorithms. It is designed to be distributed and efficient with the
 following advantages:</p>
@@ -2967,7 +2967,7 @@ Categorical([1e-4, 1e-3, 0.01, 0.1, 1, 10, 100], name="min_child_weight"),
 </p>
 <p>
 <strong>min_child_samples: int, default=20</strong><br>
-Integer(10, 30, name="min_child_samples")
+Integer(1, 30, name="min_child_samples")
 </p>
 <p>
 <strong>subsample: float, default=1.0</strong><br>

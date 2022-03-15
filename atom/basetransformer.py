@@ -31,8 +31,7 @@ from .utils import (
 class BaseTransformer:
     """Base class for estimators in the package.
 
-    Contains shared properties (n_jobs, verbose, warnings, logger,
-    random_state) and standard methods across estimators.
+    Contains shared properties and standard methods across transformers.
 
     Parameters
     ----------
@@ -43,11 +42,20 @@ class BaseTransformer:
             - warnings: Whether to show or suppress encountered warnings.
             - logger: Name of the log file or Logger object.
             - experiment: Name of the mlflow experiment used for tracking.
+            - gpu: Whether to train the pipeline on GPU.
             - random_state: Seed used by the random number generator.
 
     """
 
-    attrs = ["n_jobs", "verbose", "warnings", "logger", "experiment", "random_state"]
+    attrs = [
+        "n_jobs",
+        "verbose",
+        "warnings",
+        "logger",
+        "experiment",
+        "gpu",
+        "random_state",
+    ]
 
     def __init__(self, **kwargs):
         """Update the properties with the provided kwargs."""
@@ -130,6 +138,20 @@ class BaseTransformer:
         self._experiment = value
         if value:
             mlflow.set_experiment(value)
+
+    @property
+    def gpu(self):
+        return self._gpu
+
+    @gpu.setter
+    @typechecked
+    def gpu(self, value: Union[bool, str]):
+        if isinstance(value, str) and value.lower() != "force":
+            raise ValueError(
+                "Invalid value for the gpu parameter. Only True, "
+                f"False and 'force' are valid values, got {value}."
+            )
+        self._gpu = value
 
     @property
     def random_state(self):

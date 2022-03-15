@@ -2,7 +2,7 @@
 ---------------------------------
 
 <a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
-<a href="../../../user_guide/data_management/#gpu" class="md-tag" draggable=False>gpu</a>
+<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>gpu</a>
 
 Categorical Naive Bayes implements the Naive Bayes algorithm for
 categorical features.

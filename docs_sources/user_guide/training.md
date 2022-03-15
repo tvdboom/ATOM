@@ -463,3 +463,30 @@ Click [here](../../examples/train_sizing) for a train sizing example.
 !!! tip
     Use the [plot_learning_curve](../../API/plots/plot_learning_curve)
     method to see the model's performance per size of the training set.
+
+<br>
+
+## Training on GPU
+
+!!! warning
+    Models trained on GPU not always accept sparse dataframes!
+
+
+ATOM does not support multi-gpu training. If there is more than one GPU
+on the machine, the first one is used by default. Use `CUDA_VISIBLE_DEVICES`
+to manually specify any of the other GPUs.
+
+**Prerequisites**
+
+* OS: Ubuntu 18.04/20.04 or CentOS 7/8 with gcc/++ 9.0+
+* GPU: NVIDIA Pascal™ or better with [compute capability](https://developer.nvidia.com/cuda-gpus) 6.0+
+* CUDA & NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5
+
+**Feature selection**
+
+
+**Models**
+
+* [XGBoost](../API/models/xgb): Requires no further installation.
+* [LightGBM](../API/models/lgb): Requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html).
+* [CatBoost](../API/models/catb): Requires no further installation.
