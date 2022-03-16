@@ -20,12 +20,12 @@ example.
     All of atom's feature engineering methods automatically adopt the relevant
     transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
     atom. A different choice can be added as parameter to the method call,
-    e.g. `atom.feature_selection("PCA", n_features=10, random_state=2)`.
+    e.g. `atom.feature_selection("pca", n_features=10, random_state=2)`.
 
 !!! note
     Like the [add](../../API/ATOM/atomclassifier/#add) method, the feature engineering
     methods accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g. `atom.feature_selection("PCA", n_features=10, columns=slice(5, 15))`.
+    dataset's features, e.g. `atom.feature_selection("pca", n_features=10, columns=slice(5, 15))`.
 
 <br>
 
@@ -150,8 +150,7 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
 The [FeatureSelector](../../API/feature_engineering/feature_selector) class
 provides tooling to select the relevant features from a dataset. It can
 be accessed from atom through the [feature_selection](../../API/ATOM/atomclassifier/#feature-selection)
-method. The following strategies are implemented: univariate, PCA, SFM,
-SFS, RFE, RFECV, PSO, HHO, GWO, DFO, genetic.
+method.
 
 !!! tip
     Use the [plot_feature_importance](../../API/plots/plot_feature_importance)
@@ -160,7 +159,7 @@ SFS, RFE, RFECV, PSO, HHO, GWO, DFO, genetic.
     attribute, use [plot_permutation_importance](../../API/plots/plot_permutation_importance) instead.
 
 !!! warning
-    The RFE and RFECV strategies don't work when the solver is a 
+    The RFE and rfecv strategies don't work when the solver is a 
     [CatBoost](https://catboost.ai/) model due to incompatibility
     of the APIs.
 
@@ -179,11 +178,11 @@ arrays (scores, p-values). Read more in sklearn's [documentation](https://scikit
 
 <a name="pca"></a>
 **Principal Components Analysis**<br>
-Applying PCA will reduce the dimensionality of the dataset by maximizing
+Applying PCA reduces the dimensionality of the dataset by maximizing
 the variance of each dimension. The new features are called component
 1, component 2, etc... PCA can be applied in two ways:
 
-* If the data is dense (i.e. not sparse), the estimator used is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
+* If the data is dense (i.e. not sparse), the estimator used is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html).
   Before fitting the transformer, the data is scaled to mean=0 and std=1
   if it wasn't already. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#pca).
 * If the data is [sparse](../data_management/#sparse-data) (often the

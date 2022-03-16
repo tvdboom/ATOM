@@ -7,15 +7,14 @@ Description: Module containing the API classes.
 
 """
 
-# Standard packages
-import dill
 from copy import deepcopy
 from logging import Logger
-from typeguard import typechecked
-from typing import Optional, Union, Any
-from sklearn.base import clone
+from typing import Any, Optional, Union
 
-# Own modules
+import dill
+from sklearn.base import clone
+from typeguard import typechecked
+
 from .atom import ATOM
 from .basetransformer import BaseTransformer
 from .utils import SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform

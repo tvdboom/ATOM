@@ -7,25 +7,21 @@ Description: Unit tests for ensembles.py
 
 """
 
-# Standard packages
 import numpy as np
 import pytest
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
 
-# Own modules
 from atom.ensembles import (
-    VotingClassifier,
-    VotingRegressor,
-    StackingClassifier,
-    StackingRegressor,
+    StackingClassifier, StackingRegressor, VotingClassifier, VotingRegressor,
 )
 from atom.pipeline import Pipeline
 from atom.utils import check_is_fitted
-from .utils import X_bin, y_bin, X_reg, y_reg
+
+from .utils import X_bin, X_reg, y_bin, y_reg
 
 
 @pytest.fixture

@@ -7,20 +7,19 @@ Description: Module containing the training classes.
 
 """
 
-# Standard packages
+from copy import copy
+from typing import Optional, Union
+
 import numpy as np
 import pandas as pd
-from copy import copy
-from typeguard import typechecked
-from typing import Optional, Union
 from sklearn.base import BaseEstimator
+from typeguard import typechecked
 
-# Own modules
 from .basetrainer import BaseTrainer
 from .plots import BaseModelPlotter
 from .utils import (
-    SEQUENCE_TYPES, lst, get_best_score, infer_task, composed,
-    method_to_log, crash, CustomDict,
+    SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score, infer_task,
+    lst, method_to_log,
 )
 
 

@@ -7,36 +7,31 @@ Description: Unit tests for atom.py
 
 """
 
-# Standard packages
 import glob
+from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
-import numpy as np
-from unittest.mock import patch
-from sklearn.metrics import get_scorer
 from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel
 from sklearn.kernel_approximation import RBFSampler
 from sklearn.linear_model import LassoLarsCV
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.pipeline import Pipeline
+from sklearn.metrics import get_scorer
 from sklearn.neural_network import MLPClassifier
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
-    LabelEncoder,
-    OneHotEncoder,
-    StandardScaler,
-    RobustScaler,
+    LabelEncoder, OneHotEncoder, RobustScaler, StandardScaler,
 )
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.data_cleaning import Scaler, Pruner
+from atom.data_cleaning import Pruner, Scaler
 from atom.utils import check_scaling
+
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_sparse,
-    X_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10, y10_str,
-    y10_sn, X20_out,
+    FILE_DIR, X10, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin, X_class,
+    X_reg, X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class, y_reg,
 )
 
 
@@ -497,8 +492,8 @@ def test_add_no_transformer():
 def test_add_basetransformer_params_are_attached():
     """Assert that the n_jobs and random_state params from atom are used."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.add(PCA())  # When left to default
-    atom.add(PCA(random_state=2))  # When changed
+    atom.add(pca())  # When left to default
+    atom.add(pca(random_state=2))  # When changed
     assert atom.pipeline[0].get_params()["random_state"] == 1
     assert atom.pipeline[1].get_params()["random_state"] == 2
 
@@ -807,7 +802,7 @@ def test_winner_solver_after_run():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("LR")
     atom.branch = "fs_branch"
-    atom.feature_selection(strategy="SFM", solver=None, n_features=8)
+    atom.feature_selection(strategy="sfm", solver=None, n_features=8)
     assert atom.pipeline[0]._solver is atom.winner.estimator
 
 

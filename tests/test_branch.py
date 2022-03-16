@@ -7,14 +7,13 @@ Description: Unit tests for branch.py
 
 """
 
-# Standard packages
-import pytest
 import pandas as pd
+import pytest
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import merge
-from .utils import X_bin, y_bin, X_class, X_bin_array, y_bin_array, mnist
+
+from .utils import X_bin, X_bin_array, X_class, mnist, y_bin, y_bin_array
 
 
 # Test __init__ ==================================================== >>

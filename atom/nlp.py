@@ -7,34 +7,30 @@ Description: Module containing estimators for NLP.
 
 """
 
-# Standard packages
 import re
-import nltk
 import unicodedata
-import pandas as pd
 from string import punctuation
-from typeguard import typechecked
-from typing import Union, Optional
-from sklearn.base import BaseEstimator
-from sklearn.feature_extraction.text import (
-    CountVectorizer,
-    TfidfVectorizer,
-    HashingVectorizer,
+from typing import Optional, Union
+
+import nltk
+import pandas as pd
+from nltk.collocations import (
+    BigramCollocationFinder, QuadgramCollocationFinder,
+    TrigramCollocationFinder,
 )
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
-from nltk.collocations import (
-    BigramCollocationFinder,
-    TrigramCollocationFinder,
-    QuadgramCollocationFinder,
+from sklearn.base import BaseEstimator
+from sklearn.feature_extraction.text import (
+    CountVectorizer, HashingVectorizer, TfidfVectorizer,
 )
+from typeguard import typechecked
 
-# Own modules
-from .data_cleaning import TransformerMixin
 from .basetransformer import BaseTransformer
+from .data_cleaning import TransformerMixin
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, is_sparse, to_df,
-    check_is_fitted, get_corpus, composed, crash, method_to_log,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, check_is_fitted, composed, crash,
+    get_corpus, is_sparse, method_to_log, to_df,
 )
 
 
@@ -590,11 +586,11 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="BOW")
+    strategy: str, optional (default="bow")
         Strategy with which to vectorize the text. Choose from:
-            - "BOW": Uses a Bag of Words algorithm.
-            - "TF-IDF": Uses a TF-IDF algorithm.
-            - "Hashing": Uses a hashing algorithm.
+            - "bow": Bag of Words.
+            - "tf-idf": Term Frequency - Inverse Document Frequency.
+            - "hashing": Vectorize to a matrix of token occurrences.
 
     return_sparse: bool, optional (default=True)
         Whether to return the transformation output as a dataframe
@@ -626,7 +622,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strategy: str = "BOW",
+        strategy: str = "bow",
         return_sparse: bool = True,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
@@ -676,9 +672,10 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             raise ValueError(
                 "Invalid value for the strategy parameter, got "
-                f"{self.strategy}. Choose from: BOW, TF-IDF, Hashing."
+                f"{self.strategy}. Choose from: bow, tf-idf, hashing."
             )
 
+        self.log("Fitting Vectorizer...")
         self._estimator.fit(X[corpus])
         self._is_fitted = True
         return self

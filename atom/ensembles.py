@@ -7,28 +7,23 @@ Description: Module containing the ensemble estimators.
 
 """
 
-# Standard packages
-import numpy as np
 from copy import deepcopy
-from joblib import Parallel, delayed
 
+import numpy as np
+from joblib import Parallel, delayed
 # Sklearn
-from sklearn.base import clone
-from sklearn.utils import Bunch
-from sklearn.base import is_classifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.ensemble import (
-    VotingClassifier as VC,
-    VotingRegressor as VR,
-    StackingClassifier as SC,
-    StackingRegressor as SR,
-)
-from sklearn.utils.validation import column_or_1d
+from sklearn.base import clone, is_classifier
+from sklearn.ensemble import StackingClassifier as SC
+from sklearn.ensemble import StackingRegressor as SR
+from sklearn.ensemble import VotingClassifier as VC
+from sklearn.ensemble import VotingRegressor as VR
 from sklearn.ensemble._base import _fit_single_estimator
 from sklearn.model_selection import check_cv, cross_val_predict
+from sklearn.preprocessing import LabelEncoder
+from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
+from sklearn.utils.validation import column_or_1d
 
-# Own modules
 from .utils import check_is_fitted
 
 

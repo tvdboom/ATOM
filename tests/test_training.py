@@ -7,19 +7,16 @@ Description: Unit tests for training.py
 
 """
 
-# Standard packages
 import pytest
 
-# Own modules
 from atom.training import (
-    DirectClassifier,
-    DirectRegressor,
-    SuccessiveHalvingClassifier,
-    SuccessiveHalvingRegressor,
-    TrainSizingClassifier,
-    TrainSizingRegressor,
+    DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
+    SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
 )
-from .utils import bin_train, bin_test, class_train, class_test, reg_train, reg_test
+
+from .utils import (
+    bin_test, bin_train, class_test, class_train, reg_test, reg_train,
+)
 
 
 # Test trainers ============================================== >>

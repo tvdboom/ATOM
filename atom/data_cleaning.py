@@ -7,33 +7,52 @@ Description: Module containing the data cleaning transformers.
 
 """
 
-# Standard packages
+from collections import defaultdict
+from inspect import signature
+from typing import Any, Dict, Optional, Union
+
 import numpy as np
 import pandas as pd
-from inspect import signature
-from scipy.stats import zscore
-from typeguard import typechecked
-from collections import defaultdict
-from typing import Union, Optional, Dict, Any
-from sklearn.base import BaseEstimator, clone
-from sklearn.impute import SimpleImputer, KNNImputer
-from sklearn.preprocessing import (
-    FunctionTransformer,
-    KBinsDiscretizer,
-    PowerTransformer,
-    QuantileTransformer,
-    LabelEncoder,
-)
-from category_encoders.ordinal import OrdinalEncoder
+from category_encoders.backward_difference import BackwardDifferenceEncoder
+from category_encoders.basen import BaseNEncoder
+from category_encoders.binary import BinaryEncoder
+from category_encoders.cat_boost import CatBoostEncoder
+from category_encoders.helmert import HelmertEncoder
+from category_encoders.james_stein import JamesSteinEncoder
+from category_encoders.leave_one_out import LeaveOneOutEncoder
+from category_encoders.m_estimate import MEstimateEncoder
 from category_encoders.one_hot import OneHotEncoder
+from category_encoders.ordinal import OrdinalEncoder
+from category_encoders.polynomial import PolynomialEncoder
+from category_encoders.sum_coding import SumEncoder
+from category_encoders.target_encoder import TargetEncoder
+from category_encoders.woe import WOEEncoder
+from imblearn.combine import SMOTEENN, SMOTETomek
+from imblearn.over_sampling import (
+    ADASYN, SMOTE, SMOTEN, SMOTENC, SVMSMOTE, BorderlineSMOTE, KMeansSMOTE,
+    RandomOverSampler,
+)
+from imblearn.under_sampling import (
+    AllKNN, CondensedNearestNeighbour, EditedNearestNeighbours,
+    InstanceHardnessThreshold, NearMiss, NeighbourhoodCleaningRule,
+    OneSidedSelection, RandomUnderSampler, RepeatedEditedNearestNeighbours,
+    TomekLinks,
+)
+from scipy.stats import zscore
+from sklearn.base import BaseEstimator, clone
+from sklearn.impute import KNNImputer, SimpleImputer
+from sklearn.preprocessing import (
+    FunctionTransformer, KBinsDiscretizer, LabelEncoder, MaxAbsScaler,
+    MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler,
+    StandardScaler,
+)
+from typeguard import typechecked
 
-# Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS,
-    ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS, lst, it,
-    variable_return, to_series, merge, check_is_fitted, composed,
-    crash, method_to_log,
+    SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    check_is_fitted, composed, crash, it, lst, merge, method_to_log, to_series,
+    variable_return,
 )
 
 
@@ -231,15 +250,22 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
-        if self.strategy.lower() in SCALING_STRATS:
-            self._estimator = SCALING_STRATS[self.strategy.lower()](**self.kwargs)
+        strategies = CustomDict(
+            standard=StandardScaler,
+            minmax=MinMaxScaler,
+            maxabs=MaxAbsScaler,
+            robust=RobustScaler,
+        )
+
+        if self.strategy in strategies:
+            self._estimator = strategies[self.strategy](**self.kwargs)
 
             # Add the estimator as attribute to the instance
             setattr(self, self.strategy.lower(), self._estimator)
         else:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Choose from: standard, minmax, maxabs, robust."
+                f"Choose from: {', '.join(strategies)}."
             )
 
         self.log("Fitting Scaler...", 1)
@@ -1233,15 +1259,33 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._cat_cols = list(X.select_dtypes(exclude="number").columns)
 
+        strategies = CustomDict(
+            backwarddifference=BackwardDifferenceEncoder,
+            basen=BaseNEncoder,
+            binary=BinaryEncoder,
+            catboost=CatBoostEncoder,
+            # hashing=HashingEncoder,
+            helmert=HelmertEncoder,
+            jamesstein=JamesSteinEncoder,
+            leaveoneout=LeaveOneOutEncoder,
+            mestimate=MEstimateEncoder,
+            # onehot=OneHotEncoder,
+            ordinal=OrdinalEncoder,
+            polynomial=PolynomialEncoder,
+            sum=SumEncoder,
+            target=TargetEncoder,
+            woe=WOEEncoder,
+        )
+
         if isinstance(self.strategy, str):
             if self.strategy.lower().endswith("encoder"):
                 self.strategy = self.strategy[:-7]  # Remove the Encoder at the end
-            if self.strategy.lower() not in ENCODING_STRATS:
+            if self.strategy not in strategies:
                 raise ValueError(
                     f"Invalid value for the strategy parameter, got {self.strategy}. "
-                    f"Choose from: {', '.join(ENCODING_STRATS)}."
+                    f"Choose from: {', '.join(strategies)}."
                 )
-            estimator = ENCODING_STRATS[self.strategy.lower()](
+            estimator = strategies[self.strategy](
                 handle_missing="return_nan",
                 handle_unknown="value",
                 **self.kwargs,
@@ -1421,13 +1465,13 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         Strategy with which to select the outliers. If sequence of
         strategies, only samples marked as outliers by all chosen
         strategies are dropped. Choose from:
-            - "z-score": Uses the z-score of each data value.
-            - "iForest": Uses an Isolation Forest.
-            - "EE": Uses an Elliptic Envelope.
-            - "LOF": Uses a Local Outlier Factor.
-            - "SVM": Uses a One-class SVM.
-            - "DBSCAN": Uses DBSCAN clustering.
-            - "OPTICS": Uses OPTICS clustering.
+            - "z-score": Z-score of each data value.
+            - "iforest": Isolation Forest.
+            - "ee": Elliptic Envelope.
+            - "lof": Local Outlier Factor.
+            - "svm": One-class SVM.
+            - "dbscan": Density-Based Spatial Clustering.
+            - "optics": DBSCAN-like clustering approach.
 
     method: int, float or str, optional (default="drop")
         Method to apply on the outliers. Only the z-score strategy
@@ -1465,8 +1509,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     Attributes
     ----------
     <strategy>: sklearn estimator
-        Object (lowercase strategy) used to prune the data,
-        e.g. `pruner.iforest` for the isolation forest strategy.
+        Object used to prune the data, e.g. `pruner.iforest` for the
+        isolation forest strategy.
 
     """
 
@@ -1516,12 +1560,20 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        # Check Parameters
+        strategies = CustomDict(
+            iforest=IsolationForest,
+            ee=EllipticEnvelope,
+            lof=LocalOutlierFactor,
+            svm=OneClassSVM,
+            dbscan=DBSCAN,
+            optics=OPTICS,
+        )
+
         for strat in lst(self.strategy):
-            if strat.lower() not in ["z-score"] + list(PRUNING_STRATS):
+            if strat not in strategies:
                 raise ValueError(
-                    "Invalid value for the strategy parameter. Choose from: "
-                    "z-score, iForest, EE, LOF, SVM, DBSCAN, OPTICS."
+                    "Invalid value for the strategy parameter. "
+                    f"Choose from: z-score, {', '.join(strategies)}."
                 )
             if str(self.method).lower() != "drop" and strat.lower() != "z-score":
                 raise ValueError(
@@ -1543,16 +1595,16 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             )
 
         # Allocate kwargs to every estimator
-        kwargs = {}
+        kwargs = CustomDict()
         for strat in lst(self.strategy):
-            kwargs[strat.lower()] = {}
+            kwargs[strat] = {}
             for key, value in self.kwargs.items():
                 # Parameters for this estimator only
                 if key.lower() == strat.lower():
-                    kwargs[strat.lower()].update(value)
+                    kwargs[strat].update(value)
                 # Parameters for all estimators
                 elif key.lower() not in map(str.lower, lst(self.strategy)):
-                    kwargs[strat.lower()].update({key: value})
+                    kwargs[strat].update({key: value})
 
         self.log("Pruning outliers...", 1)
 
@@ -1605,7 +1657,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                         )
 
             else:
-                estimator = PRUNING_STRATS[strat.lower()](**kwargs[strat.lower()])
+                estimator = strategies[strat](**kwargs[strat])
                 mask = estimator.fit_predict(objective) != -1
                 outliers.append(mask)
                 if len(lst(self.strategy)) > 1:
@@ -1748,13 +1800,37 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         X, y = self._prepare_input(X, y)
 
+        strategies = CustomDict(
+            # clustercentroids=ClusterCentroids,
+            condensednearestneighbour=CondensedNearestNeighbour,
+            editednearestneighborus=EditedNearestNeighbours,
+            repeatededitednearestneighbours=RepeatedEditedNearestNeighbours,
+            allknn=AllKNN,
+            instancehardnessthreshold=InstanceHardnessThreshold,
+            nearmiss=NearMiss,
+            neighbourhoodcleaningrule=NeighbourhoodCleaningRule,
+            onesidedselection=OneSidedSelection,
+            randomundersampler=RandomUnderSampler,
+            tomeklinks=TomekLinks,
+            randomoversampler=RandomOverSampler,
+            smote=SMOTE,
+            smotenc=SMOTENC,
+            smoten=SMOTEN,
+            adasyn=ADASYN,
+            borderlinesmote=BorderlineSMOTE,
+            kmeanssmote=KMeansSMOTE,
+            svmsmote=SVMSMOTE,
+            smoteenn=SMOTEENN,
+            smotetomek=SMOTETomek,
+        )
+
         if isinstance(self.strategy, str):
-            if self.strategy.lower() not in BALANCING_STRATS:
+            if self.strategy not in strategies:
                 raise ValueError(
                     f"Invalid value for the strategy parameter, got {self.strategy}. "
-                    f"Choose from: {', '.join(BALANCING_STRATS)}."
+                    f"Choose from: {', '.join(strategies)}."
                 )
-            estimator = BALANCING_STRATS[self.strategy.lower()](**self.kwargs)
+            estimator = strategies[self.strategy](**self.kwargs)
         elif not hasattr(self.strategy, "fit_resample"):
             raise TypeError(
                 "Invalid type for the strategy parameter. A "

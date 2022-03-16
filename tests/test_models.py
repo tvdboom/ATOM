@@ -7,24 +7,23 @@ Description: Unit tests for models.py
 
 """
 
-# Standard packages
-import pytest
-import numpy as np
 from pickle import PickleError
-from skopt.space.space import Categorical, Integer
-from sklearn.ensemble import RandomForestRegressor
 
+import numpy as np
+import pytest
+from sklearn.ensemble import RandomForestRegressor
+from skopt.space.space import Categorical, Integer
+from tensorflow.keras.layers import Conv2D, Dense, Flatten
 # Keras
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, Conv2D
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.feature_engineering import FeatureSelector
 from atom.models import MODELS
 from atom.pipeline import Pipeline
-from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
+
+from .utils import X_bin, X_class2, X_reg, mnist, y_bin, y_class2, y_reg
 
 
 # Variables ======================================================== >>
@@ -167,7 +166,7 @@ def test_RNN():
     """Assert that the RNN model works when called just for the estimator."""
     with pytest.raises(ValueError):
         # Fails cause RNN has no coef_ nor feature_importances_ attribute
-        FeatureSelector("SFM", solver="RNN_class").fit_transform(X_bin, y_bin)
+        FeatureSelector("sfm", solver="RNN_class").fit_transform(X_bin, y_bin)
 
 
 def test_MLP_custom_hidden_layer_sizes():

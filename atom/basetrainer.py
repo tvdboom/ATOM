@@ -7,23 +7,22 @@ Description: Module containing the parent class for the trainers.
 
 """
 
-# Standard packages
-import mlflow
 import importlib
 import traceback
 from datetime import datetime
+
 import matplotlib.pyplot as plt
+import mlflow
 from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
 
-# Own modules
-from .branch import Branch
-from .models import MODELS, CustomModel
 from .basepredictor import BasePredictor
+from .branch import Branch
 from .data_cleaning import BaseTransformer
+from .models import MODELS, CustomModel
 from .utils import (
-    SEQUENCE, OPTIONAL_PACKAGES, lst, time_to_str, is_multidim,
-    is_sparse, get_custom_scorer, get_best_score, check_scaling,
-    delete, PlotCallback, CustomDict,
+    OPTIONAL_PACKAGES, SEQUENCE, CustomDict, PlotCallback, check_scaling,
+    delete, get_best_score, get_custom_scorer, is_multidim, is_sparse, lst,
+    time_to_str,
 )
 
 

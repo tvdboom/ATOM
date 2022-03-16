@@ -7,24 +7,23 @@ Description: Module containing the BaseTransformer class.
 
 """
 
-# Standard packages
+import multiprocessing
 import os
-import dill
 import random
-import mlflow
 import warnings
+from copy import deepcopy
+from typing import Optional, Union
+
+import dill
+import mlflow
 import numpy as np
 import pandas as pd
-import multiprocessing
-from copy import deepcopy
-from typeguard import typechecked
-from typing import Union, Optional
 from sklearn.model_selection import train_test_split
+from typeguard import typechecked
 
-# Own modules
 from .utils import (
-    SEQUENCE, X_TYPES, Y_TYPES, lst, to_df, to_series, merge,
-    prepare_logger, composed, crash, method_to_log,
+    SEQUENCE, X_TYPES, Y_TYPES, composed, crash, lst, merge, method_to_log,
+    prepare_logger, to_df, to_series,
 )
 
 

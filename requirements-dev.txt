@@ -1,0 +1,6 @@
+pip==22.0.4
+setuptools>=60.9.3
+coverage>=6.3.2
+isort>=5.10.1
+flake8>=4.0.1
+

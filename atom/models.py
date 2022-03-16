@@ -118,83 +118,55 @@ Additionally, ATOM implements two ensemble models:
 
 """
 
-# Standard packages
-import numpy as np
-from random import randint
 from inspect import signature
-from scipy.spatial.distance import cdist
-from skopt.space.space import Real, Integer, Categorical
+from random import randint
 
-# Sklearn estimators
+import numpy as np
+from scipy.spatial.distance import cdist
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.ensemble import (
+    AdaBoostClassifier, AdaBoostRegressor, BaggingClassifier, BaggingRegressor,
+    ExtraTreesClassifier, ExtraTreesRegressor, GradientBoostingClassifier,
+    GradientBoostingRegressor, HistGradientBoostingClassifier,
+    HistGradientBoostingRegressor, RandomForestClassifier,
+    RandomForestRegressor,
+)
 from sklearn.gaussian_process import (
-    GaussianProcessClassifier,
-    GaussianProcessRegressor
+    GaussianProcessClassifier, GaussianProcessRegressor,
 )
-from sklearn.naive_bayes import (
-    GaussianNB,
-    MultinomialNB,
-    BernoulliNB,
-    CategoricalNB,
-    ComplementNB,
-)
+from sklearn.linear_model import ARDRegression
+from sklearn.linear_model import BayesianRidge as BayesianRidgeRegressor
+from sklearn.linear_model import ElasticNet as ElasticNetRegressor
+from sklearn.linear_model import HuberRegressor, Lars
+from sklearn.linear_model import Lasso as LassoRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression as LR
 from sklearn.linear_model import (
-    LinearRegression,
-    RidgeClassifier,
-    Ridge as RidgeRegressor,
-    Lasso as LassoRegressor,
-    ElasticNet as ElasticNetRegressor,
-    Lars,
-    BayesianRidge as BayesianRidgeRegressor,
-    ARDRegression,
-    HuberRegressor,
-    Perceptron as Perc,
-    LogisticRegression as LR,
+    PassiveAggressiveClassifier, PassiveAggressiveRegressor,
 )
-from sklearn.discriminant_analysis import (
-    LinearDiscriminantAnalysis as LDA,
-    QuadraticDiscriminantAnalysis as QDA,
+from sklearn.linear_model import Perceptron as Perc
+from sklearn.linear_model import Ridge as RidgeRegressor
+from sklearn.linear_model import RidgeClassifier, SGDClassifier, SGDRegressor
+from sklearn.naive_bayes import (
+    BernoulliNB, CategoricalNB, ComplementNB, GaussianNB, MultinomialNB,
 )
 from sklearn.neighbors import (
-    KNeighborsClassifier,
-    KNeighborsRegressor,
-    RadiusNeighborsClassifier,
+    KNeighborsClassifier, KNeighborsRegressor, RadiusNeighborsClassifier,
     RadiusNeighborsRegressor,
 )
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.ensemble import (
-    BaggingClassifier,
-    BaggingRegressor,
-    ExtraTreesClassifier,
-    ExtraTreesRegressor,
-    RandomForestClassifier,
-    RandomForestRegressor,
-    AdaBoostClassifier,
-    AdaBoostRegressor,
-    GradientBoostingClassifier,
-    GradientBoostingRegressor,
-    HistGradientBoostingClassifier,
-    HistGradientBoostingRegressor,
-)
-from sklearn.svm import LinearSVC, LinearSVR, SVC, SVR
-from sklearn.linear_model import (
-    PassiveAggressiveClassifier,
-    PassiveAggressiveRegressor,
-    SGDClassifier,
-    SGDRegressor,
-)
 from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.svm import SVC, SVR, LinearSVC, LinearSVR
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from skopt.space.space import Categorical, Integer, Real
 
-# Own modules
 from .basemodel import BaseModel
-from .pipeline import Pipeline
 from .ensembles import (
-    VotingClassifier,
-    VotingRegressor,
-    StackingClassifier,
-    StackingRegressor,
+    StackingClassifier, StackingRegressor, VotingClassifier, VotingRegressor,
 )
-from .utils import create_acronym, CustomDict
+from .pipeline import Pipeline
+from .utils import CustomDict, create_acronym
 
 
 # Variables ======================================================== >>

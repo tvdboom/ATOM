@@ -7,57 +7,41 @@ Description: Module containing the ATOM class.
 
 """
 
-# Standard packages
 import tempfile
-import numpy as np
-import pandas as pd
-from scipy import stats
 from copy import deepcopy
 from inspect import signature
-from joblib.memory import Memory
-from typeguard import typechecked
-from typing import Union, Optional, Any, Dict
+from typing import Any, Dict, Optional, Union
 
-# Own modules
-from .branch import Branch
+import numpy as np
+import pandas as pd
+from joblib.memory import Memory
+from scipy import stats
+from typeguard import typechecked
+
 from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .basetransformer import BaseTransformer
-from .nlp import TextCleaner, Tokenizer, Normalizer, Vectorizer
-from .pipeline import Pipeline
+from .branch import Branch
 from .data_cleaning import (
-    DropTransformer,
-    FuncTransformer,
-    Cleaner,
-    Gauss,
-    Discretizer,
-    Scaler,
-    Imputer,
-    Encoder,
-    Pruner,
-    Balancer,
+    Balancer, Cleaner, Discretizer, DropTransformer, Encoder, FuncTransformer,
+    Gauss, Imputer, Pruner, Scaler,
 )
 from .feature_engineering import (
-    FeatureExtractor,
-    FeatureGenerator,
-    FeatureSelector,
+    FeatureExtractor, FeatureGenerator, FeatureSelector,
 )
-from .training import (
-    DirectClassifier,
-    DirectRegressor,
-    SuccessiveHalvingClassifier,
-    SuccessiveHalvingRegressor,
-    TrainSizingClassifier,
-    TrainSizingRegressor,
-)
-from .models import CustomModel, MODELS_ENSEMBLES
+from .models import MODELS_ENSEMBLES, CustomModel
+from .nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
+from .pipeline import Pipeline
 from .plots import ATOMPlotter
+from .training import (
+    DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
+    SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
+)
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, flt, lst, divide,
-    infer_task, check_dim, check_scaling, is_multidim, is_sparse,
-    get_pl_name, names_from_estimator, check_is_fitted, variable_return,
-    fit_one, delete, custom_transform, method_to_log, composed, crash,
-    Table, CustomDict,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Table, check_dim,
+    check_is_fitted, check_scaling, composed, crash, custom_transform, delete,
+    divide, fit_one, flt, get_pl_name, infer_task, is_multidim, is_sparse, lst,
+    method_to_log, names_from_estimator, variable_return,
 )
 
 
@@ -110,6 +94,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(f"Algorithm task: {self.task}.", 1)
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
+        if self.gpu:
+            self.log("GPU training enabled.", 1)
 
         self.log("", 1)  # Add empty rows around stats for cleaner look
         self.stats(1)
@@ -1235,7 +1221,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
 
     @composed(crash, method_to_log, typechecked)
-    def balance(self, strategy: str = "ADASYN", **kwargs):
+    def balance(self, strategy: str = "adasyn", **kwargs):
         """Balance the number of rows per class in the target column.
 
         Use only for classification tasks. The estimator created by
@@ -1390,7 +1376,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(normalizer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
-    def vectorize(self, strategy: str = "BOW", return_sparse: bool = True, **kwargs):
+    def vectorize(self, strategy: str = "bow", return_sparse: bool = True, **kwargs):
         """Vectorize the corpus.
 
         Transform the corpus into meaningful vectors of numbers. The
@@ -1457,17 +1443,16 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def feature_generation(
         self,
-        strategy: str = "DFS",
+        strategy: str = "dfs",
         n_features: Optional[int] = None,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
         """Apply automated feature engineering.
 
-        Use Deep feature Synthesis or a genetic algorithm to create
-        new combinations of existing features to capture the non-linear
-        relations between the original features. Attributes created by
-        the class are attached to atom.
+        Create new combinations of existing features to capture the
+        non-linear relations between the original features. Attributes
+        created by the class are attached to atom.
 
         See feature_engineering.py for a description of the parameters.
 

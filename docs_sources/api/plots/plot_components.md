@@ -10,7 +10,7 @@ title=None, figsize=None, filename=None, display=True)
 </div>
 
 Plot the explained variance ratio per component. Only available if
-[PCA](../../../user_guide/feature_engineering/#pca) was applied on
+[pca](../../../user_guide/feature_engineering/#pca) was applied on
 the data.
 
 <table style="font-size:16px">
@@ -59,7 +59,7 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy="PCA", n_features=11)
+atom.feature_selection(strategy="pca", n_features=11)
 atom.plot_components()
 ```
 

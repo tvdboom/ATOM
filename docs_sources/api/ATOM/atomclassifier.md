@@ -1655,7 +1655,7 @@ class for a description of the parameters.
 
 <a name="vectorize"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">vectorize</strong>(strategy="BOW",
+<em>method</em> <strong style="color:#008AB8">vectorize</strong>(strategy="bow",
 return_sparse=True, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1392">[source]</a>
@@ -1716,15 +1716,14 @@ description of the parameters.
 
 <a name="feature-generation"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="DFS",
+<em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="dfs",
 n_features=None, operators=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1450">[source]</a>
 </span>
 </div>
-Use Deep feature Synthesis or a genetic algorithm to create new
-combinations of existing features to capture the non-linear relations
-between the original features. See [FeatureGenerator](../feature_engineering/feature_generator.md)
+Create new combinations of existing features to capture the non-linear
+relations between the original features. See [FeatureGenerator](../feature_engineering/feature_generator.md)
 for a description of the parameters. Attributes created by the class
 are attached to atom.
 <br /><br /><br />
@@ -1749,13 +1748,13 @@ created by the class are attached to atom.
     <ul style="line-height:1.2em;margin-top:5px">
     <li>When strategy="univariate" and solver=None, [f_classif](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html)
         is used as default solver.</li>
-    <li>When strategy is one of SFM, RFE, RFECV or SFS and the solver is one of 
+    <li>When strategy is one of sfm, RFE, rfecv or sfs and the solver is one of 
         ATOM's [predefined models](../../../user_guide/models/#predefined-models), the
         algorithm automatically selects the classifier (no need to add `_class`
         to the solver).</li>
-    <li>When strategy is one of SFM, RFE, RFECV or SFS and solver=None, atom
+    <li>When strategy is one of sfm, RFE, rfecv or sfs and solver=None, atom
          uses the winning model (if it exists) as solver.</li>
-    <li>When strategy is RFECV or SFS and no scoring is specified, atom uses the
+    <li>When strategy is rfecv or sfs and no scoring is specified, atom uses the
         metric in the pipeline (if it exists) as scoring parameter.</li>
 
 <br /><br />

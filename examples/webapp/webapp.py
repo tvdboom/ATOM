@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
-from atom import ATOMClassifier
 
+from atom import ATOMClassifier
 
 # Expand the web app across the whole screen
 st.set_page_config(layout="wide")

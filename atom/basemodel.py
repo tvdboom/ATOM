@@ -7,53 +7,48 @@ Description: Module containing the BaseModel class.
 
 """
 
-# Standard packages
 import os
-import dill
-import mlflow
 import tempfile
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
 from copy import deepcopy
 from datetime import datetime
-from pickle import PickleError
-from unittest.mock import patch
-from typeguard import typechecked
-from typing import Optional, Union
-from joblib.memory import Memory
-from joblib import Parallel, delayed
 from inspect import Parameter, signature
-from mlflow.tracking import MlflowClient
+from pickle import PickleError
+from typing import Optional, Union
+from unittest.mock import patch
 
+import dill
+import mlflow
+import numpy as np
+import pandas as pd
+from joblib import Parallel, delayed
+from joblib.memory import Memory
+from mlflow.tracking import MlflowClient
 # Sklearn
 from sklearn.base import clone
-from sklearn.utils import resample
-from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
+from sklearn.model_selection import (
+    KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
+)
 from sklearn.model_selection._validation import _score, cross_validate
-
+from sklearn.utils import resample
+from skopt.optimizer import (
+    base_minimize, forest_minimize, gbrt_minimize, gp_minimize,
+)
+from skopt.space.space import Categorical, check_dimension
 # Others
 from skopt.space.transformers import LabelEncoder
-from skopt.space.space import Categorical, check_dimension
-from skopt.optimizer import (
-    base_minimize,
-    gp_minimize,
-    forest_minimize,
-    gbrt_minimize,
-)
+from tqdm import tqdm
+from typeguard import typechecked
 
-# Own modules
 from .data_cleaning import Scaler
+from .patches import fit, inverse_transform, score, transform
 from .pipeline import Pipeline
 from .plots import BaseModelPlotter
-from .patches import inverse_transform, fit, transform, score
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst, it, arr,
-    merge, time_to_str, get_best_score, get_custom_scorer, get_pl_name,
-    variable_return, custom_transform, composed, crash, method_to_log,
-    Table, ShapExplanation, CustomDict,
+    DF_ATTRS, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, ShapExplanation,
+    Table, arr, composed, crash, custom_transform, flt, get_best_score,
+    get_custom_scorer, get_pl_name, it, lst, merge, method_to_log, time_to_str,
+    variable_return,
 )
 
 
@@ -1298,7 +1293,7 @@ class BaseModel(BaseModelPlotter):
 
         """
         from explainerdashboard import (
-            ClassifierExplainer, RegressionExplainer, ExplainerDashboard
+            ClassifierExplainer, ExplainerDashboard, RegressionExplainer,
         )
 
         self.T.log("Creating dashboard...", 1)

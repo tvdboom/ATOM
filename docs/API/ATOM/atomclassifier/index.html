@@ -4516,7 +4516,7 @@ class for a description of the parameters.
 <br /><br /><br /></p>
 <p><a name="vectorize"></a></p>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">vectorize</strong>(strategy="BOW",
+<em>method</em> <strong style="color:#008AB8">vectorize</strong>(strategy="bow",
 return_sparse=True, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1392">[source]</a>
@@ -4599,13 +4599,13 @@ created by the class are attached to atom.</p>
 <p><ul style="line-height:1.2em;margin-top:5px">
 <li>When strategy="univariate" and solver=None, <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html">f_classif</a>
     is used as default solver.</li>
-<li>When strategy is one of SFM, RFE, RFECV or SFS and the solver is one of 
+<li>When strategy is one of sfm, RFE, rfecv or sfs and the solver is one of
     ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>, the
     algorithm automatically selects the classifier (no need to add <code>_class</code>
     to the solver).</li>
-<li>When strategy is one of SFM, RFE, RFECV or SFS and solver=None, atom
+<li>When strategy is one of sfm, RFE, rfecv or sfs and solver=None, atom
      uses the winning model (if it exists) as solver.</li>
-<li>When strategy is RFECV or SFS and no scoring is specified, atom uses the
+<li>When strategy is rfecv or sfs and no scoring is specified, atom uses the
     metric in the pipeline (if it exists) as scoring parameter.</li></p>
 </div>
 <p><br /><br /></p>

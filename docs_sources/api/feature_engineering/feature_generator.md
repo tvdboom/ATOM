@@ -2,7 +2,7 @@
 ------------------
 
 <div style="font-size:20px">
-<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="DFS",
+<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="dfs",
 n_features=None, operators=None, n_jobs=1, verbose=0, logger=None,
 random_state=None, **kwargs)
 <span style="float:right">
@@ -10,21 +10,20 @@ random_state=None, **kwargs)
 </span>
 </div>
 
-Use Deep feature Synthesis or a genetic algorithm to create new combinations
-of existing features to capture the non-linear relations between the original
-features. This class can be accessed from atom through the
-[feature_generation](../../ATOM/atomclassifier/#feature-generation)
+Create new combinations of existing features to capture the non-linear
+relations between the original features. This class can be accessed from
+atom through the [feature_generation](../../ATOM/atomclassifier/#feature-generation)
 method. Read more in the [user guide](../../../user_guide/feature_engineering/#generating-new-features).
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str, optional (default="DFS")</strong><br>
+<strong>strategy: str, optional (default="dfs")</strong><br>
 Strategy to crate new features. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"DFS" to use Deep Feature Synthesis.</li>
-<li>"GFG" or "genetic" to use Genetic Feature Generation.</li>
+<li>"dfs": Deep Feature Synthesis.</li>
+<li>"<a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">gfg</a>": Genetic Feature Generation.</li>
 </ul>
 <p>
 <strong>n_features: int or None, optional (default=None)</strong><br>
@@ -97,7 +96,7 @@ instance. Only for the genetic strategy.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>symbolic_transformer: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
+<strong>gfg: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
 Object used to calculate the genetic features. Only for the genetic strategy.
 </p>
 <strong>genetic_features: pd.DataFrame</strong><br>
@@ -364,14 +363,14 @@ Feature set with the newly generated features.
     from atom import ATOMClassifier
     
     atom = ATOMClassifier(X, y)
-    atom.feature_generation(strategy="genetic", n_features=3, generations=30)
+    atom.feature_generation(strategy="dfs", n_features=3, operators=["add", "mul"])
     ```
 
 === "stand-alone"
     ```python
     from atom.feature_engineering import FeatureGenerator
     
-    fg = FeatureGenerator(strategy="genetic", n_features=3, generations=30)
-    fg.fit(X_train, y_train)
-    X = fg.transform(X)
+    generator = FeatureGenerator(strategy="dfs", n_features=3, operators=["add", "mul"])
+    generator.fit(X_train, y_train)
+    X = generator.transform(X)
     ```

@@ -7,23 +7,23 @@ Description: Unit tests for basetransformer.py
 
 """
 
-# Standard packages
 import glob
-import pytest
-import numpy as np
-import pandas as pd
 import multiprocessing
 from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.training import DirectClassifier
 from atom.basetransformer import BaseTransformer
+from atom.training import DirectClassifier
 from atom.utils import merge
+
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_idx, y_idx, X_bin_array, y_bin_array,
-    mnist, X_sparse, X_text, X10, y10, bin_train, bin_test,
+    FILE_DIR, X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test,
+    bin_train, mnist, y10, y_bin, y_bin_array, y_idx,
 )
 
 

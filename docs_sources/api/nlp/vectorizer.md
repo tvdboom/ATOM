@@ -2,7 +2,7 @@
 ------------
 
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="BOW",
+<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="bow",
 return_sparse=True, verbose=0, logger=None, *kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L580">[source]</a>
@@ -22,12 +22,12 @@ the [user guide](../../../user_guide/nlp/#vectorization).
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str, optional (default="BOW")</strong><br>
+<strong>strategy: str, optional (default="bow")</strong><br>
 Strategy with which to vectorize the text. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"BOW": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">Bag of Words</a> algorithm.</li>
-<li>"TF-IDF": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">TF-IDF</a> algorithm.</li>
-<li>"Hashing": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a> algorithm.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">bow</a>": Bag of Words.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">tf-idf</a>": Term Frequency - Inverse Document Frequency.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a>": Vectorize to a matrix of token occurrences.</li>
 </ul>
 <p>
 <strong>return_sparse: bool, optional (default=True)</strong><br>
@@ -61,6 +61,22 @@ Additional keyword arguments for the <code>strategy</code> estimator.
     occupy large chunks of memory when the corpus contains many tokens.
 
 
+<br>
+
+
+
+## Attributes
+
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
+<strong>&lt;strategy>: sklearn estimator</strong><br>
+Object used to prune the data, e.g.<code>vectorizer.bow</code> for the
+Bag of Words strategy.
+</td>
+</tr>
+</table>
 <br>
 
 
@@ -313,13 +329,13 @@ Transformed corpus.
     from atom import ATOMClassifier
     
     atom = ATOMClassifier(X, y)
-    atom.vectorize(strategy="TF-IDF")
+    atom.vectorize(strategy="tf-idf")
     ```
 
 === "stand-alone"
     ```python
     from atom.nlp import Vectorizer
     
-    vectorizer = Vectorizer("TF-IDF")
+    vectorizer = Vectorizer("tf-idf")
     X = vectorizer.transform(X)
     ```

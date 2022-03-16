@@ -7,19 +7,18 @@ Description: Unit tests for basetrainer.py
 
 """
 
-# Standard packages
 import pytest
-from skopt.callbacks import TimerCallback
 from mlflow.tracking.fluent import ActiveRun
-from sklearn.metrics import make_scorer, f1_score
 from sklearn.ensemble import RandomForestClassifier
-from skopt.space.space import Integer, Categorical
+from sklearn.metrics import f1_score, make_scorer
+from skopt.callbacks import TimerCallback
+from skopt.space.space import Categorical, Integer
 
-# Own modules
 from atom.training import DirectClassifier, DirectRegressor
 from atom.utils import CUSTOM_SCORERS, PlotCallback
+
 from .utils import (
-    bin_train, bin_test, class_train, class_test, reg_train, reg_test, mnist
+    bin_test, bin_train, class_test, class_train, mnist, reg_test, reg_train,
 )
 
 

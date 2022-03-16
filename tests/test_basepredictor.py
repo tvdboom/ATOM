@@ -7,20 +7,19 @@ Description: Unit tests for basepredictor.py
 
 """
 
-# Standard packages
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
+
 from .utils import (
-    X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_idx, y_idx,
-    bin_train, bin_test, X10, y10, X10_str,
+    X10, X10_str, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, y10,
+    y_bin, y_class, y_idx, y_reg,
 )
 
 

@@ -7,17 +7,15 @@ Description: Unit tests for utils.py
 
 """
 
-# Standard packages
 import sys
-
-import pytest
-import pandas as pd
 from datetime import datetime, timedelta
+
+import pandas as pd
+import pytest
 from sklearn.base import BaseEstimator
 
-# Own modules
 from atom.utils import (
-    time_to_str, check_is_fitted, create_acronym, NotFittedError, CustomDict,
+    CustomDict, NotFittedError, check_is_fitted, create_acronym, time_to_str,
 )
 
 

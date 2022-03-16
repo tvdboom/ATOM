@@ -7,20 +7,20 @@ Description: Unit tests for plots.py
 
 """
 
-# Standard packages
 import glob
-import pytest
 from unittest.mock import patch
-from sklearn.metrics import f1_score, get_scorer
-from sklearn.linear_model import LogisticRegression
 
-# Own modules
+import pytest
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import f1_score, get_scorer
+
 from atom import ATOMClassifier, ATOMRegressor
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
+
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_sparse, X_text, X10, X10_str, y10, y10_str,
+    FILE_DIR, X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10,
+    y10_str, y_bin, y_class, y_reg,
 )
 
 
@@ -226,7 +226,7 @@ def test_plot_pca(X):
     """Assert that the plot_pca method work as intended."""
     atom = ATOMClassifier(X, y10, random_state=1)
     pytest.raises(PermissionError, atom.plot_pca)
-    atom.feature_selection(strategy="PCA", n_features=2)
+    atom.feature_selection(strategy="pca", n_features=2)
     atom.plot_pca(display=False)
 
 
@@ -235,7 +235,7 @@ def test_plot_components(show):
     """Assert that the plot_components method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(PermissionError, atom.plot_components)
-    atom.feature_selection(strategy="PCA", n_features=10)
+    atom.feature_selection(strategy="pca", n_features=10)
     pytest.raises(ValueError, atom.plot_components, show=0)
     atom.plot_components(show=show, display=False)
 
@@ -247,7 +247,7 @@ def test_plot_rfecv(scoring):
     pytest.raises(PermissionError, atom.plot_rfecv)
     atom.run("lr", metric="precision")
     atom.branch = "fs_branch"
-    atom.feature_selection(strategy="RFECV", n_features=10, scoring=scoring)
+    atom.feature_selection(strategy="rfecv", n_features=10, scoring=scoring)
     atom.plot_rfecv(display=False)
 
 

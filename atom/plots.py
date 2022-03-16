@@ -7,55 +7,48 @@ Description: Module containing the plotting classes.
 
 """
 
-# Standard packages
+from collections import defaultdict
+from contextlib import contextmanager
+from inspect import signature
+from itertools import chain, cycle
+from typing import Optional, Tuple, Union
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy import stats
-from itertools import cycle
-from itertools import chain
-from inspect import signature
-from collections import defaultdict
-from typeguard import typechecked
-from joblib import Parallel, delayed
-from contextlib import contextmanager
-from mlflow.tracking import MlflowClient
-from scipy.stats.mstats import mquantiles
-from typing import Optional, Union, Tuple
-from nltk.collocations import (
-    BigramCollocationFinder,
-    TrigramCollocationFinder,
-    QuadgramCollocationFinder,
-)
-
+import seaborn as sns
 # Plotting packages
 import shap
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.transforms import blended_transform_factory
-from matplotlib.ticker import MaxNLocator
-from matplotlib.patches import ConnectionStyle
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from joblib import Parallel, delayed
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
-from wordcloud import WordCloud
-
+from matplotlib.patches import ConnectionStyle
+from matplotlib.ticker import MaxNLocator
+from matplotlib.transforms import blended_transform_factory
+from mlflow.tracking import MlflowClient
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from nltk.collocations import (
+    BigramCollocationFinder, QuadgramCollocationFinder,
+    TrigramCollocationFinder,
+)
+from scipy import stats
+from scipy.stats.mstats import mquantiles
+from sklearn.calibration import calibration_curve
+from sklearn.inspection import permutation_importance
+from sklearn.metrics import (
+    confusion_matrix, det_curve, precision_recall_curve, roc_curve,
+)
 # Sklearn
 from sklearn.utils import _safe_indexing
-from sklearn.inspection import permutation_importance
-from sklearn.calibration import calibration_curve
-from sklearn.metrics import (
-    roc_curve,
-    precision_recall_curve,
-    det_curve,
-    confusion_matrix,
-)
+from typeguard import typechecked
+from wordcloud import WordCloud
 
-# Own modules
 from atom.basetransformer import BaseTransformer
+
 from .utils import (
-    SEQUENCE_TYPES, SCALAR, lst, check_is_fitted, check_dim, check_goal,
-    check_binary_task, check_predict_proba, get_proba_attr, get_corpus,
-    get_custom_scorer, get_best_score, partial_dependence, get_feature_importance,
-    composed, crash, plot_from_model,
+    SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
+    check_is_fitted, check_predict_proba, composed, crash, get_best_score,
+    get_corpus, get_custom_scorer, get_feature_importance, get_proba_attr, lst,
+    partial_dependence, plot_from_model,
 )
 
 
@@ -503,7 +496,7 @@ class FSPlotter(BasePlotter):
     ):
         """Plot the explained variance ratio vs number of components.
 
-        If the underlying estimator is PCA (for dense datasets), all
+        If the underlying estimator is pca (for dense datasets), all
         possible components are plotted. If the underlying estimator
         is TruncatedSVD (for sparse datasets), it only shows the
         selected components. The blue star marks the number of
@@ -533,7 +526,7 @@ class FSPlotter(BasePlotter):
         """
         if not hasattr(self, "pca"):
             raise PermissionError(
-                "The plot_pca method is only available if PCA was applied on the data!"
+                "The plot_pca method is only available if pca was applied on the data!"
             )
 
         var = np.array(self.pca.explained_variance_ratio_[:self.pca._n_components])
@@ -608,7 +601,7 @@ class FSPlotter(BasePlotter):
         if not hasattr(self, "pca"):
             raise PermissionError(
                 "The plot_components method is only available "
-                "if PCA was applied on the data!"
+                "if pca was applied on the data!"
             )
 
         # Set parameters
@@ -653,7 +646,7 @@ class FSPlotter(BasePlotter):
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the RFECV results.
+        """Plot the rfecv results.
 
         Plot the scores obtained by the estimator fitted on every
         subset of the dataset.
@@ -683,7 +676,7 @@ class FSPlotter(BasePlotter):
         if not hasattr(self.branch, "rfecv") or not self.rfecv:
             raise PermissionError(
                 "The plot_rfecv method is only available "
-                "if RFECV was applied on the data!"
+                "if rfecv was applied on the data!"
             )
 
         try:  # Define the y-label for the plot

@@ -7,6 +7,7 @@ Description: Import API and declare version.
 
 """
 
-from .api import ATOMClassifier, ATOMRegressor, ATOMLoader, ATOMModel
+from .api import ATOMClassifier, ATOMLoader, ATOMModel, ATOMRegressor
+
 
 __version__ = "4.13.0"

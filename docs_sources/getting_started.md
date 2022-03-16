@@ -66,7 +66,7 @@ Use the data cleaning methods to prepare the data for modelling.
 ```python
 atom.impute(strat_num="median", strat_cat="most_frequent")  
 atom.encode(strategy="LeaveOneOut", max_onehot=8)  
-atom.feature_selection(strategy="PCA", n_features=12)
+atom.feature_selection(strategy="pca", n_features=12)
 ```
 
 Train and evaluate the models you want to compare.

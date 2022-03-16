@@ -7,21 +7,18 @@ Description: Unit tests for feature_engineering.py
 
 """
 
-# Standard packages
 import pandas as pd
 import pytest
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import f_regression
 
-# Own modules
 from atom.feature_engineering import (
-    FeatureExtractor,
-    FeatureGenerator,
-    FeatureSelector,
+    FeatureExtractor, FeatureGenerator, FeatureSelector,
 )
 from atom.utils import to_df
+
 from .utils import (
-    X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_sparse, X10_str, X10_dt
+    X10_dt, X10_str, X_bin, X_class, X_reg, X_sparse, y_bin, y_class, y_reg,
 )
 
 
@@ -218,16 +215,16 @@ def test_raise_unknown_solver_univariate():
         selector.fit(X_reg, y_reg)
 
 
-def test_solver_auto_PCA():
+def test_solver_auto_pca():
     """Assert that the solver is set to "auto" when None."""
-    selector = FeatureSelector(strategy="PCA", solver=None)
+    selector = FeatureSelector(strategy="pca", solver=None)
     selector.fit(X_bin, y_bin)
     assert selector._solver == "auto"
 
 
-def test_solver_parameter_empty_SFM():
-    """Assert that an error is raised when solver is None for SFM strategy."""
-    selector = FeatureSelector(strategy="SFM", solver=None)
+def test_solver_parameter_empty_sfm():
+    """Assert that an error is raised when solver is None for sfm strategy."""
+    selector = FeatureSelector(strategy="sfm", solver=None)
     with pytest.raises(ValueError, match=r".*can't be None.*"):
         selector.fit(X_reg, y_reg)
 
@@ -235,12 +232,12 @@ def test_solver_parameter_empty_SFM():
 def test_goal_attribute():
     """Assert that the goal is deduced from the model's name."""
     # For classification tasks
-    selector = FeatureSelector(strategy="SFM", solver="LGB_class")
+    selector = FeatureSelector(strategy="sfm", solver="LGB_class")
     selector.fit(X_bin, y_bin)
     assert selector.goal == "class"
 
     # For regression tasks
-    selector = FeatureSelector(strategy="SFM", solver="LGB_reg")
+    selector = FeatureSelector(strategy="sfm", solver="LGB_reg")
     selector.fit(X_reg, y_reg)
     assert selector.goal == "reg"
 
@@ -261,7 +258,7 @@ def test_kwargs_but_no_strategy():
 
 def test_n_features_parameter():
     """Assert that an error is raised when n_features is invalid."""
-    selector = FeatureSelector(strategy="SFM", solver="XGB_reg", n_features=0)
+    selector = FeatureSelector(strategy="sfm", solver="XGB_reg", n_features=0)
     with pytest.raises(ValueError, match=r".*the n_features parameter.*"):
         selector.fit(X_reg, y_reg)
 
@@ -317,32 +314,32 @@ def test_univariate_strategy_custom_solver():
     assert set(selector.feature_importance) == set(X.columns)
 
 
-def test_PCA_strategy():
-    """Assert that the PCA strategy works as intended."""
-    selector = FeatureSelector(strategy="PCA", n_features=0.7)
+def test_pca_strategy():
+    """Assert that the pca strategy works as intended."""
+    selector = FeatureSelector(strategy="pca", n_features=0.7)
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 21
 
 
-def test_PCA_components():
-    """Assert that the PCA strategy creates components instead of features."""
-    selector = FeatureSelector(strategy="PCA", solver="arpack", n_features=5)
+def test_pca_components():
+    """Assert that the pca strategy creates components instead of features."""
+    selector = FeatureSelector(strategy="pca", solver="arpack", n_features=5)
     X = selector.fit_transform(X_bin)
     assert selector.pca.svd_solver == "arpack"
     assert "component 1" in X.columns
 
 
-def test_PCA_sparse_data():
-    """Assert that the PCA strategy uses TruncatedSVD for sparse data."""
-    selector = FeatureSelector(strategy="PCA", n_features=2)
+def test_pca_sparse_data():
+    """Assert that the pca strategy uses TruncatedSVD for sparse data."""
+    selector = FeatureSelector(strategy="pca", n_features=2)
     selector.fit(X_sparse)
     assert selector.pca.__class__.__name__ == "TruncatedSVD"
 
 
-def test_SFM_prefit_invalid_estimator():
-    """Assert that an error is raised for an invalid estimator in SFM."""
+def test_sfm_prefit_invalid_estimator():
+    """Assert that an error is raised for an invalid estimator in sfm."""
     selector = FeatureSelector(
-        strategy="SFM",
+        strategy="sfm",
         solver=ExtraTreesClassifier(random_state=1).fit(X_class, y_class),
         n_features=8,
         random_state=1,
@@ -351,10 +348,10 @@ def test_SFM_prefit_invalid_estimator():
         selector.fit(X_bin, y_bin)
 
 
-def test_SFM_strategy_not_threshold():
-    """Assert that if threshold is not specified, SFM selects n_features features."""
+def test_sfm_strategy_not_threshold():
+    """Assert that if threshold is not specified, sfm selects n_features features."""
     selector = FeatureSelector(
-        strategy="SFM",
+        strategy="sfm",
         solver=ExtraTreesClassifier(random_state=1),
         n_features=16,
         random_state=1,
@@ -363,17 +360,17 @@ def test_SFM_strategy_not_threshold():
     assert X.shape[1] == 16
 
 
-def test_SFM_invalid_solver():
+def test_sfm_invalid_solver():
     """Assert that an error is raised when solver is invalid."""
-    selector = FeatureSelector(strategy="SFM", solver="invalid", n_features=5)
+    selector = FeatureSelector(strategy="sfm", solver="invalid", n_features=5)
     with pytest.raises(ValueError, match=r".*Unknown model.*"):
         selector.fit_transform(X_bin, y_bin)
 
 
-def test_SFM_strategy_fitted_solver():
-    """Assert that the SFM strategy works when the solver is already fitted."""
+def test_sfm_strategy_fitted_solver():
+    """Assert that the sfm strategy works when the solver is already fitted."""
     selector = FeatureSelector(
-        strategy="SFM",
+        strategy="sfm",
         solver=ExtraTreesClassifier(random_state=1).fit(X_bin, y_bin),
         n_features=7,
         random_state=1,
@@ -383,10 +380,10 @@ def test_SFM_strategy_fitted_solver():
     assert set(selector.feature_importance) == set(X.columns)
 
 
-def test_SFM_strategy_not_fitted_solver():
-    """Assert that the SFM strategy works when the solver is not fitted."""
+def test_sfm_strategy_not_fitted_solver():
+    """Assert that the sfm strategy works when the solver is not fitted."""
     selector = FeatureSelector(
-        strategy="SFM", solver=ExtraTreesClassifier(random_state=1), n_features=5
+        strategy="sfm", solver=ExtraTreesClassifier(random_state=1), n_features=5
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 5
@@ -406,10 +403,10 @@ def test_RFE_strategy():
     assert set(selector.feature_importance) == set(X.columns)
 
 
-def test_RFECV_strategy_before_pipeline_classification():
-    """Assert that the RFECV strategy works before a fitted pipeline."""
+def test_rfecv_strategy_before_pipeline_classification():
+    """Assert that the rfecv strategy works before a fitted pipeline."""
     selector = FeatureSelector(
-        strategy="RFECV",
+        strategy="rfecv",
         solver="Tree_class",
         n_features=None,
         random_state=1,
@@ -419,17 +416,17 @@ def test_RFECV_strategy_before_pipeline_classification():
     assert set(selector.feature_importance) == set(X.columns)
 
 
-def test_RFECV_strategy_before_pipeline_regression():
-    """Assert that the RFECV strategy works before a fitted pipeline."""
-    selector = FeatureSelector("RFECV", solver="RF_reg", n_features=16, random_state=1)
+def test_rfecv_strategy_before_pipeline_regression():
+    """Assert that the rfecv strategy works before a fitted pipeline."""
+    selector = FeatureSelector("rfecv", solver="RF_reg", n_features=16, random_state=1)
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
     assert set(selector.feature_importance) == set(X.columns)
 
 
-def test_SFS_strategy():
-    """Assert that the SFS strategy works."""
-    selector = FeatureSelector("SFS", solver="RF_reg", n_features=6, cv=3, random_state=1)
+def test_sfs_strategy():
+    """Assert that the sfs strategy works."""
+    selector = FeatureSelector("sfs", solver="RF_reg", n_features=6, cv=3, random_state=1)
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 6
 
@@ -437,7 +434,7 @@ def test_SFS_strategy():
 def test_kwargs_parameter_threshold():
     """Assert that the kwargs parameter works as intended (add threshold)."""
     selector = FeatureSelector(
-        strategy="SFM",
+        strategy="sfm",
         solver=ExtraTreesClassifier(random_state=1),
         n_features=21,
         threshold="mean",
@@ -450,7 +447,7 @@ def test_kwargs_parameter_threshold():
 def test_kwargs_parameter_tol():
     """Assert that the kwargs parameter works as intended (add tol)."""
     selector = FeatureSelector(
-        strategy="PCA",
+        strategy="pca",
         solver="arpack",
         tol=0.001,
         n_features=12,
@@ -462,7 +459,7 @@ def test_kwargs_parameter_tol():
     assert X.shape[1] == 12
 
 
-@pytest.mark.parametrize("strategy", ["SFS", "RFECV"])
+@pytest.mark.parametrize("strategy", ["sfs", "rfecv"])
 def test_kwargs_parameter_scoring(strategy):
     """Assert that the kwargs parameter works as intended (add scoring acronym)."""
     selector = FeatureSelector(

@@ -87,7 +87,7 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy="PCA", n_features=6)
+atom.feature_selection(strategy="pca", n_features=6)
 atom.run(["Tree", "Bag"], metric="precision")
 atom.plot_partial_dependence()
 ```

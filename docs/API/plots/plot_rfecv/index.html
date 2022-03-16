@@ -2819,9 +2819,9 @@ figsize=(10, 6), filename=None, display=True)
 </span>
 </div>
 
-<p>Plot the RFECV results, i.e. the scores obtained by the estimator
+<p>Plot the rfecv results, i.e. the scores obtained by the estimator
 fitted on every subset of the dataset. Only available if
-<a href="../../../user_guide/feature_engineering/#rfe">RFECV</a> was applied
+<a href="../../../user_guide/feature_engineering/#rfe">rfecv</a> was applied
 on the data.</p>
 <table style="font-size:16px">
 <tr>
@@ -2859,7 +2859,7 @@ Plot object. Only returned if <code>display=None</code>.
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;RFECV&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;LGB&quot;</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="s2">&quot;precision&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;rfecv&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;LGB&quot;</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="s2">&quot;precision&quot;</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">plot_rfecv</span><span class="p">()</span>
 </code></pre></div>
 <div align="center">

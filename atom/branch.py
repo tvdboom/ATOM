@@ -7,19 +7,18 @@ Description: Module containing the Branch class.
 
 """
 
-# Standard packages
-import pandas as pd
-from inspect import signature
 from copy import copy
-from typeguard import typechecked
+from inspect import signature
 from typing import Optional
 
-# Own modules
+import pandas as pd
+from typeguard import typechecked
+
 from .basetransformer import BaseTransformer
 from .models import MODELS_ENSEMBLES
 from .utils import (
-    X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series, is_multidim,
-    custom_transform, composed, crash, method_to_log, CustomDict,
+    SEQUENCE_TYPES, X_TYPES, CustomDict, composed, crash, custom_transform,
+    flt, is_multidim, merge, method_to_log, to_df, to_series,
 )
 
 

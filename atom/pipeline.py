@@ -7,17 +7,15 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 """
 
-# Standard packages
 from sklearn import pipeline
 from sklearn.base import clone
 from sklearn.utils import _print_elapsed_time
-from sklearn.utils.validation import check_memory
 from sklearn.utils.metaestimators import available_if
+from sklearn.utils.validation import check_memory
 
-# Own modules
 from .utils import (
-    variable_return, fit_one, transform_one, fit_transform_one,
-    check_is_fitted,
+    check_is_fitted, fit_one, fit_transform_one, transform_one,
+    variable_return,
 )
 
 

@@ -7,33 +7,25 @@ Description: Unit tests for data_cleaning.py
 
 """
 
-# Standard packages
-import pytest
 import numpy as np
 import pandas as pd
-from imblearn.combine import SMOTETomek
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
+import pytest
 from category_encoders.leave_one_out import LeaveOneOutEncoder
+from imblearn.combine import SMOTETomek
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
 
-# Own modules
 from atom.data_cleaning import (
-    Scaler,
-    Gauss,
-    Cleaner,
-    Imputer,
-    Discretizer,
-    Encoder,
-    Pruner,
-    Balancer,
+    Balancer, Cleaner, Discretizer, Encoder, Gauss, Imputer, Pruner, Scaler,
 )
 from atom.utils import (
-    SCALING_STRATS, ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS,
+    BALANCING_STRATS, ENCODING_STRATS, PRUNING_STRATS, SCALING_STRATS,
     NotFittedError, check_scaling,
 )
+
 from .utils import (
-    X_bin, y_bin, X_class, y_class, X_idx, y_idx, X10, X10_nan,
-    X10_str, X10_str2, X10_sn, y10, y10_str,
+    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
+    y10_str, y_bin, y_class, y_idx,
 )
 
 

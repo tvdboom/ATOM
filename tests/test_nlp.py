@@ -7,13 +7,12 @@ Description: Unit tests for nlp.py
 
 """
 
-# Standard packages
-import pytest
 import pandas as pd
+import pytest
 
-# Own modules
 from atom import ATOMClassifier
-from atom.nlp import TextCleaner, Tokenizer, Normalizer, Vectorizer
+from atom.nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
+
 from .utils import X_bin, X_text, y10
 
 

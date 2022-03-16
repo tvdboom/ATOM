@@ -7,17 +7,16 @@ Description: Unit tests for api.py
 
 """
 
-# Standard packages
 import pytest
 from pandas.testing import assert_frame_equal
 from sklearn.linear_model import HuberRegressor
 
-# Own modules
-from atom import ATOMClassifier, ATOMRegressor, ATOMLoader, ATOMModel
-from atom.training import DirectClassifier
+from atom import ATOMClassifier, ATOMLoader, ATOMModel, ATOMRegressor
 from atom.data_cleaning import Imputer
+from atom.training import DirectClassifier
 from atom.utils import merge
-from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg
+
+from .utils import FILE_DIR, X_bin, X_reg, y_bin, y_reg
 
 
 # Test ATOMModel =================================================== >>

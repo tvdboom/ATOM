@@ -23,24 +23,24 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 <strong>strategy: str or None, optional (default=None)</strong><br>
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>None: Do not perform any feature selection algorithm.</li>
+<li>None: Do not perform any feature selection strategy.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">univariate</a>": Univariate F-test.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a>": Principal Component Analysis.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">SFM</a>": Select best features according to a model.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html">SFS</a>": Sequential Feature Selection.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">RFE</a>": Recursive Feature Elimination.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">RFECV</a>": RFE with cross-validated selection.</li>
-<li>"<a href="https://jaswinder9051998.github.io/zoofs/Particle%20Swarm%20Optimization%20Class/">PSO</a>": Particle Swarm Optimization.</li>
-<li>"<a href="https://jaswinder9051998.github.io/zoofs/Harris%20Hawk%20Optimization/">HHO</a>": Harris Hawks Optimization.</li>
-<li>"<a href="https://jaswinder9051998.github.io/zoofs/Grey%20Wolf%20Optimization%20Class/">GWO</a>": Grey Wolf Optimization.</li>
-<li>"<a href="https://jaswinder9051998.github.io/zoofs/Dragon%20Fly%20Optimization%20Class/">DFO</a>": Dragonfly Optimization.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">pca</a>": Principal Component Analysis.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">sfm</a>": Select best features according to a model.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html">sfs</a>": Sequential Feature Selection.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">rfe</a>": Recursive Feature Elimination.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">rfecv</a>": RFE with cross-validated selection.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Particle%20Swarm%20Optimization%20Class/">pso</a>": Particle Swarm Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Harris%20Hawk%20Optimization/">hho</a>": Harris Hawks Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Grey%20Wolf%20Optimization%20Class/">gwo</a>": Grey Wolf Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Dragon%20Fly%20Optimization%20Class/">dfo</a>": Dragonfly Optimization.</li>
 <li>"<a href="https://jaswinder9051998.github.io/zoofs/Genetic%20Optimization%20Class/">genetic</a>": Genetic Optimization.</li>
 </ul>
 <strong>solver: str, estimator or None, optional (default=None)</strong><br>
 Solver/model to use for the feature selection strategy. See the
 corresponding documentation for an extended description of the
 choices. Select None for the default option per strategy (only for
-univariate or PCA).
+univariate or pca).
 <ul style="line-height:1.2em;margin-top:5px">
 <li>for "univariate", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
@@ -53,7 +53,7 @@ univariate or PCA).
         arrays (scores, p-values). See the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</li>
     </ul>
 </li>
-<li>for "PCA", choose from:
+<li>for "pca", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
     <li>"auto" (not available for sparse data, default for dense data)</li>
     <li>"full" (not available for sparse data)</li>
@@ -62,7 +62,7 @@ univariate or PCA).
     </ul>
 </li>
 <li>for the remaining strategies:<br>
-<p>The base estimator. For SFM, RFE and RFECV, it should
+<p>The base estimator. For sfm, rfe and rfecv, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
 attribute after fitting. You can use one of ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
 Add <code>_class</code> or <code>_reg</code> after the model's name to
@@ -77,9 +77,9 @@ Number of features to select. Choose from:
 <li>if >= 1: Number of features to select.</li>
 </ul>
 <p style="margin-top:5px">
-If strategy="SFM" and the threshold parameter is not specified, the
+If strategy="sfm" and the threshold parameter is not specified, the
 threshold is set to <code>-np.inf</code> to select the <code>n_features</code>
-features. If strategy="RFECV", it's the minimum number of features to select.
+features. If strategy="rfecv", it's the minimum number of features to select.
 </p>
 <strong>max_frac_repeated: float or None, optional (default=1.)</strong><br>
 Remove features with the same value in at least this fraction of
@@ -118,15 +118,15 @@ Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
 <strong>**kwargs</strong><br>
-Any extra keyword argument for the PCA, SFM, RFE, RFECV  and SFS estimators.
-See the corresponding sklearn documentation for the available options.
+Any extra keyword argument for the strategy estimator. See the
+corresponding documentation for the available options.
 </p>
 </td>
 </tr>
 </table>
 
 !!! info
-    If strategy="PCA" and the provided data is dense, it's scaled to mean=0
+    If strategy="pca" and the provided data is dense, it's scaled to mean=0
     and std=1 before fitting the transformer (if it wasn't already).
 
 !!! tip
@@ -134,10 +134,6 @@ See the corresponding sklearn documentation for the available options.
     examine how much a specific feature contributes to the final predictions. If the
     model doesn't have a `feature_importances_` attribute, use 
     [plot_permutation_importance](../plots/plot_permutation_importance.md) instead.
-
-!!! warning
-    The SFS, RFE and RFECV strategies don't work when the solver is a 
-    [CatBoost](../models/catb) model due to incompatibility of the APIs.
 
 <br>
 
@@ -160,14 +156,14 @@ Information on the removed collinear features. Columns include:
 </ul>
 <p>
 <strong>feature_importance: list</strong><br>
-Remaining features ordered by importance. Only if strategy in ("univariate", "SFM,
-"RFE", "RFECV"). For RFE and RFECV, the importance is extracted from the external
-estimator fitted on the reduced set. 
+Remaining features ordered by importance. Only if strategy in ("univariate", "sfm",
+"rfe", "rfecv"). For rfe and rfecv, the importance is extracted from the external
+estimator fitted on the reduced set.
 </p>
 <p>
 <strong>&lt;strategy&gt;: sklearn transformer</strong><br>
-Object (lowercase strategy) used to transform the data,
-e.g. <code>feature_selector.pca</code> for the PCA strategy.
+Object used to transform the data, e.g. <code>feature_selector.pca</code>
+for the pca strategy.
 </p>
 </td>
 </tr>
@@ -243,7 +239,7 @@ Fontsize for the ticks along the plot's axes.
 
 <tr>
 <td><a href="#plot-rfecv">plot_rfecv</a></td>
-<td>Plot the scores obtained by the estimator on the RFECV.</td>
+<td>Plot the scores obtained by the estimator on the rfecv.</td>
 </tr>
 
 <tr>
@@ -276,8 +272,8 @@ Fontsize for the ticks along the plot's axes.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L671">[source]</a>
 </span>
 </div>
-Fit to data. Note that the univariate, SFM (when model is not fitted),
-SFS, RFE and RFECV strategies all need a target column. Leaving it
+Fit to data. Note that the univariate, sfm (when model is not fitted),
+sfs, RFE and rfecv strategies all need a target column. Leaving it
 None will raise an exception.
 <table style="font-size:16px">
 <tr>
@@ -312,8 +308,8 @@ Fitted instance of self.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
 </span>
 </div>
-Fit to data, then transform it. Note that the univariate, SFM (when
-model is not fitted), SFS, RFE and RFECV strategies need a target column.
+Fit to data, then transform it. Note that the univariate, sfm (when
+model is not fitted), sfs, RFE and rfecv strategies need a target column.
 Leaving it None will raise an exception.
 <table style="font-size:16px">
 <tr>

@@ -7,23 +7,23 @@ Description: Unit tests for basemodel.py
 
 """
 
-# Standard packages
 import glob
-import pytest
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
-from unittest.mock import patch
-from skopt.space.space import Integer
-from skopt.learning import GaussianProcessRegressor
+import pytest
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, r2_score, recall_score
+from skopt.learning import GaussianProcessRegressor
+from skopt.space.space import Integer
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_scaling
+
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_idx, y_idx, X10_str, y10,
+    FILE_DIR, X10_str, X_bin, X_class, X_idx, X_reg, y10, y_bin, y_class,
+    y_idx, y_reg,
 )
 
 

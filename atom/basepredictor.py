@@ -7,20 +7,18 @@ Description: Module containing the BasePredictor class.
 
 """
 
-# Standard packages
+from typing import Any, Optional, Union
+
 import mlflow
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
-from typing import Union, Optional, Any
 
-# Own modules
 from .branch import Branch
 from .models import MODELS, Stacking, Voting
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
-    check_is_fitted, divide, get_best_score, delete,
-    method_to_log, composed, crash, CustomDict,
+    DF_ATTRS, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
+    composed, crash, delete, divide, flt, get_best_score, lst, method_to_log,
 )
 
 

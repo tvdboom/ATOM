@@ -178,7 +178,7 @@ both few and different in the feature space. Read more in sklearn's [documentati
 If the input variables have a Gaussian distribution, then simple statistical
 methods can be used to detect outliers. For example, if the dataset has two
 input variables and both are Gaussian, the feature space forms a
-multi-dimensional Gaussian, and knowledge of this distribution can be used to
+multidimensional Gaussian, and knowledge of this distribution can be used to
 identify values far from the distribution. This approach can be generalized by
 defining a hypersphere (ellipsoid) that covers the normal data, and data that
 falls outside this shape is considered an outlier. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/outlier_detection.html#fitting-an-elliptic-envelope).
