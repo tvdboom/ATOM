@@ -63,7 +63,7 @@ generator is the <code>RandomState</code> instance used by <code>np.random</code
 <p>
 <strong>**kwargs</strong><br>
 Additional keyword arguments for the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
-instance. Only for the genetic strategy.
+instance. Only for the gfg strategy.
 </p>
 </td>
 </tr>
@@ -71,7 +71,7 @@ instance. Only for the genetic strategy.
 
 
 !!! tip
-    DFS can create many new features and not all of them will be useful. Use
+    dfs can create many new features and not all of them will be useful. Use
     [FeatureSelector](/API/feature_engineering/feature_selector) to reduce
     the number of features!
 
@@ -81,7 +81,7 @@ instance. Only for the genetic strategy.
     [missing](/API/ATOM/atomclassifier/#data-attributes) property.
 
 !!! warning
-    When using DFS with `n_jobs>1`, make sure to protect your code with `if __name__
+    When using dfs with `n_jobs>1`, make sure to protect your code with `if __name__
     == "__main__"`. Featuretools uses [dask](https://dask.org/), which uses python
     multiprocessing for parallelization. The spawn method on multiprocessing starts
     a new python process, which requires it to import the \__main__ module before it
@@ -97,10 +97,10 @@ instance. Only for the genetic strategy.
 <td width="80%" class="td_params">
 <p>
 <strong>gfg: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
-Object used to calculate the genetic features. Only for the genetic strategy.
+Object used to calculate the genetic features. Only for the gfg strategy.
 </p>
 <strong>genetic_features: pd.DataFrame</strong><br>
-Information on the newly created non-linear features. Only for the genetic
+Information on the newly created non-linear features. Only for the gfg
 strategy. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>name:</b> Name of the feature (automatically created).</li>

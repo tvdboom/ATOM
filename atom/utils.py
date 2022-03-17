@@ -25,17 +25,12 @@ import pandas as pd
 from matplotlib.gridspec import GridSpec
 from scipy import sparse
 from shap import Explainer
-from sklearn.cluster import DBSCAN, OPTICS
-from sklearn.covariance import EllipticEnvelope
-from sklearn.ensemble import IsolationForest
 from sklearn.inspection._partial_dependence import (
     _grid_from_X, _partial_dependence_brute,
 )
 from sklearn.metrics import (
     SCORERS, confusion_matrix, make_scorer, matthews_corrcoef,
 )
-from sklearn.neighbors import LocalOutlierFactor
-from sklearn.svm import OneClassSVM
 from sklearn.utils import _print_elapsed_time, _safe_indexing
 
 

@@ -1470,8 +1470,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(feature_generator, columns=columns)
 
         # Attach the genetic attributes to atom's branch
-        if strategy.lower() in ("gfg", "genetic"):
-            self.branch.symbolic_transformer = feature_generator.symbolic_transformer
+        if strategy.lower() == "gfg":
+            self.branch.gfg = feature_generator.gfg
             self.branch.genetic_features = feature_generator.genetic_features
 
     @composed(crash, method_to_log, typechecked)
@@ -1507,7 +1507,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                         solver += f"_{self.goal}"
 
             # If the run method was called before, use the main metric
-            if strategy.lower() in ("rfecv", "sfs"):
+            if strategy.lower() not in ("univariate", "pca", "sfm", "rfe"):
                 if self._metric and "scoring" not in kwargs:
                     kwargs["scoring"] = self._metric[0]
 

@@ -2861,13 +2861,13 @@ Strategy with which to select the outliers. If sequence of
 strategies, only samples marked as outliers by all chosen
 strategies are dropped. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"z-score": Uses the z-score of each data value.</li>
-<li>"iForest": Uses an <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">Isolation Forest</a>.</li>
-<li>"EE": Uses an <a href="https://scikit-learn.org/stable/modules/generated/sklearn.covariance.EllipticEnvelope.html">Elliptic Envelope</a>.</li>
-<li>"LOF": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html">Local Outlier Factor</a>.</li>
-<li>"SVM": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html">One-class SVM</a>.</li>
-<li>"DBSCAN": Uses <a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html">DBSCAN</a> clustering.</li>
-<li>"OPTICS": Uses <a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html">OPTICS</a> clustering.</li>
+<li>"z-score": Z-score of each data value.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">iforest</a>": Isolation Forest.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.covariance.EllipticEnvelope.html">ee</a>": Elliptic Envelope.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html">lof</a>": Local Outlier Factor.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html">svm</a>": One-class SVM.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html">dbscan</a>": Density-Based Spatial Clustering.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html">optics</a>": DBSCAN-like clustering approach.</li>
 </ul>
 <strong>method: int, float or str, optional (default="drop")</strong><br>
 Method to apply on the outliers. Only the z-score strategy
@@ -2921,8 +2921,8 @@ for an overview of the number of outlier values per column.</p>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
 <strong>&lt;strategy>: sklearn estimator</strong><br>
-Object (lowercase strategy) used to prune the data, e.g.
-<code>pruner.iforest</code> for the isolation forest strategy.
+Object used to prune the data, e.g.<code>pruner.iforest</code> for the
+isolation forest strategy.
 </td>
 </tr>
 </table>

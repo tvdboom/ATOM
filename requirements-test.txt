@@ -1,2 +1,0 @@
-pytest>=7.1.0
-tensorflow>=2.3.1

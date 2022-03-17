@@ -125,10 +125,10 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 **Genetic Feature Generation**<br>
 Genetic feature generation (GFG) uses [genetic programming](https://en.wikipedia.org/wiki/Genetic_programming),
 a branch of evolutionary programming, to determine which features
-are successful and create new ones based on those. Where DFS can be
-seen as some kind of "brute force" for feature engineering, GFG tries
-to improve its features with every generation of the algorithm. GFG
-uses the same operators as DFS, but instead of only applying the
+are successful and create new ones based on those. Where dfs can be
+seen as some kind of "brute force" for feature engineering, gfg tries
+to improve its features with every generation of the algorithm. gfg
+uses the same operators as dfs, but instead of only applying the
 transformations once, it evolves them further, creating nested
 structures of combinations of features. The new features are given the
 name `feature_n`, where n stands for the n-th feature in the dataset.
@@ -141,7 +141,7 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
  [here](https://gplearn.readthedocs.io/en/stable/intro.html#transformer).
 
 !!! warning
-    GFG can be slow for very large populations!
+    gfg can be slow for very large populations!
 
 <br>
 
@@ -237,12 +237,18 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/f
 
 ### Advanced strategies
 
+The following strategies are a collection of nature-inspired optimization
+algorithms that maximize an objective function. If not manually specified,
+the function calculates the cross-validated score of a model on the data.
+Use the `scoring` parameter (not present in description, part of kwargs)
+to specify the metric to optimize on.
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
 <a name="pso"></a>
 **Particle Swarm Optimization**<br>
-Particle Swarm Optimization (PSO) is a computational method that optimizes
-a problem by iteratively trying to improve a candidate solution with regard
-to a given measure of quality. It solves a problem by having a population of
-candidate solutions (particles), and moving them around in the search-space
+Particle Swarm Optimization (PSO) optimizes a problem by having a population
+of candidate solutions (particles), and moving them around in the search-space
 according to simple mathematical formula over the particle's position and
 velocity. Each particle's movement is influenced by its local best known
 position, but is also guided toward the best known positions in the search-space,

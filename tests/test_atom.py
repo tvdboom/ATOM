@@ -492,8 +492,8 @@ def test_add_no_transformer():
 def test_add_basetransformer_params_are_attached():
     """Assert that the n_jobs and random_state params from atom are used."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.add(pca())  # When left to default
-    atom.add(pca(random_state=2))  # When changed
+    atom.add(PCA())  # When left to default
+    atom.add(PCA(random_state=2))  # When changed
     assert atom.pipeline[0].get_params()["random_state"] == 1
     assert atom.pipeline[1].get_params()["random_state"] == 2
 
@@ -771,8 +771,8 @@ def test_feature_generation():
 def test_feature_generation_attributes():
     """Assert that the attrs from feature_generation are passed to atom."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_generation("GFG", n_features=2)
-    assert hasattr(atom, "symbolic_transformer")
+    atom.feature_generation("gfg", n_features=2)
+    assert hasattr(atom, "gfg")
     assert hasattr(atom, "genetic_features")
 
 

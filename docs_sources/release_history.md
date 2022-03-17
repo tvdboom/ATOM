@@ -5,13 +5,13 @@
 ### Version 4.13.0
 
 * Added GPU support. Read more in the [user guide](../user_guide/training/#training-on-gpu).
-* Added advanced [feature selection](../API/feature_engineering/fetaure_selection) strategies.
+* Added [advanced feature selection](../user_guide/feature_engineering/#advanced-strategies) strategies.
 * Added the `return_sparse` parameter to the [Vectorizer](../API/NLP/vectorizer) class.
 * Fixed a bug where the BO could crash after [balancing](../user_guide/data_cleaning/#balancing-the-data)
   the data.
 * Fixed a bug where saving the [FeatureGenerator](../API/feature_engineering/feature_generator)
   class could fail for certain operators.
-* Fixed a bug where the [FeatureSelector](../API/feature_engineering/fetaure_selection)
+* Fixed a bug where the [FeatureSelector](../API/feature_engineering/feature_selector)
   class displayed the wrong output.
 * Fixed a bug where the `mapping` attribute was not reordered.
 
@@ -383,7 +383,7 @@
 * Early stopping for models that allow in-training evaluation.
 * Added the [ATOMLoader](../API/ATOM/atomloader) function to load any saved pickle instance.
 * The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".
-* Implemented the DFS strategy in [FeatureGenerator](../API/feature_engineering/feature_generator).
+* Implemented the dfs strategy in [FeatureGenerator](../API/feature_engineering/feature_generator).
 * All training classes now inherit from BaseEstimator.
 * Added multiple new example notebooks.
 * Tests coverage up to 100%.

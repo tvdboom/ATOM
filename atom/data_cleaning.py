@@ -40,12 +40,17 @@ from imblearn.under_sampling import (
 )
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
+from sklearn.cluster import DBSCAN, OPTICS
+from sklearn.covariance import EllipticEnvelope
+from sklearn.ensemble import IsolationForest
 from sklearn.impute import KNNImputer, SimpleImputer
+from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import (
     FunctionTransformer, KBinsDiscretizer, LabelEncoder, MaxAbsScaler,
     MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler,
     StandardScaler,
 )
+from sklearn.svm import OneClassSVM
 from typeguard import typechecked
 
 from .basetransformer import BaseTransformer
@@ -1570,7 +1575,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         )
 
         for strat in lst(self.strategy):
-            if strat not in strategies:
+            if strat.lower() not in ["z-score"] + list(strategies):
                 raise ValueError(
                     "Invalid value for the strategy parameter. "
                     f"Choose from: z-score, {', '.join(strategies)}."

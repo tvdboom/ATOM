@@ -78,8 +78,12 @@ Number of features to select. Choose from:
 </ul>
 <p style="margin-top:5px">
 If strategy="sfm" and the threshold parameter is not specified, the
-threshold is set to <code>-np.inf</code> to select the <code>n_features</code>
-features. If strategy="rfecv", it's the minimum number of features to select.
+threshold is set to <code>-np.inf</code> to select <code>n_features</code>
+number of features.<br>
+If strategy="rfecv", <code>n_features</code> is the minimum number of
+features to select.
+<br>This parameter is ignored if any of the following strategies is
+selected: pso, hho, gwo, dfo, genetic.
 </p>
 <strong>max_frac_repeated: float or None, optional (default=1.)</strong><br>
 Remove features with the same value in at least this fraction of

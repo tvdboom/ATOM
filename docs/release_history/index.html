@@ -3077,13 +3077,13 @@
 <h3 id="version-4130">Version 4.13.0</h3>
 <ul>
 <li>Added GPU support. Read more in the <a href="../user_guide/training/#training-on-gpu">user guide</a>.</li>
-<li>Added advanced <a href="../API/feature_engineering/fetaure_selection">feature selection</a> strategies.</li>
+<li>Added <a href="../user_guide/feature_engineering/#advanced-strategies">advanced feature selection</a> strategies.</li>
 <li>Added the <code>return_sparse</code> parameter to the <a href="../API/NLP/vectorizer">Vectorizer</a> class.</li>
 <li>Fixed a bug where the BO could crash after <a href="../user_guide/data_cleaning/#balancing-the-data">balancing</a>
   the data.</li>
 <li>Fixed a bug where saving the <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>
   class could fail for certain operators.</li>
-<li>Fixed a bug where the <a href="../API/feature_engineering/fetaure_selection">FeatureSelector</a>
+<li>Fixed a bug where the <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>
   class displayed the wrong output.</li>
 <li>Fixed a bug where the <code>mapping</code> attribute was not reordered.</li>
 </ul>
@@ -3436,7 +3436,7 @@
 <li>Early stopping for models that allow in-training evaluation.</li>
 <li>Added the <a href="../API/ATOM/atomloader">ATOMLoader</a> function to load any saved pickle instance.</li>
 <li>The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".</li>
-<li>Implemented the DFS strategy in <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>.</li>
+<li>Implemented the dfs strategy in <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>.</li>
 <li>All training classes now inherit from BaseEstimator.</li>
 <li>Added multiple new example notebooks.</li>
 <li>Tests coverage up to 100%.</li>

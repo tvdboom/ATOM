@@ -1748,14 +1748,15 @@ created by the class are attached to atom.
     <ul style="line-height:1.2em;margin-top:5px">
     <li>When strategy="univariate" and solver=None, [f_classif](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html)
         is used as default solver.</li>
-    <li>When strategy is one of sfm, RFE, rfecv or sfs and the solver is one of 
-        ATOM's [predefined models](../../../user_guide/models/#predefined-models), the
+    <li>When the strategy requires a model and it's one of ATOM's
+        [predefined models](../../../user_guide/models/#predefined-models), the
         algorithm automatically selects the classifier (no need to add `_class`
         to the solver).</li>
-    <li>When strategy is one of sfm, RFE, rfecv or sfs and solver=None, atom
-         uses the winning model (if it exists) as solver.</li>
-    <li>When strategy is rfecv or sfs and no scoring is specified, atom uses the
-        metric in the pipeline (if it exists) as scoring parameter.</li>
+    <li>When strategy is not one of univariate or pca, and solver=None, atom
+        uses the winning model (if it exists) as solver.</li>
+    <li>When strategy is sfs, rfecv or any of the advanced strategies and no
+        scoring is specified, atom uses the metric in the pipeline (if it exists)
+        as scoring parameter.</li>
 
 <br /><br />
 

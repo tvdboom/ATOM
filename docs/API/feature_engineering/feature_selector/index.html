@@ -2900,17 +2900,17 @@ method. Read more in the <a href="../../../user_guide/feature_engineering/#selec
 <strong>strategy: str or None, optional (default=None)</strong><br>
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>None: Do not perform any feature selection algorithm.</li>
+<li>None: Do not perform any feature selection strategy.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">univariate</a>": Univariate F-test.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html">pca</a>": Principal Component Analysis.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">pca</a>": Principal Component Analysis.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">sfm</a>": Select best features according to a model.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html">sfs</a>": Sequential Feature Selection.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">RFE</a>": Recursive Feature Elimination.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.rfecv.html">rfecv</a>": RFE with cross-validated selection.</li>
-<li>"<a href="https://jaswinder9051998.github.io/zoofs/Particle%20Swarm%20Optimization%20Class/">PSO</a>": Particle Swarm Optimization.</li>
-<li>"<a href="https://jaswinder9051998.github.io/zoofs/Harris%20Hawk%20Optimization/">HHO</a>": Harris Hawks Optimization.</li>
-<li>"<a href="https://jaswinder9051998.github.io/zoofs/Grey%20Wolf%20Optimization%20Class/">GWO</a>": Grey Wolf Optimization.</li>
-<li>"<a href="https://jaswinder9051998.github.io/zoofs/Dragon%20Fly%20Optimization%20Class/">DFO</a>": Dragonfly Optimization.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">rfe</a>": Recursive Feature Elimination.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">rfecv</a>": RFE with cross-validated selection.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Particle%20Swarm%20Optimization%20Class/">pso</a>": Particle Swarm Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Harris%20Hawk%20Optimization/">hho</a>": Harris Hawks Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Grey%20Wolf%20Optimization%20Class/">gwo</a>": Grey Wolf Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Dragon%20Fly%20Optimization%20Class/">dfo</a>": Dragonfly Optimization.</li>
 <li>"<a href="https://jaswinder9051998.github.io/zoofs/Genetic%20Optimization%20Class/">genetic</a>": Genetic Optimization.</li>
 </ul>
 <strong>solver: str, estimator or None, optional (default=None)</strong><br>
@@ -2939,7 +2939,7 @@ univariate or pca).
     </ul>
 </li>
 <li>for the remaining strategies:<br>
-<p>The base estimator. For sfm, RFE and rfecv, it should
+<p>The base estimator. For sfm, rfe and rfecv, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
 attribute after fitting. You can use one of ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
 Add <code>_class</code> or <code>_reg</code> after the model's name to
@@ -2955,8 +2955,12 @@ Number of features to select. Choose from:
 </ul>
 <p style="margin-top:5px">
 If strategy="sfm" and the threshold parameter is not specified, the
-threshold is set to <code>-np.inf</code> to select the <code>n_features</code>
-features. If strategy="rfecv", it's the minimum number of features to select.
+threshold is set to <code>-np.inf</code> to select <code>n_features</code>
+number of features.<br>
+If strategy="rfecv", <code>n_features</code> is the minimum number of
+features to select.
+<br>This parameter is ignored if any of the following strategies is
+selected: pso, hho, gwo, dfo, genetic.
 </p>
 <strong>max_frac_repeated: float or None, optional (default=1.)</strong><br>
 Remove features with the same value in at least this fraction of
@@ -2995,8 +2999,8 @@ Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
 <strong>**kwargs</strong><br>
-Any extra keyword argument for the pca, sfm, RFE, rfecv  and sfs estimators.
-See the corresponding sklearn documentation for the available options.
+Any extra keyword argument for the strategy estimator. See the
+corresponding documentation for the available options.
 </p>
 </td>
 </tr>
@@ -3014,11 +3018,6 @@ examine how much a specific feature contributes to the final predictions. If the
 model doesn't have a <code>feature_importances_</code> attribute, use 
 <a href="../../plots/plot_permutation_importance/">plot_permutation_importance</a> instead.</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The sfs, RFE and rfecv strategies don't work when the solver is a
-<a href="../models/catb">CatBoost</a> model due to incompatibility of the APIs.</p>
-</div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
 <h3 id="utility-attributes">Utility attributes</h3>
@@ -3035,14 +3034,14 @@ Information on the removed collinear features. Columns include:
 </ul>
 <p>
 <strong>feature_importance: list</strong><br>
-Remaining features ordered by importance. Only if strategy in ("univariate", "sfm,
-"RFE", "rfecv"). For RFE and rfecv, the importance is extracted from the external
-estimator fitted on the reduced set. 
+Remaining features ordered by importance. Only if strategy in ("univariate", "sfm",
+"rfe", "rfecv"). For rfe and rfecv, the importance is extracted from the external
+estimator fitted on the reduced set.
 </p>
 <p>
 <strong>&lt;strategy&gt;: sklearn transformer</strong><br>
-Object (lowercase strategy) used to transform the data,
-e.g. <code>feature_selector.pca</code> for the pca strategy.
+Object used to transform the data, e.g. <code>feature_selector.pca</code>
+for the pca strategy.
 </p>
 </td>
 </tr>

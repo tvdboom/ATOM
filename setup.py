@@ -18,8 +18,8 @@ with open("requirements.txt", encoding="utf8") as f:
 with open("requirements-optional.txt", encoding="utf8") as f:
     optional_requirements = f.read().splitlines()
 
-with open("requirements-test.txt", encoding="utf8") as f:
-    test_requirements = f.read().splitlines()
+with open("requirements-dev.txt", encoding="utf8") as f:
+    dev_requirements = f.read().splitlines()
 
 setup(
     name="atom-ml",
@@ -44,7 +44,10 @@ setup(
         "Operating System :: OS Independent",
     ],
     install_requires=requirements,
-    extras_require={"models": optional_requirements},
-    tests_require=test_requirements,
+    extras_require={
+        "models": optional_requirements,
+        "dev": optional_requirements + dev_requirements,
+    },
+    tests_require=dev_requirements,
     python_requires=">=3.7"
 )

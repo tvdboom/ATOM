@@ -113,15 +113,15 @@ def test_n_features_parameter_negative():
 
 
 def test_strategy_parameter():
-    """Assert that the strategy parameter is either "DFS", "GFG" or "genetic"."""
+    """Assert that the strategy parameter is either dfs or gfg."""
     generator = FeatureGenerator(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*should be either 'dfs'.*"):
+    with pytest.raises(ValueError, match=r".*strategy parameter.*"):
         generator.fit(X_bin, y_bin)
 
 
 def test_operators_parameter():
     """Assert that all operators are valid."""
-    generator = FeatureGenerator("GFG", n_features=None, operators=("div", "invalid"))
+    generator = FeatureGenerator("gfg", n_features=None, operators=("div", "invalid"))
     with pytest.raises(ValueError, match=r".*value in the operators.*"):
         generator.fit(X_bin, y_bin)
 
@@ -390,6 +390,19 @@ def test_sfm_strategy_not_fitted_solver():
     assert set(selector.feature_importance) == set(X.columns)
 
 
+def test_sfs_strategy():
+    """Assert that the sfs strategy works."""
+    selector = FeatureSelector(
+        strategy="sfs",
+        solver="RF_reg",
+        n_features=6,
+        cv=3,
+        random_state=1,
+    )
+    X = selector.fit_transform(X_reg, y_reg)
+    assert X.shape[1] == 6
+
+
 def test_RFE_strategy():
     """Assert that the RFE strategy works as intended."""
     selector = FeatureSelector(
@@ -424,13 +437,6 @@ def test_rfecv_strategy_before_pipeline_regression():
     assert set(selector.feature_importance) == set(X.columns)
 
 
-def test_sfs_strategy():
-    """Assert that the sfs strategy works."""
-    selector = FeatureSelector("sfs", solver="RF_reg", n_features=6, cv=3, random_state=1)
-    X = selector.fit_transform(X_reg, y_reg)
-    assert X.shape[1] == 6
-
-
 def test_kwargs_parameter_threshold():
     """Assert that the kwargs parameter works as intended (add threshold)."""
     selector = FeatureSelector(
@@ -459,7 +465,7 @@ def test_kwargs_parameter_tol():
     assert X.shape[1] == 12
 
 
-@pytest.mark.parametrize("strategy", ["sfs", "rfecv"])
+@pytest.mark.parametrize("strategy", ["sfs", "rfecv", "pso"])
 def test_kwargs_parameter_scoring(strategy):
     """Assert that the kwargs parameter works as intended (add scoring acronym)."""
     selector = FeatureSelector(
@@ -475,65 +481,84 @@ def test_kwargs_parameter_scoring(strategy):
     assert X.shape[1] < X_bin.shape[1]
 
 
-def test_solver_parameter_empty_zoofs():
-    """test scoring , in absence of any specified scoring."""
-
-    # For classification tasks
-    from atom.utils import get_custom_scorer
+def test_advanced_provided_validation_sets():
+    """Assert that custom validation sets can be provided."""
     selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)
-    assert selector.pso.kwargs['scorer'].name == get_custom_scorer(
-        "f1_weighted").name
-
-    # For regression tasks
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_reg", n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)
-    assert selector.pso.kwargs['scorer'].name == get_custom_scorer("r2").name
-
-    # test scoring
-    selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", n_iteration=2, scoring='neg_log_loss')
-    selector.fit(X_bin, y_bin)
-    assert selector.pso.kwargs['scorer'].name == get_custom_scorer(
-        "neg_log_loss").name
+        strategy="pso",
+        solver="tree_class",
+        X_valid=X_bin,
+        y_valid=y_bin,
+        n_iteration=2,
+        population_size=2,
+    )
+    X = selector.fit_transform(X_bin, y_bin)
+    assert X.shape[1] < X_bin.shape[1]
 
 
-def test_exception_missing_y_valid():
+def test_advanced_missing_y_valid():
     """Assert that an error is raised when y_valid is missing."""
-    selector = FeatureSelector("pso", solver="LGB_class", X_valid=X_bin)
+    selector = FeatureSelector("pso", solver="tree_class", X_valid=X_bin)
     with pytest.raises(ValueError, match=r".*y_valid parameter.*"):
         selector.fit(X_bin, y_bin)
 
 
-def test_transform_zoofs():
-    """test transform for zoof algos."""
-
+def test_advanced_custom_scoring():
+    """Assert that scoring can be specified by the user."""
     selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)
-    assert selector.pso.best_feature_list == list(
-        selector.transform(X_reg).columns)
+        strategy="pso",
+        solver="tree_class",
+        n_iteration=2,
+        population_size=2,
+        scoring="auc",
+    )
+    selector = selector.fit(X_bin, y_bin)
+    assert selector.pso.kwargs["scoring"].name == "roc_auc"
 
 
-def test_objective_function_zoofs():
-    """test objective_function validity."""
-
-    from sklearn.metrics import log_loss
-
-    def objective_function_topass(model, X_train, y_train, X_valid, y_valid):
-        model.fit(X_train, y_train)
-        return log_loss(y_valid, model.predict_proba(X_valid))
-
+def test_advanced_binary_classification_scoring():
+    """Assert that scoring is set for binary classification tasks."""
     selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", objective_function = objective_function_topass,
-        n_iteration=2, population_size=2)
-    selector = selector.fit(X_reg, y_reg)
-    assert selector.pso.objective_function == objective_function_topass
+        strategy="pso",
+        solver="tree_class",
+        n_iteration=2,
+        population_size=2,
+    )
+    selector = selector.fit(X_bin, y_bin)
+    assert selector.pso.kwargs["scoring"].name == "f1"
 
+
+def test_advanced_multiclass_classification_scoring():
+    """Assert that scoring is set for multiclass classification tasks."""
     selector = FeatureSelector(
-        strategy="pso", solver="LGB_class", X_valid = X_reg, y_valid = y_reg,
-        n_iteration=2, population_size=2)
+        strategy="pso",
+        solver="tree_class",
+        n_iteration=2,
+        population_size=2,
+    )
+    selector = selector.fit(X_class, y_class)
+    assert selector.pso.kwargs["scoring"].name == "f1_weighted"
+
+
+def test_advanced_regression_scoring():
+    """Assert that scoring is set for regression tasks."""
+    selector = FeatureSelector(
+        strategy="hho",
+        solver="tree_reg",
+        n_iteration=2,
+        population_size=2,
+    )
     selector = selector.fit(X_reg, y_reg)
-    assert selector.pso.objective_function.__name__ == "custom_function_for_scorer"
+    assert selector.hho.kwargs["scoring"].name == "r2"
+
+
+def test_advanced_custom_objective_function():
+    """Assert that a custom objective function can be used."""
+    selector = FeatureSelector(
+        strategy="gwo",
+        solver="tree_class",
+        objective_function=lambda *args: 1,
+        n_iteration=2,
+        population_size=2,
+    )
+    selector = selector.fit(X_bin, y_bin)
+    assert selector.gwo.objective_function.__name__ == "<lambda>"

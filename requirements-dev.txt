@@ -1,6 +1,17 @@
-pip==22.0.4
+# Installation
+pip>=22.0.4
 setuptools>=60.9.3
-coverage>=6.3.2
+
+# Styling and linting
 isort>=5.10.1
 flake8>=4.0.1
 
+# Testing
+pytest>=7.1.0
+coverage>=6.3.2
+tensorflow>=2.3.1  # To test deep learning pipelines
+
+# Documentation
+mkdocs>=1.2.3
+mkdocs-material>=8.2.5
+mkdocs-jupyter>=0.20.1

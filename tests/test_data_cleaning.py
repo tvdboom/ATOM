@@ -18,10 +18,7 @@ from sklearn.preprocessing import StandardScaler
 from atom.data_cleaning import (
     Balancer, Cleaner, Discretizer, Encoder, Gauss, Imputer, Pruner, Scaler,
 )
-from atom.utils import (
-    BALANCING_STRATS, ENCODING_STRATS, PRUNING_STRATS, SCALING_STRATS,
-    NotFittedError, check_scaling,
-)
+from atom.utils import NotFittedError, check_scaling
 
 from .utils import (
     X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
@@ -61,7 +58,7 @@ def test_scaler_invalid_strategy():
         scaler.fit(X_bin)
 
 
-@pytest.mark.parametrize("strategy", SCALING_STRATS)
+@pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])
 def test_scaler_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     scaler = Scaler(strategy=strategy)
@@ -580,9 +577,9 @@ def test_one_hot_encoder():
     assert "feature_3_c" in X.columns
 
 
-@pytest.mark.parametrize("strategy", ENCODING_STRATS)
+@pytest.mark.parametrize("strategy", ["HelmertEncoder", "SumEncoder"])
 def test_all_encoder_types(strategy):
-    """Assert that all estimators work as intended."""
+    """Assert that encoding estimators work as intended."""
     encoder = Encoder(strategy=strategy, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
     assert all(X[col].dtype.kind in "ifu" for col in X)
@@ -674,7 +671,7 @@ def test_drop_outlier_in_target():
     assert len(y) + 2 == len(y10)
 
 
-@pytest.mark.parametrize("strategy", PRUNING_STRATS)
+@pytest.mark.parametrize("strategy", ["iforest", "ee", "lof", "svm", "dbscan"])
 def test_pruner_strategies(strategy):
     """Assert that all estimator requiring strategies work."""
     pruner = Pruner(strategy=strategy)
@@ -740,13 +737,12 @@ def test_balancer_custom_estimator():
     assert len(X) != len(X_bin)
 
 
-@pytest.mark.parametrize("strategy", BALANCING_STRATS)
-def test_all_balancers(strategy):
-    """Assert that all estimators work as intended."""
-    if strategy not in ("smotenc", "kmeanssmote"):  # Non ATOM related errors
-        balancer = Balancer(strategy=strategy, sampling_strategy="all")
-        X, y = balancer.transform(X_bin, y_bin)
-        assert len(X) != len(X_bin)
+@pytest.mark.parametrize("strategy", ["allknn", "tomeklinks", "svmsmote", "smoteenn"])
+def test_balancers(strategy):
+    """Assert that balancer estimators work as intended."""
+    balancer = Balancer(strategy=strategy, sampling_strategy="all")
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
 
 
 def test_balancer_kwargs():

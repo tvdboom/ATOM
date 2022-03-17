@@ -13,7 +13,6 @@ from typing import Optional, Union
 import featuretools as ft
 import numpy as np
 import pandas as pd
-from featuretools.primitives.base import transform_primitive_base
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator, is_regressor
 from sklearn.decomposition import PCA, TruncatedSVD
@@ -23,7 +22,6 @@ from sklearn.feature_selection import (
 )
 from sklearn.model_selection import cross_val_score
 from typeguard import typechecked
-from woodwork.column_schema import ColumnSchema
 from zoofs import (
     DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
     HarrisHawkOptimization, ParticleSwarmOptimization,
@@ -268,7 +266,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     **kwargs
         Additional keyword arguments for the SymbolicTransformer
-        instance. Only for the genetic strategy.
+        instance. Only for the gfg strategy.
 
     Attributes
     ----------
@@ -454,7 +452,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             # Get the names and fitness of the new features
             df = pd.DataFrame(columns=["name", "description", "fitness"])
-            for i, fx in enumerate(self.symbolic_transformer):
+            for i, fx in enumerate(self.gfg):
                 if str(fx) not in X.columns:  # Drop unchanged features
                     df.loc[i] = ["", str(fx), fx.fitness_]
 
@@ -472,11 +470,11 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # If there are not enough features remaining, notify the user
             if len(df) != self.n_features:
-                n = (self.n_features or len(self.symbolic_transformer)) - len(df)
-                self.log(f" --> Dropping {n} features due to repetition.", 2)
+                self.log(
+                    f" --> Dropping {(self.n_features or len(self.gfg)) - len(df)} "
+                    "features due to repetition.", 2)
 
-            results = self.symbolic_transformer.transform(X)[:, df.index]
-            for i, array in enumerate(results.T):
+            for i, array in enumerate(self.gfg.transform(X)[:, df.index].T):
                 # If the column is new, use a default name
                 counter = 0
                 while True:
@@ -552,11 +550,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - if >= 1: Number of features to select.
 
         If strategy="sfm" and the threshold parameter is not specified,
-        the threshold are automatically set to `-inf` to select the
-        `n_features` features.
+        the threshold is automatically set to `-inf` to select
+        `n_features` number of features.
 
         If strategy="rfecv", `n_features` is the minimum number of
         features to select.
+
+        This parameter is ignored if any of the following strategies
+        is selected: pso, hho, gwo, dfo, genetic.
 
     max_frac_repeated: float or None, optional (default=1.)
         Remove features with the same value in at least this fraction
@@ -699,14 +700,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     f"be None for strategy='{self.strategy}'."
                 )
 
-        def objective_function(model, X_train, y_train, X_valid, y_valid, scorer):
+        def objective_function(model, X_train, y_train, X_valid, y_valid, scoring):
             """Objective function for the advanced optimization strategies."""
             if X_train.equals(X_valid):
-                cv = cross_val_score(model, X_train, y_train, cv=3, scoring=scorer)
+                cv = cross_val_score(model, X_train, y_train, cv=3, scoring=scoring)
                 return np.mean(cv)
             else:
                 model.fit(X_train, y_train)
-                return scorer(model, X_valid, y_valid)
+                return scoring(model, X_valid, y_valid)
 
         X, y = self._prepare_input(X, y)
 
@@ -879,7 +880,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "pca":
             if is_sparse(X):
-                self.pca = self._estimator = strategies[self.strategy](
+                self.pca = self._estimator = TruncatedSVD(
                     n_components=self._n_features,
                     algorithm=self._solver,
                     random_state=self.random_state,
@@ -973,10 +974,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             check_y()
 
             # Either use a provided validation set or cross-validation over X
-            if "X_valid" in self.kwargs:
-                if "y_valid" in self.kwargs:
+            kwargs = self.kwargs.copy()
+            if "X_valid" in kwargs:
+                if "y_valid" in kwargs:
                     X_valid, y_valid = self._prepare_input(
-                        self.kwargs["X_valid"], self.kwargs["y_valid"]
+                        kwargs.pop("X_valid"), kwargs.pop("y_valid")
                     )
                 else:
                     raise ValueError(
@@ -986,23 +988,21 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             else:
                 X_valid, y_valid = X, y
 
-            # Get a custom objective_function, scoring or use default
-            kwargs = self.kwargs.copy()
-            if kwargs.get("objective_function"):
-                objective_function = kwargs.pop("objective_function")
-            elif kwargs.get("scoring"):
-                kwargs["scorer"] = get_custom_scorer(kwargs.pop("scoring"))
-            else:
-                task = infer_task(y, goal=self.goal)
-                if task.startswith("bin"):
-                    kwargs["scorer"] = get_custom_scorer("f1")
-                elif task.startswith("multi"):
-                    kwargs["scorer"] = get_custom_scorer("f1_weighted")
+            # Get scoring for default objective_function
+            if "objective_function" not in kwargs:
+                if kwargs.get("scoring"):
+                    kwargs["scoring"] = get_custom_scorer(kwargs["scoring"])
                 else:
-                    kwargs["scorer"] = get_custom_scorer("r2")
+                    task = infer_task(y, goal=self.goal)
+                    if task.startswith("bin"):
+                        kwargs["scoring"] = get_custom_scorer("f1")
+                    elif task.startswith("multi"):
+                        kwargs["scoring"] = get_custom_scorer("f1_weighted")
+                    else:
+                        kwargs["scoring"] = get_custom_scorer("r2")
 
             self._estimator = strategies[self.strategy](
-                objective_function=objective_function,
+                objective_function=kwargs.pop("objective_function", objective_function),
                 minimize=kwargs.pop("minimize", False),
                 logger=self.logger,
                 **kwargs,
@@ -1144,10 +1144,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             self.feature_importance = list(X.columns[idx][::-1])
 
         else:  # Advanced strategies
-            strat = self.strategy.upper() if len(self.strategy) == 3 else "genetic"
+            n_features = len(self._estimator.best_feature_list)
             self.log(
-                f" --> {strat} selected {len(self._estimator.best_feature_list)}"
-                f" features from the dataset.", 2
+                f" --> {self.strategy.lower()} selected "
+                f"{n_features} features from the dataset.", 2
             )
 
             for column in X:

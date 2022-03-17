@@ -3330,12 +3330,49 @@ method to see the model's performance per size of the training set.</p>
 </div>
 <p><br></p>
 <h2 id="training-on-gpu">Training on GPU</h2>
+<p><a href="https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing"><img alt="Colab" src="https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667" /></a></p>
+<p>Graphics Processing Units (GPUs) can significantly accelerate the training
+process for many machine learning models. Training models involves
+compute-intensive matrix multiplications and other operations that can
+take advantage of a GPU's massively parallel architecture. Training on
+large datasets can take hours to run on a single processor. However, if
+you offload those tasks to a GPUs, you can reduce training time to minutes
+instead.</p>
+<p>Training models in atom using a GPU is as easy as initializing the
+instance with parameter <code>gpu=True</code>. Check which <a href="#prerequisites">prerequisites</a>
+your machine needs for it to work, and which <a href="#algorithms">algorithms</a>
+and <a href="#models">models</a> are supported.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Models trained on GPU not always accept sparse dataframes!</p>
+<p>Models trained on GPU do not support sparse dataframes!</p>
 </div>
-<p>XGBoost: Require a graphics card with compute capability 3.5 or higher, with CUDA toolkits 10.0 or later. 
-CatBoost: Training on GPU requires NVIDIA Driver of version 418.xx or higher.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>ATOM does not support multi-gpu training. If there is more than
+one GPU on the machine, the first one is used by default. Use
+<code>CUDA_VISIBLE_DEVICES</code> or model-specific parameters to use any of
+the other GPUs.</p>
+</div>
+<p><a name="prerequisites"></a>
+<strong>Prerequisites</strong></p>
+<ul>
+<li>Operating System:<ul>
+<li>Ubuntu 18.04/20.04 or CentOS 7/8 with gcc/++ 9.0+</li>
+<li>Windows 8.1+ with WSL2 (see <a href="https://developer.nvidia.com/blog/run-rapids-on-microsoft-windows-10-using-wsl-2-the-windows-subsystem-for-linux/">here</a> a tutorial)</li>
+</ul>
+</li>
+<li>GPU: NVIDIA Pascal™ or better with <a href="https://developer.nvidia.com/cuda-gpus">compute capability</a> 6.0+</li>
+<li>CUDA &amp; NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5</li>
+</ul>
+<p><a name="algorithms"></a>
+<strong>Algorithms</strong></p>
+<p><a name="models"></a>
+<strong>Models</strong></p>
+<ul>
+<li><a href="../API/models/xgb">XGBoost</a>: Requires no further installation.</li>
+<li><a href="../API/models/lgb">LightGBM</a>: Requires <a href="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html">extra installations</a>.</li>
+<li><a href="../API/models/catb">CatBoost</a>: Requires no further installation.</li>
+</ul>
 
               
             </article>

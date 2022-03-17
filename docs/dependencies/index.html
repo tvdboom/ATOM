@@ -2757,6 +2757,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#development" class="md-nav__link">
+    Development
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2840,6 +2847,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#development" class="md-nav__link">
+    Development
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2877,10 +2891,9 @@
 </ul>
 <p><br><br></p>
 <h2 id="packages">Packages</h2>
-<p>ATOM is built on top of several existing Python libraries. The required packages are
-necessary for it's correct functioning. Additionally, you can install some optional
-packages to use machine learning estimators not provided by sklearn.</p>
 <h3 id="required">Required</h3>
+<p>ATOM is built on top of several existing Python libraries. These
+packages are necessary for its correct functioning.</p>
 <ul>
 <li><strong><a href="https://numpy.org/">numpy</a></strong> (~=1.21.0)</li>
 <li><strong><a href="https://www.scipy.org/">scipy</a></strong> (&gt;=1.7.3)</li>
@@ -2898,8 +2911,7 @@ packages to use machine learning estimators not provided by sklearn.</p>
 <li><strong><a href="http://epistasislab.github.io/tpot/">tpot</a></strong> (&gt;=0.11.7)</li>
 <li><strong><a href="https://contrib.scikit-learn.org/categorical-encoding/index.html">category-encoders</a></strong> (&gt;=2.1.0)</li>
 <li><strong><a href="https://imbalanced-learn.readthedocs.io/en/stable/api.html">imbalanced-learn</a></strong> (&gt;=0.8.1)</li>
-<li><strong><a href="https://github.com/alteryx/woodwork/">woodwork</a></strong> (&gt;=0.8.2)</li>
-<li><strong><a href="https://www.featuretools.com/">featuretools</a></strong> (&gt;=1.0.0)</li>
+<li><strong><a href="https://www.featuretools.com/">featuretools</a></strong> (&gt;=1.7.0)</li>
 <li><strong><a href="https://gplearn.readthedocs.io/en/stable/index.html">gplearn</a></strong> (&gt;=0.4.1)</li>
 <li><strong><a href="https://jaswinder9051998.github.io/zoofs/">zoofs</a></strong> (&gt;=0.1.24)</li>
 <li><strong><a href="https://matplotlib.org/">matplotlib</a></strong> (&gt;=3.3.0)</li>
@@ -2908,10 +2920,31 @@ packages to use machine learning estimators not provided by sklearn.</p>
 <li><strong><a href="http://amueller.github.io/word_cloud/">wordcloud</a></strong> (&gt;=1.8.1)</li>
 </ul>
 <h3 id="optional">Optional</h3>
+<p>You can install some optional packages to be able to use some well-known
+machine learning estimators that are not provided by sklearn but are
+among ATOM's <a href="../user_guide/models/#predefined-models">predefined models</a>.
+Install them using <code>pip install atom-ml[models]</code>.</p>
 <ul>
 <li><strong><a href="https://xgboost.readthedocs.io/en/latest/">xgboost</a></strong> (&gt;=0.90)</li>
 <li><strong><a href="https://lightgbm.readthedocs.io/en/latest/">lightgbm</a></strong> (&gt;=3.3.2)</li>
 <li><strong><a href="https://catboost.ai/docs/concepts/about.html">catboost</a></strong> (&gt;=1.0.4)</li>
+</ul>
+<h3 id="development">Development</h3>
+<p>The development dependencies are not installed with the package, and are
+not necessary for any of its functionalities. These libraries are only
+required to be able to <a href="../contributing">contribute</a> to the project.
+Install them using <code>pip install atom-ml[dev]</code>.</p>
+<ul>
+<li><strong><a href="https://pip.pypa.io/en/stable/">pip</a></strong> (&gt;=22.0.4)</li>
+<li><strong><a href="https://github.com/pypa/setuptools">setuptools</a></strong> (&gt;=60.9.3)</li>
+<li><strong><a href="https://pycqa.github.io/isort/">isort</a></strong> (&gt;=5.10.1)</li>
+<li><strong><a href="https://github.com/pycqa/flake8">flake8</a></strong> (&gt;=4.0.1)</li>
+<li><strong><a href="https://docs.pytest.org/en/latest/">pytest</a></strong> (&gt;=7.1.0)</li>
+<li><strong><a href="https://github.com/nedbat/coveragepy">coverage</a></strong> (&gt;=6.3.2)</li>
+<li><strong><a href="https://www.tensorflow.org/">tensorflow</a></strong> (&gt;=2.3.1)</li>
+<li><strong><a href="https://www.mkdocs.org/">mkdocs</a></strong> (&gt;=1.2.3)</li>
+<li><strong><a href="https://squidfunk.github.io/mkdocs-material/">mkdocs-material</a></strong> (&gt;=8.2.5)</li>
+<li><strong><a href="https://github.com/danielfrg/mkdocs-jupyter">mkdocs-jupyter</a></strong> (&gt;=0.20.1)</li>
 </ul>
 
               

@@ -4568,15 +4568,14 @@ description of the parameters.
 <br /><br /><br /></p>
 <p><a name="feature-generation"></a></p>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="DFS",
+<em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="dfs",
 n_features=None, operators=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1450">[source]</a>
 </span>
 </div>
-<p>Use Deep feature Synthesis or a genetic algorithm to create new
-combinations of existing features to capture the non-linear relations
-between the original features. See <a href="../../feature_engineering/feature_generator/">FeatureGenerator</a>
+<p>Create new combinations of existing features to capture the non-linear
+relations between the original features. See <a href="../../feature_engineering/feature_generator/">FeatureGenerator</a>
 for a description of the parameters. Attributes created by the class
 are attached to atom.
 <br /><br /><br /></p>
@@ -4599,14 +4598,15 @@ created by the class are attached to atom.</p>
 <p><ul style="line-height:1.2em;margin-top:5px">
 <li>When strategy="univariate" and solver=None, <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html">f_classif</a>
     is used as default solver.</li>
-<li>When strategy is one of sfm, RFE, rfecv or sfs and the solver is one of
-    ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>, the
+<li>When the strategy requires a model and it's one of ATOM's
+    <a href="../../../user_guide/models/#predefined-models">predefined models</a>, the
     algorithm automatically selects the classifier (no need to add <code>_class</code>
     to the solver).</li>
-<li>When strategy is one of sfm, RFE, rfecv or sfs and solver=None, atom
-     uses the winning model (if it exists) as solver.</li>
-<li>When strategy is rfecv or sfs and no scoring is specified, atom uses the
-    metric in the pipeline (if it exists) as scoring parameter.</li></p>
+<li>When strategy is not one of univariate or pca, and solver=None, atom
+    uses the winning model (if it exists) as solver.</li>
+<li>When strategy is sfs, rfecv or any of the advanced strategies and no
+    scoring is specified, atom uses the metric in the pipeline (if it exists)
+    as scoring parameter.</li></p>
 </div>
 <p><br /><br /></p>
 <h2 id="training">Training</h2>

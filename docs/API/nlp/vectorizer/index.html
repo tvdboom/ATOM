@@ -1019,6 +1019,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
   </a>
@@ -2796,6 +2803,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
   </a>
@@ -2826,7 +2840,7 @@
 <h1 id="vectorizer">Vectorizer</h1>
 <hr />
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="BOW",
+<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="bow",
 return_sparse=True, verbose=0, logger=None, *kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L580">[source]</a>
@@ -2845,12 +2859,12 @@ the <a href="../../../user_guide/nlp/#vectorization">user guide</a>.</p>
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str, optional (default="BOW")</strong><br>
+<strong>strategy: str, optional (default="bow")</strong><br>
 Strategy with which to vectorize the text. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"BOW": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">Bag of Words</a> algorithm.</li>
-<li>"TF-IDF": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">TF-IDF</a> algorithm.</li>
-<li>"Hashing": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a> algorithm.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">bow</a>": Bag of Words.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">tf-idf</a>": Term Frequency - Inverse Document Frequency.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a>": Vectorize to a matrix of token occurrences.</li>
 </ul>
 <p>
 <strong>return_sparse: bool, optional (default=True)</strong><br>
@@ -2884,6 +2898,18 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <p>Using <code>return_sparse=True</code> can turn the transformation very slow and
 occupy large chunks of memory when the corpus contains many tokens.</p>
 </div>
+<p><br></p>
+<h2 id="attributes">Attributes</h2>
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
+<strong>&lt;strategy>: sklearn estimator</strong><br>
+Object used to prune the data, e.g.<code>vectorizer.bow</code> for the
+Bag of Words strategy.
+</td>
+</tr>
+</table>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size:16px">
@@ -3116,13 +3142,13 @@ Transformed corpus.
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;TF-IDF&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;tf-idf&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">Vectorizer</span>
 
-<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">Vectorizer</span><span class="p">(</span><span class="s2">&quot;TF-IDF&quot;</span><span class="p">)</span>
+<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">Vectorizer</span><span class="p">(</span><span class="s2">&quot;tf-idf&quot;</span><span class="p">)</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 </code></pre></div>
 </div>

@@ -1529,7 +1529,6 @@ class CatBoost(BaseModel):
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
             Categorical([None, *range(1, 10)], name="max_depth"),
-            Integer(20, 40, name="num_leaves"),
             Integer(1, 30, name="min_child_samples"),
             Categorical(half_to_one_inc, name="subsample"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda"),
