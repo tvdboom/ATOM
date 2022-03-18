@@ -7,6 +7,8 @@ Description: Unit tests for feature_engineering.py
 
 """
 
+from unittest.mock import MagicMock, patch
+
 import pandas as pd
 import pytest
 from sklearn.ensemble import ExtraTreesClassifier
@@ -201,29 +203,8 @@ def test_unknown_strategy_parameter():
         selector.fit(X_reg, y_reg)
 
 
-def test_solver_parameter_empty_univariate():
-    """Assert that an error is raised when solver is None for univariate."""
-    selector = FeatureSelector(strategy="univariate")
-    with pytest.raises(ValueError, match=r".*can't be None.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_raise_unknown_solver_univariate():
-    """Assert that an error is raised when the solver is unknown."""
-    selector = FeatureSelector(strategy="univariate", solver="invalid")
-    with pytest.raises(ValueError, match=r".*the solver parameter.*"):
-        selector.fit(X_reg, y_reg)
-
-
-def test_solver_auto_pca():
-    """Assert that the solver is set to "auto" when None."""
-    selector = FeatureSelector(strategy="pca", solver=None)
-    selector.fit(X_bin, y_bin)
-    assert selector._solver == "auto"
-
-
-def test_solver_parameter_empty_sfm():
-    """Assert that an error is raised when solver is None for sfm strategy."""
+def test_solver_parameter_empty():
+    """Assert that an error is raised when solver is None."""
     selector = FeatureSelector(strategy="sfm", solver=None)
     with pytest.raises(ValueError, match=r".*can't be None.*"):
         selector.fit(X_reg, y_reg)
@@ -306,6 +287,20 @@ def test_remove_collinear():
     assert X.shape[1] == 20  # Originally 30
 
 
+def test_solver_parameter_empty_univariate():
+    """Assert that an error is raised when solver is None for univariate."""
+    selector = FeatureSelector(strategy="univariate")
+    with pytest.raises(ValueError, match=r".*can't be None.*"):
+        selector.fit(X_reg, y_reg)
+
+
+def test_raise_unknown_solver_univariate():
+    """Assert that an error is raised when the solver is unknown."""
+    selector = FeatureSelector(strategy="univariate", solver="invalid")
+    with pytest.raises(ValueError, match=r".*the solver parameter.*"):
+        selector.fit(X_reg, y_reg)
+
+
 def test_univariate_strategy_custom_solver():
     """Assert that the univariate strategy works for a custom solver."""
     selector = FeatureSelector("univariate", solver=f_regression, n_features=9)
@@ -319,6 +314,7 @@ def test_pca_strategy():
     selector = FeatureSelector(strategy="pca", n_features=0.7)
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 21
+    assert selector.pca.get_params()["svd_solver"] == "auto"
 
 
 def test_pca_components():
@@ -326,7 +322,7 @@ def test_pca_components():
     selector = FeatureSelector(strategy="pca", solver="arpack", n_features=5)
     X = selector.fit_transform(X_bin)
     assert selector.pca.svd_solver == "arpack"
-    assert "component 1" in X.columns
+    assert "component_1" in X.columns
 
 
 def test_pca_sparse_data():
@@ -334,6 +330,15 @@ def test_pca_sparse_data():
     selector = FeatureSelector(strategy="pca", n_features=2)
     selector.fit(X_sparse)
     assert selector.pca.__class__.__name__ == "TruncatedSVD"
+    assert selector.pca.get_params()["algorithm"] == "randomized"
+
+
+@patch.dict("sys.modules", {"cuml.PCA": MagicMock()})
+def test_pca_gpu():
+    """Assert that the pca strategy works on gpu."""
+    selector = FeatureSelector(strategy="pca", n_features=2, gpu=True)
+    selector.fit(X_bin)
+    assert selector.pca.__class__.__name__ == "PCA"
 
 
 def test_sfm_prefit_invalid_estimator():

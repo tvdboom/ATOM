@@ -259,11 +259,9 @@ class ATOMClassifier(BaseTransformer, ATOM):
     gpu: bool or str, optional (default=False)
         Train estimators on GPU (instead of CPU). Refer to the
         documentation to check which estimators are supported.
-            - If False: Only use CPU.
-            - If True: Use GPU for algorithms that support it and CPU
-                       otherwise.
-            - If 'force': Use GPU for algorithms that support it and
-                          raise an exception otherwise.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation where possible.
+            - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -414,11 +412,9 @@ class ATOMRegressor(BaseTransformer, ATOM):
     gpu: bool or str, optional (default=False)
         Train estimators on GPU (instead of CPU). Refer to the
         documentation to check which estimators are supported.
-            - If False: Only use CPU.
-            - If True: Use GPU for algorithms that support it and CPU
-                       otherwise.
-            - If 'force': Use GPU for algorithms that support it and
-                          raise an exception otherwise.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation where possible.
+            - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:

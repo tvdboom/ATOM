@@ -5,8 +5,8 @@
 <em>class</em> atom.training.<strong style="color:#008AB8">TrainSizingClassifier</strong>(models=None,
 metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
 train_sizes=5, n_calls=0, n_initial_points=5, est_params=None, bo_params=None,
-n_bootstrap=0, n_jobs=1, verbose=0, warnings=True, logger=None, experiment=None,
-random_state=None)
+n_bootstrap=0, n_jobs=1, gpu=False, verbose=0, warnings=True, logger=None,
+experiment=None, random_state=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L381">[source]</a>
 </span>
@@ -173,6 +173,19 @@ Number of cores to use for parallel processing.
 <li>If >0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
 <li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
+</ul>
+<p style="margin-top:5px">
+Beware that using multiple processes on the same machine may cause
+memory issues for large datasets.
+</p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train estimators on GPU (instead of CPU). Refer to the
+<a href="../../../user_guide/training/#training-on-gpu">documentation</a>
+to check which estimators are supported.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation where possible.</li>
+<li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -486,7 +499,7 @@ Columns include:
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
 <li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
-<li><b>gpu:</b> Whether the model has GPU support.</li>
+<li><b>supports_gpu:</b> Whether the model has GPU support.</li>
 </ul>
 </td>
 </tr>

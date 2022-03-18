@@ -505,14 +505,14 @@ class BasePredictor:
                 - module: The estimator's module.
                 - needs_scaling: Whether the model requires feature scaling.
                 - accepts_sparse: Whether the model supports sparse matrices.
-                - gpu: Whether the model has GPU support.
+                - supports_gpu: Whether the model has GPU support.
 
         """
-        overview = pd.DataFrame()
+        rows = []
         for model in MODELS.values():
             m = model(self, fast_init=True)
             if self.goal in m.goal:
-                overview = overview.append(
+                rows.append(
                     {
                         "acronym": m.acronym,
                         "fullname": m.fullname,
@@ -520,12 +520,11 @@ class BasePredictor:
                         "module": m.est_class.__module__,
                         "needs_scaling": str(m.needs_scaling),
                         "accepts_sparse": str(m.accepts_sparse),
-                        "gpu": str(m.gpu),
-                    },
-                    ignore_index=True,
+                        "supports_gpu": str(m.supports_gpu),
+                    }
                 )
 
-        return overview
+        return pd.DataFrame(rows)
 
     @composed(crash, method_to_log)
     def clear(self):

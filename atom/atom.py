@@ -868,7 +868,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Add the estimator to the pipeline
         self.branch.pipeline = pd.concat(
-            [self.pipeline, pd.Series([estimator], name=self._current)],
+            [self.pipeline, pd.Series([estimator], name=self._current, dtype="object")],
             ignore_index=True,
         )
 

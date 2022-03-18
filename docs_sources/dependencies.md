@@ -66,8 +66,8 @@ Install them using `pip install atom-ml[models]`.
 
 The development dependencies are not installed with the package, and are
 not necessary for any of its functionalities. These libraries are only
-required to be able to [contribute](../contributing) to the project.
-Install them using `pip install atom-ml[dev]`.
+required to [contribute](../contributing) to the project. Install them
+using `pip install atom-ml[dev]`.
 
 * **[pip](https://pip.pypa.io/en/stable/)** (>=22.0.4)
 * **[setuptools](https://github.com/pypa/setuptools)** (>=60.9.3)

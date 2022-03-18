@@ -183,7 +183,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         def drop_regex(search):
             """Find and remove a regex expression from the text."""
             counts, docs = 0, 0
-            for i, row in enumerate(X[corpus]):
+            for i, row in X[corpus].items():
                 for j, elem in enumerate([row] if isinstance(row, str) else row):
                     regex = getattr(self, f"regex_{search}")
                     occurrences = re.compile(regex).findall(elem)
@@ -207,7 +207,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         for elem in ("email", "url", "html", "emoji", "number"):
             drops[elem] = pd.Series(name=elem, dtype="object")
 
-        self.log("Filtering the corpus...", 1)
+        self.log("Cleaning the corpus...", 1)
 
         if self.decode:
             if isinstance(X[corpus][0], str):
@@ -267,8 +267,8 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(func)
             self.log(" --> Dropping punctuation from the text.", 2)
 
-        # Concatenate all drops to one dataframe attribute
-        self.drops = pd.concat([series for series in drops.values()], axis=1)
+        # Convert all drops to one dataframe attribute
+        self.drops = pd.concat(drops.values(), axis=1)
 
         # Drop empty tokens from every row
         if not isinstance(X[corpus][0], str):
@@ -398,26 +398,23 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         for attr, finder in ngrams.items():
             frequency = getattr(self, f"{attr[:-1]}_freq")
             if frequency:
-                df = pd.DataFrame(columns=[attr[:-1], "frequency"])
-
                 # Search for all n-grams in the corpus
                 ngram_fd = finder.from_documents(X[corpus]).ngram_fd
 
                 if frequency < 1:
                     frequency = int(frequency * len(ngram_fd))
 
+                rows = []
                 occur, counts = 0, 0
                 for ngram, freq in ngram_fd.items():
                     if freq >= frequency:
                         occur += 1
                         counts += freq
                         X[corpus] = X[corpus].apply(replace_ngrams, args=(ngram,))
-                        df = df.append(
-                            {attr[:-1]: ngram, "frequency": freq}, ignore_index=True
-                        )
+                        rows.append({attr[:-1]: "_".join(ngram), "frequency": freq})
 
                 # Sort ngrams by frequency and add the dataframe as attribute
-                df = df.sort_values(by="frequency", ascending=False)
+                df = pd.DataFrame(rows).sort_values("frequency", ascending=False)
                 setattr(self, attr, df.reset_index(drop=True))
 
                 self.log(f" --> Creating {occur} {attr} on {counts} locations.", 2)

@@ -339,7 +339,8 @@ class BasePlotter:
         """Check and return the provided parameter show."""
         max_fxs = max([m.n_features for m in lst(model)])
         if show is None or show > max_fxs:
-            return max_fxs
+            # Limit max features shown to avoid maximum figsize error
+            return min(200, max_fxs)
         elif show < 1:
             raise ValueError(
                 "Invalid value for the show parameter."
@@ -604,11 +605,9 @@ class FSPlotter(BasePlotter):
                 "if pca was applied on the data!"
             )
 
-        # Set parameters
-        if show is None:
-            show = self.pca.n_components_
-        elif show > self.pca.n_features_:
-            show = self.pca.n_features_
+        if show is None or show > self.pca.components_.shape[1]:
+            # Limit max features shown to avoid maximum figsize error
+            show = min(200, self.pca.components_.shape[1])
         elif show < 1:
             raise ValueError(
                 "Invalid value for the show parameter. "
@@ -616,8 +615,11 @@ class FSPlotter(BasePlotter):
             )
 
         var = np.array(self.pca.explained_variance_ratio_)[:show]
-        indices = [f"Component {str(i)}" for i in range(len(var))]
-        scr = pd.Series(var, index=indices).sort_values()
+        scr = pd.Series(
+            data=var,
+            index=[f"component_{str(i)}" for i in range(len(var))],
+            dtype=float,
+        ).sort_values()
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -1885,7 +1887,6 @@ class BaseModelPlotter(BasePlotter):
 
         # Create dataframe with columns as indices to plot with barh
         df = pd.DataFrame()
-
         for m in models:
             fi = get_feature_importance(m.estimator)
             if fi is None:
@@ -1998,7 +1999,7 @@ class BaseModelPlotter(BasePlotter):
                 f"Value should be >0, got {n_repeats}."
             )
 
-        df = pd.DataFrame(columns=["features", "score", "model"])
+        rows = []
         for m in models:
             # If permutations are already calculated and n_repeats is
             # same, use known permutations (for efficient re-plotting)
@@ -2020,12 +2021,10 @@ class BaseModelPlotter(BasePlotter):
             # Append permutation scores to the dataframe
             for i, feature in enumerate(m.features):
                 for score in m.permutations.importances[i, :]:
-                    df = df.append(
-                        {"features": feature, "score": score, "model": m.name},
-                        ignore_index=True,
-                    )
+                    rows.append({"features": feature, "score": score, "model": m.name})
 
         # Get the column names sorted by sum of scores
+        df = pd.DataFrame(rows)
         get_idx = df.groupby("features", as_index=False)["score"].sum()
         get_idx = get_idx.sort_values("score", ascending=False)
         column_order = get_idx["features"].values[:show]

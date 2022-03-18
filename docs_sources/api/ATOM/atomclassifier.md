@@ -4,8 +4,8 @@
 <div style="font-size:20px">
 <em>class</em> atom.api.<strong style="color:#008AB8">ATOMClassifier</strong>(*arrays,
 y=-1, index=False, test_size=0.2, holdout_size=None, shuffle=True,
-stratify=True, n_rows=1, n_jobs=1, verbose=0, warnings=True, logger=None,
-experiment=None, random_state=None)
+stratify=True, n_rows=1, n_jobs=1, gpu=False, verbose=0, warnings=True,
+logger=None, experiment=None, random_state=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L179">[source]</a>
 </span>
@@ -121,6 +121,15 @@ Number of cores to use for parallel processing.
 Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
 </p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train estimators on GPU (instead of CPU). Refer to the
+<a href="../../../user_guide/training/#training-on-gpu">documentation</a>
+to check which estimators are supported.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation where possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -718,7 +727,7 @@ Columns include:
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
 <li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
-<li><b>gpu:</b> Whether the model has GPU support.</li>
+<li><b>supports_gpu:</b> Whether the model has GPU support.</li>
 </ul>
 </td>
 </tr>

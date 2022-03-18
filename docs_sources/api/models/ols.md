@@ -3,7 +3,7 @@
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
 <a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
-<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>gpu</a>
+<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>supports_gpu</a>
 
 Ordinary Least Squares is just linear regression without any
 regularization. It fits a linear model with coefficients w=(w1, …, wp)

@@ -170,6 +170,38 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
+    def _get_gpu(self, est):
+        """Get a GPU or CPU estimator depending on availability.
+
+        Parameters
+        ----------
+        est: estimator
+            Class to get GPU implementation from.
+
+        Returns
+        -------
+        estimator
+            Provided estimator or cuml implementation.
+
+        """
+        if self.gpu:
+            try:
+                import cuml
+                return getattr(cuml, est.__name__)
+            except ModuleNotFoundError:
+                if self.gpu == "force":
+                    raise ModuleNotFoundError(
+                        "It looks like cuml is not installed. Refer to the package's "
+                        "documentation to learn how to utilize the machine's GPU."
+                    )
+                else:
+                    self.log(
+                        f"Unable to import cuml.{est.__name__}. "
+                        "Using CPU implementation instead.", 1
+                    )
+
+        return est
+
     @staticmethod
     @typechecked
     def _prepare_input(X: X_TYPES, y: Optional[Y_TYPES] = None):

@@ -179,8 +179,8 @@ arrays (scores, p-values). Read more in sklearn's [documentation](https://scikit
 <a name="pca"></a>
 **Principal Components Analysis**<br>
 Applying PCA reduces the dimensionality of the dataset by maximizing
-the variance of each dimension. The new features are called component
-1, component 2, etc... PCA can be applied in two ways:
+the variance of each dimension. The new features are called component_1,
+component_2, etc... PCA can be applied in two ways:
 
 * If the data is dense (i.e. not sparse), the estimator used is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html).
   Before fitting the transformer, the data is scaled to mean=0 and std=1

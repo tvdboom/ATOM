@@ -574,7 +574,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        self.log("Applying data cleaning...", 1)
+        self.log("Cleaning the data...", 1)
 
         # Replace all missing values with NaN
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
