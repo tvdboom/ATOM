@@ -24,7 +24,7 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>None: Do not perform any feature selection strategy.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">univariate</a>": Univariate F-test.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">univariate</a>": Univariate statistical F-test.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">pca</a>": Principal Component Analysis.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">sfm</a>": Select best features according to a model.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html">sfs</a>": Sequential Feature Selection.</li>
@@ -39,8 +39,7 @@ Feature selection strategy to use. Choose from:
 <strong>solver: str, estimator or None, optional (default=None)</strong><br>
 Solver/model to use for the feature selection strategy. See the
 corresponding documentation for an extended description of the
-choices. Select None for the default option per strategy (only for
-univariate or pca).
+choices. If None, use the estimator's default value (only pca).
 <ul style="line-height:1.2em;margin-top:5px">
 <li>for "univariate", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
@@ -55,10 +54,27 @@ univariate or pca).
 </li>
 <li>for "pca", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
-    <li>"auto" (not available for sparse data, default for dense data)</li>
-    <li>"full" (not available for sparse data)</li>
-    <li>"arpack"</li>
-    <li>"randomized" (default for sparse data)</li>
+    <li>if dense data:
+        <ul style="line-height:1.2em;margin-top:5px">
+            <li>"auto" (default)</li>
+            <li>"full"</li>
+            <li>"arpack"</li>
+            <li>"randomized"</li>
+        </ul>
+    </li>
+    <li>if sparse data:
+        <ul style="line-height:1.2em;margin-top:5px">
+            <li>"randomized" (default)</li>
+            <li>"arpack"</li>
+        </ul>
+    </li>
+    <li>if gpu implementation:
+        <ul style="line-height:1.2em;margin-top:5px">
+            <li>"full" (default)</li>
+            <li>"jacobi"</li>
+            <li>"auto"</li>
+        </ul>
+    </li>
     </ul>
 </li>
 <li>for the remaining strategies:<br>
@@ -103,6 +119,13 @@ Number of cores to use for parallel processing.
 <li>If >0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
 <li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
+</ul>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train estimator on GPU (instead of CPU). Only for strategy=pca.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation where possible.</li>
+<li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:

@@ -874,10 +874,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         elif self.strategy.lower() == "pca":
             s = lambda p: signature(estimator).parameters[p].default
 
+            # The PCA and TruncatedSVD both get all possible components to use
+            # for the plots (n_components must be < n_features and <= n_rows)
             if is_sparse(X):
                 estimator = self._get_gpu(TruncatedSVD)
                 self.pca = self._estimator = estimator(
-                    n_components=X.shape[1] - 4,  # TODO: Fix sparse !
+                    n_components=min(len(X), X.shape[1] - 1),
                     algorithm=s("algorithm") if self.solver is None else self.solver,
                     random_state=self.random_state,
                     **self.kwargs,
@@ -888,9 +890,6 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     X = self.scaler.transform(X)
 
                 estimator = self._get_gpu(PCA)
-
-                # Get all components for plots (-1 because
-                # arpack must be strictly less than features
                 self.pca = self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
                     svd_solver=s("svd_solver") if self.solver is None else self.solver,
@@ -898,9 +897,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     **self.kwargs,
                 )
 
-            # Fit and add desired number of components as internal attr
             self.pca.fit(X)
-            self.pca._n_components = min(len(X), self._n_features)
+            self.pca._comps = min(self.pca.components_.shape[0], self._n_features)
 
         elif self.strategy.lower() == "sfm":
             # If any of these attr exists, model is already fitted
@@ -1092,11 +1090,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 self.log("   >>> Scaling features...", 2)
                 X = self.scaler.transform(X)
 
-            cols = [f"component_{str(i)}" for i in range(1, self.pca._n_components + 1)]
             X = to_df(
-                data=self.pca.transform(X)[:, :self.pca._n_components],
+                data=self.pca.transform(X)[:, :self.pca._comps],
                 index=X.index,
-                columns=cols,
+                columns=[f"component_{str(i)}" for i in range(1, self.pca._comps + 1)],
             )
 
             var = np.array(self.pca.explained_variance_ratio_[:self._n_features])

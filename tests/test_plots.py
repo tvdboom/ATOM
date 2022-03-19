@@ -230,7 +230,7 @@ def test_plot_pca(X):
     atom.plot_pca(display=False)
 
 
-@pytest.mark.parametrize("show", [10, 200, None])
+@pytest.mark.parametrize("show", [10, None])
 def test_plot_components(show):
     """Assert that the plot_components method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

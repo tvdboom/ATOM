@@ -530,13 +530,13 @@ class FSPlotter(BasePlotter):
                 "The plot_pca method is only available if pca was applied on the data!"
             )
 
-        var = np.array(self.pca.explained_variance_ratio_[:self.pca._n_components])
+        var = np.array(self.pca.explained_variance_ratio_[:self.pca._comps])
         var_all = np.array(self.pca.explained_variance_ratio_)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.scatter(
-            x=self.pca._n_components,
+            x=self.pca._comps,
             y=var.sum(),
             marker="*",
             s=130,
@@ -605,9 +605,9 @@ class FSPlotter(BasePlotter):
                 "if pca was applied on the data!"
             )
 
-        if show is None or show > self.pca.components_.shape[1]:
+        if show is None or show > self.pca.components_.shape[0]:
             # Limit max features shown to avoid maximum figsize error
-            show = min(200, self.pca.components_.shape[1])
+            show = min(200, self.pca.components_.shape[0])
         elif show < 1:
             raise ValueError(
                 "Invalid value for the show parameter. "
