@@ -2841,7 +2841,7 @@
 <hr />
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(strategy="standard",
-verbose=0, logger=None, **kwargs)
+gpu=False, verbose=0, logger=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L163">[source]</a>
 </span>
@@ -2862,6 +2862,13 @@ Strategy with which to scale the data. Choose from:
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">minmax</a>": Scale features to a given range.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">maxabs</a>": Scale features by their maximum absolute value.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">robust</a>": Scale using statistics that are robust to outliers.</li>
+</ul>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train strategy on GPU (instead of CPU).
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:

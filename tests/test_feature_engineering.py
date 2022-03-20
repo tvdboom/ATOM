@@ -7,8 +7,6 @@ Description: Unit tests for feature_engineering.py
 
 """
 
-from unittest.mock import MagicMock, patch
-
 import pandas as pd
 import pytest
 from sklearn.ensemble import ExtraTreesClassifier
