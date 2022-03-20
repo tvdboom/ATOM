@@ -333,14 +333,6 @@ def test_pca_sparse_data():
     assert selector.pca.get_params()["algorithm"] == "randomized"
 
 
-@patch.dict("sys.modules", {"cuml.PCA": MagicMock()})
-def test_pca_gpu():
-    """Assert that the pca strategy works on gpu."""
-    selector = FeatureSelector(strategy="pca", n_features=2, gpu=True)
-    selector.fit(X_bin)
-    assert selector.pca.__class__.__name__ == "PCA"
-
-
 def test_sfm_prefit_invalid_estimator():
     """Assert that an error is raised for an invalid estimator in sfm."""
     selector = FeatureSelector(

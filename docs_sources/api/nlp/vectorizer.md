@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="bow",
-return_sparse=True, verbose=0, logger=None, *kwargs)
+return_sparse=True, gpu=False, verbose=0, logger=None, *kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L580">[source]</a>
 </span>
@@ -26,7 +26,7 @@ the [user guide](../../../user_guide/nlp/#vectorization).
 Strategy with which to vectorize the text. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">bow</a>": Bag of Words.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">tf-idf</a>": Term Frequency - Inverse Document Frequency.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">tfidf</a>": Term Frequency - Inverse Document Frequency.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a>": Vectorize to a matrix of token occurrences.</li>
 </ul>
 <p>
@@ -35,6 +35,13 @@ Whether to return the transformation output as a dataframe
 of sparse arrays. Must be False when there are other columns
 in X (besides <code>corpus</code>) that are non-sparse.
 </p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train strategy on GPU (instead of CPU).
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -329,13 +336,13 @@ Transformed corpus.
     from atom import ATOMClassifier
     
     atom = ATOMClassifier(X, y)
-    atom.vectorize(strategy="tf-idf")
+    atom.vectorize(strategy="tfidf")
     ```
 
 === "stand-alone"
     ```python
     from atom.nlp import Vectorizer
     
-    vectorizer = Vectorizer("tf-idf")
+    vectorizer = Vectorizer("tfidf")
     X = vectorizer.transform(X)
     ```

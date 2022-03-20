@@ -2929,13 +2929,20 @@ words in the text documents with variable length. Vectorization is the
 general process of turning a collection of text documents into numerical
 feature vectors. You can apply it to the corpus using the <a href="../../API/nlp/vectorizer">Vectorizer</a>
 class. It can be accessed from atom through the <a href="../../API/ATOM/atomclassifier/#vectorize">vectorize</a>
-method. The following strategies are accepted.</p>
+method.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>All strategies can utilize GPU speed-up. Click <a href="../training/#training-on-gpu">here</a>
+for further information about GPU implementation.</p>
+</div>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><strong>Bag of Words</strong><br>
 The Bag of Words (BOW) strategy applies tokenization, counting and
 normalization to the corpus. Documents are described by word occurrences
 while completely ignoring the relative position information of the words in
 the document. The created columns are named with the words they are counting.
 Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#the-bag-of-words-representation">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><strong>TF-IDF</strong><br>
 In a large text corpus, some words will be very present (e.g. “the”,
 “a”, “is” in English), hence carrying very little meaningful information
@@ -2945,6 +2952,7 @@ shadow the frequencies of rarer, yet more interesting, terms. Use the
 TF-IDF strategy to re-weight the count features into floating point values.
 The created columns are named with the words they are counting. Read more
 in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#tfidf-term-weighting">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><strong>Hashing</strong><br>
 The larger the corpus, the larger the vocabulary will grow and thus
 increasing the number of features and memory use. Use the Hashing

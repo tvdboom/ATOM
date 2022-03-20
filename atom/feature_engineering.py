@@ -586,9 +586,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
     gpu: bool or str, optional (default=False)
-        Train estimator on GPU (instead of CPU). Only for strategy=pca.
+        Train strategy on GPU (instead of CPU). Only for strategy=pca.
             - If False: Always use CPU implementation.
-            - If True: Use GPU implementation where possible.
+            - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
@@ -715,7 +715,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         X, y = self._prepare_input(X, y)
 
-        strategies = CustomDict(
+        strats = CustomDict(
             univariate=SelectKBest,
             pca=PCA,
             sfm=SelectFromModel,
@@ -730,10 +730,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         )
 
         if isinstance(self.strategy, str):
-            if self.strategy not in strategies:
+            if self.strategy not in strats:
                 raise ValueError(
-                    f"Invalid value for the strategy parameter, got {self.strategy}. "
-                    f"Choose from: {', '.join(strategies)}"
+                    "Invalid value for the strategy parameter, got "
+                    f"{self.strategy}. Choose from: {', '.join(strats)}"
                 )
             elif self.strategy.lower() not in ("univariate", "pca"):
                 if self.solver is None:
@@ -866,7 +866,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 solver = self.solver
 
             check_y()
-            self._estimator = self.univariate = SelectKBest(
+            self._estimator = SelectKBest(
                 score_func=solver,
                 k=self._n_features,
             ).fit(X, y)
@@ -878,7 +878,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             # for the plots (n_components must be < n_features and <= n_rows)
             if is_sparse(X):
                 estimator = self._get_gpu(TruncatedSVD)
-                self.pca = self._estimator = estimator(
+                self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
                     algorithm=s("algorithm") if self.solver is None else self.solver,
                     random_state=self.random_state,
@@ -890,15 +890,17 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     X = self.scaler.transform(X)
 
                 estimator = self._get_gpu(PCA)
-                self.pca = self._estimator = estimator(
+                self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
                     svd_solver=s("svd_solver") if self.solver is None else self.solver,
                     random_state=self.random_state,
                     **self.kwargs,
                 )
 
-            self.pca.fit(X)
-            self.pca._comps = min(self.pca.components_.shape[0], self._n_features)
+            self._estimator.fit(X)
+            self._estimator._comps = min(
+                self._estimator.components_.shape[0], self._n_features
+            )
 
         elif self.strategy.lower() == "sfm":
             # If any of these attr exists, model is already fitted
@@ -911,7 +913,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if not self.kwargs.get("threshold"):
                 self._kwargs["threshold"] = -np.inf
 
-            self.sfm = self._estimator = strategies[self.strategy](
+            self._estimator = strats[self.strategy](
                 estimator=solver,
                 max_features=self._n_features,
                 prefit=prefit,
@@ -927,7 +929,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 self._estimator.estimator_ = solver
             else:
                 check_y()
-                self.sfm.fit(X, y)
+                self._estimator.fit(X, y)
 
         elif self.strategy.lower() == "sfs":
             check_y()
@@ -935,7 +937,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if self.kwargs.get("scoring"):
                 self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
-            self.sfs = self._estimator = strategies[self.strategy](
+            self._estimator = strats[self.strategy](
                 estimator=solver,
                 n_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
@@ -945,7 +947,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         elif self.strategy.lower() == "rfe":
             check_y()
 
-            self.rfe = self._estimator = strategies[self.strategy](
+            self._estimator = strats[self.strategy](
                 estimator=solver,
                 n_features_to_select=self._n_features,
                 **self._kwargs,
@@ -961,7 +963,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if self._n_features == X.shape[1]:
                 self._n_features = 1
 
-            self.rfecv = self._estimator = strategies[self.strategy](
+            self._estimator = strats[self.strategy](
                 estimator=solver,
                 min_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
@@ -999,7 +1001,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     else:
                         kwargs["scoring"] = get_custom_scorer("r2")
 
-            self._estimator = strategies[self.strategy](
+            self._estimator = strats[self.strategy](
                 objective_function=kwargs.pop("objective_function", objective_function),
                 minimize=kwargs.pop("minimize", False),
                 logger=self.logger,
@@ -1015,8 +1017,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 verbose=True if self.verbose >= 2 else False,
             )
 
-            # Add the strategy estimator as attribute to the class
-            setattr(self, self.strategy.lower(), self._estimator)
+        # Add the strategy estimator as attribute to the class
+        setattr(self, self.strategy.lower(), self._estimator)
 
         self._is_fitted = True
         return self

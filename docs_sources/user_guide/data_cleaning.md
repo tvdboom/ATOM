@@ -35,6 +35,10 @@ method.
     Use atom's [scaled](../../API/ATOM/atomclassifier/#data-attributes) attribute
     to check whether the dataset is scaled.
 
+!!! info
+    All strategies can utilize GPU speed-up. Click [here](../training/#training-on-gpu)
+    for further information about GPU implementation.
+
 <br>
 
 ## Making Gaussian-like features

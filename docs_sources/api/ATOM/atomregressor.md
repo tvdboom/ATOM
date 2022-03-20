@@ -115,7 +115,7 @@ Train estimators on GPU (instead of CPU). Refer to the
 to check which estimators are supported.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
-<li>If True: Use GPU implementation where possible.</li>
+<li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
@@ -1362,7 +1362,7 @@ estimator created by the class is attached to atom. See the
 
 <a name="gauss"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">gauss</strong>(strategy="yeo-johnson", **kwargs)
+<em>method</em> <strong style="color:#008AB8">gauss</strong>(strategy="yeojohnson", **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1022">[source]</a>
 </span>
@@ -1465,7 +1465,7 @@ value `other` in order to prevent too high cardinality. See
 
 <a name="prune"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="z-score",
+<em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="zscore",
 method="drop", max_sigma=3, include_target=False, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1197">[source]</a>

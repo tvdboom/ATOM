@@ -117,6 +117,21 @@ def test_random_state_setter():
         BaseTransformer(random_state=-1)
 
 
+# Test _get_gpu ==================================================== >>
+
+def test_gpu_force():
+    """Assert that an error is raised when GPU fails."""
+    with pytest.raises(ModuleNotFoundError, match=r".*cuml is not installed.*"):
+        BaseTransformer(gpu="force")
+
+
+def test_gpu_fails():
+    """Assert that GPU is skipped when fails."""
+    atom = ATOMClassifier(X10, y10, gpu=True, random_state=1)
+    atom.feature_selection("pca")
+    assert atom.pca.__module__.startswith("sklearn")
+
+
 # Test _prepare_input ============================================== >>
 
 def test_input_data_in_atom():

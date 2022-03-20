@@ -3,7 +3,7 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing estimators for NLP.
+Description: Module containing the NLP transformers.
 
 """
 
@@ -29,8 +29,8 @@ from typeguard import typechecked
 from .basetransformer import BaseTransformer
 from .data_cleaning import TransformerMixin
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, check_is_fitted, composed, crash,
-    get_corpus, is_sparse, method_to_log, to_df,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
+    composed, crash, get_corpus, is_sparse, method_to_log, to_df,
 )
 
 
@@ -586,13 +586,19 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     strategy: str, optional (default="bow")
         Strategy with which to vectorize the text. Choose from:
             - "bow": Bag of Words.
-            - "tf-idf": Term Frequency - Inverse Document Frequency.
+            - "tfidf": Term Frequency - Inverse Document Frequency.
             - "hashing": Vectorize to a matrix of token occurrences.
 
     return_sparse: bool, optional (default=True)
         Whether to return the transformation output as a dataframe
         of sparse arrays. Must be False when there are other columns
         in X (besides `corpus`) that are non-sparse.
+
+    gpu: bool or str, optional (default=False)
+        Train strategy on GPU (instead of CPU).
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -621,11 +627,12 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "bow",
         return_sparse: bool = True,
+        gpu: Union[bool, str] = False,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.return_sparse = return_sparse
         self.kwargs = kwargs
@@ -660,20 +667,30 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         if not isinstance(X[corpus][0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
-        if self.strategy.lower() == "bow":
-            self.bow = self._estimator = CountVectorizer(**self.kwargs)
-        elif self.strategy.lower() in ("tfidf", "tf-idf"):
-            self.tfidf = self._estimator = TfidfVectorizer(**self.kwargs)
-        elif self.strategy.lower() == "hashing":
-            self.hashing = self._estimator = HashingVectorizer(**self.kwargs)
+        strategies = CustomDict(
+            bow=CountVectorizer,
+            tfidf=TfidfVectorizer,
+            hashing=HashingVectorizer,
+        )
+
+        if self.strategy in strategies:
+            estimator = self._get_gpu(
+                estimator=strategies[self.strategy],
+                module="cuml.feature_extraction.text",
+            )
+            self._estimator = estimator(**self.kwargs)
         else:
             raise ValueError(
                 "Invalid value for the strategy parameter, got "
-                f"{self.strategy}. Choose from: bow, tf-idf, hashing."
+                f"{self.strategy}. Choose from: bow, tfidf, hashing."
             )
 
         self.log("Fitting Vectorizer...")
         self._estimator.fit(X[corpus])
+
+        # Add the estimator as attribute to the instance
+        setattr(self, self.strategy.lower(), self._estimator)
+
         self._is_fitted = True
         return self
 

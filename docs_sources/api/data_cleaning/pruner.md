@@ -2,7 +2,7 @@
 --------
 
 <div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Pruner</strong>(strategy="z-score",
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Pruner</strong>(strategy="zscore",
 method="drop", max_sigma=3, include_target=False, verbose=0, logger=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1412">[source]</a>
@@ -19,12 +19,12 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#handlin
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str or sequence, optional (default="z-score")</strong><br>
+<strong>strategy: str or sequence, optional (default="zscore")</strong><br>
 Strategy with which to select the outliers. If sequence of
 strategies, only samples marked as outliers by all chosen
 strategies are dropped. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"z-score": Z-score of each data value.</li>
+<li>"zscore": Z-score of each data value.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">iforest</a>": Isolation Forest.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.covariance.EllipticEnvelope.html">ee</a>": Elliptic Envelope.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html">lof</a>": Local Outlier Factor.</li>
@@ -33,7 +33,7 @@ strategies are dropped. Choose from:
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html">optics</a>": DBSCAN-like clustering approach.</li>
 </ul>
 <strong>method: int, float or str, optional (default="drop")</strong><br>
-Method to apply on the outliers. Only the z-score strategy
+Method to apply on the outliers. Only the zscore strategy
 accepts another method than "drop". Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"drop": Drop any sample with outlier values.</li>
@@ -43,13 +43,13 @@ accepts another method than "drop". Choose from:
 <p>
 <strong>max_sigma: int or float, optional (default=3)</strong><br>
 Maximum allowed standard deviations from the mean of the column.
-If more, it is considered an outlier. Only if strategy="z-score".
+If more, it is considered an outlier. Only if strategy="zscore".
 </p>
 <p>
 <strong>include_target: bool, optional (default=False)</strong><br>
 Whether to include the target column in the search for
 outliers. This can be useful for regression tasks. Only
-if strategy="z-score".
+if strategy="zscore".
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -325,13 +325,13 @@ Transformed target column. Only returned if provided.
     from atom import ATOMRegressor
     
     atom = ATOMRegressor(X, y)
-    atom.prune(strategy="z-score", max_sigma=2, include_target=True)
+    atom.prune(strategy="zscore", max_sigma=2, include_target=True)
     ```
 
 === "stand-alone"
     ```python
     from atom.data_cleaning import Pruner
     
-    pruner = Pruner(strategy="z-score", max_sigma=2, include_target=True)
+    pruner = Pruner(strategy="zscore", max_sigma=2, include_target=True)
     X_train, y_train = pruner.transform(X_train, y_train)
     ```

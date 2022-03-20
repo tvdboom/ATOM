@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureSelector</strong>(strategy=None,
-solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
+solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, gpu=False, verbose=0, logger=None, random_state=None,
 **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L511">[source]</a>
@@ -121,10 +121,10 @@ Number of cores to use for parallel processing.
 <li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
 </ul>
 <strong>gpu: bool or str, optional (default=False)</strong><br>
-Train estimator on GPU (instead of CPU). Only for strategy=pca.
+Train strategy on GPU (instead of CPU). Only for strategy=pca.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
-<li>If True: Use GPU implementation where possible.</li>
+<li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>

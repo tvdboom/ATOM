@@ -2966,8 +2966,8 @@
 <div style="font-size:20px">
 <em>class</em> atom.api.<strong style="color:#008AB8">ATOMClassifier</strong>(*arrays,
 y=-1, index=False, test_size=0.2, holdout_size=None, shuffle=True,
-stratify=True, n_rows=1, n_jobs=1, verbose=0, warnings=True, logger=None,
-experiment=None, random_state=None)
+stratify=True, n_rows=1, n_jobs=1, gpu=False, verbose=0, warnings=True,
+logger=None, experiment=None, random_state=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L179">[source]</a>
 </span>
@@ -3081,6 +3081,15 @@ Number of cores to use for parallel processing.
 Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
 </p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train estimators on GPU (instead of CPU). Refer to the
+<a href="../../../user_guide/training/#training-on-gpu">documentation</a>
+to check which estimators are supported.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -4310,7 +4319,7 @@ estimator created by the class is attached to atom. See the
 <br /><br /><br /></p>
 <p><a name="gauss"></a></p>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">gauss</strong>(strategy="yeo-johnson", **kwargs)
+<em>method</em> <strong style="color:#008AB8">gauss</strong>(strategy="yeojohnson", **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1022">[source]</a>
 </span>
@@ -4403,7 +4412,7 @@ the target column! Use the <a href="#clean">clean</a> method for that.</p>
 <p><br /><br /><br /></p>
 <p><a name="prune"></a></p>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="z-score",
+<em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="zscore",
 method="drop", max_sigma=3, include_target=False, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1197">[source]</a>
@@ -4712,7 +4721,7 @@ description of the parameters.
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="c1"># Apply data cleaning methods</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;z-score&quot;</span><span class="p">,</span> <span class="n">max_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;zscore&quot;</span><span class="p">,</span> <span class="n">max_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;smote&quot;</span><span class="p">)</span>
 
 <span class="c1"># Fit the models to the data</span>

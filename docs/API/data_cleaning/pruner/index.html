@@ -2840,7 +2840,7 @@
 <h1 id="pruner">Pruner</h1>
 <hr />
 <div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Pruner</strong>(strategy="z-score",
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Pruner</strong>(strategy="zscore",
 method="drop", max_sigma=3, include_target=False, verbose=0, logger=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1412">[source]</a>
@@ -2856,12 +2856,12 @@ method. Read more in the <a href="../../../user_guide/data_cleaning/#handling-ou
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str or sequence, optional (default="z-score")</strong><br>
+<strong>strategy: str or sequence, optional (default="zscore")</strong><br>
 Strategy with which to select the outliers. If sequence of
 strategies, only samples marked as outliers by all chosen
 strategies are dropped. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"z-score": Z-score of each data value.</li>
+<li>"zscore": Z-score of each data value.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">iforest</a>": Isolation Forest.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.covariance.EllipticEnvelope.html">ee</a>": Elliptic Envelope.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html">lof</a>": Local Outlier Factor.</li>
@@ -2870,7 +2870,7 @@ strategies are dropped. Choose from:
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html">optics</a>": DBSCAN-like clustering approach.</li>
 </ul>
 <strong>method: int, float or str, optional (default="drop")</strong><br>
-Method to apply on the outliers. Only the z-score strategy
+Method to apply on the outliers. Only the zscore strategy
 accepts another method than "drop". Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"drop": Drop any sample with outlier values.</li>
@@ -2880,13 +2880,13 @@ accepts another method than "drop". Choose from:
 <p>
 <strong>max_sigma: int or float, optional (default=3)</strong><br>
 Maximum allowed standard deviations from the mean of the column.
-If more, it is considered an outlier. Only if strategy="z-score".
+If more, it is considered an outlier. Only if strategy="zscore".
 </p>
 <p>
 <strong>include_target: bool, optional (default=False)</strong><br>
 Whether to include the target column in the search for
 outliers. This can be useful for regression tasks. Only
-if strategy="z-score".
+if strategy="zscore".
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -3140,13 +3140,13 @@ Transformed target column. Only returned if provided.
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;z-score&quot;</span><span class="p">,</span> <span class="n">max_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">include_target</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;zscore&quot;</span><span class="p">,</span> <span class="n">max_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">include_target</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Pruner</span>
 
-<span class="n">pruner</span> <span class="o">=</span> <span class="n">Pruner</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;z-score&quot;</span><span class="p">,</span> <span class="n">max_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">include_target</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">pruner</span> <span class="o">=</span> <span class="n">Pruner</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;zscore&quot;</span><span class="p">,</span> <span class="n">max_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">include_target</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">pruner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
 </code></pre></div>
 </div>

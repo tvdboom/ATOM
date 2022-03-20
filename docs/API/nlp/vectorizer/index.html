@@ -2841,7 +2841,7 @@
 <hr />
 <div style="font-size:20px">
 <em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="bow",
-return_sparse=True, verbose=0, logger=None, *kwargs)
+return_sparse=True, gpu=False, verbose=0, logger=None, *kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L580">[source]</a>
 </span>
@@ -2863,7 +2863,7 @@ the <a href="../../../user_guide/nlp/#vectorization">user guide</a>.</p>
 Strategy with which to vectorize the text. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">bow</a>": Bag of Words.</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">tf-idf</a>": Term Frequency - Inverse Document Frequency.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">tfidf</a>": Term Frequency - Inverse Document Frequency.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a>": Vectorize to a matrix of token occurrences.</li>
 </ul>
 <p>
@@ -2872,6 +2872,13 @@ Whether to return the transformation output as a dataframe
 of sparse arrays. Must be False when there are other columns
 in X (besides <code>corpus</code>) that are non-sparse.
 </p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train strategy on GPU (instead of CPU).
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -3142,13 +3149,13 @@ Transformed corpus.
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;tf-idf&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;tfidf&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">Vectorizer</span>
 
-<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">Vectorizer</span><span class="p">(</span><span class="s2">&quot;tf-idf&quot;</span><span class="p">)</span>
+<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">Vectorizer</span><span class="p">(</span><span class="s2">&quot;tfidf&quot;</span><span class="p">)</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 </code></pre></div>
 </div>

@@ -7,6 +7,7 @@ Description: Module containing the BaseTransformer class.
 
 """
 
+import importlib
 import multiprocessing
 import os
 import random
@@ -170,13 +171,16 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _get_gpu(self, est):
+    def _get_gpu(self, estimator, module="cuml"):
         """Get a GPU or CPU estimator depending on availability.
 
         Parameters
         ----------
-        est: estimator
+        estimator: estimator
             Class to get GPU implementation from.
+
+        module: str, optional (default="cuml")
+            Module from which to get the GPU estimator.
 
         Returns
         -------
@@ -186,21 +190,20 @@ class BaseTransformer:
         """
         if self.gpu:
             try:
-                import cuml
-                return getattr(cuml, est.__name__)
+                return importlib.import_module(module, estimator.__name__)
             except ModuleNotFoundError:
-                if self.gpu == "force":
+                if str(self.gpu).lower() == "force":
                     raise ModuleNotFoundError(
                         "It looks like cuml is not installed. Refer to the package's "
                         "documentation to learn how to utilize the machine's GPU."
                     )
                 else:
                     self.log(
-                        f"Unable to import cuml.{est.__name__}. "
-                        "Using CPU implementation instead.", 1
+                        f" --> Unable to import {estimator.__name__} from "
+                        f"{module}. Using CPU implementation instead.", 1
                     )
 
-        return est
+        return estimator
 
     @staticmethod
     @typechecked

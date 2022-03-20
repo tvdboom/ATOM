@@ -161,7 +161,7 @@ def test_invalid_strategy():
         vectorizer.fit(X_text)
 
 
-@pytest.mark.parametrize("strategy", ["bow", "tfidf", "tf-idf"])
+@pytest.mark.parametrize("strategy", ["bow", "tfidf"])
 def test_strategies(strategy):
     """Assert that the BOW and TF-IDF strategies works as intended."""
     X = Vectorizer(strategy=strategy).fit_transform(X_text)

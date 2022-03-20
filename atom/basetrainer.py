@@ -169,7 +169,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Train estimators on GPU (instead of CPU). Refer to the
         documentation to check which estimators are supported.
             - If False: Always use CPU implementation.
-            - If True: Use GPU implementation where possible.
+            - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.
 
     random_state: int or None, optional (default=None)

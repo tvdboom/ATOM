@@ -502,13 +502,16 @@ and [models](#models) are supported.
 * GPU: NVIDIA Pascal™ or better with [compute capability](https://developer.nvidia.com/cuda-gpus) 6.0+
 * CUDA & NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5
 
-<a name="algorithms"></a>
-**Algorithms**
+<a name="classes"></a>
+**Classes**
 
+* [Scaler](../../API/data_cleaning/scaler)
+* [Vectorizer](../../API/nlp/vectorizer)
+* [FeatureSelector](../../API/feature_engineering/feature_selector) (only for strategy="pca")
 
 <a name="models"></a>
 **Models**
 
-* [XGBoost](../API/models/xgb): Requires no further installation.
-* [LightGBM](../API/models/lgb): Requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html).
-* [CatBoost](../API/models/catb): Requires no further installation.
+* [XGBoost](../../API/models/xgb): Requires no further installation.
+* [LightGBM](../../API/models/lgb): Requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html).
+* [CatBoost](../../API/models/catb): Requires no further installation.

@@ -3043,13 +3043,9 @@ methods to compare all models, independent of the branch it was trained on.</p>
 <p><br></p>
 <p><a name="q6"></a></p>
 <h3 id="6-can-i-train-models-through-atom-using-a-gpu">6. Can I train models through atom using a GPU?</h3>
-<p>ATOM doesn't train the models himself. The models' underlying package does.
-Since the majority of predefined models are implemented through sklearn
-and sklearn runs only on CPU, they can not be trained on GPU. If you are
-using a <a href="../user_guide/models/#deep-learning">deep learning model</a> whose
-library allows GPU implementation (e.g. Keras) and the settings or model
-parameters are tuned to do so, the model will train on the GPU like it
-would do without using ATOM.</p>
+<p>Yes. Refer to the <a href="../user_guide/training/#training-on-gpu">user guide</a>
+to see what algorithms and models have a GPU implementation. Be aware
+that some of them have additional software and/or hardware dependencies.</p>
 <p><br></p>
 <p><a name="q7"></a></p>
 <h3 id="7-how-are-numerical-and-categorical-columns-differentiated">7. How are numerical and categorical columns differentiated?</h3>

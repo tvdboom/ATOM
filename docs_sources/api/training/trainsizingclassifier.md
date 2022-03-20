@@ -184,7 +184,7 @@ Train estimators on GPU (instead of CPU). Refer to the
 to check which estimators are supported.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
-<li>If True: Use GPU implementation where possible.</li>
+<li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>

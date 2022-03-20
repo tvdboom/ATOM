@@ -113,7 +113,7 @@ def test_invalid_strategy():
         gauss.fit(X_bin)
 
 
-@pytest.mark.parametrize("strategy", ["yeo-johnson", "box-cox", "quantile"])
+@pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
 def test_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     gauss = Gauss(strategy=strategy)
@@ -129,7 +129,7 @@ def test_gauss_y_is_ignored():
 
 def test_gauss_kwargs():
     """Assert that kwargs can be passed to the estimator."""
-    X = Gauss(strategy="yeo-johnson", standardize=False).fit_transform(X_bin)
+    X = Gauss(strategy="yeojohnson", standardize=False).fit_transform(X_bin)
     assert not check_scaling(X)
 
 
@@ -682,7 +682,7 @@ def test_pruner_strategies(strategy):
 
 def test_multiple_strategies():
     """Assert that selecting multiple strategies work."""
-    pruner = Pruner(strategy=["z-score", "lof", "ee", "iforest"])
+    pruner = Pruner(strategy=["zscore", "lof", "ee", "iforest"])
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
     assert all(hasattr(pruner, attr) for attr in ("lof", "ee", "iforest"))

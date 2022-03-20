@@ -3053,8 +3053,8 @@ arrays (scores, p-values). Read more in sklearn's <a href="https://scikit-learn.
 <p><a name="pca"></a>
 <strong>Principal Components Analysis</strong><br>
 Applying PCA reduces the dimensionality of the dataset by maximizing
-the variance of each dimension. The new features are called component
-1, component 2, etc... PCA can be applied in two ways:</p>
+the variance of each dimension. The new features are called component_1,
+component_2, etc... PCA can be applied in three ways:</p>
 <ul>
 <li>If the data is dense (i.e. not sparse), the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html">PCA</a>.
   Before fitting the transformer, the data is scaled to mean=0 and std=1
@@ -3063,6 +3063,8 @@ the variance of each dimension. The new features are called component
   case for term-document matrices, see <a href="../../API/nlp/vectorizer">Vectorizer</a>),
   the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html">TruncatedSVD</a>.
   Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis">documentation</a>.</li>
+<li>If <a href="../training/#training-on-gpu">GPU training</a> is enabled, the estimator
+  used is cuml's <a href="https://docs.rapids.ai/api/cuml/stable/api.html#cuml.PCA">PCA</a>. </li>
 </ul>
 <p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="sfm"></a>

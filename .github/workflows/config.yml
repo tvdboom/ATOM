@@ -29,8 +29,6 @@ jobs:
         pip install -r requirements-dev.txt
         pip install -r requirements.txt
         pip install -r requirements-optional.txt
-    - name: Check import ordering
-      run: isort --check-only atom tests
     - name: Check linting
       run: flake8 --show-source --statistics atom tests
     - name: Run tests

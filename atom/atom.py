@@ -1005,7 +1005,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         setattr(self.branch, strategy.lower(), getattr(scaler, strategy.lower()))
 
     @composed(crash, method_to_log)
-    def gauss(self, strategy: str = "yeo-johnson", **kwargs):
+    def gauss(self, strategy: str = "yeojohnson", **kwargs):
         """Transform the data to follow a Gaussian distribution.
 
         This transformation is useful for modeling issues related
@@ -1182,7 +1182,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def prune(
         self,
-        strategy: Union[str, SEQUENCE_TYPES] = "z-score",
+        strategy: Union[str, SEQUENCE_TYPES] = "zscore",
         method: Union[SCALAR, str] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
@@ -1217,7 +1217,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Attach the estimator attribute to atom's branch
         for strat in lst(strategy):
-            if strat.lower() != "z-score":
+            if strat.lower() != "zscore":
                 setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
 
     @composed(crash, method_to_log, typechecked)
