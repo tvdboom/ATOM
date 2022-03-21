@@ -25,7 +25,7 @@ jobs:
         uses: jamescurtin/isort-action@master
         with:
           sortPaths: atom tests
-          requirementsFiles: requirements.txt
+          requirementsFiles: requirements-dev.txt requirements.txt
 
   flake8:
     runs-on: ubuntu-latest
@@ -39,6 +39,8 @@ jobs:
           architecture: x64
       - name: Apply linting
         uses: py-actions/flake8@v2
+        with:
+          path: atom tests
 
   build:
     runs-on: ${{ matrix.os }}
@@ -63,6 +65,3 @@ jobs:
         run: coverage run -m pytest
       - name: Get coverage
         run: codecov
-
-
-

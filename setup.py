@@ -26,7 +26,7 @@ setup(
     version="4.13.0",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url=f"https://github.com/tvdboom/ATOM/archive/v4.13.0.tar.gz",
+    download_url="https://github.com/tvdboom/ATOM/archive/v4.13.0.tar.gz",
     url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",
