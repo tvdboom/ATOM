@@ -12,8 +12,8 @@ from copy import deepcopy
 from inspect import signature
 from typing import Any, Dict, Optional, Union
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from joblib.memory import Memory
 from scipy import stats
 from typeguard import typechecked

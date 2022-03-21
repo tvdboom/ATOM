@@ -411,6 +411,8 @@ class BaseTransformer:
             else:
                 test_size = self.test_size
 
+            splitter = self._get_gpu(train_test_split, "cuml.model_selection")
+
             # Define holdout set size
             if self.holdout_size:
                 if self.holdout_size < 1:
@@ -425,7 +427,7 @@ class BaseTransformer:
                         f"got {self.holdout_size}."
                     )
 
-                data, holdout = train_test_split(
+                data, holdout = splitter(
                     data,
                     test_size=holdout_size,
                     random_state=self.random_state,
@@ -436,7 +438,7 @@ class BaseTransformer:
             else:
                 holdout = None
 
-            train, test = train_test_split(
+            train, test = splitter(
                 data,
                 test_size=test_size,
                 random_state=self.random_state,

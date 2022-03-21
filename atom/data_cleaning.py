@@ -507,6 +507,13 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Whether to Label-encode the target column. This parameter is
         ignored if `y` is not provided.
 
+    gpu: bool or str, optional (default=False)
+        Train estimator on GPU (instead of CPU). Only for
+        encode_target=True.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -542,10 +549,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
         encode_target: bool = True,
+        gpu: Union[bool, str] = False,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.drop_types = drop_types
         self.strip_categorical = strip_categorical
         self.drop_max_cardinality = drop_max_cardinality
@@ -647,7 +655,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Label-encode the target column
             if self.encode_target:
-                encoder = LabelEncoder()
+                encoder = self._get_gpu(LabelEncoder, "cuml.preprocessing.LabelEncoder")
                 y = to_series(encoder.fit_transform(y), index=y.index, name=y.name)
                 self.mapping = {str(it(v)): i for i, v in enumerate(encoder.classes_)}
 
