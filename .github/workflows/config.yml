@@ -11,6 +11,40 @@ on:
       - development
 
 jobs:
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v2
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+          architecture: x64
+      - name: Check imports
+        uses: jamescurtin/isort-action@master
+        with:
+          sortPaths: atom tests
+          configuration: --check-only setup.cfg
+          requirementsFiles: requirements.txt
+
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v2
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+          architecture: x64
+      - name: Apply linting
+        uses: py-actions/flake8@v2
+        with: setup.cfg
+          ignore: W503, E731
+          max-line-length: 89
+          exclude: __init__.py
+
   build:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -29,9 +63,10 @@ jobs:
         pip install -r requirements-dev.txt
         pip install -r requirements.txt
         pip install -r requirements-optional.txt
-    - name: Check linting
-      run: flake8 --show-source --statistics atom tests
     - name: Run tests
       run: coverage run -m pytest
     - name: Get coverage
       run: codecov
+
+
+
