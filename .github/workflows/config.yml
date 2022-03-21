@@ -25,7 +25,6 @@ jobs:
         uses: jamescurtin/isort-action@master
         with:
           sortPaths: atom tests
-          configuration: --check-only setup.cfg
           requirementsFiles: requirements.txt
 
   flake8:
@@ -40,10 +39,6 @@ jobs:
           architecture: x64
       - name: Apply linting
         uses: py-actions/flake8@v2
-        with: setup.cfg
-          ignore: W503, E731
-          max-line-length: 89
-          exclude: __init__.py
 
   build:
     runs-on: ${{ matrix.os }}
@@ -53,20 +48,21 @@ jobs:
         python-version: ["3.7", "3.8", "3.9"]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        pip install -r requirements-dev.txt
-        pip install -r requirements.txt
-        pip install -r requirements-optional.txt
-    - name: Run tests
-      run: coverage run -m pytest
-    - name: Get coverage
-      run: codecov
+      - name: Check out source repository
+        uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
+          pip install -r requirements-optional.txt
+      - name: Run tests
+        run: coverage run -m pytest
+      - name: Get coverage
+        run: codecov
 
 
 
