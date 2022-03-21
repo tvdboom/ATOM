@@ -25,7 +25,6 @@ jobs:
         uses: jamescurtin/isort-action@master
         with:
           sortPaths: atom tests
-          requirementsFiles: requirements-dev.txt requirements.txt
 
   flake8:
     runs-on: ubuntu-latest
@@ -48,7 +47,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9"]
-
     steps:
       - name: Check out source repository
         uses: actions/checkout@v2
@@ -58,10 +56,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          pip install -r requirements-dev.txt
+          pip install -U pip
+          pip install -U pytest
+          pip install -U tensorflow
           pip install -r requirements.txt
           pip install -r requirements-optional.txt
       - name: Run tests
-        run: coverage run -m pytest
-      - name: Get coverage
-        run: codecov
+        run: pytest
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2

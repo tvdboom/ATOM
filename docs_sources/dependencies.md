@@ -74,7 +74,6 @@ using `pip install atom-ml[dev]`.
 * **[isort](https://pycqa.github.io/isort/)** (>=5.10.1)
 * **[flake8](https://github.com/pycqa/flake8)** (>=4.0.1)
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.1.0)
-* **[coverage](https://github.com/nedbat/coveragepy)** (>=6.3.2)
 * **[tensorflow](https://www.tensorflow.org/)** (>=2.3.1)
 * **[mkdocs](https://www.mkdocs.org/)** (>=1.2.3)
 * **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=8.2.5)
