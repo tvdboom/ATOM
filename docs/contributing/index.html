@@ -2999,13 +2999,15 @@ make sure that you have done everything necessary so we can efficiently
 review and accept your changes.</p>
 <ul>
 <li>Update the documentation so all of your changes are reflected there.</li>
-<li>Adhere to <a href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a> standards.</li>
+<li>Adhere to <a href="https://peps.python.org/pep-0008/">PEP 8</a> standards.</li>
 <li>Use a maximum of 89 characters per line. Try to keep comments and
   docstrings below 72 characters.</li>
 <li>Update the project unit tests to test your code changes as thoroughly
   as possible.</li>
 <li>Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.</li>
+<li>Run <a href="https://pycqa.github.io/isort/">isort</a>: <code>isort atom tests</code>.</li>
+<li>Run <a href="https://flake8.pycqa.org/en/latest/">flake8</a>: <code>flake8 --show-source --statistics atom tests</code>.</li>
 </ul>
 <p>If your contribution requires a new library dependency:</p>
 <ul>

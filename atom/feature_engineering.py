@@ -586,7 +586,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
     gpu: bool or str, optional (default=False)
-        Train strategy on GPU (instead of CPU). Only for strategy=pca.
+        Train strategy on GPU (instead of CPU). Only for strategy="pca".
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.

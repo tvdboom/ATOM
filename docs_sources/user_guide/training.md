@@ -506,6 +506,9 @@ and [models](#models) are supported.
 **Classes**
 
 * [Scaler](../../API/data_cleaning/scaler)
+* [Cleaner](../../API/data_cleaning/cleaner) (only when encode_target=True)
+* [Imputer](../../API/data_cleaning/imputer) (not for strat_num="knn")
+* [Discretizer](../../API/data_cleaning/discretizer)
 * [Vectorizer](../../API/nlp/vectorizer)
 * [FeatureSelector](../../API/feature_engineering/feature_selector) (only for strategy="pca")
 

@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Discretizer</strong>(strategy="quantile",
-bins=5, labels=None, verbose=0, logger=None)
+bins=5, labels=None, gpu=False, verbose=0, logger=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L919">[source]</a>
 </span>
@@ -41,6 +41,13 @@ Label names with which to replace the binned intervals.
 <li>If None: Use default labels of the form [min_edge]-[max_edge].</li>
 <li>If sequence: Labels to use for all columns.</li>
 <li>If dict: Labels per column, where the key is the column's name.</li>
+</ul>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train estimator on GPU (instead of CPU).
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:

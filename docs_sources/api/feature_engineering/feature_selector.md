@@ -121,7 +121,7 @@ Number of cores to use for parallel processing.
 <li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
 </ul>
 <strong>gpu: bool or str, optional (default=False)</strong><br>
-Train strategy on GPU (instead of CPU). Only for strategy=pca.
+Train strategy on GPU (instead of CPU). Only for strategy="pca".
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>

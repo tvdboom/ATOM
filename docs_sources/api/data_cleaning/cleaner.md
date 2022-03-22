@@ -4,8 +4,8 @@
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Cleaner</strong>(drop_types=None,
 strip_categorical=True, drop_max_cardinality=True, drop_min_cardinality=True,
-drop_duplicates=False, drop_missing_target=True, encode_target=True, verbose=0,
-logger=None)
+drop_duplicates=False, drop_missing_target=True, encode_target=True, gpu=False,
+verbose=0, logger=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L427">[source]</a>
 </span>
@@ -63,6 +63,13 @@ This parameter is ignored if <code>y</code> is not provided.
 Whether to Label-encode the target column. This parameter is ignored
 if <code>y</code> is not provided.
 </p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train estimator on GPU (instead of CPU). Only for encode_target=True.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">

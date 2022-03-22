@@ -655,9 +655,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Label-encode the target column
             if self.encode_target:
-                encoder = self._get_gpu(LabelEncoder, "cuml.preprocessing.LabelEncoder")
-                y = to_series(encoder.fit_transform(y), index=y.index, name=y.name)
-                self.mapping = {str(it(v)): i for i, v in enumerate(encoder.classes_)}
+                enc = self._get_gpu(LabelEncoder, "cuml.preprocessing.LabelEncoder")()
+                y = to_series(enc.fit_transform(y), index=y.index, name=y.name)
+                self.mapping = {str(it(v)): i for i, v in enumerate(enc.classes_)}
 
                 # Only print if the target column wasn't already encoded
                 if any([key != str(value) for key, value in self.mapping.items()]):
@@ -699,6 +699,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         Maximum number or fraction of missing values in a column
         (if more, the column is removed). If None, ignore this step.
 
+    gpu: bool or str, optional (default=False)
+        Train on GPU (instead of CPU). Not for strat_num="knn".
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -727,10 +733,11 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         strat_cat: str = "drop",
         max_nan_rows: Optional[SCALAR] = None,
         max_nan_cols: Optional[Union[float]] = None,
+        gpu: Union[bool, str] = False,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strat_num = strat_num
         self.strat_cat = strat_cat
         self.max_nan_rows = max_nan_rows
@@ -808,6 +815,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._imputers = {}
 
         # Assign an imputer to each column
+        estimator = self._get_gpu(SimpleImputer, "cuml.experimental.preprocessing")
         for name, column in X.items():
             # Remember columns with too many missing values
             if self._max_nan_cols and column.isna().sum() > self._max_nan_cols:
@@ -821,19 +829,19 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                         self._imputers[name] = KNNImputer().fit(X[[name]])
 
                     elif self.strat_num.lower() == "most_frequent":
-                        self._imputers[name] = SimpleImputer(
+                        self._imputers[name] = estimator(
                             strategy="most_frequent",
                         ).fit(X[[name]])
 
                     # Strategies mean or median
                     elif self.strat_num.lower() != "drop":
-                        self._imputers[name] = SimpleImputer(
+                        self._imputers[name] = estimator(
                             strategy=self.strat_num.lower()
                         ).fit(X[[name]])
 
             # Column is categorical
             elif self.strat_cat.lower() == "most_frequent":
-                self._imputers[name] = SimpleImputer(
+                self._imputers[name] = estimator(
                     strategy="most_frequent",
                 ).fit(X[[name]])
 
@@ -996,6 +1004,12 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If sequence: Labels to use for all columns.
         - If dict: Labels per column, where the key is the column's name.
 
+    gpu: bool or str, optional (default=False)
+        Train estimator on GPU (instead of CPU).
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -1015,10 +1029,11 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy: str = "quantile",
         bins: Union[int, SEQUENCE_TYPES, dict] = 5,
         labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
+        gpu: Union[bool, str] = False,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.bins = bins
         self.labels = labels
@@ -1101,7 +1116,11 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                             f"len(bins)={len(bins) } and len(columns)={len(X.columns)}."
                         )
 
-                self._discretizers[col] = KBinsDiscretizer(
+                estimator = self._get_gpu(
+                    estimator=KBinsDiscretizer,
+                    module="cuml.experimental.preprocessing",
+                )
+                self._discretizers[col] = estimator(
                     n_bins=bins,
                     encode="ordinal",
                     strategy=self.strategy.lower(),

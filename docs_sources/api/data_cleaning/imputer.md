@@ -3,7 +3,8 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop",
-strat_cat="drop", max_nan_rows=None, max_nan_cols=None, verbose=0, logger=None)
+strat_cat="drop", max_nan_rows=None, max_nan_cols=None, gpu=False,
+verbose=0, logger=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L620">[source]</a>
 </span>
@@ -47,6 +48,13 @@ Maximum number or fraction of missing values in a row
 Maximum number or fraction of missing values in a column
 (if more, the column is removed). If None, ignore this step.
 </p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train strategies on GPU (instead of CPU).
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
