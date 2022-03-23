@@ -2,7 +2,7 @@
 --------------------
 
 <a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
-<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>supports_gpu</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
 
 Random forests are an ensemble learning method that operate by
 constructing a multitude of decision trees at training time and

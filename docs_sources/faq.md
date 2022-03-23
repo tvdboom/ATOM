@@ -89,9 +89,9 @@ methods to compare all models, independent of the branch it was trained on.
 <a name="q6"></a>
 ### 6. Can I train models through atom using a GPU?
 
-Yes. Refer to the [user guide](../user_guide/training/#training-on-gpu)
-to see what algorithms and models have a GPU implementation. Be aware
-that some of them have additional software and/or hardware dependencies.
+Yes. Refer to the [user guide](../user_guide/gpu) to see what algorithms
+and models have a GPU implementation. Be aware that it requires additional
+software and hardware dependencies.
 
 <br>
 

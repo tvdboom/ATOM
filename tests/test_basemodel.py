@@ -175,7 +175,7 @@ def test_all_base_estimators(est):
     atom.run("LR", n_calls=5, bo_params={"base_estimator": est})
 
 
-def test_sample_weights_fit():
+def test_sample_weight_fit():
     """Assert that sample weights can be used with the BO."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
@@ -373,7 +373,7 @@ def test_score_custom_metric():
     assert atom.tree.score(X_bin, y_bin, metric="recall") == recall
 
 
-def test_score_with_sample_weights():
+def test_score_with_sample_weight():
     """Assert that the score method works when sample weights are provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")

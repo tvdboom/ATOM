@@ -508,8 +508,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         ignored if `y` is not provided.
 
     gpu: bool or str, optional (default=False)
-        Train estimator on GPU (instead of CPU). Only for
-        encode_target=True.
+        Train estimator on GPU (instead of CPU). Only to encode the
+        target column.
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.

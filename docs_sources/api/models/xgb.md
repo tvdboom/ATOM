@@ -3,7 +3,7 @@
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
 <a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
-<a href="../../../user_guide/training/#training-on-gpu" class="md-tag" draggable=False>supports_gpu</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
 
 XGBoost is an optimized distributed gradient boosting model designed to
 be highly efficient, flexible and portable. XGBoost provides a parallel
@@ -21,7 +21,7 @@ Read more in XGBoost's [documentation](https://xgboost.readthedocs.io/en/latest/
 
 !!! info
     XGBoost allows [early stopping](../../../user_guide/training/#early-stopping)
-    to stop the training of unpromising models prematurely!
+    to stop the training of unpromising models prematurely.
 
 
 

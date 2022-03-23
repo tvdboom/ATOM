@@ -117,7 +117,7 @@ Additionally, ATOM implements two ensemble models:
     - "Vote" for Voting
 
 """
-
+import random
 from inspect import signature
 from random import randint
 
@@ -254,6 +254,17 @@ class Dummy(BaseModel):
         else:
             return DummyRegressor
 
+    def get_parameters(self, x):
+        """Return a dictionary of the model's hyperparameters."""
+        params = super().get_parameters(x)
+
+        if self._get_param(params, "strategy") != "quantile":
+            params.pop("quantile", None)
+        elif params.get("quantile") is None:
+            params.replace_value("quantile", random.choice(zero_to_one_inc))
+
+        return params
+
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         if self.T.goal == "class":
@@ -268,10 +279,14 @@ class Dummy(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         if self.T.goal == "class":
             categories = ["most_frequent", "prior", "stratified", "uniform"]
+            dimensions = [Categorical(categories, name="strategy")]
         else:
-            categories = ["mean", "median", "quantile"]
+            dimensions = [
+                Categorical(["mean", "median", "quantile"], name="strategy"),
+                Categorical([None, *zero_to_one_inc], name="quantile"),
+            ]
 
-        return [Categorical(categories, name="strategy")]
+        return dimensions
 
 
 class GaussianProcess(BaseModel):
@@ -320,7 +335,7 @@ class GaussianNaiveBayes(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return GaussianNB
+        return self.T._get_gpu(GaussianNB, "cuml.naive_bayes")
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -340,7 +355,7 @@ class MultinomialNaiveBayes(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return MultinomialNB
+        return self.T._get_gpu(MultinomialNB, "cuml.naive_bayes")
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -368,7 +383,7 @@ class BernoulliNaiveBayes(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return BernoulliNB
+        return self.T._get_gpu(BernoulliNB, "cuml.naive_bayes")
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -396,7 +411,7 @@ class CategoricalNaiveBayes(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return CategoricalNB
+        return self.T._get_gpu(CategoricalNB, "cuml.naive_bayes")
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -453,11 +468,14 @@ class OrdinaryLeastSquares(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return LinearRegression
+        return self.T._get_gpu(LinearRegression)
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        return self.est_class(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
+        if self._gpu:
+            return self.est_class(**params)
+        else:
+            return self.est_class(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
 
 
 class Ridge(BaseModel):
@@ -474,25 +492,32 @@ class Ridge(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return RidgeClassifier
+            return self.T._get_gpu(RidgeClassifier, "cuml.dask.linear_model")
         else:
             return RidgeRegressor
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
+        if self._gpu:
+            return self.est_class(**params)
+        else:
+            return self.est_class(
+                random_state=params.pop("random_state", self.T.random_state),
+                **params,
+            )
 
-    @staticmethod
-    def get_dimensions():
+    def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
-        solvers = ["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
-        return [
-            Real(1e-3, 10, "log-uniform", name="alpha"),
-            Categorical(solvers, name="solver"),
-        ]
+        if self._gpu:
+            dimensions = [Real(1e-3, 10, "log-uniform", name="alpha")]
+        else:
+            solvers = ["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
+            dimensions = [
+                Real(1e-3, 10, "log-uniform", name="alpha"),
+                Categorical(solvers, name="solver"),
+            ]
+
+        return dimensions
 
 
 class Lasso(BaseModel):
@@ -508,14 +533,17 @@ class Lasso(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return LassoRegressor
+        return self._get_gpu(LassoRegressor, "cuml.dask.linear_model")
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
+        if self._gpu:
+            return self.est_class(**params)
+        else:
+            return self.est_class(
+                random_state=params.pop("random_state", self.T.random_state),
+                **params,
+            )
 
     @staticmethod
     def get_dimensions():
@@ -539,14 +567,17 @@ class ElasticNet(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return ElasticNetRegressor
+        return self._get_gpu(ElasticNetRegressor, "cuml.dask.linear_model")
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
+        if self._gpu:
+            return self.est_class(**params)
+        else:
+            return self.est_class(
+                random_state=params.pop("random_state", self.T.random_state),
+                **params,
+            )
 
     @staticmethod
     def get_dimensions():
@@ -571,7 +602,10 @@ class LeastAngleRegression(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return Lars
+        if self._gpu:
+            return self.est_class(**params)
+        else:
+            return self._get_gpu(Lars, "cuml.experimental.linear_model")
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -749,7 +783,7 @@ class LogisticRegression(BaseModel):
             params.pop("l1_ratio", None)
         elif self._get_param(params, "l1_ratio") is None:
             # l1_ratio can't be None with elasticnet (select value randomly)
-            params.replace_value("l1_ratio", np.random.choice(zero_to_one_exc))
+            params.replace_value("l1_ratio", random.choice(zero_to_one_exc))
 
         if self._get_param(params, "penalty") == "none":
             params.pop("C", None)

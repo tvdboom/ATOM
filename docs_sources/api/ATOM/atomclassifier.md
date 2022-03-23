@@ -123,7 +123,7 @@ memory issues for large datasets.
 </p>
 <strong>gpu: bool or str, optional (default=False)</strong><br>
 Train estimators on GPU (instead of CPU). Refer to the
-<a href="../../../user_guide/training/#training-on-gpu">documentation</a>
+<a href="../../../user_guide/gpu">documentation</a>
 to check which estimators are supported.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>

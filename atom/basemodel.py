@@ -139,6 +139,11 @@ class BaseModel(BaseModelPlotter):
             )
 
     @property
+    def _gpu(self):
+        """Return if the model uses the GPU implementation."""
+        return "sklearn" not in self.est_class.__module__
+
+    @property
     def _dims(self):
         """Get the names of the hyperparameter dimension space."""
         return [d.name for d in self._dimensions]
@@ -286,7 +291,7 @@ class BaseModel(BaseModelPlotter):
                     X_subtrain, y_subtrain = pl.fit_transform(X_subtrain, y_subtrain)
                     X_val, y_val = pl.transform(X_val, y_val)
 
-                # Match the sample_weights with the length of the subtrain set
+                # Match the sample_weight with the length of the subtrain set
                 # Make copy of est_params to not alter the mutable variable
                 est_copy = self._est_params_fit.copy()
                 if "sample_weight" in est_copy:

@@ -64,7 +64,8 @@ Whether to Label-encode the target column. This parameter is ignored
 if <code>y</code> is not provided.
 </p>
 <strong>gpu: bool or str, optional (default=False)</strong><br>
-Train estimator on GPU (instead of CPU). Only for encode_target=True.
+Train estimator on GPU (instead of CPU). Only to encode the target
+column.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>

@@ -11,10 +11,10 @@ from pickle import PickleError
 
 import numpy as np
 import pytest
+from unittest.mock import patch, MagicMock
 from sklearn.ensemble import RandomForestRegressor
 from skopt.space.space import Categorical, Integer
 from tensorflow.keras.layers import Conv2D, Dense, Flatten
-# Keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
@@ -137,6 +137,14 @@ def test_models_regression(model):
     )
     assert not atom.errors
     assert hasattr(atom, model)
+
+
+@patch.dict("sys.modules", {"cuml": MagicMock()})
+def test_all_models_gpu():
+    """Assert that GPU works for all models."""
+    atom = ATOMRegressor(X_reg, y_reg, gpu=True, random_state=1)
+    atom.run(models="dummy", n_calls=2, n_initial_points=1)
+    assert not atom.errors
 
 
 def test_CatNB():

@@ -189,7 +189,7 @@ component_2, etc... PCA can be applied in three ways:
   case for term-document matrices, see [Vectorizer](../../API/nlp/vectorizer)),
   the estimator used is [TruncatedSVD](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html).
   Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis).
-* If [GPU training](../training/#training-on-gpu) is enabled, the estimator
+* If [GPU training](../gpu) is enabled, the estimator
   used is cuml's [PCA](https://docs.rapids.ai/api/cuml/stable/api.html#cuml.PCA). 
 
 

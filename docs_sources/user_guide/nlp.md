@@ -98,7 +98,7 @@ class. It can be accessed from atom through the [vectorize](../../API/ATOM/atomc
 method.
 
 !!! info
-    All strategies can utilize GPU speed-up. Click [here](../training/#training-on-gpu)
+    All strategies can utilize GPU speed-up. Click [here](../gpu)
     for further information about GPU implementation.
 
 <br style="display: block; margin-top: 2em; content: ' '">

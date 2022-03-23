@@ -303,7 +303,7 @@ def test_score():
     assert isinstance(atom.score(X_bin, y_bin), float)
 
 
-def test_score_sample_weights():
+def test_score_sample_weight():
     """Assert that the score method works with sample weights."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")

@@ -36,7 +36,7 @@ method.
     to check whether the dataset is scaled.
 
 !!! info
-    All strategies can utilize GPU speed-up. Click [here](../training/#training-on-gpu)
+    All strategies can utilize GPU speed-up. Click [here](../gpu)
     for further information about GPU implementation.
 
 <br>
