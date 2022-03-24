@@ -58,6 +58,8 @@ and [models](#models) are supported.
 * [Lasso](../../API/models/lasso)
 * [ElasticNet](../../API/models/en)
 * [Lars](../../API/models/lars)
+* [Logistic Regression](../../API/models/lr)
+* [K-Nearest Neighbors](../../API/models/knn)
 * [XGBoost](../../API/models/xgb)
 * [LightGBM](../../API/models/lgb) (requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html))
 * [CatBoost](../../API/models/catb)

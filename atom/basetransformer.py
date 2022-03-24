@@ -171,7 +171,7 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _get_gpu(self, estimator, module="cuml"):
+    def _get_gpu(self, estimator, module="cuml", level=1):
         """Get a GPU or CPU estimator depending on availability.
 
         Parameters
@@ -181,6 +181,10 @@ class BaseTransformer:
 
         module: str, optional (default="cuml")
             Module from which to get the GPU estimator.
+
+
+        level: int, optional (default=1)
+            Minimum verbosity level to print the message.
 
         Returns
         -------
@@ -199,8 +203,8 @@ class BaseTransformer:
                     )
                 else:
                     self.log(
-                        f" --> Unable to import {estimator.__name__} from "
-                        f"{module}. Using CPU implementation instead.", 1
+                        f" --> Unable to import {module}.{estimator.__name__}. "
+                        "Using CPU implementation instead.", level
                     )
 
         return estimator
@@ -411,7 +415,7 @@ class BaseTransformer:
             else:
                 test_size = self.test_size
 
-            splitter = self._get_gpu(train_test_split, "cuml.model_selection")
+            splitter = self._get_gpu(train_test_split, "cuml.model_selection", 3)
 
             # Define holdout set size
             if self.holdout_size:

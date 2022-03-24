@@ -8,10 +8,10 @@ Description: Unit tests for models.py
 """
 
 from pickle import PickleError
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-from unittest.mock import patch, MagicMock
 from sklearn.ensemble import RandomForestRegressor
 from skopt.space.space import Categorical, Integer
 from tensorflow.keras.layers import Conv2D, Dense, Flatten
@@ -143,8 +143,7 @@ def test_models_regression(model):
 def test_all_models_gpu():
     """Assert that GPU works for all models."""
     atom = ATOMRegressor(X_reg, y_reg, gpu=True, random_state=1)
-    atom.run(models="dummy", n_calls=2, n_initial_points=1)
-    assert not atom.errors
+    atom.run(models=None, n_calls=2, n_initial_points=1)
 
 
 def test_CatNB():

@@ -148,14 +148,15 @@ class BaseModel(BaseModelPlotter):
         """Get the names of the hyperparameter dimension space."""
         return [d.name for d in self._dimensions]
 
+    def _sign(self, method="__init__"):
+        """Get the estimator's parameters."""
+        return signature(getattr(self.est_class, method)).parameters
+
     def _check_est_params(self):
         """Make sure the parameters are valid keyword argument for the estimator."""
-        signature_init = signature(self.est_class.__init__).parameters
-        signature_fit = signature(self.est_class.fit).parameters
-
         # The parameter is always accepted if the estimator accepts kwargs
         for param in self._est_params:
-            if param not in signature_init and "kwargs" not in signature_init:
+            if param not in self._sign() and "kwargs" not in self._sign():
                 raise ValueError(
                     f"Invalid value for the est_params parameter. "
                     f"Got unknown parameter {param} for estimator "
@@ -163,7 +164,7 @@ class BaseModel(BaseModelPlotter):
                 )
 
         for param in self._est_params_fit:
-            if param not in signature_fit and "kwargs" not in signature_fit:
+            if param not in self._sign("fit") and "kwargs" not in self._sign("fit"):
                 raise ValueError(
                     f"Invalid value for the est_params parameter. Got "
                     f"unknown parameter {param} for the fit method of "
@@ -230,6 +231,14 @@ class BaseModel(BaseModelPlotter):
                 for p, v in zip([d.name for d in self._dimensions], x)
             }
         )
+
+    def get_estimator(self, **params):
+        """Return the model's estimator with unpacked parameters."""
+        for param in ("n_jobs", "random_state"):
+            if param in self._sign():
+                params[param] = params.pop(param, getattr(self.T, param))
+
+        return self.est_class(**params)
 
     def bayesian_optimization(self):
         """Run the bayesian optimization algorithm.

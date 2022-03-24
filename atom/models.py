@@ -26,6 +26,9 @@ Description: Module containing all available models. All classes must
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
+        supports_gpu: bool
+            Whether the model has a GPU implementation.
+
         goal: list
             If the model can do classification ("class"), and/or
             regression ("reg") tasks.
@@ -60,6 +63,8 @@ Description: Module containing all available models. All classes must
 
         get_estimator(self, **params):
             Return the model's estimator with unpacked parameters.
+            Implement only if custom parameters (aside n_jobs and
+            random_state) are needed.
 
         custom_fit(model, train, validation, est_params):
             This method is called instead of directly running the
@@ -261,19 +266,10 @@ class Dummy(BaseModel):
         if self._get_param(params, "strategy") != "quantile":
             params.pop("quantile", None)
         elif params.get("quantile") is None:
+            # quantile can't be None with strategy="quantile" (select value randomly)
             params.replace_value("quantile", random.choice(zero_to_one_inc))
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return self.est_class(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -307,20 +303,6 @@ class GaussianProcess(BaseModel):
         else:
             return GaussianProcessRegressor
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-
 
 class GaussianNaiveBayes(BaseModel):
     """Gaussian Naive Bayes."""
@@ -337,10 +319,6 @@ class GaussianNaiveBayes(BaseModel):
         """Return the estimator's class."""
         return self.T._get_gpu(GaussianNB, "cuml.naive_bayes")
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
-
 
 class MultinomialNaiveBayes(BaseModel):
     """Multinomial Naive Bayes."""
@@ -356,10 +334,6 @@ class MultinomialNaiveBayes(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         return self.T._get_gpu(MultinomialNB, "cuml.naive_bayes")
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -385,10 +359,6 @@ class BernoulliNaiveBayes(BaseModel):
         """Return the estimator's class."""
         return self.T._get_gpu(BernoulliNB, "cuml.naive_bayes")
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
-
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
@@ -413,10 +383,6 @@ class CategoricalNaiveBayes(BaseModel):
         """Return the estimator's class."""
         return self.T._get_gpu(CategoricalNB, "cuml.naive_bayes")
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
-
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
@@ -440,10 +406,6 @@ class ComplementNaiveBayes(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         return ComplementNB
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -470,13 +432,6 @@ class OrdinaryLeastSquares(BaseModel):
         """Return the estimator's class."""
         return self.T._get_gpu(LinearRegression)
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self._gpu:
-            return self.est_class(**params)
-        else:
-            return self.est_class(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
-
 
 class Ridge(BaseModel):
     """Linear least squares with l2 regularization."""
@@ -492,19 +447,9 @@ class Ridge(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return self.T._get_gpu(RidgeClassifier, "cuml.dask.linear_model")
+            return RidgeClassifier
         else:
-            return RidgeRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self._gpu:
-            return self.est_class(**params)
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+            return self.T._get_gpu(RidgeRegressor, "cuml.dask.linear_model")
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -533,17 +478,7 @@ class Lasso(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self._get_gpu(LassoRegressor, "cuml.dask.linear_model")
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self._gpu:
-            return self.est_class(**params)
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.T._get_gpu(LassoRegressor, "cuml.dask.linear_model")
 
     @staticmethod
     def get_dimensions():
@@ -567,17 +502,7 @@ class ElasticNet(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self._get_gpu(ElasticNetRegressor, "cuml.dask.linear_model")
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self._gpu:
-            return self.est_class(**params)
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+        return self.T._get_gpu(ElasticNetRegressor, "cuml.dask.linear_model")
 
     @staticmethod
     def get_dimensions():
@@ -602,17 +527,7 @@ class LeastAngleRegression(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        if self._gpu:
-            return self.est_class(**params)
-        else:
-            return self._get_gpu(Lars, "cuml.experimental.linear_model")
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
+        return self.T._get_gpu(Lars, "cuml.experimental.linear_model")
 
 
 class BayesianRidge(BaseModel):
@@ -629,10 +544,6 @@ class BayesianRidge(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         return BayesianRidgeRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -661,10 +572,6 @@ class AutomaticRelevanceDetermination(BaseModel):
         """Return the estimator's class."""
         return ARDRegression
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
-
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
@@ -691,10 +598,6 @@ class HuberRegression(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         return HuberRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -730,14 +633,6 @@ class Perceptron(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
@@ -763,7 +658,7 @@ class LogisticRegression(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return LR
+        return self.T._get_gpu(LR)
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -790,18 +685,13 @@ class LogisticRegression(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
-        solvers = ["lbfgs", "newton-cg", "liblinear", "sag", "saga"]
+        if self._gpu:
+            solvers = ["qn", "lbfgs", "owl"]
+        else:
+            solvers = ["lbfgs", "newton-cg", "liblinear", "sag", "saga"]
         return [
             Categorical(["l1", "l2", "elasticnet", "none"], name="penalty"),
             Real(1e-3, 100, "log-uniform", name="C"),
@@ -835,10 +725,6 @@ class LinearDiscriminantAnalysis(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
-
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
@@ -863,10 +749,6 @@ class QuadraticDiscriminantAnalysis(BaseModel):
         """Return the estimator's class."""
         return QDA
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
-
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
@@ -887,27 +769,26 @@ class KNearestNeighbors(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return KNeighborsClassifier
+            return self.T._get_gpu(KNeighborsClassifier, "cuml.neighbors")
         else:
-            return KNeighborsRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            **params,
-        )
+            return self.T._get_gpu(KNeighborsRegressor, "cuml.neighbors")
 
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
-        return [
-            Integer(1, 100, name="n_neighbors"),
-            Categorical(["uniform", "distance"], name="weights"),
-            Categorical(["auto", "ball_tree", "kd_tree", "brute"], name="algorithm"),
-            Integer(20, 40, name="leaf_size"),
-            Integer(1, 2, name="p"),
-        ]
+        dimensions = [Integer(1, 100, name="n_neighbors")]
+
+        if not self._gpu:
+            dimensions.extend(
+                [
+                    Categorical(["uniform", "distance"], name="weights"),
+                    Categorical(["auto", "ball_tree", "kd_tree", "brute"], name="algorithm"),
+                    Integer(20, 40, name="leaf_size"),
+                    Integer(1, 2, name="p"),
+                ]
+            )
+
+        return dimensions
 
 
 class RadiusNearestNeighbors(BaseModel):
@@ -1009,13 +890,6 @@ class DecisionTree(BaseModel):
         else:
             return DecisionTreeRegressor
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         if self.T.goal == "class":
@@ -1054,14 +928,6 @@ class Bagging(BaseModel):
             return BaggingClassifier
         else:
             return BaggingRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     @staticmethod
     def get_dimensions():
@@ -1102,14 +968,6 @@ class ExtraTrees(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         if self.T.goal == "class":
@@ -1147,9 +1005,9 @@ class RandomForest(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return RandomForestClassifier
+            return self.T._get_gpu(RandomForestClassifier, "cuml.ensemble")
         else:
-            return RandomForestRegressor
+            return self.T._get_gpu(RandomForestRegressor, "cuml.ensemble")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1159,14 +1017,6 @@ class RandomForest(BaseModel):
             params.pop("max_samples", None)
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1208,13 +1058,6 @@ class AdaBoost(BaseModel):
             return AdaBoostClassifier
         else:
             return AdaBoostRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1258,13 +1101,6 @@ class GradientBoostingMachine(BaseModel):
             params.pop("alpha", None)
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1315,13 +1151,6 @@ class HistGBM(BaseModel):
             return HistGradientBoostingClassifier
         else:
             return HistGradientBoostingRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1606,13 +1435,6 @@ class LinearSVM(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         dimensions = []
@@ -1672,16 +1494,6 @@ class KernelSVM(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return self.est_class(**params)
-
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
@@ -1713,19 +1525,6 @@ class PassiveAggressive(BaseModel):
             return PassiveAggressiveClassifier
         else:
             return PassiveAggressiveRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1770,20 +1569,6 @@ class StochasticGradientDescent(BaseModel):
             params.pop("eta0", None)
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1865,13 +1650,6 @@ class MultilayerPerceptron(BaseModel):
             params.pop("learning_rate_init", None)
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
