@@ -194,7 +194,7 @@ class BaseTransformer:
         """
         if self.gpu:
             try:
-                return importlib.import_module(module, estimator.__name__)
+                return getattr(importlib.import_module(module), estimator.__name__)
             except ModuleNotFoundError:
                 if str(self.gpu).lower() == "force":
                     raise ModuleNotFoundError(
