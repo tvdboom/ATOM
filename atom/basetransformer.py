@@ -442,6 +442,7 @@ class BaseTransformer:
             else:
                 holdout = None
 
+            print(splitter)
             train, test = splitter(
                 data,
                 test_size=test_size,
