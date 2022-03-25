@@ -67,7 +67,7 @@ Integer(1, 20, name="min_samples_leaf")
 </p>
 <p>
 <strong>max_depth: int, default=3</strong><br>
-Integer(1, 10, name="max_depth")
+Integer(1, 21, name="max_depth")
 </p>
 <p>
 <strong>max_features: str, float or None, default="auto"</strong><br>

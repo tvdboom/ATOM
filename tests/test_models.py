@@ -140,10 +140,25 @@ def test_models_regression(model):
 
 
 @patch.dict("sys.modules", {"cuml": MagicMock()})
-def test_all_models_gpu():
-    """Assert that GPU works for all models."""
+def test_all_models_gpu_classification():
+    """Assert that GPU works for all classification models."""
+    atom = ATOMClassifier(X_bin, y_bin, gpu=True, random_state=1)
+    atom.run(
+        models=["gnb", "mnb", "bnb", "cnb", "lr", "knn", "rf", "lsvm", "ksvm"],
+        n_calls=2,
+        n_initial_points=1,
+    )
+
+
+@patch.dict("sys.modules", {"cuml": MagicMock()})
+def test_all_models_gpu_regression():
+    """Assert that GPU works for all regression models."""
     atom = ATOMRegressor(X_reg, y_reg, gpu=True, random_state=1)
-    atom.run(models=None, n_calls=2, n_initial_points=1)
+    atom.run(
+        models=["ols", "ridge", "lasso", "en", "lars", "knn", "lsvm", "ksvm"],
+        n_calls=2,
+        n_initial_points=1,
+    )
 
 
 def test_CatNB():

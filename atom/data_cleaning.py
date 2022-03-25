@@ -935,10 +935,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     X[name] = self._imputers[name].transform(X[[name]])
 
                 else:  # Strategies mean, median or most_frequent
-                    mode = round(self._imputers[name].statistics_[0], 2)
+                    n = np.round(self._imputers[name].statistics_[0], 2)
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"{self.strat_num.lower()} ({mode}) in feature {name}.", 2
+                        f"{self.strat_num.lower()} ({n}) in feature {name}.", 2
                     )
                     X[name] = self._imputers[name].transform(X[[name]])
 
@@ -1066,7 +1066,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             """Get labels for the specified bins."""
             if isinstance(labels, dict):
                 default = [
-                    f"{round(bins[i], 2)}-{round(bins[i+1], 1)}"
+                    f"{np.round(bins[i], 2)}-{np.round(bins[i+1], 1)}"
                     for i in range(len(bins[:-1]))
                 ]
                 labels = labels.get(col, default)

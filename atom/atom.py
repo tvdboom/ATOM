@@ -95,7 +95,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
         if self.gpu:
-
             self.log("GPU training enabled.", 1)
 
         self.log("", 1)  # Add empty rows around stats for cleaner look

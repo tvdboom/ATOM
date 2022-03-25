@@ -48,7 +48,7 @@ Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
 <p>
 <strong>max_depth: int, default=6</strong><br>
-Integer(1, 10, name="max_depth")
+Integer(1, 20, name="max_depth")
 </p>
 <p>
 <strong>gamma: float, default=0.0</strong><br>

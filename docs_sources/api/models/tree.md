@@ -41,7 +41,7 @@ Categorical(["best", "random"], name="splitter")
 </p>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *list(range(1, 10))], name="max_depth")
+Categorical([None, *range(1, 17)], name="max_depth")
 </p>
 <p>
 <strong>min_samples_split: int, default=2</strong><br>

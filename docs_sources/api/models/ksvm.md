@@ -1,4 +1,4 @@
-# Kernel-SVM (kSVM)
+# Kernel SVM (kSVM)
 -------------------
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>

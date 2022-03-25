@@ -47,7 +47,7 @@ Categorical(["squared_error", "absolute_error", "poisson"], name="criterion")</l
 </ul>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *list(range(1, 10))], name="max_depth")
+Categorical([None, *range(1, 17)], name="max_depth")
 </p>
 <p>
 <strong>min_samples_split: int, default=2</strong><br>
@@ -66,12 +66,12 @@ Categorical(["auto", "sqrt", "log2", *np.linspace(0.5, 0.9, 5), None], name="max
 Categorical([True, False], name="bootstrap")
 </p>
 <p>
-<strong>ccp_alpha: float, default=0</strong><br>
-Real(0, 0.035, name="ccp_alpha")
-</p>
-<p>
 <strong>max_samples: float or None, default=None</strong><br>
 Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_samples")
+</p>
+<p>
+<strong>ccp_alpha: float, default=0</strong><br>
+Real(0, 0.035, name="ccp_alpha")
 </p>
 </td>
 </tr>

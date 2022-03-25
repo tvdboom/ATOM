@@ -190,8 +190,6 @@ class BaseTransformer:
         """
         if self.gpu:
             try:
-                import cuml
-                cuml.common.memory_utils.set_global_output_type("numpy")
                 return getattr(importlib.import_module(module), estimator.__name__)
             except ModuleNotFoundError:
                 if str(self.gpu).lower() == "force":

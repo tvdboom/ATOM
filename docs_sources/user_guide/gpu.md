@@ -56,8 +56,7 @@ and [models](#models) are supported.
 **Models**
 
 !!! warning
-    Models can use slightly different hyperparameters when trained with GPU than
-    with CPU.
+    Models can use different hyperparameters when trained with GPU than with CPU.
 
 * [Gaussian Naive Bayes](../../API/models/gnb)
 * [Multinomial Naive Bayes](../../API/models/mnb)

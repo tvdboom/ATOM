@@ -687,18 +687,20 @@ class LogisticRegression(BaseModel):
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
-        if self._gpu:
-            solvers = ["qn", "lbfgs", "owl"]
-        else:
-            solvers = ["lbfgs", "newton-cg", "liblinear", "sag", "saga"]
+        solvers = ["lbfgs", "newton-cg", "liblinear", "sag", "saga"]
 
-        return [
+        dimensions = [
             Categorical(["l1", "l2", "elasticnet", "none"], name="penalty"),
             Real(1e-3, 100, "log-uniform", name="C"),
             Categorical(solvers, name="solver"),
             Integer(100, 1000, name="max_iter"),
             Categorical([None, *zero_to_one_exc], name="l1_ratio"),
         ]
+
+        if self._gpu:
+            del dimensions[2]
+
+        return dimensions
 
 
 class LinearDiscriminantAnalysis(BaseModel):
@@ -902,7 +904,7 @@ class DecisionTree(BaseModel):
         return [
             Categorical(criterion, name="criterion"),
             Categorical(["best", "random"], name="splitter"),
-            Categorical([None, *range(1, 21)], name="max_depth"),
+            Categorical([None, *range(1, 17)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -980,7 +982,7 @@ class ExtraTrees(BaseModel):
         return [
             Integer(10, 500, name="n_estimators"),
             Categorical(criterion, name="criterion"),
-            Categorical([None, *range(1, 21)], name="max_depth"),
+            Categorical([None, *range(1, 17)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -1032,7 +1034,7 @@ class RandomForest(BaseModel):
         dimensions = [
             Integer(10, 500, name="n_estimators"),
             Categorical(criterion, name="criterion"),
-            Categorical([None, *range(1, 21)], name="max_depth"),
+            Categorical([None, *range(1, 17)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -1045,7 +1047,7 @@ class RandomForest(BaseModel):
 
         if self._gpu:
             dimensions[1].name = "split_criterion"
-            dimensions[2].categories = list(range(1, 21))
+            dimensions[2].categories = list(range(1, 17))
             dimensions[5].categories = ["auto", "sqrt", "log2", *half_to_one_exc]
             dimensions[7].categories = half_to_one_exc
         else:
@@ -1177,7 +1179,7 @@ class HistGBM(BaseModel):
                 Real(0.01, 1.0, "log-uniform", name="learning_rate"),
                 Integer(10, 500, name="max_iter"),
                 Integer(10, 50, name="max_leaf_nodes"),
-                Categorical([None, *range(1, 21)], name="max_depth"),
+                Categorical([None, *range(1, 17)], name="max_depth"),
                 Integer(10, 30, name="min_samples_leaf"),
                 Categorical(zero_to_one_inc, name="l2_regularization"),
             ]
@@ -1331,7 +1333,7 @@ class LightGBM(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Categorical([-1, *range(1, 21)], name="max_depth"),
+            Categorical([-1, *range(1, 17)], name="max_depth"),
             Integer(20, 40, name="num_leaves"),
             Categorical([1e-4, 1e-3, 0.01, 0.1, 1, 10, 100], name="min_child_weight"),
             Integer(1, 30, name="min_child_samples"),
@@ -1404,7 +1406,7 @@ class CatBoost(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Categorical([None, *range(1, 21)], name="max_depth"),
+            Categorical([None, *range(1, 17)], name="max_depth"),
             Integer(1, 30, name="min_child_samples"),
             Categorical(half_to_one_inc, name="subsample"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda"),
@@ -1447,6 +1449,13 @@ class LinearSVM(BaseModel):
             params.replace_value("dual", True)
 
         return params
+
+    def get_estimator(self, **params):
+        """Return the model's estimator with unpacked parameters."""
+        if self._gpu and self.T.goal == "class":
+            return self.est_class(probability=True, **params)
+        else:
+            super().get_estimator(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1508,6 +1517,16 @@ class KernelSVM(BaseModel):
             params.pop("coef0", None)
 
         return params
+
+    def get_estimator(self, **params):
+        """Return the model's estimator with unpacked parameters."""
+        if self._gpu and self.T.goal == "class":
+            return self.est_class(
+                probability=True,
+                random_state=params.pop("random_state", self.T.random_state),
+                **params)
+        else:
+            super().get_estimator(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""

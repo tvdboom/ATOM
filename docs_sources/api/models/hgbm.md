@@ -52,7 +52,7 @@ Integer(10, 50, name="max_leaf_nodes")
 </p>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *range(1, 11], name="max_depth")
+Categorical([None, *range(1, 21], name="max_depth")
 </p>
 <p>
 <strong>min_samples_leaf: int, default=20</strong><br>

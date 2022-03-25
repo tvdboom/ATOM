@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-# Plotting packages
 import shap
 from joblib import Parallel, delayed
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
@@ -37,13 +36,11 @@ from sklearn.inspection import permutation_importance
 from sklearn.metrics import (
     confusion_matrix, det_curve, precision_recall_curve, roc_curve,
 )
-# Sklearn
 from sklearn.utils import _safe_indexing
 from typeguard import typechecked
 from wordcloud import WordCloud
 
-from atom.basetransformer import BaseTransformer
-
+from .basetransformer import BaseTransformer
 from .utils import (
     SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
     check_is_fitted, check_predict_proba, composed, crash, get_best_score,
@@ -617,7 +614,7 @@ class FSPlotter(BasePlotter):
         var = np.array(self.pca.explained_variance_ratio_)[:show]
         scr = pd.Series(
             data=var,
-            index=[f"component_{str(i)}" for i in range(len(var))],
+            index=[f"component_{str(i)}" for i in range(1, len(var) + 1)],
             dtype=float,
         ).sort_values()
 

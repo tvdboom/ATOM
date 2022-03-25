@@ -54,8 +54,8 @@ models are used. Available predefined models are:
 <li>"XGB" for <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor">XGBoost</a> (only available if package is installed)</li>
 <li>"LGB" for <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html">LightGBM</a> (only available if package is installed)</li>
 <li>"CatB" for <a href="https://catboost.ai/docs/concepts/python-reference_catboostregressor.html">CatBoost</a> (only available if package is installed)</li>
-<li>"lSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">Linear-SVM</a></li> 
-<li>"kSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">Kernel-SVM</a></li>
+<li>"lSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">Linear SVM</a></li> 
+<li>"kSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">Kernel SVM</a></li>
 <li>"PA" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html">Passive Aggressive</a></li>
 <li>"SGD" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html">Stochastic Gradient Descent</a></li>
 <li>"MLP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor">Multi-layer Perceptron</a></li> 
