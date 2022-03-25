@@ -38,7 +38,6 @@ and [models](#models) are supported.
 <a name="classes"></a>
 **Classes**
 
-* [ATOMClassifier](../../API/ATOM/atomclassifier) and [ATOMRegressor](../../API/ATOM/atomregressor) (for data splitting)
 * [Scaler](../../API/data_cleaning/scaler)
 * [Cleaner](../../API/data_cleaning/cleaner) (only to encode the target column)
 * [Imputer](../../API/data_cleaning/imputer) (not for strat_num="knn")
