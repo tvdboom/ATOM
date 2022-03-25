@@ -171,7 +171,7 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _get_gpu(self, estimator, module="cuml", level=1):
+    def _get_gpu(self, estimator, module="cuml"):
         """Get a GPU or CPU estimator depending on availability.
 
         Parameters
@@ -182,10 +182,6 @@ class BaseTransformer:
         module: str, optional (default="cuml")
             Module from which to get the GPU estimator.
 
-
-        level: int, optional (default=1)
-            Minimum verbosity level to print the message.
-
         Returns
         -------
         estimator
@@ -194,6 +190,8 @@ class BaseTransformer:
         """
         if self.gpu:
             try:
+                import cuml
+                cuml.common.memory_utils.set_global_output_type("numpy")
                 return getattr(importlib.import_module(module), estimator.__name__)
             except ModuleNotFoundError:
                 if str(self.gpu).lower() == "force":
@@ -204,7 +202,7 @@ class BaseTransformer:
                 else:
                     self.log(
                         f" --> Unable to import {module}.{estimator.__name__}. "
-                        "Using CPU implementation instead.", level
+                        "Using CPU implementation instead.", 1
                     )
 
         return estimator

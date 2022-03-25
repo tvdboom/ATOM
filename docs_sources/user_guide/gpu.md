@@ -1,5 +1,3 @@
-[![Colab](https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667)](https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing)
-
 Graphics Processing Units (GPUs) can significantly accelerate the training
 process for many machine learning models. Training models involves
 compute-intensive matrix multiplications and other operations that can
@@ -22,8 +20,16 @@ and [models](#models) are supported.
     `CUDA_VISIBLE_DEVICES` or model-specific parameters to use any of
     the other GPUs.
 
-!!! warning
-    Models can use different hyperparameters when trained with GPU than with CPU.
+!!! example
+    [![Colab](https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667)](https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing)<br><br>
+    Train a model on a GPU yourself using Google Colab. Just click on
+    the badge above and follow the notebook. Note two things:
+
+    * Make sure you've been allocated a Tesla T4, P4, or P100. If this is not
+    the case (check it using `!nvidia-smi`), reset the runtime (Runtime -> 
+    Factory reset runtime) until you get one.
+    * Setting up the environment and installing the necessary libraries may
+    take quite some time (usually up to 15min).
 
 
 <a name="prerequisites"></a>
@@ -34,6 +40,7 @@ and [models](#models) are supported.
     - Windows 8.1+ with WSL2 (see [here](https://developer.nvidia.com/blog/run-rapids-on-microsoft-windows-10-using-wsl-2-the-windows-subsystem-for-linux/) a tutorial)
 * GPU: NVIDIA Pascal™ or better with [compute capability](https://developer.nvidia.com/cuda-gpus) 6.0+
 * CUDA & NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5
+* [cuML](https://docs.rapids.ai/api/cuml/stable/)>=0.15
 
 <a name="classes"></a>
 **Classes**
@@ -48,6 +55,10 @@ and [models](#models) are supported.
 <a name="models"></a>
 **Models**
 
+!!! warning
+    Models can use slightly different hyperparameters when trained with GPU than
+    with CPU.
+
 * [Gaussian Naive Bayes](../../API/models/gnb)
 * [Multinomial Naive Bayes](../../API/models/mnb)
 * [Bernoulli Naive Bayes](../../API/models/bnb)
@@ -59,6 +70,9 @@ and [models](#models) are supported.
 * [Lars](../../API/models/lars)
 * [Logistic Regression](../../API/models/lr)
 * [K-Nearest Neighbors](../../API/models/knn)
+* [Random Forest](../../API/models/rf)
 * [XGBoost](../../API/models/xgb)
 * [LightGBM](../../API/models/lgb) (requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html))
 * [CatBoost](../../API/models/catb)
+* [Linear SVM](../../API/models/lsvm)
+* [Kernel SVM](../../API/models/ksvm)

@@ -170,8 +170,8 @@ nav:
             - XGBoost: API/models/xgb.md
             - LightGBM: API/models/lgb.md
             - CatBoost: API/models/catb.md
-            - Linear-SVM: API/models/lsvm.md
-            - Kernel-SVM: API/models/ksvm.md
+            - Linear SVM: API/models/lsvm.md
+            - Kernel SVM: API/models/ksvm.md
             - Passive Aggressive: API/models/pa.md
             - Stochastic Gradient Descent: API/models/sgd.md
             - Multi-layer Perceptron: API/models/mlp.md

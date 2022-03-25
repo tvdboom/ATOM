@@ -1674,7 +1674,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1688,7 +1688,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2752,7 +2752,6 @@
 
   <h1>GPU</h1>
 
-<p><a href="https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing"><img alt="Colab" src="https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667" /></a></p>
 <p>Graphics Processing Units (GPUs) can significantly accelerate the training
 process for many machine learning models. Training models involves
 compute-intensive matrix multiplications and other operations that can
@@ -2775,9 +2774,13 @@ one GPU on the machine, the first one is used by default. Use
 <code>CUDA_VISIBLE_DEVICES</code> or model-specific parameters to use any of
 the other GPUs.</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Models can use different hyperparameters when trained with GPU than with CPU.</p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<p>Try it yourself on <a href="https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing">Google Colab</a>.
+Make sure you've been allocated a Tesla T4, P4, or P100. If this is not
+the case (check it using <code>!nvidia-smi</code>), reset the runtime (Runtime -&gt; 
+Factory reset runtime) until you get one. Note that setting up the environment
+and installing the necessary libraries may take up to 15min.</p>
 </div>
 <p><a name="prerequisites"></a>
 <strong>Prerequisites</strong></p>
@@ -2789,11 +2792,11 @@ the other GPUs.</p>
 </li>
 <li>GPU: NVIDIA Pascal™ or better with <a href="https://developer.nvidia.com/cuda-gpus">compute capability</a> 6.0+</li>
 <li>CUDA &amp; NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5</li>
+<li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=0.15</li>
 </ul>
 <p><a name="classes"></a>
 <strong>Classes</strong></p>
 <ul>
-<li><a href="../../API/ATOM/atomclassifier">ATOMClassifier</a> and <a href="../../API/ATOM/atomregressor">ATOMRegressor</a> (for data splitting)</li>
 <li><a href="../../API/data_cleaning/scaler">Scaler</a></li>
 <li><a href="../../API/data_cleaning/cleaner">Cleaner</a> (only to encode the target column)</li>
 <li><a href="../../API/data_cleaning/imputer">Imputer</a> (not for strat_num="knn")</li>
@@ -2803,6 +2806,11 @@ the other GPUs.</p>
 </ul>
 <p><a name="models"></a>
 <strong>Models</strong></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Models can use slightly different hyperparameters when trained with GPU than
+with CPU.</p>
+</div>
 <ul>
 <li><a href="../../API/models/gnb">Gaussian Naive Bayes</a></li>
 <li><a href="../../API/models/mnb">Multinomial Naive Bayes</a></li>
@@ -2813,9 +2821,14 @@ the other GPUs.</p>
 <li><a href="../../API/models/lasso">Lasso</a></li>
 <li><a href="../../API/models/en">ElasticNet</a></li>
 <li><a href="../../API/models/lars">Lars</a></li>
+<li><a href="../../API/models/lr">Logistic Regression</a></li>
+<li><a href="../../API/models/knn">K-Nearest Neighbors</a></li>
+<li><a href="../../API/models/rf">Random Forest</a></li>
 <li><a href="../../API/models/xgb">XGBoost</a></li>
 <li><a href="../../API/models/lgb">LightGBM</a> (requires <a href="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html">extra installations</a>)</li>
 <li><a href="../../API/models/catb">CatBoost</a></li>
+<li><a href="../../API/models/lsvm">Linear SVM</a></li>
+<li><a href="../../API/models/ksvm">Kernel SVM</a></li>
 </ul>
 
               

@@ -685,13 +685,13 @@ class LogisticRegression(BaseModel):
 
         return params
 
-    @staticmethod
-    def get_dimensions():
+    def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         if self._gpu:
             solvers = ["qn", "lbfgs", "owl"]
         else:
             solvers = ["lbfgs", "newton-cg", "liblinear", "sag", "saga"]
+
         return [
             Categorical(["l1", "l2", "elasticnet", "none"], name="penalty"),
             Real(1e-3, 100, "log-uniform", name="C"),
@@ -773,8 +773,7 @@ class KNearestNeighbors(BaseModel):
         else:
             return self.T._get_gpu(KNeighborsRegressor, "cuml.neighbors")
 
-    @staticmethod
-    def get_dimensions():
+    def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         dimensions = [Integer(1, 100, name="n_neighbors")]
 
@@ -782,7 +781,10 @@ class KNearestNeighbors(BaseModel):
             dimensions.extend(
                 [
                     Categorical(["uniform", "distance"], name="weights"),
-                    Categorical(["auto", "ball_tree", "kd_tree", "brute"], name="algorithm"),
+                    Categorical(
+                        categories=["auto", "ball_tree", "kd_tree", "brute"],
+                        name="algorithm",
+                    ),
                     Integer(20, 40, name="leaf_size"),
                     Integer(1, 2, name="p"),
                 ]
@@ -900,7 +902,7 @@ class DecisionTree(BaseModel):
         return [
             Categorical(criterion, name="criterion"),
             Categorical(["best", "random"], name="splitter"),
-            Categorical([None, *list(range(1, 10))], name="max_depth"),
+            Categorical([None, *range(1, 21)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -978,7 +980,7 @@ class ExtraTrees(BaseModel):
         return [
             Integer(10, 500, name="n_estimators"),
             Categorical(criterion, name="criterion"),
-            Categorical([None, *list(range(1, 10))], name="max_depth"),
+            Categorical([None, *range(1, 21)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -986,8 +988,8 @@ class ExtraTrees(BaseModel):
                 name="max_features",
             ),
             Categorical([True, False], name="bootstrap"),
-            Real(0, 0.035, name="ccp_alpha"),
             Categorical([None, *half_to_one_exc], name="max_samples"),
+            Real(0, 0.035, name="ccp_alpha"),
         ]
 
 
@@ -1022,13 +1024,15 @@ class RandomForest(BaseModel):
         """Return a list of the bounds for the hyperparameters."""
         if self.T.goal == "class":
             criterion = ["gini", "entropy"]
+        elif self._gpu:
+            criterion = ["mse", "poisson", "gamma", "inverse_gaussian"]
         else:
             criterion = ["squared_error", "absolute_error", "poisson"]
 
-        return [
+        dimensions = [
             Integer(10, 500, name="n_estimators"),
             Categorical(criterion, name="criterion"),
-            Categorical([None, *list(range(1, 10))], name="max_depth"),
+            Categorical([None, *range(1, 21)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -1036,9 +1040,18 @@ class RandomForest(BaseModel):
                 name="max_features",
             ),
             Categorical([True, False], name="bootstrap"),
-            Real(0, 0.035, name="ccp_alpha"),
             Categorical([None, *half_to_one_exc], name="max_samples"),
         ]
+
+        if self._gpu:
+            dimensions[1].name = "split_criterion"
+            dimensions[2].categories = list(range(1, 21))
+            dimensions[5].categories = ["auto", "sqrt", "log2", *half_to_one_exc]
+            dimensions[7].categories = half_to_one_exc
+        else:
+            dimensions.append(Real(0, 0.035, name="ccp_alpha"))
+
+        return dimensions
 
 
 class AdaBoost(BaseModel):
@@ -1119,7 +1132,7 @@ class GradientBoostingMachine(BaseModel):
                 Categorical(["friedman_mse", "squared_error"], name="criterion"),
                 Integer(2, 20, name="min_samples_split"),
                 Integer(1, 20, name="min_samples_leaf"),
-                Integer(1, 10, name="max_depth"),
+                Integer(1, 21, name="max_depth"),
                 Categorical(
                     categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
                     name="max_features",
@@ -1164,7 +1177,7 @@ class HistGBM(BaseModel):
                 Real(0.01, 1.0, "log-uniform", name="learning_rate"),
                 Integer(10, 500, name="max_iter"),
                 Integer(10, 50, name="max_leaf_nodes"),
-                Categorical([None, *range(1, 11)], name="max_depth"),
+                Categorical([None, *range(1, 21)], name="max_depth"),
                 Integer(10, 30, name="min_samples_leaf"),
                 Categorical(zero_to_one_inc, name="l2_regularization"),
             ]
@@ -1202,7 +1215,7 @@ class XGBoost(BaseModel):
         return self.est_class(
             use_label_encoder=params.pop("use_label_encoder", False),
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            tree_method="gpu_hist" if self.T.gpu else None,
+            tree_method=params.pop("tree_method", "gpu_hist" if self.T.gpu else None),
             verbosity=params.pop("verbosity", 0),
             random_state=random_state,
             **params,
@@ -1244,7 +1257,7 @@ class XGBoost(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Integer(1, 10, name="max_depth"),
+            Integer(1, 20, name="max_depth"),
             Real(0, 1.0, name="gamma"),
             Integer(1, 10, name="min_child_weight"),
             Categorical(half_to_one_inc, name="subsample"),
@@ -1278,7 +1291,7 @@ class LightGBM(BaseModel):
         """Return the model's estimator with unpacked parameters."""
         return self.est_class(
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            device="gpu" if self.T.gpu else "cpu",
+            device=params.pop("device", "gpu" if self.T.gpu else "cpu"),
             random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
@@ -1318,7 +1331,7 @@ class LightGBM(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Categorical([-1, *range(1, 10)], name="max_depth"),
+            Categorical([-1, *range(1, 21)], name="max_depth"),
             Integer(20, 40, name="num_leaves"),
             Categorical([1e-4, 1e-3, 0.01, 0.1, 1, 10, 100], name="min_child_weight"),
             Integer(1, 30, name="min_child_samples"),
@@ -1356,7 +1369,7 @@ class CatBoost(BaseModel):
             train_dir=params.pop("train_dir", ""),
             allow_writing_files=params.pop("allow_writing_files", False),
             thread_count=params.pop("n_jobs", self.T.n_jobs),
-            task_type="GPU" if self.T.gpu else "CPU",
+            task_type=params.pop("task_type", "GPU" if self.T.gpu else "CPU"),
             verbose=params.pop("verbose", False),
             random_state=params.pop("random_state", self.T.random_state),
             **params,
@@ -1391,7 +1404,7 @@ class CatBoost(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Categorical([None, *range(1, 10)], name="max_depth"),
+            Categorical([None, *range(1, 21)], name="max_depth"),
             Integer(1, 30, name="min_child_samples"),
             Categorical(half_to_one_inc, name="subsample"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda"),
@@ -1402,7 +1415,7 @@ class LinearSVM(BaseModel):
     """Linear Support Vector Machine."""
 
     acronym = "lSVM"
-    fullname = "Linear-SVM"
+    fullname = "Linear SVM"
     needs_scaling = True
     accepts_sparse = True
     supports_gpu = True
@@ -1412,9 +1425,9 @@ class LinearSVM(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return LinearSVC
+            return self.T._get_gpu(LinearSVC, "cuml.svm")
         else:
-            return LinearSVR
+            return self.T._get_gpu(LinearSVR, "cuml.svm")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1448,9 +1461,11 @@ class LinearSVM(BaseModel):
             [
                 Categorical(loss, name="loss"),
                 Real(1e-3, 100, "log-uniform", name="C"),
-                Categorical([True, False], name="dual"),
             ]
         )
+
+        if not self._gpu:
+            dimensions.append(Categorical([True, False], name="dual"))
 
         return dimensions
 
@@ -1459,7 +1474,7 @@ class KernelSVM(BaseModel):
     """Kernel (non-linear) Support Vector Machine."""
 
     acronym = "kSVM"
-    fullname = "Kernel-SVM"
+    fullname = "Kernel SVM"
     needs_scaling = True
     accepts_sparse = True
     supports_gpu = True
@@ -1469,9 +1484,9 @@ class KernelSVM(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return SVC
+            return self.T._get_gpu(SVC, "cuml.svm")
         else:
-            return SVR
+            return self.T._get_gpu(SVR, "cuml.svm")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1494,18 +1509,25 @@ class KernelSVM(BaseModel):
 
         return params
 
-    @staticmethod
-    def get_dimensions():
+    def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
-        return [
+        dimensions = [
             Real(1e-3, 100, "log-uniform", name="C"),
             Categorical(["linear", "poly", "rbf", "sigmoid"], name="kernel"),
             Integer(2, 5, name="degree"),
             Categorical(["scale", "auto"], name="gamma"),
             Real(-1.0, 1.0, name="coef0"),
-            Real(1e-3, 100, "log-uniform", name="epsilon"),
-            Categorical([True, False], name="shrinking"),
         ]
+
+        if not self._gpu:
+            dimensions.extend(
+                [
+                    Real(1e-3, 100, "log-uniform", name="epsilon"),
+                    Categorical([True, False], name="shrinking"),
+                ]
+            )
+
+        return dimensions
 
 
 class PassiveAggressive(BaseModel):
@@ -1547,7 +1569,7 @@ class StochasticGradientDescent(BaseModel):
     fullname = "Stochastic Gradient Descent"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
