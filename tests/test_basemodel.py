@@ -197,7 +197,12 @@ def test_bo_with_pipeline():
 def test_early_stopping(model):
     """Assert than early stopping works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(model, n_calls=5, bo_params={"early_stopping": 0.1})
+    atom.run(
+        models=model,
+        n_calls=5,
+        est_params={"n_estimators": 10},
+        bo_params={"early_stopping": 0.1},
+    )
     assert getattr(atom, model)._stopped != ("---", "---")
 
 
