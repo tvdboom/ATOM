@@ -328,7 +328,7 @@ def test_export_pipeline_memory(func):
 def test_report(cls):
     """Assert that the report method and file are created."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.report(n_rows=10, filename="report")
+    atom.report(filename="report")
     cls.return_value.to_file.assert_called_once_with("report.html")
 
 
