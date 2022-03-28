@@ -96,7 +96,6 @@ nav:
     - User guide:
         - Introduction: user_guide/introduction.md
         - Nomenclature: user_guide/nomenclature.md
-        - First steps: user_guide/first_steps.md
         - Data management: user_guide/data_management.md
         - Logging & Tracking: user_guide/logging.md
         - GPU: user_guide/gpu.md

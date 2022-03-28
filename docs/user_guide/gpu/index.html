@@ -72,6 +72,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#gpu" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -502,20 +507,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../data_management/" class="md-nav__link">
         Data management
       </a>
@@ -550,10 +541,57 @@
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          GPU
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         GPU
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformers" class="md-nav__link">
+    Transformers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    Models
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -2743,6 +2781,53 @@
               </div>
             
             
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformers" class="md-nav__link">
+    Transformers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    Models
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
@@ -2750,40 +2835,46 @@
                 
 
 
-  <h1>GPU</h1>
-
-<p>Graphics Processing Units (GPUs) can significantly accelerate the training
-process for many machine learning models. Training models involves
-compute-intensive matrix multiplications and other operations that can
-take advantage of a GPU's massively parallel architecture. Training on
-large datasets can take hours to run on a single processor. However, if
-you offload those tasks to a GPUs, you can reduce training time to minutes
-instead.</p>
-<p>Training models in atom using a GPU is as easy as initializing the
-instance with parameter <code>gpu=True</code>. Check which <a href="#prerequisites">prerequisites</a>
-your machine needs for it to work, and which <a href="#algorithms">algorithms</a>
-and <a href="#models">models</a> are supported.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Models trained on GPU do not support sparse dataframes!</p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>ATOM does not support multi-gpu training. If there is more than
-one GPU on the machine, the first one is used by default. Use
-<code>CUDA_VISIBLE_DEVICES</code> or model-specific parameters to use any of
-the other GPUs.</p>
-</div>
+<h1 id="gpu">GPU</h1>
+<hr />
+<p>Graphics Processing Units (GPUs) can significantly accelerate
+calculations for preprocessing step or training machine learning
+models. Training models involves compute-intensive matrix
+multiplications and other operations that can take advantage of a
+GPU's massively parallel architecture. Training on large datasets can
+take hours to run on a single processor. However, if you offload those
+tasks to a GPUs, you can reduce training time to minutes instead.</p>
+<p>Training transformers and models in atom using a GPU is as easy as
+initializing the instance with parameter <code>gpu=True</code>. ATOM uses
+<a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a> for all estimators
+except <a href="../../API/models/xgb">XGB</a>, <a href="../../API/models/lgb">LGB</a> and
+<a href="../../API/models/catb">CatB</a>, which come with their own GPU implementation.
+Check which <a href="#prerequisites">prerequisites</a> your machine needs for it
+to work, and which <a href="#transformers">transformers</a> and <a href="#models">models</a>
+are supported.</p>
+<p>Be aware of the following:</p>
+<ul>
+<li>cuML estimators do not support sparse dataframes.</li>
+<li>cuML models sometimes use slightly different hyperparameters than
+  their sklearn counterparts.</li>
+<li>cuML does not support multi-gpu training. If there is more than one
+  GPU on the machine, the first one is used by default. Use <code>CUDA_VISIBLE_DEVICES</code>
+  to use any of the other GPUs.</li>
+</ul>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
-<p>Try it yourself on <a href="https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing">Google Colab</a>.
-Make sure you've been allocated a Tesla T4, P4, or P100. If this is not
+<p><a href="https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing"><img alt="Colab" src="https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667" /></a><br><br>
+Train a model on a GPU yourself using Google Colab. Just click on
+the badge above and follow the notebook. Note two things:</p>
+<ul>
+<li>Make sure you've been allocated a Tesla T4, P4, or P100. If this is not
 the case (check it using <code>!nvidia-smi</code>), reset the runtime (Runtime -&gt; 
-Factory reset runtime) until you get one. Note that setting up the environment
-and installing the necessary libraries may take up to 15min.</p>
+Factory reset runtime) until you get one.</li>
+<li>Setting up the environment and installing the necessary libraries may
+take quite some time (usually up to 15min).</li>
+</ul>
 </div>
-<p><a name="prerequisites"></a>
-<strong>Prerequisites</strong></p>
+<h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li>Operating System:<ul>
 <li>Ubuntu 18.04/20.04 or CentOS 7/8 with gcc/++ 9.0+</li>
@@ -2794,36 +2885,28 @@ and installing the necessary libraries may take up to 15min.</p>
 <li>CUDA &amp; NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5</li>
 <li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=0.15</li>
 </ul>
-<p><a name="classes"></a>
-<strong>Classes</strong></p>
+<h2 id="transformers">Transformers</h2>
 <ul>
 <li><a href="../../API/data_cleaning/scaler">Scaler</a></li>
-<li><a href="../../API/data_cleaning/cleaner">Cleaner</a> (only to encode the target column)</li>
 <li><a href="../../API/data_cleaning/imputer">Imputer</a> (not for strat_num="knn")</li>
 <li><a href="../../API/data_cleaning/discretizer">Discretizer</a></li>
 <li><a href="../../API/nlp/vectorizer">Vectorizer</a></li>
 <li><a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> (only for strategy="pca")</li>
 </ul>
-<p><a name="models"></a>
-<strong>Models</strong></p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Models can use slightly different hyperparameters when trained with GPU than
-with CPU.</p>
-</div>
+<h2 id="models">Models</h2>
 <ul>
 <li><a href="../../API/models/gnb">Gaussian Naive Bayes</a></li>
 <li><a href="../../API/models/mnb">Multinomial Naive Bayes</a></li>
 <li><a href="../../API/models/bnb">Bernoulli Naive Bayes</a></li>
 <li><a href="../../API/models/catnb">Categorical Naive Bayes</a></li>
 <li><a href="../../API/models/ols">Ordinary Least Squares</a></li>
-<li><a href="../../API/models/ridge">Ridge</a></li>
+<li><a href="../../API/models/ridge">Ridge</a> (only for regression tasks)</li>
 <li><a href="../../API/models/lasso">Lasso</a></li>
 <li><a href="../../API/models/en">ElasticNet</a></li>
 <li><a href="../../API/models/lars">Lars</a></li>
 <li><a href="../../API/models/lr">Logistic Regression</a></li>
 <li><a href="../../API/models/knn">K-Nearest Neighbors</a></li>
-<li><a href="../../API/models/rf">Random Forest</a></li>
+<li><a href="../../API/models/rf">Random Forest</a> (only supports training on dtype <code>float32</code>)</li>
 <li><a href="../../API/models/xgb">XGBoost</a></li>
 <li><a href="../../API/models/lgb">LightGBM</a> (requires <a href="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html">extra installations</a>)</li>
 <li><a href="../../API/models/catb">CatBoost</a></li>

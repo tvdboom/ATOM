@@ -507,20 +507,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../data_management/" class="md-nav__link">
         Data management
       </a>
@@ -2985,7 +2971,8 @@ parameters or on different data sets. See the
   and a <code>~</code> indicates that the model is possibly overfitting (training
   set has a score at least 20% higher than the test set).</li>
 <li>The winning model (the one with the highest <code>mean_bootstrap</code> or
-  <code>metric_test</code>) can be accessed through the <code>winner</code> attribute.</li>
+  <code>metric_test</code>) can be accessed through the <code>winner</code> attribute. In case
+  of a tie, the model that trained fastest is selected as winner.</li>
 </ul>
 <p><br></p>
 <h2 id="metric">Metric</h2>

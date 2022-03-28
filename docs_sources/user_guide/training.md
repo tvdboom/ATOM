@@ -65,7 +65,8 @@ Additional things to take into account:
   and a `~` indicates that the model is possibly overfitting (training
   set has a score at least 20% higher than the test set).
 * The winning model (the one with the highest `mean_bootstrap` or
-  `metric_test`) can be accessed through the `winner` attribute.
+  `metric_test`) can be accessed through the `winner` attribute. In case
+  of a tie, the model that trained fastest is selected as winner.
 
 <br>
 

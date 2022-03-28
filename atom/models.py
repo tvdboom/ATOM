@@ -1455,7 +1455,7 @@ class LinearSVM(BaseModel):
         if self._gpu and self.T.goal == "class":
             return self.est_class(probability=True, **params)
         else:
-            super().get_estimator(**params)
+            return super().get_estimator(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1526,7 +1526,7 @@ class KernelSVM(BaseModel):
                 random_state=params.pop("random_state", self.T.random_state),
                 **params)
         else:
-            super().get_estimator(**params)
+            return super().get_estimator(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""

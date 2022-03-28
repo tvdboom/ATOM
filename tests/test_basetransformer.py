@@ -121,8 +121,9 @@ def test_random_state_setter():
 
 def test_gpu_force():
     """Assert that an error is raised when GPU fails."""
+    atom = ATOMClassifier(X10, y10, gpu="force", random_state=1)
     with pytest.raises(ModuleNotFoundError, match=r".*cuml is not installed.*"):
-        ATOMClassifier(X10, y10, gpu="force", random_state=1)
+        atom.feature_selection("pca")
 
 
 def test_gpu_fails():

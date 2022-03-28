@@ -18,8 +18,7 @@ contains the dataset on which we want to perform the analysis. Calling a method 
 automatically apply it on the dataset it contains.
 
 You can [predict](../../../user_guide/predicting), [plot](../../../user_guide/plots)
-and call any [model](../../../user_guide/models) from atom. Read more in the
-[user guide](../../../user_guide/first_steps).
+and call any [model](../../../user_guide/models) from atom.
 
 <table style="font-size:16px">
 <tr>
