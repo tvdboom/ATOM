@@ -1,7 +1,7 @@
 numpy~=1.21  # Not latest due to numba (dependency of shap)
 scipy>=1.7.3
 pandas>=1.3.0
-git+https://github.com/ydataai/pandas-profiling.git@develop
+pandas-profiling>=2.3.0
 explainerdashboard>=0.3.8
 mlflow>=1.15.0
 dill>=0.3.3
