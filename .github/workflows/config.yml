@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
           architecture: x64
       - name: Check imports
         uses: jamescurtin/isort-action@master
@@ -34,7 +34,7 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
           architecture: x64
       - name: Apply linting
         uses: py-actions/flake8@v2
@@ -46,7 +46,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.7", "3.8", "3.9"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
     steps:
       - name: Check out source repository
         uses: actions/checkout@v2
@@ -58,12 +58,12 @@ jobs:
         run: |
           pip install -U pip
           pip install -U pytest
-          pip install -U pytest-cov
+          pip install -U coverage
           pip install -U tensorflow
           pip install -r requirements.txt
           pip install -r requirements-optional.txt
           pip install werkzeug==2.0.0
       - name: Run tests
-        run: pytest --cov=atom tests/
+        run: coverage run -m pytest
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
