@@ -8,6 +8,8 @@
 * Added [advanced feature selection](../user_guide/feature_engineering/#advanced-strategies) strategies.
 * Added the `return_sparse` parameter to the [Vectorizer](../API/NLP/vectorizer) class.
 * Added the `quantile` hyperparameter to the [Dummy](../API/models/dummy) model.
+* The [data attributes](../API/ATOM/atomclassifier/#data-attributes) now return
+  pandas objects where possible.
 * Fixed a bug where the BO could crash after [balancing](../user_guide/data_cleaning/#balancing-the-data)
   the data.
 * Fixed a bug where saving the [FeatureGenerator](../API/feature_engineering/feature_generator)

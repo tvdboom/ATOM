@@ -2137,7 +2137,7 @@ class BaseModelPlotter(BasePlotter):
             # Default is to select the best or the first 3 features
             if not features:
                 if not m.branch.feature_importance:
-                    features = m.features[:3]
+                    features = list(m.features[:3])
                 else:
                     features = m.branch.feature_importance[:3]
 
@@ -2212,7 +2212,7 @@ class BaseModelPlotter(BasePlotter):
                 delayed(partial_dependence)(
                     estimator=m.estimator,
                     X=m.X_test,
-                    features=[m.features.index(c) for c in col],
+                    features=[list(m.features).index(c) for c in col],
                 ) for col in cols
             )
 

@@ -442,10 +442,8 @@ def test_plot_permutation_importance():
     atom.lgb.plot_permutation_importance(display=False)
 
 
-@pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
-def test_plot_partial_dependence(columns):
-    """Assert that the plot_partial_dependence method work as intended."""
-    # For binary classification tasks
+def test_plot_partial_dependence_binary():
+    """Assert that the plot_partial_dependence method work for binary tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_partial_dependence)
     atom.run(["Tree", "LGB"], metric="f1")
@@ -462,7 +460,7 @@ def test_plot_partial_dependence(columns):
     with pytest.raises(ValueError, match=r".*should be single or in pairs.*"):
         atom.lgb.plot_partial_dependence(columns=[(0, 1, 2), 2], display=False)
 
-    # Pair for multi-model
+    # Pair for multimodel
     with pytest.raises(ValueError, match=r".*when plotting multiple models.*"):
         atom.plot_partial_dependence(columns=[(0, 2), 2], display=False)
 
@@ -482,7 +480,10 @@ def test_plot_partial_dependence(columns):
     atom.lgb.plot_feature_importance(show=5, display=False)
     atom.lgb.plot_partial_dependence(display=False)
 
-    # For multiclass classification tasks
+
+@pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
+def test_plot_partial_dependence_multiclass(columns):
+    """Assert that the plot_partial_dependence method work for multiclass tasks."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run(["Tree", "LGB"], metric="f1_macro")
 

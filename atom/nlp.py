@@ -685,7 +685,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 f"{self.strategy}. Choose from: bow, tfidf, hashing."
             )
 
-        self.log("Fitting Vectorizer...")
+        self.log("Fitting Vectorizer...", 1)
         self._estimator.fit(X[corpus])
 
         # Add the estimator as attribute to the instance
@@ -726,7 +726,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         matrix = self._estimator.transform(X[corpus])
         if self.strategy.lower() != "hashing":
-            columns = self._estimator.get_feature_names_out()
+            columns = list(self._estimator.get_feature_names_out())
         else:
             # Hashing has no words to put as column names
             columns = [f"hash_{i}" for i in range(matrix.shape[1])]
@@ -743,12 +743,19 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "must be False when X contains non-sparse columns (besides corpus)."
             )
 
-        if X.empty:
-            # X only had 1 column: corpus
+        if X.empty:  # X only had 1 column: corpus
+            # If the column name already exists, add _[strategy]
+            if getattr(y, "name", None) in columns:
+                columns[columns.index(y.name)] = f"{y.name}_{self.strategy.lower()}"
+
             return to_df(matrix, index=X.index, columns=columns)
+
         else:
             for i, col in enumerate(columns):
                 # If the column name already exists, add _[strategy]
-                X[f"{col}_{self.strategy.lower()}" if col in X else col] = matrix[:, i]
+                if col in X or col == getattr(y, "name", None):
+                    X[f"{col}_{self.strategy.lower()}"] = matrix[:, i]
+                else:
+                    X[col] = matrix[:, i]
 
         return X

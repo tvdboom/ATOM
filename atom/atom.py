@@ -194,7 +194,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def numerical(self):
         """Names of the numerical features in the dataset."""
         if not is_multidim(self.X):
-            return list(self.X.select_dtypes(include=["number"]).columns)
+            return self.X.select_dtypes(include=["number"]).columns
 
     @property
     def n_numerical(self):
@@ -206,7 +206,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def categorical(self):
         """Names of the categorical features in the dataset."""
         if not is_multidim(self.X):
-            return list(self.X.select_dtypes(include=["object", "category"]).columns)
+            return self.X.select_dtypes(include=["object", "category"]).columns
 
     @property
     def n_categorical(self):

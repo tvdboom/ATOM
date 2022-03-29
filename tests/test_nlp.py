@@ -178,8 +178,9 @@ def test_hashing():
 
 def test_return_sparse():
     """Assert that the output is sparse."""
-    X = Vectorizer(strategy="bow", return_sparse=True).fit_transform(X_text)
+    X = Vectorizer(strategy="bow", return_sparse=True).fit_transform(X_text, y10)
     assert all(pd.api.types.is_sparse(X[c]) for c in X.columns)
+    assert "target_bow" in X
 
 
 def test_error_sparse_with_dense():

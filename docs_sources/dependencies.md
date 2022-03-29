@@ -69,8 +69,6 @@ not required for any of its functionalities. These libraries are only
 necessary to [contribute](../contributing) to the project. Install them
 using `pip install atom-ml[dev]`.
 
-* **[pip](https://pip.pypa.io/en/stable/)** (>=22.0.4)
-* **[setuptools](https://github.com/pypa/setuptools)** (>=60.9.3)
 * **[isort](https://pycqa.github.io/isort/)** (>=5.10.1)
 * **[flake8](https://github.com/pycqa/flake8)** (>=4.0.1)
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.1.0)

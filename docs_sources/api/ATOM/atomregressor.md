@@ -243,7 +243,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -251,7 +251,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>
@@ -289,7 +289,7 @@ Number of samples containing missing values. Returns None for
 multidimensional or sparse datasets.
 </p>
 <p>
-<strong>numerical: list</strong><br>
+<strong>numerical: pd.Index</strong><br>
 Names of the numerical features in the dataset.
 </p>
 <p>
@@ -297,7 +297,7 @@ Names of the numerical features in the dataset.
 Number of numerical features in the dataset.
 </p>
 <p>
-<strong>categorical: list</strong><br>
+<strong>categorical: pd.Index</strong><br>
 Names of the categorical features in the dataset.
 </p>
 <p>

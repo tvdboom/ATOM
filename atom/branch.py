@@ -396,7 +396,7 @@ class Branch:
     @property
     def columns(self):
         """Name of all the columns."""
-        return list(self._data.columns)
+        return self._data.columns
 
     @property
     def n_columns(self):

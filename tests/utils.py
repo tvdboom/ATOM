@@ -66,7 +66,7 @@ X_text = [
     ["this is a random test"],
     ["test is random this"],
     ["nice random test"],
-    ["test script for text"],
+    ["test target for text"],
 ]
 
 # Dataset wth string indices

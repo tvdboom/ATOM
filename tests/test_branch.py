@@ -224,7 +224,7 @@ def test_shape_property():
 def test_columns_property():
     """Assert that the columns property returns the columns of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.branch.columns == list(X_bin.columns) + [y_bin.name]
+    assert list(atom.branch.columns) == list(X_bin.columns) + [y_bin.name]
 
 
 def test_n_columns_property():
@@ -236,7 +236,7 @@ def test_n_columns_property():
 def test_features_property():
     """Assert that the features property returns the features of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.branch.features == list(X_bin.columns)
+    assert list(atom.branch.features) == list(X_bin.columns)
 
 
 def test_n_features_property():

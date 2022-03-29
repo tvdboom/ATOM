@@ -569,24 +569,14 @@ def test_dashboard_invalid_dataset():
         atom.rf.dashboard(dataset="invalid")
 
 
-@patch("explainerdashboard.ExplainerDashboard.run")
+@patch("explainerdashboard.ExplainerDashboard")
 @pytest.mark.parametrize("dataset", ["train", "both", "holdout"])
 def test_dashboard(func, dataset):
     """Assert that an error is raised when dataset is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("RF")
-    atom.rf.dashboard(dataset=dataset)
+    atom.rf.dashboard(dataset=dataset, filename="dashboard")
     func.assert_called_once()
-
-
-@patch("explainerdashboard.ExplainerDashboard.run")
-def test_dashboard_is_saved(func):
-    """Assert that an error is raised when dataset is invalid."""
-    atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
-    atom.run("RF")
-    atom.rf.dashboard(filename=FILE_DIR + "dashboard")
-    func.assert_called_once()
-    assert glob.glob(FILE_DIR + "dashboard.html")
 
 
 def test_delete():

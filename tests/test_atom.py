@@ -168,7 +168,7 @@ def test_n_nans():
 def test_numerical():
     """Assert that numerical returns the names of the numerical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.numerical == ["feature_1", "feature_2", "feature_4"]
+    assert len(atom.numerical) == 3
 
 
 def test_n_numerical():
@@ -180,7 +180,7 @@ def test_n_numerical():
 def test_categorical():
     """Assert that categorical returns the names of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.categorical == ["feature_3"]
+    assert len(atom.categorical) == 1
 
 
 def test_n_categorical():
@@ -547,14 +547,12 @@ def test_add_keep_column_names():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
     # When the columns are only transformed
-    cols = atom.columns.copy()
     atom.add(StandardScaler())
-    assert atom.columns == cols
+    assert atom.features.tolist() == list(X_bin)
 
     # When columns were removed
-    cols = atom.columns.copy()
     atom.add(SelectFromModel(RandomForestClassifier()))
-    assert all(col in cols for col in atom.columns)
+    assert all(col in list(X_bin) for col in atom.features)
 
 
 def test_raise_length_mismatch():
@@ -568,7 +566,7 @@ def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(columns="feature_3")
-    assert atom.columns[2:5] == ["feature_3_a", "feature_3_b", "feature_3_c"]
+    assert list(atom.columns[2:5]) == ["feature_3_a", "feature_3_b", "feature_3_c"]
 
 
 def test_add_sets_are_kept_equal():

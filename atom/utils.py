@@ -664,7 +664,7 @@ def partial_dependence(estimator, X, features):
         features (where the partial dependence is evaluated), and
         also to generate values for the complement features.
 
-    features : int, str or sequence
+    features: int or sequence
         The feature or pair of interacting features for which the
         partial dependency should be computed.
 
@@ -1418,8 +1418,10 @@ class ShapExplanation:
         # Get rows that still need to be calculated
         calculate = df.loc[[i for i in df.index if i not in self._shap_values.index]]
         if not calculate.empty:
+            # Minimum of 2 * self.T.shape[1] + 1
+            kwargs = {"max_evals": 2 * self.T.shape[1] + 1}
+
             # Additivity check fails sometimes for no apparent reason
-            kwargs = {}
             if "check_additivity" in signature(self.explainer.__call__).parameters:
                 kwargs["check_additivity"] = False
 
