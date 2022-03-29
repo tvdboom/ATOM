@@ -42,7 +42,7 @@ from wordcloud import WordCloud
 
 from .basetransformer import BaseTransformer
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
+    INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
     check_is_fitted, check_predict_proba, composed, crash, get_best_score,
     get_corpus, get_custom_scorer, get_feature_importance, get_proba_attr, lst,
     partial_dependence, plot_from_model,
@@ -428,8 +428,8 @@ class BasePlotter:
     @composed(contextmanager, crash, typechecked)
     def canvas(
         self,
-        nrows: int = 1,
-        ncols: int = 2,
+        nrows: INT = 1,
+        ncols: INT = 2,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -562,7 +562,7 @@ class FSPlotter(BasePlotter):
     @composed(crash, typechecked)
     def plot_components(
         self,
-        show: Optional[int] = None,
+        show: Optional[INT] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -735,7 +735,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_successive_halving(
             self,
             models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            metric: Union[int, str] = 0,
+            metric: Union[INT, str] = 0,
             title: Optional[str] = None,
             figsize: Tuple[SCALAR, SCALAR] = (10, 6),
             filename: Optional[str] = None,
@@ -826,7 +826,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_learning_curve(
             self,
             models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            metric: Union[int, str] = 0,
+            metric: Union[INT, str] = 0,
             title: Optional[str] = None,
             figsize: Tuple[SCALAR, SCALAR] = (10, 6),
             filename: Optional[str] = None,
@@ -913,7 +913,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_results(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        metric: Union[int, str] = 0,
+        metric: Union[INT, str] = 0,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -1027,7 +1027,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_bo(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        metric: Union[int, str] = 0,
+        metric: Union[INT, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 8),
         filename: Optional[str] = None,
@@ -1832,7 +1832,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_feature_importance(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
+        show: Optional[INT] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -1934,8 +1934,8 @@ class BaseModelPlotter(BasePlotter):
     def plot_permutation_importance(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        n_repeats: int = 10,
+        show: Optional[INT] = None,
+        n_repeats: INT = 10,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -2067,9 +2067,9 @@ class BaseModelPlotter(BasePlotter):
     def plot_partial_dependence(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         kind: str = "average",
-        target: Union[int, str] = 1,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -2321,8 +2321,8 @@ class BaseModelPlotter(BasePlotter):
     def plot_parshap(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        target: Union[int, str] = 1,
+        columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -2667,7 +2667,7 @@ class BaseModelPlotter(BasePlotter):
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
-        steps: int = 100,
+        steps: INT = 100,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -2766,7 +2766,7 @@ class BaseModelPlotter(BasePlotter):
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
-        target: Union[int, str] = 1,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -2855,7 +2855,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_calibration(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        n_bins: int = 10,
+        n_bins: INT = 10,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
         filename: Optional[str] = None,
@@ -2963,9 +2963,9 @@ class BaseModelPlotter(BasePlotter):
     def bar_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3054,8 +3054,8 @@ class BaseModelPlotter(BasePlotter):
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3141,9 +3141,9 @@ class BaseModelPlotter(BasePlotter):
     def decision_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3240,8 +3240,8 @@ class BaseModelPlotter(BasePlotter):
     def force_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        target: Union[str, int] = 1,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (14, 6),
         filename: Optional[str] = None,
@@ -3347,8 +3347,8 @@ class BaseModelPlotter(BasePlotter):
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3438,8 +3438,8 @@ class BaseModelPlotter(BasePlotter):
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        feature: Union[int, str] = 0,
-        target: Union[int, str] = 1,
+        feature: Union[INT, str] = 0,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -3527,9 +3527,9 @@ class BaseModelPlotter(BasePlotter):
     def waterfall_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, str]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        index: Optional[Union[INT, str]] = None,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3791,9 +3791,9 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_distribution(
         self,
-        columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
+        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
         distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
+        show: Optional[INT] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3943,7 +3943,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_qq(
         self,
-        columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
+        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
         distributions: Union[str, SEQUENCE_TYPES] = "norm",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -4026,7 +4026,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_wordcloud(
         self,
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -4110,9 +4110,9 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_ngrams(
         self,
-        ngram: Union[int, str] = "words",
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        show: int = 10,
+        ngram: Union[INT, str] = "words",
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        show: INT = 10,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,

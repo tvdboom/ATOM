@@ -55,7 +55,7 @@ from typeguard import typechecked
 
 from .basetransformer import BaseTransformer
 from .utils import (
-    SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, composed, crash, it, lst, merge, method_to_log, to_series,
     variable_return,
 )
@@ -229,7 +229,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "standard",
         gpu: Union[bool, str] = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
@@ -373,9 +373,9 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "yeojohnson",
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger, random_state=random_state)
@@ -542,7 +542,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
         encode_target: bool = True,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -724,9 +724,9 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         strat_num: Union[SCALAR, str] = "drop",
         strat_cat: str = "drop",
         max_nan_rows: Optional[SCALAR] = None,
-        max_nan_cols: Optional[Union[float]] = None,
+        max_nan_cols: Optional[Union[FLOAT]] = None,
         gpu: Union[bool, str] = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(gpu=gpu, verbose=verbose, logger=logger)
@@ -1019,10 +1019,10 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "quantile",
-        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
+        bins: Union[INT, SEQUENCE_TYPES, dict] = 5,
         labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
         gpu: Union[bool, str] = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(gpu=gpu, verbose=verbose, logger=logger)
@@ -1243,10 +1243,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: Union[str, Any] = "LeaveOneOut",
-        max_onehot: Optional[int] = 10,
+        max_onehot: Optional[INT] = 10,
         ordinal: Optional[Dict[str, SEQUENCE_TYPES]] = None,
         frac_to_other: Optional[SCALAR] = None,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
@@ -1553,7 +1553,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         method: Union[SCALAR, str] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
@@ -1779,10 +1779,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: Union[str, Any] = "ADASYN",
-        n_jobs: int = 1,
-        verbose: int = 0,
+        n_jobs: INT = 1,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(

@@ -33,7 +33,7 @@ from .data_cleaning import Scaler, TransformerMixin
 from .models import MODELS
 from .plots import FSPlotter
 from .utils import (
-    SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, check_scaling, composed, crash, get_custom_scorer,
     get_feature_importance, infer_task, is_sparse, lst, method_to_log, to_df,
 )
@@ -95,7 +95,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         fmt: Optional[Union[str, SEQUENCE_TYPES]] = None,
         encoding_type: str = "ordinal",
         drop_columns: bool = True,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -287,12 +287,12 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "dfs",
-        n_features: Optional[int] = None,
+        n_features: Optional[INT] = None,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        n_jobs: int = 1,
-        verbose: int = 0,
+        n_jobs: INT = 1,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(
@@ -637,12 +637,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         solver: Optional[Union[str, callable]] = None,
         n_features: Optional[SCALAR] = None,
         max_frac_repeated: Optional[SCALAR] = 1.0,
-        max_correlation: Optional[float] = 1.0,
-        n_jobs: int = 1,
+        max_correlation: Optional[FLOAT] = 1.0,
+        n_jobs: INT = 1,
         gpu: Union[bool, str] = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(

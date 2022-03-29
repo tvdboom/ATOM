@@ -23,8 +23,8 @@ from sklearn.model_selection import train_test_split
 from typeguard import typechecked
 
 from .utils import (
-    SEQUENCE, X_TYPES, Y_TYPES, composed, crash, lst, merge, method_to_log,
-    prepare_logger, to_df, to_series,
+    INT, SCALAR, SEQUENCE, X_TYPES, Y_TYPES, composed, crash, lst, merge,
+    method_to_log, prepare_logger, to_df, to_series,
 )
 
 
@@ -159,7 +159,7 @@ class BaseTransformer:
 
     @random_state.setter
     @typechecked
-    def random_state(self, value: Optional[int]):
+    def random_state(self, value: Optional[INT]):
         if value and value < 0:
             raise ValueError(
                 "Invalid value for the random_state parameter. "
@@ -578,7 +578,7 @@ class BaseTransformer:
         return data, idx, holdout
 
     @composed(crash, typechecked)
-    def log(self, msg: Union[int, float, str], level: int = 0):
+    def log(self, msg: Union[SCALAR, str], level: INT = 0):
         """Print and save output to log file.
 
         Parameters

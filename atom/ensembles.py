@@ -11,7 +11,6 @@ from copy import deepcopy
 
 import numpy as np
 from joblib import Parallel, delayed
-# Sklearn
 from sklearn.base import clone, is_classifier
 from sklearn.ensemble import StackingClassifier as SC
 from sklearn.ensemble import StackingRegressor as SR

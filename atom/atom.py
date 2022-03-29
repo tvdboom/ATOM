@@ -38,10 +38,11 @@ from .training import (
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
 )
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Table, check_dim,
-    check_is_fitted, check_scaling, composed, crash, custom_transform, delete,
-    divide, fit_one, flt, get_pl_name, infer_task, is_multidim, is_sparse, lst,
-    method_to_log, names_from_estimator, variable_return,
+    INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Table,
+    check_dim, check_is_fitted, check_scaling, composed, crash,
+    custom_transform, delete, divide, fit_one, flt, get_pl_name, infer_task,
+    is_multidim, is_sparse, lst, method_to_log, names_from_estimator,
+    variable_return,
 )
 
 
@@ -323,7 +324,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def distribution(
         self,
         distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
     ):
         """Get statistics on column distributions.
 
@@ -399,7 +400,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         model: Optional[str] = None,
         memory: Optional[Union[bool, str, Memory]] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Export atom's pipeline to a sklearn-like Pipeline object.
 
@@ -562,7 +563,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         obj2cat: bool = True,
         int2uint: bool = False,
         dense2sparse: bool = False,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
     ):
         """Converts the columns to the smallest possible matching dtype.
 
@@ -666,7 +667,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
-    def stats(self, _vb: int = -2):
+    def stats(self, _vb: INT = -2):
         """Print basic information about the dataset.
 
         Parameters
@@ -752,7 +753,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         X: X_TYPES,
         y: Optional[Y_TYPES] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Transform new data through the branch.
 
@@ -876,7 +877,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def add(
         self,
         transformer: Any,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -920,7 +921,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             self._add_transformer(transformer, columns, train_only, **fit_params)
 
     @composed(crash, method_to_log, typechecked)
-    def apply(self, func: callable, columns: Union[int, str], args=(), **kwargs):
+    def apply(self, func: callable, columns: Union[INT, str], args=(), **kwargs):
         """Apply a function to the dataset.
 
         Transform one column in the dataset using a function (can
@@ -963,7 +964,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(FuncTransformer(func, columns, args, **kwargs))
 
     @composed(crash, method_to_log, typechecked)
-    def drop(self, columns: Union[int, str, slice, SEQUENCE_TYPES], **kwargs):
+    def drop(self, columns: Union[INT, str, slice, SEQUENCE_TYPES], **kwargs):
         """Drop columns from the dataset.
 
         This approach is preferred over dropping columns from the
@@ -1116,7 +1117,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def discretize(
         self,
         strategy: str = "quantile",
-        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
+        bins: Union[INT, SEQUENCE_TYPES, dict] = 5,
         labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
         **kwargs,
     ):
@@ -1140,8 +1141,8 @@ class ATOM(BasePredictor, ATOMPlotter):
     def encode(
         self,
         strategy: str = "LeaveOneOut",
-        max_onehot: Optional[int] = 10,
-        ordinal: Optional[Dict[Union[int, str], SEQUENCE_TYPES]] = None,
+        max_onehot: Optional[INT] = 10,
+        ordinal: Optional[Dict[Union[INT, str], SEQUENCE_TYPES]] = None,
         frac_to_other: Optional[SCALAR] = None,
         **kwargs,
     ):
@@ -1444,7 +1445,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def feature_generation(
         self,
         strategy: str = "dfs",
-        n_features: Optional[int] = None,
+        n_features: Optional[INT] = None,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
@@ -1619,11 +1620,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        n_calls: Union[int, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
+        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a direct fashion.
@@ -1658,12 +1659,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        skip_runs: int = 0,
-        n_calls: Union[int, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
+        skip_runs: INT = 0,
+        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a successive halving fashion.
@@ -1704,12 +1705,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        train_sizes: Union[int, SEQUENCE_TYPES] = 5,
-        n_calls: Union[int, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
+        train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
+        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a train sizing fashion.

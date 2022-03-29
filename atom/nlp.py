@@ -29,7 +29,7 @@ from typeguard import typechecked
 from .basetransformer import BaseTransformer
 from .data_cleaning import TransformerMixin
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
+    INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
     composed, crash, get_corpus, is_sparse, method_to_log, to_df,
 )
 
@@ -128,7 +128,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_number: bool = True,
         regex_number: Optional[str] = None,
         drop_punctuation: bool = True,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -210,14 +210,14 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Cleaning the corpus...", 1)
 
         if self.decode:
-            if isinstance(X[corpus][0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 X[corpus] = X[corpus].apply(lambda row: to_ascii(row))
             else:
                 X[corpus] = X[corpus].apply(lambda row: [to_ascii(str(w)) for w in row])
         self.log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
-            if isinstance(X[corpus][0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 X[corpus] = X[corpus].str.lower()
             else:
                 X[corpus] = X[corpus].apply(lambda row: [str(w).lower() for w in row])
@@ -260,7 +260,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.drop_punctuation:
             trans_table = str.maketrans("", "", punctuation)  # Translation table
-            if isinstance(X[corpus][0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 func = lambda row: row.translate(trans_table)
             else:
                 func = lambda row: [str(w).translate(trans_table) for w in row]
@@ -336,7 +336,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         bigram_freq: Optional[SCALAR] = None,
         trigram_freq: Optional[SCALAR] = None,
         quadgram_freq: Optional[SCALAR] = None,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -382,7 +382,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Tokenizing the corpus...", 1)
 
-        if isinstance(X[corpus][0], str):
+        if isinstance(X[corpus].iloc[0], str):
             try:  # Download tokenizer if not already on machine
                 nltk.data.find("tokenizers/punkt")
             except LookupError:
@@ -471,7 +471,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         custom_stopwords: Optional[SEQUENCE_TYPES] = None,
         stem: Union[bool, str] = False,
         lemmatize: bool = True,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -517,7 +517,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Normalizing the corpus...", 1)
 
         # If the corpus is not tokenized, separate by space
-        if isinstance(X[corpus][0], str):
+        if isinstance(X[corpus].iloc[0], str):
             X[corpus] = X[corpus].apply(lambda row: row.split())
 
         stopwords = []
@@ -628,7 +628,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy: str = "bow",
         return_sparse: bool = True,
         gpu: Union[bool, str] = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
@@ -721,7 +721,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Vectorizing the corpus...", 1)
 
         # Convert sequence of tokens to space separated string
-        if not isinstance(X[corpus][0], str):
+        if not isinstance(X[corpus].iloc[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         matrix = self._estimator.transform(X[corpus])

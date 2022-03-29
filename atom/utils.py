@@ -39,10 +39,12 @@ from sklearn.utils import _print_elapsed_time, _safe_indexing
 SEQUENCE = (list, tuple, np.ndarray, pd.Series)
 
 # Variable types
-SCALAR = Union[int, float]
+INT = Union[int, np.integer]
+FLOAT = Union[float, np.float]
+SCALAR = Union[INT, FLOAT]
 SEQUENCE_TYPES = Union[SEQUENCE]
 X_TYPES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
-Y_TYPES = Union[int, str, SEQUENCE_TYPES]
+Y_TYPES = Union[INT, str, SEQUENCE_TYPES]
 
 # Non-sklearn models
 OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
@@ -1418,8 +1420,11 @@ class ShapExplanation:
         # Get rows that still need to be calculated
         calculate = df.loc[[i for i in df.index if i not in self._shap_values.index]]
         if not calculate.empty:
-            # Minimum of 2 * self.T.shape[1] + 1
-            kwargs = {"max_evals": 2 * self.T.shape[1] + 1}
+            kwargs = {}
+
+            # Minimum of 2 * n_features + 1 evals required (default=500)
+            if "max_evals" in signature(self.explainer.__call__).parameters:
+                kwargs["max_evals"] = 2 * self.T.n_features + 1
 
             # Additivity check fails sometimes for no apparent reason
             if "check_additivity" in signature(self.explainer.__call__).parameters:
@@ -1440,9 +1445,9 @@ class ShapExplanation:
 
         # Select the target values from the array
         if self._explanation.values.ndim > 2:
-            self._explanation = self._explanation[:, :, target]
+            self._explanation.values = self._explanation.values[:, :, target]
         if only_one:  # Rows should be a df with one row only
-            self._explanation = self._explanation[0]
+            self._explanation.values = self._explanation.values[0]
 
         if feature is None:
             return self._explanation

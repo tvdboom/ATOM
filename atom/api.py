@@ -17,7 +17,7 @@ from typeguard import typechecked
 
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
+from .utils import INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
 
 
 # Functions ======================================================== >>
@@ -73,7 +73,7 @@ def ATOMLoader(
     filename: str,
     data: Optional[tuple] = None,
     transform_data: bool = True,
-    verbose: Optional[int] = None,
+    verbose: Optional[INT] = None,
 ):
     """Load a class instance from a pickle file.
 
@@ -299,19 +299,19 @@ class ATOMClassifier(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
-        index: Union[bool, int, str, SEQUENCE_TYPES] = False,
+        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
         shuffle: bool = True,
-        stratify: Union[bool, int, str, SEQUENCE_TYPES] = True,
+        stratify: Union[bool, INT, str, SEQUENCE_TYPES] = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
-        n_jobs: int = 1,
+        n_jobs: INT = 1,
         gpu: Union[bool, str] = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -452,18 +452,18 @@ class ATOMRegressor(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
-        index: Union[bool, int, str, SEQUENCE_TYPES] = False,
+        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
         shuffle: bool = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
-        n_jobs: int = 1,
+        n_jobs: INT = 1,
         gpu: Union[bool, str] = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
     ):
         super().__init__(
             n_jobs=n_jobs,

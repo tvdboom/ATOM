@@ -17,8 +17,9 @@ from typeguard import typechecked
 from .branch import Branch
 from .models import MODELS, Stacking, Voting
 from .utils import (
-    DF_ATTRS, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
-    composed, crash, delete, divide, flt, get_best_score, lst, method_to_log,
+    DF_ATTRS, FLOAT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    check_is_fitted, composed, crash, delete, divide, flt, get_best_score, lst,
+    method_to_log,
 )
 
 
@@ -573,7 +574,7 @@ class BasePredictor:
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
-        threshold: float = 0.5,
+        threshold: FLOAT = 0.5,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
     ):
         """Get all models' scores for the provided metrics.

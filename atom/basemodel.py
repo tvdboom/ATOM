@@ -23,7 +23,6 @@ import pandas as pd
 from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.tracking import MlflowClient
-# Sklearn
 from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import (
@@ -35,7 +34,6 @@ from skopt.optimizer import (
     base_minimize, forest_minimize, gbrt_minimize, gp_minimize,
 )
 from skopt.space.space import Categorical, check_dimension
-# Others
 from skopt.space.transformers import LabelEncoder
 from tqdm import tqdm
 from typeguard import typechecked
@@ -45,10 +43,10 @@ from .patches import fit, inverse_transform, score, transform
 from .pipeline import Pipeline
 from .plots import BaseModelPlotter
 from .utils import (
-    DF_ATTRS, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, ShapExplanation,
-    Table, arr, composed, crash, custom_transform, flt, get_best_score,
-    get_custom_scorer, get_pl_name, it, lst, merge, method_to_log, time_to_str,
-    variable_return,
+    DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    ShapExplanation, Table, arr, composed, crash, custom_transform, flt,
+    get_best_score, get_custom_scorer, get_pl_name, it, lst, merge,
+    method_to_log, time_to_str, variable_return,
 )
 
 
@@ -841,7 +839,7 @@ class BaseModel(BaseModelPlotter):
     def predict(
         self,
         X: Union[slice, X_TYPES, Y_TYPES],
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict")
@@ -850,7 +848,7 @@ class BaseModel(BaseModelPlotter):
     def predict_proba(
         self,
         X: Union[slice, X_TYPES, Y_TYPES],
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get probability predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict_proba")
@@ -859,7 +857,7 @@ class BaseModel(BaseModelPlotter):
     def predict_log_proba(
         self,
         X: Union[slice, X_TYPES, Y_TYPES],
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get log probability predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict_log_proba")
@@ -868,7 +866,7 @@ class BaseModel(BaseModelPlotter):
     def decision_function(
         self,
         X: Union[slice, X_TYPES, Y_TYPES],
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get the decision function on new data."""
         return self._prediction(X, verbose=verbose, method="decision_function")
@@ -880,7 +878,7 @@ class BaseModel(BaseModelPlotter):
         y: Y_TYPES,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get the score function on new data."""
         return self._prediction(
@@ -1378,7 +1376,7 @@ class BaseModel(BaseModelPlotter):
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
-        threshold: float = 0.5,
+        threshold: FLOAT = 0.5,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
     ):
         """Get the model's scores for the provided metrics.
@@ -1478,7 +1476,7 @@ class BaseModel(BaseModelPlotter):
     def export_pipeline(
         self,
         memory: Optional[Union[bool, str, Memory]] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Export the model's pipeline to a sklearn-like object.
 
@@ -1636,7 +1634,7 @@ class BaseModel(BaseModelPlotter):
         self,
         X: X_TYPES,
         y: Optional[Y_TYPES] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Transform new data through the model's branch.
 
