@@ -324,12 +324,12 @@ def test_export_pipeline_memory(func):
     func.assert_called_once()
 
 
-# @patch("pandas_profiling.ProfileReport")
-# def test_report(cls):
-#     """Assert that the report method and file are created."""
-#     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-#     atom.report(filename="report")
-#     cls.return_value.to_file.assert_called_once_with("report.html")
+@patch("pandas_profiling.ProfileReport")
+def test_report(cls):
+    """Assert that the report method and file are created."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.report(filename="report")
+    cls.return_value.to_file.assert_called_once_with("report.html")
 
 
 def test_reset():
