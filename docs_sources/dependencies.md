@@ -29,7 +29,7 @@ packages are necessary for its correct functioning.
 * **[numpy](https://numpy.org/)** (~=1.21.0)
 * **[scipy](https://www.scipy.org/)** (>=1.7.3)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.0)
-* **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=2.3.0)
+* **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.1.0)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.3.8)
 * **[mlflow](https://mlflow.org/)** (>=1.15.0)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.3)
@@ -65,8 +65,8 @@ Install them using `pip install atom-ml[models]`.
 ### Development
 
 The development dependencies are not installed with the package, and are
-not necessary for any of its functionalities. These libraries are only
-required to [contribute](../contributing) to the project. Install them
+not required for any of its functionalities. These libraries are only
+necessary to [contribute](../contributing) to the project. Install them
 using `pip install atom-ml[dev]`.
 
 * **[pip](https://pip.pypa.io/en/stable/)** (>=22.0.4)
@@ -74,6 +74,7 @@ using `pip install atom-ml[dev]`.
 * **[isort](https://pycqa.github.io/isort/)** (>=5.10.1)
 * **[flake8](https://github.com/pycqa/flake8)** (>=4.0.1)
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.1.0)
+* **[pytest-cov](https://github.com/pytest-dev/pytest-cov)** (>=3.0.0)
 * **[tensorflow](https://www.tensorflow.org/)** (>=2.3.1)
 * **[mkdocs](https://www.mkdocs.org/)** (>=1.2.3)
 * **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=8.2.5)
