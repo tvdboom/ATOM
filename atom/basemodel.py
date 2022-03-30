@@ -403,7 +403,7 @@ class BaseModel(BaseModelPlotter):
             self.bo.loc[self._iter - 1] = row
 
             # Save BO calls to experiment as nested runs
-            if self.T.log_bo:
+            if self._run and self.T.log_bo:
                 with mlflow.start_run(run_name=f"{self.name} - {call}", nested=True):
                     mlflow.set_tag("time", row["time"])
                     mlflow.log_params(params)
@@ -1083,8 +1083,7 @@ class BaseModel(BaseModelPlotter):
             mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
 
         if self.T.log_model:
-            name = self.estimator.__class__.__name__
-            mlflow.sklearn.log_model(self.estimator, name)
+            mlflow.sklearn.log_model(self.estimator, self.estimator.__class__.__name__)
 
         if self.T.log_data:
             for set_ in ("train", "test"):

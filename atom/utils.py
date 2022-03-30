@@ -1388,6 +1388,7 @@ class ShapExplanation:
                 self._explainer = Explainer(self.T.estimator, self.T.X_train)
             except Exception:
                 # Prediction attr to use (predict_proba > decision_function > predict)
+                # If method is provided as first arg, selects always Permutation
                 attr = getattr(self.T.estimator, get_proba_attr(self.T))
                 self._explainer = Explainer(attr, self.T.X_train)
 
@@ -1437,22 +1438,26 @@ class ShapExplanation:
             for i, idx in enumerate(calculate.index):
                 self._shap_values.loc[idx] = self._explanation.values[i]
 
+        # Don't use attribute to not save plot-specific changes
+        explanation = copy(self._explanation)
+
         # Update the explanation object
-        self._explanation.values = np.stack(self._shap_values.loc[df.index].values)
-        if isinstance(self._explanation.base_values, SEQUENCE):
-            self._explanation.base_values = self._explanation.base_values[0]
-        self._explanation.data = self.T.X.loc[df.index, :].to_numpy()
+        explanation.values = np.stack(self._shap_values.loc[df.index].values)
+        explanation.base_values = explanation.base_values[0]
+        explanation.data = self.T.X.loc[df.index, :].to_numpy()
 
         # Select the target values from the array
-        if self._explanation.values.ndim > 2:
-            self._explanation.values = self._explanation.values[:, :, target]
-        if only_one:  # Rows should be a df with one row only
-            self._explanation.values = self._explanation.values[0]
+        if explanation.values.ndim > 2:
+            explanation.values = explanation.values[:, :, target]
+        if only_one:  # Attributes should be 1-dimensional
+            explanation.values = explanation.values[0]
+            explanation.data = explanation.data[0]
+            explanation.base_values = explanation.base_values[target]
 
         if feature is None:
-            return self._explanation
+            return explanation
         else:
-            return self._explanation[:, feature]
+            return explanation[:, feature]
 
     def get_shap_values(self, df, target=1, return_all_classes=False):
         """Get shap values from the Explanation object."""
