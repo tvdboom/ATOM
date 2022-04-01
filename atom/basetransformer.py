@@ -136,7 +136,7 @@ class BaseTransformer:
     @experiment.setter
     def experiment(self, value):
         self._experiment = value
-        mlflow.autolog(disable=True)
+        mlflow.sklearn.autolog(disable=True)
         if value:
             mlflow.set_experiment(value)
 

@@ -7,6 +7,8 @@ Description: Unit tests for basetrainer.py
 
 """
 
+from unittest.mock import patch
+
 import pytest
 from mlflow.tracking.fluent import ActiveRun
 from sklearn.ensemble import RandomForestClassifier
@@ -106,6 +108,14 @@ def test_model_is_predefined():
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.models == "LR"
+
+
+@patch.dict("sys.modules", {"lightgbm": None})
+def test_package_not_installed():
+    """Assert that an error is raised when the model's package is not installed."""
+    trainer = DirectClassifier("LGB", random_state=1)
+    with pytest.raises(ModuleNotFoundError, match=r".*Unable to import.*"):
+        trainer.run(bin_train, bin_test)
 
 
 def test_model_is_custom():

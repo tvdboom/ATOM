@@ -7,9 +7,9 @@ Description: Module containing the parent class for the trainers.
 
 """
 
-import importlib
 import traceback
 from datetime import datetime
+from importlib.util import find_spec
 
 import matplotlib.pyplot as plt
 import mlflow
@@ -273,14 +273,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
                     # Check if packages for non-sklearn models are available
                     packages = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
-                    if acronym in packages:
-                        try:
-                            importlib.import_module(packages[acronym])
-                        except ImportError:
-                            raise ValueError(
-                                f"Unable to import the {packages[acronym]} "
-                                "package. Make sure it is installed."
-                            )
+                    if acronym in packages and not find_spec(packages[acronym]):
+                        raise ModuleNotFoundError(
+                            f"Unable to import the {packages[acronym]} package. "
+                            f"Install it using: pip install {packages[acronym]}"
+                        )
 
                     models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 

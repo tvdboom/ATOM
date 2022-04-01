@@ -9,6 +9,7 @@ Description: Module containing the plotting classes.
 
 from collections import defaultdict
 from contextlib import contextmanager
+from importlib.util import find_spec
 from inspect import signature
 from itertools import chain, cycle
 from typing import Optional, Tuple, Union
@@ -1780,7 +1781,7 @@ class BaseModelPlotter(BasePlotter):
                 ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
 
         ax2.set_yticklabels([])
-        self._draw_line(ax=ax2, x=0)
+        self._draw_line(ax=ax2, y=0)
         self._plot(ax=ax2, xlabel="Distribution")
 
         if title:
@@ -2910,7 +2911,7 @@ class BaseModelPlotter(BasePlotter):
             ax2.hist(prob, n_bins, range=(0, 1), label=m.name, histtype="step", lw=2)
 
         plt.setp(ax1.get_xticklabels(), visible=False)
-        self._draw_line(ax=ax1, x="diagonal")
+        self._draw_line(ax=ax1, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         self._plot(
@@ -3307,14 +3308,11 @@ class BaseModelPlotter(BasePlotter):
                 if not filename.endswith(".html"):
                     filename += ".html"
                 shap.save_html(filename, plot)
-            if display:
-                try:  # Render if possible (for notebooks)
-                    from IPython.display import display
+            if display and find_spec("IPython"):
+                from IPython.display import display
 
-                    shap.initjs()
-                    display(plot)
-                except ModuleNotFoundError:
-                    pass
+                shap.initjs()
+                display(plot)
 
     @composed(crash, plot_from_model, typechecked)
     def heatmap_plot(
