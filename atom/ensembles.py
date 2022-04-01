@@ -23,7 +23,7 @@ from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 
-from .utils import check_is_fitted
+from atom.utils import check_is_fitted
 
 
 class BaseEnsemble:

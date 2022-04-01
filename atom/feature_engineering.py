@@ -28,11 +28,11 @@ from zoofs import (
     HarrisHawkOptimization, ParticleSwarmOptimization,
 )
 
-from .basetransformer import BaseTransformer
-from .data_cleaning import Scaler, TransformerMixin
-from .models import MODELS
-from .plots import FSPlotter
-from .utils import (
+from atom.basetransformer import BaseTransformer
+from atom.data_cleaning import Scaler, TransformerMixin
+from atom.models import MODELS
+from atom.plots import FSPlotter
+from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, check_scaling, composed, crash, get_custom_scorer,
     get_feature_importance, infer_task, is_sparse, lst, method_to_log, to_df,

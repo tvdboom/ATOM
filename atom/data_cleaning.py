@@ -53,8 +53,8 @@ from sklearn.preprocessing import (
 from sklearn.svm import OneClassSVM
 from typeguard import typechecked
 
-from .basetransformer import BaseTransformer
-from .utils import (
+from atom.basetransformer import BaseTransformer
+from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, composed, crash, it, lst, merge, method_to_log, to_series,
     variable_return,

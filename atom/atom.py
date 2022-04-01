@@ -18,26 +18,26 @@ from joblib.memory import Memory
 from scipy import stats
 from typeguard import typechecked
 
-from .basepredictor import BasePredictor
-from .basetrainer import BaseTrainer
-from .basetransformer import BaseTransformer
-from .branch import Branch
-from .data_cleaning import (
+from atom.basepredictor import BasePredictor
+from atom.basetrainer import BaseTrainer
+from atom.basetransformer import BaseTransformer
+from atom.branch import Branch
+from atom.data_cleaning import (
     Balancer, Cleaner, Discretizer, DropTransformer, Encoder, FuncTransformer,
     Gauss, Imputer, Pruner, Scaler,
 )
-from .feature_engineering import (
+from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureSelector,
 )
-from .models import MODELS_ENSEMBLES, CustomModel
-from .nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
-from .pipeline import Pipeline
-from .plots import ATOMPlotter
-from .training import (
+from atom.models import MODELS_ENSEMBLES, CustomModel
+from atom.nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
+from atom.pipeline import Pipeline
+from atom.plots import ATOMPlotter
+from atom.training import (
     DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
 )
-from .utils import (
+from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Table,
     check_dim, check_is_fitted, check_scaling, composed, crash,
     custom_transform, delete, divide, fit_one, flt, get_pl_name, infer_task,

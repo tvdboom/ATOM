@@ -7,7 +7,12 @@ Description: Package's setup code.
 
 """
 
+import re
 from setuptools import setup
+
+
+with open("atom/__init__.py", encoding="utf8") as f:
+    version = re.search(r"^__version__ = \"([\d.]*)\"", f.read(), re.M).group(1)
 
 with open("README.md", encoding="utf8") as f:
     long_description = f.read()
@@ -23,10 +28,10 @@ with open("requirements-dev.txt", encoding="utf8") as f:
 
 setup(
     name="atom-ml",
-    version="4.13.0",
+    version=version,
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url="https://github.com/tvdboom/ATOM/archive/v4.13.0.tar.gz",
+    download_url=f"https://github.com/tvdboom/ATOM/archive/v{version}.tar.gz",
     url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",

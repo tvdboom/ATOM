@@ -15,9 +15,9 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from typeguard import typechecked
 
-from .basetrainer import BaseTrainer
-from .plots import BaseModelPlotter
-from .utils import (
+from atom.basetrainer import BaseTrainer
+from atom.plots import BaseModelPlotter
+from atom.utils import (
     INT, SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score,
     infer_task, lst, method_to_log,
 )

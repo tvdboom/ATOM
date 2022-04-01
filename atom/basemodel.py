@@ -38,11 +38,11 @@ from skopt.space.transformers import LabelEncoder
 from tqdm import tqdm
 from typeguard import typechecked
 
-from .data_cleaning import Scaler
-from .patches import fit, inverse_transform, score, transform
-from .pipeline import Pipeline
-from .plots import BaseModelPlotter
-from .utils import (
+from atom.data_cleaning import Scaler
+from atom.patches import fit, inverse_transform, score, transform
+from atom.pipeline import Pipeline
+from atom.plots import BaseModelPlotter
+from atom.utils import (
     DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     ShapExplanation, Table, arr, composed, crash, custom_transform, flt,
     get_best_score, get_custom_scorer, get_pl_name, it, lst, merge,

@@ -13,7 +13,7 @@ from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
-from .utils import (
+from atom.utils import (
     check_is_fitted, fit_one, fit_transform_one, transform_one,
     variable_return,
 )

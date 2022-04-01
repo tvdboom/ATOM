@@ -26,9 +26,9 @@ from sklearn.feature_extraction.text import (
 )
 from typeguard import typechecked
 
-from .basetransformer import BaseTransformer
-from .data_cleaning import TransformerMixin
-from .utils import (
+from atom.basetransformer import BaseTransformer
+from atom.data_cleaning import TransformerMixin
+from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
     composed, crash, get_corpus, is_sparse, method_to_log, to_df,
 )

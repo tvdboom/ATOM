@@ -166,12 +166,12 @@ from sklearn.svm import SVC, SVR, LinearSVC, LinearSVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from skopt.space.space import Categorical, Integer, Real
 
-from .basemodel import BaseModel
-from .ensembles import (
+from atom.basemodel import BaseModel
+from atom.ensembles import (
     StackingClassifier, StackingRegressor, VotingClassifier, VotingRegressor,
 )
-from .pipeline import Pipeline
-from .utils import CustomDict, create_acronym
+from atom.pipeline import Pipeline
+from atom.utils import CustomDict, create_acronym
 
 
 # Variables ======================================================== >>

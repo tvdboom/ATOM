@@ -15,9 +15,9 @@ import dill
 from sklearn.base import clone
 from typeguard import typechecked
 
-from .atom import ATOM
-from .basetransformer import BaseTransformer
-from .utils import INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
+from atom.atom import ATOM
+from atom.basetransformer import BaseTransformer
+from atom.utils import INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
 
 
 # Functions ======================================================== >>

@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 from typeguard import typechecked
 
-from .branch import Branch
-from .models import MODELS, Stacking, Voting
-from .utils import (
+from atom.branch import Branch
+from atom.models import MODELS, Stacking, Voting
+from atom.utils import (
     DF_ATTRS, FLOAT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, composed, crash, delete, divide, flt, get_best_score, lst,
     method_to_log,

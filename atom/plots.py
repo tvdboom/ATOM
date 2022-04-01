@@ -40,8 +40,8 @@ from sklearn.utils import _safe_indexing
 from typeguard import typechecked
 from wordcloud import WordCloud
 
-from .basetransformer import BaseTransformer
-from .utils import (
+from atom.basetransformer import BaseTransformer
+from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
     check_is_fitted, check_predict_proba, composed, crash, get_best_score,
     get_corpus, get_custom_scorer, get_feature_importance, lst,
@@ -1679,7 +1679,7 @@ class BaseModelPlotter(BasePlotter):
                 )
 
                 # Fit the points using linear regression
-                from .models import OrdinaryLeastSquares
+                from atom.models import OrdinaryLeastSquares
 
                 model = OrdinaryLeastSquares(self, fast_init=True).get_estimator()
                 model.fit(

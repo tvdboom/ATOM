@@ -15,14 +15,13 @@ import matplotlib.pyplot as plt
 import mlflow
 from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
 
-from .basepredictor import BasePredictor
-from .branch import Branch
-from .data_cleaning import BaseTransformer
-from .models import MODELS, CustomModel
-from .utils import (
-    OPTIONAL_PACKAGES, SEQUENCE, CustomDict, PlotCallback, check_scaling,
-    delete, get_best_score, get_custom_scorer, is_multidim, is_sparse, lst,
-    time_to_str,
+from atom.basepredictor import BasePredictor
+from atom.branch import Branch
+from atom.data_cleaning import BaseTransformer
+from atom.models import MODELS, CustomModel
+from atom.utils import (
+    SEQUENCE, CustomDict, PlotCallback, check_scaling, delete, get_best_score,
+    get_custom_scorer, is_multidim, is_sparse, lst, time_to_str,
 )
 
 
@@ -273,12 +272,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                         acronym = names[0]
 
                     # Check if packages for non-sklearn models are available
-                    if acronym in OPTIONAL_PACKAGES:
+                    packages = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
+                    if acronym in packages:
                         try:
-                            importlib.import_module(OPTIONAL_PACKAGES[acronym])
+                            importlib.import_module(packages[acronym])
                         except ImportError:
                             raise ValueError(
-                                f"Unable to import the {OPTIONAL_PACKAGES[acronym]} "
+                                f"Unable to import the {packages[acronym]} "
                                 "package. Make sure it is installed."
                             )
 

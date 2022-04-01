@@ -22,7 +22,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from typeguard import typechecked
 
-from .utils import (
+from atom.utils import (
     INT, SCALAR, SEQUENCE, X_TYPES, Y_TYPES, composed, crash, lst, merge,
     method_to_log, prepare_logger, to_df, to_series,
 )

@@ -46,9 +46,6 @@ SEQUENCE_TYPES = Union[SEQUENCE]
 X_TYPES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
 Y_TYPES = Union[INT, str, SEQUENCE_TYPES]
 
-# Non-sklearn models
-OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
-
 # Attributes shared between atom and a pd.DataFrame
 DF_ATTRS = (
     "size",
@@ -498,7 +495,7 @@ def create_acronym(fullname):
         Created acronym.
 
     """
-    from .models import MODELS
+    from atom.models import MODELS
 
     acronym = "".join([c for c in fullname if c.isupper()])
     if len(acronym) < 2 or acronym.lower() in MODELS:
@@ -527,7 +524,7 @@ def names_from_estimator(cls, est):
         Model's complete name.
 
     """
-    from .models import MODELS
+    from atom.models import MODELS
 
     for key, value in MODELS.items():
         model = value(cls, fast_intialization=True)

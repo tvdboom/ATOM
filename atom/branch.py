@@ -14,9 +14,9 @@ from typing import Optional
 import pandas as pd
 from typeguard import typechecked
 
-from .basetransformer import BaseTransformer
-from .models import MODELS_ENSEMBLES
-from .utils import (
+from atom.basetransformer import BaseTransformer
+from atom.models import MODELS_ENSEMBLES
+from atom.utils import (
     SEQUENCE_TYPES, X_TYPES, CustomDict, composed, crash, custom_transform,
     flt, is_multidim, merge, method_to_log, to_df, to_series,
 )
