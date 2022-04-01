@@ -1475,11 +1475,9 @@ class ShapExplanation:
                     getattr(self.T, f"{get_proba_attr(self.T)}_train")
                 )
 
-        if return_one and isinstance(self._expected_value, (list, np.ndarray)):
+        if return_one and isinstance(self._expected_value, SEQUENCE):
             if len(self._expected_value) == self.T.y.nunique():
                 return self._expected_value[target]  # Return target expected value
-        if not return_one and not isinstance(self._expected_value, (list, np.ndarray)):
-            return [1 - self._expected_value, self._expected_value]  # Must be binary
 
         return self._expected_value
 

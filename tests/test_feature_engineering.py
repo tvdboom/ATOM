@@ -481,8 +481,8 @@ def test_advanced_provided_validation_sets():
     selector = FeatureSelector(
         strategy="pso",
         solver="tree_class",
-        X_valid=X_bin,
-        y_valid=y_bin,
+        X_valid=X_bin.iloc[:20, :],
+        y_valid=y_bin.iloc[:20],
         n_iteration=2,
         population_size=2,
     )

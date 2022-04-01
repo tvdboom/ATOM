@@ -25,8 +25,8 @@ from atom.utils import INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
 @typechecked
 def ATOMModel(
     estimator: Any,
-    acronym: str = None,
-    fullname: str = None,
+    acronym: Optional[str] = None,
+    fullname: Optional[str] = None,
     needs_scaling: bool = False,
 ):
     """Convert an estimator to a model that can be ingested by ATOM.

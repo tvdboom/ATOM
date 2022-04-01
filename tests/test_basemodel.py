@@ -556,34 +556,43 @@ def test_cross_validate():
 def test_dashboard_dataset_no_holdout():
     """Assert that an error is raised when there's no holdout set."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
+    atom.run("Tree")
     with pytest.raises(ValueError, match=r".*No holdout data set.*"):
-        atom.rf.dashboard(dataset="holdout")
+        atom.tree.dashboard(dataset="holdout")
 
 
 def test_dashboard_invalid_dataset():
     """Assert that an error is raised when dataset is invalid."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
+    atom.run("Tree")
     with pytest.raises(ValueError, match=r".*dataset parameter.*"):
-        atom.rf.dashboard(dataset="invalid")
+        atom.tree.dashboard(dataset="invalid")
 
 
 @patch("explainerdashboard.ExplainerDashboard")
 @pytest.mark.parametrize("dataset", ["train", "both", "holdout"])
-def test_dashboard(func, dataset):
-    """Assert that an error is raised when dataset is invalid."""
+def test_dashboard_classification(func, dataset):
+    """Assert that the dashboard method calls the underlying package."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    atom.run("RF")
-    atom.rf.dashboard(dataset=dataset, filename="dashboard")
+    atom.run("Tree")
+    atom.tree.dashboard(dataset=dataset, filename="dashboard")
+    func.assert_called_once()
+
+
+@patch("explainerdashboard.ExplainerDashboard")
+def test_dashboard_regression(func):
+    """Assert that the dashboard method calls the underlying package."""
+    atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
+    atom.run("Tree")
+    atom.tree.dashboard()
     func.assert_called_once()
 
 
 def test_delete():
     """Assert that models can be deleted."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
-    atom.rf.delete()
+    atom.run("Tree")
+    atom.tree.delete()
     assert not atom.models
     assert not atom.metric
 

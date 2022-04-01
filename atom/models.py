@@ -74,11 +74,6 @@ Description: Module containing all available models. All classes must
             Return a list of the hyperparameter space for optimization.
 
 
-To add a new model:
-    1. Add the model's class to models.py
-    2. Add the model to the list MODELS in models.py
-
-
 List of available models:
     - "Dummy" for Dummy Estimator
     - "GNB" for Gaussian Naive Bayes (no hyperparameter tuning)
@@ -122,6 +117,7 @@ Additionally, ATOM implements two ensemble models:
     - "Vote" for Voting
 
 """
+
 import random
 from inspect import signature
 from random import randint
@@ -217,24 +213,21 @@ class CustomModel(BaseModel):
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        sign = signature(self.est.__init__).parameters
-
-        # The provided estimator can be a class or an instance
         if callable(self.est):
             # Add n_jobs and random_state to the estimator (if available)
             for p in ("n_jobs", "random_state"):
-                if p in sign:
+                if p in self._sign():
                     params[p] = params.pop(p, getattr(self.T, p))
 
             return self.est(**params)
-
         else:
-            # Update the parameters (only if it's a BaseEstimator)
+            # Update the parameters if it's a child class of BaseEstimator
+            # If the class has the param and it's the default value, change it
             if all(hasattr(self.est, attr) for attr in ("get_params", "set_params")):
                 for p in ("n_jobs", "random_state"):
-                    # If the class has the parameter and it's the default value
-                    if p in sign and self.est.get_params()[p] == sign[p]._default:
-                        params[p] = params.pop(p, getattr(self.T, p))
+                    if p in self._sign():
+                        if self.est.get_params()[p] == self._sign()[p]._default:
+                            params[p] = params.pop(p, getattr(self.T, p))
 
                 self.est.set_params(**params)
 

@@ -172,15 +172,15 @@ class BaseModel(BaseModelPlotter):
     def _get_default_params(self):
         """Get the estimator's default parameters for the BO dimensions."""
         x0 = CustomDict()
-        params = signature(self.est_class.__init__).parameters
         for dim in self._dimensions:
             # Special case for MLP, layers are different from default
             if dim.name == "hidden_layer_1":
                 x0[dim.name] = 100
             elif dim.name.startswith("hidden_layer"):
                 x0[dim.name] = 0
-            elif dim.name in params and params[dim.name].default is not Parameter.empty:
-                x0[dim.name] = params[dim.name].default
+            elif dim.name in self._sign():
+                if self._sign()[dim.name].default is not Parameter.empty:
+                    x0[dim.name] = self._sign()[dim.name].default
             else:
                 # Return random value in dimension if it's not possible to
                 # extract a default value. This can happen when the value

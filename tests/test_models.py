@@ -161,6 +161,17 @@ def test_all_models_gpu_regression():
     )
 
 
+def test_Dummy():
+    """Assert that Dummy doesn't crash when strategy=quantile."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(
+        models="dummy",
+        n_calls=2,
+        n_initial_points=1,
+        est_params={"strategy": "quantile"},
+    )
+
+
 def test_CatNB():
     """Assert that the CatNB model works. Separated because of special dataset."""
     X = np.random.randint(5, size=(100, 100))
