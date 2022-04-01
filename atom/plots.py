@@ -44,7 +44,7 @@ from .basetransformer import BaseTransformer
 from .utils import (
     INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
     check_is_fitted, check_predict_proba, composed, crash, get_best_score,
-    get_corpus, get_custom_scorer, get_feature_importance, get_proba_attr, lst,
+    get_corpus, get_custom_scorer, get_feature_importance, lst,
     partial_dependence, plot_from_model,
 )
 
@@ -221,17 +221,17 @@ class BasePlotter:
     # Methods ====================================================== >>
 
     @staticmethod
-    def _draw_line(ax, x):
+    def _draw_line(ax, y):
         """Draw a line across the axis."""
         ax.plot(
             [0, 1],
-            [0, 1] if x == "diagonal" else [x, x],
+            [0, 1] if y == "diagonal" else [y, y],
             color="black",
             linestyle="--",
             linewidth=2,
             alpha=0.6,
             zorder=-2,
-            transform=ax.transAxes,
+            transform=blended_transform_factory(ax.transAxes, ax.transData),
         )
 
     @staticmethod
@@ -1257,9 +1257,8 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
@@ -1271,7 +1270,7 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
                 ax.plot(fpr, tpr, lw=2, label=label)
 
-        self._draw_line(ax=ax, x="diagonal")
+        self._draw_line(ax=ax, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1340,9 +1339,8 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
@@ -1354,7 +1352,7 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
                 plt.plot(rec, prec, lw=2, label=label)
 
-        self._draw_line(ax=ax, x=m.y_test.sort_values().iloc[-1] / len(m.y_test))
+        self._draw_line(ax=ax, y=m.y_test.sort_values().iloc[-1] / len(m.y_test))
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1422,9 +1420,8 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
@@ -1501,31 +1498,20 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                y_true = getattr(m, f"y_{set_}")
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
-                # Make y_true a bool vector
-                y_true = getattr(m, f"y_{set_}") == 1
+                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
+                x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
 
-                # Get sorted indices
-                sort_idx = np.argsort(y_pred)[::-1]
-
-                # Correct indices for the test set (add train set length)
-                if set_ == "test":
-                    sort_idx = [i + len(m.y_train) for i in sort_idx]
-
-                # Compute cumulative gains
-                gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
-
-                x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
                 ax.plot(x, gains, lw=2, label=label)
 
-        self._draw_line(ax=ax, x="diagonal")
+        self._draw_line(ax=ax, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1596,32 +1582,20 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                y_true = getattr(m, f"y_{set_}")
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
-                # Make y_true a bool vector
-                y_true = getattr(m, f"y_{set_}") == 1
+                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
+                x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
 
-                # Get sorted indices
-                sort_idx = np.argsort(y_pred)[::-1]
-
-                # Correct indices for the test set (add train set length)
-                if set_ == "test":  # Add the training set length to the indices
-                    sort_idx = [i + len(m.y_train) for i in sort_idx]
-
-                # Compute cumulative gains
-                gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
-
-                x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
-                lift = f" (Lift={round(m.evaluate('lift', set_)['lift'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + lift
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
                 ax.plot(x, gains / x, lw=2, label=label)
 
-        self._draw_line(ax=ax, x=1)
+        self._draw_line(ax=ax, y=1)
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1717,7 +1691,7 @@ class BaseModelPlotter(BasePlotter):
                 x = np.linspace(*ax.get_xlim(), 100)
                 ax.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
 
-        self._draw_line(ax=ax, x="diagonal")
+        self._draw_line(ax=ax, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -2484,7 +2458,7 @@ class BaseModelPlotter(BasePlotter):
             )
             cbar.ax.tick_params(labelsize=self.tick_fontsize)
 
-        self._draw_line(ax=ax, x="diagonal")
+        self._draw_line(ax=ax, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(

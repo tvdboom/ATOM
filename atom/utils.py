@@ -1143,11 +1143,6 @@ def false_negative_rate(y_true, y_pred):
     return float(fn / (fn + tp))
 
 
-def lift(y_true, y_pred):
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    return float((tp / (tp + fp)) / ((tp + fn) / (tp + tn + fp + fn)))
-
-
 # Scorers not predefined by sklearn
 CUSTOM_SCORERS = dict(
     tn=true_negatives,
@@ -1158,7 +1153,6 @@ CUSTOM_SCORERS = dict(
     tpr=true_positive_rate,
     tnr=true_negative_rate,
     fnr=false_negative_rate,
-    lift=lift,
     mcc=matthews_corrcoef,
 )
 

@@ -23,8 +23,13 @@ When no backend is configured, the data is stored locally at `./mlruns`.
 To configure the backend, use [mlflow.set_tracking_uri](https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri)
 in your notebook or IDE before initializing the trainer. This does not
 affect the currently active run (if one exists), but takes effect for
-successive runs. When using ATOM on Databricks, the uri should include
-the complete path to the storage, e.g. `/Users/username@domain.com/experiment_name`.
+successive runs.
+
+!!! info
+    When using ATOM on [Databricks](https://databricks.com/), the
+    experiment's name should include the complete path to the storage,
+    e.g. `/Users/username@domain.com/experiment_name`.
+
 The following elements are tracked:
 
 **Tags**<br>

@@ -131,7 +131,6 @@ tasks.
 * "TPR" for True Positive Rate (sensitivity, recall)
 * "TNR" for True Negative Rate (specificity)
 * "FNR" for False Negative Rate (miss rate)
-* "Lift" for Lift
 * "MCC" for Matthews Correlation Coefficient (also for multiclass classification)
 
 
