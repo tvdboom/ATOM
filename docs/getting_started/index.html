@@ -2887,7 +2887,7 @@ manipulate. This data is stored in the instance and can be accessed at
 any moment through atom's <a href="../API/ATOM/atomclassifier/#data-attributes">data attributes</a>.
 You can either let atom split the dataset into a train and test set or
 provide the sets yourself.</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">test_sixe</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="mf">1e3</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
 <p>Data transformations are applied through atom's methods. For example,
 calling the <a href="../API/ATOM/atomclassifier/#impute">impute</a> method will
@@ -2900,8 +2900,8 @@ commands necessary).</p>
 </code></pre></div>
 <p>Similarly, models are <a href="../user_guide/training">trained and evaluated</a> using the
 <a href="../API/ATOM/atomclassifier/#run">run</a> method. Here, we fit both a
-<a href="../API/models/rf">Random Forest</a> and <a href="../API/models/adab">AdaBoost</a> model
-while applying <a href="../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.</p>
+<a href="../API/models/rf">Random Forest</a> and <a href="../API/models/adab">AdaBoost</a> model,
+and apply <a href="../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.</p>
 <div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;RF&quot;</span><span class="p">,</span> <span class="s2">&quot;AdaB&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;auc&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 </code></pre></div>
 <p>Lastly, visualize the result using the integrated <a href="../user_guide/plots">plots</a>.</p>

@@ -127,20 +127,25 @@ X.head()
 
 Initialize the [ATOMClassifier](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomclassifier/)
 or [ATOMRegressor](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomregressor) class.
+You can either let atom split the dataset into a train and test set
+or provide the sets yourself.
 
 ```python
-atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e3, verbose=2)
+atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.25, verbose=2)
 ```
 
-Use the data cleaning methods to prepare the data for modelling.
+Use the data cleaning methods to prepare the data for modelling. The
+transformations are applied immediately after calling the method (no
+fit and transform commands necessary).
 
 ```python
 atom.impute(strat_num="median", strat_cat="most_frequent")  
-atom.encode(strategy="LeaveOneOut", max_onehot=8)  
-atom.feature_selection(strategy="pca", n_features=12)
+atom.encode(strategy="LeaveOneOut", max_onehot=8)
 ```
 
-Train and evaluate the models you want to compare.
+Train and evaluate the models you want to compare. Here, we fit a Logistic
+Regression, Random Forest and LightGBM model, and apply hyperparameter
+tuning.
 
 ```python
 atom.run(
@@ -151,7 +156,7 @@ atom.run(
 )
 ```
 
-Make plots to analyze the results.
+Lastly, visualize the result using the integrated plots.
 
 ```python
 atom.plot_roc()

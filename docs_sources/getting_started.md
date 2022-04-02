@@ -91,7 +91,7 @@ You can either let atom split the dataset into a train and test set or
 provide the sets yourself.
 
 ```python
-atom = ATOMClassifier(X, y="RainTomorrow", test_sixe=0.3, n_rows=1e3, verbose=2)
+atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.3,verbose=2)
 ```
 
 Data transformations are applied through atom's methods. For example,
@@ -108,8 +108,8 @@ atom.encode(strategy="LeaveOneOut", max_onehot=8)
 
 Similarly, models are [trained and evaluated](../user_guide/training) using the
 [run](../API/ATOM/atomclassifier/#run) method. Here, we fit both a
-[Random Forest](../API/models/rf) and [AdaBoost](../API/models/adab) model
-while applying [hyperparameter tuning](../user_guide/training/#hyperparameter-tuning).
+[Random Forest](../API/models/rf) and [AdaBoost](../API/models/adab) model,
+and apply [hyperparameter tuning](../user_guide/training/#hyperparameter-tuning).
 
 ```python
 atom.run(models=["RF", "AdaB"], metric="auc", n_calls=10, n_initial_points=4)
