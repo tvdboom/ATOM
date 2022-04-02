@@ -119,7 +119,6 @@ Additionally, ATOM implements two ensemble models:
 """
 
 import random
-from inspect import signature
 from random import randint
 
 import numpy as np

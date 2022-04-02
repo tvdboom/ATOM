@@ -30,7 +30,7 @@ packages are necessary for its correct functioning.
 * **[scipy](https://www.scipy.org/)** (>=1.7.3)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.0)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.1.0)
-* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.3.8)
+* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (==0.3.8)
 * **[mlflow](https://mlflow.org/)** (>=1.15.0)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.3)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
