@@ -96,84 +96,6 @@ class Branch:
 
         return out
 
-    # Utility methods ============================================== >>
-
-    def _get_attrs(self):
-        """Get properties and attributes to call from parent."""
-        attrs = []
-        for p in dir(self):
-            if (
-                p in vars(self) and p not in ("T", "name", "_data", "_idx", "_holdout")
-                or isinstance(getattr(Branch, p, None), property)
-            ):
-                attrs.append(p)
-
-        return attrs
-
-    def _get_depending_models(self):
-        """Return the models that are dependent on this branch."""
-        return [m.name for m in self.T._models.values() if m.branch is self]
-
-    @composed(crash, method_to_log, typechecked)
-    def delete(self, name: Optional[str] = None):
-        """Delete the branch and all the models in it."""
-        if name is None:
-            name = self.name
-
-        if name == "og":
-            raise PermissionError(
-                "The og branch is an internal branch and can not be deleted!"
-            )
-        elif name not in self.T._branches:
-            raise ValueError(f"Branch {name} not found!")
-        elif len(self.T._branches.min("og")) == 1:
-            raise PermissionError("Can't delete the last branch!")
-        else:
-            branch = self.T._branches[name]
-
-            # Delete all depending models
-            depending_models = branch._get_depending_models()
-            if depending_models:
-                self.T.delete(depending_models)
-
-            # If this is the last og branch, create a new one
-            if self.T._get_og_branches() == [branch]:
-                self.T._branches.insert(0, "og", Branch(self.T, "og", parent=self))
-
-            # Reset the current branch
-            if branch.name == self.T._current:
-                self.T._current = list(self.T._branches.min("og"))[0]
-
-            self.T._branches.pop(branch.name)
-            self.T.log(f"Branch {branch.name} successfully deleted.", 1)
-
-    @composed(crash, method_to_log, typechecked)
-    def rename(self, name: str):
-        """Change the name of the branch."""
-        if not name:
-            raise ValueError("A branch can't have an empty name!")
-        elif name in self.T._branches:
-            raise ValueError(f"Branch {self.T._branches[name].name} already exists!")
-        else:
-            for model in MODELS_ENSEMBLES.values():
-                if name.lower().startswith(model.acronym.lower()):
-                    raise ValueError(
-                        "Invalid name for the branch. The name of a branch may "
-                        f"not begin with a model's acronym, and {model.acronym} "
-                        f"is the acronym of the {model.fullname} model."
-                    )
-
-        self.name = name
-        self.pipeline.name = name
-        self.T._branches[name] = self.T._branches.pop(self.T._current)
-        self.T.log(f"Branch {self.T._current} is renamed to {name}.", 1)
-        self.T._current = name
-
-    @composed(crash, method_to_log)
-    def status(self):
-        """Get an overview of the pipeline and models in the branch."""
-        self.T.log(str(self))
-
     # Data properties ============================================== >>
 
     def _check_setter(self, name, value):
@@ -417,3 +339,81 @@ class Branch:
     def target(self):
         """Name of the target column."""
         return self.columns[-1]
+
+    # Utility methods ============================================== >>
+
+    def _get_attrs(self):
+        """Get properties and attributes to call from parent."""
+        attrs = []
+        for p in dir(self):
+            if (
+                p in vars(self) and p not in ("T", "name", "_data", "_idx", "_holdout")
+                or isinstance(getattr(Branch, p, None), property)
+            ):
+                attrs.append(p)
+
+        return attrs
+
+    def _get_depending_models(self):
+        """Return the models that are dependent on this branch."""
+        return [m.name for m in self.T._models.values() if m.branch is self]
+
+    @composed(crash, method_to_log, typechecked)
+    def delete(self, name: Optional[str] = None):
+        """Delete the branch and all the models in it."""
+        if name is None:
+            name = self.name
+
+        if name == "og":
+            raise PermissionError(
+                "The og branch is an internal branch and can not be deleted!"
+            )
+        elif name not in self.T._branches:
+            raise ValueError(f"Branch {name} not found!")
+        elif len(self.T._branches.min("og")) == 1:
+            raise PermissionError("Can't delete the last branch!")
+        else:
+            branch = self.T._branches[name]
+
+            # Delete all depending models
+            depending_models = branch._get_depending_models()
+            if depending_models:
+                self.T.delete(depending_models)
+
+            # If this is the last og branch, create a new one
+            if self.T._get_og_branches() == [branch]:
+                self.T._branches.insert(0, "og", Branch(self.T, "og", parent=self))
+
+            # Reset the current branch
+            if branch.name == self.T._current:
+                self.T._current = list(self.T._branches.min("og"))[0]
+
+            self.T._branches.pop(branch.name)
+            self.T.log(f"Branch {branch.name} successfully deleted.", 1)
+
+    @composed(crash, method_to_log, typechecked)
+    def rename(self, name: str):
+        """Change the name of the branch."""
+        if not name:
+            raise ValueError("A branch can't have an empty name!")
+        elif name in self.T._branches:
+            raise ValueError(f"Branch {self.T._branches[name].name} already exists!")
+        else:
+            for model in MODELS_ENSEMBLES.values():
+                if name.lower().startswith(model.acronym.lower()):
+                    raise ValueError(
+                        "Invalid name for the branch. The name of a branch may "
+                        f"not begin with a model's acronym, and {model.acronym} "
+                        f"is the acronym of the {model.fullname} model."
+                    )
+
+        self.name = name
+        self.pipeline.name = name
+        self.T._branches[name] = self.T._branches.pop(self.T._current)
+        self.T.log(f"Branch {self.T._current} is renamed to {name}.", 1)
+        self.T._current = name
+
+    @composed(crash, method_to_log)
+    def status(self):
+        """Get an overview of the pipeline and models in the branch."""
+        self.T.log(str(self))
