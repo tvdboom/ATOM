@@ -594,12 +594,6 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         of sparse arrays. Must be False when there are other columns
         in X (besides `corpus`) that are non-sparse.
 
-    gpu: bool or str, optional (default=False)
-        Train strategy on GPU (instead of CPU).
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
-
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -627,12 +621,11 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "bow",
         return_sparse: bool = True,
-        gpu: Union[bool, str] = False,
         verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
         self.return_sparse = return_sparse
         self.kwargs = kwargs
@@ -674,11 +667,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         )
 
         if self.strategy in strategies:
-            estimator = self._get_gpu(
-                estimator=strategies[self.strategy],
-                module="cuml.feature_extraction.text",
-            )
-            self._estimator = estimator(**self.kwargs)
+            self._estimator = strategies[self.strategy](**self.kwargs)
         else:
             raise ValueError(
                 "Invalid value for the strategy parameter, got "

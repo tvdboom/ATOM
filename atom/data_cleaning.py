@@ -985,8 +985,8 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                   if strategy="custom".
         - If sequence: Number of bins per column, where the n-th value
                        corresponds to the n-th column that is transformed.
-                       If strategy="custom", it's the bin edges with length=
-                       n_bins + 1.
+                       If strategy="custom", it's the bin edges with
+                       length=n_bins + 1.
         - If dict: One of the aforementioned options per column, where
                    the key is the column's name.
 
@@ -997,7 +997,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If dict: Labels per column, where the key is the column's name.
 
     gpu: bool or str, optional (default=False)
-        Train estimator on GPU (instead of CPU).
+        Train estimator on GPU (instead of CPU). Not for strategy="custom".
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.

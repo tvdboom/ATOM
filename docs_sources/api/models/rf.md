@@ -19,6 +19,11 @@ Corresponding estimators are:
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#random-forests).
 
+!!! warning
+    The GPU implementation of RandomForestClassifier only supports predictions
+    on dtype `float32`. Convert all dtypes before calling the [run](../../../API/ATOM/atomclassifier/#run)
+    method to avoid exceptions.
+
 
 <br><br>
 ## Hyperparameters

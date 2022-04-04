@@ -43,7 +43,7 @@ Label names with which to replace the binned intervals.
 <li>If dict: Labels per column, where the key is the column's name.</li>
 </ul>
 <strong>gpu: bool or str, optional (default=False)</strong><br>
-Train estimator on GPU (instead of CPU).
+Train estimator on GPU (instead of CPU). Not for strategy="custom".
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>
@@ -67,7 +67,7 @@ Verbosity level of the class. Possible values are:
 </table>
 
 !!! tip
-    The class returns columns of dtype `object`. Use the [Encoder](../encoder)
+    The transformation returns categorical columns. Use the [Encoder](../encoder)
     class to convert them back to numerical types.
 
 !!! warning

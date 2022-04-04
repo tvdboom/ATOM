@@ -97,10 +97,6 @@ feature vectors. You can apply it to the corpus using the [Vectorizer](../../API
 class. It can be accessed from atom through the [vectorize](../../API/ATOM/atomclassifier/#vectorize)
 method.
 
-!!! info
-    All strategies can utilize GPU speed-up. Click [here](../gpu)
-    for further information about GPU implementation.
-
 <br style="display: block; margin-top: 2em; content: ' '">
 
 **Bag of Words**<br>

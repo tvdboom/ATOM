@@ -872,15 +872,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             ).fit(X, y)
 
         elif self.strategy.lower() == "pca":
-            s = lambda p: signature(estimator).parameters[p].default
-
             # The PCA and TruncatedSVD both get all possible components to use
             # for the plots (n_components must be < n_features and <= n_rows)
             if is_sparse(X):
-                estimator = self._get_gpu(TruncatedSVD)
-                self._estimator = estimator(
+                self._estimator = TruncatedSVD(
                     n_components=min(len(X), X.shape[1] - 1),
-                    algorithm=s("algorithm") if self.solver is None else self.solver,
+                    algorithm="randomized" if self.solver is None else self.solver,
                     random_state=self.random_state,
                     **self.kwargs,
                 )
@@ -888,6 +885,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 if not check_scaling(X):
                     self.scaler = Scaler().fit(X)
                     X = self.scaler.transform(X)
+
+                s = lambda p: signature(estimator).parameters[p].default
 
                 estimator = self._get_gpu(PCA)
                 self._estimator = estimator(

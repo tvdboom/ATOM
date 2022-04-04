@@ -190,8 +190,8 @@ component_2, etc... PCA can be applied in three ways:
   the estimator used is [TruncatedSVD](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html).
   Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis).
 * If [GPU training](../gpu) is enabled, the estimator used is cuml's
-  [PCA](https://docs.rapids.ai/api/cuml/stable/api.html#cuml.PCA)
-  or [TruncatedSVD](https://docs.rapids.ai/api/cuml/stable/api.html#cuml.TruncatedSVD).
+  [PCA](https://docs.rapids.ai/api/cuml/stable/api.html#cuml.PCA). No
+  GPU implementation available for sparse data.
 
 
 <br style="display: block; margin-top: 2em; content: ' '">

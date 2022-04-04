@@ -2866,7 +2866,7 @@ Label names with which to replace the binned intervals.
 <li>If dict: Labels per column, where the key is the column's name.</li>
 </ul>
 <strong>gpu: bool or str, optional (default=False)</strong><br>
-Train estimator on GPU (instead of CPU).
+Train estimator on GPU (instead of CPU). Not for strategy="custom".
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>
@@ -2891,7 +2891,7 @@ Verbosity level of the class. Possible values are:
 
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>The class returns columns of dtype <code>object</code>. Use the <a href="../encoder">Encoder</a>
+<p>The transformation returns categorical columns. Use the <a href="../encoder">Encoder</a>
 class to convert them back to numerical types.</p>
 </div>
 <div class="admonition warning">

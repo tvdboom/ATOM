@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="bow",
-return_sparse=True, gpu=False, verbose=0, logger=None, *kwargs)
+return_sparse=True, verbose=0, logger=None, *kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L574">[source]</a>
 </span>
@@ -35,13 +35,6 @@ Whether to return the transformation output as a dataframe
 of sparse arrays. Must be False when there are other columns
 in X (besides <code>corpus</code>) that are non-sparse.
 </p>
-<strong>gpu: bool or str, optional (default=False)</strong><br>
-Train strategy on GPU (instead of CPU).
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If False: Always use CPU implementation.</li>
-<li>If True: Use GPU implementation if possible.</li>
-<li>If "force": Force GPU implementation.</li>
-</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -131,7 +124,7 @@ Bag of Words strategy.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L644">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L637">[source]</a></span></div>
 Fit to text.
 <table style="font-size:16px">
 <tr>
@@ -299,7 +292,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L698">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L687">[source]</a>
 </span>
 </div>
 Normalize the text.

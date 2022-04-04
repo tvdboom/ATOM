@@ -441,20 +441,19 @@ class Ridge(BaseModel):
         if self.T.goal == "class":
             return RidgeClassifier
         else:
-            return self.T._get_gpu(RidgeRegressor, "cuml.dask.linear_model")
+            return self.T._get_gpu(RidgeRegressor)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         if self._gpu:
-            dimensions = [Real(1e-3, 10, "log-uniform", name="alpha")]
+            solvers = ["eig", "svd", "cd"]
         else:
             solvers = ["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
-            dimensions = [
-                Real(1e-3, 10, "log-uniform", name="alpha"),
-                Categorical(solvers, name="solver"),
-            ]
 
-        return dimensions
+        return [
+            Real(1e-3, 10, "log-uniform", name="alpha"),
+            Categorical(solvers, name="solver"),
+        ]
 
 
 class Lasso(BaseModel):
@@ -470,7 +469,7 @@ class Lasso(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(LassoRegressor, "cuml.dask.linear_model")
+        return self.T._get_gpu(LassoRegressor)
 
     @staticmethod
     def get_dimensions():
@@ -494,7 +493,7 @@ class ElasticNet(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(ElasticNetRegressor, "cuml.dask.linear_model")
+        return self.T._get_gpu(ElasticNetRegressor)
 
     @staticmethod
     def get_dimensions():

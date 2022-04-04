@@ -10,8 +10,15 @@ take hours to run on a single processor. However, if you offload those
 tasks to a GPUs, you can reduce training time to minutes instead.
 
 Training transformers and models in atom using a GPU is as easy as
-initializing the instance with parameter `gpu=True`. ATOM uses
-[cuML](https://docs.rapids.ai/api/cuml/stable/) for all estimators
+initializing the instance with parameter `gpu=True`. The `gpu` parameter
+accepts three options:
+
+* False: Always use CPU implementation.
+* True: Use GPU implementation. If this results in an error, use CPU instead.
+  When this happens, a message is written to the logger.
+* "force": Use GPU implementation. If this results in an error, raise it.
+
+ATOM uses [cuML](https://docs.rapids.ai/api/cuml/stable/) for all estimators
 except [XGB](../../API/models/xgb), [LGB](../../API/models/lgb) and
 [CatB](../../API/models/catb), which come with their own GPU implementation.
 Check which [prerequisites](#prerequisites) your machine needs for it
@@ -53,8 +60,7 @@ Be aware of the following:
 
 * [Scaler](../../API/data_cleaning/scaler)
 * [Imputer](../../API/data_cleaning/imputer) (not for strat_num="knn")
-* [Discretizer](../../API/data_cleaning/discretizer)
-* [Vectorizer](../../API/nlp/vectorizer)
+* [Discretizer](../../API/data_cleaning/discretizer) (not for strategy="custom")
 * [FeatureSelector](../../API/feature_engineering/feature_selector) (only for strategy="pca")
 
 
@@ -71,7 +77,7 @@ Be aware of the following:
 * [Lars](../../API/models/lars)
 * [Logistic Regression](../../API/models/lr)
 * [K-Nearest Neighbors](../../API/models/knn)
-* [Random Forest](../../API/models/rf) (only supports training on dtype `float32`)
+* [Random Forest](../../API/models/rf)
 * [XGBoost](../../API/models/xgb)
 * [LightGBM](../../API/models/lgb) (requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html))
 * [CatBoost](../../API/models/catb)

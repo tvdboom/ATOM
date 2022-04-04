@@ -2922,6 +2922,12 @@ correct for decision trees' habit of overfitting to their training set.</p>
   for regression tasks.</li>
 </ul>
 <p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#random-forests">documentation</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The GPU implementation of RandomForestClassifier only supports predictions
+on dtype <code>float32</code>. Convert all dtypes before calling the <a href="../../../API/ATOM/atomclassifier/#run">run</a>
+method to avoid exceptions.</p>
+</div>
 <p><br><br></p>
 <h2 id="hyperparameters">Hyperparameters</h2>
 <ul>

@@ -2845,8 +2845,15 @@ GPU's massively parallel architecture. Training on large datasets can
 take hours to run on a single processor. However, if you offload those
 tasks to a GPUs, you can reduce training time to minutes instead.</p>
 <p>Training transformers and models in atom using a GPU is as easy as
-initializing the instance with parameter <code>gpu=True</code>. ATOM uses
-<a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a> for all estimators
+initializing the instance with parameter <code>gpu=True</code>. The <code>gpu</code> parameter
+accepts three options:</p>
+<ul>
+<li>False: Always use CPU implementation.</li>
+<li>True: Use GPU implementation. If this results in an error, use CPU instead.
+  When this happens, a message is written to the logger.</li>
+<li>"force": Use GPU implementation. If this results in an error, raise it.</li>
+</ul>
+<p>ATOM uses <a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a> for all estimators
 except <a href="../../API/models/xgb">XGB</a>, <a href="../../API/models/lgb">LGB</a> and
 <a href="../../API/models/catb">CatB</a>, which come with their own GPU implementation.
 Check which <a href="#prerequisites">prerequisites</a> your machine needs for it
@@ -2889,8 +2896,7 @@ take quite some time (usually up to 15min).</li>
 <ul>
 <li><a href="../../API/data_cleaning/scaler">Scaler</a></li>
 <li><a href="../../API/data_cleaning/imputer">Imputer</a> (not for strat_num="knn")</li>
-<li><a href="../../API/data_cleaning/discretizer">Discretizer</a></li>
-<li><a href="../../API/nlp/vectorizer">Vectorizer</a></li>
+<li><a href="../../API/data_cleaning/discretizer">Discretizer</a> (not for strategy="custom")</li>
 <li><a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> (only for strategy="pca")</li>
 </ul>
 <h2 id="models">Models</h2>
@@ -2906,7 +2912,7 @@ take quite some time (usually up to 15min).</li>
 <li><a href="../../API/models/lars">Lars</a></li>
 <li><a href="../../API/models/lr">Logistic Regression</a></li>
 <li><a href="../../API/models/knn">K-Nearest Neighbors</a></li>
-<li><a href="../../API/models/rf">Random Forest</a> (only supports training on dtype <code>float32</code>)</li>
+<li><a href="../../API/models/rf">Random Forest</a></li>
 <li><a href="../../API/models/xgb">XGBoost</a></li>
 <li><a href="../../API/models/lgb">LightGBM</a> (requires <a href="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html">extra installations</a>)</li>
 <li><a href="../../API/models/catb">CatBoost</a></li>
