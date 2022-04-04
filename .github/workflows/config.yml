@@ -66,6 +66,6 @@ jobs:
         run: pytest --cov=atom --cov-report=xml tests/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
-        if: matrix.os == "ubuntu-latest" && matrix.python-version == "3.9"
+        if: ${{ matrix.os == ubuntu-latest }} && ${{ matrix.python-version == 3.9 }}
         with:
           files: ./coverage.xml
