@@ -139,20 +139,28 @@ def test_models_regression(model):
     assert hasattr(atom, model)
 
 
-def test_models_gpu():
-    """Assert that GPU works for models with BO."""
+def test_models_gpu_classification():
+    """Assert that GPU works for classification models with BO."""
     atom = ATOMClassifier(X_bin, y_bin, gpu="force", random_state=1)
     with patch.dict("sys.modules", {"cuml": MagicMock()}):
         with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
             atom.run(models="lr", n_calls=2, n_initial_points=1)
 
-    with patch.dict("sys.modules", {"cuml.ensemble": MagicMock()}):
-        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
-            atom.run(models="rf", n_calls=2, n_initial_points=1)
-
     with patch.dict("sys.modules", {"cuml.svm": MagicMock()}):
         with pytest.raises(RuntimeError, match=r".*All models failed to run.*"):
             atom.run(models=["lsvm", "ksvm"], n_calls=2, n_initial_points=1)
+
+
+def test_models_gpu_regression():
+    """Assert that GPU works for regression models with BO."""
+    atom = ATOMRegressor(X_reg, y_reg, gpu="force", random_state=1)
+    with patch.dict("sys.modules", {"cuml": MagicMock()}):
+        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
+            atom.run(models="ridge", n_calls=2, n_initial_points=1)
+
+    with patch.dict("sys.modules", {"cuml.ensemble": MagicMock()}):
+        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
+            atom.run(models="rf", n_calls=2, n_initial_points=1)
 
 
 def test_Dummy():
