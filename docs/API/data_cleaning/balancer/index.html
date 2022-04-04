@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/data_cleaning/balancer/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/data_cleaning/balancer/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1714,7 +1714,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1728,7 +1728,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2843,7 +2843,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN",
 n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1645">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1728">[source]</a>
 </span>
 </div>
 
@@ -2962,7 +2962,7 @@ Target values mapped to their respective encoded integer.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 <p>Balance the data.</p>
@@ -3028,7 +3028,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3052,7 +3052,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3094,7 +3094,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1718">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1801">[source]</a>
 </span>
 </div>
 <p>Balance the data.</p>
@@ -3129,17 +3129,24 @@ Balanced target column.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;NearMiss&quot;</span><span class="p">,</span> <span class="n">sampling_strategy</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </code></pre></div>
-or
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Balancer</span>
 
 <span class="n">balancer</span> <span class="o">=</span> <span class="n">Balancer</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;NearMiss&quot;</span><span class="p">,</span> <span class="n">sampling_strategy</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">balancer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
-</code></pre></div></p>
+</code></pre></div>
+</div>
+</div>
+</div>
 
               
             </article>

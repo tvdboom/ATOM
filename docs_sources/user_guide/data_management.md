@@ -59,8 +59,8 @@ following formats:
 The input data is always converted internally to a [pandas dataframe](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html),
 if it isn't one already. The column names should always be strings. If
 they are not, atom changes their type at initialization. If no column
-names are provided, default names are given of the form `feature n`,
-where n stands for the n-th feature.
+names are provided, default names are given of the form `feature_[N]`,
+where N stands for the n-th feature in the dataset.
 
 <br>
 
@@ -78,13 +78,13 @@ To avoid this, specify the `index` parameter. If the dataset has an
 
 <br>
 
-## Sparse matrices
+## Sparse data
 
 If atom is initialized using a scipy sparse matrix, it is converted
 internally to a dataframe of sparse columns. Read more about pandas'
 sparse data structures [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html).
 The same conversion takes place when a transformer returns a sparse
-matrix, like, for example, the [Vectorizer](../../API/NLP/vectorizer).
+matrix, like for example, the [Vectorizer](../../API/NLP/vectorizer).
 
 Note that ATOM considers a dataset to be sparse if any of the columns
 is sparse. A dataset can only benefit from sparsity when all its
@@ -171,7 +171,7 @@ The branch class has the following methods.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L119">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L362">[source]</a>
 </span>
 </div>
 Delete the branch and all the models in it. Same as executing `del atom.branch`.
@@ -182,7 +182,7 @@ Delete the branch and all the models in it. Same as executing `del atom.branch`.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L152">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L395">[source]</a>
 </span>
 </div>
 Change the name of the branch.
@@ -204,7 +204,7 @@ New name for the branch. Can not be empty nor equal to an existing branch.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">status</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L174">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L417">[source]</a>
 </span>
 </div>
 Get an overview of the pipeline and models in the branch. This method

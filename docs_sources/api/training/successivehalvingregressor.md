@@ -5,10 +5,10 @@
 <em>class</em> atom.training.<strong style="color:#008AB8">SuccessiveHalvingRegressor</strong>(models=None,
 metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
 skip_runs=0, n_calls=0, n_initial_points=5, est_params=None, bo_params=None,
-n_bootstrap=0, n_jobs=1, verbose=0, warnings=True, logger=None, experiment=None,
-random_state=None)
+n_bootstrap=0, n_jobs=1, gpu=False, verbose=0, warnings=True, logger=None,
+experiment=None, random_state=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L348">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L350">[source]</a>
 </span>
 </div>
 
@@ -53,8 +53,8 @@ models are used. Available predefined models are:
 <li>"XGB" for <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor">XGBoost</a> (only available if package is installed)</li>
 <li>"LGB" for <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html">LightGBM</a> (only available if package is installed)</li>
 <li>"CatB" for <a href="https://catboost.ai/docs/concepts/python-reference_catboostregressor.html">CatBoost</a> (only available if package is installed)</li>
-<li>"lSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">Linear-SVM</a></li> 
-<li>"kSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">Kernel-SVM</a></li>
+<li>"lSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">Linear SVM</a></li> 
+<li>"kSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">Kernel SVM</a></li>
 <li>"PA" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html">Passive Aggressive</a></li>
 <li>"SGD" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html">Stochastic Gradient Descent</a></li>
 <li>"MLP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor">Multi-layer Perceptron</a></li> 
@@ -165,6 +165,19 @@ Number of cores to use for parallel processing.
 <li>If -1: Use all available cores.</li>
 <li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
 </ul>
+<p style="margin-top:5px">
+Beware that using multiple processes on the same machine may cause
+memory issues for large datasets.
+</p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train models on GPU (instead of CPU). Refer to the
+<a href="../../../user_guide/gpu">documentation</a>
+to check which estimators are supported.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -273,7 +286,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -281,7 +294,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>
@@ -454,7 +467,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">available_models</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L496">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L495">[source]</a>
 </span>
 </div>
 Give an overview of the available predefined models.
@@ -472,6 +485,7 @@ Columns include:
 <li><b>module:</b> The estimator's module.</li>
 <li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
 <li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
+<li><b>supports_gpu:</b> Whether the model has GPU support.</li>
 </ul>
 </td>
 </tr>
@@ -484,7 +498,7 @@ Columns include:
 <em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1,
 ncols=2, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L438">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L430">[source]</a>
 </span>
 </div>
 This `@contextmanager` allows you to draw many plots in one figure.
@@ -666,7 +680,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -724,7 +738,7 @@ to the end of their names.
 <a name="reset-aesthetics"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L221">[source]</a>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L212">[source]</a>
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
@@ -763,7 +777,7 @@ Training and test set (and optionally a holdout set). Allowed formats are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto", save_data=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file. Remember that the class contains
@@ -854,7 +868,7 @@ acronyms can be used for the <code>final_estimator</code> parameter.
 <em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L781">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L783">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/models/#voting) model to the pipeline.
@@ -894,4 +908,5 @@ trainer.run(train, test)
 
 # Analyze the results
 trainer.plot_successive_halving()
+print(trainer.results)
 ```

@@ -7,36 +7,31 @@ Description: Unit tests for atom.py
 
 """
 
-# Standard packages
 import glob
+from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
-import numpy as np
-from unittest.mock import patch
-from sklearn.metrics import get_scorer
 from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel
 from sklearn.kernel_approximation import RBFSampler
 from sklearn.linear_model import LassoLarsCV
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.pipeline import Pipeline
+from sklearn.metrics import get_scorer
 from sklearn.neural_network import MLPClassifier
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
-    LabelEncoder,
-    OneHotEncoder,
-    StandardScaler,
-    RobustScaler,
+    LabelEncoder, OneHotEncoder, RobustScaler, StandardScaler,
 )
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.data_cleaning import Scaler, Pruner
+from atom.data_cleaning import Pruner, Scaler
 from atom.utils import check_scaling
+
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_sparse,
-    X_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10, y10_str,
-    y10_sn, X20_out,
+    FILE_DIR, X10, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin, X_class,
+    X_reg, X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class, y_reg,
 )
 
 
@@ -173,7 +168,7 @@ def test_n_nans():
 def test_numerical():
     """Assert that numerical returns the names of the numerical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.numerical == ["feature 1", "feature 2", "feature 4"]
+    assert len(atom.numerical) == 3
 
 
 def test_n_numerical():
@@ -185,7 +180,7 @@ def test_n_numerical():
 def test_categorical():
     """Assert that categorical returns the names of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.categorical == ["feature 3"]
+    assert len(atom.categorical) == 1
 
 
 def test_n_categorical():
@@ -272,7 +267,7 @@ def test_automl_invalid_scoring():
 
 
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
-@pytest.mark.parametrize("columns", ["feature 1", 1, None])
+@pytest.mark.parametrize("columns", ["feature_1", 1, None])
 def test_distribution(distributions, columns):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -333,7 +328,7 @@ def test_export_pipeline_memory(func):
 def test_report(cls):
     """Assert that the report method and file are created."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.report(n_rows=10, filename="report")
+    atom.report(filename="report")
     cls.return_value.to_file.assert_called_once_with("report.html")
 
 
@@ -346,7 +341,7 @@ def test_reset():
     atom.run("LR")
     atom.reset()
     assert not atom.models and len(atom._branches) == 1
-    assert atom["feature 3"].dtype.name == "object"  # Is reset back to str
+    assert atom["feature_3"].dtype.name == "object"  # Is reset back to str
 
 
 def test_save_data():
@@ -437,7 +432,7 @@ def test_transform_method():
     """ Assert that the transform method works as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
-    assert atom.transform(X10_str)["feature 3"].dtype.kind in "ifu"
+    assert atom.transform(X10_str)["feature_3"].dtype.kind in "ifu"
 
 
 def test_transform_not_train_only():
@@ -552,14 +547,12 @@ def test_add_keep_column_names():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
     # When the columns are only transformed
-    cols = atom.columns.copy()
     atom.add(StandardScaler())
-    assert atom.columns == cols
+    assert atom.features.tolist() == list(X_bin)
 
     # When columns were removed
-    cols = atom.columns.copy()
     atom.add(SelectFromModel(RandomForestClassifier()))
-    assert all(col in cols for col in atom.columns)
+    assert all(col in list(X_bin) for col in atom.features)
 
 
 def test_raise_length_mismatch():
@@ -572,8 +565,8 @@ def test_raise_length_mismatch():
 def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.encode(columns="feature 3")
-    assert atom.columns[2:5] == ["feature 3_a", "feature 3_b", "feature 3_c"]
+    atom.encode(columns="feature_3")
+    assert list(atom.columns[2:5]) == ["feature_3_a", "feature_3_b", "feature_3_c"]
 
 
 def test_add_sets_are_kept_equal():
@@ -776,8 +769,8 @@ def test_feature_generation():
 def test_feature_generation_attributes():
     """Assert that the attrs from feature_generation are passed to atom."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_generation("GFG", n_features=2)
-    assert hasattr(atom, "symbolic_transformer")
+    atom.feature_generation("gfg", n_features=2)
+    assert hasattr(atom, "gfg")
     assert hasattr(atom, "genetic_features")
 
 
@@ -794,12 +787,12 @@ def test_default_solver_univariate():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.pipeline[0]._solver.__name__ == "f_classif"
+    assert atom.pipeline[0].univariate.score_func.__name__ == "f_classif"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.pipeline[0]._solver.__name__ == "f_regression"
+    assert atom.pipeline[0].univariate.score_func.__name__ == "f_regression"
 
 
 def test_winner_solver_after_run():
@@ -807,8 +800,8 @@ def test_winner_solver_after_run():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("LR")
     atom.branch = "fs_branch"
-    atom.feature_selection(strategy="SFM", solver=None, n_features=8)
-    assert atom.pipeline[0]._solver is atom.winner.estimator
+    atom.feature_selection(strategy="sfm", solver=None, n_features=8)
+    assert atom.pipeline[0].sfm.estimator_ is atom.winner.estimator
 
 
 def test_default_solver_from_task():
@@ -816,12 +809,12 @@ def test_default_solver_from_task():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="rfe", solver="lgb", n_features=8)
-    assert atom.pipeline[0]._solver.__class__.__name__ == "LGBMClassifier"
+    assert atom.pipeline[0].rfe.estimator_.__class__.__name__ == "LGBMClassifier"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="rfe", solver="lgb", n_features=25)
-    assert atom.pipeline[0]._solver.__class__.__name__ == "LGBMRegressor"
+    assert atom.pipeline[0].rfe.estimator_.__class__.__name__ == "LGBMRegressor"
 
 
 @patch("atom.feature_engineering.SequentialFeatureSelector")

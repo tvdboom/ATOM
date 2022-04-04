@@ -7,20 +7,16 @@ Description: Utility variables for the tests.
 
 """
 
-# Standard packages
 import os
+
 import numpy as np
 import pandas as pd
-from tensorflow import keras
-from sklearn.model_selection import train_test_split
 from sklearn.datasets import (
-    load_breast_cancer,
-    load_wine,
-    load_digits,
-    load_diabetes,
+    load_breast_cancer, load_diabetes, load_digits, load_wine,
 )
+from sklearn.model_selection import train_test_split
+from tensorflow import keras
 
-# Own modules
 from atom.utils import merge
 
 
@@ -70,7 +66,7 @@ X_text = [
     ["this is a random test"],
     ["test is random this"],
     ["nice random test"],
-    ["test script for text"],
+    ["test target for text"],
 ]
 
 # Dataset wth string indices

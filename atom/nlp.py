@@ -3,38 +3,34 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing estimators for NLP.
+Description: Module containing the NLP transformers.
 
 """
 
-# Standard packages
 import re
-import nltk
 import unicodedata
-import pandas as pd
 from string import punctuation
-from typeguard import typechecked
-from typing import Union, Optional
-from sklearn.base import BaseEstimator
-from sklearn.feature_extraction.text import (
-    CountVectorizer,
-    TfidfVectorizer,
-    HashingVectorizer,
+from typing import Optional, Union
+
+import nltk
+import pandas as pd
+from nltk.collocations import (
+    BigramCollocationFinder, QuadgramCollocationFinder,
+    TrigramCollocationFinder,
 )
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
-from nltk.collocations import (
-    BigramCollocationFinder,
-    TrigramCollocationFinder,
-    QuadgramCollocationFinder,
+from sklearn.base import BaseEstimator
+from sklearn.feature_extraction.text import (
+    CountVectorizer, HashingVectorizer, TfidfVectorizer,
 )
+from typeguard import typechecked
 
-# Own modules
-from .data_cleaning import TransformerMixin
-from .basetransformer import BaseTransformer
-from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, to_df, is_sparse,
-    check_is_fitted, get_corpus, composed, crash, method_to_log,
+from atom.basetransformer import BaseTransformer
+from atom.data_cleaning import TransformerMixin
+from atom.utils import (
+    INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
+    composed, crash, get_corpus, is_sparse, method_to_log, to_df,
 )
 
 
@@ -132,7 +128,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_number: bool = True,
         regex_number: Optional[str] = None,
         drop_punctuation: bool = True,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -187,7 +183,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         def drop_regex(search):
             """Find and remove a regex expression from the text."""
             counts, docs = 0, 0
-            for i, row in enumerate(X[corpus]):
+            for i, row in X[corpus].items():
                 for j, elem in enumerate([row] if isinstance(row, str) else row):
                     regex = getattr(self, f"regex_{search}")
                     occurrences = re.compile(regex).findall(elem)
@@ -211,17 +207,17 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         for elem in ("email", "url", "html", "emoji", "number"):
             drops[elem] = pd.Series(name=elem, dtype="object")
 
-        self.log("Filtering the corpus...", 1)
+        self.log("Cleaning the corpus...", 1)
 
         if self.decode:
-            if isinstance(X[corpus][0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 X[corpus] = X[corpus].apply(lambda row: to_ascii(row))
             else:
                 X[corpus] = X[corpus].apply(lambda row: [to_ascii(str(w)) for w in row])
         self.log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
-            if isinstance(X[corpus][0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 X[corpus] = X[corpus].str.lower()
             else:
                 X[corpus] = X[corpus].apply(lambda row: [str(w).lower() for w in row])
@@ -264,15 +260,15 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.drop_punctuation:
             trans_table = str.maketrans("", "", punctuation)  # Translation table
-            if isinstance(X[corpus][0], str):
+            if isinstance(X[corpus].iloc[0], str):
                 func = lambda row: row.translate(trans_table)
             else:
                 func = lambda row: [str(w).translate(trans_table) for w in row]
             X[corpus] = X[corpus].apply(func)
             self.log(" --> Dropping punctuation from the text.", 2)
 
-        # Concatenate all drops to one dataframe attribute
-        self.drops = pd.concat([series for series in drops.values()], axis=1)
+        # Convert all drops to one dataframe attribute
+        self.drops = pd.concat(drops.values(), axis=1)
 
         # Drop empty tokens from every row
         if not isinstance(X[corpus][0], str):
@@ -340,7 +336,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         bigram_freq: Optional[SCALAR] = None,
         trigram_freq: Optional[SCALAR] = None,
         quadgram_freq: Optional[SCALAR] = None,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -386,7 +382,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Tokenizing the corpus...", 1)
 
-        if isinstance(X[corpus][0], str):
+        if isinstance(X[corpus].iloc[0], str):
             try:  # Download tokenizer if not already on machine
                 nltk.data.find("tokenizers/punkt")
             except LookupError:
@@ -402,26 +398,24 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         for attr, finder in ngrams.items():
             frequency = getattr(self, f"{attr[:-1]}_freq")
             if frequency:
-                df = pd.DataFrame(columns=[attr[:-1], "frequency"])
-
-                # Search for all n-grams in the documents
+                # Search for all n-grams in the corpus
                 ngram_fd = finder.from_documents(X[corpus]).ngram_fd
 
-                # Fraction to total number
                 if frequency < 1:
                     frequency = int(frequency * len(ngram_fd))
 
+                rows = []
                 occur, counts = 0, 0
                 for ngram, freq in ngram_fd.items():
                     if freq >= frequency:
                         occur += 1
                         counts += freq
                         X[corpus] = X[corpus].apply(replace_ngrams, args=(ngram,))
-                        df = df.append(
-                            {attr[:-1]: ngram, "frequency": freq}, ignore_index=True
-                        )
+                        rows.append({attr[:-1]: "_".join(ngram), "frequency": freq})
 
-                setattr(self, attr, df.sort_values(by="frequency", ascending=False))
+                # Sort ngrams by frequency and add the dataframe as attribute
+                df = pd.DataFrame(rows).sort_values("frequency", ascending=False)
+                setattr(self, attr, df.reset_index(drop=True))
 
                 self.log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
 
@@ -477,7 +471,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         custom_stopwords: Optional[SEQUENCE_TYPES] = None,
         stem: Union[bool, str] = False,
         lemmatize: bool = True,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -523,7 +517,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Normalizing the corpus...", 1)
 
         # If the corpus is not tokenized, separate by space
-        if isinstance(X[corpus][0], str):
+        if isinstance(X[corpus].iloc[0], str):
             X[corpus] = X[corpus].apply(lambda row: row.split())
 
         stopwords = []
@@ -585,16 +579,26 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     there is no column with that name, an exception is raised. The
     transformed columns are named after the word they are embedding
     (if the column is already present in the provided dataset,
-    `_[strategy]` is added behind the name), and returned in sparse
-    format only if all provided columns (except `corpus`) are sparse.
+    `_[strategy]` is added behind the name).
 
     Parameters
     ----------
-    strategy: str, optional (default="BOW")
+    strategy: str, optional (default="bow")
         Strategy with which to vectorize the text. Choose from:
-            - "BOW": Uses a Bag of Words algorithm.
-            - "TF-IDF": Uses a TF-IDF algorithm.
-            - "Hashing": Uses a hashing algorithm.
+            - "bow": Bag of Words.
+            - "tfidf": Term Frequency - Inverse Document Frequency.
+            - "hashing": Vectorize to a matrix of token occurrences.
+
+    return_sparse: bool, optional (default=True)
+        Whether to return the transformation output as a dataframe
+        of sparse arrays. Must be False when there are other columns
+        in X (besides `corpus`) that are non-sparse.
+
+    gpu: bool or str, optional (default=False)
+        Train strategy on GPU (instead of CPU).
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -621,13 +625,16 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strategy: str = "BOW",
-        verbose: int = 0,
+        strategy: str = "bow",
+        return_sparse: bool = True,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strategy = strategy
+        self.return_sparse = return_sparse
         self.kwargs = kwargs
 
         self._estimator = None
@@ -660,19 +667,30 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         if not isinstance(X[corpus][0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
-        if self.strategy.lower() == "bow":
-            self.bow = self._estimator = CountVectorizer(**self.kwargs)
-        elif self.strategy.lower() in ("tfidf", "tf-idf"):
-            self.tfidf = self._estimator = TfidfVectorizer(**self.kwargs)
-        elif self.strategy.lower() == "hashing":
-            self.hashing = self._estimator = HashingVectorizer(**self.kwargs)
+        strategies = CustomDict(
+            bow=CountVectorizer,
+            tfidf=TfidfVectorizer,
+            hashing=HashingVectorizer,
+        )
+
+        if self.strategy in strategies:
+            estimator = self._get_gpu(
+                estimator=strategies[self.strategy],
+                module="cuml.feature_extraction.text",
+            )
+            self._estimator = estimator(**self.kwargs)
         else:
             raise ValueError(
                 "Invalid value for the strategy parameter, got "
-                f"{self.strategy}. Choose from: BOW, TF-IDF, Hashing."
+                f"{self.strategy}. Choose from: bow, tfidf, hashing."
             )
 
+        self.log("Fitting Vectorizer...", 1)
         self._estimator.fit(X[corpus])
+
+        # Add the estimator as attribute to the instance
+        setattr(self, self.strategy.lower(), self._estimator)
+
         self._is_fitted = True
         return self
 
@@ -703,32 +721,41 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Vectorizing the corpus...", 1)
 
         # Convert sequence of tokens to space separated string
-        if not isinstance(X[corpus][0], str):
+        if not isinstance(X[corpus].iloc[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         matrix = self._estimator.transform(X[corpus])
         if self.strategy.lower() != "hashing":
-            columns = self._estimator.get_feature_names_out()
+            columns = list(self._estimator.get_feature_names_out())
         else:
             # Hashing has no words to put as column names
             columns = [f"hash_{i}" for i in range(matrix.shape[1])]
 
-        if X.shape[1] == 1:
-            # If corpus is the only column, return as sparse df
-            return to_df(matrix, index=X.index, columns=columns)
-        else:
-            X = X.drop(corpus, axis=1)
-            if not is_sparse(X):
-                # If there are more columns than just corpus and they are
-                # not all sparse, the matrix is converted to its full array
-                self.log(
-                    " --> Not all columns in the dataset (besides corpus) are "
-                    "sparse. Converting the vectorized output to a full array.", 2
-                )
-                matrix = matrix.toarray()
-                for i, col in enumerate(columns):
-                    # If the column name already exists, add _[strategy]
-                    col_name = f"{col}_{self.strategy.lower()}" if col in X else col
-                    X[col_name] = matrix[:, i]
+        X = X.drop(corpus, axis=1)
 
-            return X
+        if not self.return_sparse:
+            self.log(" --> Converting the output to a full array.", 2)
+            matrix = matrix.toarray()
+        elif not X.empty and not is_sparse(X):
+            # Raise if there are other columns that are non-sparse
+            raise ValueError(
+                "Invalid value for the return_sparse parameter. The value must "
+                "must be False when X contains non-sparse columns (besides corpus)."
+            )
+
+        if X.empty:  # X only had 1 column: corpus
+            # If the column name already exists, add _[strategy]
+            if getattr(y, "name", None) in columns:
+                columns[columns.index(y.name)] = f"{y.name}_{self.strategy.lower()}"
+
+            return to_df(matrix, index=X.index, columns=columns)
+
+        else:
+            for i, col in enumerate(columns):
+                # If the column name already exists, add _[strategy]
+                if col in X or col == getattr(y, "name", None):
+                    X[f"{col}_{self.strategy.lower()}"] = matrix[:, i]
+                else:
+                    X[col] = matrix[:, i]
+
+        return X

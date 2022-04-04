@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN",
 n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1645">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1728">[source]</a>
 </span>
 </div>
 
@@ -133,7 +133,7 @@ Target values mapped to their respective encoded integer.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 Balance the data.
@@ -203,7 +203,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -229,7 +229,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -275,7 +275,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1718">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1801">[source]</a>
 </span>
 </div>
 Balance the data.
@@ -314,16 +314,18 @@ Balanced target column.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.balance(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.balance(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
-```
-or
-```python
-from atom.data_cleaning import Balancer
-
-balancer = Balancer(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
-X_train, y_train = balancer.transform(X_train, y_train)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Balancer
+    
+    balancer = Balancer(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
+    X_train, y_train = balancer.transform(X_train, y_train)
+    ```

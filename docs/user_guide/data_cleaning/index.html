@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/user_guide/data_cleaning/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/data_cleaning/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -507,20 +507,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../data_management/" class="md-nav__link">
         Data management
       </a>
@@ -537,6 +523,20 @@
     <li class="md-nav__item">
       <a href="../logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1747,7 +1747,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1761,7 +1761,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2939,6 +2939,11 @@ method. </p>
 <p>Use atom's <a href="../../API/ATOM/atomclassifier/#data-attributes">scaled</a> attribute
 to check whether the dataset is scaled.</p>
 </div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>All strategies can utilize GPU speed-up. Click <a href="../gpu">here</a>
+for further information about GPU implementation.</p>
+</div>
 <p><br></p>
 <h2 id="making-gaussian-like-features">Making Gaussian-like features</h2>
 <p>Use the <a href="../../API/data_cleaning/gauss">Gauss</a> class to transform the
@@ -3063,7 +3068,7 @@ both few and different in the feature space. Read more in sklearn's <a href="htt
 If the input variables have a Gaussian distribution, then simple statistical
 methods can be used to detect outliers. For example, if the dataset has two
 input variables and both are Gaussian, the feature space forms a
-multi-dimensional Gaussian, and knowledge of this distribution can be used to
+multidimensional Gaussian, and knowledge of this distribution can be used to
 identify values far from the distribution. This approach can be generalized by
 defining a hypersphere (ellipsoid) that covers the normal data, and data that
 falls outside this shape is considered an outlier. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/outlier_detection.html#fitting-an-elliptic-envelope">documentation</a>.</p>
@@ -3129,7 +3134,7 @@ method.</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../logging/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Logging &amp; Tracking" rel="prev">
+        <a href="../gpu/" class="md-footer__link md-footer__link--prev" aria-label="Previous: GPU" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -3138,7 +3143,7 @@ method.</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Logging & Tracking
+              GPU
             </div>
           </div>
         </a>

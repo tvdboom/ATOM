@@ -7,53 +7,46 @@ Description: Module containing the BaseModel class.
 
 """
 
-# Standard packages
 import os
-import dill
-import mlflow
 import tempfile
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
 from copy import deepcopy
 from datetime import datetime
-from pickle import PickleError
-from unittest.mock import patch
-from typeguard import typechecked
-from typing import Optional, Union
-from joblib.memory import Memory
-from joblib import Parallel, delayed
 from inspect import Parameter, signature
+from pickle import PickleError
+from typing import Optional, Union
+from unittest.mock import patch
+
+import dill
+import mlflow
+import numpy as np
+import pandas as pd
+from joblib import Parallel, delayed
+from joblib.memory import Memory
 from mlflow.tracking import MlflowClient
-
-# Sklearn
 from sklearn.base import clone
-from sklearn.utils import resample
-from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
-from sklearn.model_selection._validation import _score, cross_validate
-
-# Others
-from skopt.space.transformers import LabelEncoder
-from skopt.space.space import Categorical, check_dimension
-from skopt.optimizer import (
-    base_minimize,
-    gp_minimize,
-    forest_minimize,
-    gbrt_minimize,
+from sklearn.model_selection import (
+    KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
 )
+from sklearn.model_selection._validation import _score, cross_validate
+from sklearn.utils import resample
+from skopt.optimizer import (
+    base_minimize, forest_minimize, gbrt_minimize, gp_minimize,
+)
+from skopt.space.space import Categorical, check_dimension
+from skopt.space.transformers import LabelEncoder
+from tqdm import tqdm
+from typeguard import typechecked
 
-# Own modules
-from .data_cleaning import Scaler
-from .pipeline import Pipeline
-from .plots import BaseModelPlotter
-from .patches import inverse_transform, fit, transform, score
-from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst, it, arr,
-    merge, time_to_str, get_best_score, get_custom_scorer, get_pl_name,
-    variable_return, custom_transform, composed, crash, method_to_log,
-    Table, ShapExplanation, CustomDict,
+from atom.data_cleaning import Scaler
+from atom.patches import fit, inverse_transform, score, transform
+from atom.pipeline import Pipeline
+from atom.plots import BaseModelPlotter
+from atom.utils import (
+    DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    ShapExplanation, Table, arr, composed, crash, custom_transform, flt,
+    get_best_score, get_custom_scorer, get_pl_name, it, lst, merge,
+    method_to_log, time_to_str, variable_return,
 )
 
 
@@ -144,18 +137,24 @@ class BaseModel(BaseModelPlotter):
             )
 
     @property
+    def _gpu(self):
+        """Return if the model uses the GPU implementation."""
+        return "sklearn" not in self.est_class.__module__
+
+    @property
     def _dims(self):
         """Get the names of the hyperparameter dimension space."""
         return [d.name for d in self._dimensions]
 
+    def _sign(self, method="__init__"):
+        """Get the estimator's parameters."""
+        return signature(getattr(self.est_class, method)).parameters
+
     def _check_est_params(self):
         """Make sure the parameters are valid keyword argument for the estimator."""
-        signature_init = signature(self.est_class.__init__).parameters
-        signature_fit = signature(self.est_class.fit).parameters
-
         # The parameter is always accepted if the estimator accepts kwargs
         for param in self._est_params:
-            if param not in signature_init and "kwargs" not in signature_init:
+            if param not in self._sign() and "kwargs" not in self._sign():
                 raise ValueError(
                     f"Invalid value for the est_params parameter. "
                     f"Got unknown parameter {param} for estimator "
@@ -163,7 +162,7 @@ class BaseModel(BaseModelPlotter):
                 )
 
         for param in self._est_params_fit:
-            if param not in signature_fit and "kwargs" not in signature_fit:
+            if param not in self._sign("fit") and "kwargs" not in self._sign("fit"):
                 raise ValueError(
                     f"Invalid value for the est_params parameter. Got "
                     f"unknown parameter {param} for the fit method of "
@@ -173,15 +172,15 @@ class BaseModel(BaseModelPlotter):
     def _get_default_params(self):
         """Get the estimator's default parameters for the BO dimensions."""
         x0 = CustomDict()
-        params = signature(self.est_class.__init__).parameters
         for dim in self._dimensions:
             # Special case for MLP, layers are different from default
             if dim.name == "hidden_layer_1":
                 x0[dim.name] = 100
             elif dim.name.startswith("hidden_layer"):
                 x0[dim.name] = 0
-            elif dim.name in params and params[dim.name].default is not Parameter.empty:
-                x0[dim.name] = params[dim.name].default
+            elif dim.name in self._sign():
+                if self._sign()[dim.name].default is not Parameter.empty:
+                    x0[dim.name] = self._sign()[dim.name].default
             else:
                 # Return random value in dimension if it's not possible to
                 # extract a default value. This can happen when the value
@@ -230,6 +229,14 @@ class BaseModel(BaseModelPlotter):
                 for p, v in zip([d.name for d in self._dimensions], x)
             }
         )
+
+    def get_estimator(self, **params):
+        """Return the model's estimator with unpacked parameters."""
+        for param in ("n_jobs", "random_state"):
+            if param in self._sign():
+                params[param] = params.pop(param, getattr(self.T, param))
+
+        return self.est_class(**params)
 
     def bayesian_optimization(self):
         """Run the bayesian optimization algorithm.
@@ -280,12 +287,10 @@ class BaseModel(BaseModelPlotter):
                     Score of the fitted model on the validation set.
 
                 """
-                # Define subsets from original dataset
-                branch = self.T._get_og_branches()[0]
-                X_subtrain = branch.dataset.iloc[train_idx, :-1]
-                y_subtrain = branch.dataset.iloc[train_idx, -1]
-                X_val = branch.dataset.iloc[val_idx, :-1]
-                y_val = branch.dataset.iloc[val_idx, -1]
+                X_subtrain = og.dataset.iloc[train_idx, :-1]
+                y_subtrain = og.dataset.iloc[train_idx, -1]
+                X_val = og.dataset.iloc[val_idx, :-1]
+                y_val = og.dataset.iloc[val_idx, -1]
 
                 # Transform subsets if there is a pipeline
                 if not self.T.pipeline.empty:
@@ -293,7 +298,7 @@ class BaseModel(BaseModelPlotter):
                     X_subtrain, y_subtrain = pl.fit_transform(X_subtrain, y_subtrain)
                     X_val, y_val = pl.transform(X_val, y_val)
 
-                # Match the sample_weights with the length of the subtrain set
+                # Match the sample_weight with the length of the subtrain set
                 # Make copy of est_params to not alter the mutable variable
                 est_copy = self._est_params_fit.copy()
                 if "sample_weight" in est_copy:
@@ -328,7 +333,11 @@ class BaseModel(BaseModelPlotter):
             if pbar:
                 pbar.set_description(call)
 
+            # Get estimator instance with call specific hyperparameters
             est = self.get_estimator(**{**self._est_params, **params})
+
+            # Get original branch to define subsets
+            og = self.T._get_og_branches()[0]
 
             # Skip if the eval function has already been evaluated at this point
             if params not in self.bo["params"].values:
@@ -346,12 +355,12 @@ class BaseModel(BaseModelPlotter):
                     # Get the ShuffleSplit cross-validator object
                     fold = split(
                         n_splits=1,
-                        test_size=len(self.test) / self.shape[0],
+                        test_size=len(og.test) / og.shape[0],
                         random_state=rs,
                     )
 
                     # Fit model just on the one fold
-                    score = fit_model(*next(fold.split(self.X_train, self.y_train)))
+                    score = fit_model(*next(fold.split(og.X_train, og.y_train)))
 
                 else:  # Use cross validation to get the score
                     if self.T.goal == "class":
@@ -366,7 +375,7 @@ class BaseModel(BaseModelPlotter):
                         # Parallel loop over fit_model
                         jobs = Parallel(self.T.n_jobs)(
                             delayed(fit_model)(i, j)
-                            for i, j in k_fold.split(self.X_train, self.y_train)
+                            for i, j in k_fold.split(og.X_train, og.y_train)
                         )
                         score = list(np.mean(jobs, axis=0))
                     except PickleError:
@@ -394,7 +403,7 @@ class BaseModel(BaseModelPlotter):
             self.bo.loc[self._iter - 1] = row
 
             # Save BO calls to experiment as nested runs
-            if self.T.log_bo:
+            if self._run and self.T.log_bo:
                 with mlflow.start_run(run_name=f"{self.name} - {call}", nested=True):
                     mlflow.set_tag("time", row["time"])
                     mlflow.log_params(params)
@@ -830,7 +839,7 @@ class BaseModel(BaseModelPlotter):
     def predict(
         self,
         X: Union[slice, X_TYPES, Y_TYPES],
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict")
@@ -839,7 +848,7 @@ class BaseModel(BaseModelPlotter):
     def predict_proba(
         self,
         X: Union[slice, X_TYPES, Y_TYPES],
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get probability predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict_proba")
@@ -848,7 +857,7 @@ class BaseModel(BaseModelPlotter):
     def predict_log_proba(
         self,
         X: Union[slice, X_TYPES, Y_TYPES],
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get log probability predictions on new data."""
         return self._prediction(X, verbose=verbose, method="predict_log_proba")
@@ -857,7 +866,7 @@ class BaseModel(BaseModelPlotter):
     def decision_function(
         self,
         X: Union[slice, X_TYPES, Y_TYPES],
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get the decision function on new data."""
         return self._prediction(X, verbose=verbose, method="decision_function")
@@ -869,7 +878,7 @@ class BaseModel(BaseModelPlotter):
         y: Y_TYPES,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Get the score function on new data."""
         return self._prediction(
@@ -1074,8 +1083,7 @@ class BaseModel(BaseModelPlotter):
             mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
 
         if self.T.log_model:
-            name = self.estimator.__class__.__name__
-            mlflow.sklearn.log_model(self.estimator, name)
+            mlflow.sklearn.log_model(self.estimator, self.estimator.__class__.__name__)
 
         if self.T.log_data:
             for set_ in ("train", "test"):
@@ -1296,7 +1304,7 @@ class BaseModel(BaseModelPlotter):
 
         """
         from explainerdashboard import (
-            ClassifierExplainer, RegressionExplainer, ExplainerDashboard
+            ClassifierExplainer, ExplainerDashboard, RegressionExplainer,
         )
 
         self.T.log("Creating dashboard...", 1)
@@ -1345,8 +1353,7 @@ class BaseModel(BaseModelPlotter):
         if filename:
             if not filename.endswith(".html"):
                 filename += ".html"
-            with open(filename, "w") as f:
-                f.write(dashboard.to_html())
+            dashboard.save_html(filename)
             self.T.log("Dashboard successfully saved.", 1)
 
         return dashboard
@@ -1368,7 +1375,7 @@ class BaseModel(BaseModelPlotter):
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
-        threshold: float = 0.5,
+        threshold: FLOAT = 0.5,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
     ):
         """Get the model's scores for the provided metrics.
@@ -1468,7 +1475,7 @@ class BaseModel(BaseModelPlotter):
     def export_pipeline(
         self,
         memory: Optional[Union[bool, str, Memory]] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Export the model's pipeline to a sklearn-like object.
 
@@ -1626,7 +1633,7 @@ class BaseModel(BaseModelPlotter):
         self,
         X: X_TYPES,
         y: Optional[Y_TYPES] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Transform new data through the model's branch.
 

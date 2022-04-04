@@ -1,6 +1,9 @@
 # Stochastic Gradient Descent (SGD)
 -----------------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+
 Stochastic Gradient Descent is a simple yet very efficient approach to
 fitting linear classifiers and regressors under convex loss functions.
 Even though SGD has been around in the machine learning community for a
@@ -128,7 +131,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -136,7 +139,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

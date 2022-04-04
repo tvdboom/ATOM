@@ -91,13 +91,15 @@ make sure that you have done everything necessary so we can efficiently
 review and accept your changes.
 
 * Update the documentation so all of your changes are reflected there.
-* Adhere to [PEP 8](https://www.python.org/dev/peps/pep-0008/) standards.
+* Adhere to [PEP 8](https://peps.python.org/pep-0008/) standards.
 * Use a maximum of 89 characters per line. Try to keep comments and
   docstrings below 72 characters.
 * Update the project unit tests to test your code changes as thoroughly
   as possible.
 * Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.
+* Run [isort](https://pycqa.github.io/isort/): `isort atom tests`.
+* Run [flake8](https://flake8.pycqa.org/en/latest/): `flake8 --show-source --statistics atom tests`.
 
 If your contribution requires a new library dependency:
 
@@ -110,5 +112,5 @@ If your contribution requires a new library dependency:
 
 After submitting your pull request, GitHub will automatically run the tests
 on your changes and make sure that the updated code builds successfully.
-The checks are run on Python 3.7, 3.8 and 3.9, on Ubuntu and Windows.
+The checks are run on Python 3.7, 3.8, 3.9 and 3.10, on Ubuntu and Windows.
 We also use services that automatically check code style and test coverage.

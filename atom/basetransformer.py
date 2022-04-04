@@ -7,32 +7,31 @@ Description: Module containing the BaseTransformer class.
 
 """
 
-# Standard packages
+import importlib
+import multiprocessing
 import os
-import dill
 import random
-import mlflow
 import warnings
+from copy import deepcopy
+from typing import Optional, Union
+
+import dill
+import mlflow
 import numpy as np
 import pandas as pd
-import multiprocessing
-from copy import deepcopy
-from typeguard import typechecked
-from typing import Union, Optional
 from sklearn.model_selection import train_test_split
+from typeguard import typechecked
 
-# Own modules
-from .utils import (
-    SEQUENCE, X_TYPES, Y_TYPES, lst, to_df, to_series, merge,
-    prepare_logger, composed, crash, method_to_log,
+from atom.utils import (
+    INT, SCALAR, SEQUENCE, X_TYPES, Y_TYPES, composed, crash, lst, merge,
+    method_to_log, prepare_logger, to_df, to_series,
 )
 
 
 class BaseTransformer:
     """Base class for estimators in the package.
 
-    Contains shared properties (n_jobs, verbose, warnings, logger,
-    random_state) and standard methods across estimators.
+    Contains shared properties and standard methods across transformers.
 
     Parameters
     ----------
@@ -43,11 +42,20 @@ class BaseTransformer:
             - warnings: Whether to show or suppress encountered warnings.
             - logger: Name of the log file or Logger object.
             - experiment: Name of the mlflow experiment used for tracking.
+            - gpu: Whether to train the pipeline on GPU.
             - random_state: Seed used by the random number generator.
 
     """
 
-    attrs = ["n_jobs", "verbose", "warnings", "logger", "experiment", "random_state"]
+    attrs = [
+        "n_jobs",
+        "verbose",
+        "warnings",
+        "logger",
+        "experiment",
+        "gpu",
+        "random_state",
+    ]
 
     def __init__(self, **kwargs):
         """Update the properties with the provided kwargs."""
@@ -128,8 +136,23 @@ class BaseTransformer:
     @experiment.setter
     def experiment(self, value):
         self._experiment = value
+        mlflow.sklearn.autolog(disable=True)
         if value:
             mlflow.set_experiment(value)
+
+    @property
+    def gpu(self):
+        return self._gpu
+
+    @gpu.setter
+    @typechecked
+    def gpu(self, value: Union[bool, str]):
+        if isinstance(value, str) and value.lower() != "force":
+            raise ValueError(
+                "Invalid value for the gpu parameter. Only True, "
+                f"False and 'force' are valid values, got {value}."
+            )
+        self._gpu = value
 
     @property
     def random_state(self):
@@ -137,7 +160,7 @@ class BaseTransformer:
 
     @random_state.setter
     @typechecked
-    def random_state(self, value: Optional[int]):
+    def random_state(self, value: Optional[INT]):
         if value and value < 0:
             raise ValueError(
                 "Invalid value for the random_state parameter. "
@@ -148,6 +171,40 @@ class BaseTransformer:
         self._random_state = value
 
     # Methods ====================================================== >>
+
+    def _get_gpu(self, estimator, module="cuml"):
+        """Get a GPU or CPU estimator depending on availability.
+
+        Parameters
+        ----------
+        estimator: estimator
+            Class to get GPU implementation from.
+
+        module: str, optional (default="cuml")
+            Module from which to get the GPU estimator.
+
+        Returns
+        -------
+        estimator
+            Provided estimator or cuml implementation.
+
+        """
+        if self.gpu:
+            try:
+                return getattr(importlib.import_module(module), estimator.__name__)
+            except ModuleNotFoundError:
+                if str(self.gpu).lower() == "force":
+                    raise ModuleNotFoundError(
+                        "It looks like cuml is not installed. Refer to the package's "
+                        "documentation to learn how to utilize the machine's GPU."
+                    )
+                else:
+                    self.log(
+                        f" --> Unable to import {module}.{estimator.__name__}. "
+                        "Using CPU implementation instead.", 1
+                    )
+
+        return estimator
 
     @staticmethod
     @typechecked
@@ -186,7 +243,7 @@ class BaseTransformer:
             X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
             # If text dataset, change the name of the column to corpus
-            if list(X.columns) == ["feature 1"] and X[X.columns[0]].dtype == "object":
+            if list(X.columns) == ["feature_1"] and X[X.columns[0]].dtype == "object":
                 X = X.rename(columns={X.columns[0]: "corpus"})
 
             # Convert all column names to str
@@ -522,7 +579,7 @@ class BaseTransformer:
         return data, idx, holdout
 
     @composed(crash, typechecked)
-    def log(self, msg: Union[int, float, str], level: int = 0):
+    def log(self, msg: Union[SCALAR, str], level: INT = 0):
         """Print and save output to log file.
 
         Parameters

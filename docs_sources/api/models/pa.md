@@ -1,6 +1,9 @@
 # Passive Aggressive (PA)
 -------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+
 The passive-aggressive algorithms are a family of algorithms for
 large-scale learning. They are similar to the Perceptron in that they
 do not require a learning rate. However, contrary to the Perceptron,
@@ -101,7 +104,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -109,7 +112,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

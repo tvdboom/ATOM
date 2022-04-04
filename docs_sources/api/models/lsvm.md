@@ -1,7 +1,11 @@
-# Linear-SVM (lSVM)
+# Linear SVM (lSVM)
 -------------------
 
-Similar to [Kernel-SVM](../ksvm) but with a linear kernel. Implemented
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
+
+Similar to [Kernel SVM](../ksvm) but with a linear kernel. Implemented
 in terms of liblinear rather than libsvm, so it has more flexibility
 in the choice of penalties and loss functions and should scale better
 to large numbers of samples.
@@ -107,7 +111,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -115,7 +119,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

@@ -1,6 +1,9 @@
 # Radius Nearest Neighbors (RNN)
 --------------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+
 Radius Nearest Neighbors implements the nearest neighbors vote, where
 the neighbors are selected from within a given radius. For regression,
 the target is predicted by local interpolation of the targets associated
@@ -114,7 +117,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -122,7 +125,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

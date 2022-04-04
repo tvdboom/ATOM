@@ -6,7 +6,7 @@
 columns=None, kind="average", target=None, title=None, figsize=(10, 6),
 filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2078">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2042">[source]</a>
 </span>
 </div>
 
@@ -87,7 +87,7 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy="PCA", n_features=6)
+atom.feature_selection(strategy="pca", n_features=6)
 atom.run(["Tree", "Bag"], metric="precision")
 atom.plot_partial_dependence()
 ```

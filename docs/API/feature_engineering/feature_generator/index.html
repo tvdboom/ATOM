@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/feature_engineering/feature_generator/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/feature_engineering/feature_generator/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1714,7 +1714,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1728,7 +1728,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2840,28 +2840,27 @@
 <h1 id="featuregenerator">FeatureGenerator</h1>
 <hr />
 <div style="font-size:20px">
-<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="DFS",
+<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="dfs",
 n_features=None, operators=None, n_jobs=1, verbose=0, logger=None,
 random_state=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L231">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L225">[source]</a>
 </span>
 </div>
 
-<p>Use Deep feature Synthesis or a genetic algorithm to create new combinations
-of existing features to capture the non-linear relations between the original
-features. This class can be accessed from atom through the
-<a href="../../ATOM/atomclassifier/#feature-generation">feature_generation</a>
+<p>Create new combinations of existing features to capture the non-linear
+relations between the original features. This class can be accessed from
+atom through the <a href="../../ATOM/atomclassifier/#feature-generation">feature_generation</a>
 method. Read more in the <a href="../../../user_guide/feature_engineering/#generating-new-features">user guide</a>.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str, optional (default="DFS")</strong><br>
+<strong>strategy: str, optional (default="dfs")</strong><br>
 Strategy to crate new features. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"DFS" to use Deep Feature Synthesis.</li>
-<li>"GFG" or "genetic" to use Genetic Feature Generation.</li>
+<li>"dfs": Deep Feature Synthesis.</li>
+<li>"<a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">gfg</a>": Genetic Feature Generation.</li>
 </ul>
 <p>
 <strong>n_features: int or None, optional (default=None)</strong><br>
@@ -2901,7 +2900,7 @@ generator is the <code>RandomState</code> instance used by <code>np.random</code
 <p>
 <strong>**kwargs</strong><br>
 Additional keyword arguments for the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
-instance. Only for the genetic strategy.
+instance. Only for the gfg strategy.
 </p>
 </td>
 </tr>
@@ -2909,7 +2908,7 @@ instance. Only for the genetic strategy.
 
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>DFS can create many new features and not all of them will be useful. Use
+<p>dfs can create many new features and not all of them will be useful. Use
 <a href="/API/feature_engineering/feature_selector">FeatureSelector</a> to reduce
 the number of features!</p>
 </div>
@@ -2921,7 +2920,7 @@ the number of features!</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>When using DFS with <code>n_jobs&gt;1</code>, make sure to protect your code with <code>if __name__
+<p>When using dfs with <code>n_jobs&gt;1</code>, make sure to protect your code with <code>if __name__
 == "__main__"</code>. Featuretools uses <a href="https://dask.org/">dask</a>, which uses python
 multiprocessing for parallelization. The spawn method on multiprocessing starts
 a new python process, which requires it to import the __main__ module before it
@@ -2934,11 +2933,11 @@ can do its task.</p>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>symbolic_transformer: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
-Object used to calculate the genetic features. Only for the genetic strategy.
+<strong>gfg: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
+Object used to calculate the genetic features. Only for the gfg strategy.
 </p>
 <strong>genetic_features: pd.DataFrame</strong><br>
-Information on the newly created non-linear features. Only for the genetic
+Information on the newly created non-linear features. Only for the gfg
 strategy. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>name:</b> Name of the feature (automatically created).</li>
@@ -2991,7 +2990,7 @@ strategy. Columns include:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L322">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L315">[source]</a>
 </span>
 </div>
 <p>Fit to data.</p>
@@ -3022,7 +3021,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 <p>Fit to data, then transform it.</p>
@@ -3081,7 +3080,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3105,7 +3104,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3147,7 +3146,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L431">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L416">[source]</a>
 </span>
 </div>
 <p>Generate new features.</p>
@@ -3174,18 +3173,25 @@ Feature set with the newly generated features.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">feature_generation</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;genetic&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">generations</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">feature_generation</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;dfs&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">operators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="s2">&quot;mul&quot;</span><span class="p">])</span>
 </code></pre></div>
-or
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.feature_engineering</span> <span class="kn">import</span> <span class="n">FeatureGenerator</span>
 
-<span class="n">fg</span> <span class="o">=</span> <span class="n">FeatureGenerator</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;genetic&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">generations</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-<span class="n">fg</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-</code></pre></div></p>
+<span class="n">generator</span> <span class="o">=</span> <span class="n">FeatureGenerator</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;dfs&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">operators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="s2">&quot;mul&quot;</span><span class="p">])</span>
+<span class="n">generator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 
               
             </article>

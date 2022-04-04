@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/models/dummy/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/models/dummy/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1748,7 +1748,7 @@
   
     <li class="md-nav__item">
       <a href="../lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1762,7 +1762,7 @@
   
     <li class="md-nav__item">
       <a href="../ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2926,6 +2926,7 @@ to compare with other models.</p>
 <li>By default, the estimator adopts the default parameters provided by
   its package. See the <a href="../../../user_guide/training/#parameter-customization">user guide</a>
   on how to customize them.</li>
+<li>The <code>quantile</code> parameter is only used with DummyRegressor.</li>
 <li>The <code>random_state</code> parameter is set equal to that of the trainer.</li>
 </ul>
 <table style="font-size:16px">
@@ -2937,8 +2938,10 @@ to compare with other models.</p>
 <li>classifier: default="prior"<br>
 Categorical(["most_frequent", "prior", "stratified", "uniform"], name="strategy")</li>
 <li>regressor: default="mean"<br>
-Categorical(["mean", "median"], name="strategy")</li>
+Categorical(["mean", "median", "quantile"], name="strategy")</li>
 </ul>
+<strong>quantile: float or None, default=None</strong><br>
+Categorical([None, *np.linspace(0.0, 1.0, 11)], name="quantile")
 </td>
 </tr>
 </table>
@@ -2992,7 +2995,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -3000,7 +3003,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

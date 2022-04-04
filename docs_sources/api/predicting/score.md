@@ -3,9 +3,9 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
-y, metric=None, sample_weights=None, verbose=None)
+y, metric=None, sample_weight=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L250">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L249">[source]</a>
 </span>
 </div>
 
@@ -37,7 +37,7 @@ a scorer object. If None, it returns mean accuracy for classification
 tasks and r2 for regression tasks.
 </p>
 <p>
-<strong>sample_weights: sequence or None, optional (default=None)</strong><br>
+<strong>sample_weight: sequence or None, optional (default=None)</strong><br>
 Sample weights corresponding to y.
 </p>
 <p>

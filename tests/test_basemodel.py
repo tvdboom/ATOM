@@ -7,23 +7,23 @@ Description: Unit tests for basemodel.py
 
 """
 
-# Standard packages
 import glob
-import pytest
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
-from unittest.mock import patch
-from skopt.space.space import Integer
-from skopt.learning import GaussianProcessRegressor
+import pytest
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, r2_score, recall_score
+from skopt.learning import GaussianProcessRegressor
+from skopt.space.space import Integer
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_scaling
+
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_idx, y_idx, X10_str, y10,
+    FILE_DIR, X10_str, X_bin, X_class, X_idx, X_reg, y10, y_bin, y_class,
+    y_idx, y_reg,
 )
 
 
@@ -175,7 +175,7 @@ def test_all_base_estimators(est):
     atom.run("LR", n_calls=5, bo_params={"base_estimator": est})
 
 
-def test_sample_weights_fit():
+def test_sample_weight_fit():
     """Assert that sample weights can be used with the BO."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
@@ -197,7 +197,12 @@ def test_bo_with_pipeline():
 def test_early_stopping(model):
     """Assert than early stopping works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(model, n_calls=5, bo_params={"early_stopping": 0.1})
+    atom.run(
+        models=model,
+        n_calls=5,
+        est_params={"n_estimators": 10},
+        bo_params={"early_stopping": 0.1},
+    )
     assert getattr(atom, model)._stopped != ("---", "---")
 
 
@@ -373,7 +378,7 @@ def test_score_custom_metric():
     assert atom.tree.score(X_bin, y_bin, metric="recall") == recall
 
 
-def test_score_with_sample_weights():
+def test_score_with_sample_weight():
     """Assert that the score method works when sample weights are provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
@@ -551,44 +556,43 @@ def test_cross_validate():
 def test_dashboard_dataset_no_holdout():
     """Assert that an error is raised when there's no holdout set."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
+    atom.run("Tree")
     with pytest.raises(ValueError, match=r".*No holdout data set.*"):
-        atom.rf.dashboard(dataset="holdout")
+        atom.tree.dashboard(dataset="holdout")
 
 
 def test_dashboard_invalid_dataset():
     """Assert that an error is raised when dataset is invalid."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
+    atom.run("Tree")
     with pytest.raises(ValueError, match=r".*dataset parameter.*"):
-        atom.rf.dashboard(dataset="invalid")
+        atom.tree.dashboard(dataset="invalid")
 
 
-@patch("explainerdashboard.ExplainerDashboard.run")
+@patch("explainerdashboard.ExplainerDashboard")
 @pytest.mark.parametrize("dataset", ["train", "both", "holdout"])
-def test_dashboard(func, dataset):
-    """Assert that an error is raised when dataset is invalid."""
+def test_dashboard_classification(func, dataset):
+    """Assert that the dashboard method calls the underlying package."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    atom.run("RF")
-    atom.rf.dashboard(dataset=dataset)
+    atom.run("Tree")
+    atom.tree.dashboard(dataset=dataset, filename="dashboard")
     func.assert_called_once()
 
 
-@patch("explainerdashboard.ExplainerDashboard.run")
-def test_dashboard_is_saved(func):
-    """Assert that an error is raised when dataset is invalid."""
+@patch("explainerdashboard.ExplainerDashboard")
+def test_dashboard_regression(func):
+    """Assert that the dashboard method calls the underlying package."""
     atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
-    atom.run("RF")
-    atom.rf.dashboard(filename=FILE_DIR + "dashboard")
+    atom.run("Tree")
+    atom.tree.dashboard()
     func.assert_called_once()
-    assert glob.glob(FILE_DIR + "dashboard.html")
 
 
 def test_delete():
     """Assert that models can be deleted."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
-    atom.rf.delete()
+    atom.run("Tree")
+    atom.tree.delete()
     assert not atom.models
     assert not atom.metric
 

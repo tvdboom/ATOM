@@ -7,18 +7,17 @@ Description: Module containing the API classes.
 
 """
 
-# Standard packages
-import dill
 from copy import deepcopy
 from logging import Logger
-from typeguard import typechecked
-from typing import Optional, Union, Any
-from sklearn.base import clone
+from typing import Any, Optional, Union
 
-# Own modules
-from .atom import ATOM
-from .basetransformer import BaseTransformer
-from .utils import SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
+import dill
+from sklearn.base import clone
+from typeguard import typechecked
+
+from atom.atom import ATOM
+from atom.basetransformer import BaseTransformer
+from atom.utils import INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
 
 
 # Functions ======================================================== >>
@@ -26,8 +25,8 @@ from .utils import SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
 @typechecked
 def ATOMModel(
     estimator: Any,
-    acronym: str = None,
-    fullname: str = None,
+    acronym: Optional[str] = None,
+    fullname: Optional[str] = None,
     needs_scaling: bool = False,
 ):
     """Convert an estimator to a model that can be ingested by ATOM.
@@ -74,7 +73,7 @@ def ATOMLoader(
     filename: str,
     data: Optional[tuple] = None,
     transform_data: bool = True,
-    verbose: Optional[int] = None,
+    verbose: Optional[INT] = None,
 ):
     """Load a class instance from a pickle file.
 
@@ -257,6 +256,13 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
+    gpu: bool or str, optional (default=False)
+        Train estimators on GPU (instead of CPU). Refer to the
+        documentation to check which estimators are supported.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -293,21 +299,23 @@ class ATOMClassifier(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
-        index: Union[bool, int, str, SEQUENCE_TYPES] = False,
+        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
         shuffle: bool = True,
-        stratify: Union[bool, int, str, SEQUENCE_TYPES] = True,
+        stratify: Union[bool, INT, str, SEQUENCE_TYPES] = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
-        n_jobs: int = 1,
-        verbose: int = 0,
+        n_jobs: INT = 1,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
+            gpu=gpu,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -401,6 +409,13 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
+    gpu: bool or str, optional (default=False)
+        Train estimators on GPU (instead of CPU). Refer to the
+        documentation to check which estimators are supported.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -437,20 +452,22 @@ class ATOMRegressor(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
-        index: Union[bool, int, str, SEQUENCE_TYPES] = False,
+        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
         shuffle: bool = True,
         n_rows: SCALAR = 1,
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
-        n_jobs: int = 1,
-        verbose: int = 0,
+        n_jobs: INT = 1,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
+            gpu=gpu,
             verbose=verbose,
             warnings=warnings,
             logger=logger,

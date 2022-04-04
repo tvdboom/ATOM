@@ -5,17 +5,17 @@
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None,
 figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L497">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L489">[source]</a>
 </span>
 </div>
 
 Plot the explained variance ratio vs the number of components. If the
-underlying estimator is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
+underlying estimator is [pca](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html)
 (for dense datasets), all possible components are plotted. If the
 underlying estimator is [TruncatedSVD](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html)
 (for sparse datasets), it only shows the selected components. The blue
 star marks the number of components selected by the user. Only
-available if [PCA](../../../user_guide/feature_engineering/#pca) was
+available if [pca](../../../user_guide/feature_engineering/#pca) was
 applied on the data.
 
 <table style="font-size:16px">
@@ -59,7 +59,7 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy="PCA", n_features=11)
+atom.feature_selection(strategy="pca", n_features=11)
 atom.plot_pca()
 ```
 

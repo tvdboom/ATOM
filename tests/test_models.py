@@ -7,24 +7,23 @@ Description: Unit tests for models.py
 
 """
 
-# Standard packages
-import pytest
-import numpy as np
 from pickle import PickleError
-from skopt.space.space import Categorical, Integer
-from sklearn.ensemble import RandomForestRegressor
+from unittest.mock import MagicMock, patch
 
-# Keras
+import numpy as np
+import pytest
+from sklearn.ensemble import RandomForestRegressor
+from skopt.space.space import Categorical, Integer
+from tensorflow.keras.layers import Conv2D, Dense, Flatten
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, Conv2D
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.feature_engineering import FeatureSelector
 from atom.models import MODELS
 from atom.pipeline import Pipeline
-from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
+
+from .utils import X_bin, X_class2, X_reg, mnist, y_bin, y_class2, y_reg
 
 
 # Variables ======================================================== >>
@@ -140,6 +139,41 @@ def test_models_regression(model):
     assert hasattr(atom, model)
 
 
+def test_models_gpu_classification():
+    """Assert that GPU works for classification models with BO."""
+    atom = ATOMClassifier(X_bin, y_bin, gpu="force", random_state=1)
+    with patch.dict("sys.modules", {"cuml": MagicMock()}):
+        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
+            atom.run(models="lr", n_calls=2, n_initial_points=1)
+
+    with patch.dict("sys.modules", {"cuml.svm": MagicMock()}):
+        with pytest.raises(RuntimeError, match=r".*All models failed to run.*"):
+            atom.run(models=["lsvm", "ksvm"], n_calls=2, n_initial_points=1)
+
+
+def test_models_gpu_regression():
+    """Assert that GPU works for regression models with BO."""
+    atom = ATOMRegressor(X_reg, y_reg, gpu="force", random_state=1)
+    with patch.dict("sys.modules", {"cuml.dask.linear_model": MagicMock()}):
+        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
+            atom.run(models="ridge", n_calls=2, n_initial_points=1)
+
+    with patch.dict("sys.modules", {"cuml.ensemble": MagicMock()}):
+        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
+            atom.run(models="rf", n_calls=2, n_initial_points=1)
+
+
+def test_Dummy():
+    """Assert that Dummy doesn't crash when strategy=quantile."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(
+        models="dummy",
+        n_calls=2,
+        n_initial_points=1,
+        est_params={"strategy": "quantile"},
+    )
+
+
 def test_CatNB():
     """Assert that the CatNB model works. Separated because of special dataset."""
     X = np.random.randint(5, size=(100, 100))
@@ -167,7 +201,7 @@ def test_RNN():
     """Assert that the RNN model works when called just for the estimator."""
     with pytest.raises(ValueError):
         # Fails cause RNN has no coef_ nor feature_importances_ attribute
-        FeatureSelector("SFM", solver="RNN_class").fit_transform(X_bin, y_bin)
+        FeatureSelector("sfm", solver="RNN_class").fit_transform(X_bin, y_bin)
 
 
 def test_MLP_custom_hidden_layer_sizes():

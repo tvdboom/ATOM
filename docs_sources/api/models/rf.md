@@ -1,6 +1,9 @@
 # Random Forest (RF)
 --------------------
 
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
+
 Random forests are an ensemble learning method that operate by
 constructing a multitude of decision trees at training time and
 outputting the class that is the mode of the classes (classification)
@@ -44,7 +47,7 @@ Categorical(["squared_error", "absolute_error", "poisson"], name="criterion")</l
 </ul>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *list(range(1, 10))], name="max_depth")
+Categorical([None, *range(1, 17)], name="max_depth")
 </p>
 <p>
 <strong>min_samples_split: int, default=2</strong><br>
@@ -63,12 +66,12 @@ Categorical(["auto", "sqrt", "log2", *np.linspace(0.5, 0.9, 5), None], name="max
 Categorical([True, False], name="bootstrap")
 </p>
 <p>
-<strong>ccp_alpha: float, default=0</strong><br>
-Real(0, 0.035, name="ccp_alpha")
-</p>
-<p>
 <strong>max_samples: float or None, default=None</strong><br>
 Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_samples")
+</p>
+<p>
+<strong>ccp_alpha: float, default=0</strong><br>
+Real(0, 0.035, name="ccp_alpha")
 </p>
 </td>
 </tr>
@@ -127,7 +130,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -135,7 +138,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

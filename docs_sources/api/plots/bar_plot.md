@@ -6,7 +6,7 @@
 index=None, show=None, target=1, title=None, figsize=None, filename=None,
 display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2974">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2938">[source]</a>
 </span>
 </div>
 
@@ -89,7 +89,9 @@ atom.bar_plot()  # For multiple samples
 <div align="center">
     <img src="../../../img/plots/bar_plot_1.png" alt="bar_plot_1" width="700" height="700"/>
 </div>
+
 <br>
+
 ```python
 atom.bar_plot(index=120)  # For a single sample
 ```

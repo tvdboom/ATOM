@@ -1,6 +1,9 @@
 # Least Angle Regression (Lars)
 -------------------------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
+
 Least-angle regression is a regression algorithm for high-dimensional
 data. Lars is similar to forward stepwise regression. At each step, it
 finds the feature most correlated with the target. When there are
@@ -79,7 +82,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -87,7 +90,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

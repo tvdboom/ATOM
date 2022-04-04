@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/data_cleaning/gauss/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/data_cleaning/gauss/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1714,7 +1714,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1728,7 +1728,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2840,10 +2840,10 @@
 <h1 id="gauss">Gauss</h1>
 <hr />
 <div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Gauss</strong>(strategy="yeo-johnson",
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Gauss</strong>(strategy="yeojohnson",
 verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L281">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L324">[source]</a>
 </span>
 </div>
 
@@ -2858,11 +2858,11 @@ method. Read more in the <a href="../../../user_guide/data_cleaning/#making-gaus
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str, optional (default="yeo-johnson")</strong><br>
+<strong>strategy: str, optional (default="yeojohnson")</strong><br>
 The transforming strategy. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">yeo-johnson</a>"</li>
-<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">box-cox</a>" (only works with strictly positive values)</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">yeojohnson</a>"</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">boxcox</a>" (only works with strictly positive values)</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html">quantile</a>" (non-linear transformation)</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
@@ -2890,7 +2890,7 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>The yeo-johnson and box-cox strategies apply zero-mean, unit-variance
+<p>The yeojohnson and boxcox strategies apply zero-mean, unit-variance
 normalization after transforming. Use the <code>kwargs</code> parameter to change
 this behaviour.</p>
 </div>
@@ -2958,7 +2958,7 @@ Object with which the data is transformed.
 <p><br></p>
 <p><a name="fit"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L347">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L390">[source]</a></span></div>
 <p>Fit to data.</p>
 <table style="font-size:16px">
 <tr>
@@ -2984,7 +2984,7 @@ Fitted instance of self.
 <p><br /></p>
 <p><a name="fit-transform"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a></span></div>
 <p>Fit to data, then transform it.</p>
 <table style="font-size:16px">
 <tr>
@@ -3040,7 +3040,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3064,7 +3064,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3104,7 +3104,7 @@ Estimator instance.
 <p><br /></p>
 <p><a name="transform"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L397">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L438">[source]</a></span></div>
 <p>Apply the transformations to the data.</p>
 <table style="font-size:16px">
 <tr>
@@ -3129,18 +3129,25 @@ Transformed feature set.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">gauss</span><span class="p">()</span>
 </code></pre></div>
-or
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Gauss</span>
 
 <span class="n">gauss</span> <span class="o">=</span> <span class="n">Gauss</span><span class="p">()</span>
 <span class="n">gauss</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">gauss</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-</code></pre></div></p>
+</code></pre></div>
+</div>
+</div>
+</div>
 
               
             </article>

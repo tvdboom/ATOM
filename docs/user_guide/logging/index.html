@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/user_guide/logging/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/logging/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -507,20 +507,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../data_management/" class="md-nav__link">
         Data management
       </a>
@@ -586,6 +572,20 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpu/" class="md-nav__link">
+        GPU
+      </a>
     </li>
   
 
@@ -1705,7 +1705,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1719,7 +1719,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2841,9 +2841,14 @@ When no backend is configured, the data is stored locally at <code>./mlruns</cod
 To configure the backend, use <a href="https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri">mlflow.set_tracking_uri</a>
 in your notebook or IDE before initializing the trainer. This does not
 affect the currently active run (if one exists), but takes effect for
-successive runs. When using ATOM on Databricks, the uri should include
-the complete path to the storage, e.g. <code>/Users/username@domain.com/experiment_name</code>.
-The following elements are tracked:</p>
+successive runs.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>When using ATOM on <a href="https://databricks.com/">Databricks</a>, the
+experiment's name should include the complete path to the storage,
+e.g. <code>/Users/username@domain.com/experiment_name</code>.</p>
+</div>
+<p>The following elements are tracked:</p>
 <p><strong>Tags</strong><br>
 The runs are automatically tagged with the model's full name, the branch
 from which the model was trained, and the time it took to fit the model.</p>
@@ -2913,13 +2918,13 @@ switched off using the trainer's <code>log_plots</code> attribute, e.g. <code>at
       
       
         
-        <a href="../data_cleaning/" class="md-footer__link md-footer__link--next" aria-label="Next: Data cleaning" rel="next">
+        <a href="../gpu/" class="md-footer__link md-footer__link--next" aria-label="Next: GPU" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Data cleaning
+              GPU
             </div>
           </div>
           <div class="md-footer__button md-icon">

@@ -8,7 +8,7 @@ regex_url=None, drop_html=True, regex_html=None, drop_emoji,
 regex_emoji=None, drop_number=True, regex_number=None,
 drop_punctuation=True, verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L41">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L37">[source]</a>
 </span>
 </div>
 
@@ -160,7 +160,7 @@ the document index from which the occurrence was dropped.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 Apply text cleaning.
@@ -224,7 +224,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -250,7 +250,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -296,7 +296,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L157">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L153">[source]</a>
 </span>
 </div>
 Apply text cleaning.
@@ -329,16 +329,18 @@ Transformed corpus.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.textclean()
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.textclean()
-```
-or
-```python
-from atom.nlp import TextCleaner
-
-cleaner = TextCleaner()
-X = cleaner.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.nlp import TextCleaner
+    
+    cleaner = TextCleaner()
+    X = cleaner.transform(X)
+    ```

@@ -52,7 +52,7 @@ Integer(10, 50, name="max_leaf_nodes")
 </p>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *range(1, 11], name="max_depth")
+Categorical([None, *range(1, 21], name="max_depth")
 </p>
 <p>
 <strong>min_samples_leaf: int, default=20</strong><br>
@@ -119,7 +119,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -127,7 +127,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

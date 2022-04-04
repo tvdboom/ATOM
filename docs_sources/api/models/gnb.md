@@ -1,6 +1,8 @@
 # Gaussian Naive bayes (GNB)
 ----------------------------
 
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
+
 Gaussian Naive Bayes implements the Naive Bayes algorithm for
 classification. The likelihood of the features is assumed to
 be Gaussian.
@@ -79,7 +81,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -87,7 +89,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

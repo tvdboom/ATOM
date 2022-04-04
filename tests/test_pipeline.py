@@ -7,15 +7,14 @@ Description: Unit tests for pipeline.py
 
 """
 
-# Standard packages
-import pytest
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+import pytest
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-# Own modules
 from atom import ATOMClassifier
 from atom.pipeline import Pipeline
+
 from .utils import X_bin, y_bin
 
 

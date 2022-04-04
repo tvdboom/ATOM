@@ -7,57 +7,42 @@ Description: Module containing the ATOM class.
 
 """
 
-# Standard packages
 import tempfile
-import numpy as np
-import pandas as pd
-from scipy import stats
 from copy import deepcopy
 from inspect import signature
-from joblib.memory import Memory
-from typeguard import typechecked
-from typing import Union, Optional, Any, Dict
+from typing import Any, Dict, Optional, Union
 
-# Own modules
-from .branch import Branch
-from .basepredictor import BasePredictor
-from .basetrainer import BaseTrainer
-from .basetransformer import BaseTransformer
-from .nlp import TextCleaner, Tokenizer, Normalizer, Vectorizer
-from .pipeline import Pipeline
-from .data_cleaning import (
-    DropTransformer,
-    FuncTransformer,
-    Cleaner,
-    Gauss,
-    Discretizer,
-    Scaler,
-    Imputer,
-    Encoder,
-    Pruner,
-    Balancer,
+import numpy as np
+import pandas as pd
+from joblib.memory import Memory
+from scipy import stats
+from typeguard import typechecked
+
+from atom.basepredictor import BasePredictor
+from atom.basetrainer import BaseTrainer
+from atom.basetransformer import BaseTransformer
+from atom.branch import Branch
+from atom.data_cleaning import (
+    Balancer, Cleaner, Discretizer, DropTransformer, Encoder, FuncTransformer,
+    Gauss, Imputer, Pruner, Scaler,
 )
-from .feature_engineering import (
-    FeatureExtractor,
-    FeatureGenerator,
-    FeatureSelector,
+from atom.feature_engineering import (
+    FeatureExtractor, FeatureGenerator, FeatureSelector,
 )
-from .training import (
-    DirectClassifier,
-    DirectRegressor,
-    SuccessiveHalvingClassifier,
-    SuccessiveHalvingRegressor,
-    TrainSizingClassifier,
-    TrainSizingRegressor,
+from atom.models import MODELS_ENSEMBLES, CustomModel
+from atom.nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
+from atom.pipeline import Pipeline
+from atom.plots import ATOMPlotter
+from atom.training import (
+    DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
+    SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
 )
-from .models import CustomModel, MODELS_ENSEMBLES
-from .plots import ATOMPlotter
-from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, flt, lst, divide,
-    infer_task, check_dim, check_scaling, is_multidim, is_sparse,
-    get_pl_name, names_from_estimator, check_is_fitted, variable_return,
-    fit_one, delete, custom_transform, method_to_log, composed, crash,
-    Table, CustomDict,
+from atom.utils import (
+    INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Table,
+    check_dim, check_is_fitted, check_scaling, composed, crash,
+    custom_transform, delete, divide, fit_one, flt, get_pl_name, infer_task,
+    is_multidim, is_sparse, lst, method_to_log, names_from_estimator,
+    variable_return,
 )
 
 
@@ -110,6 +95,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(f"Algorithm task: {self.task}.", 1)
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
+        if self.gpu:
+            self.log("GPU training enabled.", 1)
 
         self.log("", 1)  # Add empty rows around stats for cleaner look
         self.stats(1)
@@ -208,7 +195,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def numerical(self):
         """Names of the numerical features in the dataset."""
         if not is_multidim(self.X):
-            return list(self.X.select_dtypes(include=["number"]).columns)
+            return self.X.select_dtypes(include=["number"]).columns
 
     @property
     def n_numerical(self):
@@ -220,7 +207,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def categorical(self):
         """Names of the categorical features in the dataset."""
         if not is_multidim(self.X):
-            return list(self.X.select_dtypes(include=["object", "category"]).columns)
+            return self.X.select_dtypes(include=["object", "category"]).columns
 
     @property
     def n_categorical(self):
@@ -337,7 +324,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def distribution(
         self,
         distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
     ):
         """Get statistics on column distributions.
 
@@ -413,7 +400,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         model: Optional[str] = None,
         memory: Optional[Union[bool, str, Memory]] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Export atom's pipeline to a sklearn-like Pipeline object.
 
@@ -576,7 +563,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         obj2cat: bool = True,
         int2uint: bool = False,
         dense2sparse: bool = False,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
     ):
         """Converts the columns to the smallest possible matching dtype.
 
@@ -680,7 +667,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
-    def stats(self, _vb: int = -2):
+    def stats(self, _vb: INT = -2):
         """Print basic information about the dataset.
 
         Parameters
@@ -766,7 +753,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         X: X_TYPES,
         y: Optional[Y_TYPES] = None,
-        verbose: Optional[int] = None,
+        verbose: Optional[INT] = None,
     ):
         """Transform new data through the branch.
 
@@ -882,7 +869,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Add the estimator to the pipeline
         self.branch.pipeline = pd.concat(
-            [self.pipeline, pd.Series([estimator], name=self._current)],
+            [self.pipeline, pd.Series([estimator], name=self._current, dtype="object")],
             ignore_index=True,
         )
 
@@ -890,7 +877,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def add(
         self,
         transformer: Any,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -934,7 +921,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             self._add_transformer(transformer, columns, train_only, **fit_params)
 
     @composed(crash, method_to_log, typechecked)
-    def apply(self, func: callable, columns: Union[int, str], args=(), **kwargs):
+    def apply(self, func: callable, columns: Union[INT, str], args=(), **kwargs):
         """Apply a function to the dataset.
 
         Transform one column in the dataset using a function (can
@@ -977,7 +964,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(FuncTransformer(func, columns, args, **kwargs))
 
     @composed(crash, method_to_log, typechecked)
-    def drop(self, columns: Union[int, str, slice, SEQUENCE_TYPES], **kwargs):
+    def drop(self, columns: Union[INT, str, slice, SEQUENCE_TYPES], **kwargs):
         """Drop columns from the dataset.
 
         This approach is preferred over dropping columns from the
@@ -1019,7 +1006,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         setattr(self.branch, strategy.lower(), getattr(scaler, strategy.lower()))
 
     @composed(crash, method_to_log)
-    def gauss(self, strategy: str = "yeo-johnson", **kwargs):
+    def gauss(self, strategy: str = "yeojohnson", **kwargs):
         """Transform the data to follow a Gaussian distribution.
 
         This transformation is useful for modeling issues related
@@ -1090,7 +1077,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(cleaner, columns=columns)
 
         if cleaner.mapping:
-            self.branch.mapping.insert(-1, self.target, cleaner.mapping)
+            self.mapping.insert(-1, self.target, cleaner.mapping)
 
     @composed(crash, method_to_log, typechecked)
     def impute(
@@ -1130,7 +1117,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def discretize(
         self,
         strategy: str = "quantile",
-        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
+        bins: Union[INT, SEQUENCE_TYPES, dict] = 5,
         labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
         **kwargs,
     ):
@@ -1154,8 +1141,8 @@ class ATOM(BasePredictor, ATOMPlotter):
     def encode(
         self,
         strategy: str = "LeaveOneOut",
-        max_onehot: Optional[int] = 10,
-        ordinal: Optional[Dict[Union[int, str], SEQUENCE_TYPES]] = None,
+        max_onehot: Optional[INT] = 10,
+        ordinal: Optional[Dict[Union[INT, str], SEQUENCE_TYPES]] = None,
         frac_to_other: Optional[SCALAR] = None,
         **kwargs,
     ):
@@ -1190,13 +1177,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(encoder, columns=columns)
 
         # Add mapping of the encoded columns to the branch
-        for key, value in encoder.mapping.items():
-            self.branch.mapping.insert(-1, key, value)
+        self.mapping.update(encoder.mapping)
+        self.mapping = self.mapping[[c for c in self.columns if c in self.mapping]]
 
     @composed(crash, method_to_log, typechecked)
     def prune(
         self,
-        strategy: Union[str, SEQUENCE_TYPES] = "z-score",
+        strategy: Union[str, SEQUENCE_TYPES] = "zscore",
         method: Union[SCALAR, str] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
@@ -1231,11 +1218,11 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Attach the estimator attribute to atom's branch
         for strat in lst(strategy):
-            if strat.lower() != "z-score":
+            if strat.lower() != "zscore":
                 setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
 
     @composed(crash, method_to_log, typechecked)
-    def balance(self, strategy: str = "ADASYN", **kwargs):
+    def balance(self, strategy: str = "adasyn", **kwargs):
         """Balance the number of rows per class in the target column.
 
         Use only for classification tasks. The estimator created by
@@ -1370,7 +1357,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         Convert words to a more uniform standard. The transformations
         are applied on the column named `corpus`, in the same order the
         parameters are presented. If there is no column with that name,
-        an exception is raised.
+        an exception is raised. If the provided documents are strings,
+        words are separated by spaces.
 
         See nlp.py for a description of the parameters.
 
@@ -1389,12 +1377,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(normalizer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
-    def vectorize(self, strategy: str = "BOW", **kwargs):
+    def vectorize(self, strategy: str = "bow", return_sparse: bool = True, **kwargs):
         """Vectorize the corpus.
 
         Transform the corpus into meaningful vectors of numbers. The
         transformation is applied on the column named `corpus`. If
-        there is no column with that name, an exception is raised.
+        there is no column with that name, an exception is raised. The
+        transformed columns are named after the word they are embedding
+        (if the column is already present in the provided dataset,
+        `_[strategy]` is added behind the name).
 
         See nlp.py for a description of the parameters.
 
@@ -1402,7 +1393,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         check_dim(self, "normalize")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
-        vectorizer = Vectorizer(strategy=strategy, **kwargs)
+        vectorizer = Vectorizer(
+            strategy=strategy,
+            return_sparse=return_sparse,
+            **kwargs,
+        )
 
         self._add_transformer(vectorizer, columns=columns)
 
@@ -1449,17 +1444,16 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def feature_generation(
         self,
-        strategy: str = "DFS",
-        n_features: Optional[int] = None,
+        strategy: str = "dfs",
+        n_features: Optional[INT] = None,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
         """Apply automated feature engineering.
 
-        Use Deep feature Synthesis or a genetic algorithm to create
-        new combinations of existing features to capture the non-linear
-        relations between the original features. Attributes created by
-        the class are attached to atom.
+        Create new combinations of existing features to capture the
+        non-linear relations between the original features. Attributes
+        created by the class are attached to atom.
 
         See feature_engineering.py for a description of the parameters.
 
@@ -1477,8 +1471,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._add_transformer(feature_generator, columns=columns)
 
         # Attach the genetic attributes to atom's branch
-        if strategy.lower() in ("gfg", "genetic"):
-            self.branch.symbolic_transformer = feature_generator.symbolic_transformer
+        if strategy.lower() == "gfg":
+            self.branch.gfg = feature_generator.gfg
             self.branch.genetic_features = feature_generator.genetic_features
 
     @composed(crash, method_to_log, typechecked)
@@ -1494,13 +1488,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Apply feature selection techniques.
 
         Remove features according to the selected strategy. Ties
-        between features with equal scores are broken in an
-        unspecified way. Additionally, removes features with too low
-        variance and finds pairs of collinear features based on the
-        Pearson correlation coefficient. For each pair above the
-        specified limit (in terms of absolute value), it removes one
-        of the two. Plotting methods and attributes created by the
-        class are attached to atom.
+        between features with equal scores are broken in an unspecified
+        way. Additionally, remove multicollinear and low variance
+        features.
 
         See feature_engineering.py for a description of the parameters.
 
@@ -1509,7 +1499,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         if isinstance(strategy, str):
             if strategy.lower() == "univariate" and solver is None:
                 solver = "f_classif" if self.goal == "class" else "f_regression"
-            elif strategy.lower() in ("sfm", "rfe", "rfecv", "sfs"):
+            elif strategy.lower() not in ("univariate", "pca"):
                 if solver is None and self.winner:
                     solver = self.winner.estimator
                 elif isinstance(solver, str):
@@ -1518,7 +1508,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                         solver += f"_{self.goal}"
 
             # If the run method was called before, use the main metric
-            if strategy.lower() in ("rfecv", "sfs"):
+            if strategy.lower() not in ("univariate", "pca", "sfm", "rfe"):
                 if self._metric and "scoring" not in kwargs:
                     kwargs["scoring"] = self._metric[0]
 
@@ -1630,11 +1620,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        n_calls: Union[int, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
+        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a direct fashion.
@@ -1669,12 +1659,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        skip_runs: int = 0,
-        n_calls: Union[int, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
+        skip_runs: INT = 0,
+        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a successive halving fashion.
@@ -1715,12 +1705,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        train_sizes: Union[int, SEQUENCE_TYPES] = 5,
-        n_calls: Union[int, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
+        train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
+        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a train sizing fashion.

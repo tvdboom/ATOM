@@ -4,7 +4,7 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L765">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L752">[source]</a>
 </span>
 </div>
 
@@ -59,7 +59,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.clean()
 atom.impute(strat_num="knn", strat_cat="drop")
-atom.prune(strategy="z-score", method="min_max", max_sigma=2)
+atom.prune(strategy="zscore", method="min_max", max_sigma=2)
 
 # Transform new data through all transformers in the branch
 X_transformed = atom.transform(X_new)

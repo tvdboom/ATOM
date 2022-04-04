@@ -166,7 +166,7 @@ depend on the task at hand.
 
 <tr>
 <td><a href="../../API/plots/plot_rfecv">plot_rfecv</a></td>
-<td>Plot the RFECV results.</td>
+<td>Plot the rfecv results.</td>
 </tr>
 
 <tr>

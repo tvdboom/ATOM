@@ -1,6 +1,10 @@
 # XGBoost (XGB)
 ---------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
+
 XGBoost is an optimized distributed gradient boosting model designed to
 be highly efficient, flexible and portable. XGBoost provides a parallel
 tree boosting that solve many data science problems in a fast and
@@ -17,7 +21,7 @@ Read more in XGBoost's [documentation](https://xgboost.readthedocs.io/en/latest/
 
 !!! info
     XGBoost allows [early stopping](../../../user_guide/training/#early-stopping)
-    to stop the training of unpromising models prematurely!
+    to stop the training of unpromising models prematurely.
 
 
 
@@ -44,7 +48,7 @@ Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
 <p>
 <strong>max_depth: int, default=6</strong><br>
-Integer(1, 10, name="max_depth")
+Integer(1, 20, name="max_depth")
 </p>
 <p>
 <strong>gamma: float, default=0.0</strong><br>
@@ -127,7 +131,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -135,7 +139,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

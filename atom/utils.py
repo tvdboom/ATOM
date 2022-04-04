@@ -7,92 +7,31 @@ Description: Module containing utility constants, functions and classes.
 
 """
 
-# Standard packages
-import sys
+import logging
 import math
 import pprint
-import logging
+import sys
+from collections import deque
+from collections.abc import MutableMapping
+from copy import copy
+from datetime import datetime
+from functools import wraps
+from inspect import signature
+from typing import Union
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from copy import copy
-from typing import Union
+from matplotlib.gridspec import GridSpec
 from scipy import sparse
 from shap import Explainer
-from functools import wraps
-from collections import deque
-from datetime import datetime
-from inspect import signature
-from collections.abc import MutableMapping
-from sklearn.preprocessing import (
-    StandardScaler,
-    MinMaxScaler,
-    MaxAbsScaler,
-    RobustScaler,
-)
-
-from sklearn.ensemble import IsolationForest
-from sklearn.covariance import EllipticEnvelope
-from sklearn.neighbors import LocalOutlierFactor
-from sklearn.svm import OneClassSVM
-from sklearn.cluster import DBSCAN, OPTICS
-from sklearn.utils import _print_elapsed_time
-
-# Encoders
-from category_encoders.backward_difference import BackwardDifferenceEncoder
-from category_encoders.basen import BaseNEncoder
-from category_encoders.binary import BinaryEncoder
-from category_encoders.cat_boost import CatBoostEncoder
-from category_encoders.helmert import HelmertEncoder
-from category_encoders.james_stein import JamesSteinEncoder
-from category_encoders.leave_one_out import LeaveOneOutEncoder
-from category_encoders.m_estimate import MEstimateEncoder
-from category_encoders.ordinal import OrdinalEncoder
-from category_encoders.polynomial import PolynomialEncoder
-from category_encoders.sum_coding import SumEncoder
-from category_encoders.target_encoder import TargetEncoder
-from category_encoders.woe import WOEEncoder
-
-# Balancers
-from imblearn.under_sampling import (
-    CondensedNearestNeighbour,
-    EditedNearestNeighbours,
-    RepeatedEditedNearestNeighbours,
-    AllKNN,
-    InstanceHardnessThreshold,
-    NearMiss,
-    NeighbourhoodCleaningRule,
-    OneSidedSelection,
-    RandomUnderSampler,
-    TomekLinks,
-)
-from imblearn.over_sampling import (
-    ADASYN,
-    BorderlineSMOTE,
-    KMeansSMOTE,
-    RandomOverSampler,
-    SMOTE,
-    SMOTENC,
-    SMOTEN,
-    SVMSMOTE,
-)
-from imblearn.combine import SMOTEENN, SMOTETomek
-
-# Sklearn
-from sklearn.metrics import (
-    SCORERS,
-    make_scorer,
-    confusion_matrix,
-    matthews_corrcoef,
-)
-from sklearn.utils import _safe_indexing
 from sklearn.inspection._partial_dependence import (
-    _grid_from_X,
-    _partial_dependence_brute,
+    _grid_from_X, _partial_dependence_brute,
 )
-
-# Plotting
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
+from sklearn.metrics import (
+    SCORERS, confusion_matrix, make_scorer, matthews_corrcoef,
+)
+from sklearn.utils import _print_elapsed_time, _safe_indexing
 
 
 # Global constants ================================================= >>
@@ -100,15 +39,14 @@ from matplotlib.gridspec import GridSpec
 SEQUENCE = (list, tuple, np.ndarray, pd.Series)
 
 # Variable types
-SCALAR = Union[int, float]
+INT = Union[int, np.integer]
+FLOAT = Union[float, np.float]
+SCALAR = Union[INT, FLOAT]
 SEQUENCE_TYPES = Union[SEQUENCE]
 X_TYPES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
-Y_TYPES = Union[int, str, SEQUENCE_TYPES]
+Y_TYPES = Union[INT, str, SEQUENCE_TYPES]
 
-# Non-sklearn models
-OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
-
-# Attributes shared betwen atom and a pd.DataFrame
+# Attributes shared between atom and a pd.DataFrame
 DF_ATTRS = (
     "size",
     "head",
@@ -120,6 +58,9 @@ DF_ATTRS = (
     "dtypes",
     "at",
     "iat",
+    "memory_usage",
+    "empty",
+    "ndim",
 )
 
 # List of custom metrics for the evaluate method
@@ -153,68 +94,6 @@ SCORERS_ACRONYMS = dict(
     medae="neg_median_absolute_error",
     poisson="neg_mean_poisson_deviance",
     gamma="neg_mean_gamma_deviance",
-)
-
-# All available scaling strategies
-SCALING_STRATS = dict(
-    standard=StandardScaler,
-    minmax=MinMaxScaler,
-    maxabs=MaxAbsScaler,
-    robust=RobustScaler,
-)
-
-# All available encoding strategies
-ENCODING_STRATS = dict(
-    backwarddifference=BackwardDifferenceEncoder,
-    basen=BaseNEncoder,
-    binary=BinaryEncoder,
-    catboost=CatBoostEncoder,
-    # hashing=HashingEncoder,
-    helmert=HelmertEncoder,
-    jamesstein=JamesSteinEncoder,
-    leaveoneout=LeaveOneOutEncoder,
-    mestimate=MEstimateEncoder,
-    # onehot=OneHotEncoder,
-    ordinal=OrdinalEncoder,
-    polynomial=PolynomialEncoder,
-    sum=SumEncoder,
-    target=TargetEncoder,
-    woe=WOEEncoder,
-)
-
-# All available pruning strategies
-PRUNING_STRATS = dict(
-    iforest=IsolationForest,
-    ee=EllipticEnvelope,
-    lof=LocalOutlierFactor,
-    svm=OneClassSVM,
-    dbscan=DBSCAN,
-    optics=OPTICS,
-)
-
-# All available balancing strategies
-BALANCING_STRATS = dict(
-    # clustercentroids=ClusterCentroids,
-    condensednearestneighbour=CondensedNearestNeighbour,
-    editednearestneighborus=EditedNearestNeighbours,
-    repeatededitednearestneighbours=RepeatedEditedNearestNeighbours,
-    allknn=AllKNN,
-    instancehardnessthreshold=InstanceHardnessThreshold,
-    nearmiss=NearMiss,
-    neighbourhoodcleaningrule=NeighbourhoodCleaningRule,
-    onesidedselection=OneSidedSelection,
-    randomundersampler=RandomUnderSampler,
-    tomeklinks=TomekLinks,
-    randomoversampler=RandomOverSampler,
-    smote=SMOTE,
-    smotenc=SMOTENC,
-    smoten=SMOTEN,
-    adasyn=ADASYN,
-    borderlinesmote=BorderlineSMOTE,
-    kmeanssmote=KMeansSMOTE,
-    svmsmote=SVMSMOTE,
-    smoteenn=SMOTEENN,
-    smotetomek=SMOTETomek,
 )
 
 
@@ -421,7 +300,7 @@ def to_df(data, index=None, columns=None, dtypes=None):
     if not isinstance(data, pd.DataFrame) and data is not None:
         # Assign default column names (dict already has column names)
         if not isinstance(data, dict) and columns is None:
-            columns = [f"feature {str(i)}" for i in range(1, n_cols(data) + 1)]
+            columns = [f"feature_{str(i)}" for i in range(1, n_cols(data) + 1)]
 
         # Create dataframe from sparse matrix or directly from data
         if sparse.issparse(data):
@@ -616,7 +495,7 @@ def create_acronym(fullname):
         Created acronym.
 
     """
-    from .models import MODELS
+    from atom.models import MODELS
 
     acronym = "".join([c for c in fullname if c.isupper()])
     if len(acronym) < 2 or acronym.lower() in MODELS:
@@ -645,7 +524,7 @@ def names_from_estimator(cls, est):
         Model's complete name.
 
     """
-    from .models import MODELS
+    from atom.models import MODELS
 
     for key, value in MODELS.items():
         model = value(cls, fast_intialization=True)
@@ -784,7 +663,7 @@ def partial_dependence(estimator, X, features):
         features (where the partial dependence is evaluated), and
         also to generate values for the complement features.
 
-    features : int, str or sequence
+    features: int or sequence
         The feature or pair of interacting features for which the
         partial dependency should be computed.
 
@@ -897,7 +776,7 @@ def name_cols(array, original_df, col_names):
             # If the column is new, use a default name
             counter = 1
             while True:
-                n = f"feature {i + counter + original_df.shape[1] - len(col_names)}"
+                n = f"feature_{i + counter + original_df.shape[1] - len(col_names)}"
                 if (n not in original_df or n in col_names) and n not in temp_cols:
                     temp_cols.append(n)
                     break
@@ -1261,11 +1140,6 @@ def false_negative_rate(y_true, y_pred):
     return float(fn / (fn + tp))
 
 
-def lift(y_true, y_pred):
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    return float((tp / (tp + fp)) / ((tp + fn) / (tp + tn + fp + fn)))
-
-
 # Scorers not predefined by sklearn
 CUSTOM_SCORERS = dict(
     tn=true_negatives,
@@ -1276,7 +1150,6 @@ CUSTOM_SCORERS = dict(
     tpr=true_positive_rate,
     tnr=true_negative_rate,
     fnr=false_negative_rate,
-    lift=lift,
     mcc=matthews_corrcoef,
 )
 
@@ -1506,6 +1379,7 @@ class ShapExplanation:
                 self._explainer = Explainer(self.T.estimator, self.T.X_train)
             except Exception:
                 # Prediction attr to use (predict_proba > decision_function > predict)
+                # If method is provided as first arg, selects always Permutation
                 attr = getattr(self.T.estimator, get_proba_attr(self.T))
                 self._explainer = Explainer(attr, self.T.X_train)
 
@@ -1538,8 +1412,13 @@ class ShapExplanation:
         # Get rows that still need to be calculated
         calculate = df.loc[[i for i in df.index if i not in self._shap_values.index]]
         if not calculate.empty:
-            # Additivity check fails sometimes for no apparent reason
             kwargs = {}
+
+            # Minimum of 2 * n_features + 1 evals required (default=500)
+            if "max_evals" in signature(self.explainer.__call__).parameters:
+                kwargs["max_evals"] = 2 * self.T.n_features + 1
+
+            # Additivity check fails sometimes for no apparent reason
             if "check_additivity" in signature(self.explainer.__call__).parameters:
                 kwargs["check_additivity"] = False
 
@@ -1550,22 +1429,26 @@ class ShapExplanation:
             for i, idx in enumerate(calculate.index):
                 self._shap_values.loc[idx] = self._explanation.values[i]
 
+        # Don't use attribute to not save plot-specific changes
+        explanation = copy(self._explanation)
+
         # Update the explanation object
-        self._explanation.values = np.stack(self._shap_values.loc[df.index].values)
-        if isinstance(self._explanation.base_values, SEQUENCE):
-            self._explanation.base_values = self._explanation.base_values[0]
-        self._explanation.data = self.T.X.loc[df.index, :].to_numpy()
+        explanation.values = np.stack(self._shap_values.loc[df.index].values)
+        explanation.base_values = explanation.base_values[0]
+        explanation.data = self.T.X.loc[df.index, :].to_numpy()
 
         # Select the target values from the array
-        if self._explanation.values.ndim > 2:
-            self._explanation = self._explanation[:, :, target]
-        if only_one:  # Rows should be a df with one row only
-            self._explanation = self._explanation[0]
+        if explanation.values.ndim > 2:
+            explanation.values = explanation.values[:, :, target]
+        if only_one:  # Attributes should be 1-dimensional
+            explanation.values = explanation.values[0]
+            explanation.data = explanation.data[0]
+            explanation.base_values = explanation.base_values[target]
 
         if feature is None:
-            return self._explanation
+            return explanation
         else:
-            return self._explanation[:, feature]
+            return explanation[:, feature]
 
     def get_shap_values(self, df, target=1, return_all_classes=False):
         """Get shap values from the Explanation object."""
@@ -1592,11 +1475,9 @@ class ShapExplanation:
                     getattr(self.T, f"{get_proba_attr(self.T)}_train")
                 )
 
-        if return_one and isinstance(self._expected_value, (list, np.ndarray)):
+        if return_one and isinstance(self._expected_value, SEQUENCE):
             if len(self._expected_value) == self.T.y.nunique():
                 return self._expected_value[target]  # Return target expected value
-        if not return_one and not isinstance(self._expected_value, (list, np.ndarray)):
-            return [1 - self._expected_value, self._expected_value]  # Must be binary
 
         return self._expected_value
 

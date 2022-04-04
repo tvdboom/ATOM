@@ -65,7 +65,8 @@ Additional things to take into account:
   and a `~` indicates that the model is possibly overfitting (training
   set has a score at least 20% higher than the test set).
 * The winning model (the one with the highest `mean_bootstrap` or
-  `metric_test`) can be accessed through the `winner` attribute.
+  `metric_test`) can be accessed through the `winner` attribute. In case
+  of a tie, the model that trained fastest is selected as winner.
 
 <br>
 
@@ -130,7 +131,6 @@ tasks.
 * "TPR" for True Positive Rate (sensitivity, recall)
 * "TNR" for True Negative Rate (specificity)
 * "FNR" for False Negative Rate (miss rate)
-* "Lift" for Lift
 * "MCC" for Matthews Correlation Coefficient (also for multiclass classification)
 
 
@@ -160,7 +160,7 @@ the bayesian optimization and to select the winning model.
 ## Automated feature scaling
 
 Models that require feature scaling will automatically do so before
-training, unless the data is [sparse](../data_management/#sparse-matrices)
+training, unless the data is [sparse](../data_management/#sparse-data)
 or already scaled. The data is considered scaled if it has one of
 the following prerequisites:
 

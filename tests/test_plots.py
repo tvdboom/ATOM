@@ -7,20 +7,20 @@ Description: Unit tests for plots.py
 
 """
 
-# Standard packages
 import glob
-import pytest
 from unittest.mock import patch
-from sklearn.metrics import f1_score, get_scorer
-from sklearn.linear_model import LogisticRegression
 
-# Own modules
+import pytest
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import f1_score, get_scorer
+
 from atom import ATOMClassifier, ATOMRegressor
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
+
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_sparse, X_text, X10, X10_str, y10, y10_str,
+    FILE_DIR, X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10,
+    y10_str, y_bin, y_class, y_reg,
 )
 
 
@@ -178,7 +178,7 @@ def test_plot_scatter_matrix():
     atom.plot_scatter_matrix(columns=[0, 1, 2], display=False)
 
 
-@pytest.mark.parametrize("columns", [2, "feature 1", [0, 1]])
+@pytest.mark.parametrize("columns", [2, "feature_1", [0, 1]])
 def test_plot_distribution(columns):
     """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -226,16 +226,16 @@ def test_plot_pca(X):
     """Assert that the plot_pca method work as intended."""
     atom = ATOMClassifier(X, y10, random_state=1)
     pytest.raises(PermissionError, atom.plot_pca)
-    atom.feature_selection(strategy="PCA", n_features=2)
+    atom.feature_selection(strategy="pca", n_features=2)
     atom.plot_pca(display=False)
 
 
-@pytest.mark.parametrize("show", [10, 200, None])
+@pytest.mark.parametrize("show", [10, None])
 def test_plot_components(show):
     """Assert that the plot_components method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(PermissionError, atom.plot_components)
-    atom.feature_selection(strategy="PCA", n_features=10)
+    atom.feature_selection(strategy="pca", n_features=10)
     pytest.raises(ValueError, atom.plot_components, show=0)
     atom.plot_components(show=show, display=False)
 
@@ -247,7 +247,7 @@ def test_plot_rfecv(scoring):
     pytest.raises(PermissionError, atom.plot_rfecv)
     atom.run("lr", metric="precision")
     atom.branch = "fs_branch"
-    atom.feature_selection(strategy="RFECV", n_features=10, scoring=scoring)
+    atom.feature_selection(strategy="rfecv", n_features=10, scoring=scoring)
     atom.plot_rfecv(display=False)
 
 
@@ -442,10 +442,8 @@ def test_plot_permutation_importance():
     atom.lgb.plot_permutation_importance(display=False)
 
 
-@pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
-def test_plot_partial_dependence(columns):
-    """Assert that the plot_partial_dependence method work as intended."""
-    # For binary classification tasks
+def test_plot_partial_dependence_binary():
+    """Assert that the plot_partial_dependence method work for binary tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_partial_dependence)
     atom.run(["Tree", "LGB"], metric="f1")
@@ -462,7 +460,7 @@ def test_plot_partial_dependence(columns):
     with pytest.raises(ValueError, match=r".*should be single or in pairs.*"):
         atom.lgb.plot_partial_dependence(columns=[(0, 1, 2), 2], display=False)
 
-    # Pair for multi-model
+    # Pair for multimodel
     with pytest.raises(ValueError, match=r".*when plotting multiple models.*"):
         atom.plot_partial_dependence(columns=[(0, 2), 2], display=False)
 
@@ -482,7 +480,10 @@ def test_plot_partial_dependence(columns):
     atom.lgb.plot_feature_importance(show=5, display=False)
     atom.lgb.plot_partial_dependence(display=False)
 
-    # For multiclass classification tasks
+
+@pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
+def test_plot_partial_dependence_multiclass(columns):
+    """Assert that the plot_partial_dependence method work for multiclass tasks."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run(["Tree", "LGB"], metric="f1_macro")
 

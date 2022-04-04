@@ -3,9 +3,10 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop",
-strat_cat="drop", max_nan_rows=None, max_nan_cols=None, verbose=0, logger=None)
+strat_cat="drop", max_nan_rows=None, max_nan_cols=None, gpu=False,
+verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L620">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L661">[source]</a>
 </span>
 </div>
 
@@ -47,6 +48,13 @@ Maximum number or fraction of missing values in a row
 Maximum number or fraction of missing values in a column
 (if more, the column is removed). If None, ignore this step.
 </p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train strategies on GPU (instead of CPU).
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -136,7 +144,7 @@ considered missing since they are incompatible with sklearn estimators.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L699">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L747">[source]</a>
 </span>
 </div>
 Fit to data.
@@ -168,7 +176,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 Fit to data, then impute the missing values. Note that leaving y=None
@@ -241,7 +249,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -267,7 +275,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -313,7 +321,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L797">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L844">[source]</a>
 </span>
 </div>
 Impute the missing values. Note that leaving y=None can lead to
@@ -355,17 +363,19 @@ Transformed target column. Only returned if provided.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.impute(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.impute(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
-```
-or
-```python
-from atom.data_cleaning import Imputer
-
-imputer = Imputer(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
-imputer.fit(X_train, y_train)
-X = imputer.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Imputer
+    
+    imputer = Imputer(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
+    imputer.fit(X_train, y_train)
+    X = imputer.transform(X)
+    ```

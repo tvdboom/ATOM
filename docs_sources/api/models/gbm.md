@@ -1,6 +1,8 @@
 # Gradient Boosting Machine (GBM)
 ---------------------------------
 
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+
 A Gradient Boosting Machine builds an additive model in a forward
 stage-wise fashion; it allows for the optimization of arbitrary
 differentiable loss functions. In each stage `n_classes_` regression
@@ -65,7 +67,7 @@ Integer(1, 20, name="min_samples_leaf")
 </p>
 <p>
 <strong>max_depth: int, default=3</strong><br>
-Integer(1, 10, name="max_depth")
+Integer(1, 21, name="max_depth")
 </p>
 <p>
 <strong>max_features: str, float or None, default="auto"</strong><br>
@@ -132,7 +134,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -140,7 +142,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

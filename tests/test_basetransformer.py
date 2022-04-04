@@ -7,23 +7,23 @@ Description: Unit tests for basetransformer.py
 
 """
 
-# Standard packages
 import glob
-import pytest
-import numpy as np
-import pandas as pd
 import multiprocessing
 from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.training import DirectClassifier
 from atom.basetransformer import BaseTransformer
+from atom.training import DirectClassifier
 from atom.utils import merge
+
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_idx, y_idx, X_bin_array, y_bin_array,
-    mnist, X_sparse, X_text, X10, y10, bin_train, bin_test,
+    FILE_DIR, X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test,
+    bin_train, mnist, y10, y_bin, y_bin_array, y_idx,
 )
 
 
@@ -105,10 +105,32 @@ def test_experiment_creation(mlflow):
     mlflow.assert_called_once()
 
 
+def test_gpu_setter():
+    """Assert that an error is raised for an invalid gpu value."""
+    with pytest.raises(ValueError, match=r".*gpu parameter.*"):
+        BaseTransformer(gpu="invalid")
+
+
 def test_random_state_setter():
     """Assert that an error is raised for a negative random_state."""
     with pytest.raises(ValueError, match=r".*random_state parameter.*"):
         BaseTransformer(random_state=-1)
+
+
+# Test _get_gpu ==================================================== >>
+
+def test_gpu_force():
+    """Assert that an error is raised when GPU fails."""
+    atom = ATOMClassifier(X10, y10, gpu="force", random_state=1)
+    with pytest.raises(ModuleNotFoundError, match=r".*cuml is not installed.*"):
+        atom.feature_selection("pca")
+
+
+def test_gpu_fails():
+    """Assert that GPU is skipped when fails."""
+    atom = ATOMClassifier(X10, y10, gpu=True, random_state=1)
+    atom.feature_selection("pca")
+    assert atom.pca.__module__.startswith("sklearn")
 
 
 # Test _prepare_input ============================================== >>

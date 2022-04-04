@@ -6,7 +6,6 @@ presentation.pptx
 # Mlflow
 mlruns/
 
-
 # Exclude everything from tests/files except the .gitkeep file
 tests/files/*
 !tests/files/.gitkeep
@@ -16,9 +15,9 @@ tests/files/*
 /*.pkl
 /*.png
 
-# Pytest
-.pytest_cache
-.pytest_cache/*
+# IDE
+.pytest_cache/
+.vscode/
 
 # Static Documentation
 site/

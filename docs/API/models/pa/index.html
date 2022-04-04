@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/models/pa/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/models/pa/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1659,7 +1659,7 @@
   
     <li class="md-nav__item">
       <a href="../lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1673,7 +1673,7 @@
   
     <li class="md-nav__item">
       <a href="../ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2907,6 +2907,8 @@
 
 <h1 id="passive-aggressive-pa">Passive Aggressive (PA)</h1>
 <hr />
+<p><a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a></p>
 <p>The passive-aggressive algorithms are a family of algorithms for
 large-scale learning. They are similar to the Perceptron in that they
 do not require a learning rate. However, contrary to the Perceptron,
@@ -3000,7 +3002,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -3008,7 +3010,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>
@@ -3560,7 +3562,7 @@ Transformed target column. Only returned if provided.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../ksvm/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Kernel-SVM" rel="prev">
+        <a href="../ksvm/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Kernel SVM" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -3569,7 +3571,7 @@ Transformed target column. Only returned if provided.
               <span class="md-footer__direction">
                 Previous
               </span>
-              Kernel-SVM
+              Kernel SVM
             </div>
           </div>
         </a>

@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/API/nlp/vectorizer/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/nlp/vectorizer/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1017,6 +1017,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
@@ -1707,7 +1714,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1721,7 +1728,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2796,6 +2803,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
   </a>
@@ -2826,10 +2840,10 @@
 <h1 id="vectorizer">Vectorizer</h1>
 <hr />
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="BOW",
-verbose=0, logger=None, *kwargs)
+<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="bow",
+return_sparse=True, gpu=False, verbose=0, logger=None, *kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L580">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L574">[source]</a>
 </span>
 </div>
 
@@ -2838,20 +2852,32 @@ transformation is applied on the column named <code>corpus</code>. If there
 is no column with that name, an exception is raised. The transformed
 columns are named after the word they are embedding (if the column is
 already present in the provided dataset, <code>_[strategy]</code> is added behind
-the name), and returned in sparse format only if all provided columns
-(except <code>corpus</code>) are sparse. This class can be accessed from atom
-through the <a href="../../ATOM/atomclassifier/#vectorize">vectorize</a> method.
-Read more in the <a href="../../../user_guide/nlp/#vectorization">user guide</a>.</p>
+the name). This class can be accessed from atom through the
+<a href="../../ATOM/atomclassifier/#vectorize">vectorize</a> method. Read more in
+the <a href="../../../user_guide/nlp/#vectorization">user guide</a>.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str, optional (default="BOW")</strong><br>
+<strong>strategy: str, optional (default="bow")</strong><br>
 Strategy with which to vectorize the text. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"BOW": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">Bag of Words</a> algorithm.</li>
-<li>"TF-IDF": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">TF-IDF</a> algorithm.</li>
-<li>"Hashing": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a> algorithm.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">bow</a>": Bag of Words.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">tfidf</a>": Term Frequency - Inverse Document Frequency.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html">hashing</a>": Vectorize to a matrix of token occurrences.</li>
+</ul>
+<p>
+<strong>return_sparse: bool, optional (default=True)</strong><br>
+Whether to return the transformation output as a dataframe
+of sparse arrays. Must be False when there are other columns
+in X (besides <code>corpus</code>) that are non-sparse.
+</p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train strategy on GPU (instead of CPU).
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -2876,12 +2902,21 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The returned dataframe is only sparse when all the columns in the
-provided dataset (except <code>corpus</code>) are sparse. Calling this
-transformer with other non-sparse columns forces the output matrix
-to be converted to its full array. This is not recommended since the
-process can be very slow and occupy large chunks of memory.</p>
+<p>Using <code>return_sparse=True</code> can turn the transformation very slow and
+occupy large chunks of memory when the corpus contains many tokens.</p>
 </div>
+<p><br></p>
+<h2 id="attributes">Attributes</h2>
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
+<strong>&lt;strategy>: sklearn estimator</strong><br>
+Object used to prune the data, e.g.<code>vectorizer.bow</code> for the
+Bag of Words strategy.
+</td>
+</tr>
+</table>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size:16px">
@@ -2923,7 +2958,7 @@ process can be very slow and occupy large chunks of memory.</p>
 <p><br></p>
 <p><a name="fit"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L637">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L644">[source]</a></span></div>
 <p>Fit to text.</p>
 <table style="font-size:16px">
 <tr>
@@ -2953,7 +2988,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 <p>Fit to text, then vectorize it.</p>
@@ -3013,7 +3048,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3037,7 +3072,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3079,7 +3114,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L680">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L698">[source]</a>
 </span>
 </div>
 <p>Normalize the text.</p>
@@ -3108,17 +3143,24 @@ Transformed corpus.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;TF-IDF&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;tfidf&quot;</span><span class="p">)</span>
 </code></pre></div>
-or
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">Vectorizer</span>
 
-<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">Vectorizer</span><span class="p">(</span><span class="s2">&quot;TF-IDF&quot;</span><span class="p">)</span>
+<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">Vectorizer</span><span class="p">(</span><span class="s2">&quot;tfidf&quot;</span><span class="p">)</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-</code></pre></div></p>
+</code></pre></div>
+</div>
+</div>
+</div>
 
               
             </article>

@@ -8,9 +8,9 @@ Description: Run before starting the unit tests. Removes all
 
 """
 
-# Standard packages
-import os
 import glob
+import os
+
 from .utils import FILE_DIR
 
 

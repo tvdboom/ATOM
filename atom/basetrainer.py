@@ -7,23 +7,21 @@ Description: Module containing the parent class for the trainers.
 
 """
 
-# Standard packages
-import mlflow
-import importlib
 import traceback
 from datetime import datetime
+from importlib.util import find_spec
+
 import matplotlib.pyplot as plt
+import mlflow
 from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
 
-# Own modules
-from .branch import Branch
-from .models import MODELS, CustomModel
-from .basepredictor import BasePredictor
-from .data_cleaning import BaseTransformer
-from .utils import (
-    SEQUENCE, OPTIONAL_PACKAGES, lst, time_to_str, is_multidim,
-    is_sparse, get_custom_scorer, get_best_score, check_scaling,
-    delete, PlotCallback, CustomDict,
+from atom.basepredictor import BasePredictor
+from atom.branch import Branch
+from atom.data_cleaning import BaseTransformer
+from atom.models import MODELS, CustomModel
+from atom.utils import (
+    SEQUENCE, CustomDict, PlotCallback, check_scaling, delete, get_best_score,
+    get_custom_scorer, is_multidim, is_sparse, lst, time_to_str,
 )
 
 
@@ -166,6 +164,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Name of the mlflow experiment to use for tracking. If None,
         no mlflow tracking is performed.
 
+    gpu: bool or str, optional (default=False)
+        Train estimators on GPU (instead of CPU). Refer to the
+        documentation to check which estimators are supported.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
@@ -175,7 +180,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
-        verbose, warnings, logger, experiment, random_state,
+        verbose, warnings, logger, experiment, gpu, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -183,6 +188,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             warnings=warnings,
             logger=logger,
             experiment=experiment,
+            gpu=gpu,
             random_state=random_state,
         )
 
@@ -266,14 +272,12 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                         acronym = names[0]
 
                     # Check if packages for non-sklearn models are available
-                    if acronym in OPTIONAL_PACKAGES:
-                        try:
-                            importlib.import_module(OPTIONAL_PACKAGES[acronym])
-                        except ImportError:
-                            raise ValueError(
-                                f"Unable to import the {OPTIONAL_PACKAGES[acronym]} "
-                                "package. Make sure it is installed."
-                            )
+                    packages = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
+                    if acronym in packages and not find_spec(packages[acronym]):
+                        raise ModuleNotFoundError(
+                            f"Unable to import the {packages[acronym]} package. "
+                            f"Install it using: pip install {packages[acronym]}"
+                        )
 
                     models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 

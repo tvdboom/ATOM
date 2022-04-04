@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/examples/utilities/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/examples/utilities/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1655,7 +1655,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1669,7 +1669,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -5149,6 +5149,7 @@ Name: master, dtype: object</pre>
       <th>module</th>
       <th>needs_scaling</th>
       <th>accepts_sparse</th>
+      <th>supports_gpu</th>
     </tr>
   </thead>
   <tbody>
@@ -5160,6 +5161,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.dummy</td>
       <td>False</td>
       <td>False</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>1</th>
@@ -5167,6 +5169,7 @@ Name: master, dtype: object</pre>
       <td>Gaussian Process</td>
       <td>GaussianProcessClassifier</td>
       <td>sklearn.gaussian_process._gpc</td>
+      <td>False</td>
       <td>False</td>
       <td>False</td>
     </tr>
@@ -5178,6 +5181,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
       <td>False</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>3</th>
@@ -5186,6 +5190,7 @@ Name: master, dtype: object</pre>
       <td>MultinomialNB</td>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
+      <td>True</td>
       <td>True</td>
     </tr>
     <tr>
@@ -5196,6 +5201,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>5</th>
@@ -5204,6 +5210,7 @@ Name: master, dtype: object</pre>
       <td>CategoricalNB</td>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
+      <td>True</td>
       <td>True</td>
     </tr>
     <tr>
@@ -5214,6 +5221,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.naive_bayes</td>
       <td>False</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>7</th>
@@ -5221,6 +5229,7 @@ Name: master, dtype: object</pre>
       <td>Ridge Estimator</td>
       <td>RidgeClassifier</td>
       <td>sklearn.linear_model._ridge</td>
+      <td>True</td>
       <td>True</td>
       <td>True</td>
     </tr>
@@ -5232,6 +5241,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.linear_model._perceptron</td>
       <td>True</td>
       <td>False</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>9</th>
@@ -5239,6 +5249,7 @@ Name: master, dtype: object</pre>
       <td>Logistic Regression</td>
       <td>LogisticRegression</td>
       <td>sklearn.linear_model._logistic</td>
+      <td>True</td>
       <td>True</td>
       <td>True</td>
     </tr>
@@ -5250,6 +5261,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.discriminant_analysis</td>
       <td>False</td>
       <td>False</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>11</th>
@@ -5257,6 +5269,7 @@ Name: master, dtype: object</pre>
       <td>Quadratic Discriminant Analysis</td>
       <td>QuadraticDiscriminantAnalysis</td>
       <td>sklearn.discriminant_analysis</td>
+      <td>False</td>
       <td>False</td>
       <td>False</td>
     </tr>
@@ -5268,6 +5281,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.neighbors._classification</td>
       <td>True</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>13</th>
@@ -5277,6 +5291,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.neighbors._classification</td>
       <td>True</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>14</th>
@@ -5286,6 +5301,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.tree._classes</td>
       <td>False</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>15</th>
@@ -5295,6 +5311,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.ensemble._bagging</td>
       <td>False</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>16</th>
@@ -5304,6 +5321,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.ensemble._forest</td>
       <td>False</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>17</th>
@@ -5312,6 +5330,7 @@ Name: master, dtype: object</pre>
       <td>RandomForestClassifier</td>
       <td>sklearn.ensemble._forest</td>
       <td>False</td>
+      <td>True</td>
       <td>True</td>
     </tr>
     <tr>
@@ -5322,6 +5341,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.ensemble._weight_boosting</td>
       <td>False</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>19</th>
@@ -5331,6 +5351,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.ensemble._gb</td>
       <td>False</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>20</th>
@@ -5338,6 +5359,7 @@ Name: master, dtype: object</pre>
       <td>HistGBM</td>
       <td>HistGradientBoostingClassifier</td>
       <td>sklearn.ensemble._hist_gradient_boosting.gradi...</td>
+      <td>False</td>
       <td>False</td>
       <td>False</td>
     </tr>
@@ -5349,6 +5371,7 @@ Name: master, dtype: object</pre>
       <td>xgboost.sklearn</td>
       <td>True</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>22</th>
@@ -5356,6 +5379,7 @@ Name: master, dtype: object</pre>
       <td>LightGBM</td>
       <td>LGBMClassifier</td>
       <td>lightgbm.sklearn</td>
+      <td>True</td>
       <td>True</td>
       <td>True</td>
     </tr>
@@ -5367,22 +5391,25 @@ Name: master, dtype: object</pre>
       <td>catboost.core</td>
       <td>True</td>
       <td>True</td>
+      <td>True</td>
     </tr>
     <tr>
       <th>24</th>
       <td>lSVM</td>
-      <td>Linear-SVM</td>
+      <td>Linear SVM</td>
       <td>LinearSVC</td>
       <td>sklearn.svm._classes</td>
+      <td>True</td>
       <td>True</td>
       <td>True</td>
     </tr>
     <tr>
       <th>25</th>
       <td>kSVM</td>
-      <td>Kernel-SVM</td>
+      <td>Kernel SVM</td>
       <td>SVC</td>
       <td>sklearn.svm._classes</td>
+      <td>True</td>
       <td>True</td>
       <td>True</td>
     </tr>
@@ -5394,6 +5421,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.linear_model._passive_aggressive</td>
       <td>True</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>27</th>
@@ -5403,6 +5431,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.linear_model._stochastic_gradient</td>
       <td>True</td>
       <td>True</td>
+      <td>False</td>
     </tr>
     <tr>
       <th>28</th>
@@ -5412,6 +5441,7 @@ Name: master, dtype: object</pre>
       <td>sklearn.neural_network._multilayer_perceptron</td>
       <td>True</td>
       <td>True</td>
+      <td>False</td>
     </tr>
   </tbody>
 </table>
@@ -5505,13 +5535,13 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.5685
 Test evaluation --&gt; f2: 0.5743
-Time elapsed: 0.285s
+Time elapsed: 0.275s
 -------------------------------------------------
-Total time: 0.285s
+Total time: 0.275s
 
 
 Final results ==================== &gt;&gt;
-Duration: 0.286s
+Duration: 0.275s
 -------------------------------------
 Logistic Regression --&gt; f2: 0.5743
 </pre>
@@ -5593,13 +5623,13 @@ Results for AdaBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.5556
 Test evaluation --&gt; f2: 0.5642
-Time elapsed: 2.468s
+Time elapsed: 2.490s
 -------------------------------------------------
-Total time: 2.468s
+Total time: 2.490s
 
 
 Final results ==================== &gt;&gt;
-Duration: 2.468s
+Duration: 2.491s
 -------------------------------------
 AdaBoost --&gt; f2: 0.5642
 </pre>
@@ -5747,31 +5777,31 @@ Metric: f2
 Running BO for Decision Tree...
 | call             | max_depth | min_samples_split | max_features |      f2 | best_f2 |    time | total_time |
 | ---------------- | --------- | ----------------- | ------------ | ------- | ------- | ------- | ---------- |
-| Initial point 1  |         9 |                19 |         sqrt |   0.491 |   0.491 |  0.700s |     0.710s |
-| Initial point 2  |         9 |                 6 |          0.5 |  0.4987 |  0.4987 |  0.718s |     1.628s |
-| Initial point 3  |         3 |                14 |          0.9 |  0.5029 |  0.5029 |  0.762s |     2.459s |
-| Iteration 4      |         3 |                14 |          0.9 |  0.5029 |  0.5029 |  0.001s |     2.678s |
-| Iteration 5      |         3 |                14 |         None |  0.4695 |  0.5029 |  0.723s |     3.603s |
-| Iteration 6      |         9 |                12 |          0.9 |  0.4938 |  0.5029 |  0.763s |     4.626s |
-| Iteration 7      |      None |                17 |          0.9 |  0.5102 |  0.5102 |  0.792s |     5.717s |
-| Iteration 8      |      None |                19 |          0.8 |  0.5491 |  0.5491 |  0.776s |     6.878s |
-| Iteration 9      |      None |                20 |          0.7 |  0.4822 |  0.5491 |  0.763s |     7.973s |
-| Iteration 10     |      None |                18 |          0.8 |  0.5054 |  0.5491 |  0.798s |     9.070s |
+| Initial point 1  |        16 |                19 |         sqrt |  0.4763 |  0.4763 |  1.660s |     1.670s |
+| Initial point 2  |        16 |                 6 |          0.5 |  0.4882 |  0.4882 |  1.778s |     3.657s |
+| Initial point 3  |         6 |                14 |          0.9 |  0.4751 |  0.4882 |  1.711s |     5.440s |
+| Iteration 4      |        16 |                 3 |         sqrt |  0.5018 |  0.5018 |  1.661s |     7.400s |
+| Iteration 5      |      None |                 2 |         None |  0.4919 |  0.5018 |  2.107s |     9.862s |
+| Iteration 6      |        12 |                 2 |         auto |  0.4718 |  0.5018 |  1.823s |    11.958s |
+| Iteration 7      |      None |                 3 |         sqrt |  0.4993 |  0.5018 |  1.767s |    13.946s |
+| Iteration 8      |        16 |                 3 |         sqrt |  0.5018 |  0.5018 |  0.000s |    14.266s |
+| Iteration 9      |        16 |                 4 |         sqrt |  0.4849 |  0.5018 |  1.764s |    16.426s |
+| Iteration 10     |        16 |                 2 |         sqrt |  0.4737 |  0.5018 |  1.763s |    18.548s |
 Bayesian Optimization ---------------------------
-Best call --&gt; Iteration 8
-Best parameters --&gt; {&#39;max_depth&#39;: None, &#39;min_samples_split&#39;: 19, &#39;max_features&#39;: 0.8}
-Best evaluation --&gt; f2: 0.5491
-Time elapsed: 9.338s
+Best call --&gt; Iteration 4
+Best parameters --&gt; {&#39;max_depth&#39;: 16, &#39;min_samples_split&#39;: 3, &#39;max_features&#39;: &#39;sqrt&#39;}
+Best evaluation --&gt; f2: 0.5018
+Time elapsed: 18.864s
 Fit ---------------------------------------------
 Train evaluation --&gt; f2: 0.4908
 Test evaluation --&gt; f2: 0.4992
-Time elapsed: 0.481s
+Time elapsed: 0.174s
 -------------------------------------------------
-Total time: 9.820s
+Total time: 19.040s
 
 
 Final results ==================== &gt;&gt;
-Duration: 9.822s
+Duration: 19.040s
 -------------------------------------
 Decision Tree --&gt; f2: 0.4992
 </pre>
@@ -5905,7 +5935,7 @@ atom_2 = ATOMLoader("atom", data=(X,), verbose=2)</div>
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>Transforming data for branch master:
-Applying data cleaning...
+Cleaning the data...
 Imputing missing values...
  --&gt; Dropping 637 samples due to missing values in feature MinTemp.
  --&gt; Dropping 322 samples due to missing values in feature MaxTemp.
@@ -6370,8 +6400,8 @@ atom_2</div>
       <td>None</td>
       <td>0.568508</td>
       <td>0.574347</td>
-      <td>0.285s</td>
-      <td>0.285s</td>
+      <td>0.275s</td>
+      <td>0.275s</td>
     </tr>
     <tr>
       <th>AdaB</th>
@@ -6379,17 +6409,17 @@ atom_2</div>
       <td>None</td>
       <td>0.555627</td>
       <td>0.564229</td>
-      <td>2.468s</td>
-      <td>2.468s</td>
+      <td>2.490s</td>
+      <td>2.490s</td>
     </tr>
     <tr>
       <th>Tree</th>
-      <td>0.549118</td>
-      <td>9.338s</td>
+      <td>0.501835</td>
+      <td>18.864s</td>
       <td>0.490803</td>
       <td>0.499191</td>
-      <td>0.481s</td>
-      <td>9.820s</td>
+      <td>0.174s</td>
+      <td>19.040s</td>
     </tr>
     <tr>
       <th>LGB</th>
@@ -6397,8 +6427,8 @@ atom_2</div>
       <td>None</td>
       <td>0.650216</td>
       <td>0.601199</td>
-      <td>1.227s</td>
-      <td>1.227s</td>
+      <td>1.255s</td>
+      <td>1.256s</td>
     </tr>
   </tbody>
 </table>

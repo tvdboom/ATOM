@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/user_guide/training/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/training/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -507,20 +507,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../data_management/" class="md-nav__link">
         Data management
       </a>
@@ -537,6 +523,20 @@
     <li class="md-nav__item">
       <a href="../logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1747,7 +1747,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1761,7 +1761,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2971,7 +2971,8 @@ parameters or on different data sets. See the
   and a <code>~</code> indicates that the model is possibly overfitting (training
   set has a score at least 20% higher than the test set).</li>
 <li>The winning model (the one with the highest <code>mean_bootstrap</code> or
-  <code>metric_test</code>) can be accessed through the <code>winner</code> attribute.</li>
+  <code>metric_test</code>) can be accessed through the <code>winner</code> attribute. In case
+  of a tie, the model that trained fastest is selected as winner.</li>
 </ul>
 <p><br></p>
 <h2 id="metric">Metric</h2>
@@ -3031,7 +3032,6 @@ tasks. </p>
 <li>"TPR" for True Positive Rate (sensitivity, recall)</li>
 <li>"TNR" for True Negative Rate (specificity)</li>
 <li>"FNR" for False Negative Rate (miss rate)</li>
-<li>"Lift" for Lift</li>
 <li>"MCC" for Matthews Correlation Coefficient (also for multiclass classification)</li>
 </ul>
 <p><strong>Multi-metric runs</strong><br>
@@ -3057,7 +3057,7 @@ the bayesian optimization and to select the winning model.</p>
 <p><br></p>
 <h2 id="automated-feature-scaling">Automated feature scaling</h2>
 <p>Models that require feature scaling will automatically do so before
-training, unless the data is <a href="../data_management/#sparse-matrices">sparse</a>
+training, unless the data is <a href="../data_management/#sparse-data">sparse</a>
 or already scaled. The data is considered scaled if it has one of
 the following prerequisites:</p>
 <ul>

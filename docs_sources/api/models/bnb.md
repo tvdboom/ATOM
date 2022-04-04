@@ -1,6 +1,9 @@
 # Bernoulli Naive Bayes (BNB)
 -----------------------------
 
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
+
 Bernoulli Naive Bayes implements the Naive Bayes algorithm for multivariate
 Bernoulli models. Like [Multinomial Naive bayes (MNB)](../mnb), this
 classifier is suitable for discrete data. The difference is that while
@@ -91,7 +94,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -99,7 +102,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

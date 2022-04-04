@@ -3,20 +3,17 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureSelector</strong>(strategy=None,
-solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
-**kwargs)
+solver=None, n_features=None, max_frac_repeated=1., max_correlation=1.,
+n_jobs=1, gpu=False, verbose=0, logger=None, random_state=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L511">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L496">[source]</a>
 </span>
 </div>
 
 Remove features according to the selected strategy. Ties between
 features with equal scores are broken in an unspecified way.
-Additionally, removes features with too low variance and finds pairs of
-collinear features based on the Pearson correlation coefficient. For
-each pair above the specified limit (in terms of absolute value), it
-removes one of the two. This class can be accessed from atom
-through the [feature_selection](../../ATOM/atomclassifier/#feature-selection)
+Additionally, remove multicollinear and low variance features. This
+class can be accessed from atom through the [feature_selection](../../ATOM/atomclassifier/#feature-selection)
 method. Read more in the [user guide](../../../user_guide/feature_engineering/#selecting-useful-features).
 
 <table style="font-size:16px">
@@ -26,19 +23,23 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 <strong>strategy: str or None, optional (default=None)</strong><br>
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>None: Do not perform any feature selection algorithm.</li>
-<li>"univariate": Univariate F-test.</li>
-<li>"PCA": Principal Component Analysis.</li>
-<li>"SFM": Select best features according to a model.</li>
-<li>"SFS": Sequential Feature Selection.</li>
-<li>"RFE": Recursive Feature Elimination.</li>
-<li>"RFECV": RFE with cross-validated selection.</li>
+<li>None: Do not perform any feature selection strategy.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">univariate</a>": Univariate statistical F-test.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">pca</a>": Principal Component Analysis.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">sfm</a>": Select best features according to a model.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html">sfs</a>": Sequential Feature Selection.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">rfe</a>": Recursive Feature Elimination.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">rfecv</a>": RFE with cross-validated selection.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Particle%20Swarm%20Optimization%20Class/">pso</a>": Particle Swarm Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Harris%20Hawk%20Optimization/">hho</a>": Harris Hawks Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Grey%20Wolf%20Optimization%20Class/">gwo</a>": Grey Wolf Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Dragon%20Fly%20Optimization%20Class/">dfo</a>": Dragonfly Optimization.</li>
+<li>"<a href="https://jaswinder9051998.github.io/zoofs/Genetic%20Optimization%20Class/">genetic</a>": Genetic Optimization.</li>
 </ul>
 <strong>solver: str, estimator or None, optional (default=None)</strong><br>
-Solver or model to use for the feature selection strategy. See
-sklearn's documentation for an extended description of the choices.
-Select None for the default option per strategy (only for univariate
-and PCA).
+Solver/model to use for the feature selection strategy. See the
+corresponding documentation for an extended description of the
+choices. If None, use the estimator's default value (only pca).
 <ul style="line-height:1.2em;margin-top:5px">
 <li>for "univariate", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
@@ -51,16 +52,33 @@ and PCA).
         arrays (scores, p-values). See the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</li>
     </ul>
 </li>
-<li>for "PCA", choose from:
+<li>for "pca", choose from:
     <ul style="line-height:1.2em;margin-top:5px">
-    <li>"auto" (not available for sparse data, default for dense data)</li>
-    <li>"full" (not available for sparse data)</li>
-    <li>"arpack"</li>
-    <li>"randomized" (default for sparse data)</li>
+    <li>if dense data:
+        <ul style="line-height:1.2em;margin-top:5px">
+            <li>"auto" (default)</li>
+            <li>"full"</li>
+            <li>"arpack"</li>
+            <li>"randomized"</li>
+        </ul>
+    </li>
+    <li>if sparse data:
+        <ul style="line-height:1.2em;margin-top:5px">
+            <li>"randomized" (default)</li>
+            <li>"arpack"</li>
+        </ul>
+    </li>
+    <li>if gpu implementation:
+        <ul style="line-height:1.2em;margin-top:5px">
+            <li>"full" (default)</li>
+            <li>"jacobi"</li>
+            <li>"auto"</li>
+        </ul>
+    </li>
     </ul>
 </li>
-<li>for "SFM", "SFS", "RFE" and "RFECV":<br>
-<p>The base estimator. For SFM, RFE and RFECV, it should
+<li>for the remaining strategies:<br>
+<p>The base estimator. For sfm, rfe and rfecv, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
 attribute after fitting. You can use one of ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
 Add <code>_class</code> or <code>_reg</code> after the model's name to
@@ -75,9 +93,13 @@ Number of features to select. Choose from:
 <li>if >= 1: Number of features to select.</li>
 </ul>
 <p style="margin-top:5px">
-If strategy="SFM" and the threshold parameter is not specified, the
-threshold is set to <code>-np.inf</code> to select the <code>n_features</code>
-features. If strategy="RFECV", it's the minimum number of features to select.
+If strategy="sfm" and the threshold parameter is not specified, the
+threshold is set to <code>-np.inf</code> to select <code>n_features</code>
+number of features.<br>
+If strategy="rfecv", <code>n_features</code> is the minimum number of
+features to select.
+<br>This parameter is ignored if any of the following strategies is
+selected: pso, hho, gwo, dfo, genetic.
 </p>
 <strong>max_frac_repeated: float or None, optional (default=1.)</strong><br>
 Remove features with the same value in at least this fraction of
@@ -86,10 +108,10 @@ variance, i.e. remove the features that have the same value in all
 samples. If None, skip this step.
 <p>
 <strong>max_correlation: float or None, optional (default=1.)</strong><br>
-Minimum value of the Pearson correlation coefficient to identify
-correlated features. A value of 1 removes one of 2 equal columns.
-A dataframe of the removed features and their correlation values can
-be accessed through the collinear attribute. If None, skip this step.
+Minimum <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation coefficient</a>
+to identify correlated features. For each pair above the specified
+limit (in terms of absolute value), it removes one of the two. The
+default is to drop one of two equal columns. If None, skip this step.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
@@ -97,6 +119,13 @@ Number of cores to use for parallel processing.
 <li>If >0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
 <li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
+</ul>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train strategy on GPU (instead of CPU). Only for strategy="pca".
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -116,15 +145,15 @@ Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
 <strong>**kwargs</strong><br>
-Any extra keyword argument for the PCA, SFM, RFE, RFECV  and SFS estimators.
-See the corresponding sklearn documentation for the available options.
+Any extra keyword argument for the strategy estimator. See the
+corresponding documentation for the available options.
 </p>
 </td>
 </tr>
 </table>
 
 !!! info
-    If strategy="PCA" and the provided data is dense, it's scaled to mean=0
+    If strategy="pca" and the provided data is dense, it's scaled to mean=0
     and std=1 before fitting the transformer (if it wasn't already).
 
 !!! tip
@@ -132,10 +161,6 @@ See the corresponding sklearn documentation for the available options.
     examine how much a specific feature contributes to the final predictions. If the
     model doesn't have a `feature_importances_` attribute, use 
     [plot_permutation_importance](../plots/plot_permutation_importance.md) instead.
-
-!!! warning
-    The RFE, RFECV AND SFS strategies don't work when the solver is a 
-    [CatBoost](https://catboost.ai/) model due to incompatibility of the APIs.
 
 <br>
 
@@ -158,14 +183,14 @@ Information on the removed collinear features. Columns include:
 </ul>
 <p>
 <strong>feature_importance: list</strong><br>
-Remaining features ordered by importance. Only if strategy in ("univariate", "SFM,
-"RFE", "RFECV"). For RFE and RFECV, the importance is extracted from the external
-estimator fitted on the reduced set. 
+Remaining features ordered by importance. Only if strategy in ("univariate", "sfm",
+"rfe", "rfecv"). For rfe and rfecv, the importance is extracted from the external
+estimator fitted on the reduced set.
 </p>
 <p>
 <strong>&lt;strategy&gt;: sklearn transformer</strong><br>
-Object (lowercase strategy) used to transform the data,
-e.g. <code>feature_selector.pca</code> for the PCA strategy.
+Object used to transform the data, e.g. <code>feature_selector.pca</code>
+for the pca strategy.
 </p>
 </td>
 </tr>
@@ -241,7 +266,7 @@ Fontsize for the ticks along the plot's axes.
 
 <tr>
 <td><a href="#plot-rfecv">plot_rfecv</a></td>
-<td>Plot the scores obtained by the estimator on the RFECV.</td>
+<td>Plot the scores obtained by the estimator on the rfecv.</td>
 </tr>
 
 <tr>
@@ -271,11 +296,11 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L671">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L674">[source]</a>
 </span>
 </div>
-Fit to data. Note that the univariate, SFM (when model is not fitted),
-SFS, RFE and RFECV strategies all need a target column. Leaving it
+Fit to data. Note that the univariate, sfm (when model is not fitted),
+sfs, RFE and rfecv strategies all need a target column. Leaving it
 None will raise an exception.
 <table style="font-size:16px">
 <tr>
@@ -307,11 +332,11 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
-Fit to data, then transform it. Note that the univariate, SFM (when
-model is not fitted), SFS, RFE and RFECV strategies need a target column.
+Fit to data, then transform it. Note that the univariate, sfm (when
+model is not fitted), sfs, RFE and rfecv strategies need a target column.
 Leaving it None will raise an exception.
 <table style="font-size:16px">
 <tr>
@@ -373,7 +398,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -400,7 +425,7 @@ Minimum verbosity level to print the message.
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L497">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L489">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio vs the number of components.
@@ -413,7 +438,7 @@ See [plot_pca](../../plots/plot_pca) for a description of the parameters.
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>
 (show=None, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L572">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L564">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio per components. See
@@ -426,7 +451,7 @@ Plot the explained variance ratio per components. See
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L649">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L642">[source]</a>
 </span>
 </div>
 Plot the scores obtained by the estimator fitted on every subset of the
@@ -438,7 +463,7 @@ data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the paramete
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L221">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L212">[source]</a>
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
@@ -449,7 +474,7 @@ Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their defa
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -495,7 +520,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L952">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1027">[source]</a>
 </span>
 </div>
 Transform the data.
@@ -526,21 +551,23 @@ Transformed feature set.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.feature_selection(strategy="pca", n_features=12, whiten=True)
+    
+    atom.plot_pca(filename="pca", figsize=(8, 5))
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy="pca", n_features=12, whiten=True)
-
-atom.plot_pca(filename="pca", figsize=(8, 5))
-```
-or
-```python
-from atom.feature_engineering import FeatureSelector
-
-feature_selector = FeatureSelector(strategy="pca", n_features=12, whiten=True)
-feature_selector.fit(X_train, y_train)
-X = feature_selector.transform(X, y)
-
-feature_selector.plot_pca(filename="pca", figsize=(8, 5))
-```
+=== "stand-alone"
+    ```python
+    from atom.feature_engineering import FeatureSelector
+    
+    feature_selector = FeatureSelector(strategy="pca", n_features=12, whiten=True)
+    feature_selector.fit(X_train, y_train)
+    X = feature_selector.transform(X, y)
+    
+    feature_selector.plot_pca(filename="pca", figsize=(8, 5))
+    ```

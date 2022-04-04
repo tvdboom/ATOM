@@ -2,10 +2,10 @@
 --------
 
 <div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Pruner</strong>(strategy="z-score",
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Pruner</strong>(strategy="zscore",
 method="drop", max_sigma=3, include_target=False, verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1412">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1487">[source]</a>
 </span>
 </div>
 
@@ -19,21 +19,21 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#handlin
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str or sequence, optional (default="z-score")</strong><br>
+<strong>strategy: str or sequence, optional (default="zscore")</strong><br>
 Strategy with which to select the outliers. If sequence of
 strategies, only samples marked as outliers by all chosen
 strategies are dropped. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"z-score": Uses the z-score of each data value.</li>
-<li>"iForest": Uses an <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">Isolation Forest</a>.</li>
-<li>"EE": Uses an <a href="https://scikit-learn.org/stable/modules/generated/sklearn.covariance.EllipticEnvelope.html">Elliptic Envelope</a>.</li>
-<li>"LOF": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html">Local Outlier Factor</a>.</li>
-<li>"SVM": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html">One-class SVM</a>.</li>
-<li>"DBSCAN": Uses <a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html">DBSCAN</a> clustering.</li>
-<li>"OPTICS": Uses <a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html">OPTICS</a> clustering.</li>
+<li>"zscore": Z-score of each data value.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">iforest</a>": Isolation Forest.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.covariance.EllipticEnvelope.html">ee</a>": Elliptic Envelope.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html">lof</a>": Local Outlier Factor.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html">svm</a>": One-class SVM.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html">dbscan</a>": Density-Based Spatial Clustering.</li>
+<li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html">optics</a>": DBSCAN-like clustering approach.</li>
 </ul>
 <strong>method: int, float or str, optional (default="drop")</strong><br>
-Method to apply on the outliers. Only the z-score strategy
+Method to apply on the outliers. Only the zscore strategy
 accepts another method than "drop". Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"drop": Drop any sample with outlier values.</li>
@@ -43,13 +43,13 @@ accepts another method than "drop". Choose from:
 <p>
 <strong>max_sigma: int or float, optional (default=3)</strong><br>
 Maximum allowed standard deviations from the mean of the column.
-If more, it is considered an outlier. Only if strategy="z-score".
+If more, it is considered an outlier. Only if strategy="zscore".
 </p>
 <p>
 <strong>include_target: bool, optional (default=False)</strong><br>
 Whether to include the target column in the search for
 outliers. This can be useful for regression tasks. Only
-if strategy="z-score".
+if strategy="zscore".
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -87,8 +87,8 @@ in a dict with the strategy's name as key.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
 <strong>&lt;strategy>: sklearn estimator</strong><br>
-Object (lowercase strategy) used to prune the data, e.g.
-<code>pruner.iforest</code> for the isolation forest strategy.
+Object used to prune the data, e.g.<code>pruner.iforest</code> for the
+isolation forest strategy.
 </td>
 </tr>
 </table>
@@ -137,7 +137,7 @@ Object (lowercase strategy) used to prune the data, e.g.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 Apply the outlier strategy to the data.
@@ -208,7 +208,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -234,7 +234,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -280,7 +280,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1495">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1570">[source]</a>
 </span>
 </div>
 Apply the outlier strategy to the data.
@@ -320,16 +320,18 @@ Transformed target column. Only returned if provided.
 
 ## Example
 
-```python
-from atom import ATOMRegressor
+=== "atom"
+    ```python
+    from atom import ATOMRegressor
+    
+    atom = ATOMRegressor(X, y)
+    atom.prune(strategy="zscore", max_sigma=2, include_target=True)
+    ```
 
-atom = ATOMRegressor(X, y)
-atom.prune(strategy="z-score", max_sigma=2, include_target=True)
-```
-or
-```python
-from atom.data_cleaning import Pruner
-
-pruner = Pruner(strategy="z-score", max_sigma=2, include_target=True)
-X_train, y_train = pruner.transform(X_train, y_train)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Pruner
+    
+    pruner = Pruner(strategy="zscore", max_sigma=2, include_target=True)
+    X_train, y_train = pruner.transform(X_train, y_train)
+    ```

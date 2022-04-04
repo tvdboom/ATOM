@@ -20,12 +20,12 @@ example.
     All of atom's feature engineering methods automatically adopt the relevant
     transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
     atom. A different choice can be added as parameter to the method call,
-    e.g. `atom.feature_selection("PCA", n_features=10, random_state=2)`.
+    e.g. `atom.feature_selection("pca", n_features=10, random_state=2)`.
 
 !!! note
     Like the [add](../../API/ATOM/atomclassifier/#add) method, the feature engineering
     methods accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g. `atom.feature_selection("PCA", n_features=10, columns=slice(5, 15))`.
+    dataset's features, e.g. `atom.feature_selection("pca", n_features=10, columns=slice(5, 15))`.
 
 <br>
 
@@ -41,7 +41,7 @@ month, year, hour...) from the columns. It can be accessed from atom
 through the [feature_extraction](../../API/ATOM/atomclassifier/#feature-extraction)
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
-they create, e.g. `Feature 1_day` for the day element of `Feature 1`.
+they create, e.g. `feature_1_day` for the day element of `feature_1`.
 
 Note that many time features have a cyclic pattern, e.g. after Sunday
 comes Monday. This means that if we would encode the days of the week
@@ -58,7 +58,7 @@ x_{cos} = cos\left(\frac{2\pi * x}{max(x)}\right)
 $$
 
 The resulting features have their names followed by sin or cos, e.g.
-`Feature 1_day_sin` and `Feature 1_day_cos`. The datetime elements
+`feature_1_day_sin` and `feature_1_day_cos`. The datetime elements
 that can be encoded in a cyclic fashion are: microsecond, second,
 minute, hour, weekday, day, day_of_year, month and quarter. Note that
 decision trees based algorithms build their split rules according to
@@ -85,18 +85,18 @@ and Genetic Feature Generation.
 
 **Deep Feature Synthesis**<br>
 Deep feature synthesis (DFS) applies the selected operators on the
-features in the dataset. For example, if the operator is "log",
-it will create the new feature `LOG(old_feature)` and if the
-operator is "mul", it will create the new feature `old_feature_1 x old_feature_2`.
-The operators can be chosen through the `operators` parameter.
-Choose from:
+features in the dataset. For example, if the operator is "log", it will
+create the new feature `LOG(old_feature)` and if the operator is "mul",
+it will create the new feature `old_feature_1 x old_feature_2`. The
+operators can be chosen through the `operators` parameter. Choose from:
 
-* **add**: Sum two features together.
+* **add**: Take the sum of two features.
 * **sub:** Subtract two features from each other.</li>
 * **mul:** Multiply two features with each other.</li>
 * **div:** Divide two features with each other.</li>
-* **srqt:** Take the square root of a feature.</li>
-* **log:** Take the logarithm of a feature.</li>
+* **abs:** Calculate the absolute value of a feature.</li>
+* **srqt:** Calculate the square root of a feature.</li>
+* **log:** Calculate the natural logarithm of a feature.</li>
 * **sin:** Calculate the sine of a feature.</li>
 * **cos:** Calculate the cosine of a feature.</li>
 * **tan:** Calculate the tangent of a feature.</li>
@@ -125,13 +125,13 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 **Genetic Feature Generation**<br>
 Genetic feature generation (GFG) uses [genetic programming](https://en.wikipedia.org/wiki/Genetic_programming),
 a branch of evolutionary programming, to determine which features
-are successful and create new ones based on those. Where DFS can be
-seen as some kind of "brute force" for feature engineering, GFG tries
-to improve its features with every generation of the algorithm. GFG
-uses the same operators as DFS, but instead of only applying the
+are successful and create new ones based on those. Where dfs can be
+seen as some kind of "brute force" for feature engineering, gfg tries
+to improve its features with every generation of the algorithm. gfg
+uses the same operators as dfs, but instead of only applying the
 transformations once, it evolves them further, creating nested
 structures of combinations of features. The new features are given the
-name `feature n`, where n stands for the n-th feature in the dataset.
+name `feature_n`, where n stands for the n-th feature in the dataset.
 You can access the genetic feature's fitness and description (how they
 are calculated) through the `genetic_features` attribute.
 
@@ -141,7 +141,7 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
  [here](https://gplearn.readthedocs.io/en/stable/intro.html#transformer).
 
 !!! warning
-    GFG can be slow for very large populations!
+    gfg can be slow for very large populations!
 
 <br>
 
@@ -150,8 +150,7 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
 The [FeatureSelector](../../API/feature_engineering/feature_selector) class
 provides tooling to select the relevant features from a dataset. It can
 be accessed from atom through the [feature_selection](../../API/ATOM/atomclassifier/#feature-selection)
-method. The following strategies are implemented: univariate, PCA, SFM,
-RFE, RFECV and SFS.
+method.
 
 !!! tip
     Use the [plot_feature_importance](../../API/plots/plot_feature_importance)
@@ -160,11 +159,13 @@ RFE, RFECV and SFS.
     attribute, use [plot_permutation_importance](../../API/plots/plot_permutation_importance) instead.
 
 !!! warning
-    The RFE and RFECV strategies don't work when the solver is a 
+    The RFE and rfecv strategies don't work when the solver is a 
     [CatBoost](https://catboost.ai/) model due to incompatibility
     of the APIs.
 
 <br>
+
+### Standard strategies
 
 <a name="univariate"></a>
 **Univariate**<br>
@@ -173,21 +174,27 @@ on univariate statistical F-test. The test is provided via the `solver`
 parameter. It takes any function taking two arrays (X, y), and returning
 arrays (scores, p-values). Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection).
 
+<br style="display: block; margin-top: 2em; content: ' '">
 
 <a name="pca"></a>
 **Principal Components Analysis**<br>
-Applying PCA will reduce the dimensionality of the dataset by maximizing
-the variance of each dimension. The new features are called component
-1, component 2, etc... PCA can be applied in two ways:
+Applying PCA reduces the dimensionality of the dataset by maximizing
+the variance of each dimension. The new features are called component_1,
+component_2, etc... PCA can be applied in three ways:
 
-* If the data is dense (i.e. not sparse), the estimator used is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
+* If the data is dense (i.e. not sparse), the estimator used is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html).
   Before fitting the transformer, the data is scaled to mean=0 and std=1
   if it wasn't already. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#pca).
-* If the data is [sparse](../data_management/#sparse-matrices) (often the
+* If the data is [sparse](../data_management/#sparse-data) (often the
   case for term-document matrices, see [Vectorizer](../../API/nlp/vectorizer)),
   the estimator used is [TruncatedSVD](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html).
   Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis).
+* If [GPU training](../gpu) is enabled, the estimator used is cuml's
+  [PCA](https://docs.rapids.ai/api/cuml/stable/api.html#cuml.PCA)
+  or [TruncatedSVD](https://docs.rapids.ai/api/cuml/stable/api.html#cuml.TruncatedSVD).
 
+
+<br style="display: block; margin-top: 2em; content: ' '">
 
 <a name="sfm"></a>
 **Selection from model**<br>
@@ -200,7 +207,7 @@ don't forget to indicate the estimator's task adding `_class` or `_reg`
 after the name, e.g. `RF_class` to use a random forest classifier. Read
 more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
 
-
+<br style="display: block; margin-top: 2em; content: ' '">
 
 <a name="sfs"></a>
 **Sequential Feature Selection**<br>
@@ -209,9 +216,10 @@ selection) features to form a feature subset in a greedy fashion. At each
 stage, this estimator chooses the best feature to add or remove based on
 the cross-validation score of an estimator. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#sequential-feature-selection).
 
+<br style="display: block; margin-top: 2em; content: ' '">
 
 <a name="rfe"></a>
-**Recursive feature elimination**<br>
+**Recursive Feature Elimination**<br>
 Select features by recursively considering smaller and smaller sets of
 features. First, the estimator is trained on the initial set of features,
 and the importance of each feature is obtained either through a `coef_`
@@ -229,6 +237,75 @@ features that achieved the optimal score on the specified metric. Note
 that this is not always equal to the amount specified by `n_features`.
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination).
 
+<br>
+
+### Advanced strategies
+
+The following strategies are a collection of nature-inspired optimization
+algorithms that maximize an objective function. If not manually specified,
+the function calculates the cross-validated score of a model on the data.
+Use the `scoring` parameter (not present in description, part of kwargs)
+to specify the metric to optimize on.
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="pso"></a>
+**Particle Swarm Optimization**<br>
+Particle Swarm Optimization (PSO) optimizes a problem by having a population
+of candidate solutions (particles), and moving them around in the search-space
+according to simple mathematical formula over the particle's position and
+velocity. Each particle's movement is influenced by its local best known
+position, but is also guided toward the best known positions in the search-space,
+which are updated as better positions are found by other particles. This is
+expected to move the swarm toward the best solutions. Read more [here](https://link.springer.com/chapter/10.1007/978-3-319-13563-2_51).
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="hho"></a>
+**Harris Hawks Optimization**<br>
+Harris Hawks Optimization (HHO) mimics the action and reaction of Hawk's
+team collaboration hunting in nature and prey escaping to discover the
+solutions of the single-objective problem. Read more [here](https://link.springer.com/chapter/10.1007/978-981-32-9990-0_12).
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="gwo"></a>
+**Grey Wolf Optimization**<br>
+The Grey Wolf Optimizer (GWO) mimics the leadership hierarchy and hunting
+mechanism of grey wolves in nature. Four types of grey wolves such as alpha,
+beta, delta, and omega are employed for simulating the leadership hierarchy.
+In addition, three main steps of hunting, searching for prey, encircling prey,
+and attacking prey, are implemented to perform optimization. Read more
+[here](https://www.sciencedirect.com/science/article/abs/pii/S0925231215010504?via%3Dihub).
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="dfo"></a>
+**Dragonfly Optimization**<br>
+The Dragonfly Algorithm (DFO) algorithm originates from static and dynamic
+swarming behaviours. These two swarming behaviours are very similar to the
+two main phases of optimization using meta-heuristics: exploration and
+exploitation. Dragonflies create sub swarms and fly over different areas in
+a static swarm, which is the main objective of the exploration phase. In
+the static swarm, however, dragonflies fly in bigger swarms and along one
+direction, which is favourable in the exploitation phase. Read more
+[here](https://linkinghub.elsevier.com/retrieve/pii/S0950705120303889).
+
+<br style="display: block; margin-top: 2em; content: ' '">
+
+<a name="genetic"></a>
+**Genetic Optimization**<br>
+Genetic Optimization is a metaheuristic inspired by the process of natural
+selection that belongs to the larger class of evolutionary algorithms.
+Genetic algorithms are commonly used to generate high-quality solutions to
+optimization and search problems by relying on biologically inspired
+operators such as mutation, crossover and selection. Read more
+[here](https://ieeexplore.ieee.org/document/953980).
+
+
+<br>
+
+### Other selection methods
 
 **Removing features with low variance**<br>
 Variance is the expectation of the squared deviation of a random
@@ -237,14 +314,17 @@ repeated, which means the model will not learn much from them.
 [FeatureSelector](../../API/feature_engineering/feature_selector) removes
 all features where the same value is repeated in at least
 `max_frac_repeated` fraction of the rows. The default option is to
-remove a feature if all values in it are the same. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance).
+remove a feature if all values in it are the same. Read more in sklearn's
+[documentation](https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance).
 
+<br style="display: block; margin-top: 2em; content: ' '">
 
 **Removing features with multi-collinearity**<br>
 Two features that are highly correlated are redundant, i.e. two will
 not contribute more to the model than only one of them.
 [FeatureSelector](../../API/feature_engineering/feature_selector) will
-drop a feature that has a Pearson correlation coefficient larger than
-`max_correlation` with another feature. A correlation of 1 means the
-two columns are equal. A dataframe of the removed features and their
-correlation values can be accessed through the `collinear` attribute.
+drop a feature that has a [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient)
+larger than `max_correlation` with another feature. A correlation of 
+1 means the two columns are equal. A dataframe of the removed features
+and their correlation values can be accessed through the `collinear`
+attribute.

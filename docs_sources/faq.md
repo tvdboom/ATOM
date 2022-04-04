@@ -89,12 +89,9 @@ methods to compare all models, independent of the branch it was trained on.
 <a name="q6"></a>
 ### 6. Can I train models through atom using a GPU?
 
-ATOM doesn't fit the models himself. The models' underlying package does.
-Since the majority of predefined models are implemented through sklearn
-and sklearn works on CPU only, they can not be trained on any GPU. If you
-are using a custom model whose package allows GPU implementation (e.g. Keras)
-and the settings or model parameters are tuned to do so, the model will
-train on the GPU like it would do without using ATOM.
+Yes. Refer to the [user guide](../user_guide/gpu) to see what algorithms
+and models have a GPU implementation. Be aware that it requires additional
+software and hardware dependencies.
 
 <br>
 

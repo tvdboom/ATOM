@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/faq/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/faq/">
       
       <link rel="icon" href="../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1655,7 +1655,7 @@
   
     <li class="md-nav__item">
       <a href="../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1669,7 +1669,7 @@
   
     <li class="md-nav__item">
       <a href="../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -3043,12 +3043,9 @@ methods to compare all models, independent of the branch it was trained on.</p>
 <p><br></p>
 <p><a name="q6"></a></p>
 <h3 id="6-can-i-train-models-through-atom-using-a-gpu">6. Can I train models through atom using a GPU?</h3>
-<p>ATOM doesn't fit the models himself. The models' underlying package does.
-Since the majority of predefined models are implemented through sklearn
-and sklearn works on CPU only, they can not be trained on any GPU. If you
-are using a custom model whose package allows GPU implementation (e.g. Keras)
-and the settings or model parameters are tuned to do so, the model will
-train on the GPU like it would do without using ATOM.</p>
+<p>Yes. Refer to the <a href="../user_guide/gpu">user guide</a> to see what algorithms
+and models have a GPU implementation. Be aware that it requires additional
+software and hardware dependencies.</p>
 <p><br></p>
 <p><a name="q7"></a></p>
 <h3 id="7-how-are-numerical-and-categorical-columns-differentiated">7. How are numerical and categorical columns differentiated?</h3>

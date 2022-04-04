@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/examples/imbalanced_datasets/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/examples/imbalanced_datasets/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -505,20 +505,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -535,6 +521,20 @@
     <li class="md-nav__item">
       <a href="../../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1655,7 +1655,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1669,7 +1669,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -4150,26 +4150,26 @@ atom.head()</div>
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>feature 1</th>
-      <th>feature 2</th>
-      <th>feature 3</th>
-      <th>feature 4</th>
-      <th>feature 5</th>
-      <th>feature 6</th>
-      <th>feature 7</th>
-      <th>feature 8</th>
-      <th>feature 9</th>
-      <th>feature 10</th>
+      <th>feature_1</th>
+      <th>feature_2</th>
+      <th>feature_3</th>
+      <th>feature_4</th>
+      <th>feature_5</th>
+      <th>feature_6</th>
+      <th>feature_7</th>
+      <th>feature_8</th>
+      <th>feature_9</th>
+      <th>feature_10</th>
       <th>...</th>
-      <th>feature 22</th>
-      <th>feature 23</th>
-      <th>feature 24</th>
-      <th>feature 25</th>
-      <th>feature 26</th>
-      <th>feature 27</th>
-      <th>feature 28</th>
-      <th>feature 29</th>
-      <th>feature 30</th>
+      <th>feature_22</th>
+      <th>feature_23</th>
+      <th>feature_24</th>
+      <th>feature_25</th>
+      <th>feature_26</th>
+      <th>feature_27</th>
+      <th>feature_28</th>
+      <th>feature_29</th>
+      <th>feature_30</th>
       <th>target</th>
     </tr>
   </thead>
@@ -4357,24 +4357,24 @@ atom.feature_selection("RFE", solver="RF", n_features=12)</div>
 <pre>Fitting FeatureSelector...
 Performing feature selection ...
  --&gt; RFE selected 12 features from the dataset.
-   &gt;&gt;&gt; Dropping feature feature 2 (rank 12).
-   &gt;&gt;&gt; Dropping feature feature 3 (rank 8).
-   &gt;&gt;&gt; Dropping feature feature 5 (rank 2).
-   &gt;&gt;&gt; Dropping feature feature 7 (rank 17).
-   &gt;&gt;&gt; Dropping feature feature 8 (rank 14).
-   &gt;&gt;&gt; Dropping feature feature 11 (rank 19).
-   &gt;&gt;&gt; Dropping feature feature 12 (rank 3).
-   &gt;&gt;&gt; Dropping feature feature 13 (rank 11).
-   &gt;&gt;&gt; Dropping feature feature 14 (rank 9).
-   &gt;&gt;&gt; Dropping feature feature 15 (rank 13).
-   &gt;&gt;&gt; Dropping feature feature 17 (rank 5).
-   &gt;&gt;&gt; Dropping feature feature 19 (rank 16).
-   &gt;&gt;&gt; Dropping feature feature 20 (rank 4).
-   &gt;&gt;&gt; Dropping feature feature 23 (rank 7).
-   &gt;&gt;&gt; Dropping feature feature 24 (rank 10).
-   &gt;&gt;&gt; Dropping feature feature 25 (rank 18).
-   &gt;&gt;&gt; Dropping feature feature 26 (rank 6).
-   &gt;&gt;&gt; Dropping feature feature 27 (rank 15).
+   &gt;&gt;&gt; Dropping feature feature_2 (rank 12).
+   &gt;&gt;&gt; Dropping feature feature_3 (rank 8).
+   &gt;&gt;&gt; Dropping feature feature_5 (rank 2).
+   &gt;&gt;&gt; Dropping feature feature_7 (rank 17).
+   &gt;&gt;&gt; Dropping feature feature_8 (rank 14).
+   &gt;&gt;&gt; Dropping feature feature_11 (rank 19).
+   &gt;&gt;&gt; Dropping feature feature_12 (rank 3).
+   &gt;&gt;&gt; Dropping feature feature_13 (rank 11).
+   &gt;&gt;&gt; Dropping feature feature_14 (rank 9).
+   &gt;&gt;&gt; Dropping feature feature_15 (rank 13).
+   &gt;&gt;&gt; Dropping feature feature_17 (rank 5).
+   &gt;&gt;&gt; Dropping feature feature_19 (rank 16).
+   &gt;&gt;&gt; Dropping feature feature_20 (rank 4).
+   &gt;&gt;&gt; Dropping feature feature_23 (rank 7).
+   &gt;&gt;&gt; Dropping feature feature_24 (rank 10).
+   &gt;&gt;&gt; Dropping feature feature_25 (rank 18).
+   &gt;&gt;&gt; Dropping feature feature_26 (rank 6).
+   &gt;&gt;&gt; Dropping feature feature_27 (rank 15).
 </pre>
 </div>
 </div>
@@ -4441,13 +4441,13 @@ Results for Random Forest:
 Fit ---------------------------------------------
 Train evaluation --&gt; balanced_accuracy: 1.0
 Test evaluation --&gt; balanced_accuracy: 0.6111
-Time elapsed: 0.893s
+Time elapsed: 0.814s
 -------------------------------------------------
-Total time: 0.893s
+Total time: 0.815s
 
 
 Final results ==================== &gt;&gt;
-Duration: 0.894s
+Duration: 0.816s
 -------------------------------------
 Random Forest --&gt; balanced_accuracy: 0.6111 ~
 </pre>
@@ -4806,13 +4806,13 @@ Results for Random Forest:
 Fit ---------------------------------------------
 Train evaluation --&gt; balanced_accuracy: 1.0
 Test evaluation --&gt; balanced_accuracy: 0.7214
-Time elapsed: 1.424s
+Time elapsed: 1.485s
 -------------------------------------------------
-Total time: 1.424s
+Total time: 1.485s
 
 
 Final results ==================== &gt;&gt;
-Duration: 1.424s
+Duration: 1.485s
 -------------------------------------
 Random Forest --&gt; balanced_accuracy: 0.7214 ~
 </pre>
@@ -5101,13 +5101,13 @@ Results for Random Forest:
 Fit ---------------------------------------------
 Train evaluation --&gt; balanced_accuracy: 1.0
 Test evaluation --&gt; balanced_accuracy: 0.7225
-Time elapsed: 0.150s
+Time elapsed: 0.156s
 -------------------------------------------------
-Total time: 0.150s
+Total time: 0.156s
 
 
 Final results ==================== &gt;&gt;
-Duration: 0.150s
+Duration: 0.156s
 -------------------------------------
 Random Forest --&gt; balanced_accuracy: 0.7225 ~
 </pre>

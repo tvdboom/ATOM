@@ -7,55 +7,46 @@ Description: Module containing the plotting classes.
 
 """
 
-# Standard packages
+from collections import defaultdict
+from contextlib import contextmanager
+from importlib.util import find_spec
+from inspect import signature
+from itertools import chain, cycle
+from typing import Optional, Tuple, Union
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy import stats
-from itertools import cycle
-from itertools import chain
-from inspect import signature
-from collections import defaultdict
-from typeguard import typechecked
-from joblib import Parallel, delayed
-from contextlib import contextmanager
-from mlflow.tracking import MlflowClient
-from scipy.stats.mstats import mquantiles
-from typing import Optional, Union, Tuple
-from nltk.collocations import (
-    BigramCollocationFinder,
-    TrigramCollocationFinder,
-    QuadgramCollocationFinder,
-)
-
-# Plotting packages
-import shap
 import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.transforms import blended_transform_factory
-from matplotlib.ticker import MaxNLocator
-from matplotlib.patches import ConnectionStyle
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+import shap
+from joblib import Parallel, delayed
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+from matplotlib.patches import ConnectionStyle
+from matplotlib.ticker import MaxNLocator
+from matplotlib.transforms import blended_transform_factory
+from mlflow.tracking import MlflowClient
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from nltk.collocations import (
+    BigramCollocationFinder, QuadgramCollocationFinder,
+    TrigramCollocationFinder,
+)
+from scipy import stats
+from scipy.stats.mstats import mquantiles
+from sklearn.calibration import calibration_curve
+from sklearn.inspection import permutation_importance
+from sklearn.metrics import (
+    confusion_matrix, det_curve, precision_recall_curve, roc_curve,
+)
+from sklearn.utils import _safe_indexing
+from typeguard import typechecked
 from wordcloud import WordCloud
 
-# Sklearn
-from sklearn.utils import _safe_indexing
-from sklearn.inspection import permutation_importance
-from sklearn.calibration import calibration_curve
-from sklearn.metrics import (
-    roc_curve,
-    precision_recall_curve,
-    det_curve,
-    confusion_matrix,
-)
-
-# Own modules
 from atom.basetransformer import BaseTransformer
-from .utils import (
-    SEQUENCE_TYPES, SCALAR, lst, check_is_fitted, check_dim, check_goal,
-    check_binary_task, check_predict_proba, get_proba_attr, get_corpus,
-    get_custom_scorer, get_best_score, partial_dependence, get_feature_importance,
-    composed, crash, plot_from_model,
+from atom.utils import (
+    INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
+    check_is_fitted, check_predict_proba, composed, crash, get_best_score,
+    get_corpus, get_custom_scorer, get_feature_importance, lst,
+    partial_dependence, plot_from_model,
 )
 
 
@@ -231,17 +222,17 @@ class BasePlotter:
     # Methods ====================================================== >>
 
     @staticmethod
-    def _draw_line(ax, x):
+    def _draw_line(ax, y):
         """Draw a line across the axis."""
         ax.plot(
             [0, 1],
-            [0, 1] if x == "diagonal" else [x, x],
+            [0, 1] if y == "diagonal" else [y, y],
             color="black",
             linestyle="--",
             linewidth=2,
             alpha=0.6,
             zorder=-2,
-            transform=ax.transAxes,
+            transform=blended_transform_factory(ax.transAxes, ax.transData),
         )
 
     @staticmethod
@@ -346,7 +337,8 @@ class BasePlotter:
         """Check and return the provided parameter show."""
         max_fxs = max([m.n_features for m in lst(model)])
         if show is None or show > max_fxs:
-            return max_fxs
+            # Limit max features shown to avoid maximum figsize error
+            return min(200, max_fxs)
         elif show < 1:
             raise ValueError(
                 "Invalid value for the show parameter."
@@ -437,8 +429,8 @@ class BasePlotter:
     @composed(contextmanager, crash, typechecked)
     def canvas(
         self,
-        nrows: int = 1,
-        ncols: int = 2,
+        nrows: INT = 1,
+        ncols: INT = 2,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -503,7 +495,7 @@ class FSPlotter(BasePlotter):
     ):
         """Plot the explained variance ratio vs number of components.
 
-        If the underlying estimator is PCA (for dense datasets), all
+        If the underlying estimator is pca (for dense datasets), all
         possible components are plotted. If the underlying estimator
         is TruncatedSVD (for sparse datasets), it only shows the
         selected components. The blue star marks the number of
@@ -533,16 +525,16 @@ class FSPlotter(BasePlotter):
         """
         if not hasattr(self, "pca"):
             raise PermissionError(
-                "The plot_pca method is only available if PCA was applied on the data!"
+                "The plot_pca method is only available if pca was applied on the data!"
             )
 
-        var = np.array(self.pca.explained_variance_ratio_[:self.pca._n_components])
+        var = np.array(self.pca.explained_variance_ratio_[:self.pca._comps])
         var_all = np.array(self.pca.explained_variance_ratio_)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.scatter(
-            x=self.pca._n_components,
+            x=self.pca._comps,
             y=var.sum(),
             marker="*",
             s=130,
@@ -571,7 +563,7 @@ class FSPlotter(BasePlotter):
     @composed(crash, typechecked)
     def plot_components(
         self,
-        show: Optional[int] = None,
+        show: Optional[INT] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -608,14 +600,12 @@ class FSPlotter(BasePlotter):
         if not hasattr(self, "pca"):
             raise PermissionError(
                 "The plot_components method is only available "
-                "if PCA was applied on the data!"
+                "if pca was applied on the data!"
             )
 
-        # Set parameters
-        if show is None:
-            show = self.pca.n_components_
-        elif show > self.pca.n_features_:
-            show = self.pca.n_features_
+        if show is None or show > self.pca.components_.shape[0]:
+            # Limit max features shown to avoid maximum figsize error
+            show = min(200, self.pca.components_.shape[0])
         elif show < 1:
             raise ValueError(
                 "Invalid value for the show parameter. "
@@ -623,8 +613,11 @@ class FSPlotter(BasePlotter):
             )
 
         var = np.array(self.pca.explained_variance_ratio_)[:show]
-        indices = [f"Component {str(i)}" for i in range(len(var))]
-        scr = pd.Series(var, index=indices).sort_values()
+        scr = pd.Series(
+            data=var,
+            index=[f"component_{str(i)}" for i in range(1, len(var) + 1)],
+            dtype=float,
+        ).sort_values()
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -653,7 +646,7 @@ class FSPlotter(BasePlotter):
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the RFECV results.
+        """Plot the rfecv results.
 
         Plot the scores obtained by the estimator fitted on every
         subset of the dataset.
@@ -683,7 +676,7 @@ class FSPlotter(BasePlotter):
         if not hasattr(self.branch, "rfecv") or not self.rfecv:
             raise PermissionError(
                 "The plot_rfecv method is only available "
-                "if RFECV was applied on the data!"
+                "if rfecv was applied on the data!"
             )
 
         try:  # Define the y-label for the plot
@@ -743,7 +736,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_successive_halving(
             self,
             models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            metric: Union[int, str] = 0,
+            metric: Union[INT, str] = 0,
             title: Optional[str] = None,
             figsize: Tuple[SCALAR, SCALAR] = (10, 6),
             filename: Optional[str] = None,
@@ -834,7 +827,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_learning_curve(
             self,
             models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            metric: Union[int, str] = 0,
+            metric: Union[INT, str] = 0,
             title: Optional[str] = None,
             figsize: Tuple[SCALAR, SCALAR] = (10, 6),
             filename: Optional[str] = None,
@@ -921,7 +914,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_results(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        metric: Union[int, str] = 0,
+        metric: Union[INT, str] = 0,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -1035,7 +1028,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_bo(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        metric: Union[int, str] = 0,
+        metric: Union[INT, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 8),
         filename: Optional[str] = None,
@@ -1265,9 +1258,8 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
@@ -1279,7 +1271,7 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
                 ax.plot(fpr, tpr, lw=2, label=label)
 
-        self._draw_line(ax=ax, x="diagonal")
+        self._draw_line(ax=ax, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1348,9 +1340,8 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
@@ -1362,7 +1353,7 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
                 plt.plot(rec, prec, lw=2, label=label)
 
-        self._draw_line(ax=ax, x=m.y_test.sort_values().iloc[-1] / len(m.y_test))
+        self._draw_line(ax=ax, y=m.y_test.sort_values().iloc[-1] / len(m.y_test))
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1430,9 +1421,8 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
@@ -1509,31 +1499,20 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                y_true = getattr(m, f"y_{set_}")
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
-                # Make y_true a bool vector
-                y_true = getattr(m, f"y_{set_}") == 1
+                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
+                x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
 
-                # Get sorted indices
-                sort_idx = np.argsort(y_pred)[::-1]
-
-                # Correct indices for the test set (add train set length)
-                if set_ == "test":
-                    sort_idx = [i + len(m.y_train) for i in sort_idx]
-
-                # Compute cumulative gains
-                gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
-
-                x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
                 ax.plot(x, gains, lw=2, label=label)
 
-        self._draw_line(ax=ax, x="diagonal")
+        self._draw_line(ax=ax, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1604,32 +1583,20 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
-            attr = get_proba_attr(m)
             for set_ in dataset:
-                if attr == "predict_proba":
+                y_true = getattr(m, f"y_{set_}")
+                if hasattr(m.estimator, "predict_proba"):
                     y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
-                # Make y_true a bool vector
-                y_true = getattr(m, f"y_{set_}") == 1
+                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
+                x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
 
-                # Get sorted indices
-                sort_idx = np.argsort(y_pred)[::-1]
-
-                # Correct indices for the test set (add train set length)
-                if set_ == "test":  # Add the training set length to the indices
-                    sort_idx = [i + len(m.y_train) for i in sort_idx]
-
-                # Compute cumulative gains
-                gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
-
-                x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
-                lift = f" (Lift={round(m.evaluate('lift', set_)['lift'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + lift
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
                 ax.plot(x, gains / x, lw=2, label=label)
 
-        self._draw_line(ax=ax, x=1)
+        self._draw_line(ax=ax, y=1)
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1713,7 +1680,7 @@ class BaseModelPlotter(BasePlotter):
                 )
 
                 # Fit the points using linear regression
-                from .models import OrdinaryLeastSquares
+                from atom.models import OrdinaryLeastSquares
 
                 model = OrdinaryLeastSquares(self, fast_init=True).get_estimator()
                 model.fit(
@@ -1725,7 +1692,7 @@ class BaseModelPlotter(BasePlotter):
                 x = np.linspace(*ax.get_xlim(), 100)
                 ax.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
 
-        self._draw_line(ax=ax, x="diagonal")
+        self._draw_line(ax=ax, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -1814,7 +1781,7 @@ class BaseModelPlotter(BasePlotter):
                 ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
 
         ax2.set_yticklabels([])
-        self._draw_line(ax=ax2, x=0)
+        self._draw_line(ax=ax2, y=0)
         self._plot(ax=ax2, xlabel="Distribution")
 
         if title:
@@ -1840,7 +1807,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_feature_importance(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
+        show: Optional[INT] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -1892,7 +1859,6 @@ class BaseModelPlotter(BasePlotter):
 
         # Create dataframe with columns as indices to plot with barh
         df = pd.DataFrame()
-
         for m in models:
             fi = get_feature_importance(m.estimator)
             if fi is None:
@@ -1943,8 +1909,8 @@ class BaseModelPlotter(BasePlotter):
     def plot_permutation_importance(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        n_repeats: int = 10,
+        show: Optional[INT] = None,
+        n_repeats: INT = 10,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -2005,7 +1971,7 @@ class BaseModelPlotter(BasePlotter):
                 f"Value should be >0, got {n_repeats}."
             )
 
-        df = pd.DataFrame(columns=["features", "score", "model"])
+        rows = []
         for m in models:
             # If permutations are already calculated and n_repeats is
             # same, use known permutations (for efficient re-plotting)
@@ -2027,12 +1993,10 @@ class BaseModelPlotter(BasePlotter):
             # Append permutation scores to the dataframe
             for i, feature in enumerate(m.features):
                 for score in m.permutations.importances[i, :]:
-                    df = df.append(
-                        {"features": feature, "score": score, "model": m.name},
-                        ignore_index=True,
-                    )
+                    rows.append({"features": feature, "score": score, "model": m.name})
 
         # Get the column names sorted by sum of scores
+        df = pd.DataFrame(rows)
         get_idx = df.groupby("features", as_index=False)["score"].sum()
         get_idx = get_idx.sort_values("score", ascending=False)
         column_order = get_idx["features"].values[:show]
@@ -2078,9 +2042,9 @@ class BaseModelPlotter(BasePlotter):
     def plot_partial_dependence(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         kind: str = "average",
-        target: Union[int, str] = 1,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -2148,7 +2112,7 @@ class BaseModelPlotter(BasePlotter):
             # Default is to select the best or the first 3 features
             if not features:
                 if not m.branch.feature_importance:
-                    features = m.features[:3]
+                    features = list(m.features[:3])
                 else:
                     features = m.branch.feature_importance[:3]
 
@@ -2223,7 +2187,7 @@ class BaseModelPlotter(BasePlotter):
                 delayed(partial_dependence)(
                     estimator=m.estimator,
                     X=m.X_test,
-                    features=[m.features.index(c) for c in col],
+                    features=[list(m.features).index(c) for c in col],
                 ) for col in cols
             )
 
@@ -2332,8 +2296,8 @@ class BaseModelPlotter(BasePlotter):
     def plot_parshap(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        target: Union[int, str] = 1,
+        columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -2495,7 +2459,7 @@ class BaseModelPlotter(BasePlotter):
             )
             cbar.ax.tick_params(labelsize=self.tick_fontsize)
 
-        self._draw_line(ax=ax, x="diagonal")
+        self._draw_line(ax=ax, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
@@ -2678,7 +2642,7 @@ class BaseModelPlotter(BasePlotter):
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
-        steps: int = 100,
+        steps: INT = 100,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -2777,7 +2741,7 @@ class BaseModelPlotter(BasePlotter):
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
-        target: Union[int, str] = 1,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -2866,7 +2830,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_calibration(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        n_bins: int = 10,
+        n_bins: INT = 10,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
         filename: Optional[str] = None,
@@ -2947,7 +2911,7 @@ class BaseModelPlotter(BasePlotter):
             ax2.hist(prob, n_bins, range=(0, 1), label=m.name, histtype="step", lw=2)
 
         plt.setp(ax1.get_xticklabels(), visible=False)
-        self._draw_line(ax=ax1, x="diagonal")
+        self._draw_line(ax=ax1, y="diagonal")
 
         BasePlotter._fig._used_models.extend(models)
         self._plot(
@@ -2974,9 +2938,9 @@ class BaseModelPlotter(BasePlotter):
     def bar_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3065,8 +3029,8 @@ class BaseModelPlotter(BasePlotter):
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3152,9 +3116,9 @@ class BaseModelPlotter(BasePlotter):
     def decision_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3251,8 +3215,8 @@ class BaseModelPlotter(BasePlotter):
     def force_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        target: Union[str, int] = 1,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (14, 6),
         filename: Optional[str] = None,
@@ -3344,22 +3308,19 @@ class BaseModelPlotter(BasePlotter):
                 if not filename.endswith(".html"):
                     filename += ".html"
                 shap.save_html(filename, plot)
-            if display:
-                try:  # Render if possible (for notebooks)
-                    from IPython.display import display
+            if display and find_spec("IPython"):
+                from IPython.display import display
 
-                    shap.initjs()
-                    display(plot)
-                except ModuleNotFoundError:
-                    pass
+                shap.initjs()
+                display(plot)
 
     @composed(crash, plot_from_model, typechecked)
     def heatmap_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3449,8 +3410,8 @@ class BaseModelPlotter(BasePlotter):
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        feature: Union[int, str] = 0,
-        target: Union[int, str] = 1,
+        feature: Union[INT, str] = 0,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -3538,9 +3499,9 @@ class BaseModelPlotter(BasePlotter):
     def waterfall_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, str]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        index: Optional[Union[INT, str]] = None,
+        show: Optional[INT] = None,
+        target: Union[INT, str] = 1,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3802,9 +3763,9 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_distribution(
         self,
-        columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
+        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
         distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
+        show: Optional[INT] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -3954,7 +3915,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_qq(
         self,
-        columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
+        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
         distributions: Union[str, SEQUENCE_TYPES] = "norm",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -4037,7 +3998,7 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_wordcloud(
         self,
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -4121,9 +4082,9 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
     @composed(crash, typechecked)
     def plot_ngrams(
         self,
-        ngram: Union[int, str] = "words",
-        index: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        show: int = 10,
+        ngram: Union[INT, str] = "words",
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        show: INT = 10,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,

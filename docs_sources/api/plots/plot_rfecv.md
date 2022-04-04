@@ -5,13 +5,13 @@
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None,
 figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L649">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L642">[source]</a>
 </span>
 </div>
 
-Plot the RFECV results, i.e. the scores obtained by the estimator
+Plot the rfecv results, i.e. the scores obtained by the estimator
 fitted on every subset of the dataset. Only available if
-[RFECV](../../../user_guide/feature_engineering/#rfe) was applied
+[rfecv](../../../user_guide/feature_engineering/#rfe) was applied
 on the data.
 
 <table style="font-size:16px">
@@ -55,7 +55,7 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy="RFECV", solver="LGB", scoring="precision")
+atom.feature_selection(strategy="rfecv", solver="LGB", scoring="precision")
 atom.plot_rfecv()
 ```
 

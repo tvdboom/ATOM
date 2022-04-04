@@ -1,6 +1,10 @@
 # LightGBM (LGB)
 ----------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
+
 LightGBM is a gradient boosting model that uses tree based learning
 algorithms. It is designed to be distributed and efficient with the
 following advantages:
@@ -21,8 +25,10 @@ Read more in LightGBM's [documentation](https://lightgbm.readthedocs.io/en/lates
 
 !!! info
     LightGBM allows [early stopping](../../../user_guide/training/#early-stopping)
-    to stop the training of unpromising models prematurely!
+    to stop the training of unpromising models prematurely.
 
+!!! info
+    Using LightGBM's GPU implementation requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html).
 
 <br><br>
 ## Hyperparameters
@@ -47,7 +53,7 @@ Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
 <p>
 <strong>max_depth: int, default=-1</strong><br>
-Categorical([-1, *range(1, 10)], name="max_depth")
+Categorical([-1, *range(1, 17)], name="max_depth")
 </p>
 <p>
 <strong>num_leaves: int, default=31</strong><br>
@@ -59,7 +65,7 @@ Categorical([1e-4, 1e-3, 0.01, 0.1, 1, 10, 100], name="min_child_weight"),
 </p>
 <p>
 <strong>min_child_samples: int, default=20</strong><br>
-Integer(10, 30, name="min_child_samples")
+Integer(1, 30, name="min_child_samples")
 </p>
 <p>
 <strong>subsample: float, default=1.0</strong><br>
@@ -134,7 +140,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -142,7 +148,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

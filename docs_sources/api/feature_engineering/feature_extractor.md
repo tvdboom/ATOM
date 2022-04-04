@@ -5,7 +5,7 @@
 <em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureExtractor</strong>(features=["day", "month", "year"],
 fmt=None, encoding_type="ordinal", drop_columns=True, verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L48">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L42">[source]</a>
 </span>
 </div>
 
@@ -117,7 +117,7 @@ Verbosity level of the class. Possible values are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 Extract the new features.
@@ -178,7 +178,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -204,7 +204,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -250,7 +250,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L114">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L108">[source]</a>
 </span>
 </div>
 Extract the new features.
@@ -280,16 +280,18 @@ Transformed feature set.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.feature_extraction(features=["day", "month"], fmt="%d/%m/%Y")
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.feature_extraction(features=["day", "month"], fmt="%d/%m/%Y")
-```
-or
-```python
-from atom.feature_engineering import FeatureExtractor
-
-feature_extractor = FeatureExtractor(features=["day", "month"], fmt="%d/%m/%Y")
-X = feature_extractor.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.feature_engineering import FeatureExtractor
+    
+    feature_extractor = FeatureExtractor(features=["day", "month"], fmt="%d/%m/%Y")
+    X = feature_extractor.transform(X)
+    ```

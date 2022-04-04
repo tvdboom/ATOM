@@ -1,6 +1,8 @@
 # Decision Tree (Tree)
 ----------------------
 
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+
 A single decision tree classifier/regressor.
 
 Corresponding estimators are:
@@ -39,7 +41,7 @@ Categorical(["best", "random"], name="splitter")
 </p>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *list(range(1, 10))], name="max_depth")
+Categorical([None, *range(1, 17)], name="max_depth")
 </p>
 <p>
 <strong>min_samples_split: int, default=2</strong><br>
@@ -114,7 +116,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -122,7 +124,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

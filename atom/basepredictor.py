@@ -7,20 +7,19 @@ Description: Module containing the BasePredictor class.
 
 """
 
-# Standard packages
+from typing import Any, Optional, Union
+
 import mlflow
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
-from typing import Union, Optional, Any
 
-# Own modules
-from .branch import Branch
-from .models import MODELS, Stacking, Voting
-from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
-    check_is_fitted, divide, get_best_score, delete,
-    method_to_log, composed, crash, CustomDict,
+from atom.branch import Branch
+from atom.models import MODELS, Stacking, Voting
+from atom.utils import (
+    DF_ATTRS, FLOAT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    check_is_fitted, composed, crash, delete, divide, flt, get_best_score, lst,
+    method_to_log,
 )
 
 
@@ -507,13 +506,14 @@ class BasePredictor:
                 - module: The estimator's module.
                 - needs_scaling: Whether the model requires feature scaling.
                 - accepts_sparse: Whether the model supports sparse matrices.
+                - supports_gpu: Whether the model has GPU support.
 
         """
-        overview = pd.DataFrame()
+        rows = []
         for model in MODELS.values():
             m = model(self, fast_init=True)
             if self.goal in m.goal:
-                overview = overview.append(
+                rows.append(
                     {
                         "acronym": m.acronym,
                         "fullname": m.fullname,
@@ -521,11 +521,11 @@ class BasePredictor:
                         "module": m.est_class.__module__,
                         "needs_scaling": str(m.needs_scaling),
                         "accepts_sparse": str(m.accepts_sparse),
-                    },
-                    ignore_index=True,
+                        "supports_gpu": str(m.supports_gpu),
+                    }
                 )
 
-        return overview
+        return pd.DataFrame(rows)
 
     @composed(crash, method_to_log)
     def clear(self):
@@ -574,7 +574,7 @@ class BasePredictor:
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
-        threshold: float = 0.5,
+        threshold: FLOAT = 0.5,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
     ):
         """Get all models' scores for the provided metrics.

@@ -7,19 +7,20 @@ Description: Unit tests for basetrainer.py
 
 """
 
-# Standard packages
-import pytest
-from skopt.callbacks import TimerCallback
-from mlflow.tracking.fluent import ActiveRun
-from sklearn.metrics import make_scorer, f1_score
-from sklearn.ensemble import RandomForestClassifier
-from skopt.space.space import Integer, Categorical
+from unittest.mock import patch
 
-# Own modules
+import pytest
+from mlflow.tracking.fluent import ActiveRun
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import f1_score, make_scorer
+from skopt.callbacks import TimerCallback
+from skopt.space.space import Categorical, Integer
+
 from atom.training import DirectClassifier, DirectRegressor
 from atom.utils import CUSTOM_SCORERS, PlotCallback
+
 from .utils import (
-    bin_train, bin_test, class_train, class_test, reg_train, reg_test, mnist
+    bin_test, bin_train, class_test, class_train, mnist, reg_test, reg_train,
 )
 
 
@@ -107,6 +108,14 @@ def test_model_is_predefined():
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.models == "LR"
+
+
+@patch.dict("sys.modules", {"lightgbm": None})
+def test_package_not_installed():
+    """Assert that an error is raised when the model's package is not installed."""
+    trainer = DirectClassifier("LGB", random_state=1)
+    with pytest.raises(ModuleNotFoundError, match=r".*Unable to import.*"):
+        trainer.run(bin_train, bin_test)
 
 
 def test_model_is_custom():

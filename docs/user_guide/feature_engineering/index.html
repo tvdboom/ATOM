@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/user_guide/feature_engineering/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/feature_engineering/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -507,20 +507,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../data_management/" class="md-nav__link">
         Data management
       </a>
@@ -537,6 +523,20 @@
     <li class="md-nav__item">
       <a href="../logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -628,6 +628,33 @@
   <a href="#selecting-useful-features" class="md-nav__link">
     Selecting useful features
   </a>
+  
+    <nav class="md-nav" aria-label="Selecting useful features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-strategies" class="md-nav__link">
+    Standard strategies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-strategies" class="md-nav__link">
+    Advanced strategies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-selection-methods" class="md-nav__link">
+    Other selection methods
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1712,7 +1739,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1726,7 +1753,7 @@
   
     <li class="md-nav__item">
       <a href="../../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2819,6 +2846,33 @@
     Selecting useful features
   </a>
   
+    <nav class="md-nav" aria-label="Selecting useful features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-strategies" class="md-nav__link">
+    Standard strategies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-strategies" class="md-nav__link">
+    Advanced strategies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-selection-methods" class="md-nav__link">
+    Other selection methods
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2856,13 +2910,13 @@ example.</p>
 <p>All of atom's feature engineering methods automatically adopt the relevant
 transformer attributes (<code>n_jobs</code>, <code>verbose</code>, <code>logger</code>, <code>random_state</code>) from
 atom. A different choice can be added as parameter to the method call,
-e.g. <code>atom.feature_selection("PCA", n_features=10, random_state=2)</code>.</p>
+e.g. <code>atom.feature_selection("pca", n_features=10, random_state=2)</code>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Like the <a href="../../API/ATOM/atomclassifier/#add">add</a> method, the feature engineering
 methods accept the <code>columns</code> parameter to only transform a subset of the
-dataset's features, e.g. <code>atom.feature_selection("PCA", n_features=10, columns=slice(5, 15))</code>.</p>
+dataset's features, e.g. <code>atom.feature_selection("pca", n_features=10, columns=slice(5, 15))</code>.</p>
 </div>
 <p><br></p>
 <h2 id="extracting-datetime-features">Extracting datetime features</h2>
@@ -2876,7 +2930,7 @@ month, year, hour...) from the columns. It can be accessed from atom
 through the <a href="../../API/ATOM/atomclassifier/#feature-extraction">feature_extraction</a>
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
-they create, e.g. <code>Feature 1_day</code> for the day element of <code>Feature 1</code>.</p>
+they create, e.g. <code>feature_1_day</code> for the day element of <code>feature_1</code>.</p>
 <p>Note that many time features have a cyclic pattern, e.g. after Sunday
 comes Monday. This means that if we would encode the days of the week
 from 0 to 6, we would lose that relation. A common method used to encode
@@ -2889,7 +2943,7 @@ x_{sin} = sin\left(\frac{2\pi * x}{max(x)}\right)
 x_{cos} = cos\left(\frac{2\pi * x}{max(x)}\right)
 \]</div>
 <p>The resulting features have their names followed by sin or cos, e.g.
-<code>Feature 1_day_sin</code> and <code>Feature 1_day_cos</code>. The datetime elements
+<code>feature_1_day_sin</code> and <code>feature_1_day_cos</code>. The datetime elements
 that can be encoded in a cyclic fashion are: microsecond, second,
 minute, hour, weekday, day, day_of_year, month and quarter. Note that
 decision trees based algorithms build their split rules according to
@@ -2910,18 +2964,18 @@ method. You can choose between two strategies: Deep Feature Synthesis
 and Genetic Feature Generation.</p>
 <p><strong>Deep Feature Synthesis</strong><br>
 Deep feature synthesis (DFS) applies the selected operators on the
-features in the dataset. For example, if the operator is "log",
-it will create the new feature <code>LOG(old_feature)</code> and if the
-operator is "mul", it will create the new feature <code>old_feature_1 x old_feature_2</code>.
-The operators can be chosen through the <code>operators</code> parameter.
-Choose from:</p>
+features in the dataset. For example, if the operator is "log", it will
+create the new feature <code>LOG(old_feature)</code> and if the operator is "mul",
+it will create the new feature <code>old_feature_1 x old_feature_2</code>. The
+operators can be chosen through the <code>operators</code> parameter. Choose from:</p>
 <ul>
-<li><strong>add</strong>: Sum two features together.</li>
+<li><strong>add</strong>: Take the sum of two features.</li>
 <li><strong>sub:</strong> Subtract two features from each other.</li></li>
 <li><strong>mul:</strong> Multiply two features with each other.</li></li>
 <li><strong>div:</strong> Divide two features with each other.</li></li>
-<li><strong>srqt:</strong> Take the square root of a feature.</li></li>
-<li><strong>log:</strong> Take the logarithm of a feature.</li></li>
+<li><strong>abs:</strong> Calculate the absolute value of a feature.</li></li>
+<li><strong>srqt:</strong> Calculate the square root of a feature.</li></li>
+<li><strong>log:</strong> Calculate the natural logarithm of a feature.</li></li>
 <li><strong>sin:</strong> Calculate the sine of a feature.</li></li>
 <li><strong>cos:</strong> Calculate the cosine of a feature.</li></li>
 <li><strong>tan:</strong> Calculate the tangent of a feature.</li></li>
@@ -2951,13 +3005,13 @@ it to import the __main__ module before it can do its task.</p>
 <p><strong>Genetic Feature Generation</strong><br>
 Genetic feature generation (GFG) uses <a href="https://en.wikipedia.org/wiki/Genetic_programming">genetic programming</a>,
 a branch of evolutionary programming, to determine which features
-are successful and create new ones based on those. Where DFS can be
-seen as some kind of "brute force" for feature engineering, GFG tries
-to improve its features with every generation of the algorithm. GFG
-uses the same operators as DFS, but instead of only applying the
+are successful and create new ones based on those. Where dfs can be
+seen as some kind of "brute force" for feature engineering, gfg tries
+to improve its features with every generation of the algorithm. gfg
+uses the same operators as dfs, but instead of only applying the
 transformations once, it evolves them further, creating nested
 structures of combinations of features. The new features are given the
-name <code>feature n</code>, where n stands for the n-th feature in the dataset.
+name <code>feature_n</code>, where n stands for the n-th feature in the dataset.
 You can access the genetic feature's fitness and description (how they
 are calculated) through the <code>genetic_features</code> attribute.</p>
 <p>ATOM uses the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
@@ -2966,15 +3020,14 @@ are calculated) through the <code>genetic_features</code> attribute.</p>
  <a href="https://gplearn.readthedocs.io/en/stable/intro.html#transformer">here</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>GFG can be slow for very large populations!</p>
+<p>gfg can be slow for very large populations!</p>
 </div>
 <p><br></p>
 <h2 id="selecting-useful-features">Selecting useful features</h2>
 <p>The <a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> class
 provides tooling to select the relevant features from a dataset. It can
 be accessed from atom through the <a href="../../API/ATOM/atomclassifier/#feature-selection">feature_selection</a>
-method. The following strategies are implemented: univariate, PCA, SFM,
-RFE, RFECV and SFS.</p>
+method.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../../API/plots/plot_feature_importance">plot_feature_importance</a>
@@ -2984,31 +3037,37 @@ attribute, use <a href="../../API/plots/plot_permutation_importance">plot_permut
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The RFE and RFECV strategies don't work when the solver is a 
+<p>The RFE and rfecv strategies don't work when the solver is a 
 <a href="https://catboost.ai/">CatBoost</a> model due to incompatibility
 of the APIs.</p>
 </div>
 <p><br></p>
+<h3 id="standard-strategies">Standard strategies</h3>
 <p><a name="univariate"></a>
 <strong>Univariate</strong><br>
 Univariate feature selection works by selecting the best features based
 on univariate statistical F-test. The test is provided via the <code>solver</code>
 parameter. It takes any function taking two arrays (X, y), and returning
 arrays (scores, p-values). Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="pca"></a>
 <strong>Principal Components Analysis</strong><br>
-Applying PCA will reduce the dimensionality of the dataset by maximizing
-the variance of each dimension. The new features are called component
-1, component 2, etc... PCA can be applied in two ways:</p>
+Applying PCA reduces the dimensionality of the dataset by maximizing
+the variance of each dimension. The new features are called component_1,
+component_2, etc... PCA can be applied in three ways:</p>
 <ul>
-<li>If the data is dense (i.e. not sparse), the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a>.
+<li>If the data is dense (i.e. not sparse), the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html">PCA</a>.
   Before fitting the transformer, the data is scaled to mean=0 and std=1
   if it wasn't already. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#pca">documentation</a>.</li>
-<li>If the data is <a href="../data_management/#sparse-matrices">sparse</a> (often the
+<li>If the data is <a href="../data_management/#sparse-data">sparse</a> (often the
   case for term-document matrices, see <a href="../../API/nlp/vectorizer">Vectorizer</a>),
   the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html">TruncatedSVD</a>.
   Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis">documentation</a>.</li>
+<li>If <a href="../gpu">GPU training</a> is enabled, the estimator used is cuml's
+  <a href="https://docs.rapids.ai/api/cuml/stable/api.html#cuml.PCA">PCA</a>
+  or <a href="https://docs.rapids.ai/api/cuml/stable/api.html#cuml.TruncatedSVD">TruncatedSVD</a>.</li>
 </ul>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="sfm"></a>
 <strong>Selection from model</strong><br>
 SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</code> attributes
@@ -3019,14 +3078,16 @@ e.g. <code>solver="RF"</code>. If you didn't call the FeatureSelector through at
 don't forget to indicate the estimator's task adding <code>_class</code> or <code>_reg</code>
 after the name, e.g. <code>RF_class</code> to use a random forest classifier. Read
 more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="sfs"></a>
 <strong>Sequential Feature Selection</strong><br>
 Sequential feature selection adds (forward selection) or removes (backward
 selection) features to form a feature subset in a greedy fashion. At each
 stage, this estimator chooses the best feature to add or remove based on
 the cross-validation score of an estimator. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#sequential-feature-selection">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><a name="rfe"></a>
-<strong>Recursive feature elimination</strong><br>
+<strong>Recursive Feature Elimination</strong><br>
 Select features by recursively considering smaller and smaller sets of
 features. First, the estimator is trained on the initial set of features,
 and the importance of each feature is obtained either through a <code>coef_</code>
@@ -3042,6 +3103,60 @@ of features selected by <code>n_features</code>, RFECV returns the number of
 features that achieved the optimal score on the specified metric. Note
 that this is not always equal to the amount specified by <code>n_features</code>.
 Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination">documentation</a>.</p>
+<p><br></p>
+<h3 id="advanced-strategies">Advanced strategies</h3>
+<p>The following strategies are a collection of nature-inspired optimization
+algorithms that maximize an objective function. If not manually specified,
+the function calculates the cross-validated score of a model on the data.
+Use the <code>scoring</code> parameter (not present in description, part of kwargs)
+to specify the metric to optimize on.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="pso"></a>
+<strong>Particle Swarm Optimization</strong><br>
+Particle Swarm Optimization (PSO) optimizes a problem by having a population
+of candidate solutions (particles), and moving them around in the search-space
+according to simple mathematical formula over the particle's position and
+velocity. Each particle's movement is influenced by its local best known
+position, but is also guided toward the best known positions in the search-space,
+which are updated as better positions are found by other particles. This is
+expected to move the swarm toward the best solutions. Read more <a href="https://link.springer.com/chapter/10.1007/978-3-319-13563-2_51">here</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="hho"></a>
+<strong>Harris Hawks Optimization</strong><br>
+Harris Hawks Optimization (HHO) mimics the action and reaction of Hawk's
+team collaboration hunting in nature and prey escaping to discover the
+solutions of the single-objective problem. Read more <a href="https://link.springer.com/chapter/10.1007/978-981-32-9990-0_12">here</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="gwo"></a>
+<strong>Grey Wolf Optimization</strong><br>
+The Grey Wolf Optimizer (GWO) mimics the leadership hierarchy and hunting
+mechanism of grey wolves in nature. Four types of grey wolves such as alpha,
+beta, delta, and omega are employed for simulating the leadership hierarchy.
+In addition, three main steps of hunting, searching for prey, encircling prey,
+and attacking prey, are implemented to perform optimization. Read more
+<a href="https://www.sciencedirect.com/science/article/abs/pii/S0925231215010504?via%3Dihub">here</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="dfo"></a>
+<strong>Dragonfly Optimization</strong><br>
+The Dragonfly Algorithm (DFO) algorithm originates from static and dynamic
+swarming behaviours. These two swarming behaviours are very similar to the
+two main phases of optimization using meta-heuristics: exploration and
+exploitation. Dragonflies create sub swarms and fly over different areas in
+a static swarm, which is the main objective of the exploration phase. In
+the static swarm, however, dragonflies fly in bigger swarms and along one
+direction, which is favourable in the exploitation phase. Read more
+<a href="https://linkinghub.elsevier.com/retrieve/pii/S0950705120303889">here</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><a name="genetic"></a>
+<strong>Genetic Optimization</strong><br>
+Genetic Optimization is a metaheuristic inspired by the process of natural
+selection that belongs to the larger class of evolutionary algorithms.
+Genetic algorithms are commonly used to generate high-quality solutions to
+optimization and search problems by relying on biologically inspired
+operators such as mutation, crossover and selection. Read more
+<a href="https://ieeexplore.ieee.org/document/953980">here</a>.</p>
+<p><br></p>
+<h3 id="other-selection-methods">Other selection methods</h3>
 <p><strong>Removing features with low variance</strong><br>
 Variance is the expectation of the squared deviation of a random
 variable from its mean. Features with low variance have many values
@@ -3049,15 +3164,18 @@ repeated, which means the model will not learn much from them.
 <a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> removes
 all features where the same value is repeated in at least
 <code>max_frac_repeated</code> fraction of the rows. The default option is to
-remove a feature if all values in it are the same. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance">documentation</a>.</p>
+remove a feature if all values in it are the same. Read more in sklearn's
+<a href="https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance">documentation</a>.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><strong>Removing features with multi-collinearity</strong><br>
 Two features that are highly correlated are redundant, i.e. two will
 not contribute more to the model than only one of them.
 <a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> will
-drop a feature that has a Pearson correlation coefficient larger than
-<code>max_correlation</code> with another feature. A correlation of 1 means the
-two columns are equal. A dataframe of the removed features and their
-correlation values can be accessed through the <code>collinear</code> attribute.</p>
+drop a feature that has a <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation coefficient</a>
+larger than <code>max_correlation</code> with another feature. A correlation of 
+1 means the two columns are equal. A dataframe of the removed features
+and their correlation values can be accessed through the <code>collinear</code>
+attribute.</p>
 
               
             </article>

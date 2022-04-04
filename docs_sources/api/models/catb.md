@@ -1,6 +1,10 @@
 # CatBoost (CatB)
 -----------------
 
+<a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
+<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
+
 CatBoost is a machine learning method based on gradient boosting over
 decision trees. Main advantages of CatBoost:
 
@@ -18,7 +22,7 @@ Read more in CatBoost's [documentation](https://catboost.ai/).
 
 !!! info
     CatBoost allows [early stopping](../../../user_guide/training/#early-stopping)
-    to stop the training of unpromising models prematurely!
+    to stop the training of unpromising models prematurely.
 
 !!! note
     ATOM uses CatBoost's `n_estimators` parameter instead of `iterations`
@@ -52,15 +56,15 @@ Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *range(1, 10)], name="max_depth")
+Categorical([None, *range(1, 17)], name="max_depth")
+</p>
+<p>
+<strong>max_depth: int, default=1</strong><br>
+Integer(1, 30, name="min_child_samples")
 </p>
 <p>
 <strong>subsample: float, default=1.0</strong><br>
 Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
-</p>
-<p>
-<strong>colsample_by_level: float, default=1.0</strong><br>
-Categorical(np.linspace(0.4, 1.0, 7), name="colsample_by_level")
 </p>
 <p>
 <strong>reg_lambda: int, default=0</strong><br>
@@ -123,7 +127,7 @@ Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
 for datasets with more than two dimensions.
 </p>
 <p>
-<strong>columns: list</strong><br>
+<strong>columns: pd.Index</strong><br>
 Names of the columns in the dataset.
 </p>
 <p>
@@ -131,7 +135,7 @@ Names of the columns in the dataset.
 Number of columns in the dataset.
 </p>
 <p>
-<strong>features: list</strong><br>
+<strong>features: pd.Index</strong><br>
 Names of the features in the dataset.
 </p>
 <p>

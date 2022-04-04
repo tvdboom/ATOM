@@ -4,10 +4,10 @@
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Cleaner</strong>(drop_types=None,
 strip_categorical=True, drop_max_cardinality=True, drop_min_cardinality=True,
-drop_duplicates=False, drop_missing_target=True, encode_target=True, verbose=0,
-logger=None)
+drop_duplicates=False, drop_missing_target=True, encode_target=True, gpu=False,
+verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L427">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L468">[source]</a>
 </span>
 </div>
 
@@ -63,6 +63,14 @@ This parameter is ignored if <code>y</code> is not provided.
 Whether to Label-encode the target column. This parameter is ignored
 if <code>y</code> is not provided.
 </p>
+<strong>gpu: bool or str, optional (default=False)</strong><br>
+Train estimator on GPU (instead of CPU). Only to encode the target
+column.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Always use CPU implementation.</li>
+<li>If True: Use GPU implementation if possible.</li>
+<li>If "force": Force GPU implementation.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -149,7 +157,7 @@ available if encode_target=True.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 Apply the data cleaning steps to the data.
@@ -219,7 +227,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -245,7 +253,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -291,7 +299,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L521">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L562">[source]</a>
 </span>
 </div>
 Apply the data cleaning steps to the data.
@@ -331,16 +339,18 @@ Transformed target column. Only returned if provided.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.clean(maximum_cardinality=False)
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.clean(maximum_cardinality=False)
-```
-or
-```python
-from atom.data_cleaning import Cleaner
-
-cleaner = Cleaner(maximum_cardinality=False)
-X, y = cleaner.transform(X, y)
-```
+=== "stand-alone"
+    ```python
+    from atom.data_cleaning import Cleaner
+    
+    cleaner = Cleaner(maximum_cardinality=False)
+    X, y = cleaner.transform(X, y)
+    ```

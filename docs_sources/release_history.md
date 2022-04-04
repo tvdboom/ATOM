@@ -1,6 +1,24 @@
 # Release history
 -----------------
 
+<a name="v4130"></a>
+### Version 4.13.0
+
+* Added GPU support. Read more in the [user guide](../user_guide/gpu).
+* Added [advanced feature selection](../user_guide/feature_engineering/#advanced-strategies) strategies.
+* Added the `return_sparse` parameter to the [Vectorizer](../API/NLP/vectorizer) class.
+* Added the `quantile` hyperparameter to the [Dummy](../API/models/dummy) model.
+* The [data attributes](../API/ATOM/atomclassifier/#data-attributes) now return
+  pandas objects where possible.
+* Fixed a bug where the BO could crash after [balancing](../user_guide/data_cleaning/#balancing-the-data)
+  the data.
+* Fixed a bug where saving the [FeatureGenerator](../API/feature_engineering/feature_generator)
+  class could fail for certain operators.
+* Fixed a bug where the [FeatureSelector](../API/feature_engineering/feature_selector)
+  class displayed the wrong output.
+* Fixed a bug where the `mapping` attribute was not reordered.
+
+
 <a name="v4120"></a>
 ### Version 4.12.0
 
@@ -21,7 +39,7 @@
 <a name="v4110"></a>
 ### Version 4.11.0
 
-* Full support for sparse matrices. Read more in the [user guide](../user_guide/data_management/#sparse-matrices).
+* Full support for sparse matrices. Read more in the [user guide](../user_guide/data_management/#sparse-data).
 * The [shrink](../API/ATOM/atomclassifier/#shrink) method now also handles
   sparse features.
 * Refactor of the [distribution](../API/ATOM/atomclassifier/#distribution) method.
@@ -368,7 +386,7 @@
 * Early stopping for models that allow in-training evaluation.
 * Added the [ATOMLoader](../API/ATOM/atomloader) function to load any saved pickle instance.
 * The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".
-* Implemented the DFS strategy in [FeatureGenerator](../API/feature_engineering/feature_generator).
+* Implemented the dfs strategy in [FeatureGenerator](../API/feature_engineering/feature_generator).
 * All training classes now inherit from BaseEstimator.
 * Added multiple new example notebooks.
 * Tests coverage up to 100%.

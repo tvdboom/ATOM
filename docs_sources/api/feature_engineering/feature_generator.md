@@ -2,29 +2,28 @@
 ------------------
 
 <div style="font-size:20px">
-<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="DFS",
+<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="dfs",
 n_features=None, operators=None, n_jobs=1, verbose=0, logger=None,
 random_state=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L231">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L225">[source]</a>
 </span>
 </div>
 
-Use Deep feature Synthesis or a genetic algorithm to create new combinations
-of existing features to capture the non-linear relations between the original
-features. This class can be accessed from atom through the
-[feature_generation](../../ATOM/atomclassifier/#feature-generation)
+Create new combinations of existing features to capture the non-linear
+relations between the original features. This class can be accessed from
+atom through the [feature_generation](../../ATOM/atomclassifier/#feature-generation)
 method. Read more in the [user guide](../../../user_guide/feature_engineering/#generating-new-features).
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str, optional (default="DFS")</strong><br>
+<strong>strategy: str, optional (default="dfs")</strong><br>
 Strategy to crate new features. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>"DFS" to use Deep Feature Synthesis.</li>
-<li>"GFG" or "genetic" to use Genetic Feature Generation.</li>
+<li>"dfs": Deep Feature Synthesis.</li>
+<li>"<a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">gfg</a>": Genetic Feature Generation.</li>
 </ul>
 <p>
 <strong>n_features: int or None, optional (default=None)</strong><br>
@@ -64,7 +63,7 @@ generator is the <code>RandomState</code> instance used by <code>np.random</code
 <p>
 <strong>**kwargs</strong><br>
 Additional keyword arguments for the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
-instance. Only for the genetic strategy.
+instance. Only for the gfg strategy.
 </p>
 </td>
 </tr>
@@ -72,7 +71,7 @@ instance. Only for the genetic strategy.
 
 
 !!! tip
-    DFS can create many new features and not all of them will be useful. Use
+    dfs can create many new features and not all of them will be useful. Use
     [FeatureSelector](/API/feature_engineering/feature_selector) to reduce
     the number of features!
 
@@ -82,7 +81,7 @@ instance. Only for the genetic strategy.
     [missing](/API/ATOM/atomclassifier/#data-attributes) property.
 
 !!! warning
-    When using DFS with `n_jobs>1`, make sure to protect your code with `if __name__
+    When using dfs with `n_jobs>1`, make sure to protect your code with `if __name__
     == "__main__"`. Featuretools uses [dask](https://dask.org/), which uses python
     multiprocessing for parallelization. The spawn method on multiprocessing starts
     a new python process, which requires it to import the \__main__ module before it
@@ -97,11 +96,11 @@ instance. Only for the genetic strategy.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>symbolic_transformer: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
-Object used to calculate the genetic features. Only for the genetic strategy.
+<strong>gfg: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong><br>
+Object used to calculate the genetic features. Only for the gfg strategy.
 </p>
 <strong>genetic_features: pd.DataFrame</strong><br>
-Information on the newly created non-linear features. Only for the genetic
+Information on the newly created non-linear features. Only for the gfg
 strategy. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>name:</b> Name of the feature (automatically created).</li>
@@ -160,7 +159,7 @@ strategy. Columns include:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L322">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L315">[source]</a>
 </span>
 </div>
 Fit to data.
@@ -193,7 +192,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L77">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
 </span>
 </div>
 Fit to data, then transform it.
@@ -256,7 +255,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L525">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -282,7 +281,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L546">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -328,7 +327,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L431">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L416">[source]</a>
 </span>
 </div>
 Generate new features.
@@ -359,17 +358,19 @@ Feature set with the newly generated features.
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+=== "atom"
+    ```python
+    from atom import ATOMClassifier
+    
+    atom = ATOMClassifier(X, y)
+    atom.feature_generation(strategy="dfs", n_features=3, operators=["add", "mul"])
+    ```
 
-atom = ATOMClassifier(X, y)
-atom.feature_generation(strategy="genetic", n_features=3, generations=30)
-```
-or
-```python
-from atom.feature_engineering import FeatureGenerator
-
-fg = FeatureGenerator(strategy="genetic", n_features=3, generations=30)
-fg.fit(X_train, y_train)
-X = fg.transform(X)
-```
+=== "stand-alone"
+    ```python
+    from atom.feature_engineering import FeatureGenerator
+    
+    generator = FeatureGenerator(strategy="dfs", n_features=3, operators=["add", "mul"])
+    generator.fit(X_train, y_train)
+    X = generator.transform(X)
+    ```

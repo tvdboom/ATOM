@@ -7,14 +7,13 @@ Description: Unit tests for branch.py
 
 """
 
-# Standard packages
-import pytest
 import pandas as pd
+import pytest
 
-# Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import merge
-from .utils import X_bin, y_bin, X_class, X_bin_array, y_bin_array, mnist
+
+from .utils import X_bin, X_bin_array, X_class, mnist, y_bin, y_bin_array
 
 
 # Test __init__ ==================================================== >>
@@ -225,7 +224,7 @@ def test_shape_property():
 def test_columns_property():
     """Assert that the columns property returns the columns of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.branch.columns == list(X_bin.columns) + [y_bin.name]
+    assert list(atom.branch.columns) == list(X_bin.columns) + [y_bin.name]
 
 
 def test_n_columns_property():
@@ -237,7 +236,7 @@ def test_n_columns_property():
 def test_features_property():
     """Assert that the features property returns the features of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.branch.features == list(X_bin.columns)
+    assert list(atom.branch.features) == list(X_bin.columns)
 
 
 def test_n_features_property():

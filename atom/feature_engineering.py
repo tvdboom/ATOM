@@ -7,41 +7,35 @@ Description: Module containing the feature engineering transformers.
 
 """
 
-# Standard packages
-import numpy as np
-import pandas as pd
+from inspect import signature
 from random import sample
-from typeguard import typechecked
 from typing import Optional, Union
 
-# Other packages
 import featuretools as ft
-from woodwork.column_schema import ColumnSchema
+import numpy as np
+import pandas as pd
 from gplearn.genetic import SymbolicTransformer
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, is_regressor
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_selection import (
-    f_classif,
-    f_regression,
-    mutual_info_classif,
-    mutual_info_regression,
-    chi2,
-    SelectKBest,
-    SelectFromModel,
-    RFE,
-    RFECV,
-    SequentialFeatureSelector,
+    RFE, RFECV, SelectFromModel, SelectKBest, SequentialFeatureSelector, chi2,
+    f_classif, f_regression, mutual_info_classif, mutual_info_regression,
+)
+from sklearn.model_selection import cross_val_score
+from typeguard import typechecked
+from zoofs import (
+    DragonFlyOptimization, GeneticOptimization, GreyWolfOptimization,
+    HarrisHawkOptimization, ParticleSwarmOptimization,
 )
 
-# Own modules
-from .models import MODELS
-from .basetransformer import BaseTransformer
-from .data_cleaning import TransformerMixin, Scaler
-from .plots import FSPlotter
-from .utils import (
-    SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df,
-    is_sparse, get_custom_scorer, check_scaling, check_is_fitted,
-    get_feature_importance, composed, crash, method_to_log,
+from atom.basetransformer import BaseTransformer
+from atom.data_cleaning import Scaler, TransformerMixin
+from atom.models import MODELS
+from atom.plots import FSPlotter
+from atom.utils import (
+    FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    check_is_fitted, check_scaling, composed, crash, get_custom_scorer,
+    get_feature_importance, infer_task, is_sparse, lst, method_to_log, to_df,
 )
 
 
@@ -101,7 +95,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         fmt: Optional[Union[str, SEQUENCE_TYPES]] = None,
         encoding_type: str = "ordinal",
         drop_columns: bool = True,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -231,16 +225,15 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     """Apply automated feature engineering.
 
-    Use Deep feature Synthesis or a genetic algorithm to create new
-    combinations of existing features to capture the non-linear
-    relations between the original features.
+    Create new combinations of existing features to capture the
+    non-linear relations between the original features.
 
     Parameters
     ----------
-    strategy: str, optional (default="DFS")
+    strategy: str, optional (default="dfs")
         Strategy to crate new features. Choose from:
-            - "DFS" to use Deep Feature Synthesis.
-            - "GFG" or "genetic" to use Genetic Feature Generation.
+            - "dfs": Deep Feature Synthesis.
+            - "gfg": Genetic Feature Generation.
 
     n_features: int or None, optional (default=None)
         Maximum number of newly generated features to add to the
@@ -248,7 +241,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     operators: str, sequence or None, optional (default=None)
         Mathematical operators to apply on the features. None for all.
-        Choose from: add, sub, mul, div, sqrt, log, inv, sin, cos, tan.
+        Choose from: add, sub, mul, div, abs, sqrt, log, inv, sin, cos,
+        tan.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -273,17 +267,17 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     **kwargs
         Additional keyword arguments for the SymbolicTransformer
-        instance. Only for the genetic strategy.
+        instance. Only for the gfg strategy.
 
     Attributes
     ----------
-    symbolic_transformer: SymbolicTransformer
+    gfg: SymbolicTransformer
         Object used to calculate the genetic features. Only for the
-        genetic strategy.
+        gfg strategy.
 
     genetic_features: pd.DataFrame
         Information on the newly created non-linear features. Only for
-        the genetic strategy. Columns include:
+        the gfg strategy. Columns include:
             - name: Name of the feature (automatically created).
             - description: Operators used to create this feature.
             - fitness: Fitness score.
@@ -292,13 +286,13 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        strategy: str = "DFS",
-        n_features: Optional[int] = None,
+        strategy: str = "dfs",
+        n_features: Optional[INT] = None,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        n_jobs: int = 1,
-        verbose: int = 0,
+        n_jobs: INT = 1,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(
@@ -312,7 +306,6 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.operators = operators
         self.kwargs = kwargs
 
-        self.symbolic_transformer = None
         self.genetic_features = None
         self._operators = None
         self._dfs = None
@@ -339,10 +332,23 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        if self.strategy.lower() not in ("dfs", "gfg", "genetic"):
+        operators = CustomDict(
+            add="add_numeric",
+            sub="subtract_numeric",
+            mul="multiply_numeric",
+            div="divide_numeric",
+            abs="absolute",
+            sqrt="square_root",
+            log="natural_logarithm",
+            sin="sine",
+            cos="cosine",
+            tan="tangent",
+        )
+
+        if self.strategy.lower() not in ("dfs", "gfg"):
             raise ValueError(
-                "Invalid value for the strategy parameter. Value "
-                f"should be either 'dfs' or 'genetic', got {self.strategy}."
+                "Invalid value for the strategy parameter, got "
+                f"{self.strategy}. Choose from: dfs or gfg."
             )
 
         if self.n_features is not None and self.n_features <= 0:
@@ -351,47 +357,26 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 f"Value should be >0, got {self.n_features}."
             )
 
-        default = ["add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan"]
         if not self.operators:  # None or empty list
-            self._operators = default
+            self._operators = list(operators.keys())
         else:
             self._operators = lst(self.operators)
             for operator in self._operators:
-                if operator.lower() not in default:
+                if operator not in operators:
                     raise ValueError(
                         "Invalid value in the operators parameter, got "
-                        f"{operator}. Choose from: {', '.join(default)}."
+                        f"{operator}. Choose from: {', '.join(operators)}."
                     )
 
         self.log("Fitting FeatureGenerator...", 1)
 
         if self.strategy.lower() == "dfs":
-            trans_primitives = []
-            for operator in self._operators:
-                if operator.lower() == "add":
-                    trans_primitives.append("add_numeric")
-                elif operator.lower() == "sub":
-                    trans_primitives.append("subtract_numeric")
-                elif operator.lower() == "mul":
-                    trans_primitives.append("multiply_numeric")
-                elif operator.lower() == "div":
-                    trans_primitives.append("divide_numeric")
-                elif operator.lower() in ("sqrt", "log", "sin", "cos", "tan"):
-                    trans_primitives.append(
-                        ft.primitives.make_trans_primitive(
-                            function=lambda x: getattr(np, operator.lower())(x),
-                            input_types=[ColumnSchema()],
-                            return_type=ColumnSchema(semantic_tags=["numeric"]),
-                            name=operator.lower(),
-                        )
-                    )
-
             # Run deep feature synthesis with transformation primitives
             es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
             self._dfs = ft.dfs(
                 target_dataframe_name="X",
                 entityset=es,
-                trans_primitives=trans_primitives,
+                trans_primitives=[operators[x] for x in self._operators],
                 max_depth=1,
                 features_only=True,
                 ignore_columns={"X": ["_index"]},
@@ -410,7 +395,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             kwargs = self.kwargs.copy()  # Copy in case of repeated fit
             hall_of_fame = kwargs.pop("hall_of_fame", max(400, self.n_features or 400))
-            self.symbolic_transformer = SymbolicTransformer(
+            self.gfg = SymbolicTransformer(
                 population_size=kwargs.pop("population_size", 2000),
                 hall_of_fame=hall_of_fame,
                 n_components=hall_of_fame,
@@ -468,7 +453,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             # Get the names and fitness of the new features
             df = pd.DataFrame(columns=["name", "description", "fitness"])
-            for i, fx in enumerate(self.symbolic_transformer):
+            for i, fx in enumerate(self.gfg):
                 if str(fx) not in X.columns:  # Drop unchanged features
                     df.loc[i] = ["", str(fx), fx.fitness_]
 
@@ -486,15 +471,15 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # If there are not enough features remaining, notify the user
             if len(df) != self.n_features:
-                n = (self.n_features or len(self.symbolic_transformer)) - len(df)
-                self.log(f" --> Dropping {n} features due to repetition.", 2)
+                self.log(
+                    f" --> Dropping {(self.n_features or len(self.gfg)) - len(df)} "
+                    "features due to repetition.", 2)
 
-            results = self.symbolic_transformer.transform(X)[:, df.index]
-            for i, array in enumerate(results.T):
+            for i, array in enumerate(self.gfg.transform(X)[:, df.index].T):
                 # If the column is new, use a default name
                 counter = 0
                 while True:
-                    name = f"feature {X.shape[1] + 1 + counter}"
+                    name = f"feature_{X.shape[1] + 1 + counter}"
                     if name not in X:
                         X[name] = array  # Add new feature to X
                         df.iloc[i, 0] = name
@@ -513,31 +498,29 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     Remove features according to the selected strategy. Ties between
     features with equal scores are broken in an unspecified way.
-    Additionally, removes features with too low variance and finds
-    pairs of collinear features based on the Pearson correlation
-    coefficient. For each pair above the specified limit (in terms of
-    absolute value), it removes one of the two.
+    Additionally, remove multicollinear and low variance features.
 
     Parameters
     ----------
     strategy: str or None, optional (default=None)
         Feature selection strategy to use. Choose from:
-            - None: Do not perform any feature selection algorithm.
-            - "univariate": Univariate F-test.
-            - "PCA": Principal Component Analysis.
-            - "SFM": Select best features according to a model.
-            - "SFS"" Sequential Feature Selection.
-            - "RFE": Recursive Feature Elimination.
-            - "RFECV": RFE with cross-validated selection.
-
-        Note that the SFS, RFE and RFECV strategies don't work when the
-        solver is a CatBoost model due to incompatibility of the APIs.
+            - None: Do not perform any feature selection strategy.
+            - "univariate": Univariate statistical F-test.
+            - "pca": Principal Component Analysis.
+            - "sfm": Select best features according to a model.
+            - "sfs": Sequential Feature Selection.
+            - "rfe": Recursive Feature Elimination.
+            - "rfecv": RFE with cross-validated selection.
+            - "pso": Particle Swarm Optimization.
+            - "hho": Harris Hawks Optimization.
+            - "gwo": Grey Wolf Optimization.
+            - "dfo": Dragonfly Optimization.
+            - "genetic": Genetic Optimization.
 
     solver: str, estimator or None, optional (default=None)
-        Solver or model to use for the feature selection strategy. See
-        sklearn's documentation for an extended description of the
-        choices. Select None for the default option per strategy (only
-        for univariate or PCA).
+        Solver/model to use for the feature selection strategy. See the
+        corresponding documentation for an extended description of the
+        choices. If None, use the estimator's default value (only pca).
             - for "univariate", choose from:
                 + "f_classif"
                 + "f_regression"
@@ -546,13 +529,21 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 + "chi2"
                 + Any function taking two arrays (X, y), and returning
                   arrays (scores, p-values).
-            - for "PCA", choose from:
-                + "auto" (not available for sparse data, default for dense data)
-                + "full" (not available for sparse data)
-                + "arpack"
-                + "randomized" (default for sparse data)
-            - for "SFM", "SFS", "RFE" and "RFECV":
-                The base estimator. For SFM, RFE and RFECV, it should
+            - for "pca", choose from:
+                + if dense data:
+                    * "auto" (default)
+                    * "full"
+                    * "arpack"
+                    * "randomized"
+                + if sparse data:
+                    * "randomized" (default)
+                    * "arpack"
+                + if gpu implementation:
+                    * "full" (default)
+                    * "jacobi"
+                    * "auto"
+            - for the remaining strategies:
+                The base estimator. For sfm, rfe and rfecv, it should
                 have either a `feature_importances_` or `coef_`
                 attribute after fitting. You can use one of ATOM's
                 predefined models. Add `_class` or `_reg` after the
@@ -566,12 +557,15 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - if < 1: Fraction of the total features to select.
             - if >= 1: Number of features to select.
 
-        If strategy="SFM" and the threshold parameter is not specified,
-        the threshold are automatically set to `-inf` to select the
-        `n_features` features.
+        If strategy="sfm" and the threshold parameter is not specified,
+        the threshold is automatically set to `-inf` to select
+        `n_features` number of features.
 
-        If strategy="RFECV", `n_features` is the minimum number of
+        If strategy="rfecv", `n_features` is the minimum number of
         features to select.
+
+        This parameter is ignored if any of the following strategies
+        is selected: pso, hho, gwo, dfo, genetic.
 
     max_frac_repeated: float or None, optional (default=1.)
         Remove features with the same value in at least this fraction
@@ -581,16 +575,21 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     max_correlation: float or None, optional (default=1.)
         Minimum Pearson correlation coefficient to identify correlated
-        features. A value of 1 removes one of 2 equal columns. A
-        dataframe of the removed features and their correlation values
-        can be accessed through the collinear attribute. If None, skip
-        this step.
+        features. For each pair above the specified limit (in terms of
+        absolute value), it removes one of the two. The default is to
+        drop one of two equal columns. If None, skip this step.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    gpu: bool or str, optional (default=False)
+        Train strategy on GPU (instead of CPU). Only for strategy="pca".
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -608,9 +607,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         number generator is the `RandomState` used by `np.random`.
 
     **kwargs
-        Any extra keyword argument for the PCA, SFM, SFS, RFE and
-        RFECV estimators. See the corresponding documentation for
-        the available options.
+        Any extra keyword argument for the strategy estimator. See the
+        corresponding documentation for the available options.
 
     Attributes
     ----------
@@ -623,13 +621,13 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     feature_importance: list
         Remaining features ordered by importance. Only if strategy in
-        ["univariate", "SFM, "RFE", "RFECV"]. For RFE and RFECV, the
+        ["univariate", "sfm", "rfe", "rfecv"]. For rfe and rfecv, the
         importance is extracted from the external estimator fitted on
         the reduced set.
 
     <strategy>: sklearn transformer
-        Object (lowercase strategy) used to transform the data,
-        e.g. `balancer.pca` for the PCA strategy.
+        Object used to transform the data, e.g. `balancer.pca` for the pca
+        strategy.
 
     """
 
@@ -639,15 +637,20 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         solver: Optional[Union[str, callable]] = None,
         n_features: Optional[SCALAR] = None,
         max_frac_repeated: Optional[SCALAR] = 1.0,
-        max_correlation: Optional[float] = 1.0,
-        n_jobs: int = 1,
-        verbose: int = 0,
+        max_correlation: Optional[FLOAT] = 1.0,
+        n_jobs: INT = 1,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(
-            n_jobs=n_jobs, verbose=verbose, logger=logger, random_state=random_state
+            n_jobs=n_jobs,
+            gpu=gpu,
+            verbose=verbose,
+            logger=logger,
+            random_state=random_state,
         )
         self.strategy = strategy
         self.solver = solver
@@ -661,10 +664,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         )
         self.feature_importance = None
         self.scaler = None
-        self._solver = None
-        self._kwargs = kwargs.copy()
         self._n_features = None
+        self._kwargs = kwargs.copy()
         self._low_variance = {}
+        self._estimator = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -701,85 +704,74 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     f"be None for strategy='{self.strategy}'."
                 )
 
+        def objective_function(model, X_train, y_train, X_valid, y_valid, scoring):
+            """Objective function for the advanced optimization strategies."""
+            if X_train.equals(X_valid):
+                cv = cross_val_score(model, X_train, y_train, cv=3, scoring=scoring)
+                return np.mean(cv)
+            else:
+                model.fit(X_train, y_train)
+                return scoring(model, X_valid, y_valid)
+
         X, y = self._prepare_input(X, y)
 
-        # Check parameters
+        strats = CustomDict(
+            univariate=SelectKBest,
+            pca=PCA,
+            sfm=SelectFromModel,
+            sfs=SequentialFeatureSelector,
+            rfe=RFE,
+            rfecv=RFECV,
+            pso=ParticleSwarmOptimization,
+            hho=HarrisHawkOptimization,
+            gwo=GreyWolfOptimization,
+            dfo=DragonFlyOptimization,
+            genetic=GeneticOptimization,
+        )
+
         if isinstance(self.strategy, str):
-            strats = ["univariate", "pca", "sfm", "sfs", "rfe", "rfecv"]
-
-            if self.strategy.lower() not in strats:
+            if self.strategy not in strats:
                 raise ValueError(
-                    "Invalid value for the strategy parameter. Choose "
-                    "from: univariate, PCA, SFM, RFE or RFECV."
+                    "Invalid value for the strategy parameter, got "
+                    f"{self.strategy}. Choose from: {', '.join(strats)}"
                 )
-
-            elif self.strategy.lower() == "univariate":
-                solvers_dct = dict(
-                    f_classif=f_classif,
-                    f_regression=f_regression,
-                    mutual_info_classif=mutual_info_classif,
-                    mutual_info_regression=mutual_info_regression,
-                    chi2=chi2,
-                )
-
-                if not self.solver:
-                    raise ValueError(
-                        "Invalid value for the solver parameter. The "
-                        f"value can't be None for strategy={self.strategy}"
-                    )
-                elif self.solver in solvers_dct:
-                    self._solver = solvers_dct[self.solver]
-                elif isinstance(self.solver, str):
-                    raise ValueError(
-                        "Invalid value for the solver parameter, got "
-                        f"{self.solver}. Choose from: {', '.join(solvers_dct)}."
-                    )
-                else:
-                    self._solver = self.solver
-
-            elif self.strategy.lower() == "pca":
-                if self.solver is None:
-                    if is_sparse(X):
-                        self._solver = "randomized"
-                    else:
-                        self._solver = "auto"
-                else:
-                    self._solver = self.solver
-
-            else:
+            elif self.strategy.lower() not in ("univariate", "pca"):
                 if self.solver is None:
                     raise ValueError(
                         "Invalid value for the solver parameter. The "
                         f"value can't be None for strategy={self.strategy}"
                     )
                 elif isinstance(self.solver, str):
-                    # Assign goal depending on solver's ending
+                    # Assign goal to initialize the predefined model
                     if self.solver[-6:] == "_class":
                         self.goal = "class"
-                        self._solver = self.solver[:-6]
+                        solver = self.solver[:-6]
                     elif self.solver[-4:] == "_reg":
                         self.goal = "reg"
-                        self._solver = self.solver[:-4]
+                        solver = self.solver[:-4]
                     else:
-                        self._solver = self.solver
+                        solver = self.solver
 
                     # Get estimator from predefined models
-                    if self._solver not in MODELS:
+                    if solver not in MODELS:
                         raise ValueError(
                             "Invalid value for the solver parameter. Unknown "
-                            f"model: {self._solver}. Choose from: {', '.join(MODELS)}."
+                            f"model: {solver}. Choose from: {', '.join(MODELS)}."
                         )
                     else:
-                        model = MODELS[self._solver](self, fast_init=True)
-                        self._solver = model.get_estimator()
+                        model = MODELS[solver](self, fast_init=True)
+                        solver = model.get_estimator()
                 else:
-                    self._solver = self.solver
+                    solver = self.solver
+
+                    # Assign goal to get default scorer for advanced strategies
+                    self.goal = "reg" if is_regressor(solver) else "class"
 
         elif self.kwargs:
             kwargs = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
             raise ValueError(
                 f"Keyword arguments ({kwargs}) are specified for "
-                f"the strategy estimator but no strategy is selected."
+                "the strategy estimator but no strategy is selected."
             )
 
         if self.n_features is None:
@@ -810,13 +802,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         # Remove features with too low variance
         if self.max_frac_repeated:
-            for n, col in enumerate(X):
-                unique, count = np.unique(X[col], return_counts=True)
-                for u, c in zip(unique, count):
-                    # If count is larger than fraction of total...
-                    if c >= self.max_frac_repeated * len(X):
-                        self._low_variance[col] = [u, c // 100. * len(X)]
-                        X = X.drop(col, axis=1)
+            for name, column in X.items():
+                for category, count in column.value_counts().items():
+                    # If count < fraction of total, drop column
+                    if count >= self.max_frac_repeated * len(X):
+                        self._low_variance[name] = [category, 100 * count / len(X)]
+                        X = X.drop(name, axis=1)
                         break
 
         # Remove features with too high correlation
@@ -851,17 +842,45 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             return self  # Exit feature_engineering
 
         elif self.strategy.lower() == "univariate":
+            solvers_dct = CustomDict(
+                f_classif=f_classif,
+                f_regression=f_regression,
+                mutual_info_classif=mutual_info_classif,
+                mutual_info_regression=mutual_info_regression,
+                chi2=chi2,
+            )
+
+            if not self.solver:
+                raise ValueError(
+                    "Invalid value for the solver parameter. The "
+                    f"value can't be None for strategy={self.strategy}"
+                )
+            elif self.solver in solvers_dct:
+                solver = solvers_dct[self.solver]
+            elif isinstance(self.solver, str):
+                raise ValueError(
+                    "Invalid value for the solver parameter, got "
+                    f"{self.solver}. Choose from: {', '.join(solvers_dct)}."
+                )
+            else:
+                solver = self.solver
+
             check_y()
-            self.univariate = SelectKBest(
-                score_func=self._solver,
+            self._estimator = SelectKBest(
+                score_func=solver,
                 k=self._n_features,
             ).fit(X, y)
 
         elif self.strategy.lower() == "pca":
+            s = lambda p: signature(estimator).parameters[p].default
+
+            # The PCA and TruncatedSVD both get all possible components to use
+            # for the plots (n_components must be < n_features and <= n_rows)
             if is_sparse(X):
-                self.pca = TruncatedSVD(
-                    n_components=self._n_features,
-                    algorithm=self._solver,
+                estimator = self._get_gpu(TruncatedSVD)
+                self._estimator = estimator(
+                    n_components=min(len(X), X.shape[1] - 1),
+                    algorithm=s("algorithm") if self.solver is None else self.solver,
                     random_state=self.random_state,
                     **self.kwargs,
                 )
@@ -870,20 +889,22 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self.scaler = Scaler().fit(X)
                     X = self.scaler.transform(X)
 
-                self.pca = PCA(
-                    n_components=X.shape[1] - 1,  # All -1 because of the pca plot
-                    svd_solver=self._solver,
+                estimator = self._get_gpu(PCA)
+                self._estimator = estimator(
+                    n_components=min(len(X), X.shape[1] - 1),
+                    svd_solver=s("svd_solver") if self.solver is None else self.solver,
                     random_state=self.random_state,
                     **self.kwargs,
                 )
 
-            # Fit and add desired number of components as internal attr
-            self.pca.fit(X)
-            self.pca._n_components = self._n_features
+            self._estimator.fit(X)
+            self._estimator._comps = min(
+                self._estimator.components_.shape[0], self._n_features
+            )
 
         elif self.strategy.lower() == "sfm":
             # If any of these attr exists, model is already fitted
-            if any(hasattr(self._solver, a) for a in ("coef_", "feature_importances_")):
+            if any(hasattr(solver, a) for a in ("coef_", "feature_importances_")):
                 prefit = self._kwargs.pop("prefit", True)
             else:
                 prefit = False
@@ -892,27 +913,32 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if not self.kwargs.get("threshold"):
                 self._kwargs["threshold"] = -np.inf
 
-            self.sfm = SelectFromModel(
-                estimator=self._solver,
+            self._estimator = strats[self.strategy](
+                estimator=solver,
                 max_features=self._n_features,
                 prefit=prefit,
                 **self._kwargs,
             )
             if prefit:
-                if len(self.sfm.get_support()) != X.shape[1]:
+                if len(self._estimator.get_support()) != X.shape[1]:
                     raise ValueError(
                         "Invalid value for the solver parameter. The "
-                        f"{self._solver.__class__.__name__} estimator "
+                        f"{solver.__class__.__name__} estimator "
                         "is fitted with different columns than X!"
                     )
-                self.sfm.estimator_ = self._solver
+                self._estimator.estimator_ = solver
             else:
                 check_y()
-                self.sfm.fit(X, y)
+                self._estimator.fit(X, y)
 
         elif self.strategy.lower() == "sfs":
-            self.sfs = SequentialFeatureSelector(
-                estimator=self._solver,
+            check_y()
+
+            if self.kwargs.get("scoring"):
+                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+
+            self._estimator = strats[self.strategy](
+                estimator=solver,
                 n_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
                 **self._kwargs,
@@ -920,30 +946,79 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "rfe":
             check_y()
-            self.rfe = RFE(
-                estimator=self._solver,
+
+            self._estimator = strats[self.strategy](
+                estimator=solver,
                 n_features_to_select=self._n_features,
+                **self._kwargs,
+            ).fit(X, y)
+
+        elif self.strategy.lower() == "rfecv":
+            check_y()
+
+            if self.kwargs.get("scoring"):
+                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+
+            # Invert n_features to select them all (default option)
+            if self._n_features == X.shape[1]:
+                self._n_features = 1
+
+            self._estimator = strats[self.strategy](
+                estimator=solver,
+                min_features_to_select=self._n_features,
+                n_jobs=self.n_jobs,
                 **self._kwargs,
             ).fit(X, y)
 
         else:
             check_y()
 
-            # Both RFECV and SFS use the scoring parameter
-            if self.kwargs.get("scoring"):
-                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+            # Either use a provided validation set or cross-validation over X
+            kwargs = self.kwargs.copy()
+            if "X_valid" in kwargs:
+                if "y_valid" in kwargs:
+                    X_valid, y_valid = self._prepare_input(
+                        kwargs.pop("X_valid"), kwargs.pop("y_valid")
+                    )
+                else:
+                    raise ValueError(
+                        "Invalid value for the y_valid parameter. The value "
+                        "cannot be absent when X_valid is provided."
+                    )
+            else:
+                X_valid, y_valid = X, y
 
-            if self.strategy.lower() == "rfecv":
-                # Invert n_features to select them all (default option)
-                if self._n_features == X.shape[1]:
-                    self._n_features = 1
+            # Get scoring for default objective_function
+            if "objective_function" not in kwargs:
+                if kwargs.get("scoring"):
+                    kwargs["scoring"] = get_custom_scorer(kwargs["scoring"])
+                else:
+                    task = infer_task(y, goal=self.goal)
+                    if task.startswith("bin"):
+                        kwargs["scoring"] = get_custom_scorer("f1")
+                    elif task.startswith("multi"):
+                        kwargs["scoring"] = get_custom_scorer("f1_weighted")
+                    else:
+                        kwargs["scoring"] = get_custom_scorer("r2")
 
-                self.rfecv = RFECV(
-                    estimator=self._solver,
-                    min_features_to_select=self._n_features,
-                    n_jobs=self.n_jobs,
-                    **self._kwargs,
-                ).fit(X, y)
+            self._estimator = strats[self.strategy](
+                objective_function=kwargs.pop("objective_function", objective_function),
+                minimize=kwargs.pop("minimize", False),
+                logger=self.logger,
+                **kwargs,
+            )
+
+            self._estimator.fit(
+                model=solver,
+                X_train=X,
+                y_train=y,
+                X_valid=X_valid,
+                y_valid=y_valid,
+                verbose=True if self.verbose >= 2 else False,
+            )
+
+        # Add the strategy estimator as attribute to the class
+        setattr(self, self.strategy.lower(), self._estimator)
 
         self._is_fitted = True
         return self
@@ -968,7 +1043,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         """
         check_is_fitted(self)
         X, y = self._prepare_input(X, y)
-        columns = X.columns  # Save columns for SFM
+        columns = X.columns  # Save columns for sfm
 
         self.log("Performing feature selection ...", 1)
 
@@ -1018,9 +1093,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 X = self.scaler.transform(X)
 
             X = to_df(
-                data=self.pca.transform(X)[:, :self._n_features],
+                data=self.pca.transform(X)[:, :self.pca._comps],
                 index=X.index,
-                columns=[f"component {str(i)}" for i in range(1, self._n_features + 1)],
+                columns=[f"component_{str(i)}" for i in range(1, self.pca._comps + 1)],
             )
 
             var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
@@ -1032,8 +1107,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             indices = np.argsort(get_feature_importance(self.sfm.estimator_))
             best_fxs = [columns[idx] for idx in indices][::-1]
             self.log(
-                f" --> The {self._solver.__class__.__name__} estimator selected "
-                f"{sum(self.sfm.get_support())} features from the dataset.", 2
+                f" --> sfm selected {sum(self.sfm.get_support())} "
+                "features from the dataset.", 2
             )
             for n, column in enumerate(X):
                 if not self.sfm.get_support()[n]:
@@ -1044,7 +1119,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         elif self.strategy.lower() == "sfs":
             self.log(
-                f" --> SFS selected {self.sfs.n_features_to_select_}"
+                f" --> sfs selected {self.sfs.n_features_to_select_}"
                 " features from the dataset.", 2
             )
             for n, column in enumerate(X):
@@ -1052,36 +1127,32 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self.log(f"   >>> Dropping feature {column}.", 2)
                     X = X.drop(column, axis=1)
 
-        elif self.strategy.lower() == "rfe":
+        elif self.strategy.lower() in ("rfe", "rfecv"):
             self.log(
-                f" --> RFE selected {self.rfe.n_features_}"
-                " features from the dataset.", 2
+                f" --> {self.strategy.upper()} selected "
+                f"{self._estimator.n_features_} features from the dataset.", 2
             )
             for n, column in enumerate(X):
-                if not self.rfe.support_[n]:
+                if not self._estimator.support_[n]:
                     self.log(
                         f"   >>> Dropping feature {column} "
-                        f"(rank {self.rfe.ranking_[n]}).", 2
+                        f"(rank {self._estimator.ranking_[n]}).", 2
                     )
                     X = X.drop(column, axis=1)
 
-            idx = np.argsort(get_feature_importance(self.rfe.estimator_))
+            idx = np.argsort(get_feature_importance(self._estimator.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
 
-        elif self.strategy.lower() == "rfecv":
+        else:  # Advanced strategies
+            n_features = len(self._estimator.best_feature_list)
             self.log(
-                f" --> RFECV selected {self.rfecv.n_features_}"
-                " features from the dataset.", 2
+                f" --> {self.strategy.lower()} selected "
+                f"{n_features} features from the dataset.", 2
             )
-            for n, column in enumerate(X):
-                if not self.rfecv.support_[n]:
-                    self.log(
-                        f"   >>> Dropping feature {column} "
-                        f"(rank {self.rfecv.ranking_[n]}).", 2
-                    )
-                    X = X.drop(column, axis=1)
 
-            idx = np.argsort(get_feature_importance(self.rfecv.estimator_))
-            self.feature_importance = list(X.columns[idx][::-1])
+            for column in X:
+                if column not in self._estimator.best_feature_list:
+                    self.log(f"   >>> Dropping feature {column}.", 2)
+                    X = X.drop(column, axis=1)
 
         return X

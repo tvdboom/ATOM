@@ -7,33 +7,22 @@ Description: Unit tests for data_cleaning.py
 
 """
 
-# Standard packages
-import pytest
 import numpy as np
 import pandas as pd
-from imblearn.combine import SMOTETomek
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
+import pytest
 from category_encoders.leave_one_out import LeaveOneOutEncoder
+from imblearn.combine import SMOTETomek
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
 
-# Own modules
 from atom.data_cleaning import (
-    Scaler,
-    Gauss,
-    Cleaner,
-    Imputer,
-    Discretizer,
-    Encoder,
-    Pruner,
-    Balancer,
+    Balancer, Cleaner, Discretizer, Encoder, Gauss, Imputer, Pruner, Scaler,
 )
-from atom.utils import (
-    SCALING_STRATS, ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS,
-    NotFittedError, check_scaling,
-)
+from atom.utils import NotFittedError, check_scaling
+
 from .utils import (
-    X_bin, y_bin, X_class, y_class, X_idx, y_idx, X10, X10_nan,
-    X10_str, X10_str2, X10_sn, y10, y10_str,
+    X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
+    y10_str, y_bin, y_class, y_idx,
 )
 
 
@@ -69,7 +58,7 @@ def test_scaler_invalid_strategy():
         scaler.fit(X_bin)
 
 
-@pytest.mark.parametrize("strategy", SCALING_STRATS)
+@pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])
 def test_scaler_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     scaler = Scaler(strategy=strategy)
@@ -124,7 +113,7 @@ def test_invalid_strategy():
         gauss.fit(X_bin)
 
 
-@pytest.mark.parametrize("strategy", ["yeo-johnson", "box-cox", "quantile"])
+@pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
 def test_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     gauss = Gauss(strategy=strategy)
@@ -140,7 +129,7 @@ def test_gauss_y_is_ignored():
 
 def test_gauss_kwargs():
     """Assert that kwargs can be passed to the estimator."""
-    X = Gauss(strategy="yeo-johnson", standardize=False).fit_transform(X_bin)
+    X = Gauss(strategy="yeojohnson", standardize=False).fit_transform(X_bin)
     assert not check_scaling(X)
 
 
@@ -505,7 +494,7 @@ def test_strategy_with_encoder_at_end():
     """Assert that the strategy works with Encoder at the end of the string."""
     encoder = Encoder(strategy="TargetEncoder", max_onehot=None)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["feature 3"].__class__.__name__ == "TargetEncoder"
+    assert encoder._encoders["feature_3"].__class__.__name__ == "TargetEncoder"
 
 
 def test_max_onehot_parameter():
@@ -527,7 +516,7 @@ def test_frac_to_other(frac_to_other):
     """Assert that the other values are created when encoding."""
     encoder = Encoder(max_onehot=5, frac_to_other=frac_to_other)
     X = encoder.fit_transform(X10_str, y10)
-    assert "feature 3_other" in X.columns
+    assert "feature_3_other" in X.columns
 
 
 def test_encoder_strategy_invalid_estimator():
@@ -541,11 +530,11 @@ def test_encoder_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
     encoder = Encoder(strategy=LeaveOneOutEncoder, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert X.loc[0, "feature 3"] != "a"
+    assert X.loc[0, "feature_3"] != "a"
 
     encoder = Encoder(strategy=LeaveOneOutEncoder(), max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert X.loc[0, "feature 3"] != "a"
+    assert X.loc[0, "feature_3"] != "a"
 
 
 def test_encoder_check_is_fitted():
@@ -570,13 +559,13 @@ def test_ordinal_encoder():
     """Assert that the Ordinal-encoder works as intended."""
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
-    assert np.all((X["feature 3"] == 0) | (X["feature 3"] == 1))
-    assert list(encoder.mapping) == ["feature 3", "feature 4"]
+    assert np.all((X["feature_3"] == 0) | (X["feature_3"] == 1))
+    assert list(encoder.mapping) == ["feature_3", "feature_4"]
 
 
 def test_ordinal_features():
     """Assert that ordinal features are encoded."""
-    encoder = Encoder(max_onehot=None, ordinal={"feature 3": ["b", "a"]})
+    encoder = Encoder(max_onehot=None, ordinal={"feature_3": ["b", "a"]})
     X = encoder.fit_transform(X10_str2, y10)
     assert X.iloc[0, 2] == 1 and X.iloc[2, 2] == 0
 
@@ -585,12 +574,12 @@ def test_one_hot_encoder():
     """Assert that the OneHot-encoder works as intended."""
     encoder = Encoder(max_onehot=4)
     X = encoder.fit_transform(X10_str, y10)
-    assert "feature 3_c" in X.columns
+    assert "feature_3_c" in X.columns
 
 
-@pytest.mark.parametrize("strategy", ENCODING_STRATS)
+@pytest.mark.parametrize("strategy", ["HelmertEncoder", "SumEncoder"])
 def test_all_encoder_types(strategy):
-    """Assert that all estimators work as intended."""
+    """Assert that encoding estimators work as intended."""
     encoder = Encoder(strategy=strategy, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
     assert all(X[col].dtype.kind in "ifu" for col in X)
@@ -600,7 +589,7 @@ def test_kwargs_parameters():
     """Assert that the kwargs parameter works as intended."""
     encoder = Encoder(strategy="LeaveOneOut", max_onehot=None, sigma=0.5)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["feature 3"].get_params()["sigma"] == 0.5
+    assert encoder._encoders["feature_3"].get_params()["sigma"] == 0.5
 
 
 # Test Pruner ====================================================== >>
@@ -673,7 +662,7 @@ def test_categorical_cols_are_ignored():
     """Assert that categorical columns are returned untouched."""
     Feature_2 = np.array(X10_str)[:, 2]
     X, y = Pruner(method="min_max", max_sigma=2).transform(X10_str, y10)
-    assert [i == j for i, j in zip(X["feature 2"], Feature_2)]
+    assert [i == j for i, j in zip(X["feature_2"], Feature_2)]
 
 
 def test_drop_outlier_in_target():
@@ -682,7 +671,7 @@ def test_drop_outlier_in_target():
     assert len(y) + 2 == len(y10)
 
 
-@pytest.mark.parametrize("strategy", PRUNING_STRATS)
+@pytest.mark.parametrize("strategy", ["iforest", "ee", "lof", "svm", "dbscan"])
 def test_pruner_strategies(strategy):
     """Assert that all estimator requiring strategies work."""
     pruner = Pruner(strategy=strategy)
@@ -693,7 +682,7 @@ def test_pruner_strategies(strategy):
 
 def test_multiple_strategies():
     """Assert that selecting multiple strategies work."""
-    pruner = Pruner(strategy=["z-score", "lof", "ee", "iforest"])
+    pruner = Pruner(strategy=["zscore", "lof", "ee", "iforest"])
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
     assert all(hasattr(pruner, attr) for attr in ("lof", "ee", "iforest"))
@@ -748,13 +737,12 @@ def test_balancer_custom_estimator():
     assert len(X) != len(X_bin)
 
 
-@pytest.mark.parametrize("strategy", BALANCING_STRATS)
-def test_all_balancers(strategy):
-    """Assert that all estimators work as intended."""
-    if strategy not in ("smotenc", "kmeanssmote"):  # Non ATOM related errors
-        balancer = Balancer(strategy=strategy, sampling_strategy="all")
-        X, y = balancer.transform(X_bin, y_bin)
-        assert len(X) != len(X_bin)
+@pytest.mark.parametrize("strategy", ["allknn", "tomeklinks", "svmsmote", "smoteenn"])
+def test_balancers(strategy):
+    """Assert that balancer estimators work as intended."""
+    balancer = Balancer(strategy=strategy, sampling_strategy="all")
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
 
 
 def test_balancer_kwargs():

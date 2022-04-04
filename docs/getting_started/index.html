@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.12/getting_started/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/getting_started/">
       
       <link rel="icon" href="../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -553,20 +553,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../user_guide/first_steps/" class="md-nav__link">
-        First steps
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../user_guide/data_management/" class="md-nav__link">
         Data management
       </a>
@@ -583,6 +569,20 @@
     <li class="md-nav__item">
       <a href="../user_guide/logging/" class="md-nav__link">
         Logging & Tracking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guide/gpu/" class="md-nav__link">
+        GPU
       </a>
     </li>
   
@@ -1703,7 +1703,7 @@
   
     <li class="md-nav__item">
       <a href="../API/models/lsvm/" class="md-nav__link">
-        Linear-SVM
+        Linear SVM
       </a>
     </li>
   
@@ -1717,7 +1717,7 @@
   
     <li class="md-nav__item">
       <a href="../API/models/ksvm/" class="md-nav__link">
-        Kernel-SVM
+        Kernel SVM
       </a>
     </li>
   
@@ -2822,47 +2822,91 @@
 <h1 id="getting-started">Getting started</h1>
 <hr />
 <h2 id="installation">Installation</h2>
+<p><strong>Standard installation</strong></p>
 <p>Install ATOM's newest release easily via <code>pip</code>:</p>
 <div class="highlight"><pre><span></span><code>$ pip install -U atom-ml
 </code></pre></div>
 <p>or via <code>conda</code>:</p>
 <div class="highlight"><pre><span></span><code>$ conda install -c conda-forge atom-ml
 </code></pre></div>
-<p>Note that these commands will also install all <a href="../dependencies/#required">required dependencies</a>.
-To install the <a href="../dependencies/#optional">optional dependencies</a> as well, add [models]
-after the package's name.</p>
-<div class="highlight"><pre><span></span><code>$ pip install -U atom-ml[models]
-</code></pre></div>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>Since atom was already taken, download the package under the name <code>atom-ml</code>!</p>
 </div>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><strong>Optional dependencies</strong></p>
+<p>To install the <a href="../dependencies/#optional">optional dependencies</a>, add
+[models] after the package's name.</p>
+<div class="highlight"><pre><span></span><code>$ pip install -U atom-ml[models]
+</code></pre></div>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><strong>Latest source</strong></p>
+<p>Sometimes, new features and bug fixes are already implemented in the
+<code>development</code> branch, but waiting for the next release to be made
+available. If you can't wait for that, it's possible to install the
+package directly from git.</p>
+<div class="highlight"><pre><span></span><code>$ pip install git+https://github.com/tvdboom/ATOM.git@development#egg=atom-ml
+</code></pre></div>
+<p>Don't forget to include <code>#egg=atom-ml</code> to explicitly name the project,
+this way pip can track metadata for it without having to have run the
+<code>setup.py</code> script.</p>
+<p><br style="display: block; margin-top: 2em; content: ' '"></p>
+<p><strong>Contributing</strong></p>
+<p>If you are planning to <a href="../contributing">contribute</a> to the project,
+you'll need the <a href="../dependencies/#development">development dependencies</a>.
+Install them adding [dev] after the package's name.</p>
+<div class="highlight"><pre><span></span><code>$ pip install -U atom-ml[dev]
+</code></pre></div>
+<p>Click <a href="https://pypi.org/simple/atom-ml/">here</a> for a complete list of
+package files for all versions published on PyPI.</p>
 <p><br><br></p>
 <h2 id="usage">Usage</h2>
-<p>Call the <code>ATOMClassifier</code> or <code>ATOMRegressor</code> class and provide the data you want to use:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+<p><a href="https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing"><img alt="Colab" src="https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667" /></a>
+<a href="https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
+<p>ATOM contains a variety of classes and functions to perform data cleaning,
+feature engineering, model training, plotting and much more. The easiest
+way to use everything ATOM has to offer is through one of the main classes:</p>
+<ul>
+<li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a> for binary or multiclass classification tasks.</li>
+<li><a href="../API/ATOM/atomregressor">ATOMRegressor</a> for regression tasks.</li>
+</ul>
+<p>Let's walk you through an example. Click on the Google Colab badge on top
+of this section to run this example yourself.</p>
+<p>Make the necessary imports and load the data.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="p">)</span>
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Load the Australian Weather dataset</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;https://raw.githubusercontent.com/tvdboom/ATOM/master/examples/datasets/weatherAUS.csv&quot;</span><span class="p">)</span>
+<span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div>
-<p>ATOM has multiple data cleaning methods to help you prepare the data for modelling:</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;knn&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">,</span> <span class="n">max_nan_rows</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>  
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;LeaveOneOut&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">frac_to_other</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>  
-<span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;PCA&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<p>Initialize the ATOMClassifier or ATOMRegressor class. These two classes
+are convenient wrappers for the whole machine learning pipeline. Contrary
+to sklearn's API, they are initialized providing the data you want to
+manipulate. This data is stored in the instance and can be accessed at
+any moment through atom's <a href="../API/ATOM/atomclassifier/#data-attributes">data attributes</a>.
+You can either let atom split the dataset into a train and test set or
+provide the sets yourself.</p>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
-<p>Train and evaluate the models you want to compare:</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="s2">&quot;LDA&quot;</span><span class="p">,</span> <span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;lSVM&quot;</span><span class="p">],</span>
-    <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;f1&quot;</span><span class="p">,</span>
-    <span class="n">n_calls</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
-    <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">n_bootstrap</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-<span class="p">)</span>
+<p>Data transformations are applied through atom's methods. For example,
+calling the <a href="../API/ATOM/atomclassifier/#impute">impute</a> method will
+initialize an <a href="../API/data_cleaning/imputer">Imputer</a> instance, fit it
+on the training set and transform the whole dataset. The transformations
+are applied immediately after calling the method (no fit and transform
+commands necessary).</p>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">)</span>  
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;LeaveOneOut&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 </code></pre></div>
-<p>Make plots to analyze the results: </p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">plot_results</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;bootstrap_results.png&quot;</span><span class="p">)</span>  
-<span class="n">atom</span><span class="o">.</span><span class="n">lda</span><span class="o">.</span><span class="n">plot_confusion_matrix</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;cm.png&quot;</span><span class="p">)</span>
+<p>Similarly, models are <a href="../user_guide/training">trained and evaluated</a> using the
+<a href="../API/ATOM/atomclassifier/#run">run</a> method. Here, we fit both a
+<a href="../API/models/rf">Random Forest</a> and <a href="../API/models/adab">AdaBoost</a> model,
+and apply <a href="../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;RF&quot;</span><span class="p">,</span> <span class="s2">&quot;AdaB&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;auc&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+<p>Lastly, visualize the result using the integrated <a href="../user_guide/plots">plots</a>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">plot_roc</span><span class="p">()</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">plot_confusion_matrix</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 
               

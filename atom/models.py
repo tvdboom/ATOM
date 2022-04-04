@@ -26,6 +26,9 @@ Description: Module containing all available models. All classes must
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
+        supports_gpu: bool
+            Whether the model has a GPU implementation.
+
         goal: list
             If the model can do classification ("class"), and/or
             regression ("reg") tasks.
@@ -60,6 +63,8 @@ Description: Module containing all available models. All classes must
 
         get_estimator(self, **params):
             Return the model's estimator with unpacked parameters.
+            Implement only if custom parameters (aside n_jobs and
+            random_state) are needed.
 
         custom_fit(model, train, validation, est_params):
             This method is called instead of directly running the
@@ -67,11 +72,6 @@ Description: Module containing all available models. All classes must
 
         get_dimensions(self):
             Return a list of the hyperparameter space for optimization.
-
-
-To add a new model:
-    1. Add the model's class to models.py
-    2. Add the model to the list MODELS in models.py
 
 
 List of available models:
@@ -118,83 +118,55 @@ Additionally, ATOM implements two ensemble models:
 
 """
 
-# Standard packages
-import numpy as np
+import random
 from random import randint
-from inspect import signature
-from scipy.spatial.distance import cdist
-from skopt.space.space import Real, Integer, Categorical
 
-# Sklearn estimators
+import numpy as np
+from scipy.spatial.distance import cdist
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.ensemble import (
+    AdaBoostClassifier, AdaBoostRegressor, BaggingClassifier, BaggingRegressor,
+    ExtraTreesClassifier, ExtraTreesRegressor, GradientBoostingClassifier,
+    GradientBoostingRegressor, HistGradientBoostingClassifier,
+    HistGradientBoostingRegressor, RandomForestClassifier,
+    RandomForestRegressor,
+)
 from sklearn.gaussian_process import (
-    GaussianProcessClassifier,
-    GaussianProcessRegressor
+    GaussianProcessClassifier, GaussianProcessRegressor,
 )
-from sklearn.naive_bayes import (
-    GaussianNB,
-    MultinomialNB,
-    BernoulliNB,
-    CategoricalNB,
-    ComplementNB,
-)
+from sklearn.linear_model import ARDRegression
+from sklearn.linear_model import BayesianRidge as BayesianRidgeRegressor
+from sklearn.linear_model import ElasticNet as ElasticNetRegressor
+from sklearn.linear_model import HuberRegressor, Lars
+from sklearn.linear_model import Lasso as LassoRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression as LR
 from sklearn.linear_model import (
-    LinearRegression,
-    RidgeClassifier,
-    Ridge as RidgeRegressor,
-    Lasso as LassoRegressor,
-    ElasticNet as ElasticNetRegressor,
-    Lars,
-    BayesianRidge as BayesianRidgeRegressor,
-    ARDRegression,
-    HuberRegressor,
-    Perceptron as Perc,
-    LogisticRegression as LR,
+    PassiveAggressiveClassifier, PassiveAggressiveRegressor,
 )
-from sklearn.discriminant_analysis import (
-    LinearDiscriminantAnalysis as LDA,
-    QuadraticDiscriminantAnalysis as QDA,
+from sklearn.linear_model import Perceptron as Perc
+from sklearn.linear_model import Ridge as RidgeRegressor
+from sklearn.linear_model import RidgeClassifier, SGDClassifier, SGDRegressor
+from sklearn.naive_bayes import (
+    BernoulliNB, CategoricalNB, ComplementNB, GaussianNB, MultinomialNB,
 )
 from sklearn.neighbors import (
-    KNeighborsClassifier,
-    KNeighborsRegressor,
-    RadiusNeighborsClassifier,
+    KNeighborsClassifier, KNeighborsRegressor, RadiusNeighborsClassifier,
     RadiusNeighborsRegressor,
 )
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.ensemble import (
-    BaggingClassifier,
-    BaggingRegressor,
-    ExtraTreesClassifier,
-    ExtraTreesRegressor,
-    RandomForestClassifier,
-    RandomForestRegressor,
-    AdaBoostClassifier,
-    AdaBoostRegressor,
-    GradientBoostingClassifier,
-    GradientBoostingRegressor,
-    HistGradientBoostingClassifier,
-    HistGradientBoostingRegressor,
-)
-from sklearn.svm import LinearSVC, LinearSVR, SVC, SVR
-from sklearn.linear_model import (
-    PassiveAggressiveClassifier,
-    PassiveAggressiveRegressor,
-    SGDClassifier,
-    SGDRegressor,
-)
 from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.svm import SVC, SVR, LinearSVC, LinearSVR
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from skopt.space.space import Categorical, Integer, Real
 
-# Own modules
-from .basemodel import BaseModel
-from .pipeline import Pipeline
-from .ensembles import (
-    VotingClassifier,
-    VotingRegressor,
-    StackingClassifier,
-    StackingRegressor,
+from atom.basemodel import BaseModel
+from atom.ensembles import (
+    StackingClassifier, StackingRegressor, VotingClassifier, VotingRegressor,
 )
-from .utils import create_acronym, CustomDict
+from atom.pipeline import Pipeline
+from atom.utils import CustomDict, create_acronym
 
 
 # Variables ======================================================== >>
@@ -240,24 +212,21 @@ class CustomModel(BaseModel):
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        sign = signature(self.est.__init__).parameters
-
-        # The provided estimator can be a class or an instance
         if callable(self.est):
             # Add n_jobs and random_state to the estimator (if available)
             for p in ("n_jobs", "random_state"):
-                if p in sign:
+                if p in self._sign():
                     params[p] = params.pop(p, getattr(self.T, p))
 
             return self.est(**params)
-
         else:
-            # Update the parameters (only if it's a BaseEstimator)
+            # Update the parameters if it's a child class of BaseEstimator
+            # If the class has the param and it's the default value, change it
             if all(hasattr(self.est, attr) for attr in ("get_params", "set_params")):
                 for p in ("n_jobs", "random_state"):
-                    # If the class has the parameter and it's the default value
-                    if p in sign and self.est.get_params()[p] == sign[p]._default:
-                        params[p] = params.pop(p, getattr(self.T, p))
+                    if p in self._sign():
+                        if self.est.get_params()[p] == self._sign()[p]._default:
+                            params[p] = params.pop(p, getattr(self.T, p))
 
                 self.est.set_params(**params)
 
@@ -271,6 +240,7 @@ class Dummy(BaseModel):
     fullname = "Dummy Estimator"
     needs_scaling = False
     accepts_sparse = False
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -281,24 +251,30 @@ class Dummy(BaseModel):
         else:
             return DummyRegressor
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-        else:
-            return self.est_class(**params)
+    def get_parameters(self, x):
+        """Return a dictionary of the model's hyperparameters."""
+        params = super().get_parameters(x)
+
+        if self._get_param(params, "strategy") != "quantile":
+            params.pop("quantile", None)
+        elif params.get("quantile") is None:
+            # quantile can't be None with strategy="quantile" (select value randomly)
+            params.replace_value("quantile", random.choice(zero_to_one_inc))
+
+        return params
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         if self.T.goal == "class":
             categories = ["most_frequent", "prior", "stratified", "uniform"]
+            dimensions = [Categorical(categories, name="strategy")]
         else:
-            categories = ["mean", "median", "quantile"]
+            dimensions = [
+                Categorical(["mean", "median", "quantile"], name="strategy"),
+                Categorical([None, *zero_to_one_inc], name="quantile"),
+            ]
 
-        return [Categorical(categories, name="strategy")]
+        return dimensions
 
 
 class GaussianProcess(BaseModel):
@@ -308,6 +284,7 @@ class GaussianProcess(BaseModel):
     fullname = "Gaussian Process"
     needs_scaling = False
     accepts_sparse = False
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -318,20 +295,6 @@ class GaussianProcess(BaseModel):
         else:
             return GaussianProcessRegressor
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
-
 
 class GaussianNaiveBayes(BaseModel):
     """Gaussian Naive Bayes."""
@@ -340,16 +303,13 @@ class GaussianNaiveBayes(BaseModel):
     fullname = "Gaussian Naive Bayes"
     needs_scaling = False
     accepts_sparse = False
+    supports_gpu = True
     goal = ["class"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return GaussianNB
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
+        return self.T._get_gpu(GaussianNB, "cuml.naive_bayes")
 
 
 class MultinomialNaiveBayes(BaseModel):
@@ -359,16 +319,13 @@ class MultinomialNaiveBayes(BaseModel):
     fullname = "Multinomial Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return MultinomialNB
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
+        return self.T._get_gpu(MultinomialNB, "cuml.naive_bayes")
 
     @staticmethod
     def get_dimensions():
@@ -386,16 +343,13 @@ class BernoulliNaiveBayes(BaseModel):
     fullname = "Bernoulli Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return BernoulliNB
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
+        return self.T._get_gpu(BernoulliNB, "cuml.naive_bayes")
 
     @staticmethod
     def get_dimensions():
@@ -413,16 +367,13 @@ class CategoricalNaiveBayes(BaseModel):
     fullname = "Categorical Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return CategoricalNB
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
+        return self.T._get_gpu(CategoricalNB, "cuml.naive_bayes")
 
     @staticmethod
     def get_dimensions():
@@ -440,16 +391,13 @@ class ComplementNaiveBayes(BaseModel):
     fullname = "Complement Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         return ComplementNB
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -468,16 +416,13 @@ class OrdinaryLeastSquares(BaseModel):
     fullname = "Ordinary Least Squares"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return LinearRegression
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
+        return self.T._get_gpu(LinearRegression)
 
 
 class Ridge(BaseModel):
@@ -487,6 +432,7 @@ class Ridge(BaseModel):
     fullname = "Ridge Estimator"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -495,23 +441,20 @@ class Ridge(BaseModel):
         if self.T.goal == "class":
             return RidgeClassifier
         else:
-            return RidgeRegressor
+            return self.T._get_gpu(RidgeRegressor, "cuml.dask.linear_model")
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
-    @staticmethod
-    def get_dimensions():
+    def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
-        solvers = ["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
-        return [
-            Real(1e-3, 10, "log-uniform", name="alpha"),
-            Categorical(solvers, name="solver"),
-        ]
+        if self._gpu:
+            dimensions = [Real(1e-3, 10, "log-uniform", name="alpha")]
+        else:
+            solvers = ["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
+            dimensions = [
+                Real(1e-3, 10, "log-uniform", name="alpha"),
+                Categorical(solvers, name="solver"),
+            ]
+
+        return dimensions
 
 
 class Lasso(BaseModel):
@@ -521,19 +464,13 @@ class Lasso(BaseModel):
     fullname = "Lasso Regression"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return LassoRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
+        return self.T._get_gpu(LassoRegressor, "cuml.dask.linear_model")
 
     @staticmethod
     def get_dimensions():
@@ -551,19 +488,13 @@ class ElasticNet(BaseModel):
     fullname = "ElasticNet Regression"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return ElasticNetRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
+        return self.T._get_gpu(ElasticNetRegressor, "cuml.dask.linear_model")
 
     @staticmethod
     def get_dimensions():
@@ -582,19 +513,13 @@ class LeastAngleRegression(BaseModel):
     fullname = "Least Angle Regression"
     needs_scaling = True
     accepts_sparse = False
+    supports_gpu = True
     goal = ["reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return Lars
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
+        return self.T._get_gpu(Lars, "cuml.experimental.linear_model")
 
 
 class BayesianRidge(BaseModel):
@@ -604,16 +529,13 @@ class BayesianRidge(BaseModel):
     fullname = "Bayesian Ridge"
     needs_scaling = True
     accepts_sparse = False
+    supports_gpu = False
     goal = ["reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         return BayesianRidgeRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -634,16 +556,13 @@ class AutomaticRelevanceDetermination(BaseModel):
     fullname = "Automatic Relevant Determination"
     needs_scaling = True
     accepts_sparse = False
+    supports_gpu = False
     goal = ["reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         return ARDRegression
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -664,16 +583,13 @@ class HuberRegression(BaseModel):
     fullname = "Huber Regression"
     needs_scaling = True
     accepts_sparse = False
+    supports_gpu = False
     goal = ["reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         return HuberRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -692,6 +608,7 @@ class Perceptron(BaseModel):
     fullname = "Perceptron"
     needs_scaling = True
     accepts_sparse = False
+    supports_gpu = False
     goal = ["class"]
 
     @property
@@ -707,14 +624,6 @@ class Perceptron(BaseModel):
             params.pop("l1_ratio", None)
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     @staticmethod
     def get_dimensions():
@@ -735,12 +644,13 @@ class LogisticRegression(BaseModel):
     fullname = "Logistic Regression"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return LR
+        return self.T._get_gpu(LR)
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -760,32 +670,29 @@ class LogisticRegression(BaseModel):
             params.pop("l1_ratio", None)
         elif self._get_param(params, "l1_ratio") is None:
             # l1_ratio can't be None with elasticnet (select value randomly)
-            params.replace_value("l1_ratio", np.random.choice(zero_to_one_exc))
+            params.replace_value("l1_ratio", random.choice(zero_to_one_exc))
 
         if self._get_param(params, "penalty") == "none":
             params.pop("C", None)
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
-    @staticmethod
-    def get_dimensions():
+    def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         solvers = ["lbfgs", "newton-cg", "liblinear", "sag", "saga"]
-        return [
+
+        dimensions = [
             Categorical(["l1", "l2", "elasticnet", "none"], name="penalty"),
             Real(1e-3, 100, "log-uniform", name="C"),
             Categorical(solvers, name="solver"),
             Integer(100, 1000, name="max_iter"),
             Categorical([None, *zero_to_one_exc], name="l1_ratio"),
         ]
+
+        if self._gpu:
+            del dimensions[2]
+
+        return dimensions
 
 
 class LinearDiscriminantAnalysis(BaseModel):
@@ -795,6 +702,7 @@ class LinearDiscriminantAnalysis(BaseModel):
     fullname = "Linear Discriminant Analysis"
     needs_scaling = False
     accepts_sparse = False
+    supports_gpu = False
     goal = ["class"]
 
     @property
@@ -810,10 +718,6 @@ class LinearDiscriminantAnalysis(BaseModel):
             params.pop("shrinkage", None)
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -831,16 +735,13 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     fullname = "Quadratic Discriminant Analysis"
     needs_scaling = False
     accepts_sparse = False
+    supports_gpu = False
     goal = ["class"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         return QDA
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(**params)
 
     @staticmethod
     def get_dimensions():
@@ -855,33 +756,35 @@ class KNearestNeighbors(BaseModel):
     fullname = "K-Nearest Neighbors"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class", "reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return KNeighborsClassifier
+            return self.T._get_gpu(KNeighborsClassifier, "cuml.neighbors")
         else:
-            return KNeighborsRegressor
+            return self.T._get_gpu(KNeighborsRegressor, "cuml.neighbors")
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            **params,
-        )
-
-    @staticmethod
-    def get_dimensions():
+    def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
-        return [
-            Integer(1, 100, name="n_neighbors"),
-            Categorical(["uniform", "distance"], name="weights"),
-            Categorical(["auto", "ball_tree", "kd_tree", "brute"], name="algorithm"),
-            Integer(20, 40, name="leaf_size"),
-            Integer(1, 2, name="p"),
-        ]
+        dimensions = [Integer(1, 100, name="n_neighbors")]
+
+        if not self._gpu:
+            dimensions.extend(
+                [
+                    Categorical(["uniform", "distance"], name="weights"),
+                    Categorical(
+                        categories=["auto", "ball_tree", "kd_tree", "brute"],
+                        name="algorithm",
+                    ),
+                    Integer(20, 40, name="leaf_size"),
+                    Integer(1, 2, name="p"),
+                ]
+            )
+
+        return dimensions
 
 
 class RadiusNearestNeighbors(BaseModel):
@@ -891,6 +794,7 @@ class RadiusNearestNeighbors(BaseModel):
     fullname = "Radius Nearest Neighbors"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     def __init__(self, *args, **kwargs):
@@ -971,6 +875,7 @@ class DecisionTree(BaseModel):
     fullname = "Decision Tree"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -980,13 +885,6 @@ class DecisionTree(BaseModel):
             return DecisionTreeClassifier
         else:
             return DecisionTreeRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -998,7 +896,7 @@ class DecisionTree(BaseModel):
         return [
             Categorical(criterion, name="criterion"),
             Categorical(["best", "random"], name="splitter"),
-            Categorical([None, *list(range(1, 10))], name="max_depth"),
+            Categorical([None, *range(1, 17)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -1016,6 +914,7 @@ class Bagging(BaseModel):
     fullname = "Bagging"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1025,14 +924,6 @@ class Bagging(BaseModel):
             return BaggingClassifier
         else:
             return BaggingRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     @staticmethod
     def get_dimensions():
@@ -1053,6 +944,7 @@ class ExtraTrees(BaseModel):
     fullname = "Extra-Trees"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1072,14 +964,6 @@ class ExtraTrees(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         if self.T.goal == "class":
@@ -1090,7 +974,7 @@ class ExtraTrees(BaseModel):
         return [
             Integer(10, 500, name="n_estimators"),
             Categorical(criterion, name="criterion"),
-            Categorical([None, *list(range(1, 10))], name="max_depth"),
+            Categorical([None, *range(1, 17)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -1098,8 +982,8 @@ class ExtraTrees(BaseModel):
                 name="max_features",
             ),
             Categorical([True, False], name="bootstrap"),
-            Real(0, 0.035, name="ccp_alpha"),
             Categorical([None, *half_to_one_exc], name="max_samples"),
+            Real(0, 0.035, name="ccp_alpha"),
         ]
 
 
@@ -1110,15 +994,16 @@ class RandomForest(BaseModel):
     fullname = "Random Forest"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class", "reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return RandomForestClassifier
+            return self.T._get_gpu(RandomForestClassifier, "cuml.ensemble")
         else:
-            return RandomForestRegressor
+            return self.T._get_gpu(RandomForestRegressor, "cuml.ensemble")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1129,25 +1014,19 @@ class RandomForest(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         if self.T.goal == "class":
             criterion = ["gini", "entropy"]
+        elif self._gpu:
+            criterion = ["mse", "poisson", "gamma", "inverse_gaussian"]
         else:
             criterion = ["squared_error", "absolute_error", "poisson"]
 
-        return [
+        dimensions = [
             Integer(10, 500, name="n_estimators"),
             Categorical(criterion, name="criterion"),
-            Categorical([None, *list(range(1, 10))], name="max_depth"),
+            Categorical([None, *range(1, 17)], name="max_depth"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
@@ -1155,9 +1034,18 @@ class RandomForest(BaseModel):
                 name="max_features",
             ),
             Categorical([True, False], name="bootstrap"),
-            Real(0, 0.035, name="ccp_alpha"),
             Categorical([None, *half_to_one_exc], name="max_samples"),
         ]
+
+        if self._gpu:
+            dimensions[1].name = "split_criterion"
+            dimensions[2].categories = list(range(1, 17))
+            dimensions[5].categories = ["auto", "sqrt", "log2", *half_to_one_exc]
+            dimensions[7].categories = half_to_one_exc
+        else:
+            dimensions.append(Real(0, 0.035, name="ccp_alpha"))
+
+        return dimensions
 
 
 class AdaBoost(BaseModel):
@@ -1167,6 +1055,7 @@ class AdaBoost(BaseModel):
     fullname = "AdaBoost"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1176,13 +1065,6 @@ class AdaBoost(BaseModel):
             return AdaBoostClassifier
         else:
             return AdaBoostRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1207,6 +1089,7 @@ class GradientBoostingMachine(BaseModel):
     fullname = "Gradient Boosting Machine"
     needs_scaling = False
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1226,13 +1109,6 @@ class GradientBoostingMachine(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
-
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
         dimensions = []  # Multiclass classification only works with deviance loss
@@ -1250,7 +1126,7 @@ class GradientBoostingMachine(BaseModel):
                 Categorical(["friedman_mse", "squared_error"], name="criterion"),
                 Integer(2, 20, name="min_samples_split"),
                 Integer(1, 20, name="min_samples_leaf"),
-                Integer(1, 10, name="max_depth"),
+                Integer(1, 21, name="max_depth"),
                 Categorical(
                     categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
                     name="max_features",
@@ -1272,6 +1148,7 @@ class HistGBM(BaseModel):
     fullname = "HistGBM"
     needs_scaling = False
     accepts_sparse = False
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1281,13 +1158,6 @@ class HistGBM(BaseModel):
             return HistGradientBoostingClassifier
         else:
             return HistGradientBoostingRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1301,7 +1171,7 @@ class HistGBM(BaseModel):
                 Real(0.01, 1.0, "log-uniform", name="learning_rate"),
                 Integer(10, 500, name="max_iter"),
                 Integer(10, 50, name="max_leaf_nodes"),
-                Categorical([None, *range(1, 11)], name="max_depth"),
+                Categorical([None, *range(1, 17)], name="max_depth"),
                 Integer(10, 30, name="min_samples_leaf"),
                 Categorical(zero_to_one_inc, name="l2_regularization"),
             ]
@@ -1317,6 +1187,7 @@ class XGBoost(BaseModel):
     fullname = "XGBoost"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1338,8 +1209,9 @@ class XGBoost(BaseModel):
         return self.est_class(
             use_label_encoder=params.pop("use_label_encoder", False),
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            random_state=random_state,
+            tree_method=params.pop("tree_method", "gpu_hist" if self.T.gpu else None),
             verbosity=params.pop("verbosity", 0),
+            random_state=random_state,
             **params,
         )
 
@@ -1379,7 +1251,7 @@ class XGBoost(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Integer(1, 10, name="max_depth"),
+            Integer(1, 20, name="max_depth"),
             Real(0, 1.0, name="gamma"),
             Integer(1, 10, name="min_child_weight"),
             Categorical(half_to_one_inc, name="subsample"),
@@ -1396,6 +1268,7 @@ class LightGBM(BaseModel):
     fullname = "LightGBM"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1412,6 +1285,7 @@ class LightGBM(BaseModel):
         """Return the model's estimator with unpacked parameters."""
         return self.est_class(
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            device=params.pop("device", "gpu" if self.T.gpu else "cpu"),
             random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
@@ -1451,10 +1325,10 @@ class LightGBM(BaseModel):
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Categorical([-1, *range(1, 10)], name="max_depth"),
+            Categorical([-1, *range(1, 17)], name="max_depth"),
             Integer(20, 40, name="num_leaves"),
             Categorical([1e-4, 1e-3, 0.01, 0.1, 1, 10, 100], name="min_child_weight"),
-            Integer(10, 30, name="min_child_samples"),
+            Integer(1, 30, name="min_child_samples"),
             Categorical(half_to_one_inc, name="subsample"),
             Categorical([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], name="colsample_bytree"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_alpha"),
@@ -1469,6 +1343,7 @@ class CatBoost(BaseModel):
     fullname = "CatBoost"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class", "reg"]
 
     @property
@@ -1488,8 +1363,9 @@ class CatBoost(BaseModel):
             train_dir=params.pop("train_dir", ""),
             allow_writing_files=params.pop("allow_writing_files", False),
             thread_count=params.pop("n_jobs", self.T.n_jobs),
-            random_state=params.pop("random_state", self.T.random_state),
+            task_type=params.pop("task_type", "GPU" if self.T.gpu else "CPU"),
             verbose=params.pop("verbose", False),
+            random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
 
@@ -1519,13 +1395,12 @@ class CatBoost(BaseModel):
     @staticmethod
     def get_dimensions():
         """Return a list of the bounds for the hyperparameters."""
-        # num_leaves and min_child_samples not available for CPU implementation
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
-            Categorical([None, *range(1, 10)], name="max_depth"),
+            Categorical([None, *range(1, 17)], name="max_depth"),
+            Integer(1, 30, name="min_child_samples"),
             Categorical(half_to_one_inc, name="subsample"),
-            Categorical([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], name="colsample_bylevel"),
             Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda"),
         ]
 
@@ -1534,18 +1409,19 @@ class LinearSVM(BaseModel):
     """Linear Support Vector Machine."""
 
     acronym = "lSVM"
-    fullname = "Linear-SVM"
+    fullname = "Linear SVM"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class", "reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return LinearSVC
+            return self.T._get_gpu(LinearSVC, "cuml.svm")
         else:
-            return LinearSVR
+            return self.T._get_gpu(LinearSVR, "cuml.svm")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1568,10 +1444,10 @@ class LinearSVM(BaseModel):
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
+        if self._gpu and self.T.goal == "class":
+            return self.est_class(probability=True, **params)
+        else:
+            return super().get_estimator(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1586,9 +1462,11 @@ class LinearSVM(BaseModel):
             [
                 Categorical(loss, name="loss"),
                 Real(1e-3, 100, "log-uniform", name="C"),
-                Categorical([True, False], name="dual"),
             ]
         )
+
+        if not self._gpu:
+            dimensions.append(Categorical([True, False], name="dual"))
 
         return dimensions
 
@@ -1597,18 +1475,19 @@ class KernelSVM(BaseModel):
     """Kernel (non-linear) Support Vector Machine."""
 
     acronym = "kSVM"
-    fullname = "Kernel-SVM"
+    fullname = "Kernel SVM"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = True
     goal = ["class", "reg"]
 
     @property
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return SVC
+            return self.T._get_gpu(SVC, "cuml.svm")
         else:
-            return SVR
+            return self.T._get_gpu(SVR, "cuml.svm")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1633,26 +1512,33 @@ class KernelSVM(BaseModel):
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
+        if self._gpu and self.T.goal == "class":
             return self.est_class(
+                probability=True,
                 random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
+                **params)
         else:
-            return self.est_class(**params)
+            return super().get_estimator(**params)
 
-    @staticmethod
-    def get_dimensions():
+    def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
-        return [
+        dimensions = [
             Real(1e-3, 100, "log-uniform", name="C"),
             Categorical(["linear", "poly", "rbf", "sigmoid"], name="kernel"),
             Integer(2, 5, name="degree"),
             Categorical(["scale", "auto"], name="gamma"),
             Real(-1.0, 1.0, name="coef0"),
-            Real(1e-3, 100, "log-uniform", name="epsilon"),
-            Categorical([True, False], name="shrinking"),
         ]
+
+        if not self._gpu:
+            dimensions.extend(
+                [
+                    Real(1e-3, 100, "log-uniform", name="epsilon"),
+                    Categorical([True, False], name="shrinking"),
+                ]
+            )
+
+        return dimensions
 
 
 class PassiveAggressive(BaseModel):
@@ -1662,6 +1548,7 @@ class PassiveAggressive(BaseModel):
     fullname = "Passive Aggressive"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1671,19 +1558,6 @@ class PassiveAggressive(BaseModel):
             return PassiveAggressiveClassifier
         else:
             return PassiveAggressiveRegressor
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1706,6 +1580,7 @@ class StochasticGradientDescent(BaseModel):
     fullname = "Stochastic Gradient Descent"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1727,20 +1602,6 @@ class StochasticGradientDescent(BaseModel):
             params.pop("eta0", None)
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        if self.T.goal == "class":
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                n_jobs=params.pop("n_jobs", self.T.n_jobs),
-                **params,
-            )
-        else:
-            return self.est_class(
-                random_state=params.pop("random_state", self.T.random_state),
-                **params,
-            )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1778,6 +1639,7 @@ class MultilayerPerceptron(BaseModel):
     fullname = "Multi-layer Perceptron"
     needs_scaling = True
     accepts_sparse = True
+    supports_gpu = False
     goal = ["class", "reg"]
 
     @property
@@ -1821,13 +1683,6 @@ class MultilayerPerceptron(BaseModel):
             params.pop("learning_rate_init", None)
 
         return params
-
-    def get_estimator(self, **params):
-        """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
-            random_state=params.pop("random_state", self.T.random_state),
-            **params,
-        )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""

@@ -7,33 +7,57 @@ Description: Module containing the data cleaning transformers.
 
 """
 
-# Standard packages
+from collections import defaultdict
+from inspect import signature
+from typing import Any, Dict, Optional, Union
+
 import numpy as np
 import pandas as pd
-from inspect import signature
-from scipy.stats import zscore
-from typeguard import typechecked
-from collections import defaultdict
-from typing import Union, Optional, Dict, Any
-from sklearn.base import BaseEstimator, clone
-from sklearn.impute import SimpleImputer, KNNImputer
-from sklearn.preprocessing import (
-    FunctionTransformer,
-    KBinsDiscretizer,
-    PowerTransformer,
-    QuantileTransformer,
-    LabelEncoder,
-)
-from category_encoders.ordinal import OrdinalEncoder
+from category_encoders.backward_difference import BackwardDifferenceEncoder
+from category_encoders.basen import BaseNEncoder
+from category_encoders.binary import BinaryEncoder
+from category_encoders.cat_boost import CatBoostEncoder
+from category_encoders.helmert import HelmertEncoder
+from category_encoders.james_stein import JamesSteinEncoder
+from category_encoders.leave_one_out import LeaveOneOutEncoder
+from category_encoders.m_estimate import MEstimateEncoder
 from category_encoders.one_hot import OneHotEncoder
+from category_encoders.ordinal import OrdinalEncoder
+from category_encoders.polynomial import PolynomialEncoder
+from category_encoders.sum_coding import SumEncoder
+from category_encoders.target_encoder import TargetEncoder
+from category_encoders.woe import WOEEncoder
+from imblearn.combine import SMOTEENN, SMOTETomek
+from imblearn.over_sampling import (
+    ADASYN, SMOTE, SMOTEN, SMOTENC, SVMSMOTE, BorderlineSMOTE, KMeansSMOTE,
+    RandomOverSampler,
+)
+from imblearn.under_sampling import (
+    AllKNN, CondensedNearestNeighbour, EditedNearestNeighbours,
+    InstanceHardnessThreshold, NearMiss, NeighbourhoodCleaningRule,
+    OneSidedSelection, RandomUnderSampler, RepeatedEditedNearestNeighbours,
+    TomekLinks,
+)
+from scipy.stats import zscore
+from sklearn.base import BaseEstimator, clone
+from sklearn.cluster import DBSCAN, OPTICS
+from sklearn.covariance import EllipticEnvelope
+from sklearn.ensemble import IsolationForest
+from sklearn.impute import KNNImputer, SimpleImputer
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.preprocessing import (
+    FunctionTransformer, KBinsDiscretizer, LabelEncoder, MaxAbsScaler,
+    MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler,
+    StandardScaler,
+)
+from sklearn.svm import OneClassSVM
+from typeguard import typechecked
 
-# Own modules
-from .basetransformer import BaseTransformer
-from .utils import (
-    SEQUENCE, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS,
-    ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS, lst, it,
-    variable_return, to_series, merge, check_is_fitted, composed,
-    crash, method_to_log,
+from atom.basetransformer import BaseTransformer
+from atom.utils import (
+    FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    check_is_fitted, composed, crash, it, lst, merge, method_to_log, to_series,
+    variable_return,
 )
 
 
@@ -174,6 +198,12 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
             - "maxabs": Scale features by their maximum absolute value.
             - "robust": Scale using statistics that are robust to outliers.
 
+    gpu: bool or str, optional (default=False)
+        Train strategy on GPU (instead of CPU).
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -198,11 +228,12 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "standard",
-        verbose: int = 0,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.kwargs = kwargs
 
@@ -231,19 +262,31 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
-        if self.strategy.lower() in SCALING_STRATS:
-            self._estimator = SCALING_STRATS[self.strategy.lower()](**self.kwargs)
+        strategies = CustomDict(
+            standard=StandardScaler,
+            minmax=MinMaxScaler,
+            maxabs=MaxAbsScaler,
+            robust=RobustScaler,
+        )
 
-            # Add the estimator as attribute to the instance
-            setattr(self, self.strategy.lower(), self._estimator)
+        if self.strategy in strategies:
+            estimator = self._get_gpu(
+                estimator=strategies[self.strategy],
+                module="cuml.experimental.preprocessing",
+            )
+            self._estimator = estimator(**self.kwargs)
         else:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Choose from: standard, minmax, maxabs, robust."
+                f"Choose from: {', '.join(strategies)}."
             )
 
         self.log("Fitting Scaler...", 1)
         self._estimator.fit(X[self._num_cols])
+
+        # Add the estimator as attribute to the instance
+        setattr(self, self.strategy.lower(), self._estimator)
+
         self._is_fitted = True
         return self
 
@@ -286,7 +329,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
     where normality is desired. Missing values are disregarded in
     fit and maintained in transform. Categorical columns are ignored.
 
-    Note that the yeo-johnson and box-cox strategies standardize the
+    Note that the yeojohnson and boxcox strategies standardize the
     data after transforming. Use the kwargs to change this behaviour.
 
     Note that the quantile strategy performs a non-linear transformation.
@@ -296,10 +339,10 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="yeo-johnson")
+    strategy: str, optional (default="yeojohnson")
         The transforming strategy. Choose from:
-            - "yeo-johnson"
-            - "box-cox" (only works with strictly positive values)
+            - "yeojohnson"
+            - "boxcox" (only works with strictly positive values)
             - "quantile": Transform features using quantiles information.
 
     verbose: int, optional (default=0)
@@ -329,10 +372,10 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strategy: str = "yeo-johnson",
-        verbose: int = 0,
+        strategy: str = "yeojohnson",
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger, random_state=random_state)
@@ -364,32 +407,30 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
-        if self.strategy.lower() in ("yeo-johnson", "yeojohnson"):
-            self.yeojohnson = self._estimator = PowerTransformer(
-                method="yeo-johnson",
-                **self.kwargs,
-            )
-        elif self.strategy.lower() in ("box-cox", "boxcox"):
-            self.boxcox = self._estimator = PowerTransformer(
-                method="box-cox",
-                **self.kwargs,
+        kwargs = self.kwargs.copy()
+        if self.strategy.lower() in ("yeojohnson", "boxcox"):
+            self._estimator = PowerTransformer(
+                method=self.strategy.lower()[:3] + "-" + self.strategy.lower()[3:],
+                **kwargs,
             )
         elif self.strategy.lower() == "quantile":
-            random_state = self.kwargs.pop("random_state", self.random_state)
-            output_distribution = self.kwargs.pop("output_distribution", "normal")
-            self.quantile = self._estimator = QuantileTransformer(
-                output_distribution=output_distribution,
-                random_state=random_state,
-                **self.kwargs,
+            self._estimator = QuantileTransformer(
+                output_distribution=kwargs.pop("output_distribution", "normal"),
+                random_state=kwargs.pop("random_state", self.random_state),
+                **kwargs,
             )
         else:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Choose from: yeo-johnson, box-cox, quantile."
+                "Choose from: yeojohnson, boxcox, quantile."
             )
 
         self.log("Fitting Gauss...", 1)
         self._estimator.fit(X[self._num_cols])
+
+        # Add the estimator as attribute to the instance
+        setattr(self, self.strategy.lower(), self._estimator)
+
         self._is_fitted = True
         return self
 
@@ -501,7 +542,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
         encode_target: bool = True,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -543,7 +584,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        self.log("Applying data cleaning...", 1)
+        self.log("Cleaning the data...", 1)
 
         # Replace all missing values with NaN
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
@@ -606,9 +647,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Label-encode the target column
             if self.encode_target:
-                encoder = LabelEncoder()
-                y = to_series(encoder.fit_transform(y), index=y.index, name=y.name)
-                self.mapping = {str(it(v)): i for i, v in enumerate(encoder.classes_)}
+                enc = LabelEncoder()
+                y = to_series(enc.fit_transform(y), index=y.index, name=y.name)
+                self.mapping = {str(it(v)): i for i, v in enumerate(enc.classes_)}
 
                 # Only print if the target column wasn't already encoded
                 if any([key != str(value) for key, value in self.mapping.items()]):
@@ -650,6 +691,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         Maximum number or fraction of missing values in a column
         (if more, the column is removed). If None, ignore this step.
 
+    gpu: bool or str, optional (default=False)
+        Train on GPU (instead of CPU). Not for strat_num="knn".
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -677,11 +724,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         strat_num: Union[SCALAR, str] = "drop",
         strat_cat: str = "drop",
         max_nan_rows: Optional[SCALAR] = None,
-        max_nan_cols: Optional[Union[float]] = None,
-        verbose: int = 0,
+        max_nan_cols: Optional[Union[FLOAT]] = None,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strat_num = strat_num
         self.strat_cat = strat_cat
         self.max_nan_rows = max_nan_rows
@@ -717,11 +765,11 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
         # Check input Parameters
-        strats = ["drop", "mean", "median", "knn", "most_frequent"]
-        if isinstance(self.strat_num, str) and self.strat_num.lower() not in strats:
+        strategies = ["drop", "mean", "median", "knn", "most_frequent"]
+        if isinstance(self.strat_num, str) and self.strat_num.lower() not in strategies:
             raise ValueError(
                 "Unknown strategy for the strat_num parameter, got "
-                f"{self.strat_num}. Choose from: {', '.join(strats)}."
+                f"{self.strat_num}. Choose from: {', '.join(strategies)}."
             )
         if self.max_nan_rows:
             if self.max_nan_rows < 0:
@@ -759,6 +807,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._imputers = {}
 
         # Assign an imputer to each column
+        estimator = self._get_gpu(SimpleImputer, "cuml.experimental.preprocessing")
         for name, column in X.items():
             # Remember columns with too many missing values
             if self._max_nan_cols and column.isna().sum() > self._max_nan_cols:
@@ -772,22 +821,20 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                         self._imputers[name] = KNNImputer().fit(X[[name]])
 
                     elif self.strat_num.lower() == "most_frequent":
-                        self._imputers[name] = SimpleImputer(
-                            strategy="constant",
-                            fill_value=column.mode()[0],
+                        self._imputers[name] = estimator(
+                            strategy="most_frequent",
                         ).fit(X[[name]])
 
                     # Strategies mean or median
                     elif self.strat_num.lower() != "drop":
-                        self._imputers[name] = SimpleImputer(
+                        self._imputers[name] = estimator(
                             strategy=self.strat_num.lower()
                         ).fit(X[[name]])
 
             # Column is categorical
             elif self.strat_cat.lower() == "most_frequent":
-                self._imputers[name] = SimpleImputer(
-                    strategy="constant",
-                    fill_value=column.mode()[0],
+                self._imputers[name] = estimator(
+                    strategy="most_frequent",
                 ).fit(X[[name]])
 
         self._is_fitted = True
@@ -880,10 +927,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     X[name] = self._imputers[name].transform(X[[name]])
 
                 else:  # Strategies mean, median or most_frequent
-                    mode = round(self._imputers[name].statistics_[0], 2)
+                    n = np.round(self._imputers[name].statistics_[0], 2)
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"{self.strat_num.lower()} ({mode}) in feature {name}.", 2
+                        f"{self.strat_num.lower()} ({n}) in feature {name}.", 2
                     )
                     X[name] = self._imputers[name].transform(X[[name]])
 
@@ -949,6 +996,12 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If sequence: Labels to use for all columns.
         - If dict: Labels per column, where the key is the column's name.
 
+    gpu: bool or str, optional (default=False)
+        Train estimator on GPU (instead of CPU).
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -966,12 +1019,13 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "quantile",
-        bins: Union[int, SEQUENCE_TYPES, dict] = 5,
+        bins: Union[INT, SEQUENCE_TYPES, dict] = 5,
         labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
-        verbose: int = 0,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.bins = bins
         self.labels = labels
@@ -1004,7 +1058,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             """Get labels for the specified bins."""
             if isinstance(labels, dict):
                 default = [
-                    f"{round(bins[i], 2)}-{round(bins[i+1], 1)}"
+                    f"{np.round(bins[i], 2)}-{np.round(bins[i+1], 1)}"
                     for i in range(len(bins[:-1]))
                 ]
                 labels = labels.get(col, default)
@@ -1054,7 +1108,11 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                             f"len(bins)={len(bins) } and len(columns)={len(X.columns)}."
                         )
 
-                self._discretizers[col] = KBinsDiscretizer(
+                estimator = self._get_gpu(
+                    estimator=KBinsDiscretizer,
+                    module="cuml.experimental.preprocessing",
+                )
+                self._discretizers[col] = estimator(
                     n_bins=bins,
                     encode="ordinal",
                     strategy=self.strategy.lower(),
@@ -1185,10 +1243,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: Union[str, Any] = "LeaveOneOut",
-        max_onehot: Optional[int] = 10,
+        max_onehot: Optional[INT] = 10,
         ordinal: Optional[Dict[str, SEQUENCE_TYPES]] = None,
         frac_to_other: Optional[SCALAR] = None,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
@@ -1235,15 +1293,31 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._cat_cols = list(X.select_dtypes(exclude="number").columns)
 
+        strategies = CustomDict(
+            backwarddifference=BackwardDifferenceEncoder,
+            basen=BaseNEncoder,
+            binary=BinaryEncoder,
+            catboost=CatBoostEncoder,
+            helmert=HelmertEncoder,
+            jamesstein=JamesSteinEncoder,
+            leaveoneout=LeaveOneOutEncoder,
+            mestimate=MEstimateEncoder,
+            ordinal=OrdinalEncoder,
+            polynomial=PolynomialEncoder,
+            sum=SumEncoder,
+            target=TargetEncoder,
+            woe=WOEEncoder,
+        )
+
         if isinstance(self.strategy, str):
             if self.strategy.lower().endswith("encoder"):
                 self.strategy = self.strategy[:-7]  # Remove the Encoder at the end
-            if self.strategy.lower() not in ENCODING_STRATS:
+            if self.strategy not in strategies:
                 raise ValueError(
                     f"Invalid value for the strategy parameter, got {self.strategy}. "
-                    f"Choose from: {', '.join(ENCODING_STRATS)}."
+                    f"Choose from: {', '.join(strategies)}."
                 )
-            estimator = ENCODING_STRATS[self.strategy.lower()](
+            estimator = strategies[self.strategy](
                 handle_missing="return_nan",
                 handle_unknown="value",
                 **self.kwargs,
@@ -1287,7 +1361,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._categories, self._encoders = {}, {}
 
         for name, column in X[self._cat_cols].items():
-            # Group uncommon classes into "other"
+            # Convert uncommon classes to "other"
             if self._frac_to_other:
                 for category, count in column.value_counts().items():
                     if count <= self._frac_to_other:
@@ -1369,8 +1443,9 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Encoding categorical columns...", 1)
 
         for name, column in X[self._cat_cols].items():
-            # Convert classes to "other"
-            X[name] = column.replace(self._to_other[name], "other")
+            # Convert uncommon classes to "other"
+            if self._to_other[name]:
+                X[name] = column.replace(self._to_other[name], "other")
 
             n_classes = len(column.unique())
             self.log(
@@ -1418,20 +1493,20 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str or sequence, optional (default="z-score")
+    strategy: str or sequence, optional (default="zscore")
         Strategy with which to select the outliers. If sequence of
         strategies, only samples marked as outliers by all chosen
         strategies are dropped. Choose from:
-            - "z-score": Uses the z-score of each data value.
-            - "iForest": Uses an Isolation Forest.
-            - "EE": Uses an Elliptic Envelope.
-            - "LOF": Uses a Local Outlier Factor.
-            - "SVM": Uses a One-class SVM.
-            - "DBSCAN": Uses DBSCAN clustering.
-            - "OPTICS": Uses OPTICS clustering.
+            - "zscore": Z-score of each data value.
+            - "iforest": Isolation Forest.
+            - "ee": Elliptic Envelope.
+            - "lof": Local Outlier Factor.
+            - "svm": One-class SVM.
+            - "dbscan": Density-Based Spatial Clustering.
+            - "optics": DBSCAN-like clustering approach.
 
     method: int, float or str, optional (default="drop")
-        Method to apply on the outliers. Only the z-score strategy
+        Method to apply on the outliers. Only the zscore strategy
         accepts another method than "drop". Choose from:
             - "drop": Drop any sample with outlier values.
             - "min_max": Replace outlier with the min/max of the column.
@@ -1440,12 +1515,12 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     max_sigma: int or float, optional (default=3)
         Maximum allowed standard deviations from the mean of the
         column. If more, it is considered an outlier. Only if
-        strategy="z-score".
+        strategy="zscore".
 
     include_target: bool, optional (default=False)
         Whether to include the target column in the search for
         outliers. This can be useful for regression tasks. Only
-        if strategy="z-score".
+        if strategy="zscore".
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -1466,19 +1541,19 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     Attributes
     ----------
     <strategy>: sklearn estimator
-        Object (lowercase strategy) used to prune the data,
-        e.g. `pruner.iforest` for the isolation forest strategy.
+        Object used to prune the data, e.g. `pruner.iforest` for the
+        isolation forest strategy.
 
     """
 
     @typechecked
     def __init__(
         self,
-        strategy: Union[str, SEQUENCE_TYPES] = "z-score",
+        strategy: Union[str, SEQUENCE_TYPES] = "zscore",
         method: Union[SCALAR, str] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
-        verbose: int = 0,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
@@ -1517,16 +1592,24 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        # Check Parameters
+        strategies = CustomDict(
+            iforest=IsolationForest,
+            ee=EllipticEnvelope,
+            lof=LocalOutlierFactor,
+            svm=OneClassSVM,
+            dbscan=DBSCAN,
+            optics=OPTICS,
+        )
+
         for strat in lst(self.strategy):
-            if strat.lower() not in ["z-score"] + list(PRUNING_STRATS):
+            if strat.lower() not in ["zscore"] + list(strategies):
                 raise ValueError(
-                    "Invalid value for the strategy parameter. Choose from: "
-                    "z-score, iForest, EE, LOF, SVM, DBSCAN, OPTICS."
+                    "Invalid value for the strategy parameter. "
+                    f"Choose from: zscore, {', '.join(strategies)}."
                 )
-            if str(self.method).lower() != "drop" and strat.lower() != "z-score":
+            if str(self.method).lower() != "drop" and strat.lower() != "zscore":
                 raise ValueError(
-                    "Invalid value for the method parameter. Only the z-score "
+                    "Invalid value for the method parameter. Only the zscore "
                     f"strategy accepts another method than 'drop', got {self.method}."
                 )
 
@@ -1544,16 +1627,16 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             )
 
         # Allocate kwargs to every estimator
-        kwargs = {}
+        kwargs = CustomDict()
         for strat in lst(self.strategy):
-            kwargs[strat.lower()] = {}
+            kwargs[strat] = {}
             for key, value in self.kwargs.items():
                 # Parameters for this estimator only
                 if key.lower() == strat.lower():
-                    kwargs[strat.lower()].update(value)
+                    kwargs[strat].update(value)
                 # Parameters for all estimators
                 elif key.lower() not in map(str.lower, lst(self.strategy)):
-                    kwargs[strat.lower()].update({key: value})
+                    kwargs[strat].update({key: value})
 
         self.log("Pruning outliers...", 1)
 
@@ -1563,7 +1646,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         outliers = []
         for strat in lst(self.strategy):
-            if strat.lower() == "z-score":
+            if strat.lower() == "zscore":
                 z_scores = np.array(zscore(objective, nan_policy="propagate"))
 
                 if not isinstance(self.method, str):
@@ -1601,12 +1684,12 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                     outliers.append(mask)
                     if len(lst(self.strategy)) > 1:
                         self.log(
-                            f" --> The z-score strategy detected "
+                            f" --> The zscore strategy detected "
                             f"{len(mask) - sum(mask)} outliers.", 2
                         )
 
             else:
-                estimator = PRUNING_STRATS[strat.lower()](**kwargs[strat.lower()])
+                estimator = strategies[strat](**kwargs[strat])
                 mask = estimator.fit_predict(objective) != -1
                 outliers.append(mask)
                 if len(lst(self.strategy)) > 1:
@@ -1696,10 +1779,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: Union[str, Any] = "ADASYN",
-        n_jobs: int = 1,
-        verbose: int = 0,
+        n_jobs: INT = 1,
+        verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[int] = None,
+        random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(
@@ -1749,13 +1832,37 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         X, y = self._prepare_input(X, y)
 
+        strategies = CustomDict(
+            # clustercentroids=ClusterCentroids,
+            condensednearestneighbour=CondensedNearestNeighbour,
+            editednearestneighborus=EditedNearestNeighbours,
+            repeatededitednearestneighbours=RepeatedEditedNearestNeighbours,
+            allknn=AllKNN,
+            instancehardnessthreshold=InstanceHardnessThreshold,
+            nearmiss=NearMiss,
+            neighbourhoodcleaningrule=NeighbourhoodCleaningRule,
+            onesidedselection=OneSidedSelection,
+            randomundersampler=RandomUnderSampler,
+            tomeklinks=TomekLinks,
+            randomoversampler=RandomOverSampler,
+            smote=SMOTE,
+            smotenc=SMOTENC,
+            smoten=SMOTEN,
+            adasyn=ADASYN,
+            borderlinesmote=BorderlineSMOTE,
+            kmeanssmote=KMeansSMOTE,
+            svmsmote=SVMSMOTE,
+            smoteenn=SMOTEENN,
+            smotetomek=SMOTETomek,
+        )
+
         if isinstance(self.strategy, str):
-            if self.strategy.lower() not in BALANCING_STRATS:
+            if self.strategy not in strategies:
                 raise ValueError(
                     f"Invalid value for the strategy parameter, got {self.strategy}. "
-                    f"Choose from: {', '.join(BALANCING_STRATS)}."
+                    f"Choose from: {', '.join(strategies)}."
                 )
-            estimator = BALANCING_STRATS[self.strategy.lower()](**self.kwargs)
+            estimator = strategies[self.strategy](**self.kwargs)
         elif not hasattr(self.strategy, "fit_resample"):
             raise TypeError(
                 "Invalid type for the strategy parameter. A "
