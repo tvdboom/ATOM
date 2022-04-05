@@ -34,7 +34,7 @@ packages are necessary for its correct functioning.
 * **[mlflow](https://mlflow.org/)** (>=1.15.0)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.3)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
-* **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=0.16.0)
+* **[joblib](https://joblib.readthedocs.io/en/latest/)** (~=1.0.1)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.7.1)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.0)
 * **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.9.0)

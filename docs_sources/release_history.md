@@ -1,6 +1,12 @@
 # Release history
 -----------------
 
+<a name="v4131"></a>
+### Version 4.13.1
+
+* Fix installation issue.
+
+
 <a name="v4130"></a>
 ### Version 4.13.0
 
