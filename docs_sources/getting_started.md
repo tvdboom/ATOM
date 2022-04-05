@@ -58,7 +58,7 @@ package files for all versions published on PyPI.
 
 ## Usage
 
-[![Colab](https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667)](https://colab.research.google.com/drive/1PnYfycwdmKw8dGyygwh7F0S3A4Rc47lI?usp=sharing)
+[![Colab](https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667)](https://colab.research.google.com/drive/1tgcn6qw_P0QLsrlQpSpMjjv_MV5GP17j#offline=true&sandboxMode=true)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD)
 
 ATOM contains a variety of classes and functions to perform data cleaning,
@@ -91,7 +91,7 @@ You can either let atom split the dataset into a train and test set or
 provide the sets yourself.
 
 ```python
-atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.3,verbose=2)
+atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.3, verbose=2)
 ```
 
 Data transformations are applied through atom's methods. For example,
