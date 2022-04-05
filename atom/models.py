@@ -119,7 +119,6 @@ Additionally, ATOM implements two ensemble models:
 """
 
 import random
-from random import randint
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -1202,7 +1201,7 @@ class XGBoost(BaseModel):
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         if self.T.random_state is None:  # XGBoost can't handle random_state to be None
-            random_state = params.pop("random_state", randint(0, 1e5))
+            random_state = params.pop("random_state", random.randint(0, 1e5))
         else:
             random_state = params.pop("random_state", self.T.random_state)
         return self.est_class(
