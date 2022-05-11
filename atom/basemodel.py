@@ -1226,8 +1226,8 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        dict
-            Return of sklearn's cross_validate function.
+        pd.DataFrame
+            Overview of the results.
 
         """
         # Assign scoring from predefined or trainer if not specified
@@ -1244,30 +1244,27 @@ class BaseModel(BaseModelPlotter):
         # pipelines that drop samples during transformation
         with patch("sklearn.model_selection._validation._score", score(_score)):
             branch = self.T._get_og_branches()[0]
-            cv = cross_validate(
+            self.cv = cross_validate(
                 estimator=self.export_pipeline(verbose=0),
                 X=branch.X,
                 y=branch.y,
                 scoring=scoring,
+                return_train_score=kwargs.pop("return_train_score", True),
                 n_jobs=kwargs.pop("n_jobs", self.T.n_jobs),
                 verbose=kwargs.pop("verbose", 0),
                 **kwargs,
             )
 
-        # Output mean and std of metric
-        mean = [np.mean(cv[f"test_{m}"]) for m in scoring]
-        std = [np.std(cv[f"test_{m}"]) for m in scoring]
+        df = pd.DataFrame()
+        for m in scoring:
+            if f"train_{m}"in self.cv:
+                df[f"train_{m}"] = self.cv[f"train_{m}"]
+            df[f"test_{m}"] = self.cv[f"test_{m}"]
+        df["time (s)"] = self.cv["fit_time"]
+        df.loc["mean"] = df.mean()
+        df.loc["std"] = df.std()
 
-        out = "   ".join(
-            [
-                f"{name}: {round(mean[i], 4)} " f"\u00B1 {round(std[i], 4)}"
-                for i, name in enumerate(scoring)
-            ]
-        )
-
-        self.T.log(f"{self.fullname} --> {out}", 1)
-
-        return cv
+        return df
 
     @composed(crash, typechecked, method_to_log)
     def dashboard(

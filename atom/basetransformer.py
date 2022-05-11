@@ -250,7 +250,7 @@ class BaseTransformer:
             X.columns = [str(col) for col in X.columns]
 
         # Prepare target column
-        if isinstance(y, (dict, *SEQUENCE)):
+        if isinstance(y, SEQUENCE):
             if not isinstance(y, pd.Series):
                 # Check that y is one-dimensional
                 ndim = np.array(y).ndim
@@ -266,7 +266,7 @@ class BaseTransformer:
 
                 y = to_series(y, index=X.index)
 
-            elif not X.index.equals(y.index):  # Compare indices
+            elif not X.index.equals(y.index):
                 raise ValueError("X and y don't have the same indices!")
 
         elif isinstance(y, str):

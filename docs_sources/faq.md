@@ -154,30 +154,16 @@ is ignored.
 
 <a name="q12"></a>
 ### 12. Can I train the models using cross-validation?
-It is not possible to train models using cross-validation, but for a
-good reason. Applying cross-validation would mean transforming every
-step of the pipeline multiple times, each with different results. This
-would prevent ATOM from being able to show the transformation results
-after every pre-processing step, which means losing the ability to inspect
-how a transformer changed the dataset. This makes cross-validation an
-inappropriate technique for the purpose of exploration.
 
-So why not use cross-validation only to train and evaluate the models,
-instead of applying it to the whole pipeline? Cross-validating only the
-models would make no sense here. If we use the complete dataset for
-that (both the train and test set), we would be evaluating the models
-on data that was used to fit the transformers. This implies data leakage
-and can severely bias the results towards specific transformers. On the
-other hand, using only the training set beats the point of applying
-cross-validation in the first place, since we can train the model on the
-complete training set and evaluate the results on the independent test
-set. The only reason of doing cross-validation would be to get an idea
-of the robustness of the model. This can also be achieves using
-[bootstrapping](../user_guide/training/#bootstrapping). That said, ideally
-we would cross-validate the entire pipeline using the entire dataset.
-This can be done using a trainer's [cross_validate](../API/models/gnb/#cross-validate)
-method, but for the reason just explained above, the method only outputs
-the final metric results.
+Applying cross-validation means transforming every step of the pipeline
+multiple times, each with different results. Doing this would prevent
+ATOM from being able to show the transformation results after every
+pre-processing step, which means losing the ability to inspect how a
+transformer changed the dataset. For this reason, it is not possible to
+apply cross-validation until after a model has been trained. After a
+model has been trained, the pipeline is defined, and cross-validation
+can be applied using the [cross_validate](../API/models/gnb/#cross-validate)
+method. See [here](../examples/multi_metric) an example using cross-validation.
 
 <br>
 

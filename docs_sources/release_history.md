@@ -1,6 +1,13 @@
 # Release history
 -----------------
 
+<a name="v4140"></a>
+### Version 4.14.0
+
+* Refactor of the [cross_validate](../API/models/gnb/#cross-validate) method.
+* Refactor of the [plot_pipeline](../API/plots/plot_pipeline) method.
+
+
 <a name="v4131"></a>
 ### Version 4.13.1
 
