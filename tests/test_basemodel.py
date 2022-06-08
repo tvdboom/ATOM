@@ -549,8 +549,8 @@ def test_cross_validate():
     """Assert that the cross_validate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert isinstance(atom.lr.cross_validate(), dict)
-    assert isinstance(atom.lr.cross_validate(scoring="AP"), dict)
+    assert isinstance(atom.lr.cross_validate(), pd.DataFrame)
+    assert isinstance(atom.lr.cross_validate(scoring="AP"), pd.DataFrame)
 
 
 def test_dashboard_dataset_no_holdout():
@@ -681,6 +681,14 @@ def test_export_pipeline_memory(func):
     atom.run("LR")
     atom.lr.export_pipeline(memory=True)
     func.assert_called_once()
+
+
+def test_full_train_no_holdout():
+    """Assert that an error is raised when include_holdout=True with no set."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LGB")
+    with pytest.raises(ValueError, match=r".*no holdout data set.*"):
+        atom.lgb.full_train(include_holdout=True)
 
 
 def test_full_train():

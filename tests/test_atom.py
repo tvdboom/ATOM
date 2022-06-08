@@ -530,8 +530,8 @@ def test_add_transformer_only_y():
 def test_returned_column_already_exists():
     """Assert that an error is raised if an existing column is returned."""
     atom = ATOMClassifier(X_text, y10, random_state=1)
-    atom.apply(lambda x: 1, columns="new")
-    with pytest.raises(RuntimeError, match=r".*already exists in the original.*"):
+    atom.apply(lambda x: 1, columns="corpus_new")
+    with pytest.raises(ValueError, match=r".*already exists in the original.*"):
         atom.vectorize(columns="corpus")
 
 
@@ -558,7 +558,7 @@ def test_add_keep_column_names():
 def test_raise_length_mismatch():
     """Assert that an error is raised when there's a mismatch in row length."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*does not match length.*"):
+    with pytest.raises(IndexError, match=r".*does not match length.*"):
         atom.prune(columns=[2, 4])
 
 

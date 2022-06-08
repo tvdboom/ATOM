@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/API/models/perc/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/models/perc/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -2051,20 +2051,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2095,6 +2081,20 @@
     <li class="md-nav__item">
       <a href="../../plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -3446,13 +3446,18 @@ Current branch as a sklearn-like Pipeline object.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L789">[source]</a>
 </span>
 </div>
-<p>In some cases it might be desirable to use all available data
-to train a final model. Note that doing this means that the
-estimator can no longer be evaluated on the test set. The newly
-retrained estimator will replace the <code>estimator</code> attribute. If
-there is an active mlflow experiment, a new run is started
-with the name <code>[model_name]_full_train</code>. Since the estimator
-changed, the model is <a href="#clear">cleared</a>.</p>
+<p>In some cases it might be desirable to use all available data to train
+a final model. Note that doing this means that the estimator can no
+longer be evaluated on the test set. The newly retrained estimator will
+replace the <code>estimator</code> attribute. If there is an active mlflow
+experiment, a new run is started with the name <code>[model_name]_full_train</code>.
+Since the estimator changed, the model is <a href="#clear">cleared</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Although the model is trained on the complete dataset, the pipeline
+is not! To also get the fully trained pipeline, use: <code>pipeline = atom
+.export_pipeline().fit(atom.X, atom.y)</code>.</p>
+</div>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>

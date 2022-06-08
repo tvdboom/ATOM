@@ -30,6 +30,8 @@ from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
 )
+from schemdraw import Drawing
+from schemdraw.flow import Arrow, Data, RoundBox, Subroutine
 from scipy import stats
 from scipy.stats.mstats import mquantiles
 from sklearn.calibration import calibration_curve
@@ -245,7 +247,7 @@ class BasePlotter:
             return BasePlotter._fig.figure
 
     def _get_subclass(self, models, max_one=False, ensembles=True):
-        """Check and return the provided parameter models.
+        """Return model subclasses.
 
         Parameters
         ----------
@@ -260,18 +262,12 @@ class BasePlotter:
             If False, drop ensemble models automatically.
 
         """
-        models = self._get_models(models)
-        ensembles = () if ensembles else ("Vote", "Stack")
+        models = list(self._models[self._get_models(models, ensembles)].values())
 
-        model_subclasses = []
-        for m in self._models.values():
-            if m.name in models and m.acronym not in ensembles:
-                model_subclasses.append(m)
-
-        if max_one and len(model_subclasses) > 1:
+        if max_one and len(models) > 1:
             raise ValueError("This plot method allows only one model at a time!")
 
-        return model_subclasses[0] if max_one else model_subclasses
+        return models[0] if max_one else models
 
     def _get_metric(self, metric):
         """Check and return the index of the provided metric."""
@@ -731,6 +727,101 @@ class FSPlotter(BasePlotter):
 
 class BaseModelPlotter(BasePlotter):
     """Plots for the BaseModel class."""
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_pipeline(
+        self,
+        models: Optional[str] = None,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot a diagram of a model's pipeline.
+
+        Parameters
+        ----------
+        models: str or None, optional (default=None)
+            Name of the model for which to draw the pipeline. If None,
+            it plots the current pipeline without any model.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the length of the pipeline.
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        if models:
+            models = self._get_subclass(models, max_one=True)
+            pipeline = models.pipeline.tolist() + [models]
+        else:
+            pipeline = self.pipeline
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        sns.set_style("white")  # Only for this plot
+
+        # Create schematic drawing
+        d = Drawing(backend="matplotlib")
+        d.config(fontsize=self.label_fontsize)
+        d.add(Subroutine(w=10, h=5, s=1).label("Raw data").drop("E").right())
+
+        for i, est in enumerate(pipeline):
+            if not hasattr(est, "_n_calls"):
+                name = est.__class__.__name__
+                d.add(Arrow())
+                d.add(
+                    RoundBox(w=max(len(name), 7), h=5, cornerradius=1)
+                    .label(name)
+                    .anchor("W")
+                    .drop("E")
+                    .right()
+                )
+            else:
+                if not est.bo.empty:
+                    # Add the hyperparameter tuning box
+                    d.add(Arrow())
+                    d.add(
+                        Data(w=13, h=5)
+                        .label("Hyperparameter\nTuning")
+                        .drop("E")
+                        .right()
+                    )
+
+                # Add the model box
+                name = est.estimator.__class__.__name__
+                d.add(Arrow())
+                d.add(Data(w=max(len(name) - 3, 7), h=5).label(name))
+
+        figure = d.draw(ax=ax, showframe=False, show=False)
+        ax.set_aspect("equal")
+        plt.axis("off")
+
+        sns.set_style(self.style)  # Reset style
+        return self._plot(
+            fig=figure.fig,
+            ax=figure.ax,
+            title=title,
+            figsize=figsize or ((2 + len(pipeline)) * 3, 3),
+            plotname="plot_pipeline",
+            filename=filename,
+            display=display,
+        )
 
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
@@ -3272,8 +3363,8 @@ class BaseModelPlotter(BasePlotter):
         """
         if getattr(BasePlotter._fig, "is_canvas", None):
             raise PermissionError(
-                "The force_plot method can not be called from a "
-                "canvas because of incompatibility of the APIs."
+                "The force_plot method can not be called from a canvas "
+                "because of incompatibility between the ATOM and shap API."
             )
 
         check_dim(self, "force_plot")
@@ -4189,133 +4280,6 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             legend=("lower right", 1),
             figsize=figsize or (10, 4 + show // 2),
             plotname="plot_ngrams",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, typechecked)
-    def plot_pipeline(
-        self,
-        model: Optional[str] = None,
-        show_params: bool = True,
-        title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot a diagram of a model's pipeline.
-
-        Parameters
-        ----------
-        model: str or None, optional (default=None)
-            Model from which to plot the pipeline. If no model is
-            specified, the current pipeline is plotted.
-
-        show_params: bool, optional (default=True)
-            Whether to show the parameters used for every estimator.
-
-        title: str or None, optional (default=None)
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the length of the pipeline.
-
-        filename: str or None, optional (default=None)
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, optional (default=True)
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        # Define pipeline to plot
-        if not model:
-            pipeline = self.branch.pipeline.tolist()
-        else:
-            model = self._models[self._get_model_name(model)[0]]
-            pipeline = model.branch.pipeline.tolist() + [model.estimator]
-
-        # Calculate figure's limits
-        params = []
-        ylim = 30
-        for est in pipeline:
-            ylim += 15
-            if show_params:
-                params.append(
-                    [
-                        param for param in signature(est.__init__).parameters
-                        if param not in ["self"] + BaseTransformer.attrs
-                    ]
-                )
-                ylim += len(params[-1]) * 10
-
-        sns.set_style("white")  # Only for this plot
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-
-        # Shared parameters for the blocks
-        con = ConnectionStyle("angle", angleA=0, angleB=90, rad=0)
-        arrow = dict(arrowstyle="<|-", lw=1, color="k", connectionstyle=con)
-
-        # Draw the main class
-        ax.text(
-            x=20,
-            y=ylim - 20,
-            s=self.__class__.__name__,
-            ha="center",
-            size=self.label_fontsize + 2,
-        )
-
-        pos_param = ylim - 20
-        pos_estimator = pos_param
-
-        for i, est in enumerate(pipeline):
-            ax.annotate(
-                text=est.__class__.__name__,
-                xy=(15, pos_estimator),
-                xytext=(30, pos_param - 3 - 15),
-                ha="left",
-                size=self.label_fontsize,
-                arrowprops=arrow,
-            )
-
-            pos_param -= 15
-            pos_estimator = pos_param
-
-            if show_params:
-                for j, key in enumerate(params[i]):
-                    # The param isn't always an attr of the class
-                    if hasattr(est, key):
-                        ax.annotate(
-                            text=f"{key}: {getattr(est, key)}",
-                            xy=(32, pos_param - 6 if j == 0 else pos_param + 1),
-                            xytext=(40, pos_param - 12),
-                            ha="left",
-                            size=self.label_fontsize - 4,
-                            arrowprops=arrow,
-                        )
-                        pos_param -= 10
-
-        ax.axes.get_xaxis().set_ticks([])
-        ax.axes.get_yaxis().set_ticks([])
-        plt.axis("off")
-
-        sns.set_style(self.style)  # Set back to original style
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            xlim=(0, 100),
-            ylim=(0, ylim),
-            figsize=figsize or (8, ylim // 30),
-            plotname="plot_pipeline",
             filename=filename,
             display=display,
         )

@@ -469,7 +469,7 @@ class BasePredictor:
             )
 
     def _get_models(self, models=None, ensembles=True):
-        """Return models in the pipeline."""
+        """Return the names of models in the pipeline."""
         if not models:
             if self._models:
                 to_return = lst(self.models).copy()

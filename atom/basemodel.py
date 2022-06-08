@@ -1257,7 +1257,7 @@ class BaseModel(BaseModelPlotter):
 
         df = pd.DataFrame()
         for m in scoring:
-            if f"train_{m}"in self.cv:
+            if f"train_{m}" in self.cv:
                 df[f"train_{m}"] = self.cv[f"train_{m}"]
             df[f"test_{m}"] = self.cv[f"test_{m}"]
         df["time (s)"] = self.cv["fit_time"]
@@ -1535,6 +1535,10 @@ class BaseModel(BaseModelPlotter):
         with the name `[model_name]_full_train`. Since the estimator
         changed, the model is cleared.
 
+        Note that although the model is trained on the complete dataset,
+        the pipeline is not. To also get the fully trained pipeline, use:
+        `pipeline = atom.export_pipeline().fit(atom.X, atom.y)`.
+
         Parameters
         ----------
         include_holdout: bool, optional (default=False)
@@ -1544,6 +1548,12 @@ class BaseModel(BaseModelPlotter):
             on any set.
 
         """
+        if include_holdout and self.T.holdout is None:
+            raise ValueError(
+                "The parameter include_holdout is True but no holdout data set is "
+                "available. See the documentation to learn how to initialize one."
+            )
+
         if include_holdout and self.T.holdout is not None:
             X = pd.concat([self.X, self.X_holdout])
             y = pd.concat([self.y, self.y_holdout])

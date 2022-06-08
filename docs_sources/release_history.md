@@ -2,10 +2,12 @@
 -----------------
 
 <a name="v4140"></a>
-### Version 4.14.0
+### Version 4.13.2
 
+* Refactor of the [Vectorizer](../API/nlp/vectorizer) class.
 * Refactor of the [cross_validate](../API/models/gnb/#cross-validate) method.
 * Refactor of the [plot_pipeline](../API/plots/plot_pipeline) method.
+* Significant speed up in pipeline transformations.
 
 
 <a name="v4131"></a>

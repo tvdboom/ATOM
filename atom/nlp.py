@@ -578,8 +578,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     transformation is applied on the column named `corpus`. If
     there is no column with that name, an exception is raised. The
     transformed columns are named after the word they are embedding
-    (if the column is already present in the provided dataset,
-    `_[strategy]` is added behind the name).
+    with the prefix `corpus_`.
 
     Parameters
     ----------
@@ -671,7 +670,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             raise ValueError(
                 "Invalid value for the strategy parameter, got "
-                f"{self.strategy}. Choose from: bow, tfidf, hashing."
+                f"{self.strategy}. Choose from: {', '.join(strategies)}."
             )
 
         self.log("Fitting Vectorizer...", 1)
@@ -715,12 +714,12 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         matrix = self._estimator.transform(X[corpus])
         if self.strategy.lower() != "hashing":
-            columns = list(self._estimator.get_feature_names_out())
+            columns = [f"{corpus}_{w}" for w in self._estimator.get_feature_names_out()]
         else:
             # Hashing has no words to put as column names
             columns = [f"hash_{i}" for i in range(matrix.shape[1])]
 
-        X = X.drop(corpus, axis=1)
+        X = X.drop(corpus, axis=1)  # Drop original corpus column
 
         if not self.return_sparse:
             self.log(" --> Converting the output to a full array.", 2)
@@ -732,19 +731,4 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "must be False when X contains non-sparse columns (besides corpus)."
             )
 
-        if X.empty:  # X only had 1 column: corpus
-            # If the column name already exists, add _[strategy]
-            if getattr(y, "name", None) in columns:
-                columns[columns.index(y.name)] = f"{y.name}_{self.strategy.lower()}"
-
-            return to_df(matrix, index=X.index, columns=columns)
-
-        else:
-            for i, col in enumerate(columns):
-                # If the column name already exists, add _[strategy]
-                if col in X or col == getattr(y, "name", None):
-                    X[f"{col}_{self.strategy.lower()}"] = matrix[:, i]
-                else:
-                    X[col] = matrix[:, i]
-
-        return X
+        return pd.concat([X, to_df(matrix, index=X.index, columns=columns)], axis=1)

@@ -41,7 +41,7 @@ packages are necessary for its correct functioning.
 * **[nltk](https://www.nltk.org/)** (>=3.6.2)
 * **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.1.0)
-* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.8.1)
+* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.9.1)
 * **[featuretools](https://www.featuretools.com/)** (>=1.7.0)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.24)
@@ -49,6 +49,7 @@ packages are necessary for its correct functioning.
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.10.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.38.1)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.1)
+* **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.14)
 
 ### Optional
 

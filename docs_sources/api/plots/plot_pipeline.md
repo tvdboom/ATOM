@@ -17,8 +17,8 @@ Plot a diagram of a model's pipeline.
 <td width="80%" class="td_params">
 <p>
 <strong>model: str or None, optional (default=None)</strong><br>
-Model from which to plot the pipeline. If no model is
-specified, the current pipeline is plotted.
+ Name of the model for which to draw the pipeline. If None,
+it plots the current pipeline without any model.
 </p>
 <p>
 <strong>show_params: bool, optional (default=True)</strong><br>
@@ -54,6 +54,10 @@ Plot object. Only returned if <code>display=None</code>.
 </table>
 <br />
 
+!!! tip
+    Print `atom.pipeline` in a notebook for [sklearn's interactive visualization](https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_pipeline_display.html)
+    of the pipeline.
+
 
 
 ## Example
@@ -65,11 +69,12 @@ atom = ATOMClassifier(X, y)
 atom.impute(strat_num="median", strat_cat="drop", max_nan_rows=0.8)
 atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.02)
 atom.balance(strategy="adasyn", sampling_strategy=1.0)
-atom.run("LR", metric="auc", n_calls=10)
+atom.feature_selection(strategy="univariate", n_features=20)
+atom.run("Tree", metric="auc", n_calls=10)
 
-atom.plot_pipeline(model="LR")
+atom.tree.plot_pipeline()
 ```
 
 <div align="center">
-    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="700"/>
+    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="400"/>
 </div>

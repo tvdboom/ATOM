@@ -210,17 +210,6 @@ def test_plot_ngrams(ngram):
     atom.plot_ngrams(ngram=ngram, display=False)  # When corpus are tokens
 
 
-def test_plot_pipeline():
-    """Assert that the plot_pipeline method work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.impute()
-    atom.prune()
-    atom.feature_selection("univariate", n_features=10)
-    atom.successive_halving(["Tree", "LGB"])
-    atom.plot_pipeline(model=None, show_params=False, display=False)
-    atom.plot_pipeline(model="Tree", title="Pipeline plot", display=False)
-
-
 @pytest.mark.parametrize("X", [X10, X_sparse])
 def test_plot_pca(X):
     """Assert that the plot_pca method work as intended."""
@@ -249,6 +238,16 @@ def test_plot_rfecv(scoring):
     atom.branch = "fs_branch"
     atom.feature_selection(strategy="rfecv", n_features=10, scoring=scoring)
     atom.plot_rfecv(display=False)
+
+
+def test_plot_pipeline():
+    """Assert that the plot_pipeline method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.impute()
+    atom.prune()
+    atom.run(["Tree", "LGB"])
+    atom.plot_pipeline(display=False)
+    atom.tree.plot_pipeline(title="Pipeline plot", display=False)
 
 
 @pytest.mark.parametrize("metric", ["f1", ["f1", "recall"]])

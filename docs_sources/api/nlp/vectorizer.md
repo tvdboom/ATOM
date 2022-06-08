@@ -12,9 +12,8 @@ return_sparse=True, verbose=0, logger=None, *kwargs)
 Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named `corpus`. If there
 is no column with that name, an exception is raised. The transformed
-columns are named after the word they are embedding (if the column is
-already present in the provided dataset, `_[strategy]` is added behind
-the name). This class can be accessed from atom through the
+columns are named after the word they are embedding with the prefix
+`corpus_`. This class can be accessed from atom through the
 [vectorize](../../ATOM/atomclassifier/#vectorize) method. Read more in
 the [user guide](../../../user_guide/nlp/#vectorization).
 

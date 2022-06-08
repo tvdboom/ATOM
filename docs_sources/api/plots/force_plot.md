@@ -68,7 +68,12 @@ Plot object. Only returned if <code>display=None</code> and <code>matplotlib=Tru
 </td>
 </tr>
 </table>
-<br />
+
+!!! warning
+    This plot can not be called from a canvas because of incompatibility
+    between the ATOM and shap API.
+
+<br>
 
 
 

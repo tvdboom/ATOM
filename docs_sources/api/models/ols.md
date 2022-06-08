@@ -467,13 +467,18 @@ Current branch as a sklearn-like Pipeline object.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L789">[source]</a>
 </span>
 </div>
-In some cases it might be desirable to use all available data
-to train a final model. Note that doing this means that the
-estimator can no longer be evaluated on the test set. The newly
-retrained estimator will replace the `estimator` attribute. If
-there is an active mlflow experiment, a new run is started
-with the name `[model_name]_full_train`. Since the estimator
-changed, the model is [cleared](#clear).
+In some cases it might be desirable to use all available data to train
+a final model. Note that doing this means that the estimator can no
+longer be evaluated on the test set. The newly retrained estimator will
+replace the `estimator` attribute. If there is an active mlflow
+experiment, a new run is started with the name `[model_name]_full_train`.
+Since the estimator changed, the model is [cleared](#clear).
+
+!!! warning
+    Although the model is trained on the complete dataset, the pipeline
+    is not! To also get the fully trained pipeline, use: `pipeline = atom
+    .export_pipeline().fit(atom.X, atom.y)`.
+
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>

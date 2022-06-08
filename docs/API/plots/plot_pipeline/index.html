@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/API/plots/plot_pipeline/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/plots/plot_pipeline/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -1960,6 +1960,48 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../plot_pca/" class="md-nav__link">
+        plot_pca
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_components/" class="md-nav__link">
+        plot_components
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_rfecv/" class="md-nav__link">
+        plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -2006,48 +2048,6 @@
   
 </nav>
       
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_pca/" class="md-nav__link">
-        plot_pca
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_components/" class="md-nav__link">
-        plot_components
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_rfecv/" class="md-nav__link">
-        plot_rfecv
-      </a>
     </li>
   
 
@@ -2826,8 +2826,8 @@ show_params=True, title=None, figsize=None, filename=None, display=True)
 <td width="80%" class="td_params">
 <p>
 <strong>model: str or None, optional (default=None)</strong><br>
-Model from which to plot the pipeline. If no model is
-specified, the current pipeline is plotted.
+ Name of the model for which to draw the pipeline. If None,
+it plots the current pipeline without any model.
 </p>
 <p>
 <strong>show_params: bool, optional (default=True)</strong><br>
@@ -2862,6 +2862,11 @@ Plot object. Only returned if <code>display=None</code>.
 </tr>
 </table>
 <p><br /></p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Print <code>atom.pipeline</code> in a notebook for <a href="https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_pipeline_display.html">sklearn's interactive visualization</a>
+of the pipeline.</p>
+</div>
 <h2 id="example">Example</h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
@@ -2869,12 +2874,13 @@ Plot object. Only returned if <code>display=None</code>.
 <span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="n">max_nan_rows</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;LeaveOneOut&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">frac_to_other</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;adasyn&quot;</span><span class="p">,</span> <span class="n">sampling_strategy</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;auc&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;univariate&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;Tree&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;auc&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
-<span class="n">atom</span><span class="o">.</span><span class="n">plot_pipeline</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">plot_pipeline</span><span class="p">()</span>
 </code></pre></div>
 <div align="center">
-    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="700"/>
+    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="400"/>
 </div>
 
               
@@ -2894,7 +2900,7 @@ Plot object. Only returned if <code>display=None</code>.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../plot_ngrams/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_ngrams" rel="prev">
+        <a href="../plot_rfecv/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_rfecv" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -2903,20 +2909,20 @@ Plot object. Only returned if <code>display=None</code>.
               <span class="md-footer__direction">
                 Previous
               </span>
-              plot_ngrams
+              plot_rfecv
             </div>
           </div>
         </a>
       
       
         
-        <a href="../plot_pca/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_pca" rel="next">
+        <a href="../plot_successive_halving/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_successive_halving" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              plot_pca
+              plot_successive_halving
             </div>
           </div>
           <div class="md-footer__button md-icon">

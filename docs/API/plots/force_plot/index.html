@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/API/plots/force_plot/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/plots/force_plot/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -1962,20 +1962,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2006,6 +1992,20 @@
     <li class="md-nav__item">
       <a href="../plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2877,7 +2877,13 @@ Plot object. Only returned if <code>display=None</code> and <code>matplotlib=Tru
 </td>
 </tr>
 </table>
-<p><br /></p>
+
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This plot can not be called from a canvas because of incompatibility
+between the ATOM and shap API.</p>
+</div>
+<p><br></p>
 <h2 id="example">Example</h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 

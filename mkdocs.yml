@@ -188,10 +188,10 @@ nav:
             - plot_qq: API/plots/plot_qq.md
             - plot_wordcloud: API/plots/plot_wordcloud.md
             - plot_ngrams: API/plots/plot_ngrams.md
-            - plot_pipeline: API/plots/plot_pipeline.md
             - plot_pca: API/plots/plot_pca.md
             - plot_components: API/plots/plot_components.md
             - plot_rfecv: API/plots/plot_rfecv.md
+            - plot_pipeline: API/plots/plot_pipeline.md
             - plot_successive_halving: API/plots/plot_successive_halving.md
             - plot_learning_curve: API/plots/plot_learning_curve.md
             - plot_results: API/plots/plot_results.md

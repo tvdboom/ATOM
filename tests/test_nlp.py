@@ -151,7 +151,7 @@ def test_lemmatization():
 
 def test_vectorizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
-    assert "hi" in Vectorizer().fit_transform({"corpus": [["hi", "there"], ["hi"]]})
+    assert "corpus_hi" in Vectorizer().fit_transform({"corpus": [["hi"], ["hi"]]})
 
 
 def test_invalid_strategy():
@@ -166,7 +166,7 @@ def test_strategies(strategy):
     """Assert that the BOW and TF-IDF strategies works as intended."""
     X = Vectorizer(strategy=strategy).fit_transform(X_text)
     assert X.shape == (10, 20)
-    assert "york" in X
+    assert "corpus_york" in X
 
 
 def test_hashing():
@@ -180,7 +180,6 @@ def test_return_sparse():
     """Assert that the output is sparse."""
     X = Vectorizer(strategy="bow", return_sparse=True).fit_transform(X_text, y10)
     assert all(pd.api.types.is_sparse(X[c]) for c in X.columns)
-    assert "target_bow" in X
 
 
 def test_error_sparse_with_dense():
@@ -197,4 +196,3 @@ def test_sparse_with_dense():
     atom.apply(lambda x: 1, columns="new")  # Create dense column
     atom.vectorize(strategy="BOW", return_sparse=False)
     assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)
-    assert "new_bow" in atom

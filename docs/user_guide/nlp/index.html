@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/user_guide/nlp/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/nlp/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -2022,20 +2022,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../API/plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2066,6 +2052,20 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2934,9 +2934,9 @@ method.</p>
 <p><strong>Bag of Words</strong><br>
 The Bag of Words (BOW) strategy applies tokenization, counting and
 normalization to the corpus. Documents are described by word occurrences
-while completely ignoring the relative position information of the words in
-the document. The created columns are named with the words they are counting.
-Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#the-bag-of-words-representation">documentation</a>.</p>
+while completely ignoring the relative position information of the words
+in the document. The created columns are named with the words they are
+embedding with the prefix <code>corpus_</code>. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#the-bag-of-words-representation">documentation</a>.</p>
 <p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><strong>TF-IDF</strong><br>
 In a large text corpus, some words will be very present (e.g. “the”,
@@ -2945,8 +2945,8 @@ about the actual contents of the document. If we were to feed the direct
 count data directly to a classifier, those very frequent terms would
 shadow the frequencies of rarer, yet more interesting, terms. Use the
 TF-IDF strategy to re-weight the count features into floating point values.
-The created columns are named with the words they are counting. Read more
-in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#tfidf-term-weighting">documentation</a>.</p>
+The created columns are named with the words they are embedding with the
+prefix <code>corpus_</code>. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#tfidf-term-weighting">documentation</a>.</p>
 <p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><strong>Hashing</strong><br>
 The larger the corpus, the larger the vocabulary will grow and thus
