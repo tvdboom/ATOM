@@ -10,7 +10,6 @@ Description: Module containing the plotting classes.
 from collections import defaultdict
 from contextlib import contextmanager
 from importlib.util import find_spec
-from inspect import signature
 from itertools import chain, cycle
 from typing import Optional, Tuple, Union
 
@@ -21,7 +20,6 @@ import seaborn as sns
 import shap
 from joblib import Parallel, delayed
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
-from matplotlib.patches import ConnectionStyle
 from matplotlib.ticker import MaxNLocator
 from matplotlib.transforms import blended_transform_factory
 from mlflow.tracking import MlflowClient
@@ -43,7 +41,6 @@ from sklearn.utils import _safe_indexing
 from typeguard import typechecked
 from wordcloud import WordCloud
 
-from atom.basetransformer import BaseTransformer
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
     check_is_fitted, check_predict_proba, composed, crash, get_best_score,
