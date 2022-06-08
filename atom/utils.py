@@ -843,7 +843,8 @@ def reorder_cols(df, original_df, col_names):
         left_index=True,
         right_index=True,
         suffixes=("", "__drop__"),
-    ).drop(new_df.filter(regex='__drop__$').columns, axis=1)
+    )
+    new_df = new_df.drop(new_df.filter(regex='__drop__$').columns, axis=1)
 
     return new_df[columns]
 
