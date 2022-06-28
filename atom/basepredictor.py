@@ -779,6 +779,9 @@ class BasePredictor:
 
         self[name].fit()
 
+        if self.experiment:
+            mlflow.end_run()
+
     @composed(crash, method_to_log, typechecked)
     def voting(
         self,
@@ -820,3 +823,6 @@ class BasePredictor:
             self[name]._run = mlflow.start_run(run_name=self[name].name)
 
         self[name].fit()
+
+        if self.experiment:
+            mlflow.end_run()

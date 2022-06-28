@@ -971,7 +971,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>Pipeline</strong><br>
+<strong><a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a></strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>

@@ -10,6 +10,7 @@ Description: Module containing the ATOM class.
 import tempfile
 from copy import deepcopy
 from inspect import signature
+from platform import machine, platform, python_build, python_version
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
@@ -39,7 +40,7 @@ from atom.training import (
 )
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Table,
-    check_dim, check_is_fitted, check_scaling, composed, crash,
+    __version__, check_dim, check_is_fitted, check_scaling, composed, crash,
     custom_transform, delete, divide, fit_one, flt, get_pl_name, infer_task,
     is_multidim, is_sparse, lst, method_to_log, names_from_estimator,
     variable_return,
@@ -93,10 +94,19 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
+
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
         if self.gpu:
             self.log("GPU training enabled.", 1)
+
+        # System settings only to logger
+        self.log("\nSystem info ====================== >>", 3)
+        self.log(f"Python version: {python_version()}", 3)
+        self.log(f"Python build: {python_build()}", 3)
+        self.log(f"Machine: {machine()}", 3)
+        self.log(f"OS: {platform()}", 3)
+        self.log(f"ATOM version: {__version__}", 3)
 
         self.log("", 1)  # Add empty rows around stats for cleaner look
         self.stats(1)

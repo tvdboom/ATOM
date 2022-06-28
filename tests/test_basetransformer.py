@@ -21,9 +21,9 @@ from atom.basetransformer import BaseTransformer
 from atom.training import DirectClassifier
 from atom.utils import merge
 
-from .utils import (
-    FILE_DIR, X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test,
-    bin_train, mnist, y10, y_bin, y_bin_array, y_idx,
+from .conftest import (
+    X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test, bin_train,
+    mnist, y10, y_bin, y_bin_array, y_idx,
 )
 
 
@@ -85,14 +85,14 @@ def test_logger_creator(cls):
     BaseTransformer(logger=None)
     cls.assert_not_called()
 
-    BaseTransformer(logger=FILE_DIR + "auto")
+    BaseTransformer(logger="auto")
     cls.assert_called_once()
 
 
 @patch("atom.utils.logging.getLogger")
 def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
-    atom = ATOMClassifier(X_bin, y_bin, logger=FILE_DIR + "log")
+    atom = ATOMClassifier(X_bin, y_bin, logger="log")
     pytest.raises(ValueError, atom.run, ["LR", "LDA"], n_calls=-1)
     cls.return_value.exception.assert_called()
 
@@ -592,7 +592,7 @@ def test_merger_to_dataset():
 @patch("atom.utils.logging.getLogger")
 def test_log(cls):
     """Assert the log method works."""
-    base = BaseTransformer(verbose=2, logger=FILE_DIR + "log")
+    base = BaseTransformer(verbose=2, logger="log")
     base.log("test", 1)
     cls.return_value.info.assert_called()
 
@@ -602,14 +602,14 @@ def test_log(cls):
 def test_file_is_saved():
     """Assert that the pickle file is saved."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save(FILE_DIR + "auto")
-    assert glob.glob(FILE_DIR + "ATOMClassifier")
+    atom.save("auto")
+    assert glob.glob("ATOMClassifier")
 
 
 @patch("atom.basetransformer.dill")
 def test_save_data_false(cls):
     """Assert that the dataset is restored after saving with save_data=False"""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    atom.save(filename=FILE_DIR + "atom", save_data=False)
+    atom.save(filename="atom", save_data=False)
     assert atom.dataset is not None  # Dataset is restored after saving
     assert atom.holdout is not None  # Holdout is restored after saving

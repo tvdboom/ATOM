@@ -20,7 +20,7 @@ from atom.data_cleaning import (
 )
 from atom.utils import NotFittedError, check_scaling
 
-from .utils import (
+from .conftest import (
     X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
     y10_str, y_bin, y_class, y_idx,
 )

@@ -21,9 +21,8 @@ from skopt.space.space import Integer
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_scaling
 
-from .utils import (
-    FILE_DIR, X10_str, X_bin, X_class, X_idx, X_reg, y10, y_bin, y_class,
-    y_idx, y_reg,
+from .conftest import (
+    X10_str, X_bin, X_class, X_idx, X_reg, y10, y_bin, y_class, y_idx, y_reg,
 )
 
 
@@ -66,8 +65,6 @@ def test_getitem():
     """Assert that the models are subscriptable."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("Tree")
-    print(atom.dataset["alcohol"])
-    print(atom.tree["alcohol"])
     assert atom.tree["alcohol"].equals(atom.dataset["alcohol"])
     assert isinstance(atom.tree[["alcohol", "ash"]], pd.DataFrame)
     with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
@@ -750,8 +747,8 @@ def test_save_estimator():
     """Assert that the save_estimator saves a pickle file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    atom.mnb.save_estimator(FILE_DIR + "auto")
-    assert glob.glob(FILE_DIR + "MultinomialNB")
+    atom.mnb.save_estimator("auto")
+    assert glob.glob("MultinomialNB")
 
 
 def test_transform():

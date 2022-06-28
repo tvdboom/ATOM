@@ -508,7 +508,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     PlotCallback.c += 1  # Next model
                     plt.close()  # Close the crashed plot
             finally:
-                mlflow.end_run()  # Ends the current run (if any)
+                if self.experiment:
+                    mlflow.end_run()
 
         delete(self, to_remove)  # Remove faulty models
 

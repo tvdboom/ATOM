@@ -13,7 +13,7 @@ import pytest
 from atom import ATOMClassifier
 from atom.nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
 
-from .utils import X_bin, X_text, y10
+from .conftest import X_bin, X_text, y10
 
 
 # Test TextCleaner ================================================= >>

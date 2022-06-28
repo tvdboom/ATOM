@@ -19,7 +19,7 @@ from skopt.space.space import Categorical, Integer
 from atom.training import DirectClassifier, DirectRegressor
 from atom.utils import CUSTOM_SCORERS, PlotCallback
 
-from .utils import (
+from .conftest import (
     bin_test, bin_train, class_test, class_train, mnist, reg_test, reg_train,
 )
 

@@ -29,9 +29,9 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.data_cleaning import Pruner, Scaler
 from atom.utils import check_scaling
 
-from .utils import (
-    FILE_DIR, X10, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin, X_class,
-    X_reg, X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class, y_reg,
+from .conftest import (
+    X10, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin, X_class, X_reg,
+    X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class, y_reg,
 )
 
 
@@ -51,8 +51,8 @@ def test_task_assignment():
 
 def test_raise_one_target_value():
     """Assert that error raises when there is only 1 target value."""
-    y = [1 for _ in range(len(y_bin))]  # All targets are equal to 1
-    pytest.raises(ValueError, ATOMClassifier, X_bin, y, random_state=1)
+    with pytest.raises(ValueError, match=r".*1 target value.*"):
+        ATOMClassifier(X_bin, [1 for _ in range(len(y_bin))], random_state=1)
 
 
 # Test magic methods =============================================== >>
@@ -347,8 +347,8 @@ def test_reset():
 def test_save_data():
     """Assert that the dataset is saved to a csv file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save_data(FILE_DIR + "auto")
-    assert glob.glob(FILE_DIR + "ATOMClassifier_dataset.csv")
+    atom.save_data("auto")
+    assert glob.glob("ATOMClassifier_dataset.csv")
 
 
 def test_shrink_dtypes_excluded():

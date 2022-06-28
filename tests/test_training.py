@@ -14,7 +14,7 @@ from atom.training import (
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
 )
 
-from .utils import (
+from .conftest import (
     bin_test, bin_train, class_test, class_train, reg_test, reg_train,
 )
 

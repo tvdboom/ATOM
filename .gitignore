@@ -6,10 +6,6 @@ presentation.pptx
 # Mlflow
 mlruns/
 
-# Exclude everything from tests/files except the .gitkeep file
-tests/files/*
-!tests/files/.gitkeep
-
 # Log, pickle and figures in root directory
 /*.log
 /*.pkl

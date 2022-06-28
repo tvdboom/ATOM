@@ -23,7 +23,7 @@ from atom.feature_engineering import FeatureSelector
 from atom.models import MODELS
 from atom.pipeline import Pipeline
 
-from .utils import X_bin, X_class2, X_reg, mnist, y_bin, y_class2, y_reg
+from .conftest import X_bin, X_class2, X_reg, mnist, y_bin, y_class2, y_reg
 
 
 # Variables ======================================================== >>

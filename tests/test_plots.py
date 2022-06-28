@@ -18,9 +18,9 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
 
-from .utils import (
-    FILE_DIR, X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10,
-    y10_str, y_bin, y_class, y_reg,
+from .conftest import (
+    X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10, y10_str, y_bin,
+    y_class, y_reg,
 )
 
 
@@ -611,8 +611,8 @@ def test_force_plot():
     # Own calculation of expected value
     atom.mlp.force_plot(index=100, matplotlib=True, display=False)
 
-    atom.lr.force_plot(matplotlib=False, filename=FILE_DIR + "force", display=True)
-    assert glob.glob(FILE_DIR + "force.html")
+    atom.lr.force_plot(matplotlib=False, filename="force", display=True)
+    assert glob.glob("force.html")
 
 
 def test_heatmap_plot():

@@ -15,7 +15,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from atom import ATOMClassifier
 from atom.pipeline import Pipeline
 
-from .utils import X_bin, y_bin
+from .conftest import X_bin, y_bin
 
 
 @pytest.fixture

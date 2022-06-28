@@ -17,7 +17,7 @@ from atom.feature_engineering import (
 )
 from atom.utils import to_df
 
-from .utils import (
+from .conftest import (
     X10_dt, X10_str, X_bin, X_class, X_reg, X_sparse, y_bin, y_class, y_reg,
 )
 

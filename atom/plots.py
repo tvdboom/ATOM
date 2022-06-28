@@ -3662,11 +3662,7 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots.waterfall(
-            explanation,
-            max_display=show,
-            show=True if shap.__version__ == "0.40.0" else False,
-        )
+        shap.plots.waterfall(explanation, max_display=show, show=False)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 

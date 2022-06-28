@@ -21,7 +21,7 @@ from atom.ensembles import (
 from atom.pipeline import Pipeline
 from atom.utils import check_is_fitted
 
-from .utils import X_bin, X_reg, y_bin, y_reg
+from .conftest import X_bin, X_reg, y_bin, y_reg
 
 
 @pytest.fixture

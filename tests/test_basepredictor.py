@@ -17,7 +17,7 @@ from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
 
-from .utils import (
+from .conftest import (
     X10, X10_str, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, y10,
     y_bin, y_class, y_idx, y_reg,
 )

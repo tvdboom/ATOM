@@ -3,14 +3,13 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Utility variables for the tests.
+Description: Global fixtures and variables for the tests.
 
 """
 
-import os
-
 import numpy as np
 import pandas as pd
+import pytest
 from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_digits, load_wine,
 )
@@ -20,8 +19,10 @@ from tensorflow import keras
 from atom.utils import merge
 
 
-# Directory for storing all files created by the tests
-FILE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/files/"
+@pytest.fixture(autouse=True)
+def change_current_dir(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
 
 # Sklearn datasets for all three tasks as np.array
 X_bin_array, y_bin_array = load_breast_cancer(return_X_y=True)
