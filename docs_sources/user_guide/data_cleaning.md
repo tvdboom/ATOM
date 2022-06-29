@@ -41,15 +41,15 @@ method.
 
 <br>
 
-## Making Gaussian-like features
+## Normalizing the feature set
 
-Use the [Gauss](../../API/data_cleaning/gauss) class to transform the
-feature set to follow a Gaussian-like (or normal) distribution. In
-general, data must be transformed when using models that assume
-normality in the residuals. Examples of such models are
+Use the [Normalizer](../../API/data_cleaning/normalizer) class to
+transform the feature set to follow a Normal (Gaussian)-like
+distribution. In general, data must be transformed when using models
+that assume normality in the residuals. Examples of such models are
 [Logistic Regression](../../API/models/lr), [Linear Discriminant Analysis](../../API/models/lda)
 and [Gaussian Naive Bayes](../../API/models/gnb). The class can be
-accessed from atom through the [gauss](../../API/ATOM/atomclassifier/#gauss)
+accessed from atom through the [normalize](../../API/ATOM/atomclassifier/#normalize)
 method.
 
 !!! tip

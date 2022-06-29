@@ -208,7 +208,7 @@ class BaseTransformer:
 
     @staticmethod
     @typechecked
-    def _prepare_input(X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def _prepare_input(X: Optional[X_TYPES] = None, y: Optional[Y_TYPES] = None):
         """Prepare the input data.
 
         Convert X and y to pandas (if not already) and perform standard
@@ -216,7 +216,7 @@ class BaseTransformer:
 
         Parameters
         ----------
-        X: dataframe-like
+        X: dataframe-like or None, optional (default=None)
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -234,20 +234,21 @@ class BaseTransformer:
             Target column corresponding to X.
 
         """
-        # If data has more than 2 dimensions and is not a text corpus,
-        # create a dataframe with one multidimensional column
-        array = np.array(X)
-        if array.ndim > 2 and not isinstance(array[0, 0, 0], str):
-            X = pd.DataFrame({"multidim feature": [row for row in X]})
-        else:
-            X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
+        if X is not None:
+            # If data has more than 2 dimensions and is not a text corpus,
+            # create a dataframe with one multidimensional column
+            array = np.array(X)
+            if array.ndim > 2 and not isinstance(array[0, 0, 0], str):
+                X = pd.DataFrame({"multidim feature": [row for row in X]})
+            else:
+                X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
-            # If text dataset, change the name of the column to corpus
-            if list(X.columns) == ["feature_1"] and X[X.columns[0]].dtype == "object":
-                X = X.rename(columns={X.columns[0]: "corpus"})
+                # If text dataset, change the name of the column to corpus
+                if list(X.columns) == ["feature_1"] and X[X.columns[0]].dtype == "object":
+                    X = X.rename(columns={X.columns[0]: "corpus"})
 
-            # Convert all column names to str
-            X.columns = [str(col) for col in X.columns]
+                # Convert all column names to str
+                X.columns = [str(col) for col in X.columns]
 
         # Prepare target column
         if isinstance(y, SEQUENCE):
@@ -258,25 +259,32 @@ class BaseTransformer:
                     raise ValueError(f"y should be one-dimensional, got ndim={ndim}.")
 
                 # Check X and y have the same number of rows
-                if len(X) != len(y):
+                if X is not None and len(X) != len(y):
                     raise ValueError(
                         "X and y don't have the same number of rows,"
                         f" got len(X)={len(X)} and len(y)={len(y)}."
                     )
 
-                y = to_series(y, index=X.index)
+                y = to_series(y, index=getattr(X, "index", None))
 
-            elif not X.index.equals(y.index):
+            elif X is not None and not X.index.equals(y.index):
                 raise ValueError("X and y don't have the same indices!")
 
         elif isinstance(y, str):
-            if y not in X.columns:
-                raise ValueError(f"Column {y} not found in X!")
+            if X is not None:
+                if y not in X.columns:
+                    raise ValueError(f"Column {y} not found in X!")
 
-            return X.drop(y, axis=1), X[y]
+                X, y = X.drop(y, axis=1), X[y]
+
+            else:
+                raise ValueError("X can't be None when y is a string.")
 
         elif isinstance(y, int):
-            return X.drop(X.columns[y], axis=1), X[X.columns[y]]
+            if X is None:
+                raise ValueError("X can't be None when y is a int.")
+
+            X, y = X.drop(X.columns[y], axis=1), X[X.columns[y]]
 
         return X, y
 

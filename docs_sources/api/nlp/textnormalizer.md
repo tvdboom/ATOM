@@ -1,8 +1,8 @@
-# Normalizer
+# TextNormalizer
 ------------
 
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">Normalizer</strong>(stopwords=True,
+<em>class</em> atom.nlp.<strong style="color:#008AB8">TextNormalizer</strong>(stopwords=True,
 custom_stopwords=None, stem=False, lemmatize=True, verbose=0, logger=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L425">[source]</a>
@@ -231,7 +231,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>Normalizer</strong><br>
+<strong>TextNormalizer</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -286,8 +286,8 @@ Transformed corpus.
 
 === "stand-alone"
     ```python
-    from atom.nlp import Normalizer
+    from atom.nlp import TextNormalizer
     
-    normalizer = Normalizer()
+    normalizer = TextNormalizer()
     X = normalizer.transform(X)
     ```

@@ -65,7 +65,7 @@ def test_getitem():
     """Assert that the models are subscriptable."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("Tree")
-    assert atom.tree["alcohol"].equals(atom.dataset["alcohol"])
+    pd.testing.assert_series_equal(atom.tree["alcohol"], atom.dataset["alcohol"])
     assert isinstance(atom.tree[["alcohol", "ash"]], pd.DataFrame)
     with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
         print(atom.tree[2])
@@ -401,7 +401,7 @@ def test_dataset_property():
     """Assert that the dataset property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    assert atom.dataset.equals(atom.mnb.dataset)
+    pd.testing.assert_frame_equal(atom.dataset, atom.mnb.dataset)
     assert check_scaling(atom.lr.dataset)
 
 
@@ -409,7 +409,7 @@ def test_train_property():
     """Assert that the train property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    assert atom.train.equals(atom.mnb.train)
+    pd.testing.assert_frame_equal(atom.train, atom.mnb.train)
     assert check_scaling(atom.lr.train)
 
 
@@ -417,7 +417,7 @@ def test_test_property():
     """Assert that the test property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    assert atom.test.equals(atom.mnb.test)
+    pd.testing.assert_frame_equal(atom.test, atom.mnb.test)
     assert check_scaling(atom.lr.test)
 
 
@@ -434,7 +434,7 @@ def test_X_property():
     """Assert that the X property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    assert atom.X.equals(atom.mnb.X)
+    pd.testing.assert_frame_equal(atom.X, atom.mnb.X)
     assert check_scaling(atom.lr.X)
 
 
@@ -442,15 +442,15 @@ def test_y_property():
     """Assert that the y property is returned unchanged."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    assert atom.y.equals(atom.mnb.y)
-    assert atom.y.equals(atom.lr.y)
+    pd.testing.assert_series_equal(atom.y, atom.mnb.y)
+    pd.testing.assert_series_equal(atom.y, atom.lr.y)
 
 
 def test_X_train_property():
     """Assert that the X_train property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    assert atom.X_train.equals(atom.mnb.X_train)
+    pd.testing.assert_frame_equal(atom.X_train, atom.mnb.X_train)
     assert check_scaling(atom.lr.X_train)
 
 
@@ -458,7 +458,7 @@ def test_X_test_property():
     """Assert that the X_test property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    assert atom.X_test.equals(atom.mnb.X_test)
+    pd.testing.assert_frame_equal(atom.X_test, atom.mnb.X_test)
     assert check_scaling(atom.lr.X_test)
 
 
@@ -466,22 +466,22 @@ def test_X_holdout_property():
     """Assert that the X_holdout property is calculated."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("MNB")
-    assert atom.mnb.X_holdout.equals(atom.mnb.holdout.iloc[:, :-1])
+    pd.testing.assert_frame_equal(atom.mnb.X_holdout, atom.mnb.holdout.iloc[:, :-1])
 
 
 def test_y_train_property():
     """Assert that the y_train property is returned unchanged."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    assert atom.y_train.equals(atom.mnb.y_train)
-    assert atom.y_train.equals(atom.lr.y_train)
+    pd.testing.assert_series_equal(atom.y_train, atom.mnb.y_train)
+    pd.testing.assert_series_equal(atom.y_train, atom.lr.y_train)
 
 
 def test_y_holdout_property():
     """Assert that the y_holdout property is calculated."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("MNB")
-    assert atom.mnb.y_holdout.equals(atom.mnb.holdout.iloc[:, -1])
+    pd.testing.assert_series_equal(atom.mnb.y_holdout, atom.mnb.holdout.iloc[:, -1])
 
 
 # Test utility methods ============================================= >>

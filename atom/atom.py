@@ -25,13 +25,13 @@ from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
 from atom.data_cleaning import (
     Balancer, Cleaner, Discretizer, DropTransformer, Encoder, FuncTransformer,
-    Gauss, Imputer, Pruner, Scaler,
+    Normalizer, Imputer, Pruner, Scaler,
 )
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureSelector,
 )
 from atom.models import MODELS_ENSEMBLES, CustomModel
-from atom.nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
+from atom.nlp import TextNormalizer, TextCleaner, Tokenizer, Vectorizer
 from atom.pipeline import Pipeline
 from atom.plots import ATOMPlotter
 from atom.training import (
@@ -1016,8 +1016,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         setattr(self.branch, strategy.lower(), getattr(scaler, strategy.lower()))
 
     @composed(crash, method_to_log)
-    def gauss(self, strategy: str = "yeojohnson", **kwargs):
-        """Transform the data to follow a Gaussian distribution.
+    def normalize(self, strategy: str = "yeojohnson", **kwargs):
+        """Transform the data to follow a Normal/Gaussian distribution.
 
         This transformation is useful for modeling issues related
         to heteroscedasticity (non-constant variance), or other
@@ -1029,17 +1029,17 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_dim(self, "gauss")
+        check_dim(self, "normalize")
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, Gauss().get_params())
-        gauss = Gauss(strategy=strategy, **kwargs)
+        kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
+        normalizer = Normalizer(strategy=strategy, **kwargs)
 
-        self._add_transformer(gauss, columns=columns)
+        self._add_transformer(normalizer, columns=columns)
 
         # Attach the estimator attribute to atom's branch
         for attr in ("yeojohnson", "boxcox", "quantile"):
-            if hasattr(gauss, attr):
-                setattr(self.branch, attr, getattr(gauss, attr))
+            if hasattr(normalizer, attr):
+                setattr(self.branch, attr, getattr(normalizer, attr))
 
     @composed(crash, method_to_log, typechecked)
     def clean(
@@ -1354,7 +1354,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.branch.quadgrams = tokenizer.quadgrams
 
     @composed(crash, method_to_log, typechecked)
-    def normalize(
+    def textnormalize(
         self,
         stopwords: Union[bool, str] = True,
         custom_stopwords: Optional[SEQUENCE_TYPES] = None,
@@ -1373,10 +1373,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         See nlp.py for a description of the parameters.
 
         """
-        check_dim(self, "normalize")
+        check_dim(self, "textnormalize")
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
-        normalizer = Normalizer(
+        kwargs = self._prepare_kwargs(kwargs, TextNormalizer().get_params())
+        normalizer = TextNormalizer(
             stopwords=stopwords,
             custom_stopwords=custom_stopwords,
             stem=stem,

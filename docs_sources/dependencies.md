@@ -26,7 +26,7 @@ And operating systems:
 ATOM is built on top of several existing Python libraries. These
 packages are necessary for its correct functioning.
 
-* **[numpy](https://numpy.org/)** (~=1.22)
+* **[numpy](https://numpy.org/)** (>=1.21.5)
 * **[scipy](https://www.scipy.org/)** (>=1.7.3)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.2.0)

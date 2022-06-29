@@ -342,3 +342,39 @@ class Pipeline(pipeline.Pipeline):
             X, y = self._memory_transform(transformer, X, y)
 
         return variable_return(X, y)
+
+    def _can_inverse_transform(self):
+        return all(hasattr(t, "inverse_transform") for _, _, t in self._iter())
+
+    @available_if(_can_inverse_transform)
+    def inverse_transform(self, X=None, y=None):
+        """Inverse transform for each step in a reverse order.
+
+        All estimators in the pipeline must implement the
+        `inverse_transform` method.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, optional (default=None)
+            Feature set with shape=(n_samples, n_features). None
+            if the pipeline only uses y.
+
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed feature set. Only returned if provided.
+
+        pd.Series
+            Transformed target column. Only returned if provided.
+
+        """
+        for _, _, transformer in reversed(list(self._iter())):
+            X, y = self._memory_transform(transformer, X, y, method="inverse_transform")
+
+        return variable_return(X, y)

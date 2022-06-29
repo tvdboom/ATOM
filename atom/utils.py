@@ -868,7 +868,7 @@ def fit_one(transformer, X=None, y=None, message=None, **fit_params):
             transformer.fit(*args, **fit_params)
 
 
-def transform_one(transformer, X=None, y=None):
+def transform_one(transformer, X=None, y=None, method="transform"):
     """Transform the data using one estimator."""
 
     def prepare_df(out):
@@ -889,7 +889,7 @@ def transform_one(transformer, X=None, y=None):
     y = to_series(y, index=getattr(X, "index", None))
 
     args = []
-    transform_params = signature(transformer.transform).parameters
+    transform_params = signature(getattr(transformer, method)).parameters
     if "X" in transform_params:
         if X is not None:
             inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
@@ -901,7 +901,7 @@ def transform_one(transformer, X=None, y=None):
             args.append(y)
         elif "X" not in transform_params:
             return X, y  # If y is None and needed, and no X in transformer, skip it
-    output = transformer.transform(*args)
+    output = getattr(transformer, method)(*args)
 
     # Transform can return X, y or both
     if isinstance(output, tuple):

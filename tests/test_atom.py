@@ -655,11 +655,11 @@ def test_scale():
     assert hasattr(atom, "standard")
 
 
-def test_gauss():
-    """Assert that the gauss method transforms the features."""
+def test_normalize():
+    """Assert that the normalize method transforms the features."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     X = atom.X.copy()
-    atom.gauss()
+    atom.normalize()
     assert not atom.X.equals(X)
     assert hasattr(atom, "yeojohnson")
 
@@ -734,10 +734,10 @@ def test_tokenize():
     assert atom["corpus"][0] == ["I", "àm", "in", "ne", "'", "w", "york"]
 
 
-def test_normalize():
-    """Assert that the normalize method normalizes the corpus."""
+def test_textnormalize():
+    """Assert that the textnormalize method normalizes the corpus."""
     atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
-    atom.normalize(stopwords=False, custom_stopwords=["yes"])
+    atom.textnormalize(stopwords=False, custom_stopwords=["yes"])
     assert atom["corpus"][0] == ["I", "àm", "in", "ne'w", "york"]
 
 
@@ -849,7 +849,7 @@ def test_scaling_is_passed():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.scale("minmax")
     atom.run("LGB")
-    assert atom.dataset.equals(atom.lgb.dataset)
+    pd.testing.assert_frame_equal(atom.dataset, atom.lgb.dataset)
 
 
 def test_errors_are_updated():

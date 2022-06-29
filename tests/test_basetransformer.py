@@ -226,10 +226,22 @@ def test_target_not_in_dataset():
         BaseTransformer._prepare_input(X_bin, "X")
 
 
+def test_X_is_None_with_str():
+    """Assert that an error is raised when X is None and y is a string."""
+    with pytest.raises(ValueError, match=r".*can't be None when y is a str.*"):
+        BaseTransformer._prepare_input(y="test")
+
+
 def test_target_is_int():
     """Assert that target column is assigned correctly for an integer."""
     _, y = BaseTransformer._prepare_input(X_bin, y=0)
     assert y.name == "mean radius"
+
+
+def test_X_is_None_with_int():
+    """Assert that an error is raised when X is None and y is an int."""
+    with pytest.raises(ValueError, match=r".*can't be None when y is a int.*"):
+        BaseTransformer._prepare_input(y=1)
 
 
 def test_target_is_none():
@@ -345,9 +357,9 @@ def test_data_already_set():
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test)
     trainer.run()
-    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
-    assert trainer.branch._idx[0].equals(bin_train.index)
-    assert trainer.branch._idx[1].equals(bin_test.index)
+    pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
+    pd.testing.assert_index_equal(trainer.branch._idx[0], bin_train.index)
+    pd.testing.assert_index_equal(trainer.branch._idx[1], bin_test.index)
 
 
 def test_input_is_X():
@@ -449,14 +461,14 @@ def test_input_is_2_tuples():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run((X_train, y_train), (X_test, y_test))
-    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
 
 
 def test_input_is_train_test():
     """Assert that input train, test works."""
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
 
 
 def test_input_is_train_test_with_parameter_y():
@@ -476,16 +488,16 @@ def test_input_is_3_tuples():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
-    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
-    assert trainer.holdout.equals(bin_test)
+    pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
+    pd.testing.assert_frame_equal(trainer.holdout, bin_test)
 
 
 def test_input_is_train_test_holdout():
     """Assert that input train, test, holdout works."""
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test, bin_test)
-    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
-    assert trainer.holdout.equals(bin_test)
+    pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
+    pd.testing.assert_frame_equal(trainer.holdout, bin_test)
 
 
 def test_4_data_provided():
@@ -497,7 +509,7 @@ def test_4_data_provided():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(X_train, X_test, y_train, y_test)
-    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
+    pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
 
 
 def test_6_data_provided():
@@ -511,8 +523,8 @@ def test_6_data_provided():
 
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
-    assert trainer.dataset.equals(pd.concat([bin_train, bin_test]))
-    assert trainer.holdout.equals(bin_test)
+    pd.testing.assert_frame_equal(trainer.dataset, pd.concat([bin_train, bin_test]))
+    pd.testing.assert_frame_equal(trainer.holdout, bin_test)
 
 
 def test_invalid_input():

@@ -7,6 +7,11 @@
 * Refactor of the [Vectorizer](../API/nlp/vectorizer) class.
 * Refactor of the [cross_validate](../API/models/gnb/#cross-validate) method.
 * Refactor of the [plot_pipeline](../API/plots/plot_pipeline) method.
+* Renamed the `Normalizer` class to `TextNormalizer`.
+* Renamed the `Gauss` class to `Normalizer`.
+* Added the `inverse_transform` method to the [Scaler](../API/data_cleaning/scaler),
+  [Normalizer](../API/data_cleaning/normalizder) and [Cleaner](../API/data_cleaning/cleaner) 
+  classes.
 * Significant speed up in pipeline transformations.
 * Fixed a bug where mlflow runs could be ended unexpectedly.
 
@@ -236,7 +241,7 @@
 * Support of NLP pipelines. Read more in the [user guide](../user_guide/nlp).
 * Integration of [mlflow](https://www.mlflow.org/) to track all models in the
   pipeline. Read more in the [user guide](../user_guide/logging/#tracking).
-* The new [Gauss](../API/data_cleaning/gauss) class transforms features to
+* The new [Normalizer](../API/data_cleaning/gauss) class transforms features to
   a more Gaussian-like distribution.
 * New [cross_validate](../API/ATOM/atomclassifier/#cross-validate) method to
   evaluate the robustness of a pipeline using cross_validation.

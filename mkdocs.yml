@@ -114,7 +114,7 @@ nav:
             - ATOMModel: API/ATOM/atommodel.md
         - Data cleaning:
              - Scaler: API/data_cleaning/scaler.md
-             - Gauss: API/data_cleaning/gauss.md
+             - Normalizer: API/data_cleaning/normalizer.md
              - Cleaner: API/data_cleaning/cleaner.md
              - Imputer: API/data_cleaning/imputer.md
              - Discretizer: API/data_cleaning/discretizer.md
@@ -124,7 +124,7 @@ nav:
         - NLP:
             - TextCleaner: API/nlp/textcleaner.md
             - Tokenizer: API/nlp/tokenizer.md
-            - Normalizer: API/nlp/normalizer.md
+            - TextNormalizer: API/nlp/textnormalizer.md
             - Vectorizer: API/nlp/vectorizer.md
         - Feature engineering:
             - FeatureExtractor: API/feature_engineering/feature_extractor.md

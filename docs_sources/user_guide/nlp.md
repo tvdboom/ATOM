@@ -71,17 +71,17 @@ method.
 
 <br>
 
-## Normalization
+## Text Normalization
 
-Normalization is a process that converts a list of words to a more
-uniform standard. This is useful to reduce the amount of different
+Normalization for texts is a process that converts a list of words to a
+more uniform standard. This is useful to reduce the amount of different
 information that the computer has to deal with, and therefore improves
 efficiency. The goal of normalization techniques like stemming and
-lemmatization is to reduce inflectional forms and derivationally
-related forms of a word to a common base form.
+lemmatization is to reduce inflectional and related forms of a word
+to a common base form.
 
-Normalize the words in the corpus using the [Normalizer](../../API/nlp/normalizer)
-class. It can be accessed from atom through the [normalize](../../API/ATOM/atomclassifier/#normalize)
+Normalize the words in the corpus using the [TextNormalizer](../../API/nlp/textnormalizer)
+class. It can be accessed from atom through the [textnormalize](../../API/ATOM/atomclassifier/#textnormalize)
 method.
 
 

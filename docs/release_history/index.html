@@ -996,8 +996,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../API/data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../API/data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -1155,8 +1155,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../API/nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../API/nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -3107,7 +3107,13 @@
 <li>Refactor of the <a href="../API/nlp/vectorizer">Vectorizer</a> class.</li>
 <li>Refactor of the <a href="../API/models/gnb/#cross-validate">cross_validate</a> method.</li>
 <li>Refactor of the <a href="../API/plots/plot_pipeline">plot_pipeline</a> method.</li>
+<li>Renamed the <code>Normalizer</code> class to <code>TextNormalizer</code>.</li>
+<li>Renamed the <code>Gauss</code> class to <code>Normalizer</code>.</li>
+<li>Added the <code>inverse_transform</code> method to the <a href="../API/data_cleaning/scaler">Scaler</a>,
+  <a href="../API/data_cleaning/normalizder">Normalizer</a> and <a href="../API/data_cleaning/cleaner">Cleaner</a> 
+  classes.</li>
 <li>Significant speed up in pipeline transformations.</li>
+<li>Fixed a bug where mlflow runs could be ended unexpectedly.</li>
 </ul>
 <p><a name="v4131"></a></p>
 <h3 id="version-4131">Version 4.13.1</h3>
@@ -3321,7 +3327,7 @@
 <li>Support of NLP pipelines. Read more in the <a href="../user_guide/nlp">user guide</a>.</li>
 <li>Integration of <a href="https://www.mlflow.org/">mlflow</a> to track all models in the
   pipeline. Read more in the <a href="../user_guide/logging/#tracking">user guide</a>.</li>
-<li>The new <a href="../API/data_cleaning/gauss">Gauss</a> class transforms features to
+<li>The new <a href="../API/data_cleaning/gauss">Normalizer</a> class transforms features to
   a more Gaussian-like distribution.</li>
 <li>New <a href="../API/ATOM/atomclassifier/#cross-validate">cross_validate</a> method to
   evaluate the robustness of a pipeline using cross_validation.</li>

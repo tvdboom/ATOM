@@ -1314,8 +1314,8 @@ in the pipeline.
 </tr>
 
 <tr>
-<td><a href="#gauss">gauss</a></td>
-<td>Transform the data to follow a Gaussian distribution.</td>
+<td><a href="#normalize">normalize</a></td>
+<td>Transform the data to follow a Normal/Gaussian distribution.</td>
 </tr>
 
 <tr>
@@ -1359,20 +1359,20 @@ estimator created by the class is attached to atom. See the
 <br /><br /><br />
 
 
-<a name="gauss"></a>
+<a name="normalize"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">gauss</strong>(strategy="yeojohnson", **kwargs)
+<em>method</em> <strong style="color:#008AB8">normalize</strong>(strategy="yeojohnson", **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1009">[source]</a>
 </span>
 </div>
-Transform the data to follow a Gaussian distribution. This transformation
-is useful for modeling issues related to heteroscedasticity (non-constant
-variance), or other situations where normality is desired. Missing values
-are disregarded in fit and maintained in transform. Categorical columns
-are ignored. The estimator created by the class is attached to atom. See
-the See the [Gauss](../data_cleaning/gauss.md) class for a description of
-the parameters.
+Transform the data to follow a Normal/Gaussian distribution. This
+transformation is useful for modeling issues related to heteroscedasticity
+(non-constant variance), or other situations where normality is desired.
+Missing values are disregarded in fit and maintained in transform.
+Categorical columns are ignored. The estimator created by the class is
+attached to atom. See the See the [Normalizer](../data_cleaning/normalizer.md)
+class for a description of the parameters.
 <br /><br /><br />
 
 
@@ -1501,7 +1501,7 @@ text to meaningful numeric values, ready to be ingested by a model.
 </tr>
 
 <tr>
-<td><a href="#normalize">normalize</a></td>
+<td><a href="#textnormalize">textnormalize</a></td>
 <td>Convert words to a more uniform standard.</td>
 </tr>
 
@@ -1551,9 +1551,9 @@ of the parameters.
 <br /><br /><br />
 
 
-<a name="normalize"></a>
+<a name="textnormalize"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">normalize</strong>(stopwords=True,
+<em>method</em> <strong style="color:#008AB8">textnormalize</strong>(stopwords=True,
 custom_stopwords=None, stem=False, lemmatize=True)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1347">[source]</a>
@@ -1563,7 +1563,7 @@ Convert words to a more uniform standard. The transformations
 are applied on the column named `corpus`, in the same order the
 parameters are presented. If there is no column with that name,
 an exception is raised. If the provided documents are strings,
-words are separated by spaces. See the [Normalizer](../nlp/normalizer.md)
+words are separated by spaces. See the [TextNormalizer](../nlp/textnormalizer.md)
 class for a description of the parameters.
 <br /><br /><br />
 

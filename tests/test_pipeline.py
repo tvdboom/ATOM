@@ -113,3 +113,10 @@ def test_transform(pipeline):
     pl = pipeline(model=False)
     assert isinstance(pl.transform(X_bin), pd.DataFrame)
     assert isinstance(pl.transform(X_bin, y_bin), tuple)
+
+
+def test_inverse_transform():
+    """Assert that the pipeline uses inverse_transform normally."""
+    pl = Pipeline([("scaler", StandardScaler())]).fit(X_bin)
+    X = pl.inverse_transform(pl.transform(X_bin))
+    pd.testing.assert_frame_equal(X_bin, X)

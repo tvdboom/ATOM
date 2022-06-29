@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 
 from atom import ATOMClassifier
-from atom.nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
+from atom.nlp import TextNormalizer, TextCleaner, Tokenizer, Vectorizer
 
 from .conftest import X_bin, X_text, y10
 
@@ -118,33 +118,33 @@ def test_quadgrams():
     assert isinstance(tokenizer.quadgrams, pd.DataFrame)
 
 
-# Test Normalizer ================================================== >>
+# Test TextNormalizer ================================================== >>
 
 def test_normalizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
-    assert Normalizer().transform([["b c"]])["corpus"][0] == ["b", "c"]
+    assert TextNormalizer().transform([["b c"]])["corpus"][0] == ["b", "c"]
 
 
 def test_stopwords():
     """Assert that predefined stopwords are removed."""
-    assert Normalizer().transform([["a b"]])["corpus"][0] == ["b"]
+    assert TextNormalizer().transform([["a b"]])["corpus"][0] == ["b"]
 
 
 def test_stopwords_custom():
     """Assert that custom stopwords are removed."""
-    normalizer = Normalizer(stopwords=False, custom_stopwords=["b"])
+    normalizer = TextNormalizer(stopwords=False, custom_stopwords=["b"])
     assert normalizer.transform([["a b"]])["corpus"][0] == ["a"]
 
 
 def test_stemming():
     """Assert that the corpus is stemmed."""
-    normalizer = Normalizer(stem=True, lemmatize=False)
+    normalizer = TextNormalizer(stem=True, lemmatize=False)
     assert normalizer.transform([["running"]])["corpus"][0] == ["run"]
 
 
 def test_lemmatization():
     """Assert that lemmatization is applied."""
-    assert Normalizer().transform([["better"]])["corpus"][0] == ["well"]
+    assert TextNormalizer().transform([["better"]])["corpus"][0] == ["well"]
 
 
 # Test Vectorizer ================================================== >>

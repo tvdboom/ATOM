@@ -422,7 +422,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
+class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Normalize the corpus.
 
     Convert words to a more uniform standard. The transformations

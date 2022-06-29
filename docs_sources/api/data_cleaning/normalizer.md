@@ -1,20 +1,20 @@
-# Gauss
--------
+# Normalizer
+------------
 
 <div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Gauss</strong>(strategy="yeojohnson",
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Normalizer</strong>(strategy="yeojohnson",
 verbose=0, logger=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L324">[source]</a>
 </span>
 </div>
 
-Transform the data to follow a Gaussian distribution. This
+Transform the data to follow a Normal/Gaussian distribution. This
 transformation is useful for modeling issues related to
 heteroscedasticity (non-constant variance), or other situations
 where normality is desired. Missing values are disregarded in
 fit and maintained in transform. Categorical columns are ignored.
-This class can be accessed from atom through the [gauss](../../ATOM/atomclassifier/#gauss)
+This class can be accessed from atom through the [normalize](../../ATOM/atomclassifier/#normalize)
 method. Read more in the [user guide](../../../user_guide/data_cleaning/#making-gaussian-like-features).
 
 <table style="font-size:16px">
@@ -148,7 +148,7 @@ Does nothing. Implemented for continuity of the API.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>Gauss</strong><br>
+<strong>Normalizer</strong><br>
 Fitted instance of self.
 </tr>
 </table>
@@ -177,7 +177,7 @@ Does nothing. Implemented for continuity of the API.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>X: pd.DataFrame</strong><br>
-Scaled feature set.
+Normalized feature set.
 </tr>
 </table>
 <br />
@@ -277,7 +277,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>Gauss</strong><br>
+<strong>Normalizer</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -321,14 +321,14 @@ Transformed feature set.
     from atom import ATOMRegressor
     
     atom = ATOMRegressor(X, y)
-    atom.gauss()
+    atom.normalize()
     ```
 
 === "stand-alone"
     ```python
-    from atom.data_cleaning import Gauss
+    from atom.data_cleaning import Normalizer
     
-    gauss = Gauss()
-    gauss.fit(X_train)
-    X = gauss.transform(X)
+    normalizer = Normalizer()
+    normalizer.fit(X_train)
+    X = normalizer.transform(X)
     ```
