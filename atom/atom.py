@@ -25,13 +25,13 @@ from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
 from atom.data_cleaning import (
     Balancer, Cleaner, Discretizer, DropTransformer, Encoder, FuncTransformer,
-    Normalizer, Imputer, Pruner, Scaler,
+    Imputer, Normalizer, Pruner, Scaler,
 )
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureSelector,
 )
 from atom.models import MODELS_ENSEMBLES, CustomModel
-from atom.nlp import TextNormalizer, TextCleaner, Tokenizer, Vectorizer
+from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
 from atom.pipeline import Pipeline
 from atom.plots import ATOMPlotter
 from atom.training import (

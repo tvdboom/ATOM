@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 
 from atom import ATOMClassifier
-from atom.nlp import TextNormalizer, TextCleaner, Tokenizer, Vectorizer
+from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
 
 from .conftest import X_bin, X_text, y10
 

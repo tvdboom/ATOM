@@ -16,7 +16,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
 from atom.data_cleaning import (
-    Balancer, Cleaner, Discretizer, Encoder, Normalizer, Imputer, Pruner, Scaler,
+    Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
+    Scaler,
 )
 from atom.utils import NotFittedError, check_scaling
 
