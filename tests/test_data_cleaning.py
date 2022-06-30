@@ -66,6 +66,12 @@ def test_scaler_all_strategies(strategy):
     scaler.fit_transform(X_bin)
 
 
+def test_scaler_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Scaler().fit_transform(X10_str)
+    assert X["feature_3"].dtype.kind == "O"
+
+
 def test_scaler_y_is_ignored():
     """Assert that the y parameter is ignored if provided."""
     X_1 = Scaler().fit_transform(X_bin, y_bin)
@@ -90,6 +96,12 @@ def test_scaler_inverse_transform():
     scaler = Scaler().fit(X_bin)
     X_transformed = scaler.transform(X_bin)
     pd.testing.assert_frame_equal(X_bin, scaler.inverse_transform(X_transformed))
+
+
+def test_scaler_inverse_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Scaler().fit(X10_str).inverse_transform(X10_str)
+    assert X["feature_3"].dtype.kind == "O"
 
 
 def test_scaler_ignores_categorical_columns():
@@ -128,11 +140,24 @@ def test_normalizer_all_strategies(strategy):
     normalizer.fit_transform(X10)
 
 
+def test_normalizer_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Normalizer().fit_transform(X10_str)
+    assert X["feature_3"].dtype.kind == "O"
+
+
 def test_normalizer_inverse_transform():
     """Assert that the inverse_transform method works."""
     normalizer = Normalizer().fit(X_bin)
     X_transformed = normalizer.transform(X_bin)
-    pd.testing.assert_frame_equal(X_bin, normalizer.inverse_transform(X_transformed))
+    X_original = normalizer.inverse_transform(X_transformed)
+    pd.testing.assert_frame_equal(X_bin, X_original.round(8))
+
+
+def test_normalizer_inverse_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Normalizer().fit(X10_str).inverse_transform(X10_str)
+    assert X["feature_3"].dtype.kind == "O"
 
 
 def test_normalizer_y_is_ignored():

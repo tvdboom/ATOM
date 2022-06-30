@@ -56,8 +56,8 @@ from typeguard import typechecked
 from atom.basetransformer import BaseTransformer
 from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
-    check_is_fitted, composed, crash, it, lst, merge, method_to_log, to_series,
-    variable_return,
+    check_is_fitted, composed, crash, it, lst, merge, method_to_log, to_df,
+    to_series, variable_return,
 )
 
 
@@ -324,9 +324,13 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Scaling features...", 1)
         X_transformed = self._estimator.transform(X[self._num_cols])
 
-        # Replace the numerical columns with the transformed values
-        for i, col in enumerate(self._num_cols):
-            X[col] = X_transformed[:, i]
+        # If all columns were transformed, just swap sets
+        if len(self._num_cols) != X.shape[1]:
+            # Replace the numerical columns with the transformed values
+            for i, col in enumerate(self._num_cols):
+                X[col] = X_transformed[:, i]
+        else:
+            X = to_df(X_transformed, X.index, X.columns)
 
         return X
 
@@ -354,9 +358,13 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Inversely scaling features...", 1)
         X_transformed = self._estimator.inverse_transform(X[self._num_cols])
 
-        # Replace the numerical columns with the transformed values
-        for i, col in enumerate(self._num_cols):
-            X[col] = X_transformed[:, i]
+        # If all columns were transformed, just swap sets
+        if len(self._num_cols) != X.shape[1]:
+            # Replace the numerical columns with the transformed values
+            for i, col in enumerate(self._num_cols):
+                X[col] = X_transformed[:, i]
+        else:
+            X = to_df(X_transformed, X.index, X.columns)
 
         return X
 
@@ -498,9 +506,13 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Normalizing features...", 1)
         X_transformed = self._estimator.transform(X[self._num_cols])
 
-        # Replace the numerical columns with the transformed values
-        for i, col in enumerate(self._num_cols):
-            X[col] = X_transformed[:, i]
+        # If all columns were transformed, just swap sets
+        if len(self._num_cols) != X.shape[1]:
+            # Replace the numerical columns with the transformed values
+            for i, col in enumerate(self._num_cols):
+                X[col] = X_transformed[:, i]
+        else:
+            X = to_df(X_transformed, X.index, X.columns)
 
         return X
 
@@ -532,9 +544,13 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Inversely normalizing features...", 1)
         X_transformed = self._estimator.inverse_transform(X[self._num_cols])
 
-        # Replace the numerical columns with the transformed values
-        for i, col in enumerate(self._num_cols):
-            X[col] = X_transformed[:, i]
+        # If all columns were transformed, just swap sets
+        if len(self._num_cols) != X.shape[1]:
+            # Replace the numerical columns with the transformed values
+            for i, col in enumerate(self._num_cols):
+                X[col] = X_transformed[:, i]
+        else:
+            X = to_df(X_transformed, X.index, X.columns)
 
         return X
 

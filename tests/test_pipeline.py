@@ -56,7 +56,7 @@ def test_transform_only_X_or_y(pipeline):
         steps=[
             ("label_encoder", LabelEncoder()),
             ("scaler", StandardScaler()),
-        ]
+        ],
     )
     pl.fit(X_bin, y_bin)
     assert isinstance(pl.transform(y=y_bin), pd.Series)

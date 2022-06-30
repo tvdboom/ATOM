@@ -877,7 +877,12 @@ def transform_one(transformer, X=None, y=None, method="transform"):
 
         # Convert to pandas and assign proper column names
         if not isinstance(out, pd.DataFrame):
-            out = to_df(out, index=X.index, columns=name_cols(out, X, use_cols))
+            if hasattr(transformer, "get_feature_names_out"):
+                columns = transformer.get_feature_names_out()
+            else:
+                columns = name_cols(out, X, use_cols)
+
+            out = to_df(out, index=X.index, columns=columns)
 
         # Reorder columns if only a subset was used
         if len(use_cols) != X.shape[1]:
