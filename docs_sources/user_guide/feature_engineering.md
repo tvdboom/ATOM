@@ -41,7 +41,7 @@ month, year, hour...) from the columns. It can be accessed from atom
 through the [feature_extraction](../../API/ATOM/atomclassifier/#feature-extraction)
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
-they create, e.g. `feature_1_day` for the day element of `feature_1`.
+they create, e.g. `x0_day` for the day element of `x0`.
 
 Note that many time features have a cyclic pattern, e.g. after Sunday
 comes Monday. This means that if we would encode the days of the week
@@ -58,7 +58,7 @@ x_{cos} = cos\left(\frac{2\pi * x}{max(x)}\right)
 $$
 
 The resulting features have their names followed by sin or cos, e.g.
-`feature_1_day_sin` and `feature_1_day_cos`. The datetime elements
+`x0_day_sin` and `x0_day_cos`. The datetime elements
 that can be encoded in a cyclic fashion are: microsecond, second,
 minute, hour, weekday, day, day_of_year, month and quarter. Note that
 decision trees based algorithms build their split rules according to
@@ -179,8 +179,8 @@ arrays (scores, p-values). Read more in sklearn's [documentation](https://scikit
 <a name="pca"></a>
 **Principal Components Analysis**<br>
 Applying PCA reduces the dimensionality of the dataset by maximizing
-the variance of each dimension. The new features are called component_1,
-component_2, etc... PCA can be applied in three ways:
+the variance of each dimension. The new features are called `pca0`,
+`pca1`, etc... PCA can be applied in three ways:
 
 * If the data is dense (i.e. not sparse), the estimator used is [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html).
   Before fitting the transformer, the data is scaled to mean=0 and std=1

@@ -567,7 +567,7 @@ is merged independently with atom.
     * The column naming happens as follows. If the transformer returns the
       same number of columns, the names are kept equal. If the number of
       columns change, old columns will keep their name (as long as the column
-      is unchanged) and new columns will receive the name `feature_[N]`, where
+      is unchanged) and new columns will receive the name `X[N-1]`, where
       N stands for the n-th feature. This means that a transformer should
       only transform, add or drop columns, not combinations of these.
     * The index remains the same as before the transformation. This means
@@ -1380,7 +1380,7 @@ class for a description of the parameters.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">clean</strong>(drop_types=None,
 strip_categorical=True, drop_max_cardinality=True, drop_min_cardinality=True,
-drop_duplicates=False, drop_missing_target=True, encode_target=None)
+drop_duplicates=False, drop_missing_target=True)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1035">[source]</a>
 </span>
@@ -1394,7 +1394,6 @@ to choose which transformations to perform. The available steps are:
 * Drop columns with minimum cardinality.
 * Drop duplicate rows.
 * Drop rows with missing values in the target column.
-* Encode the target column (only for classification tasks).
 
 See the [Cleaner](../data_cleaning/cleaner.md) class for a description of the parameters.
 <br /><br /><br />

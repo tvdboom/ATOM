@@ -593,6 +593,13 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         of sparse arrays. Must be False when there are other columns
         in X (besides `corpus`) that are non-sparse.
 
+    gpu: bool or str, optional (default=False)
+        Train LabelEncoder on GPU (instead of CPU). Only for
+        `encode_target=True`.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -620,11 +627,12 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "bow",
         return_sparse: bool = True,
+        gpu: Union[bool, str] = False,
         verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.return_sparse = return_sparse
         self.kwargs = kwargs
@@ -660,9 +668,9 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         strategies = CustomDict(
-            bow=CountVectorizer,
-            tfidf=TfidfVectorizer,
-            hashing=HashingVectorizer,
+            bow=self._get_gpu(CountVectorizer, "cuml.feature_extraction.text"),
+            tfidf=self._get_gpu(TfidfVectorizer, "cuml.feature_extraction.text"),
+            hashing=self._get_gpu(HashingVectorizer, "cuml.feature_extraction.text"),
         )
 
         if self.strategy in strategies:
@@ -713,13 +721,21 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         matrix = self._estimator.transform(X[corpus])
-        if self.strategy.lower() != "hashing":
+        if hasattr(self._estimator, "get_feature_names_out"):
             columns = [f"{corpus}_{w}" for w in self._estimator.get_feature_names_out()]
         else:
             # Hashing has no words to put as column names
-            columns = [f"hash_{i}" for i in range(matrix.shape[1])]
+            columns = [f"hash{i}" for i in range(matrix.shape[1])]
 
         X = X.drop(corpus, axis=1)  # Drop original corpus column
+
+        if self.gpu:
+            matrix = matrix.get()  # Convert cupy sparse array back to scipy
+
+            # cuML estimators have a slightly different method name
+            if hasattr(self._estimator, "get_feature_names"):
+                vocabulary = self._estimator.get_feature_names()  # Is a cudf.Series
+                columns = [f"{corpus}_{w}" for w in vocabulary.to_numpy()]
 
         if not self.return_sparse:
             self.log(" --> Converting the output to a full array.", 2)
@@ -731,4 +747,4 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "must be False when X contains non-sparse columns (besides corpus)."
             )
 
-        return pd.concat([X, to_df(matrix, index=X.index, columns=columns)], axis=1)
+        return pd.concat([X, to_df(matrix, X.index, columns)], axis=1)

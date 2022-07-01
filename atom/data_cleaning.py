@@ -232,6 +232,12 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     <strategy>: sklearn transformer
         Object with which the data is scaled.
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     @typechecked
@@ -270,6 +276,8 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
         strategies = CustomDict(
@@ -415,6 +423,12 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     <strategy>: sklearn transformer
         Object with which the data is transformed.
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     @typechecked
@@ -453,6 +467,8 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
         kwargs = self.kwargs.copy()
@@ -597,6 +613,13 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Whether to Label-encode the target column. This transformation
         is ignored if `y` is not provided.
 
+    gpu: bool or str, optional (default=False)
+        Train LabelEncoder on GPU (instead of CPU). Only for
+        `encode_target=True`.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -632,10 +655,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
         encode_target: bool = True,
+        gpu: Union[bool, str] = False,
         verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.drop_types = drop_types
         self.strip_categorical = strip_categorical
         self.drop_max_cardinality = drop_max_cardinality
@@ -646,8 +670,48 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.mapping = {}
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
-        self._encoder = None
+        self._estimator = None
+        self._is_fitted = False
+
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: Optional[X_TYPES] = None, y: Optional[Y_TYPES] = None):
+        """Fit to data.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, optional (default=None)
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
+
+        Returns
+        -------
+        Cleaner
+            Fitted instance of self.
+
+        """
+        X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
+
+        self.log("Fitting Cleaner...", 1)
+
+        if y is not None and self.encode_target:
+            if self.drop_missing_target:
+                y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
+
+            estimator = self._get_gpu(LabelEncoder, "cuml.preprocessing")
+            self._estimator = estimator().fit(y)
+            self.mapping = {
+                str(it(v)): i for i, v in enumerate(self._estimator.classes_)
+            }
+
         self._is_fitted = True
+        return self
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: Optional[X_TYPES] = None, y: Optional[Y_TYPES] = None):
@@ -673,6 +737,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed target column. Only returned if provided.
 
         """
+        check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
         self.log("Cleaning the data...", 1)
@@ -741,17 +806,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                         "missing values in target column.", 2
                     )
 
-            # Label-encode the target column
-            if self.encode_target:
-                self._encoder = LabelEncoder().fit(y)
-                self.mapping = {
-                    str(it(v)): i for i, v in enumerate(self._encoder.classes_)
-                }
-
-                # Only apply if the target column wasn't already encoded
-                if any([key != str(value) for key, value in self.mapping.items()]):
-                    self.log(" --> Label-encoding the target column.", 2)
-                    y = to_series(self._encoder.transform(y), y.index, y.name)
+            if self.encode_target and self._estimator:
+                self.log(" --> Label-encoding the target column.", 2)
+                y = to_series(self._estimator.transform(y), y.index, y.name)
 
         return variable_return(X, y)
 
@@ -794,7 +851,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if y is not None and self.encode_target:
             self.log(" --> Inversely label-encoding the target column.", 2)
-            y = to_series(self._encoder.inverse_transform(y), y.index, y.name)
+            y = to_series(self._estimator.inverse_transform(y), y.index, y.name)
 
         return variable_return(X, y)
 
@@ -857,6 +914,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         `NaN`, `+inf` and `-inf` are always considered missing since
         they are incompatible with sklearn estimators.
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     @typechecked
@@ -903,6 +966,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
         # Check input Parameters
@@ -1154,6 +1219,14 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
+    Attributes
+    ----------
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     @typechecked
@@ -1214,6 +1287,8 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             return labels
 
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
         if self.strategy.lower() not in ("uniform", "quantile", "kmeans", "custom"):
@@ -1378,6 +1453,12 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         the key to its mapping dictionary. Only for columns mapped to
         a single column (e.g. Ordinal, Leave-one-out, etc...).
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     @typechecked
@@ -1432,6 +1513,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
         self._cat_cols = list(X.select_dtypes(exclude="number").columns)
 
         strategies = CustomDict(

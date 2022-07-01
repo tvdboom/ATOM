@@ -87,6 +87,14 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
+    Attributes
+    ----------
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     def __init__(
@@ -135,6 +143,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 X.insert(idx, f"{name}_cos", np.cos(pos))
 
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
 
         # Check parameters
         if self.encoding_type.lower() not in ("ordinal", "cyclic"):
@@ -282,6 +292,12 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             - description: Operators used to create this feature.
             - fitness: Fitness score.
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     def __init__(
@@ -331,6 +347,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
 
         operators = CustomDict(
             add="add_numeric",
@@ -479,7 +497,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 # If the column is new, use a default name
                 counter = 0
                 while True:
-                    name = f"feature_{X.shape[1] + 1 + counter}"
+                    name = f"x{X.shape[1] + counter}"
                     if name not in X:
                         X[name] = array  # Add new feature to X
                         df.iloc[i, 0] = name
@@ -629,6 +647,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         Object used to transform the data, e.g. `balancer.pca` for the pca
         strategy.
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     def __init__(
@@ -714,6 +738,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 return scoring(model, X_valid, y_valid)
 
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
 
         strats = CustomDict(
             univariate=SelectKBest,
@@ -1094,10 +1120,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             X = to_df(
                 data=self.pca.transform(X)[:, :self.pca._comps],
                 index=X.index,
-                columns=[f"component_{str(i)}" for i in range(1, self.pca._comps + 1)],
+                columns=[f"pca{str(i)}" for i in range(self.pca._comps)],
             )
 
             var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
+            self.log(f"   >>> Keeping {self.pca._comps} components.", 2)
             self.log(f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == "sfm":

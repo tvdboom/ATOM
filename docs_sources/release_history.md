@@ -4,7 +4,7 @@
 <a name="v4140"></a>
 ### Version 4.14.0
 
-* Refactor of the [Vectorizer](../API/nlp/vectorizer) class.
+* Refactor of the [Cleaner](../API/data_cleaning/cleaner) and [Vectorizer](../API/nlp/vectorizer) classes.
 * Refactor of the [cross_validate](../API/models/gnb/#cross-validate) method.
 * Refactor of the [plot_pipeline](../API/plots/plot_pipeline) method.
 * Renamed the `Normalizer` class to `TextNormalizer`.
@@ -12,6 +12,11 @@
 * Added the `inverse_transform` method to the [Scaler](../API/data_cleaning/scaler),
   [Normalizer](../API/data_cleaning/normalizder) and [Cleaner](../API/data_cleaning/cleaner) 
   classes.
+* Added the `feature_names_in_` and `n_features_in_` attributes to transformers.
+* Renamed default feature names to `x0`, `x1`, etc... for consistency with
+  sklearn's API.
+* Renamed component names in [FeatureSelector](../API/feature_engineering/feature_selector)
+  to `pca0`, `pca1`, etc... for consistency with sklearn's API.
 * Significant speed up in pipeline transformations.
 * Fixed a bug where mlflow runs could be ended unexpectedly.
 

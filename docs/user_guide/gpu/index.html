@@ -2890,13 +2890,15 @@ take quite some time (usually up to 15min).</li>
 </li>
 <li>GPU: NVIDIA Pascal™ or better with <a href="https://developer.nvidia.com/cuda-gpus">compute capability</a> 6.0+</li>
 <li>CUDA &amp; NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5</li>
-<li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=0.15</li>
+<li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=22.06</li>
 </ul>
 <h2 id="transformers">Transformers</h2>
 <ul>
 <li><a href="../../API/data_cleaning/scaler">Scaler</a></li>
+<li><a href="../../API/data_cleaning/cleaner">Cleaner</a> (only for encode_target=True)</li>
 <li><a href="../../API/data_cleaning/imputer">Imputer</a> (not for strat_num="knn")</li>
 <li><a href="../../API/data_cleaning/discretizer">Discretizer</a> (not for strategy="custom")</li>
+<li><a href="../../API/nlp/vectorizer">Vectorizer</a></li>
 <li><a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> (only for strategy="pca")</li>
 </ul>
 <h2 id="models">Models</h2>

@@ -3104,7 +3104,7 @@
 <p><a name="v4140"></a></p>
 <h3 id="version-4140">Version 4.14.0</h3>
 <ul>
-<li>Refactor of the <a href="../API/nlp/vectorizer">Vectorizer</a> class.</li>
+<li>Refactor of the <a href="../API/data_cleaning/cleaner">Cleaner</a> and <a href="../API/nlp/vectorizer">Vectorizer</a> classes.</li>
 <li>Refactor of the <a href="../API/models/gnb/#cross-validate">cross_validate</a> method.</li>
 <li>Refactor of the <a href="../API/plots/plot_pipeline">plot_pipeline</a> method.</li>
 <li>Renamed the <code>Normalizer</code> class to <code>TextNormalizer</code>.</li>
@@ -3112,6 +3112,11 @@
 <li>Added the <code>inverse_transform</code> method to the <a href="../API/data_cleaning/scaler">Scaler</a>,
   <a href="../API/data_cleaning/normalizder">Normalizer</a> and <a href="../API/data_cleaning/cleaner">Cleaner</a> 
   classes.</li>
+<li>Added the <code>feature_names_in_</code> and <code>n_features_in_</code> attributes to transformers.</li>
+<li>Renamed default feature names to <code>x0</code>, <code>x1</code>, etc... for consistency with
+  sklearn's API.</li>
+<li>Renamed component names in <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>
+  to <code>pca0</code>, <code>pca1</code>, etc... for consistency with sklearn's API.</li>
 <li>Significant speed up in pipeline transformations.</li>
 <li>Fixed a bug where mlflow runs could be ended unexpectedly.</li>
 </ul>

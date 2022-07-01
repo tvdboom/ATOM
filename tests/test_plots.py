@@ -178,7 +178,7 @@ def test_plot_scatter_matrix():
     atom.plot_scatter_matrix(columns=[0, 1, 2], display=False)
 
 
-@pytest.mark.parametrize("columns", [2, "feature_1", [0, 1]])
+@pytest.mark.parametrize("columns", [2, "x0", [0, 1]])
 def test_plot_distribution(columns):
     """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)

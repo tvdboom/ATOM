@@ -76,8 +76,18 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
+<p>
 <strong>estimator: sklearn transformer</strong><br>
 Object with which the data is transformed.
+</p>
+<p>
+<strong>feature_names_in_: np.array</strong><br>
+Names of features seen during fit.
+</p>
+<p>
+<strong>n_features_in_: int</strong><br>
+Number of features seen during fit.
+</p>
 </td>
 </tr>
 </table>

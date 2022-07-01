@@ -267,7 +267,7 @@ def test_automl_invalid_scoring():
 
 
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
-@pytest.mark.parametrize("columns", ["feature_1", 1, None])
+@pytest.mark.parametrize("columns", ["x0", 1, None])
 def test_distribution(distributions, columns):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -341,7 +341,7 @@ def test_reset():
     atom.run("LR")
     atom.reset()
     assert not atom.models and len(atom._branches) == 1
-    assert atom["feature_3"].dtype.name == "object"  # Is reset back to str
+    assert atom["x2"].dtype.name == "object"  # Is reset back to str
 
 
 def test_save_data():
@@ -432,7 +432,7 @@ def test_transform_method():
     """ Assert that the transform method works as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
-    assert atom.transform(X10_str)["feature_3"].dtype.kind in "ifu"
+    assert atom.transform(X10_str)["x2"].dtype.kind in "ifu"
 
 
 def test_transform_not_train_only():
@@ -565,8 +565,8 @@ def test_raise_length_mismatch():
 def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.encode(columns="feature_3")
-    assert list(atom.columns[2:5]) == ["feature_3_a", "feature_3_b", "feature_3_c"]
+    atom.encode(columns="x2")
+    assert list(atom.columns[2:5]) == ["x2_a", "x2_b", "x2_c"]
 
 
 def test_add_sets_are_kept_equal():

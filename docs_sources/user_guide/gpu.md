@@ -53,14 +53,16 @@ Be aware of the following:
     - Windows 8.1+ with WSL2 (see [here](https://developer.nvidia.com/blog/run-rapids-on-microsoft-windows-10-using-wsl-2-the-windows-subsystem-for-linux/) a tutorial)
 * GPU: NVIDIA Pascal™ or better with [compute capability](https://developer.nvidia.com/cuda-gpus) 6.0+
 * CUDA & NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5
-* [cuML](https://docs.rapids.ai/api/cuml/stable/)>=0.15
+* [cuML](https://docs.rapids.ai/api/cuml/stable/)>=22.06
 
 
 ## Transformers
 
 * [Scaler](../../API/data_cleaning/scaler)
+* [Cleaner](../../API/data_cleaning/cleaner) (only for encode_target=True)
 * [Imputer](../../API/data_cleaning/imputer) (not for strat_num="knn")
 * [Discretizer](../../API/data_cleaning/discretizer) (not for strategy="custom")
+* [Vectorizer](../../API/nlp/vectorizer)
 * [FeatureSelector](../../API/feature_engineering/feature_selector) (only for strategy="pca")
 
 

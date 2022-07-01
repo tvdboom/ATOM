@@ -608,7 +608,7 @@ class FSPlotter(BasePlotter):
         var = np.array(self.pca.explained_variance_ratio_)[:show]
         scr = pd.Series(
             data=var,
-            index=[f"component_{str(i)}" for i in range(1, len(var) + 1)],
+            index=[f"pca{str(i)}" for i in range(len(var))],
             dtype=float,
         ).sort_values()
 

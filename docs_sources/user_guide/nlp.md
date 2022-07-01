@@ -97,6 +97,10 @@ feature vectors. You can apply it to the corpus using the [Vectorizer](../../API
 class. It can be accessed from atom through the [vectorize](../../API/ATOM/atomclassifier/#vectorize)
 method.
 
+!!! info
+    All strategies can utilize GPU speed-up. Click [here](../gpu)
+    for further information about GPU implementation.
+
 <br style="display: block; margin-top: 2em; content: ' '">
 
 **Bag of Words**<br>
@@ -124,5 +128,5 @@ prefix `corpus_`. Read more in sklearn's [documentation](https://scikit-learn.or
 The larger the corpus, the larger the vocabulary will grow and thus
 increasing the number of features and memory use. Use the Hashing
 strategy to hash the words to a specified number of features. The
-created features are named `hash_1`, `hash_2`, etc... Read more in
+created features are named `hash0`, `hash1`, etc... Read more in
 sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_extraction.html#vectorizing-a-large-text-corpus-with-the-hashing-trick).

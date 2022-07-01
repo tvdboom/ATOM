@@ -59,7 +59,7 @@ following formats:
 The input data is always converted internally to a [pandas dataframe](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html),
 if it isn't one already. The column names should always be strings. If
 they are not, atom changes their type at initialization. If no column
-names are provided, default names are given of the form `feature_[N]`,
+names are provided, default names are given of the form `X[N-1]`,
 where N stands for the n-th feature in the dataset.
 
 <br>

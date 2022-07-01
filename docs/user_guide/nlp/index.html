@@ -2930,6 +2930,11 @@ general process of turning a collection of text documents into numerical
 feature vectors. You can apply it to the corpus using the <a href="../../API/nlp/vectorizer">Vectorizer</a>
 class. It can be accessed from atom through the <a href="../../API/ATOM/atomclassifier/#vectorize">vectorize</a>
 method.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>All strategies can utilize GPU speed-up. Click <a href="../gpu">here</a>
+for further information about GPU implementation.</p>
+</div>
 <p><br style="display: block; margin-top: 2em; content: ' '"></p>
 <p><strong>Bag of Words</strong><br>
 The Bag of Words (BOW) strategy applies tokenization, counting and
@@ -2952,7 +2957,7 @@ prefix <code>corpus_</code>. Read more in sklearn's <a href="https://scikit-lear
 The larger the corpus, the larger the vocabulary will grow and thus
 increasing the number of features and memory use. Use the Hashing
 strategy to hash the words to a specified number of features. The
-created features are named <code>hash_1</code>, <code>hash_2</code>, etc... Read more in
+created features are named <code>hash0</code>, <code>hash1</code>, etc... Read more in
 sklearn's <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#vectorizing-a-large-text-corpus-with-the-hashing-trick">documentation</a>.</p>
 
               

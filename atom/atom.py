@@ -1063,7 +1063,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             - Drop columns with minimum cardinality.
             - Drop duplicate rows.
             - Drop rows with missing values in the target column.
-            - Encode the target column (only for classification tasks).
+            - Encode the target column (can't be True for regression tasks).
 
         See data_cleaning.py for a description of the parameters.
 

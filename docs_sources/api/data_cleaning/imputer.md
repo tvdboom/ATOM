@@ -86,11 +86,21 @@ Verbosity level of the class. Possible values are:
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
+<p>
 <strong>missing: list</strong><br>
 Values that are considered "missing". Default values are: "", "?",
 "None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>,
 <code>NaN</code>, <code>+inf</code> and <code>-inf</code> are always
 considered missing since they are incompatible with sklearn estimators.
+</p>
+<p>
+<strong>feature_names_in_: np.array</strong><br>
+Names of features seen during fit.
+</p>
+<p>
+<strong>n_features_in_: int</strong><br>
+Number of features seen during fit.
+</p>
 </td>
 </tr>
 </table>
