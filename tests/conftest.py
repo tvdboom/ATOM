@@ -182,8 +182,24 @@ X20_out = [
     [1e6, 2, 1],
 ]
 
-# Target columns (int, matgomissing, categorical and mixed)
+# Target columns (int, missing, categorical and mixed)
 y10 = [0, 1, 0, 1, 1, 0, 1, 0, 1, 1]
 y10_nan = [0, 1, 0, np.NaN, 1, 0, 1, 0, 1, 1]
 y10_str = ["y", "n", "y", "y", "n", "y", "n", "y", "n", "n"]
 y10_sn = ["y", "n", np.NaN, "y", "n", "y", "n", "y", "n", "n"]
+
+
+class DummyTransformer:
+    """Transformer class for testing name keeping of arrays."""
+
+    def __init__(self, strategy):
+        self.strategy = strategy
+
+    def transform(self, X):
+        if self.strategy == "equal":
+            return X.to_numpy()
+        elif self.strategy == "drop":
+            return X.drop(X.columns[1], axis=1).to_numpy()
+        elif self.strategy == "add":
+            X["new_col"] = list(range(len(X)))
+            return X.to_numpy()

@@ -734,7 +734,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # cuML estimators have a slightly different method name
             if hasattr(self._estimator, "get_feature_names"):
-                vocabulary = self._estimator.get_feature_names()  # Is a cudf.Series
+                vocabulary = self._estimator.get_feature_names()  # cudf.Series
                 columns = [f"{corpus}_{w}" for w in vocabulary.to_numpy()]
 
         if not self.return_sparse:

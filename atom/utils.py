@@ -776,9 +776,9 @@ def name_cols(array, original_df, col_names):
             temp_cols.append(mask[mask].index.values[0])
         else:
             # If the column is new, use a default name
-            counter = 1
+            counter = 0
             while True:
-                n = f"feature_{i + counter + original_df.shape[1] - len(col_names)}"
+                n = f"x{i + counter + original_df.shape[1] - len(col_names)}"
                 if (n not in original_df or n in col_names) and n not in temp_cols:
                     temp_cols.append(n)
                     break
@@ -877,7 +877,9 @@ def transform_one(transformer, X=None, y=None, method="transform"):
 
         # Convert to pandas and assign proper column names
         if not isinstance(out, pd.DataFrame):
-            if hasattr(transformer, "get_feature_names_out"):
+            if hasattr(transformer, "get_feature_names"):
+                columns = transformer.get_feature_names()
+            elif hasattr(transformer, "get_feature_names_out"):
                 columns = transformer.get_feature_names_out()
             else:
                 columns = name_cols(out, X, use_cols)

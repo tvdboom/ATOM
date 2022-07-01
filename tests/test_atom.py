@@ -13,6 +13,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from category_encoders.leave_one_out import LeaveOneOutEncoder
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel
@@ -30,8 +31,9 @@ from atom.data_cleaning import Pruner, Scaler
 from atom.utils import check_scaling
 
 from .conftest import (
-    X10, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin, X_class, X_reg,
-    X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class, y_reg,
+    X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
+    X_class, X_reg, X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class,
+    y_reg,
 )
 
 
@@ -544,15 +546,27 @@ def test_add_sparse_matrices():
 
 def test_add_keep_column_names():
     """Assert that the column names are kept after transforming."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
 
-    # When the columns are only transformed
+    # Transformer has method get_feature_names
+    atom.add(LeaveOneOutEncoder(return_df=False))
+    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
+
+    # Transformer has method get_feature_names_out
     atom.add(StandardScaler())
-    assert atom.features.tolist() == list(X_bin)
+    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
-    # When columns were removed
-    atom.add(SelectFromModel(RandomForestClassifier()))
-    assert all(col in list(X_bin) for col in atom.features)
+    # Transformer keeps rows equal
+    atom.add(DummyTransformer(strategy="equal"))
+    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
+
+    # Transformer drops rows
+    atom.add(DummyTransformer(strategy="drop"))
+    assert atom.features.tolist() == ["x0", "x2", "x3"]
+
+    # Transformer adds rows
+    atom.add(DummyTransformer(strategy="add"), columns="!x2")
+    assert atom.features.tolist() == ["x0", "x2", "x3", "x4"]
 
 
 def test_raise_length_mismatch():
