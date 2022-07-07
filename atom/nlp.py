@@ -620,6 +620,12 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Estimator instance (lowercase strategy) used to vectorize the
         corpus, e.g. `vectorizer.tfidf` for the TF-IDF strategy.
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     @typechecked
@@ -661,6 +667,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
         corpus = get_corpus(X)
 
         # Convert sequence of tokens to space separated string

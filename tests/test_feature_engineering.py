@@ -272,17 +272,23 @@ def test_remove_low_variance():
     assert X.shape[1] == X_bin.shape[1]
 
 
-def test_collinear_attribute():
-    """Assert that the collinear attribute is created."""
-    selector = FeatureSelector(max_correlation=0.6)
+def test_remove_collinear_without_y():
+    """Assert that the remove_collinear function works when y is provided."""
+    X = X_bin.copy()
+    X["valid"] = list(range(len(X)))
+    X["invalid"] = list(range(len(X)))
+    selector = FeatureSelector(max_correlation=1)
+    X = selector.fit_transform(X)
+    assert "valid" in X and "invalid" not in X
     assert hasattr(selector, "collinear")
 
 
-def test_remove_collinear():
-    """Assert that the remove_collinear function works as intended."""
+def test_remove_collinear_with_y():
+    """Assert that the remove_collinear function works when y is not provided."""
     selector = FeatureSelector(max_correlation=0.9)
-    X = selector.fit_transform(X_bin)
-    assert X.shape[1] == 20  # Originally 30
+    X = selector.fit_transform(X_bin, y_bin)
+    assert X.shape[1] < X_bin.shape[1]
+    assert hasattr(selector, "collinear")
 
 
 def test_solver_parameter_empty_univariate():

@@ -108,10 +108,11 @@ variance, i.e. remove the features that have the same value in all
 samples. If None, skip this step.
 <p>
 <strong>max_correlation: float or None, optional (default=1.)</strong><br>
-Minimum <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation coefficient</a>
-to identify correlated features. For each pair above the specified
-limit (in terms of absolute value), it removes one of the two. The
-default is to drop one of two equal columns. If None, skip this step.
+Minimum absolute <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation</a>
+to identify correlated features. For each group, it removes all except
+the feature with the highest correlation to `y` (if provided, else it
+removes all but the first). The default value removes equal columns. If
+None, skip this step.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
@@ -162,6 +163,11 @@ corresponding documentation for the available options.
     model doesn't have a `feature_importances_` attribute, use 
     [plot_permutation_importance](../plots/plot_permutation_importance.md) instead.
 
+!!! note
+    Be aware that, for strategy="rfecv", the `n_features` parameter is the
+    **minimum** number of features to select, not the actual number of features
+    that the transformer returns. It may very well be that it returns more!
+
 <br>
 
 
@@ -177,9 +183,9 @@ corresponding documentation for the available options.
 <strong>collinear: pd.DataFrame</strong><br>
 Information on the removed collinear features. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
-<li><b>drop_feature:</b> Name of the feature dropped by the method.</li>
-<li><b>correlated feature:</b> Name of the correlated feature(s).</li>
-<li><b>correlation_value:</b> Pearson correlation coefficients of the feature pairs.</li>
+<li><b>drop:</b> Name of the dropped feature.</li>
+<li><b>corr_feature:</b> Name of the correlated feature(s).</li>
+<li><b>corr_value:</b> Corresponding correlation coefficient(s).</li>
 </ul>
 <p>
 <strong>feature_importance: list</strong><br>

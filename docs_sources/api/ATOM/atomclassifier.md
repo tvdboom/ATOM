@@ -589,12 +589,14 @@ is merged independently with atom.
 !!! note
     If the transform method doesn't return a dataframe:
 
-    * The column naming happens as follows. If the transformer returns the
-      same number of columns, the names are kept equal. If the number of
-      columns change, old columns will keep their name (as long as the column
-      is unchanged) and new columns will receive the name `x[N-1]`, where
-      N stands for the n-th feature. This means that a transformer should
-      only transform, add or drop columns, not combinations of these.
+    * The column naming happens as follows. If the transformer has a
+      `get_feature_names` or `get_feature_names_out` method, it is used.
+      If not, and it returns the same number of columns, the names are
+      kept equal. If the number of columns change, old columns will keep
+      their name (as long as the column is unchanged) and new columns will
+      receive the name `x[N-1]`, where N stands for the n-th feature. This
+      means that a transformer should only transform, add or drop columns,
+      not combinations of these.
     * The index remains the same as before the transformation. This means
       that the transformer should not add, remove or shuffle rows unless it
       returns a dataframe.

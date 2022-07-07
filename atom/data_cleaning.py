@@ -462,7 +462,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Returns
         -------
-        Scaler
+        Normalizer
             Fitted instance of self.
 
         """

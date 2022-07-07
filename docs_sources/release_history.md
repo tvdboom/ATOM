@@ -13,6 +13,7 @@
   [Normalizer](../API/data_cleaning/normalizder) and [Cleaner](../API/data_cleaning/cleaner) 
   classes.
 * Added the `feature_names_in_` and `n_features_in_` attributes to transformers.
+* Improvements for multicollinearity removal in [FeatureSelector](../API/feature_engineering/feature_selector).
 * Renamed default feature names to `x0`, `x1`, etc... for consistency with
   sklearn's API.
 * Renamed component names in [FeatureSelector](../API/feature_engineering/feature_selector)
