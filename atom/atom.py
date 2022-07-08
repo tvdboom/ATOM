@@ -1612,14 +1612,22 @@ class ATOM(BasePredictor, ATOMPlotter):
             # Catch errors and pass them to atom's attribute
             for model, error in trainer.errors.items():
                 self._errors[model] = error
-                self._models.pop(model, None)
+                self._models.pop(model)
 
-        # Update attributes
+        # Overwrite models with same name as new ones
+        for model in trainer._models:
+            if model in self._models:
+                self._models.pop(model)
+                self.log(
+                    f"\nWarning: Consecutive runs of the same model ({model}) "
+                    "were detected. The former model has been overwritten.", 3
+                )
+
         self._models.update(trainer._models)
         self._metric = trainer._metric
 
         for model in self._models.values():
-            self._errors.pop(model.name, None)  # Remove model from errors (if there)
+            self._errors.pop(model.name)  # Remove model from errors (if there)
             model.T = self  # Change the model's parent class from trainer to atom
 
     @composed(crash, method_to_log, typechecked)

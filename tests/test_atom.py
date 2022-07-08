@@ -879,6 +879,14 @@ def test_errors_are_updated():
     assert atom.models == "LGB"
 
 
+def test_models_are_replaced():
+    """Assert that models with the same name are replaced."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(["OLS", "Tree"])
+    atom.run("OLS")
+    assert atom.models == ["Tree", "OLS"]
+
+
 def test_models_and_metric_are_updated():
     """Assert that the models and metric attributes are updated correctly."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)

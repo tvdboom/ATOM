@@ -35,7 +35,8 @@ from atom.plots import FSPlotter
 from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, check_scaling, composed, crash, get_custom_scorer,
-    get_feature_importance, infer_task, is_sparse, lst, method_to_log, to_df, merge
+    get_feature_importance, infer_task, is_sparse, lst, merge, method_to_log,
+    to_df,
 )
 
 

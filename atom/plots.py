@@ -9,6 +9,7 @@ Description: Module containing the plotting classes.
 
 from collections import defaultdict
 from contextlib import contextmanager
+from copy import copy
 from importlib.util import find_spec
 from itertools import chain, cycle
 from typing import Optional, Tuple, Union
@@ -729,6 +730,7 @@ class BaseModelPlotter(BasePlotter):
     def plot_pipeline(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        hyperparameter_tuning: bool = True,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -741,6 +743,9 @@ class BaseModelPlotter(BasePlotter):
         models: str, sequence or None, optional (default=None)
             Name of the models for which to draw the pipeline. If None,
             all models are plotted.
+
+        hyperparameter_tuning: bool, optional (default=True)
+            Whether to draw if the models had Hyperparameter Tuning.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -763,76 +768,94 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        if models:
-            models = self._get_subclass(models)
-            pipelines = [list(m.pipeline) + [m] for m in models]
+        # TODO: Add ensembles to the plot and branch names
+        models = self._get_subclass(models)
+        if not models:
+            pipelines = [list(self.pipeline)]
         else:
-            pipelines = [list(m.pipeline) + [m] for m in self._models.values()]
+            pipelines = [list(m.pipeline) + [m] for m in models]
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         sns.set_style("white")  # Only for this plot
 
         # Config
-        length = 2
-        height = 4
+        length = 2 if len(pipelines) > 1 else 1
+        height = 3 if len(pipelines) > 1 else 4
 
         # Create schematic drawing
         d = Drawing(backend="matplotlib")
         d.config(fontsize=self.label_fontsize)
-        d.add(Subroutine(w=10, h=height, s=1).label("Raw data").drop("E").right())
+        d.add(Subroutine(w=10, h=height, s=1).label("Raw data"))
 
-        visited = {"data": d.here}  # Plotted estimators with positions
+        arrow = lambda: copy(Arrow(headwidth=0.15 * length, headlength=0.25 * length))
+
+        # Define arrow length and angle
+        angles = {0: 0, 1: 30, 2: 49.5, 3: 60.5}
+        corrections = {0: 0, 1: 1/3.5, 2: 1.02, 3: 1/0.51}
+
+        visited = {0: {"child": 0, "pos": d.here}}
         for pl in pipelines:
-            d.here = visited["data"]
+            last_id = 0
+            d.here = visited[0]["pos"]  # Reset to raw data
 
             for i, est in enumerate(pl):
-                if est in visited:
+                # If the estimator has already been seen, don't draw
+                if id(est) in visited:
                     # Change location to visited estimator's end
-                    d.here = visited[est]
+                    d.here = visited[id(est)]["pos"]
+                    last_id = id(est)
                     continue
+
+                angle = angles[visited[last_id]["child"]]
+                corr = corrections[visited[last_id]["child"]]
 
                 if not hasattr(est, "_n_calls"):
                     name = est.__class__.__name__
-                    d.add(Arrow().right(d.unit * length))
+                    d.add(arrow().theta(angle).length(d.unit * (length + corr)))
                     d.add(
                         RoundBox(w=max(len(name), 7), h=height, cornerradius=1)
                         .label(name)
                         .anchor("W")
                         .drop("E")
-                        .right()
                     )
                 else:
-                    if not est.bo.empty:
+                    if hyperparameter_tuning and not est.bo.empty:
                         # Add the hyperparameter tuning box
-                        d.add(Arrow().right(d.unit * length))
+                        d.add(arrow().theta(angle).length(d.unit * (length + corr)))
                         d.add(
                             Data(w=11, h=height)
                             .label("Hyperparameter\nTuning")
                             .drop("E")
-                            .right()
                         )
 
                     # Add the model box
                     name = est.estimator.__class__.__name__
-                    d.add(Arrow().right(d.unit * length).theta(angle))
+                    d.add(arrow().theta(angle).length(d.unit * (length + corr)))
                     d.add(
                         Data(w=max(len(name) - 5, 7), h=height)
                         .label(name)
+                        .anchor("W")
+                        .drop("E")
                     )
 
-            visited[est] = d.here
+                visited[id(est)] = {"child": 0, "pos": d.here}
+                visited[last_id]["child"] += 1
+                last_id = id(est)
 
         figure = d.draw(ax=ax, showframe=False, show=False)
         ax.set_aspect("equal")
         plt.axis("off")
+
+        width = (1.5 + max(len(p) for p in pipelines)) * 3
+        height = 3 + len(pipelines) // 2
 
         sns.set_style(self.style)  # Reset style
         return self._plot(
             fig=figure.fig,
             ax=figure.ax,
             title=title,
-            figsize=figsize or ((2 + max(len(p) for p in pipelines)) * 3, 3),
+            figsize=figsize or (width, height),
             plotname="plot_pipeline",
             filename=filename,
             display=display,

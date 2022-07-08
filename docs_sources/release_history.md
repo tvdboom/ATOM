@@ -6,7 +6,7 @@
 
 * Refactor of the [Cleaner](../API/data_cleaning/cleaner) and [Vectorizer](../API/nlp/vectorizer) classes.
 * Refactor of the [cross_validate](../API/models/gnb/#cross-validate) method.
-* Refactor of the [plot_pipeline](../API/plots/plot_pipeline) method.
+* The [plot_pipeline](../API/plots/plot_pipeline) method now supports drawing multiple pipelines.
 * Renamed the `Normalizer` class to `TextNormalizer`.
 * Renamed the `Gauss` class to `Normalizer`.
 * Added the `inverse_transform` method to the [Scaler](../API/data_cleaning/scaler),
