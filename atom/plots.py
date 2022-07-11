@@ -902,11 +902,8 @@ class BaseModelPlotter(BasePlotter):
                 last_id = id(est)
 
         figure = d.draw(ax=ax, showframe=False, show=False)
-        plt.axis("off")
-
-        height = 2.5 + level
-        width = (1.5 + max(len(p) for p in pipelines)) * 3
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        plt.axis("off")
 
         # Draw invisible lines for legend
         for k, v in colors.items():
@@ -920,7 +917,7 @@ class BaseModelPlotter(BasePlotter):
             xlim=xlim,
             ylim=(ylim[0] - 2, ylim[1] + 2),
             legend=("upper left", 6) if colors else None,
-            figsize=figsize or (width, height),
+            figsize=figsize or (d.get_bbox().xmax // 4, 2.5 + level),
             plotname="plot_pipeline",
             filename=filename,
             display=display,
