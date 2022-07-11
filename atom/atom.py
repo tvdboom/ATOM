@@ -143,9 +143,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         else:
             # Branch can be created from current or another one
             if "_from_" in name:
-                new, old = name.split("_from_")
+                new, parent = name.split("_from_")
             else:
-                new, old = name, self._current
+                new, parent = name, self._current
 
             # Check if the new name is valid
             if not new:
@@ -162,13 +162,21 @@ class ATOM(BasePredictor, ATOMPlotter):
                         )
 
             # Check if the parent branch exists
-            if old not in self._branches:
+            if parent not in self._branches:
                 raise ValueError(
                     "The selected branch to split from does not exist! Use "
                     "atom.status() for an overview of the available branches."
                 )
 
-            self._branches[new] = Branch(self, new, parent=self._branches[old])
+            # Add branch after latest sibling (share same parent)
+            new_branch = Branch(self, new, parent=self._branches[parent])
+            siblings = new_branch._get_siblings()
+            if siblings:
+                index = self._branches.index(siblings[-1])
+            else:
+                index = self._branches.index(parent)
+
+            self._branches.insert(index + 1, new, new_branch)
             self._current = new
             self.log(f"New branch {self._current} successfully created.", 1)
 

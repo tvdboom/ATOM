@@ -245,9 +245,12 @@ def test_plot_pipeline():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.impute()
     atom.prune()
-    atom.plot_pipeline(display=False)  # With no models
+    atom.plot_pipeline(display=False)  # Only pipeline
     atom.run("Tree", n_calls=2, n_initial_points=1)
-    atom.tree.plot_pipeline(title="Pipeline plot", display=False)
+    atom.tree.plot_pipeline(display=False)
+    atom.branch = "b2"
+    atom.run("lr")
+    atom.plot_pipeline(title="Pipeline plot", display=False)
 
 
 @pytest.mark.parametrize("metric", ["f1", ["f1", "recall"]])

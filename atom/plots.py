@@ -30,7 +30,7 @@ from nltk.collocations import (
     TrigramCollocationFinder,
 )
 from schemdraw import Drawing
-from schemdraw.flow import Arrow, Data, RoundBox, Subroutine
+from schemdraw.flow import Arrow, Data, Line, RoundBox, Subroutine
 from scipy import stats
 from scipy.stats.mstats import mquantiles
 from sklearn.calibration import calibration_curve
@@ -730,7 +730,8 @@ class BaseModelPlotter(BasePlotter):
     def plot_pipeline(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        hyperparameter_tuning: bool = True,
+        color_branches: bool = True,
+        draw_hyperparameter_tuning: bool = True,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
@@ -744,7 +745,10 @@ class BaseModelPlotter(BasePlotter):
             Name of the models for which to draw the pipeline. If None,
             all models are plotted.
 
-        hyperparameter_tuning: bool, optional (default=True)
+        color_branches: bool, optional (default=True)
+            Whether to draw every branch in a different color.
+
+        draw_hyperparameter_tuning: bool, optional (default=True)
             Whether to draw if the models had Hyperparameter Tuning.
 
         title: str or None, optional (default=None)
@@ -768,93 +772,154 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        # TODO: Add ensembles to the plot and branch names
+
+        def get_color(branch):
+            """Get a color per branch."""
+            if not color_branches or len(set(branches)) == 1:
+                return "black"
+            else:
+                if branch in colors:
+                    return colors[branch]
+                else:
+                    return colors.setdefault(branch, next(palette))
+
+        def draw_arrow(d, angle, corr):
+            """Draw a connecting arrow."""
+            d.add(Line().theta(0).length(0.5).color(get_color(branch)))
+            if angle:
+                d.add(
+                    Line()
+                    .theta(angle)
+                    .length(length * corr[0])
+                    .color(get_color(branch))
+                )
+
+            d.add(
+                Arrow(headwidth=0.2, headlength=0.3)
+                .theta(0)
+                .length(length * corr[1] - 0.5)
+                .color(get_color(branch))
+            )
+
         models = self._get_subclass(models)
         if not models:
+            branches = [self.branch.name]
             pipelines = [list(self.pipeline)]
         else:
+            branches = [m.branch.name for m in models]
             pipelines = [list(m.pipeline) + [m] for m in models]
+
+        # Configuration
+        level = 0  # Current height level of the drawing
+        colors = {}  # Colors per branch
+        palette = cycle(sns.color_palette())
+        height = 2
+        length = 5 if len(pipelines) > 1 else 2
+        angles = {1: 50, 2: 68, 3: 75, 4: 79}
+        correct = {1: [0.75, 0.52], 2: [1.23, 0.54], 3: [1.77, 0.54], 4: [2.32, 0.55]}
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         sns.set_style("white")  # Only for this plot
 
-        # Config
-        length = 2 if len(pipelines) > 1 else 1
-        height = 3 if len(pipelines) > 1 else 4
-
         # Create schematic drawing
-        d = Drawing(backend="matplotlib")
+        d = Drawing(unit=1, backend="matplotlib")
         d.config(fontsize=self.label_fontsize)
-        d.add(Subroutine(w=10, h=height, s=1).label("Raw data"))
+        d.add(Subroutine(w=8, h=height, s=1).label("Raw data"))
 
-        arrow = lambda: copy(Arrow(headwidth=0.15 * length, headlength=0.25 * length))
-
-        # Define arrow length and angle
-        angles = {0: 0, 1: 30, 2: 49.5, 3: 60.5}
-        corrections = {0: 0, 1: 1/3.5, 2: 1.02, 3: 1/0.51}
-
-        visited = {0: {"child": 0, "pos": d.here}}
-        for pl in pipelines:
+        tree = {0: {"child": 0, "level": 0, "pos": d.here}}
+        for branch, pipeline in zip(branches, pipelines):
             last_id = 0
-            d.here = visited[0]["pos"]  # Reset to raw data
+            d.here = tree[0]["pos"]  # Reset to raw data
 
-            for i, est in enumerate(pl):
+            for est in pipeline:
                 # If the estimator has already been seen, don't draw
-                if id(est) in visited:
-                    # Change location to visited estimator's end
-                    d.here = visited[id(est)]["pos"]
+                if id(est) in tree:
+                    # Change location to tree estimator's end
+                    d.here = tree[id(est)]["pos"]
                     last_id = id(est)
                     continue
 
-                angle = angles[visited[last_id]["child"]]
-                corr = corrections[visited[last_id]["child"]]
+                # Before every jump, check to which level
+                if tree[last_id]["child"] > 0:
+                    level += 1
 
-                if not hasattr(est, "_n_calls"):
+                    # If we are the current max level, jump normally
+                    try:
+                        if tree[last_id]["level"] == level - 1:
+                            angle = angles[tree[last_id]["child"]]
+                            corr = correct[tree[last_id]["child"]]
+                        else:
+                            angle = angles[level]
+                            corr = correct[level]
+                    except KeyError:
+                        raise ValueError(
+                            "The plot_pipeline method can not draw higher than "
+                            "5 levels. Try reducing the number of models to plot."
+                        )
+                else:
+                    angle, corr = 0, [1, 1]
+
+                if not hasattr(est, "branch"):
+                    draw_arrow(d, angle, corr)
                     name = est.__class__.__name__
-                    d.add(arrow().theta(angle).length(d.unit * (length + corr)))
                     d.add(
-                        RoundBox(w=max(len(name), 7), h=height, cornerradius=1)
-                        .label(name)
+                        RoundBox(w=max(len(name) // 1.5, 6), h=height, cornerradius=1)
+                        .label(name, color="k")
+                        .color(get_color(branch))
                         .anchor("W")
                         .drop("E")
                     )
                 else:
-                    if hyperparameter_tuning and not est.bo.empty:
-                        # Add the hyperparameter tuning box
-                        d.add(arrow().theta(angle).length(d.unit * (length + corr)))
+                    if draw_hyperparameter_tuning and not est.bo.empty:
+                        draw_arrow(d, angle, corr)
+                        angle, corr = 0, [1, 1]
                         d.add(
-                            Data(w=11, h=height)
-                            .label("Hyperparameter\nTuning")
+                            Data(w=12, h=height)
+                            .label("Hyperparameter Tuning", color="k")
+                            .color(get_color(branch))
                             .drop("E")
                         )
 
-                    # Add the model box
+                    draw_arrow(d, angle, corr)
+
                     name = est.estimator.__class__.__name__
-                    d.add(arrow().theta(angle).length(d.unit * (length + corr)))
+                    if name.lower().endswith("classifier"):
+                        name = name[:-10]
+                    elif name.lower().endswith("regressor"):
+                        name = name[:-9]
+
                     d.add(
-                        Data(w=max(len(name) - 5, 7), h=height)
-                        .label(name)
+                        Data(w=max(len(name) // 1.5, 6), h=height)
+                        .label(name, color="k")
+                        .color(get_color(branch))
                         .anchor("W")
                         .drop("E")
                     )
 
-                visited[id(est)] = {"child": 0, "pos": d.here}
-                visited[last_id]["child"] += 1
+                tree[id(est)] = {"child": 0, "level": level, "pos": d.here}
+                tree[last_id]["child"] += 1
                 last_id = id(est)
 
         figure = d.draw(ax=ax, showframe=False, show=False)
-        ax.set_aspect("equal")
         plt.axis("off")
 
+        height = 2.5 + level
         width = (1.5 + max(len(p) for p in pipelines)) * 3
-        height = 3 + len(pipelines) // 2
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+
+        # Draw invisible lines for legend
+        for k, v in colors.items():
+            plt.plot((-9e9, -9e9), (-9e9, -9e9), color=v, lw=2, zorder=-2, label=k)
 
         sns.set_style(self.style)  # Reset style
         return self._plot(
             fig=figure.fig,
             ax=figure.ax,
             title=title,
+            xlim=xlim,
+            ylim=(ylim[0] - 2, ylim[1] + 2),
+            legend=("upper left", 6) if colors else None,
             figsize=figsize or (width, height),
             plotname="plot_pipeline",
             filename=filename,

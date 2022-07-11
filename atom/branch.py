@@ -44,6 +44,9 @@ class Branch:
     name: str
         Name of the branch.
 
+    parent: str
+        Name of the parent branch.
+
     mapping: CustomDict, optional (default={})
         Encoded values and their respective mapping. The column name is
         the key to its mapping dictionary. Only for columns mapped to
@@ -60,6 +63,7 @@ class Branch:
     def __init__(self, *args, parent=None):
         self.T = args[0]
         self.name = args[1]
+        self.parent = self.T._current
         self.mapping = CustomDict()
         self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
         self.feature_importance = None
@@ -72,6 +76,8 @@ class Branch:
         # _holdout is always reset since it wouldn't recalculate if
         # changes were made to the pipeline
         if parent:
+            self.parent = parent.name
+
             # Copy the branch attrs and point to the rest
             for attr in ("_data", "_idx", "mapping", "pipeline", "feature_importance"):
                 setattr(self, attr, copy(getattr(parent, attr)))
@@ -357,6 +363,10 @@ class Branch:
     def _get_depending_models(self):
         """Return the models that are dependent on this branch."""
         return [m.name for m in self.T._models.values() if m.branch is self]
+
+    def _get_siblings(self):
+        """Return other branches with same parent."""
+        return [b.name for b in self.T._branches.values() if b.parent == self.parent]
 
     @composed(crash, method_to_log, typechecked)
     def delete(self, name: Optional[str] = None):
