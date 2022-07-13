@@ -699,6 +699,15 @@ def test_stacking_invalid_models():
         atom.stacking()
 
 
+def test_stacking_invalid_name():
+    """Assert that an error is raised when the model already exists."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree"])
+    atom.stacking()
+    with pytest.raises(ValueError, match=r".*multiple Stacking.*"):
+        atom.stacking()
+
+
 def test_stacking_custom_models():
     """Assert that stacking can be created selecting the models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -761,6 +770,15 @@ def test_voting():
     assert hasattr(atom, "Vote2")
     assert "Vote2" in atom.models
     assert atom.vote2._run
+
+
+def test_voting_invalid_name():
+    """Assert that an error is raised when the model already exists."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree"])
+    atom.voting()
+    with pytest.raises(ValueError, match=r".*multiple Voting.*"):
+        atom.voting()
 
 
 def test_voting_invalid_models():

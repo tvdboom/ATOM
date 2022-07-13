@@ -756,6 +756,13 @@ class BasePredictor:
         if not name.lower().startswith("stack"):
             name = f"Stack{name}"
 
+        if name in self._models:
+            raise ValueError(
+                "Invalid value for the name parameter. It seems a model with "
+                f"the name {name} already exists. Add a different name to "
+                "train multiple Stacking models within the same instance."
+            )
+
         if isinstance(kwargs.get("final_estimator"), str):
             if kwargs["final_estimator"] not in MODELS:
                 raise ValueError(
@@ -816,6 +823,13 @@ class BasePredictor:
 
         if not name.lower().startswith("vote"):
             name = f"Vote{name}"
+
+        if name in self._models:
+            raise ValueError(
+                "Invalid value for the name parameter. It seems a model with "
+                f"the name {name} already exists. Add a different name to "
+                "train multiple Voting models within the same instance."
+            )
 
         self._models[name] = Voting(self, name, models=self._models[models], **kwargs)
 

@@ -364,10 +364,6 @@ class Branch:
         """Return the models that are dependent on this branch."""
         return [m.name for m in self.T._models.values() if m.branch is self]
 
-    def _get_siblings(self):
-        """Return other branches with same parent."""
-        return [b.name for b in self.T._branches.values() if b.parent == self.parent]
-
     @composed(crash, method_to_log, typechecked)
     def delete(self, name: Optional[str] = None):
         """Delete the branch and all the models in it."""
