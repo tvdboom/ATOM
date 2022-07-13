@@ -2812,26 +2812,32 @@
 <h1 id="plot_pipeline">plot_pipeline</h1>
 <hr />
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(model=None,
-show_params=True, title=None, figsize=None, filename=None, display=True)
+<em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(models=None,
+draw_hyperparameter_tuning=True, color_branches=None, title=None,
+figsize=None, filename=None, display=True)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4197">[source]</a>
 </span>
 </div>
 
-<p>Plot a diagram of a model's pipeline.</p>
+<p>Plot a diagram of the pipeline.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
 <strong>model: str or None, optional (default=None)</strong><br>
- Name of the model for which to draw the pipeline. If None,
-it plots the current pipeline without any model.
+Name of the models for which to draw the pipeline. If None,
+all pipelines are plotted.
 </p>
 <p>
-<strong>show_params: bool, optional (default=True)</strong><br>
-Whether to show the parameters used for every estimator.
+<strong>draw_hyperparameter_tuning: bool, optional (default=True)</strong><br>
+Whether to draw if the models used Hyperparameter Tuning.
+</p>
+<p>
+<strong>color_branches: bool or None, optional (default=None)</strong><br>
+Whether to draw every branch in a different color. If None,
+branches are colored when there is more than one.
 </p>
 <p>
 <strong>title: str or None, optional (default=None)</strong><br>
@@ -2840,7 +2846,7 @@ Plot's title. If None, the title is left empty.
 <p>
 <strong>figsize: tuple or None, optional (default=None)</strong><br>
 Figure's size, format as (x, y). If None, it adapts the size to the
-length of the pipeline.
+pipeline drawn.
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
@@ -2865,22 +2871,42 @@ Plot object. Only returned if <code>display=None</code>.
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Print <code>atom.pipeline</code> in a notebook for <a href="https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_pipeline_display.html">sklearn's interactive visualization</a>
-of the pipeline.</p>
+of the current pipeline.</p>
 </div>
 <h2 id="example">Example</h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="n">max_nan_rows</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;LeaveOneOut&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">frac_to_other</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;adasyn&quot;</span><span class="p">,</span> <span class="n">sampling_strategy</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;univariate&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;Tree&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;auc&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">max_onehot</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;GNB&quot;</span><span class="p">,</span> <span class="s2">&quot;RNN&quot;</span><span class="p">,</span> <span class="s2">&quot;SGD&quot;</span><span class="p">,</span> <span class="s2">&quot;MLP&quot;</span><span class="p">])</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">voting</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="n">atom</span><span class="o">.</span><span class="n">winners</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
 
-<span class="n">atom</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">plot_pipeline</span><span class="p">()</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">plot_pipeline</span><span class="p">()</span>  <span class="c1"># For a single branch</span>
 </code></pre></div>
 <div align="center">
-    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="400"/>
+    <img src="../../../img/plots/plot_pipeline_1.png" alt="plot_pipeline_1" width="700" height="400"/>
+</div>
+
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+
+<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">()</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">prune</span><span class="p">()</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;RF&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">atom</span><span class="o">.</span><span class="n">branch</span> <span class="o">=</span> <span class="s2">&quot;oversample&quot;</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;adasyn&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;RF_os&quot;</span><span class="p">)</span>
+
+<span class="n">atom</span><span class="o">.</span><span class="n">branch</span> <span class="o">=</span> <span class="s2">&quot;undersample_from_master&quot;</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">balance</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;nearmiss&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;RF_us&quot;</span><span class="p">)</span>
+
+<span class="n">atom</span><span class="o">.</span><span class="n">plot_pipeline</span><span class="p">()</span>  <span class="c1"># For multiple branches</span>
+</code></pre></div>
+<div align="center">
+    <img src="../../../img/plots/plot_pipeline_2.png" alt="plot_pipeline_2" width="700" height="400"/>
 </div>
 
               

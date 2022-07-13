@@ -243,13 +243,14 @@ def test_plot_rfecv(scoring):
 def test_plot_pipeline():
     """Assert that the plot_pipeline method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.impute()
+    atom.scale()
     atom.prune()
     atom.plot_pipeline(display=False)  # Only pipeline
     atom.run("Tree", n_calls=2, n_initial_points=1)
     atom.tree.plot_pipeline(display=False)
     atom.branch = "b2"
-    atom.run("lr")
+    atom.run(["LR", "GNB"])
+    atom.voting()
     atom.plot_pipeline(title="Pipeline plot", display=False)
 
 

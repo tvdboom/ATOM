@@ -2,14 +2,15 @@
 ---------------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(model=None,
-show_params=True, title=None, figsize=None, filename=None, display=True)
+<em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(models=None,
+draw_hyperparameter_tuning=True, color_branches=None, title=None,
+figsize=None, filename=None, display=True)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4197">[source]</a>
 </span>
 </div>
 
-Plot a diagram of a model's pipeline.
+Plot a diagram of the pipeline.
 
 <table style="font-size:16px">
 <tr>
@@ -17,12 +18,17 @@ Plot a diagram of a model's pipeline.
 <td width="80%" class="td_params">
 <p>
 <strong>model: str or None, optional (default=None)</strong><br>
- Name of the model for which to draw the pipeline. If None,
-it plots the current pipeline without any model.
+Name of the models for which to draw the pipeline. If None,
+all pipelines are plotted.
 </p>
 <p>
-<strong>show_params: bool, optional (default=True)</strong><br>
-Whether to show the parameters used for every estimator.
+<strong>draw_hyperparameter_tuning: bool, optional (default=True)</strong><br>
+Whether to draw if the models used Hyperparameter Tuning.
+</p>
+<p>
+<strong>color_branches: bool or None, optional (default=None)</strong><br>
+Whether to draw every branch in a different color. If None,
+branches are colored when there is more than one.
 </p>
 <p>
 <strong>title: str or None, optional (default=None)</strong><br>
@@ -31,7 +37,7 @@ Plot's title. If None, the title is left empty.
 <p>
 <strong>figsize: tuple or None, optional (default=None)</strong><br>
 Figure's size, format as (x, y). If None, it adapts the size to the
-length of the pipeline.
+pipeline drawn.
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
@@ -56,7 +62,7 @@ Plot object. Only returned if <code>display=None</code>.
 
 !!! tip
     Print `atom.pipeline` in a notebook for [sklearn's interactive visualization](https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_pipeline_display.html)
-    of the pipeline.
+    of the current pipeline.
 
 
 
@@ -66,15 +72,38 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.impute(strat_num="median", strat_cat="drop", max_nan_rows=0.8)
-atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.02)
-atom.balance(strategy="adasyn", sampling_strategy=1.0)
-atom.feature_selection(strategy="univariate", n_features=20)
-atom.run("Tree", metric="auc", n_calls=10)
+atom.impute(strat_num="median")
+atom.encode(max_onehot=5)
+atom.run(["GNB", "RNN", "SGD", "MLP"])
+atom.voting(models=atom.winners[:2])
 
-atom.tree.plot_pipeline()
+atom.plot_pipeline()  # For a single branch
 ```
 
 <div align="center">
-    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="400"/>
+    <img src="../../../img/plots/plot_pipeline_1.png" alt="plot_pipeline_1" width="700" height="400"/>
+</div>
+
+
+```python
+from atom import ATOMClassifier
+
+atom = ATOMClassifier(X, y)
+atom.scale()
+atom.prune()
+atom.run("RF", n_calls=10, n_initial_points=3)
+
+atom.branch = "oversample"
+atom.balance(strategy="adasyn")
+atom.run("RF_os")
+
+atom.branch = "undersample_from_master"
+atom.balance(strategy="nearmiss")
+atom.run("RF_us")
+
+atom.plot_pipeline()  # For multiple branches
+```
+
+<div align="center">
+    <img src="../../../img/plots/plot_pipeline_2.png" alt="plot_pipeline_2" width="700" height="400"/>
 </div>

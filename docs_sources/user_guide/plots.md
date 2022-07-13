@@ -166,7 +166,7 @@ depend on the task at hand.
 
 <tr>
 <td><a href="../../API/plots/plot_pipeline">plot_pipeline</a></td>
-<td>Plot a diagram of every estimator in atom's pipeline.</td>
+<td>Plot a diagram of the pipeline.</td>
 </tr>
 
 <tr>

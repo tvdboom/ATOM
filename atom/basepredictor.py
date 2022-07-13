@@ -184,11 +184,17 @@ class BasePredictor:
         return self._errors
 
     @property
+    def winners(self):
+        """Return the models ordered by performance."""
+        if self._models:  # Returns None if not fitted
+            models = sorted(self._models.values(), key=lambda x: get_best_score(x))
+            return [m.name for m in models[::-1]]
+
+    @property
     def winner(self):
         """Return the best performing model."""
         if self._models:  # Returns None if not fitted
-            best_index = np.argmax([get_best_score(m) for m in self._models.values()])
-            return self._models[best_index]  # CustomDict can select item from index
+            return self.winners[0]
 
     @property
     def results(self):

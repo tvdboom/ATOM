@@ -738,27 +738,27 @@ class BaseModelPlotter(BasePlotter):
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot a diagram of a model's pipeline.
+        """Plot a diagram of the pipeline.
 
         Parameters
         ----------
         models: str, sequence or None, optional (default=None)
             Name of the models for which to draw the pipeline. If None,
-            all models are plotted.
+            all pipelines are plotted.
 
         draw_hyperparameter_tuning: bool, optional (default=True)
-            Whether to draw if the models had Hyperparameter Tuning.
+            Whether to draw if the models used Hyperparameter Tuning.
 
         color_branches: bool or None, optional (default=None)
             Whether to draw every branch in a different color. If None,
-            it will draw the colors when there is more than one branch.
+            branches are colored when there is more than one.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
 
         figsize: tuple or None, optional (default=None)
             Figure's size, format as (x, y). If None, it adapts the
-            size to the length of the pipeline.
+            size to the pipeline drawn.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If
@@ -778,7 +778,7 @@ class BaseModelPlotter(BasePlotter):
         def get_length(pl, i):
             """Get the maximum length of the name of a block."""
             if len(pl) > i:
-                return max(len(pl[i].__class__.__name__) // 1.5, 6)
+                return max(len(pl[i].__class__.__name__) * 0.5, 7)
             else:
                 return 0
 
@@ -848,7 +848,7 @@ class BaseModelPlotter(BasePlotter):
         d.add(Subroutine(w=8, s=0.7).label("Raw data"))
 
         height = 3  # Height of every block
-        length = 4  # Minimal arrow length
+        length = 5  # Minimal arrow length
 
         # Define the x-position for every block
         x_pos = [d.here[0] + length]
@@ -904,8 +904,14 @@ class BaseModelPlotter(BasePlotter):
                 elif name.lower().endswith("regressor"):
                     name = name[:-9]
 
+                # For a single branch, center models
+                if len(branches) == 1:
+                    offset = height * (len(branch["models"]) - 1) / 2
+                else:
+                    offset = 0
+
                 # Draw model
-                add_wire(x_pos[-1], check_y(d.here))
+                add_wire(x_pos[-1], check_y((d.here[0], d.here[1] - offset)))
                 d.add(
                     Data(w=max(len(name) * 0.5, 7))
                     .label(name, color="k")
@@ -938,10 +944,12 @@ class BaseModelPlotter(BasePlotter):
 
                 positions[id(model)] = d.here
 
+                # Draw a wire from every model to the ensemble
                 for m in model._models.values():
                     d.here = positions[id(m)]
                     add_wire(max_pos + length, y)
 
+        bbox = d.get_bbox()
         figure = d.draw(ax=ax, showframe=False, show=False)
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         plt.axis("off")
@@ -958,7 +966,7 @@ class BaseModelPlotter(BasePlotter):
             xlim=xlim,
             ylim=(ylim[0] - 2, ylim[1] + 2),
             legend=("upper left", 6) if colors else None,
-            figsize=figsize or (d.get_bbox().xmax // 4, 2.5 + d.get_bbox().ymax // 4),
+            figsize=figsize or (bbox.xmax // 4, 2.5 + (bbox.ymax - bbox.ymin + 1) // 4),
             plotname="plot_pipeline",
             filename=filename,
             display=display,

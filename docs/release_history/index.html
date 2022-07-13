@@ -3106,12 +3106,13 @@
 <ul>
 <li>Refactor of the <a href="../API/data_cleaning/cleaner">Cleaner</a> and <a href="../API/nlp/vectorizer">Vectorizer</a> classes.</li>
 <li>Refactor of the <a href="../API/models/gnb/#cross-validate">cross_validate</a> method.</li>
-<li>Refactor of the <a href="../API/plots/plot_pipeline">plot_pipeline</a> method.</li>
+<li>The <a href="../API/plots/plot_pipeline">plot_pipeline</a> method now supports drawing multiple pipelines.</li>
 <li>Renamed the <code>Normalizer</code> class to <code>TextNormalizer</code>.</li>
 <li>Renamed the <code>Gauss</code> class to <code>Normalizer</code>.</li>
 <li>Added the <code>inverse_transform</code> method to the <a href="../API/data_cleaning/scaler">Scaler</a>,
   <a href="../API/data_cleaning/normalizder">Normalizer</a> and <a href="../API/data_cleaning/cleaner">Cleaner</a> 
   classes.</li>
+<li>Added the <code>winners</code> property to the trainers (note the extra <code>s</code>). </li>
 <li>Added the <code>feature_names_in_</code> and <code>n_features_in_</code> attributes to transformers.</li>
 <li>Improvements for multicollinearity removal in <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>.</li>
 <li>Renamed default feature names to <code>x0</code>, <code>x1</code>, etc... for consistency with

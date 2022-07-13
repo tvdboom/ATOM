@@ -1524,9 +1524,12 @@ class CustomDict(MutableMapping):
         return key.lower() if isinstance(key, str) else key
 
     def _get_key(self, key):
-        for k in self.__keys:
-            if self._conv(k) == self._conv(key):
-                return k
+        if isinstance(key, (int, np.integer)) and key not in self.__keys:
+            return self.__keys[key]
+        else:
+            for k in self.__keys:
+                if self._conv(k) == self._conv(key):
+                    return k
 
         raise KeyError(key)
 
@@ -1538,8 +1541,8 @@ class CustomDict(MutableMapping):
         unless you want the order to be arbitrary.
 
         """
-        self.__keys = []
-        self.__data = {}
+        self.__keys = []  # States the order
+        self.__data = {}  # Contains the values
 
         if iterable_or_mapping is not None:
             try:
@@ -1572,8 +1575,9 @@ class CustomDict(MutableMapping):
         self.__data[self._conv(key)] = value
 
     def __delitem__(self, key):
-        self.__keys.remove(self._get_key(key))
-        del self.__data[self._conv(key)]
+        key = self._get_key(key)
+        self.__keys.remove(key)
+        del self.__data[key]
 
     def __iter__(self):
         yield from self.keys()
