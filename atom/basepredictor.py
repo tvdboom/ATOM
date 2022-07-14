@@ -10,7 +10,6 @@ Description: Module containing the BasePredictor class.
 from typing import Any, Optional, Union
 
 import mlflow
-import numpy as np
 import pandas as pd
 from typeguard import typechecked
 
@@ -185,7 +184,7 @@ class BasePredictor:
 
     @property
     def winners(self):
-        """Return the models ordered by performance."""
+        """Return the model names ordered by performance."""
         if self._models:  # Returns None if not fitted
             models = sorted(self._models.values(), key=lambda x: get_best_score(x))
             return [m.name for m in models[::-1]]
@@ -194,7 +193,7 @@ class BasePredictor:
     def winner(self):
         """Return the best performing model."""
         if self._models:  # Returns None if not fitted
-            return self.winners[0]
+            return self._models[self.winners[0]]
 
     @property
     def results(self):

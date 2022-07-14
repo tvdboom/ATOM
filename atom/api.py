@@ -269,7 +269,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    warnings: bool or str, optional (default=True)
+    warnings: bool or str, optional (default=False)
         - If True: Default warning action (equal to "default").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of the actions in python's warnings environment.
@@ -308,7 +308,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         n_jobs: INT = 1,
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
-        warnings: Union[bool, str] = True,
+        warnings: Union[bool, str] = False,
         logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
         random_state: Optional[INT] = None,
@@ -422,7 +422,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    warnings: bool or str, optional (default=True)
+    warnings: bool or str, optional (default=False)
         - If True: Default warning action (equal to "default").
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of the actions in python's warnings environment.
@@ -460,7 +460,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         n_jobs: INT = 1,
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
-        warnings: Union[bool, str] = True,
+        warnings: Union[bool, str] = False,
         logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
         random_state: Optional[INT] = None,

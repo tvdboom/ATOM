@@ -264,7 +264,7 @@ class BasePlotter:
         models = list(self._models[self._get_models(models, ensembles)].values())
 
         if max_one and len(models) > 1:
-            raise ValueError("This plot method allows only one model at a time!")
+            raise ValueError("This plot only accepts one model!")
 
         return models[0] if max_one else models
 
@@ -408,6 +408,8 @@ class BasePlotter:
                 fig.tight_layout()
             if kwargs.get("filename"):
                 fig.savefig(name)
+
+            sns.set_style(self.style)  # Reset style
 
             # Log plot to mlflow run of every model visualized
             if self.experiment and self.log_plots:
@@ -824,7 +826,7 @@ class BaseModelPlotter(BasePlotter):
                 branches.append(
                     {
                         "name": branch.name,
-                        "pipeline": branch.pipeline,
+                        "pipeline": list(branch.pipeline),
                         "models": draw_models,
                         "ensembles": draw_ensembles,
                     }
@@ -885,7 +887,11 @@ class BaseModelPlotter(BasePlotter):
                 positions[id(est)] = d.here
 
             for model in branch["models"]:
-                d.here = positions[id(est)]
+                # Position at last transformer or at start
+                if branch["pipeline"]:
+                    d.here = positions[id(est)]
+                else:
+                    d.here = positions[0]
 
                 # Draw hyperparameter tuning
                 if draw_hyperparameter_tuning and not model.bo.empty:
@@ -958,7 +964,7 @@ class BaseModelPlotter(BasePlotter):
         for k, v in colors.items():
             plt.plot((-9e9, -9e9), (-9e9, -9e9), color=v, lw=2, zorder=-2, label=k)
 
-        sns.set_style(self.style)  # Reset style
+        BasePlotter._fig._used_models.extend(models)
         return self._plot(
             fig=figure.fig,
             ax=figure.ax,
@@ -3533,7 +3539,6 @@ class BaseModelPlotter(BasePlotter):
             **kwargs,
         )
 
-        sns.set_style(self.style)  # Reset style
         if kwargs.get("matplotlib"):
             BasePlotter._fig._used_models.append(m)
             return self._plot(
@@ -3544,6 +3549,7 @@ class BaseModelPlotter(BasePlotter):
                 display=display,
             )
         else:
+            sns.set_style(self.style)  # Reset style
             if filename:  # Save to a html file
                 if not filename.endswith(".html"):
                     filename += ".html"

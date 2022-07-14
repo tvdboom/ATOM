@@ -3099,7 +3099,7 @@ Verbosity level of the class. Possible values are:
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>warnings: bool or str, optional (default=True)</strong><br>
+<strong>warnings: bool or str, optional (default=False)</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If True: Default warning action (equal to "default").</li>
 <li>If False: Suppress all warnings (equal to "ignore").</li>
@@ -3231,8 +3231,8 @@ Metric(s) used to fit the models.
 Dictionary of the encountered exceptions (if any).
 </p>
 <p>
-<strong>winners: list</strong><br>
-Models ordered by performance on the test set (either through the
+<strong>winners: list of str</strong><br>
+Model names ordered by performance on the test set (either through the
 <code>metric_test</code> or <code>mean_bootstrap</code> attribute).
 </p>
 <p>

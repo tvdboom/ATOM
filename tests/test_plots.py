@@ -243,15 +243,21 @@ def test_plot_rfecv(scoring):
 def test_plot_pipeline():
     """Assert that the plot_pipeline method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LDA")
+    atom.plot_pipeline(display=False)  # No transformers
+    atom.delete()
+
     atom.scale()
-    atom.prune()
-    atom.plot_pipeline(display=False)  # Only pipeline
+    atom.plot_pipeline(display=False)  # No model
+
     atom.run("Tree", n_calls=2, n_initial_points=1)
-    atom.tree.plot_pipeline(display=False)
+    atom.tree.plot_pipeline(display=False)  # Only one branch
+
     atom.branch = "b2"
+    atom.prune()
     atom.run(["LR", "GNB"])
     atom.voting()
-    atom.plot_pipeline(title="Pipeline plot", display=False)
+    atom.plot_pipeline(title="Pipeline plot", display=False)  # Multiple branches
 
 
 @pytest.mark.parametrize("metric", ["f1", ["f1", "recall"]])
@@ -640,5 +646,5 @@ def test_waterfall_plot():
     """Assert that the waterfall_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.waterfall_plot)
-    atom.run("LR", metric="f1_macro")
+    atom.run("Tree", metric="f1_macro")
     atom.waterfall_plot(display=False)

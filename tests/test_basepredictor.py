@@ -224,6 +224,13 @@ def test_errors_property():
     assert "LGB" in atom.errors
 
 
+def test_winners_property():
+    """Assert that the winners property returns the best models."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree", "LGB"], n_calls=0)
+    assert atom.winners == ["LR", "LGB", "Tree"]
+
+
 def test_winner_property():
     """Assert that the winner property returns the best model in the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

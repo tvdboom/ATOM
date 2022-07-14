@@ -1466,7 +1466,10 @@ class ShapExplanation:
         if only_one:  # Attributes should be 1-dimensional
             explanation.values = explanation.values[0]
             explanation.data = explanation.data[0]
-            explanation.base_values = explanation.base_values[target]
+
+            # For some models like LGB it's a scalar already
+            if isinstance(explanation.base_values, np.ndarray):
+                explanation.base_values = explanation.base_values[target]
 
         if feature is None:
             return explanation
@@ -1577,7 +1580,7 @@ class CustomDict(MutableMapping):
     def __delitem__(self, key):
         key = self._get_key(key)
         self.__keys.remove(key)
-        del self.__data[key]
+        del self.__data[self._conv(key)]
 
     def __iter__(self):
         yield from self.keys()

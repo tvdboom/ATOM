@@ -14,6 +14,7 @@
   classes.
 * Added the `winners` property to the trainers (note the extra `s`). 
 * Added the `feature_names_in_` and `n_features_in_` attributes to transformers.
+* The default value of the `warnings` parameter is set to False.
 * Improvements for multicollinearity removal in [FeatureSelector](../API/feature_engineering/feature_selector).
 * Renamed default feature names to `x0`, `x1`, etc... for consistency with
   sklearn's API.
