@@ -6,7 +6,7 @@
 draw_hyperparameter_tuning=True, color_branches=None, title=None,
 figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4197">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L733">[source]</a>
 </span>
 </div>
 

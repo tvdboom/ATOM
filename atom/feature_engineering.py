@@ -78,7 +78,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         features from it.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -262,7 +262,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -612,7 +612,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.

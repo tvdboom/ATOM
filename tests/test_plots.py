@@ -243,10 +243,10 @@ def test_plot_rfecv(scoring):
 def test_plot_pipeline():
     """Assert that the plot_pipeline method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LDA")
+    atom.run("Tree")
     atom.plot_pipeline(display=False)  # No transformers
-    atom.delete()
 
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.scale()
     atom.plot_pipeline(display=False)  # No model
 
@@ -255,7 +255,7 @@ def test_plot_pipeline():
 
     atom.branch = "b2"
     atom.prune()
-    atom.run(["LR", "GNB"])
+    atom.run(["OLS", "EN"])
     atom.voting()
     atom.plot_pipeline(title="Pipeline plot", display=False)  # Multiple branches
 

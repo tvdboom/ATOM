@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut",
 max_onehot=10, ordinal=None, frac_to_other=None, verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1178">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1395">[source]</a>
 </span>
 </div>
 
@@ -44,14 +44,17 @@ Order of ordinal features, where the dict key is the feature's
 name and the value is the class order, e.g. {"salary": ["low",
 "medium", "high"]}.
 </p>
-<p>
 <strong>frac_to_other: int, float or None, optional (default=None)</strong><br>
-Classes with fewer occurrences than n_rows * <code>frac_to_other</code>
-are replaced with the string <code>other</code>. This transformation
-is done before the encoding of the column. If None, skip this step.
-</p>
+Replaces rare occurrences in categorical columns with the string
+<code>other</code>. This transformation is done before the encoding
+of the column.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: Skip this step.</li>
+<li>If int: Maximum number of occurrences to replace a category.</li>
+<li>If float: Maximum fraction of occurrences to replace a category.</li>
+</ul>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -153,7 +156,7 @@ Number of features seen during fit.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1270">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1495">[source]</a></span></div>
 Fit to data. Note that leaving y=None can lead to errors if the
 `strategy` encoder requires target values.
 <table style="font-size:16px">
@@ -184,7 +187,7 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a></span></div>
 Fit to data, then transform it. Note that leaving y=None can lead
 to errors if the `strategy` encoder requires target values.
 <table style="font-size:16px">
@@ -247,7 +250,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -273,7 +276,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -316,8 +319,8 @@ Estimator instance.
 
 
 <a name="transform"></a>
-<div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1423">[source]</a></span></div>
+<div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1650">[source]</a></span></div>
 Encode the data.
 <table style="font-size:16px">
 <tr>

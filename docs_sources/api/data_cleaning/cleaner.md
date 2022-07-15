@@ -7,7 +7,7 @@ strip_categorical=True, drop_max_cardinality=True, drop_min_cardinality=True,
 drop_duplicates=False, drop_missing_target=True, encode_target=True, gpu=False,
 verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L468">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L575">[source]</a>
 </span>
 </div>
 
@@ -71,7 +71,7 @@ Train LabelEncoder on GPU (instead of CPU). Only for encode_target=True.
 <li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -167,7 +167,7 @@ Number of features seen during fit.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X=None, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L677">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L678">[source]</a></span></div>
 Fit to data.
 <table style="font-size:16px">
 <tr>
@@ -200,7 +200,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X=None, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
 </span>
 </div>
 Apply the data cleaning steps to the data.
@@ -270,7 +270,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -296,7 +296,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -342,7 +342,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X=None, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L562">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L718">[source]</a>
 </span>
 </div>
 Apply the data cleaning steps to the data.

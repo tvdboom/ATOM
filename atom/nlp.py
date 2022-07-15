@@ -94,7 +94,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         considered punctuation are `!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~`.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -307,7 +307,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - If float: Minimum frequency fraction to make a quadgram.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -452,7 +452,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Whether to apply lemmatization using WordNetLemmatizer.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -601,7 +601,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.

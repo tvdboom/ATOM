@@ -630,7 +630,7 @@ def test_apply_same_column():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.apply(lambda x: 1, columns=0)
     assert atom["mean radius"].sum() == atom.shape[0]
-    assert str(atom.pipeline[0]).startswith("FuncTransformer(func=<lambda>")
+    assert str(atom.pipeline[0]).startswith("FunctionTransformer(func=<lambda>")
 
 
 def test_apply_new_column():

@@ -6,7 +6,7 @@
 strat_cat="drop", max_nan_rows=None, max_nan_cols=None, gpu=False,
 verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L661">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L860">[source]</a>
 </span>
 </div>
 
@@ -56,7 +56,7 @@ Train strategies on GPU (instead of CPU). Not for strat_num="knn".
 <li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -154,7 +154,7 @@ Number of features seen during fit.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L747">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L952">[source]</a>
 </span>
 </div>
 Fit to data.
@@ -186,7 +186,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
 </span>
 </div>
 Fit to data, then impute the missing values. Note that leaving y=None
@@ -259,7 +259,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -285,7 +285,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -331,7 +331,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L844">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1051">[source]</a>
 </span>
 </div>
 Impute the missing values. Note that leaving y=None can lead to

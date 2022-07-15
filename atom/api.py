@@ -264,7 +264,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -417,7 +417,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.

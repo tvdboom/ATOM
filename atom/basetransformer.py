@@ -633,6 +633,7 @@ class BaseTransformer:
             filename = filename.replace("auto", self.__class__.__name__)
 
         with open(filename, "wb") as f:
+            dill.settings["recurse"] = True
             dill.dump(self, f)  # Dill replaces pickle to dump lambdas
 
         # Restore the data to the attributes

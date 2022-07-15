@@ -832,8 +832,11 @@ def reorder_cols(df, original_df, col_names):
         if col in df or col not in col_names:
             columns.append(col)
 
-        # Add all derivative columns
-        columns.extend(list(df.columns[df.columns.str.startswith(f"{col}_")]))
+        # Add all derivative columns: columns that originate from another
+        # and start with its progenitor name, e.g. one-hot encoded columns
+        columns.extend(
+            [c for c in df.columns if c.startswith(f"{col}_") and c not in original_df]
+        )
 
     # Add remaining new columns (non-derivatives)
     columns.extend([col for col in df if col not in columns])
@@ -846,7 +849,7 @@ def reorder_cols(df, original_df, col_names):
         right_index=True,
         suffixes=("", "__drop__"),
     )
-    new_df = new_df.drop(new_df.filter(regex='__drop__$').columns, axis=1)
+    new_df = new_df.drop(new_df.filter(regex="__drop__$").columns, axis=1)
 
     return new_df[columns]
 

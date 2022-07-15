@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Normalizer</strong>(strategy="yeojohnson",
 verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L324">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L381">[source]</a>
 </span>
 </div>
 
@@ -29,7 +29,7 @@ The transforming strategy. Choose from:
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html">quantile</a>" (non-linear transformation)</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -139,7 +139,7 @@ Number of features seen during fit.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L390">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L453">[source]</a></span></div>
 Fit to data.
 <table style="font-size:16px">
 <tr>
@@ -167,7 +167,7 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a></span></div>
 Fit to data, then transform it.
 <table style="font-size:16px">
 <tr>
@@ -227,7 +227,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -253,7 +253,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -297,7 +297,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L438">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L503">[source]</a></span></div>
 Apply the transformations to the data.
 <table style="font-size:16px">
 <tr>

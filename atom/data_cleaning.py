@@ -45,10 +45,10 @@ from sklearn.covariance import EllipticEnvelope
 from sklearn.ensemble import IsolationForest
 from sklearn.impute import KNNImputer, SimpleImputer
 from sklearn.neighbors import LocalOutlierFactor
+from sklearn.preprocessing import FunctionTransformer as skFunctionTransformer
 from sklearn.preprocessing import (
-    FunctionTransformer, KBinsDiscretizer, LabelEncoder, MaxAbsScaler,
-    MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler,
-    StandardScaler,
+    KBinsDiscretizer, LabelEncoder, MaxAbsScaler, MinMaxScaler,
+    PowerTransformer, QuantileTransformer, RobustScaler, StandardScaler,
 )
 from sklearn.svm import OneClassSVM
 from typeguard import typechecked
@@ -100,6 +100,9 @@ class TransformerMixin:
             Fitted instance of self.
 
         """
+        X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
         return self
 
     @composed(crash, method_to_log, typechecked)
@@ -137,8 +140,13 @@ class TransformerMixin:
         return self.fit(X, y, **fit_params).transform(X, y)
 
 
-class FuncTransformer(BaseTransformer):
-    """Custom transformer for functions."""
+class FunctionTransformer(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Custom transformer for functions.
+
+    Similar to sklearn's FunctionTransformer but transforms a single
+    column. Creates or replaces the provided column.
+
+    """
 
     def __init__(self, func, columns, args, verbose, logger, **kwargs):
         super().__init__(verbose=verbose, logger=logger)
@@ -147,19 +155,15 @@ class FuncTransformer(BaseTransformer):
         self.args = args
         self.kwargs = kwargs
 
-    def __repr__(self):
-        return f"FuncTransformer(func={self.func.__name__}, columns={self.columns})"
-
-    def fit(self, X, y):
-        """Does nothing. Implemented for continuity of the API."""
-        return self
+    def __repr__(self, N_CHAR_MAX=700):
+        return f"FunctionTransformer(func={self.func.__name__}, columns={self.columns})"
 
     def transform(self, X, y=None):
         """Apply function to the dataset.
 
         If the provided column is not in the dataset, a new
         column is created at the right. If the column already
-        exists, the values are replaced.
+        exists, it is replaced.
 
         """
         self.log(f"Applying function {self.func.__name__}...", 1)
@@ -170,23 +174,20 @@ class FuncTransformer(BaseTransformer):
         return variable_return(X, y)
 
 
-class DropTransformer(BaseTransformer):
+class DropTransformer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Custom transformer to drop columns."""
 
     def __init__(self, columns, verbose, logger):
         super().__init__(verbose=verbose, logger=logger)
         self.columns = columns
 
-    def __repr__(self):
+    def __repr__(self, N_CHAR_MAX=700):
         return f"DropTransformer(columns={self.columns})"
-
-    def fit(self, X, y):
-        """Does nothing. Implemented for continuity of the API."""
-        return self
 
     def transform(self, X, y=None):
         """Drop columns from the dataset."""
         self.log("Applying DropTransformer...", 1)
+
         for col in self.columns:
             self.log(f" --> Dropping column {col}.", 2)
             X = X.drop(col, axis=1)
@@ -215,7 +216,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
 
@@ -402,7 +403,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "quantile": Transform features using quantiles information.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
 
@@ -621,7 +622,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -896,7 +897,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -1209,7 +1210,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -1348,7 +1349,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
                 # Make of pd.cut a transformer
-                self._discretizers[col] = FunctionTransformer(
+                self._discretizers[col] = skFunctionTransformer(
                     func=pd.cut,
                     kw_args={"bins": bins, "labels": get_labels(labels, bins)},
                 ).fit(X[[col]])
@@ -1427,13 +1428,15 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         "medium", "high"]}.
 
     frac_to_other: int, float or None, optional (default=None)
-        Classes with fewer occurrences than `fraction_to_other` (as
-        total number or fraction of rows) are replaced with the string
+        Replaces rare occurrences in categorical columns with the string
         `other`. This transformation is done before the encoding of the
-        column. If None, skip this step.
+        column.
+            - If None: Skip this step.
+            - If int: Maximum number of occurrences to replace a category.
+            - If float: Maximum fraction of occurrences to replace a category.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -1569,8 +1572,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         if self.frac_to_other:
             if self.frac_to_other < 0:
                 raise ValueError(
-                    "Invalid value for the frac_to_other parameter. Value "
-                    f"should be between >0, got {self.frac_to_other}."
+                    "Invalid value for the frac_to_other parameter. "
+                    f"Value should be >0, got {self.frac_to_other}."
                 )
             elif self.frac_to_other < 1:
                 self._frac_to_other = int(self.frac_to_other * len(X))
@@ -1747,7 +1750,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         if strategy="zscore".
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -1971,7 +1974,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             - If <-1: Use number of cores - 1 - value.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.

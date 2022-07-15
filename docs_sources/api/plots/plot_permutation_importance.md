@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_permutation_importance</strong>(models=None,
 show=None, n_repeats=10, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1909">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2155">[source]</a>
 </span>
 </div>
 

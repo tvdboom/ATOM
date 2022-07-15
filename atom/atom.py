@@ -24,8 +24,8 @@ from atom.basetrainer import BaseTrainer
 from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
 from atom.data_cleaning import (
-    Balancer, Cleaner, Discretizer, DropTransformer, Encoder, FuncTransformer,
-    Imputer, Normalizer, Pruner, Scaler,
+    Balancer, Cleaner, Discretizer, DropTransformer, Encoder,
+    FunctionTransformer, Imputer, Normalizer, Pruner, Scaler,
 )
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureSelector,
@@ -971,7 +971,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             columns = self._get_columns(columns)[0]
 
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
-        self._add_transformer(FuncTransformer(func, columns, args, **kwargs))
+        self._add_transformer(FunctionTransformer(func, columns, args, **kwargs))
 
     @composed(crash, method_to_log, typechecked)
     def drop(self, columns: Union[INT, str, slice, SEQUENCE_TYPES], **kwargs):
