@@ -1226,8 +1226,8 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        dict
-            Return of sklearn's cross_validate function.
+        pd.DataFrame
+            Overview of the results.
 
         """
         # Assign scoring from predefined or trainer if not specified
@@ -1244,30 +1244,27 @@ class BaseModel(BaseModelPlotter):
         # pipelines that drop samples during transformation
         with patch("sklearn.model_selection._validation._score", score(_score)):
             branch = self.T._get_og_branches()[0]
-            cv = cross_validate(
+            self.cv = cross_validate(
                 estimator=self.export_pipeline(verbose=0),
                 X=branch.X,
                 y=branch.y,
                 scoring=scoring,
+                return_train_score=kwargs.pop("return_train_score", True),
                 n_jobs=kwargs.pop("n_jobs", self.T.n_jobs),
                 verbose=kwargs.pop("verbose", 0),
                 **kwargs,
             )
 
-        # Output mean and std of metric
-        mean = [np.mean(cv[f"test_{m}"]) for m in scoring]
-        std = [np.std(cv[f"test_{m}"]) for m in scoring]
+        df = pd.DataFrame()
+        for m in scoring:
+            if f"train_{m}" in self.cv:
+                df[f"train_{m}"] = self.cv[f"train_{m}"]
+            df[f"test_{m}"] = self.cv[f"test_{m}"]
+        df["time (s)"] = self.cv["fit_time"]
+        df.loc["mean"] = df.mean()
+        df.loc["std"] = df.std()
 
-        out = "   ".join(
-            [
-                f"{name}: {round(mean[i], 4)} " f"\u00B1 {round(std[i], 4)}"
-                for i, name in enumerate(scoring)
-            ]
-        )
-
-        self.T.log(f"{self.fullname} --> {out}", 1)
-
-        return cv
+        return df
 
     @composed(crash, typechecked, method_to_log)
     def dashboard(
@@ -1538,6 +1535,10 @@ class BaseModel(BaseModelPlotter):
         with the name `[model_name]_full_train`. Since the estimator
         changed, the model is cleared.
 
+        Note that although the model is trained on the complete dataset,
+        the pipeline is not. To also get the fully trained pipeline, use:
+        `pipeline = atom.export_pipeline().fit(atom.X, atom.y)`.
+
         Parameters
         ----------
         include_holdout: bool, optional (default=False)
@@ -1547,6 +1548,12 @@ class BaseModel(BaseModelPlotter):
             on any set.
 
         """
+        if include_holdout and self.T.holdout is None:
+            raise ValueError(
+                "The parameter include_holdout is True but no holdout data set is "
+                "available. See the documentation to learn how to initialize one."
+            )
+
         if include_holdout and self.T.holdout is not None:
             X = pd.concat([self.X, self.X_holdout])
             y = pd.concat([self.y, self.y_holdout])

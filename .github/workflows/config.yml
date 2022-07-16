@@ -16,11 +16,6 @@ jobs:
     steps:
       - name: Check out source repository
         uses: actions/checkout@v2
-      - name: Set up Python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
-          architecture: x64
       - name: Check imports
         uses: jamescurtin/isort-action@master
         with:
@@ -31,11 +26,6 @@ jobs:
     steps:
       - name: Check out source repository
         uses: actions/checkout@v2
-      - name: Set up Python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
-          architecture: x64
       - name: Apply linting
         uses: py-actions/flake8@v2
         with:

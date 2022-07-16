@@ -94,7 +94,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         considered punctuation are `!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~`.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -307,7 +307,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             - If float: Minimum frequency fraction to make a quadgram.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -422,7 +422,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
+class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Normalize the corpus.
 
     Convert words to a more uniform standard. The transformations
@@ -452,7 +452,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Whether to apply lemmatization using WordNetLemmatizer.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -578,8 +578,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     transformation is applied on the column named `corpus`. If
     there is no column with that name, an exception is raised. The
     transformed columns are named after the word they are embedding
-    (if the column is already present in the provided dataset,
-    `_[strategy]` is added behind the name).
+    with the prefix `corpus_`.
 
     Parameters
     ----------
@@ -594,8 +593,15 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         of sparse arrays. Must be False when there are other columns
         in X (besides `corpus`) that are non-sparse.
 
+    gpu: bool or str, optional (default=False)
+        Train LabelEncoder on GPU (instead of CPU). Only for
+        `encode_target=True`.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -614,6 +620,12 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Estimator instance (lowercase strategy) used to vectorize the
         corpus, e.g. `vectorizer.tfidf` for the TF-IDF strategy.
 
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
     """
 
     @typechecked
@@ -621,11 +633,12 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "bow",
         return_sparse: bool = True,
+        gpu: Union[bool, str] = False,
         verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.return_sparse = return_sparse
         self.kwargs = kwargs
@@ -654,6 +667,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
         corpus = get_corpus(X)
 
         # Convert sequence of tokens to space separated string
@@ -661,9 +676,9 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         strategies = CustomDict(
-            bow=CountVectorizer,
-            tfidf=TfidfVectorizer,
-            hashing=HashingVectorizer,
+            bow=self._get_gpu(CountVectorizer, "cuml.feature_extraction.text"),
+            tfidf=self._get_gpu(TfidfVectorizer, "cuml.feature_extraction.text"),
+            hashing=self._get_gpu(HashingVectorizer, "cuml.feature_extraction.text"),
         )
 
         if self.strategy in strategies:
@@ -671,7 +686,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             raise ValueError(
                 "Invalid value for the strategy parameter, got "
-                f"{self.strategy}. Choose from: bow, tfidf, hashing."
+                f"{self.strategy}. Choose from: {', '.join(strategies)}."
             )
 
         self.log("Fitting Vectorizer...", 1)
@@ -714,13 +729,21 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         matrix = self._estimator.transform(X[corpus])
-        if self.strategy.lower() != "hashing":
-            columns = list(self._estimator.get_feature_names_out())
+        if hasattr(self._estimator, "get_feature_names_out"):
+            columns = [f"{corpus}_{w}" for w in self._estimator.get_feature_names_out()]
         else:
             # Hashing has no words to put as column names
-            columns = [f"hash_{i}" for i in range(matrix.shape[1])]
+            columns = [f"hash{i}" for i in range(matrix.shape[1])]
 
-        X = X.drop(corpus, axis=1)
+        X = X.drop(corpus, axis=1)  # Drop original corpus column
+
+        if self.gpu:
+            matrix = matrix.get()  # Convert cupy sparse array back to scipy
+
+            # cuML estimators have a slightly different method name
+            if hasattr(self._estimator, "get_feature_names"):
+                vocabulary = self._estimator.get_feature_names()  # cudf.Series
+                columns = [f"{corpus}_{w}" for w in vocabulary.to_numpy()]
 
         if not self.return_sparse:
             self.log(" --> Converting the output to a full array.", 2)
@@ -732,19 +755,4 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "must be False when X contains non-sparse columns (besides corpus)."
             )
 
-        if X.empty:  # X only had 1 column: corpus
-            # If the column name already exists, add _[strategy]
-            if getattr(y, "name", None) in columns:
-                columns[columns.index(y.name)] = f"{y.name}_{self.strategy.lower()}"
-
-            return to_df(matrix, index=X.index, columns=columns)
-
-        else:
-            for i, col in enumerate(columns):
-                # If the column name already exists, add _[strategy]
-                if col in X or col == getattr(y, "name", None):
-                    X[f"{col}_{self.strategy.lower()}"] = matrix[:, i]
-                else:
-                    X[col] = matrix[:, i]
-
-        return X
+        return pd.concat([X, to_df(matrix, X.index, columns)], axis=1)

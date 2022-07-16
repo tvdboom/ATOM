@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/user_guide/data_management/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/data_management/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -893,8 +893,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../../API/data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -1052,8 +1052,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../../API/nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -2043,20 +2043,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../API/plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2087,6 +2073,20 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2949,7 +2949,7 @@ following formats:</p>
 <p>The input data is always converted internally to a <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html">pandas dataframe</a>,
 if it isn't one already. The column names should always be strings. If
 they are not, atom changes their type at initialization. If no column
-names are provided, default names are given of the form <code>feature_[N]</code>,
+names are provided, default names are given of the form <code>X[N-1]</code>,
 where N stands for the n-th feature in the dataset.</p>
 <p><br></p>
 <h2 id="indexing">Indexing</h2>

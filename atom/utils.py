@@ -36,6 +36,8 @@ from sklearn.utils import _print_elapsed_time, _safe_indexing
 
 # Global constants ================================================= >>
 
+__version__ = "4.14.0"
+
 SEQUENCE = (list, tuple, np.ndarray, pd.Series)
 
 # Variable types
@@ -300,7 +302,7 @@ def to_df(data, index=None, columns=None, dtypes=None):
     if not isinstance(data, pd.DataFrame) and data is not None:
         # Assign default column names (dict already has column names)
         if not isinstance(data, dict) and columns is None:
-            columns = [f"feature_{str(i)}" for i in range(1, n_cols(data) + 1)]
+            columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
         # Create dataframe from sparse matrix or directly from data
         if sparse.issparse(data):
@@ -774,9 +776,9 @@ def name_cols(array, original_df, col_names):
             temp_cols.append(mask[mask].index.values[0])
         else:
             # If the column is new, use a default name
-            counter = 1
+            counter = 0
             while True:
-                n = f"feature_{i + counter + original_df.shape[1] - len(col_names)}"
+                n = f"x{i + counter + original_df.shape[1] - len(col_names)}"
                 if (n not in original_df or n in col_names) and n not in temp_cols:
                     temp_cols.append(n)
                     break
@@ -806,33 +808,50 @@ def reorder_cols(df, original_df, col_names):
 
     """
     # Check if columns returned by the transformer are already in the dataset
-    for col in df.columns:
-        if col in original_df.columns and col not in col_names:
-            raise RuntimeError(
+    for col in df:
+        if col in original_df and col not in col_names:
+            raise ValueError(
                 f"Column '{col}' returned by the transformer "
                 "already exists in the original dataset."
             )
 
-    temp_df = pd.DataFrame(index=df.index)
-    for col in dict.fromkeys(list(original_df.columns) + list(df.columns)):
-        if col in df.columns:
-            temp_df[col] = df[col]
-        elif col not in col_names:
-            if len(df) != len(original_df):
-                raise ValueError(
-                    f"Length of values ({len(df)}) does not match length of index "
-                    f"({len(original_df)}). This usually happens when transformations "
-                    "that drop rows aren't applied on all the columns."
-                )
+    # Force new indices on old dataset for merge
+    try:
+        original_df.index = df.index
+    except ValueError:  # Length mismatch
+        raise IndexError(
+            f"Length of values ({len(df)}) does not match length of "
+            f"index ({len(original_df)}). This usually happens when "
+            "transformations that drop rows aren't applied on all "
+            "the columns."
+        )
 
-            temp_df[col] = original_df[col].values  # Take values to adapt to new index
+    # Define new column order
+    columns = []
+    for col in original_df:
+        if col in df or col not in col_names:
+            columns.append(col)
 
-        # Derivative cols are added after original (e.g. for one-hot encoding)
-        for col_derivative in df.columns:
-            if col_derivative.startswith(f"{col}_"):
-                temp_df[col_derivative] = df[col_derivative]
+        # Add all derivative columns: columns that originate from another
+        # and start with its progenitor name, e.g. one-hot encoded columns
+        columns.extend(
+            [c for c in df.columns if c.startswith(f"{col}_") and c not in original_df]
+        )
 
-    return temp_df
+    # Add remaining new columns (non-derivatives)
+    columns.extend([col for col in df if col not in columns])
+
+    # Merge the new and old datasets keeping the newest columns
+    new_df = df.merge(
+        right=original_df[[col for col in original_df if col in columns]],
+        how="outer",
+        left_index=True,
+        right_index=True,
+        suffixes=("", "__drop__"),
+    )
+    new_df = new_df.drop(new_df.filter(regex="__drop__$").columns, axis=1)
+
+    return new_df[columns]
 
 
 def fit_one(transformer, X=None, y=None, message=None, **fit_params):
@@ -852,7 +871,7 @@ def fit_one(transformer, X=None, y=None, message=None, **fit_params):
             transformer.fit(*args, **fit_params)
 
 
-def transform_one(transformer, X=None, y=None):
+def transform_one(transformer, X=None, y=None, method="transform"):
     """Transform the data using one estimator."""
 
     def prepare_df(out):
@@ -861,7 +880,14 @@ def transform_one(transformer, X=None, y=None):
 
         # Convert to pandas and assign proper column names
         if not isinstance(out, pd.DataFrame):
-            out = to_df(out, index=X.index, columns=name_cols(out, X, use_cols))
+            if hasattr(transformer, "get_feature_names"):
+                columns = transformer.get_feature_names()
+            elif hasattr(transformer, "get_feature_names_out"):
+                columns = transformer.get_feature_names_out()
+            else:
+                columns = name_cols(out, X, use_cols)
+
+            out = to_df(out, index=X.index, columns=columns)
 
         # Reorder columns if only a subset was used
         if len(use_cols) != X.shape[1]:
@@ -873,7 +899,7 @@ def transform_one(transformer, X=None, y=None):
     y = to_series(y, index=getattr(X, "index", None))
 
     args = []
-    transform_params = signature(transformer.transform).parameters
+    transform_params = signature(getattr(transformer, method)).parameters
     if "X" in transform_params:
         if X is not None:
             inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
@@ -885,7 +911,7 @@ def transform_one(transformer, X=None, y=None):
             args.append(y)
         elif "X" not in transform_params:
             return X, y  # If y is None and needed, and no X in transformer, skip it
-    output = transformer.transform(*args)
+    output = getattr(transformer, method)(*args)
 
     # Transform can return X, y or both
     if isinstance(output, tuple):
@@ -1443,7 +1469,10 @@ class ShapExplanation:
         if only_one:  # Attributes should be 1-dimensional
             explanation.values = explanation.values[0]
             explanation.data = explanation.data[0]
-            explanation.base_values = explanation.base_values[target]
+
+            # For some models like LGB it's a scalar already
+            if isinstance(explanation.base_values, np.ndarray):
+                explanation.base_values = explanation.base_values[target]
 
         if feature is None:
             return explanation
@@ -1501,9 +1530,12 @@ class CustomDict(MutableMapping):
         return key.lower() if isinstance(key, str) else key
 
     def _get_key(self, key):
-        for k in self.__keys:
-            if self._conv(k) == self._conv(key):
-                return k
+        if isinstance(key, (int, np.integer)) and key not in self.__keys:
+            return self.__keys[key]
+        else:
+            for k in self.__keys:
+                if self._conv(k) == self._conv(key):
+                    return k
 
         raise KeyError(key)
 
@@ -1515,8 +1547,8 @@ class CustomDict(MutableMapping):
         unless you want the order to be arbitrary.
 
         """
-        self.__keys = []
-        self.__data = {}
+        self.__keys = []  # States the order
+        self.__data = {}  # Contains the values
 
         if iterable_or_mapping is not None:
             try:
@@ -1549,7 +1581,8 @@ class CustomDict(MutableMapping):
         self.__data[self._conv(key)] = value
 
     def __delitem__(self, key):
-        self.__keys.remove(self._get_key(key))
+        key = self._get_key(key)
+        self.__keys.remove(key)
         del self.__data[self._conv(key)]
 
     def __iter__(self):

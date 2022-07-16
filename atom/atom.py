@@ -10,6 +10,7 @@ Description: Module containing the ATOM class.
 import tempfile
 from copy import deepcopy
 from inspect import signature
+from platform import machine, platform, python_build, python_version
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
@@ -23,14 +24,14 @@ from atom.basetrainer import BaseTrainer
 from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
 from atom.data_cleaning import (
-    Balancer, Cleaner, Discretizer, DropTransformer, Encoder, FuncTransformer,
-    Gauss, Imputer, Pruner, Scaler,
+    Balancer, Cleaner, Discretizer, DropTransformer, Encoder,
+    FunctionTransformer, Imputer, Normalizer, Pruner, Scaler,
 )
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureSelector,
 )
 from atom.models import MODELS_ENSEMBLES, CustomModel
-from atom.nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
+from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
 from atom.pipeline import Pipeline
 from atom.plots import ATOMPlotter
 from atom.training import (
@@ -39,7 +40,7 @@ from atom.training import (
 )
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Table,
-    check_dim, check_is_fitted, check_scaling, composed, crash,
+    __version__, check_dim, check_is_fitted, check_scaling, composed, crash,
     custom_transform, delete, divide, fit_one, flt, get_pl_name, infer_task,
     is_multidim, is_sparse, lst, method_to_log, names_from_estimator,
     variable_return,
@@ -93,10 +94,19 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
+
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
         if self.gpu:
             self.log("GPU training enabled.", 1)
+
+        # System settings only to logger
+        self.log("\nSystem info ====================== >>", 3)
+        self.log(f"Python version: {python_version()}", 3)
+        self.log(f"Python build: {python_build()}", 3)
+        self.log(f"Machine: {machine()}", 3)
+        self.log(f"OS: {platform()}", 3)
+        self.log(f"ATOM version: {__version__}", 3)
 
         self.log("", 1)  # Add empty rows around stats for cleaner look
         self.stats(1)
@@ -133,9 +143,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         else:
             # Branch can be created from current or another one
             if "_from_" in name:
-                new, old = name.split("_from_")
+                new, parent = name.split("_from_")
             else:
-                new, old = name, self._current
+                new, parent = name, self._current
 
             # Check if the new name is valid
             if not new:
@@ -152,13 +162,13 @@ class ATOM(BasePredictor, ATOMPlotter):
                         )
 
             # Check if the parent branch exists
-            if old not in self._branches:
+            if parent not in self._branches:
                 raise ValueError(
                     "The selected branch to split from does not exist! Use "
                     "atom.status() for an overview of the available branches."
                 )
 
-            self._branches[new] = Branch(self, new, parent=self._branches[old])
+            self._branches[new] = Branch(self, new, parent=self._branches[parent])
             self._current = new
             self.log(f"New branch {self._current} successfully created.", 1)
 
@@ -961,7 +971,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             columns = self._get_columns(columns)[0]
 
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
-        self._add_transformer(FuncTransformer(func, columns, args, **kwargs))
+        self._add_transformer(FunctionTransformer(func, columns, args, **kwargs))
 
     @composed(crash, method_to_log, typechecked)
     def drop(self, columns: Union[INT, str, slice, SEQUENCE_TYPES], **kwargs):
@@ -1006,8 +1016,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         setattr(self.branch, strategy.lower(), getattr(scaler, strategy.lower()))
 
     @composed(crash, method_to_log)
-    def gauss(self, strategy: str = "yeojohnson", **kwargs):
-        """Transform the data to follow a Gaussian distribution.
+    def normalize(self, strategy: str = "yeojohnson", **kwargs):
+        """Transform the data to follow a Normal/Gaussian distribution.
 
         This transformation is useful for modeling issues related
         to heteroscedasticity (non-constant variance), or other
@@ -1019,17 +1029,17 @@ class ATOM(BasePredictor, ATOMPlotter):
         See data_cleaning.py for a description of the parameters.
 
         """
-        check_dim(self, "gauss")
+        check_dim(self, "normalize")
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, Gauss().get_params())
-        gauss = Gauss(strategy=strategy, **kwargs)
+        kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
+        normalizer = Normalizer(strategy=strategy, **kwargs)
 
-        self._add_transformer(gauss, columns=columns)
+        self._add_transformer(normalizer, columns=columns)
 
         # Attach the estimator attribute to atom's branch
         for attr in ("yeojohnson", "boxcox", "quantile"):
-            if hasattr(gauss, attr):
-                setattr(self.branch, attr, getattr(gauss, attr))
+            if hasattr(normalizer, attr):
+                setattr(self.branch, attr, getattr(normalizer, attr))
 
     @composed(crash, method_to_log, typechecked)
     def clean(
@@ -1053,7 +1063,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             - Drop columns with minimum cardinality.
             - Drop duplicate rows.
             - Drop rows with missing values in the target column.
-            - Encode the target column (only for classification tasks).
+            - Encode the target column (can't be True for regression tasks).
 
         See data_cleaning.py for a description of the parameters.
 
@@ -1344,7 +1354,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.branch.quadgrams = tokenizer.quadgrams
 
     @composed(crash, method_to_log, typechecked)
-    def normalize(
+    def textnormalize(
         self,
         stopwords: Union[bool, str] = True,
         custom_stopwords: Optional[SEQUENCE_TYPES] = None,
@@ -1363,10 +1373,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         See nlp.py for a description of the parameters.
 
         """
-        check_dim(self, "normalize")
+        check_dim(self, "textnormalize")
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
-        normalizer = Normalizer(
+        kwargs = self._prepare_kwargs(kwargs, TextNormalizer().get_params())
+        normalizer = TextNormalizer(
             stopwords=stopwords,
             custom_stopwords=custom_stopwords,
             stem=stem,
@@ -1602,14 +1612,22 @@ class ATOM(BasePredictor, ATOMPlotter):
             # Catch errors and pass them to atom's attribute
             for model, error in trainer.errors.items():
                 self._errors[model] = error
-                self._models.pop(model, None)
+                self._models.pop(model)
 
-        # Update attributes
+        # Overwrite models with same name as new ones
+        for model in trainer._models:
+            if model in self._models:
+                self._models.pop(model)
+                self.log(
+                    f"\nWarning: Consecutive runs of the same model ({model}) "
+                    "were detected. The former model has been overwritten.", 3
+                )
+
         self._models.update(trainer._models)
         self._metric = trainer._metric
 
         for model in self._models.values():
-            self._errors.pop(model.name, None)  # Remove model from errors (if there)
+            self._errors.pop(model.name)  # Remove model from errors (if there)
             model.T = self  # Change the model's parent class from trainer to atom
 
     @composed(crash, method_to_log, typechecked)

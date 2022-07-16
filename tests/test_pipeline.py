@@ -15,7 +15,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from atom import ATOMClassifier
 from atom.pipeline import Pipeline
 
-from .utils import X_bin, y_bin
+from .conftest import X_bin, y_bin
 
 
 @pytest.fixture
@@ -56,7 +56,7 @@ def test_transform_only_X_or_y(pipeline):
         steps=[
             ("label_encoder", LabelEncoder()),
             ("scaler", StandardScaler()),
-        ]
+        ],
     )
     pl.fit(X_bin, y_bin)
     assert isinstance(pl.transform(y=y_bin), pd.Series)
@@ -113,3 +113,10 @@ def test_transform(pipeline):
     pl = pipeline(model=False)
     assert isinstance(pl.transform(X_bin), pd.DataFrame)
     assert isinstance(pl.transform(X_bin, y_bin), tuple)
+
+
+def test_inverse_transform():
+    """Assert that the pipeline uses inverse_transform normally."""
+    pl = Pipeline([("scaler", StandardScaler())]).fit(X_bin)
+    X = pl.inverse_transform(pl.transform(X_bin))
+    pd.testing.assert_frame_equal(X_bin, X)

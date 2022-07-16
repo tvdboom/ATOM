@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/faq/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/faq/">
       
       <link rel="icon" href="../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -808,8 +808,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../API/data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../API/data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -967,8 +967,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../API/nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../API/nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -1958,20 +1958,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../API/plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../API/plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2002,6 +1988,20 @@
     <li class="md-nav__item">
       <a href="../API/plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -3091,29 +3091,15 @@ is ignored.</p>
 <p><br></p>
 <p><a name="q12"></a></p>
 <h3 id="12-can-i-train-the-models-using-cross-validation">12. Can I train the models using cross-validation?</h3>
-<p>It is not possible to train models using cross-validation, but for a
-good reason. Applying cross-validation would mean transforming every
-step of the pipeline multiple times, each with different results. This
-would prevent ATOM from being able to show the transformation results
-after every pre-processing step, which means losing the ability to inspect
-how a transformer changed the dataset. This makes cross-validation an
-inappropriate technique for the purpose of exploration.</p>
-<p>So why not use cross-validation only to train and evaluate the models,
-instead of applying it to the whole pipeline? Cross-validating only the
-models would make no sense here. If we use the complete dataset for
-that (both the train and test set), we would be evaluating the models
-on data that was used to fit the transformers. This implies data leakage
-and can severely bias the results towards specific transformers. On the
-other hand, using only the training set beats the point of applying
-cross-validation in the first place, since we can train the model on the
-complete training set and evaluate the results on the independent test
-set. The only reason of doing cross-validation would be to get an idea
-of the robustness of the model. This can also be achieves using
-<a href="../user_guide/training/#bootstrapping">bootstrapping</a>. That said, ideally
-we would cross-validate the entire pipeline using the entire dataset.
-This can be done using a trainer's <a href="../API/models/gnb/#cross-validate">cross_validate</a>
-method, but for the reason just explained above, the method only outputs
-the final metric results.</p>
+<p>Applying cross-validation means transforming every step of the pipeline
+multiple times, each with different results. Doing this would prevent
+ATOM from being able to show the transformation results after every
+pre-processing step, which means losing the ability to inspect how a
+transformer changed the dataset. For this reason, it is not possible to
+apply cross-validation until after a model has been trained. After a
+model has been trained, the pipeline is defined, and cross-validation
+can be applied using the <a href="../API/models/gnb/#cross-validate">cross_validate</a>
+method. See <a href="../examples/multi_metric">here</a> an example using cross-validation.</p>
 <p><br></p>
 <p><a name="q13"></a></p>
 <h3 id="13-is-there-a-way-to-process-datetime-features">13. Is there a way to process datetime features?</h3>

@@ -1,8 +1,8 @@
-# Normalizer
+# TextNormalizer
 ------------
 
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">Normalizer</strong>(stopwords=True,
+<em>class</em> atom.nlp.<strong style="color:#008AB8">TextNormalizer</strong>(stopwords=True,
 custom_stopwords=None, stem=False, lemmatize=True, verbose=0, logger=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L425">[source]</a>
@@ -43,7 +43,7 @@ Whether to apply stemming using <a href="https://www.nltk.org/_modules/nltk/stem
 Whether to apply lemmatization using <a href="https://www.nltk.org/_modules/nltk/stem/wordnet.html">WordNetLemmatizer</a>.
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -107,7 +107,7 @@ Verbosity level of the class. Possible values are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
 </span>
 </div>
 Normalize the text.
@@ -171,7 +171,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -197,7 +197,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -231,7 +231,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>Normalizer</strong><br>
+<strong>TextNormalizer</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -286,8 +286,8 @@ Transformed corpus.
 
 === "stand-alone"
     ```python
-    from atom.nlp import Normalizer
+    from atom.nlp import TextNormalizer
     
-    normalizer = Normalizer()
+    normalizer = TextNormalizer()
     X = normalizer.transform(X)
     ```

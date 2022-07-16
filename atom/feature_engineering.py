@@ -35,7 +35,8 @@ from atom.plots import FSPlotter
 from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, check_scaling, composed, crash, get_custom_scorer,
-    get_feature_importance, infer_task, is_sparse, lst, method_to_log, to_df,
+    get_feature_importance, infer_task, is_sparse, lst, merge, method_to_log,
+    to_df,
 )
 
 
@@ -77,7 +78,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         features from it.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -86,6 +87,14 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
+
+    Attributes
+    ----------
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
 
     """
 
@@ -135,6 +144,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 X.insert(idx, f"{name}_cos", np.cos(pos))
 
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
 
         # Check parameters
         if self.encoding_type.lower() not in ("ordinal", "cyclic"):
@@ -251,7 +262,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -281,6 +292,12 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             - name: Name of the feature (automatically created).
             - description: Operators used to create this feature.
             - fitness: Fitness score.
+
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
 
     """
 
@@ -331,6 +348,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
 
         operators = CustomDict(
             add="add_numeric",
@@ -479,7 +498,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 # If the column is new, use a default name
                 counter = 0
                 while True:
-                    name = f"feature_{X.shape[1] + 1 + counter}"
+                    name = f"x{X.shape[1] + counter}"
                     if name not in X:
                         X[name] = array  # Add new feature to X
                         df.iloc[i, 0] = name
@@ -574,10 +593,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         value in all samples. If None, skip this step.
 
     max_correlation: float or None, optional (default=1.)
-        Minimum Pearson correlation coefficient to identify correlated
-        features. For each pair above the specified limit (in terms of
-        absolute value), it removes one of the two. The default is to
-        drop one of two equal columns. If None, skip this step.
+        Minimum absolute Pearson correlation to identify correlated
+        features. For each group, it removes all except the feature
+        with the highest correlation to `y` (if provided, else it
+        removes all but the first). The default value removes equal
+        columns. If None, skip this step.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -592,7 +612,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - If "force": Force GPU implementation.
 
     verbose: int, optional (default=0)
-        Verbosity level of the class. Possible values are:
+        Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
@@ -614,10 +634,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     ----------
     collinear: pd.DataFrame
         Information on the removed collinear features. Columns include:
-            - drop_feature: Name of the feature dropped by the method.
-            - correlated feature: Name of the correlated features.
-            - correlation_value: Pearson correlation coefficients of
-                                 the feature pairs.
+            - drop: Name of the dropped feature.
+            - corr_feature: Name of the correlated feature(s).
+            - corr_value: Corresponding correlation coefficient(s).
 
     feature_importance: list
         Remaining features ordered by importance. Only if strategy in
@@ -628,6 +647,12 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     <strategy>: sklearn transformer
         Object used to transform the data, e.g. `balancer.pca` for the pca
         strategy.
+
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
 
     """
 
@@ -659,11 +684,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self.max_correlation = max_correlation
         self.kwargs = kwargs
 
-        self.collinear = pd.DataFrame(
-            columns=["drop_feature", "correlated_feature", "correlation_value"]
-        )
+        self.collinear = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
         self.feature_importance = None
         self.scaler = None
+
         self._n_features = None
         self._kwargs = kwargs.copy()
         self._low_variance = {}
@@ -714,6 +738,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 return scoring(model, X_valid, y_valid)
 
         X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
 
         strats = CustomDict(
             univariate=SelectKBest,
@@ -811,31 +837,44 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                         break
 
         # Remove features with too high correlation
+        self.collinear = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
         if self.max_correlation:
-            max_ = self.max_correlation
-            mtx = X.corr()  # Pearson correlation coefficient matrix
+            # Get the Pearson correlation coefficient matrix
+            if y is None:
+                corr_X = X.corr()
+            else:
+                corr_matrix = merge(X, y).corr()
+                corr_X, corr_y = corr_matrix.iloc[:-1, :-1], corr_matrix.iloc[:-1, -1]
 
-            # Extract the upper triangle of the correlation matrix
-            upper = mtx.where(np.triu(np.ones(mtx.shape).astype(bool), k=1))
+            corr = {}
+            to_drop = []
+            for col in corr_X:
+                # Select columns that are corr
+                corr[col] = corr_X[col][corr_X[col] >= self.max_correlation]
 
-            # Select the features with correlations above or equal to the threshold
-            to_drop = [i for i in upper.columns if any(abs(upper[i] >= max_))]
+                # Always finds himself with correlation 1
+                if len(corr[col]) > 1:
+                    if y is None:
+                        # Drop all but the first one
+                        to_drop.extend(list(corr[col][1:].index))
+                    else:
+                        # Keep feature with the highest correlation with y
+                        keep = corr_y[corr[col].index].idxmax()
+                        to_drop.extend(list(corr[col].index.drop(keep)))
 
-            # Record the correlated features and corresponding values
-            corr_features, corr_values = [], []
-            for col in to_drop:
-                corr_features.append(list(upper.index[abs(upper[col]) >= max_]))
-                corr_values.append(list(round(upper[col][abs(upper[col]) >= max_], 5)))
+            for col in list(dict.fromkeys(to_drop)):
+                corr_feature = corr[col].drop(col).index
+                corr_value = corr[col].drop(col).round(4).astype(str)
+                self.collinear = self.collinear.append(
+                    {
+                        "drop": col,
+                        "corr_feature": ", ".join(corr_feature),
+                        "corr_value": ", ".join(corr_value),
+                    },
+                    ignore_index=True,
+                )
 
-            self.collinear = pd.DataFrame(
-                data={
-                    "drop_feature": to_drop,
-                    "correlated_feature": [", ".join(fxs) for fxs in corr_features],
-                    "correlation_value": [", ".join(map(str, v)) for v in corr_values],
-                }
-            )
-
-            X = X.drop(to_drop, axis=1)
+            X = X.drop(self.collinear["drop"], axis=1)
 
         if self.strategy is None:
             self._is_fitted = True
@@ -1055,7 +1094,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             X = X.drop(key, axis=1)
 
         # Remove features with too high correlation
-        for col in self.collinear["drop_feature"]:
+        for col in self.collinear["drop"]:
             self.log(
                 f" --> Feature {col} was removed due to "
                 "collinearity with another feature.", 2
@@ -1094,10 +1133,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             X = to_df(
                 data=self.pca.transform(X)[:, :self.pca._comps],
                 index=X.index,
-                columns=[f"component_{str(i)}" for i in range(1, self.pca._comps + 1)],
+                columns=[f"pca{str(i)}" for i in range(self.pca._comps)],
             )
 
             var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
+            self.log(f"   >>> Keeping {self.pca._comps} components.", 2)
             self.log(f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == "sfm":

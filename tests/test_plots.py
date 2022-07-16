@@ -18,9 +18,9 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
 
-from .utils import (
-    FILE_DIR, X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10,
-    y10_str, y_bin, y_class, y_reg,
+from .conftest import (
+    X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10, y10_str, y_bin,
+    y_class, y_reg,
 )
 
 
@@ -178,7 +178,7 @@ def test_plot_scatter_matrix():
     atom.plot_scatter_matrix(columns=[0, 1, 2], display=False)
 
 
-@pytest.mark.parametrize("columns", [2, "feature_1", [0, 1]])
+@pytest.mark.parametrize("columns", [2, "x0", [0, 1]])
 def test_plot_distribution(columns):
     """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -210,17 +210,6 @@ def test_plot_ngrams(ngram):
     atom.plot_ngrams(ngram=ngram, display=False)  # When corpus are tokens
 
 
-def test_plot_pipeline():
-    """Assert that the plot_pipeline method work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.impute()
-    atom.prune()
-    atom.feature_selection("univariate", n_features=10)
-    atom.successive_halving(["Tree", "LGB"])
-    atom.plot_pipeline(model=None, show_params=False, display=False)
-    atom.plot_pipeline(model="Tree", title="Pipeline plot", display=False)
-
-
 @pytest.mark.parametrize("X", [X10, X_sparse])
 def test_plot_pca(X):
     """Assert that the plot_pca method work as intended."""
@@ -249,6 +238,26 @@ def test_plot_rfecv(scoring):
     atom.branch = "fs_branch"
     atom.feature_selection(strategy="rfecv", n_features=10, scoring=scoring)
     atom.plot_rfecv(display=False)
+
+
+def test_plot_pipeline():
+    """Assert that the plot_pipeline method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    atom.plot_pipeline(display=False)  # No transformers
+
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.scale()
+    atom.plot_pipeline(display=False)  # No model
+
+    atom.run("Tree", n_calls=2, n_initial_points=1)
+    atom.tree.plot_pipeline(display=False)  # Only one branch
+
+    atom.branch = "b2"
+    atom.prune()
+    atom.run(["OLS", "EN"])
+    atom.voting()
+    atom.plot_pipeline(title="Pipeline plot", display=False)  # Multiple branches
 
 
 @pytest.mark.parametrize("metric", ["f1", ["f1", "recall"]])
@@ -612,8 +621,8 @@ def test_force_plot():
     # Own calculation of expected value
     atom.mlp.force_plot(index=100, matplotlib=True, display=False)
 
-    atom.lr.force_plot(matplotlib=False, filename=FILE_DIR + "force", display=True)
-    assert glob.glob(FILE_DIR + "force.html")
+    atom.lr.force_plot(matplotlib=False, filename="force", display=True)
+    assert glob.glob("force.html")
 
 
 def test_heatmap_plot():
@@ -637,5 +646,5 @@ def test_waterfall_plot():
     """Assert that the waterfall_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.waterfall_plot)
-    atom.run("LR", metric="f1_macro")
+    atom.run("Tree", metric="f1_macro")
     atom.waterfall_plot(display=False)

@@ -10,7 +10,6 @@ Description: Module containing the BasePredictor class.
 from typing import Any, Optional, Union
 
 import mlflow
-import numpy as np
 import pandas as pd
 from typeguard import typechecked
 
@@ -184,11 +183,17 @@ class BasePredictor:
         return self._errors
 
     @property
+    def winners(self):
+        """Return the model names ordered by performance."""
+        if self._models:  # Returns None if not fitted
+            models = sorted(self._models.values(), key=lambda x: get_best_score(x))
+            return [m.name for m in models[::-1]]
+
+    @property
     def winner(self):
         """Return the best performing model."""
         if self._models:  # Returns None if not fitted
-            best_index = np.argmax([get_best_score(m) for m in self._models.values()])
-            return self._models[best_index]  # CustomDict can select item from index
+            return self._models[self.winners[0]]
 
     @property
     def results(self):
@@ -469,7 +474,7 @@ class BasePredictor:
             )
 
     def _get_models(self, models=None, ensembles=True):
-        """Return models in the pipeline."""
+        """Return the names of models in the pipeline."""
         if not models:
             if self._models:
                 to_return = lst(self.models).copy()
@@ -756,6 +761,13 @@ class BasePredictor:
         if not name.lower().startswith("stack"):
             name = f"Stack{name}"
 
+        if name in self._models:
+            raise ValueError(
+                "Invalid value for the name parameter. It seems a model with "
+                f"the name {name} already exists. Add a different name to "
+                "train multiple Stacking models within the same instance."
+            )
+
         if isinstance(kwargs.get("final_estimator"), str):
             if kwargs["final_estimator"] not in MODELS:
                 raise ValueError(
@@ -778,6 +790,9 @@ class BasePredictor:
             self[name]._run = mlflow.start_run(run_name=self[name].name)
 
         self[name].fit()
+
+        if self.experiment:
+            mlflow.end_run()
 
     @composed(crash, method_to_log, typechecked)
     def voting(
@@ -814,9 +829,19 @@ class BasePredictor:
         if not name.lower().startswith("vote"):
             name = f"Vote{name}"
 
+        if name in self._models:
+            raise ValueError(
+                "Invalid value for the name parameter. It seems a model with "
+                f"the name {name} already exists. Add a different name to "
+                "train multiple Voting models within the same instance."
+            )
+
         self._models[name] = Voting(self, name, models=self._models[models], **kwargs)
 
         if self.experiment:
             self[name]._run = mlflow.start_run(run_name=self[name].name)
 
         self[name].fit()
+
+        if self.experiment:
+            mlflow.end_run()

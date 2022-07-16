@@ -1,6 +1,29 @@
 # Release history
 -----------------
 
+<a name="v4140"></a>
+### Version 4.14.0
+
+* Refactor of the [Cleaner](../API/data_cleaning/cleaner) and [Vectorizer](../API/nlp/vectorizer) classes.
+* Refactor of the [cross_validate](../API/models/gnb/#cross-validate) method.
+* The [plot_pipeline](../API/plots/plot_pipeline) method now supports drawing multiple pipelines.
+* Renamed the `Normalizer` class to `TextNormalizer`.
+* Renamed the `Gauss` class to `Normalizer`.
+* Added the `inverse_transform` method to the [Scaler](../API/data_cleaning/scaler),
+  [Normalizer](../API/data_cleaning/normalizder) and [Cleaner](../API/data_cleaning/cleaner) 
+  classes.
+* Added the `winners` property to the trainers (note the extra `s`). 
+* Added the `feature_names_in_` and `n_features_in_` attributes to transformers.
+* The default value of the `warnings` parameter is set to False.
+* Improvements for multicollinearity removal in [FeatureSelector](../API/feature_engineering/feature_selector).
+* Renamed default feature names to `x0`, `x1`, etc... for consistency with
+  sklearn's API.
+* Renamed component names in [FeatureSelector](../API/feature_engineering/feature_selector)
+  to `pca0`, `pca1`, etc... for consistency with sklearn's API.
+* Significant speed up in pipeline transformations.
+* Fixed a bug where mlflow runs could be ended unexpectedly.
+
+
 <a name="v4131"></a>
 ### Version 4.13.1
 
@@ -226,7 +249,7 @@
 * Support of NLP pipelines. Read more in the [user guide](../user_guide/nlp).
 * Integration of [mlflow](https://www.mlflow.org/) to track all models in the
   pipeline. Read more in the [user guide](../user_guide/logging/#tracking).
-* The new [Gauss](../API/data_cleaning/gauss) class transforms features to
+* The new [Normalizer](../API/data_cleaning/gauss) class transforms features to
   a more Gaussian-like distribution.
 * New [cross_validate](../API/ATOM/atomclassifier/#cross-validate) method to
   evaluate the robustness of a pipeline using cross_validation.

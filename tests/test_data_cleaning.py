@@ -16,11 +16,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
 from atom.data_cleaning import (
-    Balancer, Cleaner, Discretizer, Encoder, Gauss, Imputer, Pruner, Scaler,
+    Balancer, Cleaner, Discretizer, Encoder, Imputer, Normalizer, Pruner,
+    Scaler,
 )
-from atom.utils import NotFittedError, check_scaling
+from atom.utils import NotFittedError, check_scaling, to_df
 
-from .utils import (
+from .conftest import (
     X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
     y10_str, y_bin, y_class, y_idx,
 )
@@ -32,16 +33,13 @@ def test_fit_transform():
     """Assert that the fit_transform method works as intended."""
     X_1 = Scaler().fit_transform(X_bin)
     X_2 = Scaler().fit(X_bin).transform(X_bin)
-    assert X_1.equals(X_2)
+    pd.testing.assert_frame_equal(X_1, X_2)
 
 
 def test_fit_transform_no_fit():
     """Assert that the fit_transform method works when no fit method."""
-    X = X_bin.copy()
-    X["test_column"] = 1  # Create a column with minimum cardinality
-    X_1 = Cleaner().fit_transform(X)
-    X_2 = Cleaner().transform(X)
-    assert X_1.equals(X_2)
+    X, y = Balancer().fit_transform(X_bin, y_bin)
+    assert len(X) > len(X_bin)
 
 
 # Test Scaler ====================================================== >>
@@ -65,11 +63,17 @@ def test_scaler_all_strategies(strategy):
     scaler.fit_transform(X_bin)
 
 
+def test_scaler_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Scaler().fit_transform(X10_str)
+    assert X["x2"].dtype.kind == "O"
+
+
 def test_scaler_y_is_ignored():
     """Assert that the y parameter is ignored if provided."""
     X_1 = Scaler().fit_transform(X_bin, y_bin)
     X_2 = Scaler().fit_transform(X_bin)
-    assert X_1.equals(X_2)
+    pd.testing.assert_frame_equal(X_1, X_2)
 
 
 def test_scaler_kwargs():
@@ -78,10 +82,24 @@ def test_scaler_kwargs():
     assert min(X.iloc[:, 0]) >= 1 and max(X.iloc[:, 0]) <= 2
 
 
-def test_return_scaled_dataset():
+def test_scaler_return_scaled_dataset():
     """Assert that the returned dataframe is indeed scaled."""
     X = Scaler().fit_transform(X_bin)
     assert check_scaling(X)
+
+
+def test_scaler_inverse_transform():
+    """Assert that the inverse_transform method works."""
+    scaler = Scaler().fit(X_bin)
+    X_transformed = scaler.transform(X_bin)
+    X_original = scaler.inverse_transform(X_transformed)
+    pd.testing.assert_frame_equal(X_bin, X_original)
+
+
+def test_scaler_inverse_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Scaler().fit(X10_str).inverse_transform(X10_str)
+    assert X["x2"].dtype.kind == "O"
 
 
 def test_scaler_ignores_categorical_columns():
@@ -99,140 +117,166 @@ def test_scaler_attach_attribute():
     assert hasattr(scaler, "robust")
 
 
-# Test Gauss ======================================================= >>
+# Test Normalizer ======================================================= >>
 
-def test_gauss_check_is_fitted():
+def test_normalizer_check_is_fitted():
     """Assert that an error is raised when not fitted."""
-    pytest.raises(NotFittedError, Gauss().transform, X_bin)
+    pytest.raises(NotFittedError, Normalizer().transform, X_bin)
 
 
-def test_invalid_strategy():
+def test_normalizer_invalid_strategy():
     """Assert that an error is raised when strategy is invalid."""
-    gauss = Gauss(strategy="invalid")
+    normalizer = Normalizer(strategy="invalid")
     with pytest.raises(ValueError, match=r".*value for the strategy.*"):
-        gauss.fit(X_bin)
+        normalizer.fit(X_bin)
 
 
 @pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
-def test_all_strategies(strategy):
+def test_normalizer_all_strategies(strategy):
     """Assert that all strategies work as intended."""
-    gauss = Gauss(strategy=strategy)
-    gauss.fit_transform(X10)
+    normalizer = Normalizer(strategy=strategy)
+    normalizer.fit_transform(X10)
 
 
-def test_gauss_y_is_ignored():
+def test_normalizer_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Normalizer().fit_transform(X10_str)
+    assert X["x2"].dtype.kind == "O"
+
+
+def test_normalizer_inverse_transform():
+    """Assert that the inverse_transform method works."""
+    normalizer = Normalizer().fit(X_bin)
+    X = normalizer.inverse_transform(X_bin)
+    assert X.shape == X_bin.shape
+
+
+def test_normalizer_inverse_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Normalizer().fit(X10_str).inverse_transform(X10_str)
+    assert X["x2"].dtype.kind == "O"
+
+
+def test_normalizer_y_is_ignored():
     """Assert that the y parameter is ignored if provided."""
-    X_1 = Gauss().fit_transform(X_bin, y_bin)
-    X_2 = Gauss().fit_transform(X_bin)
-    assert X_1.equals(X_2)
+    X_1 = Normalizer().fit_transform(X_bin, y_bin)
+    X_2 = Normalizer().fit_transform(X_bin)
+    pd.testing.assert_frame_equal(X_1, X_2)
 
 
-def test_gauss_kwargs():
+def test_normalizer_kwargs():
     """Assert that kwargs can be passed to the estimator."""
-    X = Gauss(strategy="yeojohnson", standardize=False).fit_transform(X_bin)
+    X = Normalizer(strategy="yeojohnson", standardize=False).fit_transform(X_bin)
     assert not check_scaling(X)
 
 
-def test_gauss_ignores_categorical_columns():
+def test_normalizer_ignores_categorical_columns():
     """Assert that categorical columns are ignored."""
     X = X_bin.copy()
     X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
-    X = Gauss().fit_transform(X)
+    X = Normalizer().fit_transform(X)
     assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
 
 
-def test_gauss_attach_attribute():
+def test_normalizer_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
-    gauss = Gauss(strategy="quantile")
-    gauss.fit_transform(X_bin)
-    assert hasattr(gauss, "quantile")
+    normalizer = Normalizer(strategy="quantile")
+    normalizer.fit_transform(X_bin)
+    assert hasattr(normalizer, "quantile")
 
 
 # Test Cleaner ==================================================== >>
 
-def test_drop_invalid_column_type():
+def test_cleaner_drop_invalid_column_type():
     """Assert that invalid columns types are dropped for string input."""
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
-    X = Cleaner(drop_types="datetime64[ns]").transform(X)
+    X = Cleaner(drop_types="datetime64[ns]").fit_transform(X)
     assert "datetime_col" not in X.columns
 
 
-def test_drop_invalid_column_list_types():
+def test_cleaner_drop_invalid_column_list_types():
     """Assert that invalid columns types are dropped for list input."""
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
     X["string_col"] = [str(i) for i in range(len(X))]  # String column
     cleaner = Cleaner(["datetime64[ns]", "object"], drop_max_cardinality=False)
-    X = cleaner.transform(X)
+    X = cleaner.fit_transform(X)
     assert "datetime_col" not in X.columns
     assert "string_col" not in X.columns
 
 
-def test_drop_maximum_cardinality():
+def test_cleaner_drop_maximum_cardinality():
     """Assert that categorical columns with maximum cardinality are dropped."""
     X = X_bin.copy()
     # Create column with all different values
     X["invalid_column"] = [str(i) for i in range(len(X))]
-    X = Cleaner().transform(X)
+    X = Cleaner().fit_transform(X)
     assert "invalid_column" not in X.columns
 
 
-def test_drop_minimum_cardinality():
+def test_cleaner_drop_minimum_cardinality():
     """Assert that columns with minimum cardinality are dropped."""
     X = X_bin.copy()
     X["invalid_column"] = 2.3  # Create column with only one value
-    X = Cleaner().transform(X)
+    X = Cleaner().fit_transform(X)
     assert "invalid_column" not in X.columns
 
 
-def test_strip_categorical_features():
+def test_cleaner_strip_categorical_features():
     """Assert that categorical features are stripped from blank spaces."""
     X = X_bin.copy()
     X["string_col"] = [" " + str(i) + " " for i in range(len(X))]
-    X = Cleaner(drop_max_cardinality=False).transform(X)
-    assert X["string_col"].equals(pd.Series([str(i) for i in range(len(X))]))
+    X = Cleaner(drop_max_cardinality=False).fit_transform(X)
+    series = pd.Series([str(i) for i in range(len(X))], name="string_col")
+    pd.testing.assert_series_equal(X["string_col"], series)
 
 
-def test_strip_ignores_nan():
+def test_cleaner_strip_ignores_nan():
     """Assert that the stripping ignores missing values."""
-    X = Cleaner(drop_max_cardinality=False).transform(X10_sn)
+    X = Cleaner(drop_max_cardinality=False).fit_transform(X10_sn)
     assert X.isna().sum().sum() == 1
 
 
-def test_drop_duplicate_rows():
+def test_cleaner_drop_duplicate_rows():
     """Assert that that duplicate rows are removed."""
-    X = Cleaner(drop_max_cardinality=False, drop_duplicates=True).transform(X10)
+    X = Cleaner(drop_max_cardinality=False, drop_duplicates=True).fit_transform(X10)
     assert len(X) == 7
 
 
-def test_drop_missing_target():
+def test_cleaner_drop_missing_target():
     """Assert that rows with missing values in the target column are dropped."""
     y = y_bin.copy()
     length = len(X_bin)
     y[0], y[21], y[41] = np.NaN, 99, np.inf  # Set missing to target column
     cleaner = Cleaner()
     cleaner.missing.append(99)
-    _, y = cleaner.transform(X_bin, y)
+    _, y = cleaner.fit_transform(X_bin, y)
     assert length == len(y) + 3
 
 
-def test_label_encoder_target_column():
+def test_cleaner_label_encoder_target_column():
     """Assert that the label-encoder for the target column works."""
-    X, y = Cleaner().transform(X10, y10_str)
+    X, y = Cleaner().fit_transform(X10, y10_str)
     assert np.all((y == 0) | (y == 1))
 
 
-def test_target_mapping():
-    """Assert that the mapping attribute is set correctly."""
-    cleaner = Cleaner()
+def test_cleaner_inverse_transform():
+    """Assert that the inverse_transform method works."""
+    cleaner = Cleaner().fit(y=y10_str)
+    y = cleaner.inverse_transform(y=cleaner.transform(y=y10_str))
+    pd.testing.assert_series_equal(pd.Series(y10_str, name="target"), y)
 
-    # For binary classification
-    cleaner.transform(X10, y10_str)
-    assert cleaner.mapping == dict(n=0, y=1)
 
-    # For multiclass classification
-    cleaner.transform(X_class, y_class)
+def test_cleaner_target_mapping_binary():
+    """Assert that the mapping attribute is set for binary tasks."""
+    cleaner = Cleaner().fit(y=y10_str)
+    assert cleaner.mapping == {"n": 0, "y": 1}
+
+
+def test_cleaner_target_mapping_multiclass():
+    """Assert that the mapping attribute is set for multiclass tasks."""
+    cleaner = Cleaner().fit(y=y_class)
     assert cleaner.mapping == {"0": 0, "1": 1, "2": 2}
 
 
@@ -494,7 +538,7 @@ def test_strategy_with_encoder_at_end():
     """Assert that the strategy works with Encoder at the end of the string."""
     encoder = Encoder(strategy="TargetEncoder", max_onehot=None)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["feature_3"].__class__.__name__ == "TargetEncoder"
+    assert encoder._encoders["x2"].__class__.__name__ == "TargetEncoder"
 
 
 def test_max_onehot_parameter():
@@ -516,7 +560,7 @@ def test_frac_to_other(frac_to_other):
     """Assert that the other values are created when encoding."""
     encoder = Encoder(max_onehot=5, frac_to_other=frac_to_other)
     X = encoder.fit_transform(X10_str, y10)
-    assert "feature_3_other" in X.columns
+    assert "x2_other" in X.columns
 
 
 def test_encoder_strategy_invalid_estimator():
@@ -530,11 +574,11 @@ def test_encoder_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
     encoder = Encoder(strategy=LeaveOneOutEncoder, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert X.loc[0, "feature_3"] != "a"
+    assert X.loc[0, "x2"] != "a"
 
     encoder = Encoder(strategy=LeaveOneOutEncoder(), max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert X.loc[0, "feature_3"] != "a"
+    assert X.loc[0, "x2"] != "a"
 
 
 def test_encoder_check_is_fitted():
@@ -559,13 +603,13 @@ def test_ordinal_encoder():
     """Assert that the Ordinal-encoder works as intended."""
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
-    assert np.all((X["feature_3"] == 0) | (X["feature_3"] == 1))
-    assert list(encoder.mapping) == ["feature_3", "feature_4"]
+    assert np.all((X["x2"] == 0) | (X["x2"] == 1))
+    assert list(encoder.mapping) == ["x2", "x3"]
 
 
 def test_ordinal_features():
     """Assert that ordinal features are encoded."""
-    encoder = Encoder(max_onehot=None, ordinal={"feature_3": ["b", "a"]})
+    encoder = Encoder(max_onehot=None, ordinal={"x2": ["b", "a"]})
     X = encoder.fit_transform(X10_str2, y10)
     assert X.iloc[0, 2] == 1 and X.iloc[2, 2] == 0
 
@@ -574,7 +618,7 @@ def test_one_hot_encoder():
     """Assert that the OneHot-encoder works as intended."""
     encoder = Encoder(max_onehot=4)
     X = encoder.fit_transform(X10_str, y10)
-    assert "feature_3_c" in X.columns
+    assert "x2_c" in X.columns
 
 
 @pytest.mark.parametrize("strategy", ["HelmertEncoder", "SumEncoder"])
@@ -589,7 +633,7 @@ def test_kwargs_parameters():
     """Assert that the kwargs parameter works as intended."""
     encoder = Encoder(strategy="LeaveOneOut", max_onehot=None, sigma=0.5)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["feature_3"].get_params()["sigma"] == 0.5
+    assert encoder._encoders["x2"].get_params()["sigma"] == 0.5
 
 
 # Test Pruner ====================================================== >>
@@ -660,9 +704,8 @@ def test_value_pruner():
 
 def test_categorical_cols_are_ignored():
     """Assert that categorical columns are returned untouched."""
-    Feature_2 = np.array(X10_str)[:, 2]
     X, y = Pruner(method="min_max", max_sigma=2).transform(X10_str, y10)
-    assert [i == j for i, j in zip(X["feature_2"], Feature_2)]
+    pd.testing.assert_series_equal(X["x1"], to_df(X10_str.copy())["x1"])
 
 
 def test_drop_outlier_in_target():

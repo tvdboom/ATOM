@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/API/nlp/vectorizer/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/nlp/vectorizer/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -810,8 +810,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../../data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -971,8 +971,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -2017,20 +2017,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2061,6 +2047,20 @@
     <li class="md-nav__item">
       <a href="../../plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2850,9 +2850,8 @@ return_sparse=True, verbose=0, logger=None, *kwargs)
 <p>Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named <code>corpus</code>. If there
 is no column with that name, an exception is raised. The transformed
-columns are named after the word they are embedding (if the column is
-already present in the provided dataset, <code>_[strategy]</code> is added behind
-the name). This class can be accessed from atom through the
+columns are named after the word they are embedding with the prefix
+<code>corpus_</code>. This class can be accessed from atom through the
 <a href="../../ATOM/atomclassifier/#vectorize">vectorize</a> method. Read more in
 the <a href="../../../user_guide/nlp/#vectorization">user guide</a>.</p>
 <table style="font-size:16px">
@@ -2873,7 +2872,7 @@ of sparse arrays. Must be False when there are other columns
 in X (besides <code>corpus</code>) that are non-sparse.
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -2904,9 +2903,19 @@ occupy large chunks of memory when the corpus contains many tokens.</p>
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
+<p>
 <strong>&lt;strategy>: sklearn estimator</strong><br>
 Object used to prune the data, e.g.<code>vectorizer.bow</code> for the
 Bag of Words strategy.
+</p>
+<p>
+<strong>feature_names_in_: np.array</strong><br>
+Names of features seen during fit.
+</p>
+<p>
+<strong>n_features_in_: int</strong><br>
+Number of features seen during fit.
+</p>
 </td>
 </tr>
 </table>
@@ -2951,7 +2960,7 @@ Bag of Words strategy.
 <p><br></p>
 <p><a name="fit"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L637">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L650">[source]</a></span></div>
 <p>Fit to text.</p>
 <table style="font-size:16px">
 <tr>
@@ -2981,7 +2990,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
 </span>
 </div>
 <p>Fit to text, then vectorize it.</p>
@@ -3041,7 +3050,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3065,7 +3074,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3107,7 +3116,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L687">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L702">[source]</a>
 </span>
 </div>
 <p>Normalize the text.</p>
@@ -3172,7 +3181,7 @@ Transformed corpus.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../normalizer/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Normalizer" rel="prev">
+        <a href="../textnormalizer/" class="md-footer__link md-footer__link--prev" aria-label="Previous: TextNormalizer" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -3181,7 +3190,7 @@ Transformed corpus.
               <span class="md-footer__direction">
                 Previous
               </span>
-              Normalizer
+              TextNormalizer
             </div>
           </div>
         </a>

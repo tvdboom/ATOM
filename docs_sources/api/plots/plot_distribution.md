@@ -6,7 +6,7 @@
 distributions=None, show=None, title=None, figsize=None, filename=None,
 display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3764">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4006">[source]</a>
 </span>
 </div>
 

@@ -17,7 +17,7 @@ from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
 
-from .utils import (
+from .conftest import (
     X10, X10_str, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, y10,
     y_bin, y_class, y_idx, y_reg,
 )
@@ -222,6 +222,13 @@ def test_errors_property():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["Tree", "LGB"], n_calls=5, n_initial_points=(2, 6))
     assert "LGB" in atom.errors
+
+
+def test_winners_property():
+    """Assert that the winners property returns the best models."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree", "LGB"], n_calls=0)
+    assert atom.winners == ["LR", "LGB", "Tree"]
 
 
 def test_winner_property():
@@ -699,6 +706,15 @@ def test_stacking_invalid_models():
         atom.stacking()
 
 
+def test_stacking_invalid_name():
+    """Assert that an error is raised when the model already exists."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree"])
+    atom.stacking()
+    with pytest.raises(ValueError, match=r".*multiple Stacking.*"):
+        atom.stacking()
+
+
 def test_stacking_custom_models():
     """Assert that stacking can be created selecting the models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -761,6 +777,15 @@ def test_voting():
     assert hasattr(atom, "Vote2")
     assert "Vote2" in atom.models
     assert atom.vote2._run
+
+
+def test_voting_invalid_name():
+    """Assert that an error is raised when the model already exists."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree"])
+    atom.voting()
+    with pytest.raises(ValueError, match=r".*multiple Voting.*"):
+        atom.voting()
 
 
 def test_voting_invalid_models():

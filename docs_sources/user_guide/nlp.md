@@ -71,17 +71,17 @@ method.
 
 <br>
 
-## Normalization
+## Text Normalization
 
-Normalization is a process that converts a list of words to a more
-uniform standard. This is useful to reduce the amount of different
+Normalization for texts is a process that converts a list of words to a
+more uniform standard. This is useful to reduce the amount of different
 information that the computer has to deal with, and therefore improves
 efficiency. The goal of normalization techniques like stemming and
-lemmatization is to reduce inflectional forms and derivationally
-related forms of a word to a common base form.
+lemmatization is to reduce inflectional and related forms of a word
+to a common base form.
 
-Normalize the words in the corpus using the [Normalizer](../../API/nlp/normalizer)
-class. It can be accessed from atom through the [normalize](../../API/ATOM/atomclassifier/#normalize)
+Normalize the words in the corpus using the [TextNormalizer](../../API/nlp/textnormalizer)
+class. It can be accessed from atom through the [textnormalize](../../API/ATOM/atomclassifier/#textnormalize)
 method.
 
 
@@ -97,14 +97,18 @@ feature vectors. You can apply it to the corpus using the [Vectorizer](../../API
 class. It can be accessed from atom through the [vectorize](../../API/ATOM/atomclassifier/#vectorize)
 method.
 
+!!! info
+    All strategies can utilize GPU speed-up. Click [here](../gpu)
+    for further information about GPU implementation.
+
 <br style="display: block; margin-top: 2em; content: ' '">
 
 **Bag of Words**<br>
 The Bag of Words (BOW) strategy applies tokenization, counting and
 normalization to the corpus. Documents are described by word occurrences
-while completely ignoring the relative position information of the words in
-the document. The created columns are named with the words they are counting.
-Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_extraction.html#the-bag-of-words-representation).
+while completely ignoring the relative position information of the words
+in the document. The created columns are named with the words they are
+embedding with the prefix `corpus_`. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_extraction.html#the-bag-of-words-representation).
 
 <br style="display: block; margin-top: 2em; content: ' '">
 
@@ -115,8 +119,8 @@ about the actual contents of the document. If we were to feed the direct
 count data directly to a classifier, those very frequent terms would
 shadow the frequencies of rarer, yet more interesting, terms. Use the
 TF-IDF strategy to re-weight the count features into floating point values.
-The created columns are named with the words they are counting. Read more
-in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_extraction.html#tfidf-term-weighting).
+The created columns are named with the words they are embedding with the
+prefix `corpus_`. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_extraction.html#tfidf-term-weighting).
 
 <br style="display: block; margin-top: 2em; content: ' '">
 
@@ -124,5 +128,5 @@ in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_ext
 The larger the corpus, the larger the vocabulary will grow and thus
 increasing the number of features and memory use. Use the Hashing
 strategy to hash the words to a specified number of features. The
-created features are named `hash_1`, `hash_2`, etc... Read more in
+created features are named `hash0`, `hash1`, etc... Read more in
 sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_extraction.html#vectorizing-a-large-text-corpus-with-the-hashing-trick).

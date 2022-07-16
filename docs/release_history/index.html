@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/release_history/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/release_history/">
       
       <link rel="icon" href="../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -468,6 +468,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#version-4140" class="md-nav__link">
+    Version 4.14.0
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#version-4131" class="md-nav__link">
@@ -989,8 +996,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../API/data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../API/data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -1148,8 +1155,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../API/nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../API/nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -2139,20 +2146,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../API/plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../API/plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2183,6 +2176,20 @@
     <li class="md-nav__item">
       <a href="../API/plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2925,6 +2932,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#version-4140" class="md-nav__link">
+    Version 4.14.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-4131" class="md-nav__link">
     Version 4.13.1
   </a>
@@ -3087,6 +3101,28 @@
 
 <h1 id="release-history">Release history</h1>
 <hr />
+<p><a name="v4140"></a></p>
+<h3 id="version-4140">Version 4.14.0</h3>
+<ul>
+<li>Refactor of the <a href="../API/data_cleaning/cleaner">Cleaner</a> and <a href="../API/nlp/vectorizer">Vectorizer</a> classes.</li>
+<li>Refactor of the <a href="../API/models/gnb/#cross-validate">cross_validate</a> method.</li>
+<li>The <a href="../API/plots/plot_pipeline">plot_pipeline</a> method now supports drawing multiple pipelines.</li>
+<li>Renamed the <code>Normalizer</code> class to <code>TextNormalizer</code>.</li>
+<li>Renamed the <code>Gauss</code> class to <code>Normalizer</code>.</li>
+<li>Added the <code>inverse_transform</code> method to the <a href="../API/data_cleaning/scaler">Scaler</a>,
+  <a href="../API/data_cleaning/normalizder">Normalizer</a> and <a href="../API/data_cleaning/cleaner">Cleaner</a> 
+  classes.</li>
+<li>Added the <code>winners</code> property to the trainers (note the extra <code>s</code>). </li>
+<li>Added the <code>feature_names_in_</code> and <code>n_features_in_</code> attributes to transformers.</li>
+<li>The default value of the <code>warnings</code> parameter is set to False.</li>
+<li>Improvements for multicollinearity removal in <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>.</li>
+<li>Renamed default feature names to <code>x0</code>, <code>x1</code>, etc... for consistency with
+  sklearn's API.</li>
+<li>Renamed component names in <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>
+  to <code>pca0</code>, <code>pca1</code>, etc... for consistency with sklearn's API.</li>
+<li>Significant speed up in pipeline transformations.</li>
+<li>Fixed a bug where mlflow runs could be ended unexpectedly.</li>
+</ul>
 <p><a name="v4131"></a></p>
 <h3 id="version-4131">Version 4.13.1</h3>
 <ul>
@@ -3299,7 +3335,7 @@
 <li>Support of NLP pipelines. Read more in the <a href="../user_guide/nlp">user guide</a>.</li>
 <li>Integration of <a href="https://www.mlflow.org/">mlflow</a> to track all models in the
   pipeline. Read more in the <a href="../user_guide/logging/#tracking">user guide</a>.</li>
-<li>The new <a href="../API/data_cleaning/gauss">Gauss</a> class transforms features to
+<li>The new <a href="../API/data_cleaning/gauss">Normalizer</a> class transforms features to
   a more Gaussian-like distribution.</li>
 <li>New <a href="../API/ATOM/atomclassifier/#cross-validate">cross_validate</a> method to
   evaluate the robustness of a pipeline using cross_validation.</li>

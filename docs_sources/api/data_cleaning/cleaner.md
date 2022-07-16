@@ -7,7 +7,7 @@ strip_categorical=True, drop_max_cardinality=True, drop_min_cardinality=True,
 drop_duplicates=False, drop_missing_target=True, encode_target=True, gpu=False,
 verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L468">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L575">[source]</a>
 </span>
 </div>
 
@@ -64,15 +64,14 @@ Whether to Label-encode the target column. This parameter is ignored
 if <code>y</code> is not provided.
 </p>
 <strong>gpu: bool or str, optional (default=False)</strong><br>
-Train estimator on GPU (instead of CPU). Only to encode the target
-column.
+Train LabelEncoder on GPU (instead of CPU). Only for encode_target=True.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -109,6 +108,14 @@ considered missing since they are incompatible with sklearn estimators.
 Target values mapped to their respective encoded integer. Only
 available if encode_target=True.
 </p>
+<p>
+<strong>feature_names_in_: np.array</strong><br>
+Names of features seen during fit.
+</p>
+<p>
+<strong>n_features_in_: int</strong><br>
+Number of features seen during fit.
+</p>
 </td>
 </tr>
 </table>
@@ -119,6 +126,11 @@ available if encode_target=True.
 ## Methods
 
 <table style="font-size:16px">
+<tr>
+<td><a href="#fit">fit</a></td>
+<td>Fit to data.</td>
+</tr>
+
 <tr>
 <td><a href="#fit-transform">fit_transform</a></td>
 <td>Same as transform.</td>
@@ -153,11 +165,42 @@ available if encode_target=True.
 <br>
 
 
+<a name="fit"></a>
+<div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X=None, y=None)
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L678">[source]</a></span></div>
+Fit to data.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: dataframe-like or None, optional (default=None)</strong><br>
+Feature set with shape=(n_samples, n_features).
+</p>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored.</li>
+<li>If int: Index of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>Cleaner</strong><br>
+Fitted instance of self.
+</tr>
+</table>
+<br />
+
+
 <a name="fit-transform"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
+<em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X=None, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
 </span>
 </div>
 Apply the data cleaning steps to the data.
@@ -166,7 +209,7 @@ Apply the data cleaning steps to the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like</strong><br>
+<strong>X: dataframe-like or None, optional (default=None)</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -227,7 +270,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -253,7 +296,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -297,9 +340,9 @@ Estimator instance.
 
 <a name="transform"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
+<em>method</em> <strong style="color:#008AB8">transform</strong>(X=None, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L562">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L718">[source]</a>
 </span>
 </div>
 Apply the data cleaning steps to the data.
@@ -308,7 +351,7 @@ Apply the data cleaning steps to the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like</strong><br>
+<strong>X: dataframe-like or None, optional (default=None)</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>

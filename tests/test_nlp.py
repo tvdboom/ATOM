@@ -7,13 +7,15 @@ Description: Unit tests for nlp.py
 
 """
 
+from unittest.mock import MagicMock, patch
+
 import pandas as pd
 import pytest
 
 from atom import ATOMClassifier
-from atom.nlp import Normalizer, TextCleaner, Tokenizer, Vectorizer
+from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
 
-from .utils import X_bin, X_text, y10
+from .conftest import X_bin, X_text, y10
 
 
 # Test TextCleaner ================================================= >>
@@ -118,40 +120,40 @@ def test_quadgrams():
     assert isinstance(tokenizer.quadgrams, pd.DataFrame)
 
 
-# Test Normalizer ================================================== >>
+# Test TextNormalizer ================================================== >>
 
 def test_normalizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
-    assert Normalizer().transform([["b c"]])["corpus"][0] == ["b", "c"]
+    assert TextNormalizer().transform([["b c"]])["corpus"][0] == ["b", "c"]
 
 
 def test_stopwords():
     """Assert that predefined stopwords are removed."""
-    assert Normalizer().transform([["a b"]])["corpus"][0] == ["b"]
+    assert TextNormalizer().transform([["a b"]])["corpus"][0] == ["b"]
 
 
 def test_stopwords_custom():
     """Assert that custom stopwords are removed."""
-    normalizer = Normalizer(stopwords=False, custom_stopwords=["b"])
+    normalizer = TextNormalizer(stopwords=False, custom_stopwords=["b"])
     assert normalizer.transform([["a b"]])["corpus"][0] == ["a"]
 
 
 def test_stemming():
     """Assert that the corpus is stemmed."""
-    normalizer = Normalizer(stem=True, lemmatize=False)
+    normalizer = TextNormalizer(stem=True, lemmatize=False)
     assert normalizer.transform([["running"]])["corpus"][0] == ["run"]
 
 
 def test_lemmatization():
     """Assert that lemmatization is applied."""
-    assert Normalizer().transform([["better"]])["corpus"][0] == ["well"]
+    assert TextNormalizer().transform([["better"]])["corpus"][0] == ["well"]
 
 
 # Test Vectorizer ================================================== >>
 
 def test_vectorizer_space_separation():
     """Assert that the corpus is separated by space if not tokenized."""
-    assert "hi" in Vectorizer().fit_transform({"corpus": [["hi", "there"], ["hi"]]})
+    assert "corpus_hi" in Vectorizer().fit_transform({"corpus": [["hi"], ["hi"]]})
 
 
 def test_invalid_strategy():
@@ -166,21 +168,26 @@ def test_strategies(strategy):
     """Assert that the BOW and TF-IDF strategies works as intended."""
     X = Vectorizer(strategy=strategy).fit_transform(X_text)
     assert X.shape == (10, 20)
-    assert "york" in X
+    assert "corpus_york" in X
 
 
 def test_hashing():
     """Assert that the Hashing strategy works as intended."""
     X = Vectorizer(strategy="Hashing", n_features=10).fit_transform(X_text)
     assert X.shape == (10, 10)
-    assert "hash_1" in X
+    assert "hash0" in X
+
+
+@patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
+def test_gpu():
+    """Assert that the gpu feature calls the get method of matrix."""
+    Vectorizer(gpu=True).fit_transform(X_text)
 
 
 def test_return_sparse():
     """Assert that the output is sparse."""
     X = Vectorizer(strategy="bow", return_sparse=True).fit_transform(X_text, y10)
     assert all(pd.api.types.is_sparse(X[c]) for c in X.columns)
-    assert "target_bow" in X
 
 
 def test_error_sparse_with_dense():
@@ -197,4 +204,3 @@ def test_sparse_with_dense():
     atom.apply(lambda x: 1, columns="new")  # Create dense column
     atom.vectorize(strategy="BOW", return_sparse=False)
     assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)
-    assert "new_bow" in atom

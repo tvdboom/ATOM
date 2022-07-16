@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/API/feature_engineering/feature_selector/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/feature_engineering/feature_selector/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -810,8 +810,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../../data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -969,8 +969,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../../nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -2037,20 +2037,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2081,6 +2067,20 @@
     <li class="md-nav__item">
       <a href="../../plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2884,7 +2884,7 @@
 solver=None, n_features=None, max_frac_repeated=1., max_correlation=1.,
 n_jobs=1, gpu=False, verbose=0, logger=None, random_state=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L496">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L515">[source]</a>
 </span>
 </div>
 
@@ -2985,10 +2985,11 @@ variance, i.e. remove the features that have the same value in all
 samples. If None, skip this step.
 <p>
 <strong>max_correlation: float or None, optional (default=1.)</strong><br>
-Minimum <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation coefficient</a>
-to identify correlated features. For each pair above the specified
-limit (in terms of absolute value), it removes one of the two. The
-default is to drop one of two equal columns. If None, skip this step.
+Minimum absolute <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation</a>
+to identify correlated features. For each group, it removes all except
+the feature with the highest correlation to `y` (if provided, else it
+removes all but the first). The default value removes equal columns. If
+None, skip this step.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
@@ -3005,7 +3006,7 @@ Train strategy on GPU (instead of CPU). Only for strategy="pca".
 <li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -3041,6 +3042,12 @@ examine how much a specific feature contributes to the final predictions. If the
 model doesn't have a <code>feature_importances_</code> attribute, use 
 <a href="../../plots/plot_permutation_importance/">plot_permutation_importance</a> instead.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Be aware that, for strategy="rfecv", the <code>n_features</code> parameter is the
+<strong>minimum</strong> number of features to select, not the actual number of features
+that the transformer returns. It may very well be that it returns more!</p>
+</div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
 <h3 id="utility-attributes">Utility attributes</h3>
@@ -3051,9 +3058,9 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <strong>collinear: pd.DataFrame</strong><br>
 Information on the removed collinear features. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
-<li><b>drop_feature:</b> Name of the feature dropped by the method.</li>
-<li><b>correlated feature:</b> Name of the correlated feature(s).</li>
-<li><b>correlation_value:</b> Pearson correlation coefficients of the feature pairs.</li>
+<li><b>drop:</b> Name of the dropped feature.</li>
+<li><b>corr_feature:</b> Name of the correlated feature(s).</li>
+<li><b>corr_value:</b> Corresponding correlation coefficient(s).</li>
 </ul>
 <p>
 <strong>feature_importance: list</strong><br>
@@ -3065,6 +3072,14 @@ estimator fitted on the reduced set.
 <strong>&lt;strategy&gt;: sklearn transformer</strong><br>
 Object used to transform the data, e.g. <code>feature_selector.pca</code>
 for the pca strategy.
+</p>
+<p>
+<strong>feature_names_in_: np.array</strong><br>
+Names of features seen during fit.
+</p>
+<p>
+<strong>n_features_in_: int</strong><br>
+Number of features seen during fit.
 </p>
 </td>
 </tr>
@@ -3161,7 +3176,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L674">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L698">[source]</a>
 </span>
 </div>
 <p>Fit to data. Note that the univariate, sfm (when model is not fitted),
@@ -3195,7 +3210,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
 </span>
 </div>
 <p>Fit to data, then transform it. Note that the univariate, sfm (when
@@ -3257,7 +3272,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3282,7 +3297,7 @@ Minimum verbosity level to print the message.
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L489">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L486">[source]</a>
 </span>
 </div>
 <p>Plot the explained variance ratio vs the number of components.
@@ -3293,7 +3308,7 @@ See <a href="../../plots/plot_pca">plot_pca</a> for a description of the paramet
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>
 (show=None, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L564">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L561">[source]</a>
 </span>
 </div>
 <p>Plot the explained variance ratio per components. See
@@ -3304,7 +3319,7 @@ See <a href="../../plots/plot_pca">plot_pca</a> for a description of the paramet
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L642">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L639">[source]</a>
 </span>
 </div>
 <p>Plot the scores obtained by the estimator fitted on every subset of the
@@ -3314,7 +3329,7 @@ data. See <a href="../../plots/plot_rfecv">plot_rfecv</a> for a description of t
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L212">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L213">[source]</a>
 </span>
 </div>
 <p>Reset the <a href="../../../user_guide/plots/#aesthetics">plot aesthetics</a> to their default values.
@@ -3323,7 +3338,7 @@ data. See <a href="../../plots/plot_rfecv">plot_rfecv</a> for a description of t
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3365,7 +3380,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1026">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1065">[source]</a>
 </span>
 </div>
 <p>Transform the data.</p>

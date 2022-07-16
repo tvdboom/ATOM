@@ -19,7 +19,7 @@ from skopt.space.space import Categorical, Integer
 from atom.training import DirectClassifier, DirectRegressor
 from atom.utils import CUSTOM_SCORERS, PlotCallback
 
-from .utils import (
+from .conftest import (
     bin_test, bin_train, class_test, class_train, mnist, reg_test, reg_train,
 )
 
@@ -494,7 +494,7 @@ def test_close_plot_after_error():
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert PlotCallback.c == 1  # First model is 0, after error passes to 1
+    assert PlotCallback.c > 0  # First model is 0, after error passes to 1
 
 
 def test_one_model_failed():

@@ -13,7 +13,7 @@ import pytest
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import merge
 
-from .utils import X_bin, X_bin_array, X_class, mnist, y_bin, y_bin_array
+from .conftest import X_bin, X_bin_array, X_class, mnist, y_bin, y_bin_array
 
 
 # Test __init__ ==================================================== >>

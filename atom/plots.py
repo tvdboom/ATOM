@@ -9,8 +9,8 @@ Description: Module containing the plotting classes.
 
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import reduce
 from importlib.util import find_spec
-from inspect import signature
 from itertools import chain, cycle
 from typing import Optional, Tuple, Union
 
@@ -21,7 +21,6 @@ import seaborn as sns
 import shap
 from joblib import Parallel, delayed
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
-from matplotlib.patches import ConnectionStyle
 from matplotlib.ticker import MaxNLocator
 from matplotlib.transforms import blended_transform_factory
 from mlflow.tracking import MlflowClient
@@ -30,6 +29,9 @@ from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
 )
+from schemdraw import Drawing
+from schemdraw.flow import Data, RoundBox, Subroutine, Wire
+from schemdraw.util import Point
 from scipy import stats
 from scipy.stats.mstats import mquantiles
 from sklearn.calibration import calibration_curve
@@ -41,7 +43,6 @@ from sklearn.utils import _safe_indexing
 from typeguard import typechecked
 from wordcloud import WordCloud
 
-from atom.basetransformer import BaseTransformer
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
     check_is_fitted, check_predict_proba, composed, crash, get_best_score,
@@ -245,7 +246,7 @@ class BasePlotter:
             return BasePlotter._fig.figure
 
     def _get_subclass(self, models, max_one=False, ensembles=True):
-        """Check and return the provided parameter models.
+        """Return model subclasses.
 
         Parameters
         ----------
@@ -260,18 +261,12 @@ class BasePlotter:
             If False, drop ensemble models automatically.
 
         """
-        models = self._get_models(models)
-        ensembles = () if ensembles else ("Vote", "Stack")
+        models = list(self._models[self._get_models(models, ensembles)].values())
 
-        model_subclasses = []
-        for m in self._models.values():
-            if m.name in models and m.acronym not in ensembles:
-                model_subclasses.append(m)
+        if max_one and len(models) > 1:
+            raise ValueError("This plot only accepts one model!")
 
-        if max_one and len(model_subclasses) > 1:
-            raise ValueError("This plot method allows only one model at a time!")
-
-        return model_subclasses[0] if max_one else model_subclasses
+        return models[0] if max_one else models
 
     def _get_metric(self, metric):
         """Check and return the index of the provided metric."""
@@ -413,6 +408,8 @@ class BasePlotter:
                 fig.tight_layout()
             if kwargs.get("filename"):
                 fig.savefig(name)
+
+            sns.set_style(self.style)  # Reset style
 
             # Log plot to mlflow run of every model visualized
             if self.experiment and self.log_plots:
@@ -615,7 +612,7 @@ class FSPlotter(BasePlotter):
         var = np.array(self.pca.explained_variance_ratio_)[:show]
         scr = pd.Series(
             data=var,
-            index=[f"component_{str(i)}" for i in range(1, len(var) + 1)],
+            index=[f"pca{str(i)}" for i in range(len(var))],
             dtype=float,
         ).sort_values()
 
@@ -731,6 +728,255 @@ class FSPlotter(BasePlotter):
 
 class BaseModelPlotter(BasePlotter):
     """Plots for the BaseModel class."""
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_pipeline(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        draw_hyperparameter_tuning: bool = True,
+        color_branches: Optional[bool] = None,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot a diagram of the pipeline.
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models for which to draw the pipeline. If None,
+            all pipelines are plotted.
+
+        draw_hyperparameter_tuning: bool, optional (default=True)
+            Whether to draw if the models used Hyperparameter Tuning.
+
+        color_branches: bool or None, optional (default=None)
+            Whether to draw every branch in a different color. If None,
+            branches are colored when there is more than one.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the pipeline drawn.
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+
+        def get_length(pl, i):
+            """Get the maximum length of the name of a block."""
+            if len(pl) > i:
+                return max(len(pl[i].__class__.__name__) * 0.5, 7)
+            else:
+                return 0
+
+        def check_y(xy):
+            """Return y unless there is something right, then jump."""
+            while any(pos[0] > xy[0] and pos[1] == xy[1] for pos in positions.values()):
+                xy = Point((xy[0], xy[1] + height))
+
+            return xy[1]
+
+        def add_wire(x, y):
+            """Draw a connecting wire between two estimators."""
+            d.add(
+                Wire(shape="z", k=(x - d.here[0]) / (length + 1), arrow="->")
+                .to((x, y))
+                .color(branch["color"])
+            )
+
+            # Update arrowhead manually
+            d.elements[-1].segments[-1].arrowwidth = 0.3
+            d.elements[-1].segments[-1].arrowlength = 0.5
+
+        models = self._get_subclass(models)
+        palette = cycle(sns.color_palette())
+
+        # Define branches to plot
+        branches = []
+        for branch in self._branches.min("og").values():
+            draw_models, draw_ensembles = [], []
+            for m in models:
+                if m.name in branch._get_depending_models():
+                    if m.acronym not in ("Stack", "Vote"):
+                        draw_models.append(m)
+                    else:
+                        draw_ensembles.append(m)
+
+                        # Additionally, add all dependent models (if not already there)
+                        draw_models.extend(
+                            [i for i in m._models.values() if i not in draw_models]
+                        )
+
+            if not models or draw_models:
+                branches.append(
+                    {
+                        "name": branch.name,
+                        "pipeline": list(branch.pipeline),
+                        "models": draw_models,
+                        "ensembles": draw_ensembles,
+                    }
+                )
+
+        # Define colors per branch
+        colors = {}
+        for branch in branches:
+            if color_branches or (color_branches is None and len(branches) > 1):
+                colors[branch["name"]] = branch["color"] = next(palette)
+            else:
+                branch["color"] = "black"
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        sns.set_style("white")  # Only for this plot
+
+        # Create schematic drawing
+        d = Drawing(unit=1, backend="matplotlib")
+        d.config(fontsize=self.label_fontsize)
+        d.add(Subroutine(w=8, s=0.7).label("Raw data"))
+
+        height = 3  # Height of every block
+        length = 5  # Minimal arrow length
+
+        # Define the x-position for every block
+        x_pos = [d.here[0] + length]
+        for i in range(max(len(b["pipeline"]) for b in branches)):
+            len_block = reduce(max, [get_length(b["pipeline"], i) for b in branches])
+            x_pos.append(x_pos[-1] + length + len_block)
+
+        # Add positions for hyperparameter tuning and models
+        x_pos.append(x_pos[-1])
+        if draw_hyperparameter_tuning and any(not m.bo.empty for m in models):
+            x_pos[-1] = x_pos[-2] + length + 11
+
+        positions = {0: d.here}  # Contains the position of every element
+        for branch in branches:
+            d.here = positions[0]
+
+            for i, est in enumerate(branch["pipeline"]):
+                # If the estimator has already been seen, don't draw
+                if id(est) in positions:
+                    # Change location to estimator's end
+                    d.here = positions[id(est)]
+                    continue
+
+                # Draw transformer
+                add_wire(x_pos[i], check_y(d.here))
+                d.add(
+                    RoundBox(w=max(len(est.__class__.__name__) * 0.5, 7))
+                    .label(est.__class__.__name__, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(est)] = d.here
+
+            for model in branch["models"]:
+                # Position at last transformer or at start
+                if branch["pipeline"]:
+                    d.here = positions[id(est)]
+                else:
+                    d.here = positions[0]
+
+                # Draw hyperparameter tuning
+                if draw_hyperparameter_tuning and not model.bo.empty:
+                    add_wire(x_pos[-2], check_y(d.here))
+                    d.add(
+                        Data(w=11)
+                        .label("Hyperparameter\nTuning", color="k")
+                        .color(branch["color"])
+                        .drop("E")
+                    )
+
+                # Remove classifier/regressor from model's name
+                name = model.estimator.__class__.__name__
+                if name.lower().endswith("classifier"):
+                    name = name[:-10]
+                elif name.lower().endswith("regressor"):
+                    name = name[:-9]
+
+                # For a single branch, center models
+                if len(branches) == 1:
+                    offset = height * (len(branch["models"]) - 1) / 2
+                else:
+                    offset = 0
+
+                # Draw model
+                add_wire(x_pos[-1], check_y((d.here[0], d.here[1] - offset)))
+                d.add(
+                    Data(w=max(len(name) * 0.5, 7))
+                    .label(name, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(model)] = d.here
+
+        # Draw ensembles
+        max_pos = max(pos[0] for pos in positions.values())  # Max length model names
+        for branch in branches:
+            for model in branch["ensembles"]:
+                # Determine y-position of the ensemble
+                y_pos = [positions[id(m)][1] for m in model._models.values()]
+                offset = height / 2 * (len(branch["ensembles"]) - 1)
+                y = min(y_pos) + (max(y_pos) - min(y_pos)) * 0.5 - offset
+                y = check_y((max_pos + length, max(min(y_pos), y)))
+
+                d.here = (max_pos + length, y)
+
+                d.add(
+                    Data(w=max(len(model.fullname) * 0.5, 7))
+                    .label(model.fullname, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(model)] = d.here
+
+                # Draw a wire from every model to the ensemble
+                for m in model._models.values():
+                    d.here = positions[id(m)]
+                    add_wire(max_pos + length, y)
+
+        bbox = d.get_bbox()
+        figure = d.draw(ax=ax, showframe=False, show=False)
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        plt.axis("off")
+
+        # Draw lines for legend (outside plot)
+        for k, v in colors.items():
+            plt.plot((-9e9, -9e9), (-9e9, -9e9), color=v, lw=2, zorder=-2, label=k)
+
+        BasePlotter._fig._used_models.extend(models)
+        return self._plot(
+            fig=figure.fig,
+            ax=figure.ax,
+            title=title,
+            xlim=xlim,
+            ylim=(ylim[0] - 2, ylim[1] + 2),
+            legend=("upper left", 6) if colors else None,
+            figsize=figsize or (bbox.xmax // 4, 2.5 + (bbox.ymax - bbox.ymin + 1) // 4),
+            plotname="plot_pipeline",
+            filename=filename,
+            display=display,
+        )
 
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
@@ -3272,8 +3518,8 @@ class BaseModelPlotter(BasePlotter):
         """
         if getattr(BasePlotter._fig, "is_canvas", None):
             raise PermissionError(
-                "The force_plot method can not be called from a "
-                "canvas because of incompatibility of the APIs."
+                "The force_plot method can not be called from a canvas "
+                "because of incompatibility between the ATOM and shap API."
             )
 
         check_dim(self, "force_plot")
@@ -3293,7 +3539,6 @@ class BaseModelPlotter(BasePlotter):
             **kwargs,
         )
 
-        sns.set_style(self.style)  # Reset style
         if kwargs.get("matplotlib"):
             BasePlotter._fig._used_models.append(m)
             return self._plot(
@@ -3304,6 +3549,7 @@ class BaseModelPlotter(BasePlotter):
                 display=display,
             )
         else:
+            sns.set_style(self.style)  # Reset style
             if filename:  # Save to a html file
                 if not filename.endswith(".html"):
                     filename += ".html"
@@ -3574,11 +3820,7 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots.waterfall(
-            explanation,
-            max_display=show,
-            show=True if shap.__version__ == "0.40.0" else False,
-        )
+        shap.plots.waterfall(explanation, max_display=show, show=False)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
@@ -4189,133 +4431,6 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             legend=("lower right", 1),
             figsize=figsize or (10, 4 + show // 2),
             plotname="plot_ngrams",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, typechecked)
-    def plot_pipeline(
-        self,
-        model: Optional[str] = None,
-        show_params: bool = True,
-        title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot a diagram of a model's pipeline.
-
-        Parameters
-        ----------
-        model: str or None, optional (default=None)
-            Model from which to plot the pipeline. If no model is
-            specified, the current pipeline is plotted.
-
-        show_params: bool, optional (default=True)
-            Whether to show the parameters used for every estimator.
-
-        title: str or None, optional (default=None)
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the length of the pipeline.
-
-        filename: str or None, optional (default=None)
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, optional (default=True)
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        # Define pipeline to plot
-        if not model:
-            pipeline = self.branch.pipeline.tolist()
-        else:
-            model = self._models[self._get_model_name(model)[0]]
-            pipeline = model.branch.pipeline.tolist() + [model.estimator]
-
-        # Calculate figure's limits
-        params = []
-        ylim = 30
-        for est in pipeline:
-            ylim += 15
-            if show_params:
-                params.append(
-                    [
-                        param for param in signature(est.__init__).parameters
-                        if param not in ["self"] + BaseTransformer.attrs
-                    ]
-                )
-                ylim += len(params[-1]) * 10
-
-        sns.set_style("white")  # Only for this plot
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-
-        # Shared parameters for the blocks
-        con = ConnectionStyle("angle", angleA=0, angleB=90, rad=0)
-        arrow = dict(arrowstyle="<|-", lw=1, color="k", connectionstyle=con)
-
-        # Draw the main class
-        ax.text(
-            x=20,
-            y=ylim - 20,
-            s=self.__class__.__name__,
-            ha="center",
-            size=self.label_fontsize + 2,
-        )
-
-        pos_param = ylim - 20
-        pos_estimator = pos_param
-
-        for i, est in enumerate(pipeline):
-            ax.annotate(
-                text=est.__class__.__name__,
-                xy=(15, pos_estimator),
-                xytext=(30, pos_param - 3 - 15),
-                ha="left",
-                size=self.label_fontsize,
-                arrowprops=arrow,
-            )
-
-            pos_param -= 15
-            pos_estimator = pos_param
-
-            if show_params:
-                for j, key in enumerate(params[i]):
-                    # The param isn't always an attr of the class
-                    if hasattr(est, key):
-                        ax.annotate(
-                            text=f"{key}: {getattr(est, key)}",
-                            xy=(32, pos_param - 6 if j == 0 else pos_param + 1),
-                            xytext=(40, pos_param - 12),
-                            ha="left",
-                            size=self.label_fontsize - 4,
-                            arrowprops=arrow,
-                        )
-                        pos_param -= 10
-
-        ax.axes.get_xaxis().set_ticks([])
-        ax.axes.get_yaxis().set_ticks([])
-        plt.axis("off")
-
-        sns.set_style(self.style)  # Set back to original style
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            xlim=(0, 100),
-            ylim=(0, ylim),
-            figsize=figsize or (8, ylim // 30),
-            plotname="plot_pipeline",
             filename=filename,
             display=display,
         )

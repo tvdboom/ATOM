@@ -54,6 +54,11 @@ class Pipeline(pipeline.Pipeline):
     def __init__(self, steps, *, memory=None, verbose=False):
         super().__init__(steps, memory=memory, verbose=verbose)
 
+        # Set up cache memory objects
+        memory = check_memory(self.memory)
+        self._memory_fit = memory.cache(fit_transform_one)
+        self._memory_transform = memory.cache(transform_one)
+
         # If all estimators are fitted, Pipeline is fitted
         self._is_fitted = False
         if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
@@ -75,9 +80,6 @@ class Pipeline(pipeline.Pipeline):
     def _fit(self, X=None, y=None, **fit_params_steps):
         self.steps = list(self.steps)
         self._validate_steps()
-        memory = check_memory(self.memory)
-
-        fit_transform_one_cached = memory.cache(fit_transform_one)
 
         for (step_idx, name, transformer) in self._iter(False, False, False):
             if transformer is None or transformer == "passthrough":
@@ -85,7 +87,7 @@ class Pipeline(pipeline.Pipeline):
                     continue
 
             if hasattr(transformer, "transform"):
-                if memory.location is None:
+                if self._memory_fit.__class__.__name__ == "NotMemorizedFunc":
                     # Don't clone when caching is disabled to
                     # preserve backward compatibility
                     cloned = transformer
@@ -98,7 +100,7 @@ class Pipeline(pipeline.Pipeline):
                             setattr(cloned, attr, getattr(transformer, attr))
 
                 # Fit or load the current estimator from cache
-                X, y, fitted_transformer = fit_transform_one_cached(
+                X, y, fitted_transformer = self._memory_fit(
                     transformer=cloned,
                     X=X,
                     y=y,
@@ -206,7 +208,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, name, transformer in self._iter(with_final=False):
-            X, _ = transform_one(transformer, X)
+            X, _ = self._memory_transform(transformer, X)
 
         return self.steps[-1][-1].predict(X, **predict_params)
 
@@ -226,7 +228,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = transform_one(transformer, X)
+            X, _ = self._memory_transform(transformer, X)
 
         return self.steps[-1][-1].predict_proba(X)
 
@@ -246,7 +248,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = transform_one(transformer, X)
+            X, _ = self._memory_transform(transformer, X)
 
         return self.steps[-1][-1].predict_log_proba(X)
 
@@ -266,7 +268,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = transform_one(transformer, X)
+            X, _ = self._memory_transform(transformer, X)
 
         return self.steps[-1][-1].decision_function(X)
 
@@ -294,13 +296,14 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, y = transform_one(transformer, X, y)
+            X, y = self._memory_transform(transformer, X, y)
 
         return self.steps[-1][-1].score(X, y, sample_weight=sample_weight)
 
     def _can_transform(self):
-        return self._final_estimator == "passthrough" or hasattr(
-            self._final_estimator, "transform"
+        return (
+            self._final_estimator == "passthrough"
+            or hasattr(self._final_estimator, "transform")
         )
 
     @available_if(_can_transform)
@@ -336,6 +339,42 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter():
-            X, y = transform_one(transformer, X, y)
+            X, y = self._memory_transform(transformer, X, y)
+
+        return variable_return(X, y)
+
+    def _can_inverse_transform(self):
+        return all(hasattr(t, "inverse_transform") for _, _, t in self._iter())
+
+    @available_if(_can_inverse_transform)
+    def inverse_transform(self, X=None, y=None):
+        """Inverse transform for each step in a reverse order.
+
+        All estimators in the pipeline must implement the
+        `inverse_transform` method.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, optional (default=None)
+            Feature set with shape=(n_samples, n_features). None
+            if the pipeline only uses y.
+
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed feature set. Only returned if provided.
+
+        pd.Series
+            Transformed target column. Only returned if provided.
+
+        """
+        for _, _, transformer in reversed(list(self._iter())):
+            X, y = self._memory_transform(transformer, X, y, method="inverse_transform")
 
         return variable_return(X, y)

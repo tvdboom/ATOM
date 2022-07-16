@@ -976,7 +976,7 @@ class ExtraTrees(BaseModel):
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
-                categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
+                categories=["sqrt", "log2", *half_to_one_exc, None],
                 name="max_features",
             ),
             Categorical([True, False], name="bootstrap"),
@@ -1028,7 +1028,7 @@ class RandomForest(BaseModel):
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Categorical(
-                categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
+                categories=["sqrt", "log2", *half_to_one_exc, None],
                 name="max_features",
             ),
             Categorical([True, False], name="bootstrap"),

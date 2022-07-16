@@ -1,20 +1,20 @@
-# Gauss
--------
+# Normalizer
+------------
 
 <div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Gauss</strong>(strategy="yeojohnson",
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Normalizer</strong>(strategy="yeojohnson",
 verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L324">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L381">[source]</a>
 </span>
 </div>
 
-Transform the data to follow a Gaussian distribution. This
+Transform the data to follow a Normal/Gaussian distribution. This
 transformation is useful for modeling issues related to
 heteroscedasticity (non-constant variance), or other situations
 where normality is desired. Missing values are disregarded in
 fit and maintained in transform. Categorical columns are ignored.
-This class can be accessed from atom through the [gauss](../../ATOM/atomclassifier/#gauss)
+This class can be accessed from atom through the [normalize](../../ATOM/atomclassifier/#normalize)
 method. Read more in the [user guide](../../../user_guide/data_cleaning/#making-gaussian-like-features).
 
 <table style="font-size:16px">
@@ -29,7 +29,7 @@ The transforming strategy. Choose from:
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html">quantile</a>" (non-linear transformation)</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -76,8 +76,18 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
+<p>
 <strong>estimator: sklearn transformer</strong><br>
 Object with which the data is transformed.
+</p>
+<p>
+<strong>feature_names_in_: np.array</strong><br>
+Names of features seen during fit.
+</p>
+<p>
+<strong>n_features_in_: int</strong><br>
+Number of features seen during fit.
+</p>
 </td>
 </tr>
 </table>
@@ -129,7 +139,7 @@ Object with which the data is transformed.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L390">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L453">[source]</a></span></div>
 Fit to data.
 <table style="font-size:16px">
 <tr>
@@ -148,7 +158,7 @@ Does nothing. Implemented for continuity of the API.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>Gauss</strong><br>
+<strong>Normalizer</strong><br>
 Fitted instance of self.
 </tr>
 </table>
@@ -157,7 +167,7 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a></span></div>
 Fit to data, then transform it.
 <table style="font-size:16px">
 <tr>
@@ -177,7 +187,7 @@ Does nothing. Implemented for continuity of the API.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>X: pd.DataFrame</strong><br>
-Scaled feature set.
+Normalized feature set.
 </tr>
 </table>
 <br />
@@ -217,7 +227,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -243,7 +253,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -277,7 +287,7 @@ Estimator parameters.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>Gauss</strong><br>
+<strong>Normalizer</strong><br>
 Estimator instance.
 </td>
 </tr>
@@ -287,7 +297,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L438">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L503">[source]</a></span></div>
 Apply the transformations to the data.
 <table style="font-size:16px">
 <tr>
@@ -321,14 +331,14 @@ Transformed feature set.
     from atom import ATOMRegressor
     
     atom = ATOMRegressor(X, y)
-    atom.gauss()
+    atom.normalize()
     ```
 
 === "stand-alone"
     ```python
-    from atom.data_cleaning import Gauss
+    from atom.data_cleaning import Normalizer
     
-    gauss = Gauss()
-    gauss.fit(X_train)
-    X = gauss.transform(X)
+    normalizer = Normalizer()
+    normalizer.fit(X_train)
+    X = normalizer.transform(X)
     ```

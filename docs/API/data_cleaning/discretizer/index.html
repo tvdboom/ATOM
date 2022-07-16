@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/API/data_cleaning/discretizer/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/data_cleaning/discretizer/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -812,8 +812,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../gauss/" class="md-nav__link">
-        Gauss
+      <a href="../normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -886,6 +886,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
@@ -1019,8 +1026,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../../nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -2010,20 +2017,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2054,6 +2047,20 @@
     <li class="md-nav__item">
       <a href="../../plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2796,6 +2803,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
   </a>
@@ -2829,7 +2843,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Discretizer</strong>(strategy="quantile",
 bins=5, labels=None, gpu=False, verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L966">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1173">[source]</a>
 </span>
 </div>
 <p>Bin continuous data into intervals. For each feature, the bin edges
@@ -2873,7 +2887,7 @@ Train estimator on GPU (instead of CPU). Not for strategy="custom".
 <li>If "force": Force GPU implementation.</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -2899,6 +2913,23 @@ class to convert them back to numerical types.</p>
 <p>If strategy="custom", the columns returned can contain <code>NaN</code> if the values
 lie outside the specified bin edges.</p>
 </div>
+<p><br></p>
+<h2 id="attributes">Attributes</h2>
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>feature_names_in_: np.array</strong><br>
+Names of features seen during fit.
+</p>
+<p>
+<strong>n_features_in_: int</strong><br>
+Number of features seen during fit.
+</p>
+</td>
+</tr>
+</table>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size:16px">
@@ -2941,7 +2972,7 @@ lie outside the specified bin edges.</p>
 <p><br></p>
 <p><a name="fit"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1039">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1236">[source]</a></span></div>
 <p>Fit to data.</p>
 <table style="font-size:16px">
 <tr>
@@ -2967,7 +2998,7 @@ Fitted instance of self.
 <p><br /></p>
 <p><a name="fit-transform"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a></span></div>
 <p>Fit to data, then transform it. Note that leaving y=None can lead
 to errors if the <code>strategy</code> encoder requires target values.</p>
 <table style="font-size:16px">
@@ -3024,7 +3055,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -3048,7 +3079,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -3088,7 +3119,7 @@ Estimator instance.
 <p><br /></p>
 <p><a name="transform"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1144">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1361">[source]</a></span></div>
 <p>Bin the data into intervals.</p>
 <table style="font-size:16px">
 <tr>

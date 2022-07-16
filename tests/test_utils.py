@@ -54,6 +54,7 @@ def test_custom_dict_key_request():
     cd = CustomDict({"A": 0, "B": 1, "C": 2})
     assert cd["a"] == cd["A"] == cd[0] == 0
     assert cd[["a", "b"]] == CustomDict({"A": 0, "B": 1})
+    assert cd[[1, 2]] == CustomDict({"B": 1, "C": 2})
     with pytest.raises(KeyError):
         print(cd[1.2])
 
@@ -85,3 +86,5 @@ def test_custom_dict_manipulations():
     assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'f': 3, 'e': 4}"
     cd.replace_value("f", 6)
     assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'f': 6, 'e': 4}"
+    del cd[2]
+    assert "c" not in cd

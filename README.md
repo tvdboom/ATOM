@@ -141,7 +141,7 @@ to sklearn's API, they are initialized providing the data you want to
 manipulate.
 
 ```python
-atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.3, verbose=2, warnings=False)
+atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.3, verbose=2)
 ```
 
 Data transformations are applied through atom's methods. For example,

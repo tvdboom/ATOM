@@ -13,6 +13,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from category_encoders.leave_one_out import LeaveOneOutEncoder
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel
@@ -29,9 +30,10 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.data_cleaning import Pruner, Scaler
 from atom.utils import check_scaling
 
-from .utils import (
-    FILE_DIR, X10, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin, X_class,
-    X_reg, X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class, y_reg,
+from .conftest import (
+    X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
+    X_class, X_reg, X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class,
+    y_reg,
 )
 
 
@@ -51,8 +53,8 @@ def test_task_assignment():
 
 def test_raise_one_target_value():
     """Assert that error raises when there is only 1 target value."""
-    y = [1 for _ in range(len(y_bin))]  # All targets are equal to 1
-    pytest.raises(ValueError, ATOMClassifier, X_bin, y, random_state=1)
+    with pytest.raises(ValueError, match=r".*1 target value.*"):
+        ATOMClassifier(X_bin, [1 for _ in range(len(y_bin))], random_state=1)
 
 
 # Test magic methods =============================================== >>
@@ -267,7 +269,7 @@ def test_automl_invalid_scoring():
 
 
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
-@pytest.mark.parametrize("columns", ["feature_1", 1, None])
+@pytest.mark.parametrize("columns", ["x0", 1, None])
 def test_distribution(distributions, columns):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
@@ -341,14 +343,14 @@ def test_reset():
     atom.run("LR")
     atom.reset()
     assert not atom.models and len(atom._branches) == 1
-    assert atom["feature_3"].dtype.name == "object"  # Is reset back to str
+    assert atom["x2"].dtype.name == "object"  # Is reset back to str
 
 
 def test_save_data():
     """Assert that the dataset is saved to a csv file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save_data(FILE_DIR + "auto")
-    assert glob.glob(FILE_DIR + "ATOMClassifier_dataset.csv")
+    atom.save_data("auto")
+    assert glob.glob("ATOMClassifier_dataset.csv")
 
 
 def test_shrink_dtypes_excluded():
@@ -432,7 +434,7 @@ def test_transform_method():
     """ Assert that the transform method works as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
-    assert atom.transform(X10_str)["feature_3"].dtype.kind in "ifu"
+    assert atom.transform(X10_str)["x2"].dtype.kind in "ifu"
 
 
 def test_transform_not_train_only():
@@ -530,8 +532,8 @@ def test_add_transformer_only_y():
 def test_returned_column_already_exists():
     """Assert that an error is raised if an existing column is returned."""
     atom = ATOMClassifier(X_text, y10, random_state=1)
-    atom.apply(lambda x: 1, columns="new")
-    with pytest.raises(RuntimeError, match=r".*already exists in the original.*"):
+    atom.apply(lambda x: 1, columns="corpus_new")
+    with pytest.raises(ValueError, match=r".*already exists in the original.*"):
         atom.vectorize(columns="corpus")
 
 
@@ -544,29 +546,41 @@ def test_add_sparse_matrices():
 
 def test_add_keep_column_names():
     """Assert that the column names are kept after transforming."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
 
-    # When the columns are only transformed
+    # Transformer has method get_feature_names
+    atom.add(LeaveOneOutEncoder(return_df=False))
+    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
+
+    # Transformer has method get_feature_names_out
     atom.add(StandardScaler())
-    assert atom.features.tolist() == list(X_bin)
+    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
 
-    # When columns were removed
-    atom.add(SelectFromModel(RandomForestClassifier()))
-    assert all(col in list(X_bin) for col in atom.features)
+    # Transformer keeps rows equal
+    atom.add(DummyTransformer(strategy="equal"))
+    assert atom.features.tolist() == ["x0", "x1", "x2", "x3"]
+
+    # Transformer drops rows
+    atom.add(DummyTransformer(strategy="drop"))
+    assert atom.features.tolist() == ["x0", "x2", "x3"]
+
+    # Transformer adds rows
+    atom.add(DummyTransformer(strategy="add"), columns="!x2")
+    assert atom.features.tolist() == ["x0", "x2", "x3", "x4"]
 
 
 def test_raise_length_mismatch():
     """Assert that an error is raised when there's a mismatch in row length."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*does not match length.*"):
+    with pytest.raises(IndexError, match=r".*does not match length.*"):
         atom.prune(columns=[2, 4])
 
 
 def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.encode(columns="feature_3")
-    assert list(atom.columns[2:5]) == ["feature_3_a", "feature_3_b", "feature_3_c"]
+    atom.encode(columns="x2")
+    assert list(atom.columns[2:5]) == ["x2_a", "x2_b", "x2_c"]
 
 
 def test_add_sets_are_kept_equal():
@@ -616,7 +630,7 @@ def test_apply_same_column():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.apply(lambda x: 1, columns=0)
     assert atom["mean radius"].sum() == atom.shape[0]
-    assert str(atom.pipeline[0]).startswith("FuncTransformer(func=<lambda>")
+    assert str(atom.pipeline[0]).startswith("FunctionTransformer(func=<lambda>")
 
 
 def test_apply_new_column():
@@ -655,11 +669,11 @@ def test_scale():
     assert hasattr(atom, "standard")
 
 
-def test_gauss():
-    """Assert that the gauss method transforms the features."""
+def test_normalize():
+    """Assert that the normalize method transforms the features."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     X = atom.X.copy()
-    atom.gauss()
+    atom.normalize()
     assert not atom.X.equals(X)
     assert hasattr(atom, "yeojohnson")
 
@@ -734,10 +748,10 @@ def test_tokenize():
     assert atom["corpus"][0] == ["I", "àm", "in", "ne", "'", "w", "york"]
 
 
-def test_normalize():
-    """Assert that the normalize method normalizes the corpus."""
+def test_textnormalize():
+    """Assert that the textnormalize method normalizes the corpus."""
     atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
-    atom.normalize(stopwords=False, custom_stopwords=["yes"])
+    atom.textnormalize(stopwords=False, custom_stopwords=["yes"])
     assert atom["corpus"][0] == ["I", "àm", "in", "ne'w", "york"]
 
 
@@ -849,7 +863,7 @@ def test_scaling_is_passed():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.scale("minmax")
     atom.run("LGB")
-    assert atom.dataset.equals(atom.lgb.dataset)
+    pd.testing.assert_frame_equal(atom.dataset, atom.lgb.dataset)
 
 
 def test_errors_are_updated():
@@ -863,6 +877,14 @@ def test_errors_are_updated():
     # Subsequent runs should remove the original model
     atom.run(["Tree", "LGB"], n_calls=(5, 3), n_initial_points=(7, 1))
     assert atom.models == "LGB"
+
+
+def test_models_are_replaced():
+    """Assert that models with the same name are replaced."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(["OLS", "Tree"])
+    atom.run("OLS")
+    assert atom.models == ["Tree", "OLS"]
 
 
 def test_models_and_metric_are_updated():

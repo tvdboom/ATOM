@@ -12,9 +12,8 @@ return_sparse=True, verbose=0, logger=None, *kwargs)
 Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named `corpus`. If there
 is no column with that name, an exception is raised. The transformed
-columns are named after the word they are embedding (if the column is
-already present in the provided dataset, `_[strategy]` is added behind
-the name). This class can be accessed from atom through the
+columns are named after the word they are embedding with the prefix
+`corpus_`. This class can be accessed from atom through the
 [vectorize](../../ATOM/atomclassifier/#vectorize) method. Read more in
 the [user guide](../../../user_guide/nlp/#vectorization).
 
@@ -36,7 +35,7 @@ of sparse arrays. Must be False when there are other columns
 in X (besides <code>corpus</code>) that are non-sparse.
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Possible values are:
+Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -71,9 +70,19 @@ Additional keyword arguments for the <code>strategy</code> estimator.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
+<p>
 <strong>&lt;strategy>: sklearn estimator</strong><br>
 Object used to prune the data, e.g.<code>vectorizer.bow</code> for the
 Bag of Words strategy.
+</p>
+<p>
+<strong>feature_names_in_: np.array</strong><br>
+Names of features seen during fit.
+</p>
+<p>
+<strong>n_features_in_: int</strong><br>
+Number of features seen during fit.
+</p>
 </td>
 </tr>
 </table>
@@ -124,7 +133,7 @@ Bag of Words strategy.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L637">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L650">[source]</a></span></div>
 Fit to text.
 <table style="font-size:16px">
 <tr>
@@ -156,7 +165,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L101">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
 </span>
 </div>
 Fit to text, then vectorize it.
@@ -220,7 +229,7 @@ Parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L582">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -246,7 +255,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L603">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -292,7 +301,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L687">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L702">[source]</a>
 </span>
 </div>
 Normalize the text.

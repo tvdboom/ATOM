@@ -17,7 +17,7 @@ from atom.feature_engineering import (
 )
 from atom.utils import to_df
 
-from .utils import (
+from .conftest import (
     X10_dt, X10_str, X_bin, X_class, X_reg, X_sparse, y_bin, y_class, y_reg,
 )
 
@@ -40,42 +40,42 @@ def test_wrongly_converted_columns_are_ignored():
     """Assert that columns converted unsuccessfully are skipped."""
     extractor = FeatureExtractor()
     X = extractor.transform(X10_str)
-    assert "feature_3" in X.columns
+    assert "x2" in X.columns
 
 
 def test_datetime_features_are_used():
     """Assert that datetime64 features are used as is."""
     X = to_df(X10_dt.copy())
-    X["feature_3"] = pd.to_datetime(X["feature_3"])
+    X["x2"] = pd.to_datetime(X["x2"])
 
     extractor = FeatureExtractor(features="day")
     X = extractor.transform(X)
-    assert "feature_3_day" in X.columns
-    assert "feature_3" not in X.columns
+    assert "x2_day" in X.columns
+    assert "x2" not in X.columns
 
 
 def test_wrongly_converted_features_are_ignored():
     """Assert that wrongly converted features are ignored."""
     extractor = FeatureExtractor(features=["tz", "is_leap_year", "day"])
     X = extractor.transform(X10_dt)
-    assert "feature_2_tz" not in X.columns  # Not pd.Series.dt
+    assert "x1_tz" not in X.columns  # Not pd.Series.dt
 
 
 def test_ordinal_features():
     """Assert that ordinal features are created."""
     extractor = FeatureExtractor(features="day")
     X = extractor.transform(X10_dt)
-    assert "feature_3_day" in X.columns
-    assert "feature_3" not in X.columns
+    assert "x2_day" in X.columns
+    assert "x2" not in X.columns
 
 
 def test_order_features():
     """Assert that the new features are in the order provided."""
     extractor = FeatureExtractor()
     X = extractor.transform(X10_dt)
-    assert X.columns.get_loc("feature_3_day") == 2
-    assert X.columns.get_loc("feature_3_month") == 3
-    assert X.columns.get_loc("feature_3_year") == 4
+    assert X.columns.get_loc("x2_day") == 2
+    assert X.columns.get_loc("x2_month") == 3
+    assert X.columns.get_loc("x2_year") == 4
 
 
 @pytest.mark.parametrize("fxs", [
@@ -100,7 +100,7 @@ def test_features_are_not_dropped():
     """Assert that features are kept when drop_columns=False."""
     extractor = FeatureExtractor(drop_columns=False)
     X = extractor.transform(X10_dt)
-    assert "feature_3" in X.columns
+    assert "x2" in X.columns
 
 
 # Test FeatureGenerator ============================================ >>
@@ -184,12 +184,12 @@ def test_updated_dataset():
 def test_default_feature_names():
     """Assert that the new features get correct default names."""
     X = X_bin.copy()
-    X["feature_32"] = range(len(X))
+    X["x31"] = range(len(X))
 
     generator = FeatureGenerator(strategy="gfg", n_features=2, random_state=1)
     X = generator.fit_transform(X, y_bin)
-    assert "feature_31" not in X
-    assert "feature_34" in X and "feature_33" in X
+    assert "x30" not in X
+    assert "x32" in X and "x33" in X
 
 
 # Test FeatureSelector ============================================= >>
@@ -272,17 +272,23 @@ def test_remove_low_variance():
     assert X.shape[1] == X_bin.shape[1]
 
 
-def test_collinear_attribute():
-    """Assert that the collinear attribute is created."""
-    selector = FeatureSelector(max_correlation=0.6)
+def test_remove_collinear_without_y():
+    """Assert that the remove_collinear function works when y is provided."""
+    X = X_bin.copy()
+    X["valid"] = list(range(len(X)))
+    X["invalid"] = list(range(len(X)))
+    selector = FeatureSelector(max_correlation=1)
+    X = selector.fit_transform(X)
+    assert "valid" in X and "invalid" not in X
     assert hasattr(selector, "collinear")
 
 
-def test_remove_collinear():
-    """Assert that the remove_collinear function works as intended."""
+def test_remove_collinear_with_y():
+    """Assert that the remove_collinear function works when y is not provided."""
     selector = FeatureSelector(max_correlation=0.9)
-    X = selector.fit_transform(X_bin)
-    assert X.shape[1] == 20  # Originally 30
+    X = selector.fit_transform(X_bin, y_bin)
+    assert X.shape[1] < X_bin.shape[1]
+    assert hasattr(selector, "collinear")
 
 
 def test_solver_parameter_empty_univariate():
@@ -320,7 +326,7 @@ def test_pca_components():
     selector = FeatureSelector(strategy="pca", solver="arpack", n_features=5)
     X = selector.fit_transform(X_bin)
     assert selector.pca.svd_solver == "arpack"
-    assert "component_1" in X.columns
+    assert "pca0" in X.columns
 
 
 def test_pca_sparse_data():

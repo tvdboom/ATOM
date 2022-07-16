@@ -368,13 +368,14 @@ saving the class. The cleared attributes per model are:
 </div>
 Evaluate the model using cross-validation. This method cross-validates the
 whole pipeline on the complete dataset. Use it to assess the robustness of
-the solution's performance.
+the solution's performance. The return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
+function is stored under the `cv` attribute.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
+Additional keyword arguments for sklearn's cross_validate
 function. If the scoring method is not specified, it uses
 the trainer's metric.
 </td>
@@ -382,9 +383,8 @@ the trainer's metric.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>scores: dict</strong><br>
-Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function.
+<strong>pd.DataFrame</strong><br>
+Overview of the results.
 </td>
 </tr>
 </table>
@@ -439,7 +439,7 @@ Additional keyword arguments for the ExplainerDashboard instance.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>dashboard: <a href="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html">ExplainerDashboard</a></strong><br>
+<strong><a href="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html">ExplainerDashboard</a></strong><br>
 Created dashboard object.
 </td>
 </tr>
@@ -487,7 +487,7 @@ Sample weights corresponding to y in <code>dataset</code>.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>score: pd.Series</strong><br>
+<strong>pd.Series</strong><br>
 Scores of the model.
 </td>
 </tr>
@@ -546,7 +546,7 @@ method.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
-<strong>Pipeline</strong><br>
+<strong><a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a></strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
@@ -561,13 +561,18 @@ Current branch as a sklearn-like Pipeline object.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L789">[source]</a>
 </span>
 </div>
-In some cases it might be desirable to use all available data
-to train a final model. Note that doing this means that the
-estimator can no longer be evaluated on the test set. The newly
-retrained estimator will replace the `estimator` attribute. If
-there is an active mlflow experiment, a new run is started
-with the name `[model_name]_full_train`. Since the estimator
-changed, the model is [cleared](#clear).
+In some cases it might be desirable to use all available data to train
+a final model. Note that doing this means that the estimator can no
+longer be evaluated on the test set. The newly retrained estimator will
+replace the `estimator` attribute. If there is an active mlflow
+experiment, a new run is started with the name `[model_name]_full_train`.
+Since the estimator changed, the model is [cleared](#clear).
+
+!!! warning
+    Although the model is trained on the complete dataset, the pipeline
+    is not! To also get the fully trained pipeline, use: `pipeline = atom
+    .export_pipeline().fit(X, y)`.
+
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>

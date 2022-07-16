@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/user_guide/gpu/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/gpu/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -865,8 +865,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../../API/data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -1024,8 +1024,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../../API/nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -2015,20 +2015,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../API/plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2059,6 +2045,20 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2890,13 +2890,15 @@ take quite some time (usually up to 15min).</li>
 </li>
 <li>GPU: NVIDIA Pascal™ or better with <a href="https://developer.nvidia.com/cuda-gpus">compute capability</a> 6.0+</li>
 <li>CUDA &amp; NVIDIA Drivers: One of versions 11.0, 11.2, 11.4 or 11.5</li>
-<li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=0.15</li>
+<li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=22.06</li>
 </ul>
 <h2 id="transformers">Transformers</h2>
 <ul>
 <li><a href="../../API/data_cleaning/scaler">Scaler</a></li>
+<li><a href="../../API/data_cleaning/cleaner">Cleaner</a> (only for encode_target=True)</li>
 <li><a href="../../API/data_cleaning/imputer">Imputer</a> (not for strat_num="knn")</li>
 <li><a href="../../API/data_cleaning/discretizer">Discretizer</a> (not for strategy="custom")</li>
+<li><a href="../../API/nlp/vectorizer">Vectorizer</a></li>
 <li><a href="../../API/feature_engineering/feature_selector">FeatureSelector</a> (only for strategy="pca")</li>
 </ul>
 <h2 id="models">Models</h2>

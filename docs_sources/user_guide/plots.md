@@ -150,11 +150,6 @@ depend on the task at hand.
 </tr>
 
 <tr>
-<td><a href="../../API/plots/plot_pipeline">plot_pipeline</a></td>
-<td>Plot a diagram of every estimator in atom's pipeline.</td>
-</tr>
-
-<tr>
 <td><a href="../../API/plots/plot_pca">plot_pca</a></td>
 <td>Plot the explained variance ratio vs the number of components.</td>
 </tr>
@@ -167,6 +162,11 @@ depend on the task at hand.
 <tr>
 <td><a href="../../API/plots/plot_rfecv">plot_rfecv</a></td>
 <td>Plot the rfecv results.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_pipeline">plot_pipeline</a></td>
+<td>Plot a diagram of the pipeline.</td>
 </tr>
 
 <tr>

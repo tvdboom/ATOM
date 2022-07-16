@@ -6,7 +6,7 @@
 index=None, show=None, target=1, title=None, figsize=(14, 6),
 filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3215">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3461">[source]</a>
 </span>
 </div>
 
@@ -68,7 +68,12 @@ Plot object. Only returned if <code>display=None</code> and <code>matplotlib=Tru
 </td>
 </tr>
 </table>
-<br />
+
+!!! warning
+    This plot can not be called from a canvas because of incompatibility
+    between the ATOM and shap API.
+
+<br>
 
 
 

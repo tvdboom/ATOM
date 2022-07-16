@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/user_guide/data_cleaning/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/data_cleaning/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -590,8 +590,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#making-gaussian-like-features" class="md-nav__link">
-    Making Gaussian-like features
+  <a href="#normalizing-the-feature-set" class="md-nav__link">
+    Normalizing the feature set
   </a>
   
 </li>
@@ -900,8 +900,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../../API/data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -1059,8 +1059,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../../API/nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -2050,20 +2050,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../API/plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2094,6 +2080,20 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2843,8 +2843,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#making-gaussian-like-features" class="md-nav__link">
-    Making Gaussian-like features
+  <a href="#normalizing-the-feature-set" class="md-nav__link">
+    Normalizing the feature set
   </a>
   
 </li>
@@ -2945,14 +2945,14 @@ to check whether the dataset is scaled.</p>
 for further information about GPU implementation.</p>
 </div>
 <p><br></p>
-<h2 id="making-gaussian-like-features">Making Gaussian-like features</h2>
-<p>Use the <a href="../../API/data_cleaning/gauss">Gauss</a> class to transform the
-feature set to follow a Gaussian-like (or normal) distribution. In
-general, data must be transformed when using models that assume
-normality in the residuals. Examples of such models are
+<h2 id="normalizing-the-feature-set">Normalizing the feature set</h2>
+<p>Use the <a href="../../API/data_cleaning/normalizer">Normalizer</a> class to
+transform the feature set to follow a Normal (Gaussian)-like
+distribution. In general, data must be transformed when using models
+that assume normality in the residuals. Examples of such models are
 <a href="../../API/models/lr">Logistic Regression</a>, <a href="../../API/models/lda">Linear Discriminant Analysis</a>
 and <a href="../../API/models/gnb">Gaussian Naive Bayes</a>. The class can be
-accessed from atom through the <a href="../../API/ATOM/atomclassifier/#gauss">gauss</a>
+accessed from atom through the <a href="../../API/ATOM/atomclassifier/#normalize">normalize</a>
 method.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>

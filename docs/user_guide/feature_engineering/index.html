@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v4.13/user_guide/feature_engineering/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/feature_engineering/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
@@ -892,8 +892,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/data_cleaning/gauss/" class="md-nav__link">
-        Gauss
+      <a href="../../API/data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
       </a>
     </li>
   
@@ -1051,8 +1051,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/nlp/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../../API/nlp/textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -2042,20 +2042,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../API/plots/plot_pca/" class="md-nav__link">
         plot_pca
       </a>
@@ -2086,6 +2072,20 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_rfecv/" class="md-nav__link">
         plot_rfecv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
       </a>
     </li>
   
@@ -2930,7 +2930,7 @@ month, year, hour...) from the columns. It can be accessed from atom
 through the <a href="../../API/ATOM/atomclassifier/#feature-extraction">feature_extraction</a>
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
-they create, e.g. <code>feature_1_day</code> for the day element of <code>feature_1</code>.</p>
+they create, e.g. <code>x0_day</code> for the day element of <code>x0</code>.</p>
 <p>Note that many time features have a cyclic pattern, e.g. after Sunday
 comes Monday. This means that if we would encode the days of the week
 from 0 to 6, we would lose that relation. A common method used to encode
@@ -2943,7 +2943,7 @@ x_{sin} = sin\left(\frac{2\pi * x}{max(x)}\right)
 x_{cos} = cos\left(\frac{2\pi * x}{max(x)}\right)
 \]</div>
 <p>The resulting features have their names followed by sin or cos, e.g.
-<code>feature_1_day_sin</code> and <code>feature_1_day_cos</code>. The datetime elements
+<code>x0_day_sin</code> and <code>x0_day_cos</code>. The datetime elements
 that can be encoded in a cyclic fashion are: microsecond, second,
 minute, hour, weekday, day, day_of_year, month and quarter. Note that
 decision trees based algorithms build their split rules according to
@@ -3053,8 +3053,8 @@ arrays (scores, p-values). Read more in sklearn's <a href="https://scikit-learn.
 <p><a name="pca"></a>
 <strong>Principal Components Analysis</strong><br>
 Applying PCA reduces the dimensionality of the dataset by maximizing
-the variance of each dimension. The new features are called component_1,
-component_2, etc... PCA can be applied in three ways:</p>
+the variance of each dimension. The new features are called <code>pca0</code>,
+<code>pca1</code>, etc... PCA can be applied in three ways:</p>
 <ul>
 <li>If the data is dense (i.e. not sparse), the estimator used is <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html">PCA</a>.
   Before fitting the transformer, the data is scaled to mean=0 and std=1
