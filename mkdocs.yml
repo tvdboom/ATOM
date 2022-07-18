@@ -63,6 +63,9 @@ extra:
 
 plugins:
     - mkdocs-jupyter
+    - mkdocstrings
+    - mkdocs-jupyter
+        include_source: True
     - search
 
 markdown_extensions:
