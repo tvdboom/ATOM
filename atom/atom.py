@@ -19,6 +19,7 @@ from joblib.memory import Memory
 from scipy import stats
 from typeguard import typechecked
 
+from atom._version import __version__
 from atom.basepredictor import BasePredictor
 from atom.basetrainer import BaseTrainer
 from atom.basetransformer import BaseTransformer
@@ -40,7 +41,7 @@ from atom.training import (
 )
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Table,
-    __version__, check_dim, check_is_fitted, check_scaling, composed, crash,
+    check_dim, check_is_fitted, check_scaling, composed, crash,
     custom_transform, delete, divide, fit_one, flt, get_pl_name, infer_task,
     is_multidim, is_sparse, lst, method_to_log, names_from_estimator,
     variable_return,

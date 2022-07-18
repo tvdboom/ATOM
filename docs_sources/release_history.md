@@ -1,6 +1,12 @@
 # Release history
 -----------------
 
+<a name="v4141"></a>
+### Version 4.14.1
+
+* Fixed an installation issue with `conda`.
+
+
 <a name="v4140"></a>
 ### Version 4.14.0
 

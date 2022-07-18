@@ -36,8 +36,6 @@ from sklearn.utils import _print_elapsed_time, _safe_indexing
 
 # Global constants ================================================= >>
 
-__version__ = "4.14.0"
-
 SEQUENCE = (list, tuple, np.ndarray, pd.Series)
 
 # Variable types
