@@ -1428,12 +1428,12 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         "medium", "high"]}.
 
     frac_to_other: int, float or None, optional (default=None)
-        Replaces rare occurrences in categorical columns with the string
-        `other`. This transformation is done before the encoding of the
-        column.
+        Replaces rare occurrences in categorical columns with the
+        string `other`. This transformation is done before the encoding
+        of the column.
             - If None: Skip this step.
-            - If int: Maximum number of occurrences to replace a category.
-            - If float: Maximum fraction of occurrences to replace a category.
+            - If int: Minimum number of occurrences in a category.
+            - If float: Minimum fraction of occurrences in a category.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Choose from:
@@ -1588,7 +1588,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._categories, self._encoders = {}, {}
 
         for name, column in X[self._cat_cols].items():
-            # Convert uncommon classes to "other"
+            # Replace rare classes with the string "other"
             if self._frac_to_other:
                 for category, count in column.value_counts().items():
                     if count <= self._frac_to_other:

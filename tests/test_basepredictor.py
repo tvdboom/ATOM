@@ -513,18 +513,18 @@ def test_available_models():
     assert "BR" not in models["acronym"].unique()
 
 
-# def test_clear():
-#     """Assert that the clear method resets all model's attributes."""
-#     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-#     atom.run(["LR", "LGB"])
-#     atom.lgb.beeswarm_plot()
-#     assert atom.lr._pred[3] is not None
-#     assert atom.lr._scores["train"]
-#     assert not atom.lgb._shap._shap_values.empty
-#     atom.clear()
-#     assert atom.lr._pred == [None] * 15
-#     assert not atom.lr._scores["train"]
-#     assert atom.lgb._shap._shap_values.empty
+def test_clear():
+    """Assert that the clear method resets all model's attributes."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.lgb.beeswarm_plot()
+    assert atom.lr._pred[3] is not None
+    assert atom.lr._scores["train"]
+    assert not atom.lgb._shap._shap_values.empty
+    atom.clear()
+    assert atom.lr._pred == [None] * 15
+    assert not atom.lr._scores["train"]
+    assert atom.lgb._shap._shap_values.empty
 
 
 def test_delete_default():
