@@ -11,7 +11,7 @@ import re
 from setuptools import setup
 
 
-with open("atom/__init__.py", encoding="utf8") as f:
+with open("atom/_version.py", encoding="utf8") as f:
     version = re.search(r"^__version__ = \"([\d.]*)\"", f.read(), re.M).group(1)
 
 with open("README.md", encoding="utf8") as f:

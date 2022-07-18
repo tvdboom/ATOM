@@ -19,7 +19,7 @@ from joblib.memory import Memory
 from scipy import stats
 from typeguard import typechecked
 
-from atom import __version__
+from atom._version import __version__
 from atom.basepredictor import BasePredictor
 from atom.basetrainer import BaseTrainer
 from atom.basetransformer import BaseTransformer

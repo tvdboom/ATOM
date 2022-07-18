@@ -3,11 +3,9 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Import API and declare version.
+Description: Import API.
 
 """
 
+from atom._version import __version__
 from atom.api import ATOMClassifier, ATOMLoader, ATOMModel, ATOMRegressor
-
-
-__version__ = "4.14.1"
