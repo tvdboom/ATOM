@@ -22,8 +22,8 @@ from atom.training import DirectClassifier
 from atom.utils import merge
 
 from .conftest import (
-    X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test, bin_train,
-    mnist, y10, y_bin, y_bin_array, y_idx,
+    X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test, bin_train, y10,
+    y_bin, y_bin_array, y_idx,
 )
 
 
@@ -135,6 +135,12 @@ def test_gpu_fails():
 
 # Test _prepare_input ============================================== >>
 
+def test_input_X_and_y_None():
+    """Assert that an error is raised when both X and y are None."""
+    with pytest.raises(ValueError, match=r".*both None.*"):
+        BaseTransformer._prepare_input()
+
+
 def test_input_data_in_atom():
     """Assert that the data does not change once in an atom pipeline."""
     atom = ATOMClassifier(X10, y10, random_state=1)
@@ -149,13 +155,6 @@ def test_input_data_in_training():
     trainer.run(train, bin_test)
     train.iloc[3, 2] = 99  # Change an item of the original variable
     assert 99 not in trainer.dataset  # Is unchanged in the pipeline
-
-
-def test_multidimensional_X():
-    """Assert that more than two-dimensional datasets are handled correctly."""
-    atom = ATOMClassifier(*mnist, random_state=1)
-    assert atom.X.columns == ["multidim feature"]
-    assert atom.X.iloc[0, 0].shape == (28, 28, 1)
 
 
 def test_text_to_corpus():
@@ -240,7 +239,7 @@ def test_target_is_int():
 
 def test_X_is_None_with_int():
     """Assert that an error is raised when X is None and y is an int."""
-    with pytest.raises(ValueError, match=r".*can't be None when y is a int.*"):
+    with pytest.raises(ValueError, match=r".*can't be None when y is an int.*"):
         BaseTransformer._prepare_input(y=1)
 
 
@@ -601,6 +600,12 @@ def test_merger_to_dataset():
 
 # Test log ========================================================= >>
 
+def test_log_invalid_severity():
+    """Assert that an error is raised when the severity is invalid."""
+    with pytest.raises(ValueError, match=r".*severity parameter.*"):
+        BaseTransformer(logger="log").log("test", severity="invalid")
+
+
 @patch("atom.utils.logging.getLogger")
 def test_log(cls):
     """Assert the log method works."""
@@ -618,7 +623,7 @@ def test_file_is_saved():
     assert glob.glob("ATOMClassifier")
 
 
-@patch("atom.basetransformer.dill")
+@patch("atom.basetransformer.pickle")
 def test_save_data_false(cls):
     """Assert that the dataset is restored after saving with save_data=False"""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)

@@ -119,6 +119,7 @@ Additionally, ATOM implements two ensemble models:
 """
 
 import random
+from typing import Union
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -1708,7 +1709,7 @@ class MultilayerPerceptron(BaseModel):
 # Ensembles ======================================================== >>
 
 class Stacking(BaseModel):
-    """Class for stacking the models in the pipeline."""
+    """Class for stacking the models in the trainer."""
 
     acronym = "Stack"
     fullname = "Stacking"
@@ -1848,3 +1849,6 @@ ENSEMBLES = CustomDict(Stack=Stacking, Vote=Voting)
 
 # List of all models + ensembles
 MODELS_ENSEMBLES = CustomDict(**MODELS, **ENSEMBLES)
+
+# Model types as list of all model classes
+MODEL_TYPES = Union[tuple(MODELS_ENSEMBLES.values())]

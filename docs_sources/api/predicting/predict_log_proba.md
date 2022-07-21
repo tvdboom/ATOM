@@ -4,7 +4,7 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">predict_log_proba</strong>(X, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L242">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L242">[source]</a>
 </span>
 </div>
 
@@ -24,7 +24,7 @@ have a `predict_log_proba` method.
 Index names or positions of rows in the dataset, or unseen feature
 set with shape=(n_samples, n_features).
 </p>
-<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
+<strong>pipeline: bool, sequence or None, default=None</strong><br>
 Transformers to use on the data before predicting.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Only transformers that are applied on the whole dataset are used.</li>
@@ -33,7 +33,7 @@ Transformers to use on the data before predicting.
 <li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
 </ul>
 <p>
-<strong>verbose: int or None, optional (default=None)</strong><br>
+<strong>verbose: int or None, default=None</strong><br>
 Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </p>
 </td>

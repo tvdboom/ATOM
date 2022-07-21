@@ -22,33 +22,33 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#balanci
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>strategy: str or estimator, optional (default="ADASYN")</strong><br>
+<strong>strategy: str or estimator, default="ADASYN"</strong><br>
 Type of algorithm with which to balance the dataset. Choose
 from any of the estimators in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
 package or provide a custom one (has to have a <code>fit_resample</code>
 method).
 </p>
-<strong>n_jobs: int, optional (default=1)</strong><br>
+<strong>n_jobs: int, default=1</strong><br>
 Number of cores to use for parallel processing.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If >0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
 <li>If <-1: Use available_cores - 1 + n_jobs.</li>
 </ul>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
-<strong>random_state: int or None, optional (default=None)</strong><br>
+<strong>random_state: int or None, default=None</strong><br>
 Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
@@ -182,7 +182,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -216,7 +216,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -237,7 +237,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>

@@ -49,6 +49,9 @@ class Pipeline(pipeline.Pipeline):
         - The instance is considered fitted at initialization if all
           the underlying transformers/estimator in the pipeline are.
 
+    Note: This Pipeline only works with estimators whose parameters
+    for fit, transform, predict, etc... are named X and/or y.
+
     """
 
     def __init__(self, steps, *, memory=None, verbose=False):
@@ -119,11 +122,11 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). None
             if the pipeline only uses y.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -153,11 +156,11 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). None
             if the estimator only uses y.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -286,7 +289,7 @@ class Pipeline(pipeline.Pipeline):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights corresponding to y.
 
         Returns
@@ -319,11 +322,11 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). None
             if the pipeline only uses y.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -355,11 +358,11 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). None
             if the pipeline only uses y.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.

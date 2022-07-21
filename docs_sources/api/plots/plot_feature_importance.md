@@ -20,29 +20,29 @@ importance ranking.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>models: str, sequence or None, optional (default=None)</strong><br>
-Name of the models to plot. If None, all the models in the pipeline are selected.
+<strong>models: int, str, slice, sequence or None, default=None</strong><br>
+Name of the models to plot. If None, all the models are selected.
 </p>
 <p>
-<strong>show: int, optional (default=None)</strong><br>
+<strong>show: int, default=None</strong><br>
 Number of features (ordered by importance) to show. None to show all.
 </p>
 <p>
-<strong>title: str or None, optional (default=None)</strong><br>
+<strong>title: str or None, default=None</strong><br>
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple or None, optional (default=None)</strong><br>
+<strong>figsize: tuple or None, default=None</strong><br>
 Figure's size, format as (x, y). If None, it adapts the size to the
 number of features shown.
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool or None, optional (default=True)</strong><br>
+<strong>display: bool or None, default=True</strong><br>
 Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 </td>

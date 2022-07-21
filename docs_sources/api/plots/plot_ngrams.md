@@ -19,36 +19,36 @@ words are separated by spaces.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>ngram: str or int, optional (default="bigram")</strong><br>
+<strong>ngram: str or int, default="bigram"</strong><br>
 Number of contiguous words to search for (size of n-gram).
 Choose from: words (1), bigrams (2), trigrams (3), quadgrams (4).
 </p>
 <p>
-<strong>index: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>index: int, str, sequence or None, default=None</strong><br>
 Index names or positions of the documents in the corpus to
 include in the search. If None, it selects all documents in
 the dataset.
 </p>
 <p>
-<strong>show: int, optional (default=10)</strong><br>
+<strong>show: int, default=10</strong><br>
 Number of n-grams (ordered by number of occurrences) to show in the plot.
 </p>
 <p>
-<strong>title: str or None, optional (default=None)</strong><br>
+<strong>title: str or None, default=None</strong><br>
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple, optional (default=None)</strong><br>
+<strong>figsize: tuple, default=None</strong><br>
 Figure's size, format as (x, y). If None, it adapts the
 size to the number of n-grams shown.
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool or None, optional (default=True)</strong><br>
+<strong>display: bool or None, default=True</strong><br>
 Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 </td>

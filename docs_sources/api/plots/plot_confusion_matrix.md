@@ -20,34 +20,34 @@ Only for classification tasks.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>models: str, sequence or None, optional (default=None)</strong><br>
-Name of the models to plot. If None, all models in the pipeline are selected.
+<strong>models: int, str, slice, sequence or None, default=None</strong><br>
+Name or index of the models to plot. If None, all models are selected.
 </p>
 <p>
-<strong>dataset: str, optional (default="test")</strong><br>
+<strong>dataset: str, default="test"</strong><br>
 Data set on which to calculate the confusion matrix. Choose from:
 "train", "test" or "holdout".
 </p>
 <p>
-<strong>normalize: bool, optional (default=False)</strong><br>
+<strong>normalize: bool, default=False</strong><br>
 Whether to normalize the matrix.
 </p>
 <p>
-<strong>title: str or None, optional (default=None)</strong><br>
+<strong>title: str or None, default=None</strong><br>
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple, optional (default=None)</strong><br>
+<strong>figsize: tuple, default=None</strong><br>
 Figure's size, format as (x, y). If None, it adapts the size
 to plot's type.
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool or None, optional (default=True)</strong><br>
+<strong>display: bool or None, default=True</strong><br>
 Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 </td>

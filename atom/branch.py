@@ -18,7 +18,7 @@ from atom.basetransformer import BaseTransformer
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
     SEQUENCE_TYPES, X_TYPES, CustomDict, composed, crash, custom_transform,
-    flt, is_multidim, merge, method_to_log, to_df, to_series,
+    flt, merge, method_to_log, to_df, to_series,
 )
 
 
@@ -33,7 +33,7 @@ class Branch:
     *args
         Parent class (from which the branch is called) and name.
 
-    parent: Branch or None, optional (default=None)
+    parent: Branch or None, default=None
         Branch from which to split. If None, create an empty branch.
 
     Attributes
@@ -47,15 +47,15 @@ class Branch:
     parent: str
         Name of the parent branch.
 
-    mapping: CustomDict, optional (default={})
+    mapping: CustomDict, default={}
         Encoded values and their respective mapping. The column name is
         the key to its mapping dictionary. Only for columns mapped to
         a single column (e.g. Ordinal, Leave-one-out, etc...).
 
-    pipeline: pd.Series or None, optional (default=None)
+    pipeline: pd.Series or None, default=None
         Estimators fitted on the data in the branch.
 
-    feature_importance: list, optional (default=None)
+    feature_importance: list, default=None
         Features ordered by most to least important.
 
     """
@@ -315,11 +315,8 @@ class Branch:
 
     @property
     def shape(self):
-        """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
-        if not is_multidim(self.X):
-            return self._data.shape
-        else:
-            return len(self._data), self.X.iloc[0, 0].shape, 2
+        """Shape of the dataset (n_rows, n_cols)."""
+        return self._data.shape
 
     @property
     def columns(self):

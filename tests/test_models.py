@@ -7,26 +7,20 @@ Description: Unit tests for models.py
 
 """
 
-from pickle import PickleError
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 from sklearn.ensemble import RandomForestRegressor
-from skopt.space.space import Categorical, Integer
-from tensorflow.keras.layers import Conv2D, Dense, Flatten
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+from skopt.space.space import Integer
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.feature_engineering import FeatureSelector
 from atom.models import MODELS
 from atom.pipeline import Pipeline
 
-from .conftest import X_bin, X_class2, X_reg, mnist, y_bin, y_class2, y_reg
+from .conftest import X_bin, X_class2, X_reg, y_bin, y_class2, y_reg
 
-
-# Variables ======================================================== >>
 
 binary, multiclass, regression = [], [], []
 for m in MODELS.values():
@@ -39,27 +33,6 @@ for m in MODELS.values():
         regression.append(m.acronym)
 
 
-# Functions ======================================================= >>
-
-def neural_network():
-    """Returns a convolutional neural network."""
-
-    def create_model():
-        """Returns a convolutional neural network."""
-        model = Sequential()
-        model.add(Conv2D(64, kernel_size=3, activation="relu", input_shape=(28, 28, 1)))
-        model.add(Conv2D(64, kernel_size=3, activation="relu"))
-        model.add(Flatten())
-        model.add(Dense(10, activation="softmax"))
-        model.compile(optimizer="adam", loss="categorical_crossentropy")
-
-        return model
-
-    return KerasClassifier(create_model, epochs=1, batch_size=512, verbose=0)
-
-
-# Test custom models =============================================== >>
-
 @pytest.mark.parametrize("model", [RandomForestRegressor, RandomForestRegressor()])
 def test_custom_models(model):
     """Assert that ATOM works with custom models."""
@@ -68,31 +41,6 @@ def test_custom_models(model):
     assert atom.rfr.fullname == "RandomForestRegressor"
     assert atom.rfr.estimator.get_params()["random_state"] == 1
 
-
-def test_deep_learning_models():
-    """Assert that ATOM works with deep learning models."""
-    atom = ATOMClassifier(*mnist, n_rows=0.01, random_state=1)
-    pytest.raises(PermissionError, atom.clean)
-    atom.run(models=neural_network())
-    assert atom.models == "KC"  # KerasClassifier
-
-
-def test_error_for_unpickable_models():
-    """Assert that pickle errors raise an explainable exception."""
-    atom = ATOMClassifier(*mnist, n_rows=0.01, n_jobs=2, random_state=1)
-    pytest.raises(
-        PickleError,
-        atom.run,
-        models=neural_network(),
-        n_calls=5,
-        bo_params={
-            "cv": 3,
-            "dimensions": [Categorical([64, 128, 256], name="batch_size")],
-        },
-    )
-
-
-# Test predefined models =========================================== >>
 
 @pytest.mark.parametrize("model", binary)
 def test_models_binary(model):

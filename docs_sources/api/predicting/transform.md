@@ -20,7 +20,7 @@ called from atom, not from the models.
 <strong>X: dataframe-like</strong><br>
 Features to transform, with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored in the transformers.</li>
 <li>If int: Position of the target column in X.</li>
@@ -28,7 +28,7 @@ Features to transform, with shape=(n_samples, n_features).
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 <p>
-<strong>verbose: int or None, optional (default=None)</strong><br>
+<strong>verbose: int or None, default=None</strong><br>
 Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </p>
 </td>

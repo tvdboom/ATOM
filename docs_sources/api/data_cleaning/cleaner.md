@@ -30,54 +30,54 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#standar
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>drop_types: str, sequence or None, optional (default=None)</strong><br>
+<strong>drop_types: str, sequence or None, default=None</strong><br>
 Columns with these types are dropped from the dataset.
 </p>
 <p>
-<strong>strip_categorical: bool, optional (default=True)</strong><br>
+<strong>strip_categorical: bool, default=True</strong><br>
 Whether to strip the spaces from the categorical columns.
 </p>
 <p>
-<strong>drop_max_cardinality: bool, optional (default=True)</strong><br>
+<strong>drop_max_cardinality: bool, default=True</strong><br>
 Whether to drop categorical columns with maximum cardinality,
 i.e. the number of unique values is equal to the number of
 samples. Usually the case for names, IDs, etc...
 </p>
 <p>
-<strong>drop_min_cardinality: bool, optional (default=True)</strong><br>
+<strong>drop_min_cardinality: bool, default=True</strong><br>
 Whether to drop columns with minimum cardinality, i.e. all values in the
 column are the same.
 </p>
 <p>
-<strong>drop_duplicates: bool, optional (default=False)</strong><br>
+<strong>drop_duplicates: bool, default=False</strong><br>
 Whether to drop duplicate rows. Only the first occurrence of
 every duplicated row is kept.
 </p>
 <p>
-<strong>drop_missing_target: bool, optional (default=True)</strong><br>
+<strong>drop_missing_target: bool, default=True</strong><br>
 Whether to drop rows with missing values in the target column.
 This parameter is ignored if <code>y</code> is not provided.
 </p>
 <p>
-<strong>encode_target: bool, optional (default=True)</strong><br>
+<strong>encode_target: bool, default=True</strong><br>
 Whether to Label-encode the target column. This parameter is ignored
 if <code>y</code> is not provided.
 </p>
-<strong>gpu: bool or str, optional (default=False)</strong><br>
+<strong>gpu: bool or str, default=False</strong><br>
 Train LabelEncoder on GPU (instead of CPU). Only for encode_target=True.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
@@ -174,10 +174,10 @@ Fit to data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like or None, optional (default=None)</strong><br>
+<strong>X: dataframe-like or None, default=None</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
@@ -209,10 +209,10 @@ Apply the data cleaning steps to the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like or None, optional (default=None)</strong><br>
+<strong>X: dataframe-like or None, default=None</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
@@ -249,7 +249,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -283,7 +283,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -304,7 +304,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -351,10 +351,10 @@ Apply the data cleaning steps to the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like or None, optional (default=None)</strong><br>
+<strong>X: dataframe-like or None, default=None</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>

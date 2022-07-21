@@ -548,19 +548,19 @@ def test_max_onehot_parameter():
         encoder.fit(X10_str, y10)
 
 
-def test_frac_to_other_parameter():
-    """Assert that the frac_to_other parameter is set correctly."""
-    encoder = Encoder(frac_to_other=-2)
-    with pytest.raises(ValueError, match=r".*value for the frac_to_other.*"):
+def test_rare_to_value_parameter():
+    """Assert that the rare_to_value parameter is set correctly."""
+    encoder = Encoder(rare_to_value=-2)
+    with pytest.raises(ValueError, match=r".*value for the rare_to_value.*"):
         encoder.fit(X10_str, y10)
 
 
-@pytest.mark.parametrize("frac_to_other", [3, 0.3])
-def test_frac_to_other(frac_to_other):
+@pytest.mark.parametrize("rare_to_value", [3, 0.3])
+def test_rare_to_value(rare_to_value):
     """Assert that the other values are created when encoding."""
-    encoder = Encoder(max_onehot=5, frac_to_other=frac_to_other)
+    encoder = Encoder(max_onehot=5, rare_to_value=rare_to_value)
     X = encoder.fit_transform(X10_str, y10)
-    assert "x2_other" in X.columns
+    assert "x2_rare" in X.columns
 
 
 def test_encoder_strategy_invalid_estimator():

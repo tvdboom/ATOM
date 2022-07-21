@@ -45,61 +45,61 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    decode: bool, optional (default=True)
+    decode: bool, default=True
         Whether to decode unicode characters to their ascii
         representations.
 
-    lower_case: bool, optional (default=True)
+    lower_case: bool, default=True
         Whether to convert all characters to lower case.
 
-    drop_email: bool, optional (default=True)
+    drop_email: bool, default=True
         Whether to drop email addresses from the text.
 
-    regex_email: str, optional (default=None)
+    regex_email: str, default=None
         Regex used to search for email addresses. If None, it uses
         `r"[\w.-]+@[\w-]+\.[\w.-]+"`.
 
-    drop_url: bool, optional (default=True)
+    drop_url: bool, default=True
         Whether to drop URL links from the text.
 
-    regex_url: str, optional (default=None)
+    regex_url: str, default=None
         Regex used to search for URLs. If None, it uses
         `r"https?://\S+|www\.\S+"`.
 
-    drop_html: bool, optional (default=True)
+    drop_html: bool, default=True
         Whether to drop HTML tags from the text. This option is
         particularly useful if the data was scraped from a website.
 
-    regex_html: str, optional (default=None)
+    regex_html: str, default=None
         Regex used to search for html tags. If None, it uses
         `r"<.*?>"`.
 
-    drop_emoji: bool, optional (default=True)
+    drop_emoji: bool, default=True
         Whether to drop emojis from the text.
 
-    regex_emoji: str, optional (default=None)
+    regex_emoji: str, default=None
         Regex used to search for emojis. If None, it uses
         `r":[a-z_]+:"`.
 
-    drop_number: bool, optional (default=False)
+    drop_number: bool, default=False
         Whether to drop numbers from the text.
 
-    regex_number: str, optional (default=None)
+    regex_number: str, default=None
         Regex used to search for numbers. If None, it uses
         `r"\b\d+\b".` Note that numbers adjacent to letters are
         not removed.
 
-    drop_punctuation: bool, optional (default=True)
+    drop_punctuation: bool, default=True
         Whether to drop punctuations from the text. Characters
         considered punctuation are `!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~`.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -160,7 +160,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -288,31 +288,31 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    bigram_freq: int, float or None, optional (default=None)
+    bigram_freq: int, float or None, default=None
         Frequency threshold for bigram creation.
             - If None: Don't create any bigrams.
             - If int: Minimum number of occurrences to make a bigram.
             - If float: Minimum frequency fraction to make a bigram.
 
-    trigram_freq: int, float or None, optional (default=None)
+    trigram_freq: int, float or None, default=None
         Frequency threshold for trigram creation.
             - If None: Don't create any trigrams.
             - If int: Minimum number of occurrences to make a trigram.
             - If float: Minimum frequency fraction to make a trigram.
 
-    quadgram_freq: int, float or None, optional (default=None)
+    quadgram_freq: int, float or None, default=None
         Frequency threshold for quadgram creation.
             - If None: Don't create any quadgrams.
             - If int: Minimum number of occurrences to make a quadgram.
             - If float: Minimum frequency fraction to make a quadgram.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -358,7 +358,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -433,31 +433,31 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    stopwords: bool or str, optional (default=True)
+    stopwords: bool or str, default=True
         Whether to remove a predefined dictionary of stopwords.
             - If False: Don't remove any predefined stopwords.
             - If True: Drop predefined english stopwords from the text.
             - If str: Language from `nltk.corpus.stopwords.words`.
 
-    custom_stopwords: sequence or None, optional (default=None)
+    custom_stopwords: sequence or None, default=None
         Custom stopwords to remove from the text.
 
-    stem: bool or str, optional (default=False)
+    stem: bool or str, default=False
         Whether to apply stemming using SnowballStemmer.
             - If False: Don't apply stemming.
             - If True: Apply stemmer based on the english language.
             - If str: Language from `SnowballStemmer.languages`.
 
-    lemmatize: bool, optional (default=True)
+    lemmatize: bool, default=True
         Whether to apply lemmatization using WordNetLemmatizer.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -490,7 +490,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -582,31 +582,31 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="bow")
+    strategy: str, default="bow"
         Strategy with which to vectorize the text. Choose from:
             - "bow": Bag of Words.
             - "tfidf": Term Frequency - Inverse Document Frequency.
             - "hashing": Vectorize to a matrix of token occurrences.
 
-    return_sparse: bool, optional (default=True)
+    return_sparse: bool, default=True
         Whether to return the transformation output as a dataframe
         of sparse arrays. Must be False when there are other columns
         in X (besides `corpus`) that are non-sparse.
 
-    gpu: bool or str, optional (default=False)
+    gpu: bool or str, default=False
         Train LabelEncoder on GPU (instead of CPU). Only for
         `encode_target=True`.
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -657,7 +657,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -709,7 +709,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns

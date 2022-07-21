@@ -18,7 +18,7 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#binning
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str, optional (default="quantile")</strong><br>
+<strong>strategy: str, default="quantile"</strong><br>
 Strategy used to define the widths of the bins. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"uniform": All bins have identical widths.</li>
@@ -26,7 +26,7 @@ Strategy used to define the widths of the bins. Choose from:
 <li>"kmeans": Values in each bin have the same nearest center of a 1D k-means cluster.</li>
 <li>"custom": Use custom bin edges provided through <code>bins</code>.</li>
 </ul>
-<strong>bins: int, sequence or dict, optional (default=5)</strong><br>
+<strong>bins: int, sequence or dict, default=5</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If int: Number of bins to produce for all columns. Not allowed if strategy="custom".</li>
 <li>If sequence: Number of bins per column, where the n-th value
@@ -35,28 +35,28 @@ it's the bin edges with length=n_bins + 1.</li>
 <li>If dict: One of the aforementioned options per column, where the key is
 the column's name.</li>
 </ul>
-<strong>labels: sequence, dict or None, optional (default=None)</strong><br>
+<strong>labels: sequence, dict or None, default=None</strong><br>
 Label names with which to replace the binned intervals.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Use default labels of the form [min_edge]-[max_edge].</li>
 <li>If sequence: Labels to use for all columns.</li>
 <li>If dict: Labels per column, where the key is the column's name.</li>
 </ul>
-<strong>gpu: bool or str, optional (default=False)</strong><br>
+<strong>gpu: bool or str, default=False</strong><br>
 Train estimator on GPU (instead of CPU). Not for strategy="custom".
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
@@ -154,7 +154,7 @@ Fit to data.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -183,7 +183,7 @@ to errors if the `strategy` encoder requires target values.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -211,7 +211,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -245,7 +245,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -266,7 +266,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -313,7 +313,7 @@ Bin the data into intervals.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>

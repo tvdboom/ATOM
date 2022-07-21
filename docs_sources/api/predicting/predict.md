@@ -4,7 +4,7 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">predict</strong>(X, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L230">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L230">[source]</a>
 </span>
 </div>
 
@@ -25,7 +25,7 @@ Index names or positions of rows in the dataset, or unseen feature
 set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>verbose: int or None, optional (default=None)</strong><br>
+<strong>verbose: int or None, default=None</strong><br>
 Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </p>
 </td>

@@ -326,7 +326,7 @@ def test_export_pipeline_memory(func):
     func.assert_called_once()
 
 
-@patch("pandas_profiling.ProfileReport")
+@patch("atom.atom.ProfileReport")
 def test_report(cls):
     """Assert that the report method and file are created."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -527,6 +527,14 @@ def test_add_transformer_only_y():
     atom = ATOMClassifier(X10, y10_str, random_state=1)
     atom.add(LabelEncoder())
     assert np.all((atom["target"] == 0) | (atom["target"] == 1))
+
+
+def test_add_transformer_y_ignore_X():
+    """Assert that atom accepts transformers with y and default X."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    atom.clean()  # Cleaner has X=None and y=None
+    y = atom.transform(y=y10_str)
+    assert np.all((y == 0) | (y == 1))
 
 
 def test_returned_column_already_exists():

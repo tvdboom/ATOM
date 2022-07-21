@@ -81,8 +81,7 @@ Test target.
 </p>
 <p>
 <strong>shape: tuple</strong><br>
-Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
-for datasets with more than two dimensions.
+Dataset's shape: (n_rows x n_columns).
 </p>
 <p>
 <strong>columns: pd.Index</strong><br>
@@ -423,12 +422,12 @@ the dashboard opens in an external dash app.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>dataset: str, optional (default="test")</strong><br>
+<strong>dataset: str, default="test"</strong><br>
 Data set to get the report from. Choose from: "train", "test",
 "both" (train and test) or "holdout".
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name to save the file with (as .html). None to not save anything.
 </p>
 <p>
@@ -462,16 +461,16 @@ Get the model's scores for the provided metrics.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+<strong>metric: str, func, scorer, sequence or None, default=None</strong><br>
 Metrics to calculate. If None, a selection of the most common
 metrics per task are used.
 </p>
 <p>
-<strong>dataset: str, optional (default="test")</strong><br>
+<strong>dataset: str, default="test"</strong><br>
 Data set on which to calculate the metric. Choose from: "train",
 "test" or "holdout".
 </p>
-<strong>threshold: float, optional (default=0.5)</strong><br>
+<strong>threshold: float, default=0.5</strong><br>
 Threshold between 0 and 1 to convert predicted probabilities
 to class labels. Only used when:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -480,7 +479,7 @@ to class labels. Only used when:
 <li>The metric evaluates predicted target values.</li>
 </ul>
 <p>
-<strong>sample_weight: sequence or None, optional (default=None)</strong><br>
+<strong>sample_weight: sequence or None, default=None</strong><br>
 Sample weights corresponding to y in <code>dataset</code>.
 </p>
 </td>
@@ -527,7 +526,7 @@ fitted on the training set.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>memory: bool, str, Memory or None, optional (default=None)</strong><br>
+<strong>memory: bool, str, Memory or None, default=None</strong><br>
 Used to cache the fitted transformers of the pipeline.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None or False: No caching is performed.</li>
@@ -536,7 +535,7 @@ Used to cache the fitted transformers of the pipeline.
 <li>If Memory: Object with the <a href="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html">joblib.Memory</a> interface.</li>
 </ul>
 <p>
-<strong>verbose: int or None, optional (default=None)</strong><br>
+<strong>verbose: int or None, default=None</strong><br>
 Verbosity level of the transformers in the pipeline. If None, it leaves
 them to their original verbosity. Note that this is not the pipeline's
 own verbose parameter. To change that, use the <code>set_params</code>
@@ -578,7 +577,7 @@ Since the estimator changed, the model is [cleared](#clear).
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>include_holdout: bool, optional (default=False)</strong><br>
+<strong>include_holdout: bool, default=False</strong><br>
 Whether to include the holdout data set (if available) in the
 training of the estimator. Note that if True, it means the model
 can't be evaluated.
@@ -602,7 +601,7 @@ name of the corresponding run is also changed.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>name: str or None, optional (default=None)</strong><br>
+<strong>name: str or None, default=None</strong><br>
 New tag for the model. If None, the tag is removed.
 </table>
 <br />
@@ -620,7 +619,7 @@ Save the estimator to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -646,7 +645,7 @@ used feature scaling, the data is also scaled.
 <strong>X: dataframe-like</strong><br>
 Features to transform, with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored in the transformers.</li>
 <li>If int: Position of the target column in X.</li>
@@ -654,7 +653,7 @@ Features to transform, with shape=(n_samples, n_features).
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 <p>
-<strong>verbose: int or None, optional (default=None)</strong><br>
+<strong>verbose: int or None, default=None</strong><br>
 Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </p>
 </td>

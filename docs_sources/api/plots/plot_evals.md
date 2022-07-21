@@ -20,32 +20,32 @@ the method only allows plotting one model.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>models: str, sequence or None, optional (default=None)</strong><br>
-Name of the model to plot. If None, all models in the pipeline are
+<strong>models: int, str, slice, sequence or None, default=None</strong><br>
+Name of the model to plot. If None, all models in the trainer are
 selected. Note that leaving the default option could raise an
-exception if there are multiple models in the pipeline. To avoid
+exception if there are multiple models in the trainer. To avoid
 this, call the plot from a model, e.g. <code>atom.lgb.plot_evals()</code>.
 </p>
 <p>
-<strong>dataset: str, optional (default="both")</strong><br>
+<strong>dataset: str, default="both"</strong><br>
 Data set on which to calculate the evaluation curves. Options
  are "train", "test" or "both".
 </p>
 <p>
-<strong>title: str or None, optional (default=None)</strong><br>
+<strong>title: str or None, default=None</strong><br>
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple, optional (default=(10, 6))</strong><br>
+<strong>figsize: tuple, default=(10, 6)</strong><br>
 Figure's size, format as (x, y).
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool or None, optional (default=True)</strong><br>
+<strong>display: bool or None, default=True</strong><br>
 Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 </td>

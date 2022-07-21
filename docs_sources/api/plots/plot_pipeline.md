@@ -17,35 +17,34 @@ Plot a diagram of the pipeline.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>model: str or None, optional (default=None)</strong><br>
-Name of the models for which to draw the pipeline. If None,
-all pipelines are plotted.
+<strong>model: str or None, default=None</strong><br>
+Name or index of the models to plot. If None, all models are selected.
 </p>
 <p>
-<strong>draw_hyperparameter_tuning: bool, optional (default=True)</strong><br>
+<strong>draw_hyperparameter_tuning: bool, default=True</strong><br>
 Whether to draw if the models used Hyperparameter Tuning.
 </p>
 <p>
-<strong>color_branches: bool or None, optional (default=None)</strong><br>
+<strong>color_branches: bool or None, default=None</strong><br>
 Whether to draw every branch in a different color. If None,
 branches are colored when there is more than one.
 </p>
 <p>
-<strong>title: str or None, optional (default=None)</strong><br>
+<strong>title: str or None, default=None</strong><br>
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple or None, optional (default=None)</strong><br>
+<strong>figsize: tuple or None, default=None</strong><br>
 Figure's size, format as (x, y). If None, it adapts the size to the
 pipeline drawn.
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool or None, optional (default=True)</strong><br>
+<strong>display: bool or None, default=True</strong><br>
 Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 </td>

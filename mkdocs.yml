@@ -19,6 +19,7 @@ theme:
     - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
+    - content.tabs.link
   palette:
     # Light mode
     - amber: "(prefers-color-scheme: light)"
@@ -62,11 +63,9 @@ extra:
       name: Email
 
 plugins:
-    - mkdocs-jupyter
-    - mkdocstrings
-    - mkdocs-jupyter
-        include_source: True
     - search
+    - autorefs
+    - mkdocs-jupyter
 
 markdown_extensions:
     - tables
@@ -83,6 +82,9 @@ markdown_extensions:
         generic: true
     - pymdownx.tabbed:
         alternate_style: true
+    - pymdownx.emoji:
+          emoji_index: !!python/name:materialx.emoji.twemoji
+          emoji_generator: !!python/name:materialx.emoji.to_svg
 
 extra_css:
     - stylesheets/extra.css
@@ -95,7 +97,9 @@ extra_javascript:
 nav:
     - About: about.md
     - Getting started: getting_started.md
-    - Release history: release_history.md
+    - Release history:
+        - v5.x.x: release_history/v5.x.x.md
+        - v4.x.x: release_history/v4.x.x.md
     - User guide:
         - Introduction: user_guide/introduction.md
         - Nomenclature: user_guide/nomenclature.md
@@ -132,6 +136,7 @@ nav:
         - Feature engineering:
             - FeatureExtractor: API/feature_engineering/feature_extractor.md
             - FeatureGenerator: API/feature_engineering/feature_generator.md
+            - FeatureGrouper: API/feature_engineering/feature_grouper.md
             - FeatureSelector: API/feature_engineering/feature_selector.md
         - Training:
             - DirectClassifier: API/training/directclassifier.md

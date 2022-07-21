@@ -199,7 +199,7 @@ class VotingClassifier(BaseVoting, VC):
         y: sequence
             Target column.
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.
@@ -296,7 +296,7 @@ class StackingClassifier(BaseStacking, SC):
         y: sequence
             Target column.
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.
@@ -332,7 +332,7 @@ class StackingRegressor(BaseStacking, SR):
         y: sequence
             Target column.
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.

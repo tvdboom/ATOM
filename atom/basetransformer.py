@@ -13,9 +13,10 @@ import os
 import random
 import warnings
 from copy import deepcopy
-from typing import Optional, Union
+from logging import Logger
+from typing import Any, List, Optional, Tuple, Union
 
-import dill
+import dill as pickle
 import mlflow
 import numpy as np
 import pandas as pd
@@ -23,13 +24,14 @@ from sklearn.model_selection import train_test_split
 from typeguard import typechecked
 
 from atom.utils import (
-    INT, SCALAR, SEQUENCE, X_TYPES, Y_TYPES, composed, crash, lst, merge,
-    method_to_log, prepare_logger, to_df, to_series,
+    INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, Predictor,
+    composed, crash, lst, merge, method_to_log, prepare_logger, to_df,
+    to_series,
 )
 
 
 class BaseTransformer:
-    """Base class for estimators in the package.
+    """Base class for trainers and transformers in the package.
 
     Contains shared properties and standard methods across transformers.
 
@@ -65,12 +67,12 @@ class BaseTransformer:
     # Properties =================================================== >>
 
     @property
-    def n_jobs(self):
+    def n_jobs(self) -> INT:
         return self._n_jobs
 
     @n_jobs.setter
     @typechecked
-    def n_jobs(self, value: int):
+    def n_jobs(self, value: INT):
         # Check number of cores for multiprocessing
         n_cores = multiprocessing.cpu_count()
         if value > n_cores:
@@ -87,12 +89,12 @@ class BaseTransformer:
         self._n_jobs = value
 
     @property
-    def verbose(self):
+    def verbose(self) -> INT:
         return self._verbose
 
     @verbose.setter
     @typechecked
-    def verbose(self, value: int):
+    def verbose(self, value: INT):
         if value < 0 or value > 2:
             raise ValueError(
                 "Invalid value for the verbose parameter. Value"
@@ -101,7 +103,7 @@ class BaseTransformer:
         self._verbose = value
 
     @property
-    def warnings(self):
+    def warnings(self) -> str:
         return self._warnings
 
     @warnings.setter
@@ -122,26 +124,28 @@ class BaseTransformer:
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses
 
     @property
-    def logger(self):
+    def logger(self) -> Logger:
         return self._logger
 
     @logger.setter
-    def logger(self, value):
+    @typechecked
+    def logger(self, value: Optional[Union[str, Logger]]):
         self._logger = prepare_logger(value, class_name=self.__class__.__name__)
 
     @property
-    def experiment(self):
+    def experiment(self) -> Optional[str]:
         return self._experiment
 
     @experiment.setter
-    def experiment(self, value):
+    @typechecked
+    def experiment(self, value: Optional[str]):
         self._experiment = value
         if value:
             mlflow.sklearn.autolog(disable=True)
             mlflow.set_experiment(value)
 
     @property
-    def gpu(self):
+    def gpu(self) -> Union[bool, str]:
         return self._gpu
 
     @gpu.setter
@@ -155,7 +159,7 @@ class BaseTransformer:
         self._gpu = value
 
     @property
-    def random_state(self):
+    def random_state(self) -> INT:
         return self._random_state
 
     @random_state.setter
@@ -166,27 +170,27 @@ class BaseTransformer:
                 "Invalid value for the random_state parameter. "
                 f"Value should be >0, got {value}."
             )
-        random.seed(value)  # Set random seed
+        random.seed(value)
         np.random.seed(value)
         self._random_state = value
 
     # Methods ====================================================== >>
 
-    def _get_gpu(self, estimator, module="cuml"):
+    def _get_gpu(self, estimator: Any, module: str = "cuml") -> Predictor:
         """Get a GPU or CPU estimator depending on availability.
 
         Parameters
         ----------
-        estimator: estimator
+        estimator: Predictor
             Class to get GPU implementation from.
 
-        module: str, optional (default="cuml")
+        module: str, default="cuml"
             Module from which to get the GPU estimator.
 
         Returns
         -------
-        estimator
-            Provided estimator or cuml implementation.
+        Estimator
+            Provided predictor or cuml implementation.
 
         """
         if self.gpu:
@@ -208,7 +212,10 @@ class BaseTransformer:
 
     @staticmethod
     @typechecked
-    def _prepare_input(X: Optional[X_TYPES] = None, y: Optional[Y_TYPES] = None):
+    def _prepare_input(
+        X: Optional[X_TYPES] = None,
+        y: Optional[Y_TYPES] = None,
+    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.Series]]:
         """Prepare the input data.
 
         Convert X and y to pandas (if not already) and perform standard
@@ -216,10 +223,10 @@ class BaseTransformer:
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -227,28 +234,24 @@ class BaseTransformer:
 
         Returns
         -------
-        pd.DataFrame
-            Feature dataset.
+        pd.DataFrame or None
+            Feature dataset. Only returned if provided.
 
-        pd.Series
-            Target column corresponding to X.
+        pd.Series or None
+            Target column corresponding to X. Only returned if provided.
 
         """
+        if X is None and y is None:
+            raise ValueError("X and y can not be both None!")
         if X is not None:
-            # If data has more than 2 dimensions and is not a text corpus,
-            # create a dataframe with one multidimensional column
-            array = np.array(X)
-            if array.ndim > 2 and not isinstance(array[0, 0, 0], str):
-                X = pd.DataFrame({"multidim feature": [row for row in X]})
-            else:
-                X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
+            X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
-                # If text dataset, change the name of the column to corpus
-                if list(X.columns) == ["x0"] and X[X.columns[0]].dtype == "object":
-                    X = X.rename(columns={X.columns[0]: "corpus"})
+            # If text dataset, change the name of the column to corpus
+            if list(X.columns) == ["x0"] and X[X.columns[0]].dtype == "object":
+                X = X.rename(columns={X.columns[0]: "corpus"})
 
-                # Convert all column names to str
-                X.columns = [str(col) for col in X.columns]
+            # Convert all column names to str
+            X.columns = [str(col) for col in X.columns]
 
         # Prepare target column
         if isinstance(y, SEQUENCE):
@@ -282,14 +285,26 @@ class BaseTransformer:
 
         elif isinstance(y, int):
             if X is None:
-                raise ValueError("X can't be None when y is a int.")
+                raise ValueError("X can't be None when y is an int.")
 
             X, y = X.drop(X.columns[y], axis=1), X[X.columns[y]]
 
         return X, y
 
-    def _set_index(self, df):
-        """Assign an index to the dataframe."""
+    def _set_index(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Assign an index to the dataframe.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Dataset.
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataset with updated indices.
+
+        """
         target = df.columns[-1]
 
         if self.index is True:  # True gets caught by isinstance(int)
@@ -321,8 +336,21 @@ class BaseTransformer:
 
         return df
 
-    def _get_stratify_columns(self, df):
-        """Get columns to stratify by."""
+    def _get_stratify_columns(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
+        """Get columns to stratify by.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Dataset from which to get the columns.
+
+        Returns
+        -------
+        pd.DataFrame or None
+            Dataset with subselection of columns. Returns None if
+            there's no stratification.
+
+        """
         # Stratification is not possible when the data can not change order
         if self.shuffle is False or self.stratify is False:
             return None
@@ -350,18 +378,26 @@ class BaseTransformer:
 
             return df[inc]
 
-    def _get_data(self, arrays, y=-1, use_n_rows=True):
-        """Get the data sets and indices from a sequence of indexables.
+    def _get_data(
+        self,
+        arrays: SEQUENCE_TYPES,
+        y: Y_TYPES = -1,
+        use_n_rows: bool = True,
+    ) -> Tuple[pd.DataFrame, List[pd.Index], Optional[pd.DataFrame]]:
+        """Get data sets from a sequence of indexables.
+
+        Also assigns an index, (stratified) shuffles and selects a
+        subsample of rows depending on the attributes.
 
         Parameters
         ----------
-        arrays: tuple of indexables
-            Data set(s) provided. Should follow the API's input format.
+        arrays: sequence of indexables
+            Data set(s) provided. Should follow the API input format.
 
-        y: int, str or sequence, optional (default=-1)
+        y: int, str or sequence, default=-1
             Target column corresponding to X.
 
-        use_n_rows: bool, optional (default=True)
+        use_n_rows: bool, default=True
             Whether to use the `n_rows` parameter on the dataset.
 
         Returns
@@ -369,16 +405,32 @@ class BaseTransformer:
         pd.DataFrame
             Dataset containing the train and test sets.
 
-        list
-            Sizes of the train and test sets.
+        list of pd.Index
+            Indices of the train and test sets.
 
         pd.DataFrame or None
             Holdout data set. Returns None if not specified.
 
         """
 
-        def _no_data_sets(data):
-            """Path to follow when no data sets are provided."""
+        def _no_data_sets(data: pd.DataFrame) -> tuple:
+            """Generate data sets from one dataframe.
+
+            Additionally, assigns an index, shuffles the data, selects
+            a subsample if `n_rows` is specified and split into sets in
+            a stratified fashion.
+
+            Parameters
+            ----------
+            data: pd.DataFrame
+                Complete dataset containing all data sets.
+
+            Returns
+            -------
+            tuple
+                Data, indices and holdout.
+
+            """
             # If the index is a sequence, assign it before shuffling
             if isinstance(self.index, SEQUENCE):
                 if len(self.index) != len(data):
@@ -456,8 +508,33 @@ class BaseTransformer:
 
             return data, [data.index[:-test_size], data.index[-test_size:]], holdout
 
-        def _has_data_sets(train, test, holdout=None):
-            """Path to follow when data sets are provided."""
+        def _has_data_sets(
+            train: pd.DataFrame,
+            test: pd.DataFrame,
+            holdout: Optional[pd.DataFrame] = None,
+        ) -> tuple:
+            """Generate data sets from provided sets.
+
+            Additionally, assigns an index, shuffles the data and
+            selects a subsample if `n_rows` is specified.
+
+            Parameters
+            ----------
+            train: pd.DataFrame
+                Training set.
+
+            test: pd.DataFrame
+                Test set.
+
+            holdout: pd.DataFrame or None
+                Holdout set. Is None if not provided by the user.
+
+            Returns
+            -------
+            tuple
+                Data, indices and holdout.
+
+            """
             # If the index is a sequence, assign it before shuffling
             if isinstance(self.index, SEQUENCE):
                 len_data = len(train) + len(test)
@@ -534,23 +611,23 @@ class BaseTransformer:
         elif len(arrays) == 1:
             # arrays=(X,)
             data = merge(*self._prepare_input(arrays[0], y=y))
-            data, idx, holdout = _no_data_sets(data)
+            sets = _no_data_sets(data)
 
         elif len(arrays) == 2:
             if isinstance(arrays[0], tuple) and len(arrays[0]) == len(arrays[1]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test))
                 train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
                 test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
-                data, idx, holdout = _has_data_sets(train, test)
+                sets = _has_data_sets(train, test)
             elif isinstance(arrays[1], (int, str)) or np.array(arrays[1]).ndim == 1:
                 # arrays=(X, y)
                 data = merge(*self._prepare_input(arrays[0], arrays[1]))
-                data, idx, holdout = _no_data_sets(data)
+                sets = _no_data_sets(data)
             else:
                 # arrays=(train, test)
                 train = merge(*self._prepare_input(arrays[0], y=y))
                 test = merge(*self._prepare_input(arrays[1], y=y))
-                data, idx, holdout = _has_data_sets(train, test)
+                sets = _has_data_sets(train, test)
 
         elif len(arrays) == 3:
             if len(arrays[0]) == len(arrays[1]) == len(arrays[2]) == 2:
@@ -558,36 +635,36 @@ class BaseTransformer:
                 train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
                 test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
                 holdout = merge(*self._prepare_input(arrays[2][0], arrays[2][1]))
-                data, idx, holdout = _has_data_sets(train, test, holdout)
+                sets = _has_data_sets(train, test, holdout)
             else:
                 # arrays=(train, test, holdout)
                 train = merge(*self._prepare_input(arrays[0], y=y))
                 test = merge(*self._prepare_input(arrays[1], y=y))
                 holdout = merge(*self._prepare_input(arrays[2], y=y))
-                data, idx, holdout = _has_data_sets(train, test, holdout)
+                sets = _has_data_sets(train, test, holdout)
 
         elif len(arrays) == 4:
             # arrays=(X_train, X_test, y_train, y_test)
             train = merge(*self._prepare_input(arrays[0], arrays[2]))
             test = merge(*self._prepare_input(arrays[1], arrays[3]))
-            data, idx, holdout = _has_data_sets(train, test)
+            sets = _has_data_sets(train, test)
 
         elif len(arrays) == 6:
             # arrays=(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
             train = merge(*self._prepare_input(arrays[0], arrays[3]))
             test = merge(*self._prepare_input(arrays[1], arrays[4]))
             holdout = merge(*self._prepare_input(arrays[2], arrays[5]))
-            data, idx, holdout = _has_data_sets(train, test, holdout)
+            sets = _has_data_sets(train, test, holdout)
 
         else:
             raise ValueError(
                 "Invalid data arrays. See the documentation for the allowed formats."
             )
 
-        return data, idx, holdout
+        return sets
 
     @composed(crash, typechecked)
-    def log(self, msg: Union[SCALAR, str], level: INT = 0):
+    def log(self, msg: Union[SCALAR, str], level: INT = 0, severity: str = "info"):
         """Print and save output to log file.
 
         Parameters
@@ -595,17 +672,27 @@ class BaseTransformer:
         msg: int, float or str
             Message to save to the logger and print to stdout.
 
-        level: int, optional (default=0)
-            Minimum verbosity level to print the message.
-            If 42, don't save to log.
+        level: int, default=0
+            Minimum verbosity level to print the message. If 42, don't
+            save to log.
+
+        severity: str, default="info"
+            Severity level of the message. Choose from: debug, info,
+            warning, error, critical.
 
         """
+        if severity not in ("debug", "info", "warning", "error", "critical"):
+            raise ValueError(
+                "Invalid value for the severity parameter. Choose "
+                "from: debug, info, warning, error, critical."
+            )
+
         if self.verbose >= level:
             print(msg)
 
         if self.logger is not None and level != 42:
             for text in str(msg).split("\n"):
-                self.logger.info(str(text))
+                getattr(self.logger, severity)(str(text))
 
     @composed(crash, method_to_log, typechecked)
     def save(self, filename: str = "auto", save_data: bool = True):
@@ -613,10 +700,10 @@ class BaseTransformer:
 
         Parameters
         ----------
-        filename: str, optional (default="auto")
+        filename: str, default="auto"
             Name of the file. Use "auto" for automatic naming.
 
-        save_data: bool, optional (default=True)
+        save_data: bool, default=True
             Whether to save the dataset with the instance. This
             parameter is ignored if the method is not called from
             a trainer.
@@ -633,8 +720,8 @@ class BaseTransformer:
             filename = filename.replace("auto", self.__class__.__name__)
 
         with open(filename, "wb") as f:
-            dill.settings["recurse"] = True
-            dill.dump(self, f)  # Dill replaces pickle to dump lambdas
+            pickle.settings["recurse"] = True
+            pickle.dump(self, f)  # Dill replaces pickle to dump lambdas
 
         # Restore the data to the attributes
         if not save_data and hasattr(self, "dataset"):

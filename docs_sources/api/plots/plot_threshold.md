@@ -18,40 +18,40 @@ classification tasks.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>models: str, sequence or None, optional (default=None)</strong><br>
-Name of the models to plot. If None, all models in the pipeline are selected.
+<strong>models: int, str, slice, sequence or None, default=None</strong><br>
+Name or index of the models to plot. If None, all models are selected.
 </p>
 <p>
-<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+<strong>metric: str, func, scorer, sequence or None, default=None</strong><br>
 Metric to plot. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>,
 a function with signature <code>metric(y_true, y_pred)</code>,
 a scorer object or a sequence of these. If None, the metric
 used to run the pipeline is plotted.
 </p>
 <p>
-<strong>dataset: str, optional (default="test")</strong><br>
+<strong>dataset: str, default="test"</strong><br>
 Data set on which to calculate the metric. Choose from:
 "train", "test", "both" (train and test) or "holdout".
 </p>
 <p>
-<strong>steps: int, optional (default=100)</strong><br>
+<strong>steps: int, default=100</strong><br>
 Number of thresholds measured.
 </p>
 <p>
-<strong>title: str or None, optional (default=None)</strong><br>
+<strong>title: str or None, default=None</strong><br>
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple, optional (default=(10, 6))</strong><br>
+<strong>figsize: tuple, default=(10, 6)</strong><br>
 Figure's size, format as (x, y).
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool or None, optional (default=True)</strong><br>
+<strong>display: bool or None, default=True</strong><br>
 Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 </td>

@@ -55,6 +55,7 @@ def test_custom_dict_key_request():
     assert cd["a"] == cd["A"] == cd[0] == 0
     assert cd[["a", "b"]] == CustomDict({"A": 0, "B": 1})
     assert cd[[1, 2]] == CustomDict({"B": 1, "C": 2})
+    assert cd[1:3] == CustomDict({"B": 1, "C": 2})
     with pytest.raises(KeyError):
         print(cd[1.2])
 

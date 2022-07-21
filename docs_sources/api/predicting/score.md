@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
 y, metric=None, sample_weight=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L254">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L254">[source]</a>
 </span>
 </div>
 
@@ -30,18 +30,18 @@ Feature set with shape=(n_samples, n_features).
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 <p>
-<strong>metric: str, func, scorer or None, optional (default=None)</strong><br>
+<strong>metric: str, func, scorer or None, default=None</strong><br>
 Metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>,
 a function with signature <code>metric(y_true, y_pred)</code> or
 a scorer object. If None, it returns mean accuracy for classification
 tasks and r2 for regression tasks.
 </p>
 <p>
-<strong>sample_weight: sequence or None, optional (default=None)</strong><br>
+<strong>sample_weight: sequence or None, default=None</strong><br>
 Sample weights corresponding to y.
 </p>
 <p>
-<strong>verbose: int or None, optional (default=None)</strong><br>
+<strong>verbose: int or None, default=None</strong><br>
 Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </p>
 </td>

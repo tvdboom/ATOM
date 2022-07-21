@@ -19,38 +19,38 @@ values are ignored.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>columns: int, str, slice or sequence, optional (default=0)</strong><br>
+<strong>columns: int, str, slice or sequence, default=0</strong><br>
 Slice, names or indices of the columns to plot. It is only
 possible to plot one categorical column. If more than just
 the one categorical column is selected, all categorical
 columns are ignored.
 </p>
 <p>
-<strong>distributions: str, sequence or None, optional (default=None)</strong><br>
+<strong>distributions: str, sequence or None, default=None</strong><br>
 Names of the <code>scipy.stats</code> distributions to fit to the column.
 If None, no distribution is fitted. Only for numerical columns.
 </p>
 <p>
-<strong>show: int or None, optional (default=None)</strong><br>
+<strong>show: int or None, default=None</strong><br>
 Number of classes (ordered by number of occurrences) to show in
 the plot. None to show all. Only for categorical columns.
 </p>
 <p>
-<strong>title: str or None, optional (default=None)</strong><br>
+<strong>title: str or None, default=None</strong><br>
 Plot's title. If None, the title is left empty.
 </p>
 <p>
-<strong>figsize: tuple, optional (default=None)</strong><br>
+<strong>figsize: tuple, default=None</strong><br>
 Figure's size, format as (x, y). If None, adapts size to
 the plot's type.
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool or None, optional (default=True)</strong><br>
+<strong>display: bool or None, default=True</strong><br>
 Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 <p>

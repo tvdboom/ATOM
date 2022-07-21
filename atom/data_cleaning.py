@@ -82,10 +82,10 @@ class TransformerMixin:
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -116,10 +116,10 @@ class TransformerMixin:
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -202,25 +202,25 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="standard")
+    strategy: str, default="standard"
         Strategy with which to scale the data. Choose from:
             - "standard": Remove mean and scale to unit variance.
             - "minmax": Scale features to a given range.
             - "maxabs": Scale features by their maximum absolute value.
             - "robust": Scale using statistics that are robust to outliers.
 
-    gpu: bool or str, optional (default=False)
+    gpu: bool or str, default=False
         Train strategy on GPU (instead of CPU).
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -267,7 +267,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -318,7 +318,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -352,7 +352,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -396,23 +396,23 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="yeojohnson")
+    strategy: str, default="yeojohnson"
         The transforming strategy. Choose from:
             - "yeojohnson"
             - "boxcox" (only works with strictly positive values)
             - "quantile": Transform features using quantiles information.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
-    random_state: int or None, optional (default=None)
+    random_state: int or None, default=None
         Seed used by the quantile strategy. If None, the random
         number generator is the `RandomState` used by `np.random`.
 
@@ -458,7 +458,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -508,7 +508,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -546,7 +546,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -587,47 +587,47 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    drop_types: str, sequence or None, optional (default=None)
+    drop_types: str, sequence or None, default=None
         Columns with these data types are dropped from the dataset.
 
-    strip_categorical: bool, optional (default=True)
+    strip_categorical: bool, default=True
         Whether to strip spaces from the categorical columns.
 
-    drop_max_cardinality: bool, optional (default=True)
+    drop_max_cardinality: bool, default=True
         Whether to drop categorical columns with maximum cardinality,
         i.e. the number of unique values is equal to the number of
         samples. Usually the case for names, IDs, etc...
 
-    drop_min_cardinality: bool, optional (default=True)
+    drop_min_cardinality: bool, default=True
         Whether to drop columns with minimum cardinality, i.e. all
         values in the column are the same.
 
-    drop_duplicates: bool, optional (default=False)
+    drop_duplicates: bool, default=False
         Whether to drop duplicate rows. Only the first occurrence of
         every duplicated row is kept.
 
-    drop_missing_target: bool, optional (default=True)
+    drop_missing_target: bool, default=True
         Whether to drop rows with missing values in the target column.
         This transformation is ignored if `y` is not provided.
 
-    encode_target: bool, optional (default=True)
+    encode_target: bool, default=True
         Whether to Label-encode the target column. This transformation
         is ignored if `y` is not provided.
 
-    gpu: bool or str, optional (default=False)
+    gpu: bool or str, default=False
         Train LabelEncoder on GPU (instead of CPU). Only for
         `encode_target=True`.
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -680,10 +680,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -720,10 +720,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
+        X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -831,7 +831,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Does nothing. Implemented for continuity of the API.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -867,7 +867,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strat_num: str, int or float, optional (default="drop")
+    strat_num: str, int or float, default="drop"
         Imputing strategy for numerical columns. Choose from:
             - "drop": Drop rows containing missing values.
             - "mean": Impute with mean of column.
@@ -876,33 +876,33 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "most_frequent": Impute with most frequent value.
             - int or float: Impute with provided numerical value.
 
-    strat_cat: str, optional (default="drop")
+    strat_cat: str, default="drop"
         Imputing strategy for categorical columns. Choose from:
             - "drop": Drop rows containing missing values.
             - "most_frequent": Impute with most frequent value.
             - str: Impute with provided string.
 
-    max_nan_rows: int, float or None, optional (default=None)
+    max_nan_rows: int, float or None, default=None
         Maximum number or fraction of missing values in a row
         (if more, the row is removed). If None, ignore this step.
 
-    max_nan_cols: int, float, optional (default=None)
+    max_nan_cols: int, float, default=None
         Maximum number or fraction of missing values in a column
         (if more, the column is removed). If None, ignore this step.
 
-    gpu: bool or str, optional (default=False)
+    gpu: bool or str, default=False
         Train on GPU (instead of CPU). Not for strat_num="knn".
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -957,7 +957,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1179,7 +1179,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="quantile")
+    strategy: str, default="quantile"
         Strategy used to define the widths of the bins. Choose from:
             - "uniform": All bins have identical widths.
             - "quantile": All bins have the same number of points.
@@ -1187,7 +1187,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                         of a 1D k-means cluster.
             - "custom": Use custom bin edges provided through `bins`.
 
-    bins: int, sequence or dict, optional (default=5)
+    bins: int, sequence or dict, default=5
         - If int: Number of bins to produce for all columns. Not allowed
                   if strategy="custom".
         - If sequence: Number of bins per column, where the n-th value
@@ -1197,25 +1197,25 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If dict: One of the aforementioned options per column, where
                    the key is the column's name.
 
-    labels: sequence, dict or None, optional (default=None)
+    labels: sequence, dict or None, default=None
         Label names with which to replace the binned intervals.
         - If None: Use default labels of the form [min_edge]-[max_edge].
         - If sequence: Labels to use for all columns.
         - If dict: Labels per column, where the key is the column's name.
 
-    gpu: bool or str, optional (default=False)
+    gpu: bool or str, default=False
         Train estimator on GPU (instead of CPU). Not for strategy="custom".
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -1259,7 +1259,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1366,7 +1366,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1402,9 +1402,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Missing values are propagated to the output column. Unknown
     classes encountered during transforming are imputed according
-    to the selected strategy. Classes with low occurrences can be
-    replaced with the value `other` in order to prevent too high
-    cardinality.
+    to the selected strategy. Rare classes can be replaced with a
+    value in order to prevent too high cardinality.
 
     Two category-encoders estimators are unavailable:
         - OneHotEncoder: Use the `max_onehot` parameter.
@@ -1412,36 +1411,40 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str or estimator, optional (default="LeaveOneOut")
+    strategy: str or estimator, default="LeaveOneOut"
         Type of encoding to use for high cardinality features. Choose
         from any of the estimators in the category-encoders package
         or provide a custom one.
 
-    max_onehot: int or None, optional (default=10)
+    max_onehot: int or None, default=10
         Maximum number of unique values in a feature to perform
         one-hot encoding. If None, `strategy`-encoding is always
         used for columns with more than two classes.
 
-    ordinal: dict or None, optional (default=None)
+    ordinal: dict or None, default=None
         Order of ordinal features, where the dict key is the feature's
         name and the value is the class order, e.g. {"salary": ["low",
         "medium", "high"]}.
 
-    frac_to_other: int, float or None, optional (default=None)
-        Replaces rare occurrences in categorical columns with the
-        string `other`. This transformation is done before the encoding
-        of the column.
+    rare_to_value: int, float or None, default=None
+        Replaces rare class occurrences in categorical columns with the
+        string in parameter `value`. This transformation is done before
+        the encoding of the column.
             - If None: Skip this step.
-            - If int: Minimum number of occurrences in a category.
-            - If float: Minimum fraction of occurrences in a category.
+            - If int: Minimum number of occurrences in a class.
+            - If float: Minimum fraction of occurrences in a class.
 
-    verbose: int, optional (default=0)
+    value: str, default="rare"
+        Value with which to replace rare classes. This parameter is
+        ignored if `rare_to_value=None`.
+
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -1470,7 +1473,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy: Union[str, Any] = "LeaveOneOut",
         max_onehot: Optional[INT] = 10,
         ordinal: Optional[Dict[str, SEQUENCE_TYPES]] = None,
-        frac_to_other: Optional[SCALAR] = None,
+        rare_to_value: Optional[SCALAR] = None,
+        value: str = "rare",
         verbose: INT = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
@@ -1479,13 +1483,14 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.strategy = strategy
         self.max_onehot = max_onehot
         self.ordinal = ordinal
-        self.frac_to_other = frac_to_other
+        self.rare_to_value = rare_to_value
+        self.value = value
         self.kwargs = kwargs
 
         self.mapping = {}
         self._cat_cols = None
         self._max_onehot = None
-        self._frac_to_other = None
+        self._rare_to_value = None
         self._to_other = defaultdict(list)
         self._categories = {}
         self._encoders = {}
@@ -1569,16 +1574,16 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             self._max_onehot = self.max_onehot
 
-        if self.frac_to_other:
-            if self.frac_to_other < 0:
+        if self.rare_to_value:
+            if self.rare_to_value < 0:
                 raise ValueError(
-                    "Invalid value for the frac_to_other parameter. "
-                    f"Value should be >0, got {self.frac_to_other}."
+                    "Invalid value for the rare_to_value parameter. "
+                    f"Value should be >0, got {self.rare_to_value}."
                 )
-            elif self.frac_to_other < 1:
-                self._frac_to_other = int(self.frac_to_other * len(X))
+            elif self.rare_to_value < 1:
+                self._rare_to_value = int(self.rare_to_value * len(X))
             else:
-                self._frac_to_other = self.frac_to_other
+                self._rare_to_value = self.rare_to_value
 
         self.log("Fitting Encoder...", 1)
 
@@ -1589,11 +1594,11 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         for name, column in X[self._cat_cols].items():
             # Replace rare classes with the string "other"
-            if self._frac_to_other:
+            if self._rare_to_value:
                 for category, count in column.value_counts().items():
-                    if count <= self._frac_to_other:
+                    if count <= self._rare_to_value:
                         self._to_other[name].append(category)
-                        X[name] = column.replace(category, "other")
+                        X[name] = column.replace(category, self.value)
 
             # Get the unique categories before fitting
             self._categories[name] = column.sort_values().unique().tolist()
@@ -1655,7 +1660,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1672,7 +1677,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         for name, column in X[self._cat_cols].items():
             # Convert uncommon classes to "other"
             if self._to_other[name]:
-                X[name] = column.replace(self._to_other[name], "other")
+                X[name] = column.replace(self._to_other[name], self.value)
 
             n_classes = len(column.unique())
             self.log(
@@ -1720,7 +1725,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str or sequence, optional (default="zscore")
+    strategy: str or sequence, default="zscore"
         Strategy with which to select the outliers. If sequence of
         strategies, only samples marked as outliers by all chosen
         strategies are dropped. Choose from:
@@ -1732,30 +1737,30 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             - "dbscan": Density-Based Spatial Clustering.
             - "optics": DBSCAN-like clustering approach.
 
-    method: int, float or str, optional (default="drop")
+    method: int, float or str, default="drop"
         Method to apply on the outliers. Only the zscore strategy
         accepts another method than "drop". Choose from:
             - "drop": Drop any sample with outlier values.
             - "min_max": Replace outlier with the min/max of the column.
             - Any numerical value with which to replace the outliers.
 
-    max_sigma: int or float, optional (default=3)
+    max_sigma: int or float, default=3
         Maximum allowed standard deviations from the mean of the
         column. If more, it is considered an outlier. Only if
         strategy="zscore".
 
-    include_target: bool, optional (default=False)
+    include_target: bool, default=False
         Whether to include the target column in the search for
         outliers. This can be useful for regression tasks. Only
         if strategy="zscore".
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -1802,7 +1807,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -1962,29 +1967,29 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str or estimator, optional (default="ADASYN")
+    strategy: str or estimator, default="ADASYN"
         Type of algorithm with which to balance the dataset. Choose
         from any of the estimators in the imbalanced-learn package or
         provide a custom one (has to have a `fit_resample` method).
 
-    n_jobs: int, optional (default=1)
+    n_jobs: int, default=1
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 - value.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
-    random_state: int or None, optional (default=None)
+    random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
 
@@ -2033,7 +2038,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str or sequence, optional (default=-1)
+        y: int, str or sequence, default=-1
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).

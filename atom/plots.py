@@ -44,7 +44,7 @@ from typeguard import typechecked
 from wordcloud import WordCloud
 
 from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_dim, check_goal,
+    INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_goal,
     check_is_fitted, check_predict_proba, composed, crash, get_best_score,
     get_corpus, get_custom_scorer, get_feature_importance, lst,
     partial_dependence, plot_from_model,
@@ -59,17 +59,17 @@ class BaseFigure:
 
     Parameters
     ----------
-    nrows: int, optional (default=1)
+    nrows: int, default=1
         Number of subplot rows in the canvas.
 
-    ncols: int, optional (default=1)
+    ncols: int, default=1
         Number of subplot columns in the canvas.
 
-    create_figure: bool, optional (default=True)
+    create_figure: bool, default=True
         Whether to create a new figure. Is False when an external
         library creates the figure (e.g. force_plot).
 
-    is_canvas: bool, optional (default=False)
+    is_canvas: bool, default=False
         Whether the figure shows multiple plots.
 
     """
@@ -253,11 +253,11 @@ class BasePlotter:
         models: str or sequence
             Models provided by the plot's parameter.
 
-        max_one: bool, optional (default=False)
+        max_one: bool, default=False
             Whether one or multiple models are allowed. If True, return
             the model instead of a list.
 
-        ensembles: bool, optional (default=True)
+        ensembles: bool, default=True
             If False, drop ensemble models automatically.
 
         """
@@ -350,10 +350,10 @@ class BasePlotter:
 
         Parameters
         ----------
-        matplotlib.figure.Figure, optional (default=None)
+        matplotlib.figure.Figure, default=None
             Current plotting figure. If None, ignore the figure.
 
-        ax: matplotlib.axes.Axes or None, optional (default=None)
+        ax: matplotlib.axes.Axes or None, default=None
             Current plotting axes. If None, ignore the axes.
 
         **kwargs
@@ -440,24 +440,24 @@ class BasePlotter:
 
         Parameters
         ----------
-        nrows: int, optional (default=1)
+        nrows: int, default=1
             Number of plots in length.
 
-        ncols: int, optional (default=2)
+        ncols: int, default=2
             Number of plots in width.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, no title is displayed.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of plots in the canvas.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. The None option doesn't do
             anything. Use the `as` syntax to get the figure object.
 
@@ -500,17 +500,17 @@ class FSPlotter(BasePlotter):
 
         Parameters
         ----------
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -570,21 +570,21 @@ class FSPlotter(BasePlotter):
 
         Parameters
         ----------
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of components to show. None to show all.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=None)
+        figsize: tuple, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of components shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -650,17 +650,17 @@ class FSPlotter(BasePlotter):
 
         Parameters
         ----------
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=None)
+        figsize: tuple, default=None
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -732,7 +732,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_pipeline(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         draw_hyperparameter_tuning: bool = True,
         color_branches: Optional[bool] = None,
         title: Optional[str] = None,
@@ -744,29 +744,29 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models for which to draw the pipeline. If None,
-            all pipelines are plotted.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models for which to draw the pipeline.
+            If None, all pipelines are plotted.
 
-        draw_hyperparameter_tuning: bool, optional (default=True)
+        draw_hyperparameter_tuning: bool, default=True
             Whether to draw if the models used Hyperparameter Tuning.
 
-        color_branches: bool or None, optional (default=None)
+        color_branches: bool or None, default=None
             Whether to draw every branch in a different color. If None,
             branches are colored when there is more than one.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the pipeline drawn.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -981,7 +981,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
             self,
-            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+            models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
             metric: Union[INT, str] = 0,
             title: Optional[str] = None,
             figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -995,24 +995,24 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        metric: int or str, optional (default=0)
+        metric: int or str, default=0
             Index or name of the metric. Only for multi-metric runs.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1072,7 +1072,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_learning_curve(
             self,
-            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+            models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
             metric: Union[INT, str] = 0,
             title: Optional[str] = None,
             figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1086,24 +1086,24 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        metric: int or str, optional (default=0)
+        metric: int or str, default=0
             Index or name of the metric. Only for multi-metric runs.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1159,7 +1159,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_results(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         metric: Union[INT, str] = 0,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
@@ -1176,25 +1176,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        metric: int or str, optional (default=0)
+        metric: int or str, default=0
             Index or name of the metric. Only for multi-metric runs.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=None)
+        figsize: tuple, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of models shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1273,7 +1273,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_bo(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         metric: Union[INT, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 8),
@@ -1290,24 +1290,24 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the models to plot. If None, all models in the
             pipeline that used bayesian optimization are selected.
 
-        metric: int or str, optional (default=0)
+        metric: int or str, default=0
             Index or name of the metric. Only for multi-metric runs.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 8))
+        figsize: tuple, default=(10, 8)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1373,7 +1373,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_evals(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "both",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1389,28 +1389,28 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the pipeline. To avoid this, call the plot
+            models in the trainer. To avoid this, call the plot
             from a model, e.g. `atom.lgb.plot_evals()`.
 
-        dataset: str, optional (default="both")
+        dataset: str, default="both"
             Data set on which to calculate the evaluation curves.
             Choose from: "train", "test" or "both".
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1420,7 +1420,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "plot_evals")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         dataset = self._get_set(dataset, allow_holdout=False)
@@ -1454,7 +1453,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1468,25 +1467,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1536,7 +1535,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1550,25 +1549,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1618,7 +1617,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_det(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1631,25 +1630,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1695,7 +1694,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1709,25 +1708,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1779,7 +1778,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1793,25 +1792,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1862,7 +1861,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1879,25 +1878,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -1957,7 +1956,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1977,25 +1976,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -2052,7 +2051,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_feature_importance(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
@@ -2069,26 +2068,26 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of features (ordered by importance) to show.
             None to show all.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -2098,7 +2097,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "plot_feature_importance")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         show = self._get_show(show, models)
@@ -2154,7 +2152,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_permutation_importance(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         n_repeats: INT = 10,
         title: Optional[str] = None,
@@ -2174,29 +2172,29 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of features (ordered by importance) to show.
             None to show all.
 
-        n_repeats: int, optional (default=10)
+        n_repeats: int, default=10
             Number of times to permute each feature.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -2206,7 +2204,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "plot_permutation_importance")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         show = self._get_show(show, models)
@@ -2287,7 +2284,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_partial_dependence(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         kind: str = "average",
         target: Union[INT, str] = 1,
@@ -2308,17 +2305,17 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        columns: int, str, sequence or None, optional (default=None)
+        columns: int, str, sequence or None, default=None
             Features or feature pairs (name or index) to get the partial
             dependence from. Maximum of 3 allowed. If None, it uses the
             best 3 features if the `feature_importance` attribute is
             defined, else it uses the first 3 features in the dataset.
 
-        kind: str, optional (default="average")
+        kind: str, default="average"
             - "average": Plot the partial dependence averaged across
                          all the samples in the dataset.
             - "individual": Plot the partial dependence per sample
@@ -2328,21 +2325,21 @@ class BaseModelPlotter(BasePlotter):
 
             This parameter is ignored when plotting feature pairs.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -2392,7 +2389,6 @@ class BaseModelPlotter(BasePlotter):
                     )
             return cols
 
-        check_dim(self, "plot_partial_dependence")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         target = self._get_target(target) if self.task.startswith("multi") else 0
@@ -2541,7 +2537,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_parshap(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         title: Optional[str] = None,
@@ -2568,29 +2564,29 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        columns: int, str, sequence or None, optional (default=None)
+        columns: int, str, sequence or None, default=None
             Names or indices of the features to plot. None to show all.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -2600,7 +2596,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "plot_parshap")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         target = self._get_target(target)
@@ -2724,7 +2719,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         normalize: bool = False,
         title: Optional[str] = None,
@@ -2741,29 +2736,29 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the confusion matrix.
             Choose from:` "train", "test" or "holdout".
 
-        normalize: bool, optional (default=False)
+        normalize: bool, default=False
            Whether to normalize the matrix.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=None)
+        figsize: tuple, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the plot's type.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -2885,7 +2880,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         steps: INT = 100,
@@ -2900,34 +2895,34 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        metric: str, func, scorer, sequence or None, optional (default=None)
+        metric: str, func, scorer, sequence or None, default=None
             Metric to plot. Choose from any of sklearn's SCORERS, a
             function with signature `metric(y_true, y_pred)`, a scorer
             object or a sequence of these. If None, the metric used
             to run the pipeline is plotted.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        steps: int, optional (default=100)
+        steps: int, default=100
             Number of thresholds measured.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -2985,7 +2980,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         target: Union[INT, str] = 1,
         title: Optional[str] = None,
@@ -2999,29 +2994,29 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Probability of being that class in the target column
             (as index or name). Only for multiclass classification.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3075,7 +3070,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         n_bins: INT = 10,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
@@ -3101,25 +3096,25 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        n_bins: int, optional (default=10)
+        n_bins: int, default=10
             Number of bins used for calibration. Minimum of 5
             required.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 10))
+        figsize: tuple, default=(10, 10)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3183,7 +3178,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def bar_plot(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -3202,37 +3197,37 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the pipeline. To avoid this, call the plot
+            models in the trainer. To avoid this, call the plot
             from a model, e.g. `atom.xgb.bar_plot()`.
 
-        index: int, str, sequence or None, optional (default=None)
+        index: int, str, sequence or None, default=None
             Index names or positions of the rows in the dataset to
             plot. If None, it selects all rows in the test set.
 
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of features (ordered by importance) to show.
             None to show all.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to
             look at. Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts
             the size to the number of features shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3245,7 +3240,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "bar_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
@@ -3273,7 +3267,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def beeswarm_plot(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -3289,38 +3283,38 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the pipeline. To avoid this, call the plot
+            models in the trainer. To avoid this, call the plot
             from a model, e.g. `atom.xgb.beeswarm_plot()`.
 
-        index: tuple, slice or None, optional (default=None)
+        index: tuple, slice or None, default=None
             Index names or positions of the rows in the dataset to plot.
             If None, it selects all rows in the test set. The beeswarm
             plot does not support plotting a single sample.
 
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of features (ordered by importance) to show. None
             to show all.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3333,7 +3327,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "beeswarm_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
@@ -3361,7 +3354,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def decision_plot(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -3382,37 +3375,37 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the pipeline. To avoid this, call the plot
+            models in the trainer. To avoid this, call the plot
             from a model, e.g. `atom.xgb.decision_plot()`.
 
-        index: int, str, sequence or None, optional (default=None)
+        index: int, str, sequence or None, default=None
             Index names or positions of the rows in the dataset to plot.
             If None, it selects all rows in the test set.
 
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of features (ordered by importance) to show. None
             to show all.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=None)
+        figsize: tuple, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3425,7 +3418,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "decision_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
@@ -3460,7 +3452,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def force_plot(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         title: Optional[str] = None,
@@ -3478,32 +3470,32 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the pipeline. To avoid this, call the plot
+            models in the trainer. To avoid this, call the plot
             from a model, e.g. `atom.xgb.force_plot()`.
 
-        index: int, str, sequence or None, optional (default=None)
+        index: int, str, sequence or None, default=None
             Index names or positions of the rows in the dataset to plot.
             If None, it selects all rows in the test set.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(14, 6))
+        figsize: tuple, default=(14, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. If matplotlib=False, the figure will
             be saved as a html file. If None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3522,7 +3514,6 @@ class BaseModelPlotter(BasePlotter):
                 "because of incompatibility between the ATOM and shap API."
             )
 
-        check_dim(self, "force_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
@@ -3563,7 +3554,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def heatmap_plot(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -3582,38 +3573,38 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the pipeline. To avoid this, call the plot
+            models in the trainer. To avoid this, call the plot
             from a model, e.g. `atom.xgb.heatmap_plot()`.
 
-        index: slice, sequence or None, optional (default=None)
+        index: slice, sequence or None, default=None
             Index names or positions of the rows in the dataset to plot.
             If None, it selects all rows in the test set. The heatmap
             plot does not support plotting a single sample.
 
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of features (ordered by importance) to show. None
             to show all.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3626,7 +3617,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "heatmap_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
@@ -3654,7 +3644,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def scatter_plot(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         feature: Union[INT, str] = 0,
         target: Union[INT, str] = 1,
@@ -3674,36 +3664,36 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the pipeline. To avoid this, call the plot
+            models in the trainer. To avoid this, call the plot
             from a model, e.g. `atom.xgb.scatter_plot()`.
 
-        index: slice, sequence or None, optional (default=None)
+        index: slice, sequence or None, default=None
             Index names or positions of the rows in the dataset to
             plot. If None, it selects all rows in the test set. The
             scatter plot does not support plotting a single sample.
 
-        feature: int or str, optional (default=0)
+        feature: int or str, default=0
             Index or name of the feature to plot.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3716,7 +3706,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "scatter_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
@@ -3744,7 +3733,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def waterfall_plot(
         self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -3768,39 +3757,39 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
+        models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the pipeline. To avoid this, call the plot
+            models in the trainer. To avoid this, call the plot
             from a model, e.g. `atom.xgb.waterfall_plot()`.
 
-        index: int, str or None, optional (default=None)
+        index: int, str or None, default=None
             Index name or position of the row in the dataset to plot.
             If None, it selects the first row in the test set. The
             waterfall plot does not support plotting multiple
             samples.
 
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of features (ordered by importance) to show. None
             to show all.
 
-        target: int or str, optional (default=1)
+        target: int or str, default=1
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3810,7 +3799,6 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "waterfall_plot")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[[self._get_rows(index, branch=m.branch)[0]]]
@@ -3853,26 +3841,26 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Parameters
         ----------
-        columns: slice, sequence or None, optional (default=None)
+        columns: slice, sequence or None, default=None
             Slice, names or indices of the columns to plot. If None,
             plot all columns in the dataset. Selected categorical
             columns are ignored.
 
-        method: str, optional (default="pearson")
+        method: str, default="pearson"
             Method of correlation. Choose from: pearson, kendall or
             spearman.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(8, 7))
+        figsize: tuple, default=(8, 7)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3882,7 +3870,6 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "plot_correlation")
         columns = self._get_columns(columns, only_numerical=True)
         if method.lower() not in ("pearson", "kendall", "spearman"):
             raise ValueError(
@@ -3942,22 +3929,22 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Parameters
         ----------
-        columns: slice, sequence or None, optional (default=None)
+        columns: slice, sequence or None, default=None
             Slice, names or indices of the columns to plot. If None,
             plot all columns in the dataset. Selected categorical
             columns are ignored.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=(10, 10)))
+        figsize: tuple or None, default=(10, 10))
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -3976,7 +3963,6 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
                 "a canvas because of incompatibility of the APIs."
             )
 
-        check_dim(self, "plot_scatter_matrix")
         columns = self._get_columns(columns, only_numerical=True)
 
         # Use max 250 samples to not clutter the plot
@@ -4022,34 +4008,34 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Parameters
         ----------
-        columns: int, str, slice or sequence, optional (default=0)
+        columns: int, str, slice or sequence, default=0
             Slice, names or indices of the columns to plot. It is only
             possible to plot one categorical column. If more than just
             one categorical columns are selected, all categorical
             columns are ignored.
 
-        distributions: str, sequence or None, optional (default=None)
+        distributions: str, sequence or None, default=None
             Names of the `scipy.stats` distributions to fit to the
             columns. If None, no distribution is fitted. Only for
             numerical columns.
 
-        show: int or None, optional (default=None)
+        show: int or None, default=None
             Number of classes (ordered by number of occurrences) to
             show in the plot. None to show all. Only for categorical
             columns.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the plot's type.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -4062,7 +4048,6 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "plot_distribution")
         columns = self._get_columns(columns)
         palette_1 = cycle(sns.color_palette())
         palette_2 = sns.color_palette("Blues_r", 3)
@@ -4168,25 +4153,25 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Parameters
         ----------
-        columns: int, str, slice or sequence, optional (default=0)
+        columns: int, str, slice or sequence, default=0
             Slice, names or indices of the columns to plot. Selected
             categorical columns are ignored.
 
-        distributions: str, sequence or None, optional (default="norm")
+        distributions: str, sequence or None, default="norm"
             Names of the `scipy.stats` distributions to fit to the
             columns.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -4196,7 +4181,6 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             Plot object. Only returned if `display=None`.
 
         """
-        check_dim(self, "plot_qq")
         columns = self._get_columns(columns)
         palette = cycle(sns.color_palette())
 
@@ -4255,22 +4239,22 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Parameters
         ----------
-        index: int, str, sequence or None, optional (default=None)
+        index: int, str, sequence or None, default=None
             Index names or positions of the documents in the corpus to
             include in the wordcloud. If None, it selects all documents
             in the dataset.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(10, 6))
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -4291,7 +4275,6 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             else:
                 return " ".join([" ".join(row) for row in column])
 
-        check_dim(self, "plot_wordcloud")
         corpus = get_corpus(self.X)
         rows = self.dataset.loc[self._get_rows(index, return_test=False)]
 
@@ -4341,32 +4324,32 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
 
         Parameters
         ----------
-        ngram: str or int, optional (default="bigram")
+        ngram: str or int, default="bigram"
             Number of contiguous words to search for (size of
             n-gram). Choose from: words (1), bigrams (2),
             trigrams (3), quadgrams (4).
 
-        index: int, str, sequence or None, optional (default=None)
+        index: int, str, sequence or None, default=None
             Index names or positions of the documents in the corpus to
             include in the search. If None, it selects all documents in
             the dataset.
 
-        show: int, optional (default=10)
+        show: int, default=10
             Number of n-grams (ordered by number of occurrences) to
             show in the plot.
 
-        title: str or None, optional (default=None)
+        title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=None)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of n-grams shown.
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, optional (default=True)
+        display: bool or None, default=True
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
@@ -4384,7 +4367,6 @@ class ATOMPlotter(FSPlotter, BaseModelPlotter):
             else:
                 return column
 
-        check_dim(self, "plot_ngrams")
         corpus = get_corpus(self.X)
         rows = self.dataset.loc[self._get_rows(index, return_test=False)]
 

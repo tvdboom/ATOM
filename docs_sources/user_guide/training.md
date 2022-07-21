@@ -187,7 +187,7 @@ the models: adding them directly to the dictionary as key-value pairs
 or through dictionaries.
 
 Adding the parameters directly to `est_params` (or using a dict with
-the key 'all') shares them across all models in the pipeline. In
+the key 'all') shares them across all models in the trainer. In
 this example, both the XGBoost and the LightGBM model use
 `n_estimators=200`. Make sure all the models do have the specified
 parameters or an exception will be raised!
@@ -397,7 +397,7 @@ training set.
 There are two ways to apply early stopping on these models:
 
 * Through the `early_stopping` key in `bo_params`. This approach applies
-  early stopping to all models in the pipeline and allows the input of a
+  early stopping to all models in the trainer and allows the input of a
   fraction of the total number of rounds.
 * Filling the `early_stopping_rounds` parameter directly in `est_params`.
   Don't forget to add `_fit` to the parameter to call it from the fit method.

@@ -11,8 +11,8 @@ data=None, transform_data=True, verbose=None)
 
 Load a class instance from a pickle file. If the file is a trainer that
 was saved using `save_data=False`, it is possible to load new data into
-it. For atom pickles, all data transformations in the pipeline can be
-applied to the loaded data.
+it. For atom pickles, all data transformations can be applied to the loaded
+data.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -21,7 +21,7 @@ applied to the loaded data.
 <strong>filename: str</strong><br>
 Name of the pickle file to load.
 </p>
-<strong>data: tuple of indexables or None, optional (default=None)</strong><br>
+<strong>data: sequence of indexables or None, default=None</strong><br>
 Tuple containing the features and target data. Only use this parameter
 if the file is a trainer that was saved using <code>save_data=False</code> (see
 the <a href="../atomclassifier/#save">save</a> method). Allowed formats are:
@@ -45,12 +45,12 @@ y: int, str or sequence<br>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
-<strong>transform_data: bool, optional (default=True)</strong><br>
+<strong>transform_data: bool, default=True</strong><br>
 If False, the <code>data</code> is left as provided. If True, it is transformed
 through all the steps in the instance's pipeline. This parameter is
 ignored if the loaded file is not an atom pickle.
 <p>
-<strong>verbose: int or None, optional (default=None)</strong><br>
+<strong>verbose: int or None, default=None</strong><br>
 Verbosity level of the transformations applied to the new data. If
 None, use the verbosity from the loaded instance. This parameter
 is ignored if <code>transform_data=False</code>.

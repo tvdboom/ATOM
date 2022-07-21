@@ -46,7 +46,7 @@ y: int, str or sequence<br>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
-<strong>y: int, str or sequence, optional (default=-1)</strong><br>
+<strong>y: int, str or sequence, default=-1</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
@@ -56,7 +56,7 @@ y: int, str or sequence<br>
 This parameter is ignored if the target column is provided
 through <code>arrays</code>.
 </p>
-<strong>index: bool, int, str or sequence, optional (default=False)</strong><br>
+<strong>index: bool, int, str or sequence, default=False</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Reset to <a href="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html">RangeIndex</a>.</li>
 <li>If True: Use the current index.</li>
@@ -64,7 +64,7 @@ through <code>arrays</code>.
 <li>If str: Name of the column to use as index.</li>
 <li>If sequence: Index column with shape=(n_samples,).</li>
 </ul>
-<strong>test_size: int or float, optional (default=0.2)</strong><br>
+<strong>test_size: int or float, default=0.2</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If <=1: Fraction of the dataset to include in the test set.</li>
 <li>If >1: Number of rows to include in the test set.</li>
@@ -73,7 +73,7 @@ through <code>arrays</code>.
 This parameter is ignored if the test set is provided through
 <code>arrays</code>.
 </p>
-<strong>holdout_size: int, float or None, optional (default=None)</strong><br>
+<strong>holdout_size: int, float or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If None: No holdout data set is kept apart.</li>
 <li>If <=1: Fraction of the dataset to include in the holdout set.</li>
@@ -84,12 +84,12 @@ This parameter is ignored if the holdout set is provided through
 <code>arrays</code>.
 </p>
 <p>
-<strong>shuffle: bool, optional (default=True)</strong><br>
+<strong>shuffle: bool, default=True</strong><br>
 Whether to shuffle the dataset before splitting the train and
 test set. Be aware that not shuffling the dataset can cause
 an unequal distribution of target classes over the sets.
 </p>
-<strong>n_rows: int or float, optional (default=1)</strong><br>
+<strong>n_rows: int or float, default=1</strong><br>
 Random subsample of the provided dataset to use. The default
 value selects all the rows.
 <ul style="line-height:1.2em;margin-top:5px">
@@ -97,7 +97,7 @@ value selects all the rows.
 <li>If >1: Select this exact number of rows. Only if the input
 doesn't already specify the data sets (i.e. X or X, y).</li>
 </ul>
-<strong>n_jobs: int, optional (default=1)</strong><br>
+<strong>n_jobs: int, default=1</strong><br>
 Number of cores to use for parallel processing.
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If >0: Number of cores to use.</li>
@@ -108,7 +108,7 @@ Number of cores to use for parallel processing.
 Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
 </p>
-<strong>gpu: bool or str, optional (default=False)</strong><br>
+<strong>gpu: bool or str, default=False</strong><br>
 Train estimators on GPU (instead of CPU). Refer to the
 <a href="../../../user_guide/gpu">documentation</a>
 to check which estimators are supported.
@@ -117,14 +117,14 @@ to check which estimators are supported.
 <li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>warnings: bool or str, optional (default=False)</strong><br>
+<strong>warnings: bool or str, default=False</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If True: Default warning action (equal to "default").</li>
 <li>If False: Suppress all warnings (equal to "ignore").</li>
@@ -134,19 +134,19 @@ Verbosity level of the class. Choose from:
 Changing this parameter affects the <code>PYTHONWARNINGS</code> environment.
 <br>ATOM can't manage warnings that go directly from C/C++ code to stdout.
 </p>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 <p>
-<strong>experiment: str or None, optional (default=None)</strong><br>
+<strong>experiment: str or None, default=None</strong><br>
 Name of the mlflow experiment to use for tracking. If None,
 no mlflow tracking is performed.
 </p>
 <p>
-<strong>random_state: int or None, optional (default=None)</strong><br>
+<strong>random_state: int or None, default=None</strong><br>
 Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 </p>
@@ -239,8 +239,7 @@ Test target.
 </p>
 <p>
 <strong>shape: tuple</strong><br>
-Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
-for datasets with more than two dimensions.
+Dataset's shape: (n_rows x n_columns).
 </p>
 <p>
 <strong>columns: pd.Index</strong><br>
@@ -272,7 +271,7 @@ a single column (e.g. Ordinal, Leave-one-out, etc...).
 <strong>scaled: bool or None</strong><br>
 Whether the feature set is scaled. It is considered scaled when
 it has mean=0 and std=1, or when atom has a scaler in the pipeline.
-Returns None for multidimensional or sparse datasets.
+Returns None sparse datasets.
 </p>
 <p>
 <strong>duplicates: int</strong><br>
@@ -281,12 +280,12 @@ Number of duplicate rows in the dataset.
 <p>
 <strong>nans: pd.Series or None</strong><br>
 Columns with the number of missing values in them. Returns None for
-multidimensional or sparse datasets.
+sparse datasets.
 </p>
 <p>
 <strong>n_nans: int or None</strong><br>
 Number of samples containing missing values. Returns None for
-multidimensional or sparse datasets.
+sparse datasets.
 </p>
 <p>
 <strong>numerical: pd.Index</strong><br>
@@ -307,12 +306,12 @@ Number of categorical features in the dataset.
 <p>
 <strong>outliers: pd.Series or None</strong><br>
 Columns in training set with amount of outlier values. Returns None for
-multidimensional or sparse datasets.
+sparse datasets.
 </p>
 <p>
 <strong>n_outliers: int or None</strong><br>
 Number of samples in the training set containing outliers. Returns None for
-multidimensional or sparse datasets.
+sparse datasets.
 </p>
 </td>
 </tr>
@@ -336,7 +335,7 @@ sklearn estimators.
 </p>
 <p>
 <strong>models: list</strong><br>
-List of models in the pipeline.
+List of models in the trainer.
 </p>
 <p>
 <strong>metric: str or list</strong><br>
@@ -522,7 +521,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#stacking">stacking</a></td>
-<td>Add a Stacking instance to the models in the pipeline.</td>
+<td>Train a Stacking model.</td>
 </tr>
 
 <tr>
@@ -537,7 +536,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#voting">voting</a></td>
-<td>Add a Voting instance to the models in the pipeline.</td>
+<td>Train a Voting model.</td>
 </tr>
 </table>
 <br>
@@ -594,7 +593,7 @@ is merged independently with atom.
 Transformer to add to the pipeline. Should implement a <code>transform</code> method.
 </p>
 <p>
-<strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>
+<strong>columns: int, str, slice, sequence or None, default=None</strong><br>
 Names, indices or dtypes of the columns in the dataset to transform.
 If None, transform all columns. Add <code>!</code> in front of a name
 or dtype to exclude that column, e.g. <code>atom.add(Transformer(), columns="!Location")</code>
@@ -602,7 +601,7 @@ transforms all columns except <code>Location</code>. You can either
 include or exclude columns, not combinations of these.
 </p>
 <p>
-<strong>train_only: bool, optional (default=False)</strong><br>
+<strong>train_only: bool, default=False</strong><br>
 Whether to apply the estimator only on the training set or
 on the complete dataset. Note that if True, the transformation
 is skipped when making predictions on unseen data.
@@ -649,7 +648,7 @@ Function to apply to the dataset.
 Name or index of the column in the dataset to create or transform.
 </p>
 <p>
-<strong>args: tuple, optional (default=())</strong><br>
+<strong>args: tuple, default=()</strong><br>
 Positional arguments for the function (after the dataset).
 </p>
 <p>
@@ -690,7 +689,7 @@ Keyword arguments for <a href="https://epistasislab.github.io/tpot/api/#regressi
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">available_models</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L500">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L500">[source]</a>
 </span>
 </div>
 Give an overview of the available predefined models.
@@ -732,29 +731,29 @@ The default option is to add two plots side by side. See the
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>nrows: int, optional (default=1)</strong><br>
+<strong>nrows: int, default=1</strong><br>
 Number of plots in length.
 </p>
 <p>
-<strong>ncols: int, optional (default=2)</strong><br>
+<strong>ncols: int, default=2</strong><br>
 Number of plots in width.
 </p>
 <p>
-<strong>title: str or None, optional (default=None)</strong><br>
+<strong>title: str or None, default=None</strong><br>
 Plot's title. If None, no title is displayed.
 </p>
 <p>
-<strong>figsize: tuple or None, optional (default=None)</strong><br>
+<strong>figsize: tuple or None, default=None</strong><br>
 Figure's size, format as (x, y). If None, it adapts the size to the
 number of plots in the canvas.
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool, optional (default=True)</strong><br>
+<strong>display: bool, default=True</strong><br>
 Whether to render the plot.
 </p>
 </td>
@@ -767,7 +766,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">clear</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L536">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L536">[source]</a>
 </span>
 </div>
 Reset all model attributes to their initial state, deleting potentially
@@ -785,7 +784,7 @@ the class. The cleared attributes per model are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L551">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L551">[source]</a>
 </span>
 </div>
 Delete models from the trainer. If all models are removed, the metric
@@ -796,7 +795,7 @@ from any active mlflow experiment.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>models: str or sequence, optional (default=None)</strong><br>
+<strong>models: str or sequence, default=None</strong><br>
 Models to delete. If None, delete them all.
 </td>
 </tr>
@@ -824,12 +823,12 @@ numerical columns. Missing values are ignored.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>distributions: str, sequence or None, optional (default=None)</strong><br>
+<strong>distributions: str, sequence or None, default=None</strong><br>
 Names of the distributions in <code>scipy.stats</code> to get the
 statistics on. If None, a selection of the most common ones is used.
 </p>
 <p>
-<strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>
+<strong>columns: int, str, slice, sequence or None, default=None</strong><br>
 Names, indices or dtypes of the columns in the dataset to
 perform the test on. If None, select all numerical columns.
 </p>
@@ -886,7 +885,7 @@ Names or indices of the columns to drop.
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
 dataset="test", sample_weight=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L578">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L578">[source]</a>
 </span>
 </div>
 Get all the models' scores for the provided metrics.
@@ -895,17 +894,17 @@ Get all the models' scores for the provided metrics.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+<strong>metric: str, func, scorer, sequence or None, default=None</strong><br>
 Metrics to calculate. If None, a selection of the most common
 metrics per task are used.
 </p>
 <p>
-<strong>dataset: str, optional (default="test")</strong><br>
+<strong>dataset: str, default="test"</strong><br>
 Data set on which to calculate the metric. Choose from: "train",
 "test" or "holdout".
 </p>
 <p>
-<strong>sample_weight: sequence or None, optional (default=None)</strong><br>
+<strong>sample_weight: sequence or None, default=None</strong><br>
 Sample weights corresponding to y in <code>dataset</code>.
 </p>
 </td>
@@ -952,13 +951,13 @@ on the training set.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>model: str or None, optional (default=None)</strong><br>
+<strong>model: str or None, default=None</strong><br>
 Name of the model to add as a final estimator to the pipeline. If the
 model used <a href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
 the <code>scaler</code> is added to the pipeline. If None, only the
 transformers are added.
 </p>
-<strong>memory: bool, str, Memory or None, optional (default=None)</strong><br>
+<strong>memory: bool, str, Memory or None, default=None</strong><br>
 Used to cache the fitted transformers of the pipeline.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None or False: No caching is performed.</li>
@@ -967,7 +966,7 @@ Used to cache the fitted transformers of the pipeline.
 <li>If Memory: Object with the <a href="https://joblib.readthedocs.io/en/latest/generated/joblib.Memory.html">joblib.Memory</a> interface.</li>
 </ul>
 <p>
-<strong>verbose: int or None, optional (default=None)</strong><br>
+<strong>verbose: int or None, default=None</strong><br>
 Verbosity level of the transformers in the pipeline. If None, it leaves
 them to their original verbosity. Note that this is not the pipeline's
 own verbose parameter. To change that, use the <code>set_params</code>
@@ -1003,7 +1002,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -1016,7 +1015,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L659">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L659">[source]</a>
 </span>
 </div>
 Merge another trainer into this one. Branches, models, metrics and
@@ -1035,7 +1034,7 @@ dataset and trained with the same metric.
 Trainer instance with which to merge.
 </p>
 <p>
-<strong>suffix: str, optional (default="2")</strong><br>
+<strong>suffix: str, default="2"</strong><br>
 Conflicting branches and models are merged adding <code>suffix</code>
 to the end of their names.
 </p>
@@ -1061,15 +1060,15 @@ is rendered in HTML5 and CSS3. Note that this method can be slow for
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>dataset: str, optional (default="dataset")</strong><br>
+<strong>dataset: str, default="dataset"</strong><br>
 Data set to get the report from.
 </p>
 <p>
-<strong>n_rows: int or None, optional (default=None)</strong><br>
+<strong>n_rows: int or None, default=None</strong><br>
 Number of (randomly picked) rows to process. None to use all rows.
 </p>
 <p>
-<strong>filename: str or None, optional (default=None)</strong><br>
+<strong>filename: str or None, default=None</strong><br>
 Name to save the file with (as .html). None to not save anything.
 </p>
 <p>
@@ -1126,11 +1125,11 @@ big datasets! To avoid this, use `save_data=False`.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </p>
 <p>
-<strong>save_data: bool, optional (default=True)</strong><br>
+<strong>save_data: bool, default=True</strong><br>
 Whether to save the data as an attribute of the instance. If False,
 remember to add the data to <a href="../../ATOM/atomloader">ATOMLoader</a>
 when loading the file.
@@ -1154,11 +1153,11 @@ Save the data in the current branch to a csv file.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </p>
 <p>
-<strong>dataset: str, optional (default="dataset")</strong><br>
+<strong>dataset: str, default="dataset"</strong><br>
 Data set to save.
 </p>
 </td>
@@ -1184,23 +1183,23 @@ Note that applying transformers to the data may alter the types again.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>obj2cat: bool, optional (default=True)</strong><br>
+<strong>obj2cat: bool, default=True</strong><br>
 Whether to convert <code>object</code> to <code>category</code>. Only if the
 number of categories would be less than 30% of the length
 of the column.
 </p>
 <p>
-<strong>int2uint: bool, optional (default=False)</strong><br>
+<strong>int2uint: bool, default=False</strong><br>
 Whether to convert <code>int</code> to <code>uint</code> (unsigned integer).
 Only if the values in the column are strictly positive.
 </p>
 <p>
-<strong>dense2sparse: bool, optional (default=False)</strong><br>
+<strong>dense2sparse: bool, default=False</strong><br>
 Whether to convert all features to sparse format. The value that is
 compressed is the most frequent value in the column.
 </p>
 <p>
-<strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>
+<strong>columns: int, str, slice, sequence or None, default=None</strong><br>
 Names, indices or dtypes of the columns in the dataset to shrink.
 If None, transform all columns.
 </p>
@@ -1215,7 +1214,7 @@ If None, transform all columns.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(name="Stack",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L728">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L728">[source]</a>
 </span>
 </div>
 Add a [Stacking](../../../user_guide/models/#stacking) model to the pipeline.
@@ -1224,12 +1223,12 @@ Add a [Stacking](../../../user_guide/models/#stacking) model to the pipeline.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>name: str, optional (default="Stack")</strong><br>
+<strong>name: str, default="Stack"</strong><br>
 Name of the model. The name is always presided with the
 model's acronym: <code>Stack</code>.
 </p>
 <p>
-<strong>models: sequence or None, optional (default=None)</strong><br>
+<strong>models: sequence or None, default=None</strong><br>
 Models that feed the stacking estimator. If None, it selects
 all non-ensemble models trained on the current branch.
 </p>
@@ -1273,7 +1272,7 @@ saves it to the logger.
 <em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L798">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L798">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/models/#voting) model to the pipeline.
@@ -1282,12 +1281,12 @@ Add a [Voting](../../../user_guide/models/#voting) model to the pipeline.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>name: str, optional (default="Vote")</strong><br>
+<strong>name: str, default="Vote"</strong><br>
 Name of the model. The name is always presided with the
 model's acronym: <code>Vote</code>.
 </p>
 <p>
-<strong>models: sequence or None, optional (default=None)</strong><br>
+<strong>models: sequence or None, default=None</strong><br>
 Models that feed the voting estimator. If None, it selects
 all non-ensemble models trained on the current branch.
 </p>
@@ -1443,7 +1442,7 @@ define the intervals. Ignores numerical columns. See
 <a name="encode"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">encode</strong>(strategy="LeaveOneOut",
-max_onehot=10, ordinal=None, frac_to_other=None)
+max_onehot=10, ordinal=None, rare_to_value=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1151">[source]</a>
 </span>
@@ -1676,7 +1675,7 @@ created by the class are attached to atom.
     <li>When strategy is not one of univariate or pca, and solver=None, atom
          uses the winning model (if it exists) as solver.</li>
     <li>When strategy is sfs, rfecv or any of the advanced strategies and no
-        scoring is specified, atom uses the metric in the pipeline (if it exists)
+        scoring is specified, atom uses the metric in the trainer (if it exists)
         as scoring parameter.</li>
 
 <br /><br />

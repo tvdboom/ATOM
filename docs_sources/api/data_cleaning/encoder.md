@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut",
-max_onehot=10, ordinal=None, frac_to_other=None, verbose=0, logger=None, **kwargs)
+max_onehot=10, ordinal=None, rare_to_value=None, value="rare", verbose=0, logger=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1395">[source]</a>
 </span>
@@ -16,51 +16,54 @@ the number of classes in the column:
 * If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
 * If n_classes > `max_onehot`, use `strategy`-encoding.
 
-Missing values are propagated to the output column. Unknown
-classes encountered during transforming are imputed according
-to the selected strategy. Classes with low occurrences can be
-replaced with the value `other` in order to prevent too high
-cardinality. It can be accessed from atom through the
-[encode](../../ATOM/atomclassifier/#encode) method. Read more
-in the [user guide](../../../user_guide/data_cleaning/#encoding-categorical-features).
+Missing values are propagated to the output column. Unknown classes
+encountered during transforming are imputed according to the selected
+strategy. Rare classes can be replaced with a value in order to prevent
+too high cardinality. It can be accessed from atom through the [encode](../../ATOM/atomclassifier/#encode)
+method. Read more in the [user guide](../../../user_guide/data_cleaning/#encoding-categorical-features).
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str or estimator, optional (default="LeaveOneOut")</strong><br>
+<strong>strategy: str or estimator, default="LeaveOneOut"</strong><br>
 Type of encoding to use for high cardinality features. Choose
 from any of the estimators in the <a href="https://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
 package or provide a custom one.
 <p>
-<strong>max_onehot: int or None, optional (default=10)</strong><br>
+<strong>max_onehot: int or None, default=10</strong><br>
 Maximum number of unique values in a feature to perform one-hot
 encoding. If None, <code>strategy</code>-encoding is always used
 for columns with more than two classes.
 </p>
 <p>
-<strong>ordinal: dict or None, optional (default=None)</strong><br>
+<strong>ordinal: dict or None, default=None</strong><br>
 Order of ordinal features, where the dict key is the feature's
 name and the value is the class order, e.g. {"salary": ["low",
 "medium", "high"]}.
 </p>
-<strong>frac_to_other: int, float or None, optional (default=None)</strong><br>
-Replaces rare occurrences in categorical columns with the string
-<code>other</code>. This transformation is done before the encoding
-of the column.
+<strong>rare_to_value: int, float or None, default=None</strong><br>
+Replaces rare class occurrences in categorical columns with the
+string in parameter <code>value</code>. This transformation is done
+before the encoding of the column.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Skip this step.</li>
-<li>If int: Maximum number of occurrences to replace a category.</li>
-<li>If float: Maximum fraction of occurrences to replace a category.</li>
+<li>If int: Maximum number of occurrences to replace a class.</li>
+<li>If float: Maximum fraction of occurrences to replace a class.</li>
 </ul>
-<strong>verbose: int, optional (default=0)</strong><br>
+<p>
+<strong>value: str, default="rare"</strong><br>
+Value with which to replace rare classes. This parameter is ignored if
+<code>rare_to_value=None</code>.
+</p>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
@@ -167,7 +170,7 @@ Fit to data. Note that leaving y=None can lead to errors if the
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
@@ -198,7 +201,7 @@ to errors if the `strategy` encoder requires target values.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
@@ -229,7 +232,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -263,7 +266,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -284,7 +287,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -331,7 +334,7 @@ Encode the data.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>

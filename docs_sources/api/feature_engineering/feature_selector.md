@@ -20,7 +20,7 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str or None, optional (default=None)</strong><br>
+<strong>strategy: str or None, default=None</strong><br>
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>None: Do not perform any feature selection strategy.</li>
@@ -36,7 +36,7 @@ Feature selection strategy to use. Choose from:
 <li>"<a href="https://jaswinder9051998.github.io/zoofs/Dragon%20Fly%20Optimization%20Class/">dfo</a>": Dragonfly Optimization.</li>
 <li>"<a href="https://jaswinder9051998.github.io/zoofs/Genetic%20Optimization%20Class/">genetic</a>": Genetic Optimization.</li>
 </ul>
-<strong>solver: str, estimator or None, optional (default=None)</strong><br>
+<strong>solver: str, estimator or None, default=None</strong><br>
 Solver/model to use for the feature selection strategy. See the
 corresponding documentation for an extended description of the
 choices. If None, use the estimator's default value (only pca).
@@ -85,7 +85,7 @@ Add <code>_class</code> or <code>_reg</code> after the model's name to
 specify a classification or regression task, e.g. <code>solver="LGB_reg"</code>
 (not necessary if called from an atom instance). No default option.</p></li>
 </ul>
-<strong>n_features: int, float or None, optional (default=None)</strong><br>
+<strong>n_features: int, float or None, default=None</strong><br>
 Number of features to select. Choose from:
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>if None: Select all features.</li>
@@ -101,47 +101,47 @@ features to select.
 <br>This parameter is ignored if any of the following strategies is
 selected: pso, hho, gwo, dfo, genetic.
 </p>
-<strong>max_frac_repeated: float or None, optional (default=1.)</strong><br>
+<strong>max_frac_repeated: float or None, default=1.</strong><br>
 Remove features with the same value in at least this fraction of
 the total rows. The default is to keep all features with non-zero
 variance, i.e. remove the features that have the same value in all
 samples. If None, skip this step.
 <p>
-<strong>max_correlation: float or None, optional (default=1.)</strong><br>
+<strong>max_correlation: float or None, default=1.</strong><br>
 Minimum absolute <a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation</a>
 to identify correlated features. For each group, it removes all except
 the feature with the highest correlation to `y` (if provided, else it
 removes all but the first). The default value removes equal columns. If
 None, skip this step.
 </p>
-<strong>n_jobs: int, optional (default=1)</strong><br>
+<strong>n_jobs: int, default=1</strong><br>
 Number of cores to use for parallel processing.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If >0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
 <li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
 </ul>
-<strong>gpu: bool or str, optional (default=False)</strong><br>
+<strong>gpu: bool or str, default=False</strong><br>
 Train strategy on GPU (instead of CPU). Only for strategy="pca".
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
-<strong>random_state: int or None, optional (default=None)</strong><br>
+<strong>random_state: int or None, default=None</strong><br>
 Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>np.random</code>.
 <p>
@@ -324,7 +324,7 @@ None will raise an exception.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
@@ -360,7 +360,7 @@ Leaving it None will raise an exception.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
@@ -391,7 +391,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -425,7 +425,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -496,7 +496,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -547,7 +547,7 @@ Transform the data.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>

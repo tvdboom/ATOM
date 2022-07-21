@@ -16,8 +16,8 @@ from collections.abc import MutableMapping
 from copy import copy
 from datetime import datetime
 from functools import wraps
-from inspect import signature
-from typing import Union
+from inspect import Parameter, signature
+from typing import Protocol, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -145,23 +145,9 @@ def variable_return(X, y):
         return X, y
 
 
-def is_multidim(df):
-    """Check if the dataframe contains a multidimensional column."""
-    return df.columns[0] == "multidim feature" and len(df.columns) <= 2
-
-
 def is_sparse(df):
     """Check if the dataframe contains any sparse columns."""
     return any(pd.api.types.is_sparse(df[col]) for col in df)
-
-
-def check_dim(cls, method):
-    """Raise an error if the dataset has more than two dimensions."""
-    if is_multidim(cls.X):
-        raise PermissionError(
-            f"The {method} method is not available for "
-            f"datasets with more than two dimensions!"
-        )
 
 
 def check_goal(cls, method, goal):
@@ -230,7 +216,7 @@ def get_best_score(item, metric=0):
     item: model or pd.Series
         Model instance or row from the results dataframe.
 
-    metric: int, optional (default=0)
+    metric: int, default=0
         Index of the metric to use.
 
     """
@@ -281,10 +267,10 @@ def to_df(data, index=None, columns=None, dtypes=None):
     index: sequence or pd.Index
         Values for the dataframe's index.
 
-    columns: sequence or None, optional (default=None)
+    columns: sequence or None, default=None
         Name of the columns. Use None for automatic naming.
 
-    dtypes: str, dict, dtype or None, optional (default=None)
+    dtypes: str, dict, dtype or None, default=None
         Data types for the output columns. If None, the types are
         inferred from the data.
 
@@ -322,13 +308,13 @@ def to_series(data, index=None, name="target", dtype=None):
     data: sequence or None
         Data to convert. If None, return unchanged.
 
-    index: sequence or Index, optional (default=None)
+    index: sequence or Index, default=None
         Values for the indices.
 
-    name: string, optional (default="target")
+    name: string, default="target"
         Name of the target column.
 
-    dtype: str, np.dtype or None, optional (default=None)
+    dtype: str, np.dtype or None, default=None
         Data type for the output series. If None, the type is
         inferred from the data.
 
@@ -344,37 +330,12 @@ def to_series(data, index=None, name="target", dtype=None):
     return data
 
 
-def arr(df):
-    """From dataframe to multidimensional array.
-
-    When the data consist of more than 2 dimensions, ATOM
-    stores it in a df with a single column, "multidim feature".
-    This function extracts the arrays from every row and
-    returns them stacked.
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Dataset to check.
-
-    Returns
-    -------
-    pd.DataFrame
-        Stacked dataframe.
-
-    """
-    if is_multidim(df):
-        return np.stack(df["multidim feature"].values)
-    else:
-        return df
-
-
 def prepare_logger(logger, class_name):
     """Prepare logging file.
 
     Parameters
     ----------
-    logger: str, class or None
+    logger: str, Logger or None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
@@ -391,7 +352,7 @@ def prepare_logger(logger, class_name):
 
     """
     if not logger:  # Empty string or None
-        return
+        return None
 
     elif isinstance(logger, str):
         # Prepare the FileHandler's name
@@ -430,11 +391,11 @@ def check_is_fitted(estimator, exception=True, attributes=None):
     estimator: class
         Class instance for which the check is performed.
 
-    exception: bool, optional (default=True)
+    exception: bool, default=True
         Whether to raise an exception if the estimator is not fitted.
         If False, it returns False instead.
 
-    attributes: str, sequence or None, optional (default=None)
+    attributes: str, sequence or None, default=None
         Attribute(s) to check. If None, the estimator is considered
         fitted if there exist an attribute that ends with a underscore
         and does not start with double underscore.
@@ -550,16 +511,16 @@ def get_custom_scorer(
     metric: str, func or scorer
         Name, metric or scorer to get ATOM's scorer from.
 
-    greater_is_better: bool, optional (default=True)
+    greater_is_better: bool, default=True
         whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
         better. Is ignored if the metric is a string or a scorer.
 
-    needs_proba: bool, optional (default=False)
+    needs_proba: bool, default=False
         Whether the metric function requires probability estimates of
         a classifier. Is ignored if the metric is a string or a scorer.
 
-    needs_threshold: bool, optional (default=False)
+    needs_threshold: bool, default=False
         Whether the metric function takes a continuous decision
         certainty. Is ignored if the metric is a string or a scorer.
 
@@ -624,7 +585,7 @@ def infer_task(y, goal="class"):
     y: pd.Series
         Target column from which to infer the task.
 
-    goal: str, optional (default="class")
+    goal: str, default="class"
         Classification or regression goal.
 
     Returns
@@ -702,9 +663,9 @@ def get_feature_importance(est, attributes=None):
     Parameters
     ----------
     est: sklearn estimator
-        Predictor from which to get the feature importance.
+        Estimator from which to get the feature importance.
 
-    attributes: sequence or None, optional (default=None)
+    attributes: sequence or None, default=None
         Attributes to get, in order of importance. If None, use
         score > coefficient > feature importance.
 
@@ -902,13 +863,17 @@ def transform_one(transformer, X=None, y=None, method="transform"):
         if X is not None:
             inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
             args.append(X[inc or [c for c in X.columns if c not in exc]])
-        else:  # If X is None and needed in the transformer, skip it
-            return X, y
+        elif transform_params["X"].default != Parameter.empty:
+            args.append(transform_params["X"].default)  # Fill X with default
+        else:
+            return X, y  # If X is None and needed, skip it
+
     if "y" in transform_params:
         if y is not None:
             args.append(y)
         elif "X" not in transform_params:
-            return X, y  # If y is None and needed, and no X in transformer, skip it
+            return X, y  # If y is None and no X in transformer, skip it
+
     output = getattr(transformer, method)(*args)
 
     # Transform can return X, y or both
@@ -955,7 +920,7 @@ def custom_transform(transformer, branch, data=None, verbose=None):
         (X, y). If None, the transformation is applied directly
         on the branch.
 
-    verbose: int or None, optional (default=None)
+    verbose: int or None, default=None
         Verbosity level for the transformation. If None, the
         estimator's verbosity is used.
 
@@ -1024,9 +989,9 @@ def custom_transform(transformer, branch, data=None, verbose=None):
 def delete(self, models):
     """Delete models from a trainer's pipeline.
 
-    Removes all traces of a model in the pipeline (except for the
-    `errors` attribute). If all models are removed, the metric and
-    approach are reset.
+    Removes all traces of a model in the trainer (except for
+    the `errors` attribute). If all models are removed, the
+    metric and approach are reset.
 
     Parameters
     ----------
@@ -1100,7 +1065,7 @@ def method_to_log(f):
 
     @wraps(f)
     def wrapper(*args, **kwargs):
-        # Get logger (for model subclasses called from BasePredictor)
+        # Get logger (for model subclasses called from BaseTrainer)
         logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
 
         if logger is not None:
@@ -1189,6 +1154,29 @@ class NotFittedError(ValueError, AttributeError):
     """
 
 
+class Transformer(Protocol):
+    """Protocol for all predictors."""
+    def fit(self, X, y, sample_weight=None): ...
+    def transform(self, X): ...
+    def get_params(self, **params): ...
+    def set_params(self, **params): ...
+
+
+class Predictor(Protocol):
+    """Protocol for all predictors."""
+    def fit(self, X, y, sample_weight=None): ...
+    def predict(self, X): ...
+    def score(self, X, y, sample_weight=None): ...
+    def get_params(self, **params): ...
+    def set_params(self, **params): ...
+
+
+class Model(Protocol):
+    """Protocol for all models."""
+    def est_class(self): ...
+    def get_estimator(self, **params): ...
+
+
 class Table:
     """Class to print nice tables per row.
 
@@ -1202,7 +1190,7 @@ class Table:
     spaces: sequence
         Width of each column. Should have the same length as `headers`.
 
-    default_pos: str, optional (default="right")
+    default_pos: str, default="right"
         Default position of the text in the cell.
 
     """
@@ -1417,14 +1405,14 @@ class ShapExplanation:
         df: pd.DataFrame
             Data set to look at (subset of the complete dataset).
 
-        target: int, optional (default=1)
+        target: int, default=1
             Index of the class in the target column to look at.
             Only for multi-class classification tasks.
 
         feature: int or str
             Index or name of the feature to look at.
 
-        only_one: bool, optional (default=False)
+        only_one: bool, default=False
             Whether only one row is accepted.
 
         Returns
@@ -1515,7 +1503,7 @@ class CustomDict(MutableMapping):
     The main differences with the Python dictionary are:
         - It has ordered entries.
         - Key requests are case-insensitive.
-        - Returns a subset of itself using getitem with a list of keys.
+        - Returns a subset of itself using getitem with a list of keys or slice.
         - It allows getting an item from an index position.
         - It can insert key value pairs at a specific position.
         - Replace method to change a key or value if key exists.
@@ -1565,6 +1553,8 @@ class CustomDict(MutableMapping):
     def __getitem__(self, key):
         if isinstance(key, list):
             return self.__class__({self._get_key(k): self[k] for k in key})
+        elif isinstance(key, slice):
+            return self.__class__({k: self[k] for k in self.__keys[key]})
         elif self._conv(key) in self.__data:
             return self.__data[self._conv(key)]  # From key
         else:

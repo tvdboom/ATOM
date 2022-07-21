@@ -11,28 +11,29 @@ acronym=None, fullname=None, needs_scaling=False)
 
 Convert an estimator to a model that can be ingested by ATOM. Note that
 only estimators that follow [sklearn's API](https://scikit-learn.org/stable/developers/develop.html)
-are compatible. Read more about using custom estimators in the [user guide](../../../user_guide/models/#custom-models).
+are compatible. Read more about using custom models in the [user guide](../../../user_guide/models/#custom-models).
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>estimator: sklearn estimator</strong><br>
-Custom model's estimator.
+<strong>estimator: Predictor</strong><br>
+Custom estimator. Should implement a <code>fit</code> and
+<code>predict</code> method.
 </p>
 <p>
-<strong>acronym: str or None, optional (default=None)</strong><br>
+<strong>acronym: str or None, default=None</strong><br>
 Model's acronym. Used to call the model from the trainer. If
 None, the capital letters in the estimator's __name__ are used
 (only if 2 or more, else it uses the entire name).
 </p>
 <p>
-<strong>fullname: str or None, optional (default=None)</strong><br>
+<strong>fullname: str or None, default=None</strong><br>
 Full model's name. If None, the estimator's __name__ is used.
 </p>
 <p>
-<strong>needs_scaling: bool, optional (default=False)</strong><br>
+<strong>needs_scaling: bool, default=False</strong><br>
 Whether the model needs scaled features. Can not be True for
 datasets with more than two dimensions. Read more about this
 in the <a href="../../../user_guide/models/#deep-learning">user guide</a>.

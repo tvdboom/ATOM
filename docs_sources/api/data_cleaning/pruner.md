@@ -19,7 +19,7 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#handlin
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strategy: str or sequence, optional (default="zscore")</strong><br>
+<strong>strategy: str or sequence, default="zscore"</strong><br>
 Strategy with which to select the outliers. If sequence of
 strategies, only samples marked as outliers by all chosen
 strategies are dropped. Choose from:
@@ -32,7 +32,7 @@ strategies are dropped. Choose from:
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html">dbscan</a>": Density-Based Spatial Clustering.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html">optics</a>": DBSCAN-like clustering approach.</li>
 </ul>
-<strong>method: int, float or str, optional (default="drop")</strong><br>
+<strong>method: int, float or str, default="drop"</strong><br>
 Method to apply on the outliers. Only the zscore strategy
 accepts another method than "drop". Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -41,24 +41,24 @@ accepts another method than "drop". Choose from:
 <li>Any numerical value with which to replace the outliers.</li>
 </ul>
 <p>
-<strong>max_sigma: int or float, optional (default=3)</strong><br>
+<strong>max_sigma: int or float, default=3</strong><br>
 Maximum allowed standard deviations from the mean of the column.
 If more, it is considered an outlier. Only if strategy="zscore".
 </p>
 <p>
-<strong>include_target: bool, optional (default=False)</strong><br>
+<strong>include_target: bool, default=False</strong><br>
 Whether to include the target column in the search for
 outliers. This can be useful for regression tasks. Only
 if strategy="zscore".
 </p>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
@@ -149,7 +149,7 @@ Apply the outlier strategy to the data.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
@@ -187,7 +187,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -221,7 +221,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -242,7 +242,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -292,7 +292,7 @@ Apply the outlier strategy to the data.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, default=None</strong>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>

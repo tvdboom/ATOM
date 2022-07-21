@@ -12,11 +12,10 @@ import tempfile
 from copy import deepcopy
 from datetime import datetime
 from inspect import Parameter, signature
-from pickle import PickleError
 from typing import Optional, Union
 from unittest.mock import patch
 
-import dill
+import dill as pickle
 import mlflow
 import numpy as np
 import pandas as pd
@@ -44,7 +43,7 @@ from atom.pipeline import Pipeline
 from atom.plots import BaseModelPlotter
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
-    ShapExplanation, Table, arr, composed, crash, custom_transform, flt,
+    ShapExplanation, Table, composed, crash, custom_transform, flt,
     get_best_score, get_custom_scorer, get_pl_name, it, lst, merge,
     method_to_log, time_to_str, variable_return,
 )
@@ -314,10 +313,10 @@ class BaseModel(BaseModelPlotter):
                         **est_copy,
                     )
                 else:
-                    est.fit(arr(X_subtrain), y_subtrain, **est_copy)
+                    est.fit(X_subtrain, y_subtrain, **est_copy)
 
                 # Calculate metrics on the validation set
-                return [m(est, arr(X_val), y_val) for m in self.T._metric.values()]
+                return [m(est, X_val, y_val) for m in self.T._metric.values()]
 
             # Start iteration ====================================== >>
 
@@ -371,19 +370,13 @@ class BaseModel(BaseModelPlotter):
                     # Get the K-fold cross-validator object
                     k_fold = fold(self.T._bo["cv"], shuffle=True, random_state=rs)
 
-                    try:
-                        # Parallel loop over fit_model
-                        jobs = Parallel(self.T.n_jobs)(
-                            delayed(fit_model)(i, j)
-                            for i, j in k_fold.split(og.X_train, og.y_train)
-                        )
-                        score = list(np.mean(jobs, axis=0))
-                    except PickleError:
-                        raise PickleError(
-                            f"Could not pickle the {self.acronym} model to send "
-                            "it to the workers. Try using one of the predefined "
-                            "models, or use n_jobs=1 or bo_params={'cv': 1}."
-                        )
+                    # Parallel loop over fit_model (threading fixes PickleError)
+                    parallel = Parallel(n_jobs=self.T.n_jobs, backend="threading")
+                    scores = parallel(
+                        delayed(fit_model)(i, j)
+                        for i, j in k_fold.split(og.X_train, og.y_train)
+                    )
+                    score = list(np.mean(scores, axis=0))
             else:
                 # Get same score as previous evaluation
                 score = lst(self.bo.loc[self.bo["params"] == params, "score"].values[0])
@@ -440,7 +433,7 @@ class BaseModel(BaseModelPlotter):
                 f"should be >n_initial_points, got {self._n_calls}."
             )
 
-        # Check validity of parameters (not in basetrainer to skip if error)
+        # Check validity of parameters (not in baserunner to skip if error)
         self._check_est_params()
 
         init_bo = datetime.now()  # Track the BO's duration
@@ -494,7 +487,7 @@ class BaseModel(BaseModelPlotter):
         # If no hyperparameters to optimize, skip BO
         if not self._dimensions:
             self.T.log(" --> Skipping BO. No hyperparameters to optimize.", 2)
-            return
+            return None
 
         pbar = None
         if self.T.verbose == 1:
@@ -610,7 +603,7 @@ class BaseModel(BaseModelPlotter):
                 **self._est_params_fit,
             )
         else:
-            self.estimator.fit(arr(self.X_train), self.y_train, **self._est_params_fit)
+            self.estimator.fit(self.X_train, self.y_train, **self._est_params_fit)
 
         # Save metric scores on complete training and test set
         for metric in self.T._metric.values():
@@ -676,12 +669,12 @@ class BaseModel(BaseModelPlotter):
             if hasattr(self, "custom_fit"):
                 self.custom_fit(estimator, (sample_x, sample_y), **self._est_params_fit)
             else:
-                estimator.fit(arr(sample_x), sample_y, **self._est_params_fit)
+                estimator.fit(sample_x, sample_y, **self._est_params_fit)
 
             self.metric_bootstrap.append(
                 flt(
                     [
-                        metric(estimator, arr(self.X_test), self.y_test)
+                        metric(estimator, self.X_test, self.y_test)
                         for metric in self.T._metric.values()
                     ]
                 )
@@ -761,26 +754,26 @@ class BaseModel(BaseModelPlotter):
             Index names or positions of rows in the dataset, or unseen
             feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        metric: str, func, scorer or None, optional (default=None)
+        metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's SCORERS,
             a function with signature metric(y_true, y_pred) or a scorer
             object. If None, it returns mean accuracy for classification
             tasks and r2 for regression tasks. Only for method="score".
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights for the score method.
 
-        verbose: int or None, optional (default=None)
+        verbose: int or None, default=None
             Verbosity level for the transformers. If None, it uses the
             estimator's own verbosity.
 
-        method: str, optional (default="predict")
+        method: str, default="predict"
             Prediction method to be applied to the estimator.
 
         Returns
@@ -895,91 +888,91 @@ class BaseModel(BaseModelPlotter):
     @property
     def predict_train(self):
         if self._pred[0] is None:
-            self._pred[0] = self.estimator.predict(arr(self.X_train))
+            self._pred[0] = self.estimator.predict(self.X_train)
         return self._pred[0]
 
     @property
     def predict_test(self):
         if self._pred[1] is None:
-            self._pred[1] = self.estimator.predict(arr(self.X_test))
+            self._pred[1] = self.estimator.predict(self.X_test)
         return self._pred[1]
 
     @property
     def predict_holdout(self):
         if self.T.holdout is not None and self._pred[2] is None:
-            self._pred[2] = self.estimator.predict(arr(self.X_holdout))
+            self._pred[2] = self.estimator.predict(self.X_holdout)
         return self._pred[2]
 
     @property
     def predict_proba_train(self):
         if self._pred[3] is None:
-            self._pred[3] = self.estimator.predict_proba(arr(self.X_train))
+            self._pred[3] = self.estimator.predict_proba(self.X_train)
         return self._pred[3]
 
     @property
     def predict_proba_test(self):
         if self._pred[4] is None:
-            self._pred[4] = self.estimator.predict_proba(arr(self.X_test))
+            self._pred[4] = self.estimator.predict_proba(self.X_test)
         return self._pred[4]
 
     @property
     def predict_proba_holdout(self):
         if self.T.holdout is not None and self._pred[5] is None:
-            self._pred[5] = self.estimator.predict_proba(arr(self.X_holdout))
+            self._pred[5] = self.estimator.predict_proba(self.X_holdout)
         return self._pred[5]
 
     @property
     def predict_log_proba_train(self):
         if self._pred[6] is None:
-            self._pred[6] = self.estimator.predict_log_proba(arr(self.X_train))
+            self._pred[6] = self.estimator.predict_log_proba(self.X_train)
         return self._pred[6]
 
     @property
     def predict_log_proba_test(self):
         if self._pred[7] is None:
-            self._pred[7] = self.estimator.predict_log_proba(arr(self.X_test))
+            self._pred[7] = self.estimator.predict_log_proba(self.X_test)
         return self._pred[7]
 
     @property
     def predict_log_proba_holdout(self):
         if self.T.holdout is not None and self._pred[8] is None:
-            self._pred[8] = self.estimator.predict_log_proba(arr(self.X_holdout))
+            self._pred[8] = self.estimator.predict_log_proba(self.X_holdout)
         return self._pred[8]
 
     @property
     def decision_function_train(self):
         if self._pred[9] is None:
-            self._pred[9] = self.estimator.decision_function(arr(self.X_train))
+            self._pred[9] = self.estimator.decision_function(self.X_train)
         return self._pred[9]
 
     @property
     def decision_function_test(self):
         if self._pred[10] is None:
-            self._pred[10] = self.estimator.decision_function(arr(self.X_test))
+            self._pred[10] = self.estimator.decision_function(self.X_test)
         return self._pred[10]
 
     @property
     def decision_function_holdout(self):
         if self.T.holdout is not None and self._pred[11] is None:
-            self._pred[11] = self.estimator.decision_function(arr(self.X_holdout))
+            self._pred[11] = self.estimator.decision_function(self.X_holdout)
         return self._pred[11]
 
     @property
     def score_train(self):
         if self._pred[12] is None:
-            self._pred[12] = self.estimator.score(arr(self.X_train), self.y_train)
+            self._pred[12] = self.estimator.score(self.X_train, self.y_train)
         return self._pred[12]
 
     @property
     def score_test(self):
         if self._pred[13] is None:
-            self._pred[13] = self.estimator.score(arr(self.X_test), self.y_test)
+            self._pred[13] = self.estimator.score(self.X_test, self.y_test)
         return self._pred[13]
 
     @property
     def score_holdout(self):
         if self.T.holdout is not None and self._pred[14] is None:
-            self._pred[14] = self.estimator.score(arr(self.X_holdout), self.y_holdout)
+            self._pred[14] = self.estimator.score(self.X_holdout, self.y_holdout)
         return self._pred[14]
 
     # Data Properties ============================================== >>
@@ -1282,11 +1275,11 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set to get the report from. Choose from: "train", "test",
             "both" (train and test) or "holdout".
 
-        filename: str or None, optional (default=None)
+        filename: str or None, default=None
             Name to save the file with (as .html). None to not save
             anything.
 
@@ -1379,22 +1372,22 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        metric: str, func, scorer, sequence or None, optional (default=None)
+        metric: str, func, scorer, sequence or None, default=None
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
-        dataset: str, optional (default="test")
+        dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
 
-        threshold: float, optional (default=0.5)
+        threshold: float, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
                 - The task is binary classification.
                 - The model has a `predict_proba` method.
                 - The metric evaluates predicted target values.
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.
 
         Returns
@@ -1482,14 +1475,14 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        memory: bool, str, Memory or None, optional (default=None)
+        memory: bool, str, Memory or None, default=None
             Used to cache the fitted transformers of the pipeline.
                 - If None or False: No caching is performed.
                 - If True: A default temp directory is used.
                 - If str: Path to the caching directory.
                 - If Memory: Object with the joblib.Memory interface.
 
-        verbose: int or None, optional (default=None)
+        verbose: int or None, default=None
             Verbosity level of the transformers in the pipeline. If
             None, it leaves them to their original verbosity. Note
             that this is not the pipeline's own verbose parameter.
@@ -1541,7 +1534,7 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        include_holdout: bool, optional (default=False)
+        include_holdout: bool, default=False
             Whether to include the holdout set (if available) in the
             training of the estimator. It's discouraged to use this
             option since it means the model can no longer be evaluated
@@ -1563,7 +1556,7 @@ class BaseModel(BaseModelPlotter):
         if hasattr(self, "custom_fit"):
             self.custom_fit(self.estimator, (X, y), **self._est_params_fit)
         else:
-            self.estimator.fit(arr(X), y, **self._est_params_fit)
+            self.estimator.fit(X, y, **self._est_params_fit)
 
         self.clear()  # Clear model since we have a new estimator
 
@@ -1591,7 +1584,7 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        name: str or None, optional (default=None)
+        name: str or None, default=None
             New tag for the model. If None, the tag is removed.
 
         """
@@ -1623,7 +1616,7 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        filename: str, optional (default=None)
+        filename: str, default=None
             Name of the file. Use "auto" for automatic naming.
 
         """
@@ -1631,7 +1624,7 @@ class BaseModel(BaseModelPlotter):
             filename = filename.replace("auto", self.estimator.__class__.__name__)
 
         with open(filename, "wb") as f:
-            dill.dump(self.estimator, f)
+            pickle.dump(self.estimator, f)
 
         self.T.log(f"{self.fullname} estimator successfully saved.", 1)
 
@@ -1653,7 +1646,7 @@ class BaseModel(BaseModelPlotter):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored in the transformers.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -1661,7 +1654,7 @@ class BaseModel(BaseModelPlotter):
 
             Feature set with shape=(n_samples, n_features).
 
-        verbose: int or None, optional (default=None)
+        verbose: int or None, default=None
             Verbosity level for the transformers. If None, it uses the
             estimator's own verbosity.
 

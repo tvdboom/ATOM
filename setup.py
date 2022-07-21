@@ -32,7 +32,6 @@ setup(
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
     download_url=f"https://github.com/tvdboom/ATOM/archive/v{version}.tar.gz",
-    url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",
     keywords=["Python package", "Machine Learning", "Modelling", "Data Pipeline"],
@@ -40,7 +39,6 @@ setup(
     long_description_content_type="text/markdown",
     packages=["atom"],
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -48,11 +46,18 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    projects_urls={
+        "Documentation": "https://tvdboom.github.io/ATOM/",
+        "Download": f"https://github.com/tvdboom/ATOM/archive/v{version}.tar.gz",
+        "Issues": "https://github.com/tvdboom/ATOM/issues",
+        "Repository": "https://github.com/tvdboom/ATOM",
+        "Slack": "https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g",
+    },
     install_requires=requirements,
     extras_require={
         "models": optional_requirements,
         "dev": optional_requirements + dev_requirements,
     },
     tests_require=dev_requirements,
-    python_requires=">=3.7"
+    python_requires=">=3.8",
 )

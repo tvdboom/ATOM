@@ -3,539 +3,880 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing the parent class for the trainers.
+Description: Module containing the BaseTrainer class.
 
 """
 
-import traceback
-from datetime import datetime
-from importlib.util import find_spec
+from typing import Any, List, Optional, Tuple, Union
 
-import matplotlib.pyplot as plt
 import mlflow
-from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
+import numpy as np
+import pandas as pd
+from typeguard import typechecked
 
-from atom.basepredictor import BasePredictor
 from atom.branch import Branch
-from atom.data_cleaning import BaseTransformer
-from atom.models import MODELS, CustomModel
+from atom.models import MODELS, Stacking, Voting
 from atom.utils import (
-    SEQUENCE, CustomDict, PlotCallback, check_scaling, delete, get_best_score,
-    get_custom_scorer, is_multidim, is_sparse, lst, time_to_str,
+    DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Model,
+    check_is_fitted, composed, crash, delete, divide, flt, get_best_score, lst,
+    method_to_log,
 )
 
 
-class BaseTrainer(BaseTransformer, BasePredictor):
-    """Base class for the trainers.
+class BaseTrainer:
+    """Properties and shared methods for the trainers."""
 
-    Parameters
-    ----------
-    models: str, estimator or sequence, optional (default=None)
-        Models to fit to the data. Allowed inputs are: an acronym from
-        any of ATOM's predefined models, an ATOMModel or a custom
-        estimator as class or instance. If None, all the predefined
-        models are used.
+    # Tracking parameters for mlflow
+    _tracking_params = dict(
+        log_bo=True,
+        log_model=True,
+        log_plots=True,
+        log_data=False,
+        log_pipeline=False,
+    )
 
-    metric: str, func, scorer, sequence or None, optional (default=None)
-        Metric on which to fit the models. Choose from any of sklearn's
-        SCORERS, a function with signature `metric(y_true, y_pred)`, a
-        scorer object or a sequence of these. If multiple metrics are
-        selected, only the first is used to optimize the BO. If None, a
-        default scorer is selected:
-            - "f1" for binary classification
-            - "f1_weighted" for multiclass classification
-            - "r2" for regression
-
-    greater_is_better: bool or sequence, optional (default=True)
-        Whether the metric is a score function or a loss function,
-        i.e. if True, a higher score is better and if False, lower
-        is better. This parameter is ignored if the metric is a
-        string or a scorer. If sequence, the n-th value applies to
-        the n-th metric.
-
-    needs_proba: bool or sequence, optional (default=False)
-        Whether the metric function requires probability estimates out
-        of a classifier. If True, make sure that every selected model
-        has a `predict_proba` method. This parameter is ignored if the
-        metric is a string or a scorer. If sequence, the n-th value
-        applies to the n-th metric.
-
-    needs_threshold: bool or sequence, optional (default=False)
-        Whether the metric function takes a continuous decision
-        certainty. This only works for estimators that have either a
-        `decision_function` or `predict_proba` method. This parameter
-        is ignored if the metric is a string or a scorer. If sequence,
-        the n-th value applies to the n-th metric.
-
-    n_calls: int or sequence, optional (default=15)
-        Maximum number of iterations of the BO. It includes the random
-        points of `n_initial_points`. If 0, skip the BO and fit the
-        model on its default Parameters. If sequence, the n-th value
-        applies to the n-th model.
-
-    n_initial_points: int or sequence, optional (default=5)
-        Initial number of random tests of the BO before fitting the
-        surrogate function. If equal to `n_calls`, the optimizer will
-        technically be performing a random search. If sequence, the
-        n-th value applies to the n-th model.
-
-    est_params: dict or None, optional (default=None)
-        Additional parameters for the estimators. See the corresponding
-        documentation for the available options. For multiple models,
-        use the acronyms as key (or 'all' for all models) and a dict
-        of the parameters as value. Add _fit to the parameter's name
-        to pass it to the fit method instead of the initializer.
-
-    bo_params: dict or None, optional (default=None)
-        Additional parameters to for the BO. These can include:
-            - base_estimator: str, optional (default="GP")
-                Surrogate model to use. Choose from:
-                    - "GP" for Gaussian Process
-                    - "RF" for Random Forest
-                    - "ET" for Extra-Trees
-                    - "GBRT" for Gradient Boosted Regression Trees
-            - max_time: int, optional (default=np.inf)
-                Stop the optimization after `max_time` seconds.
-            - delta_x: int or float, optional (default=0)
-                Stop the optimization when `|x1 - x2| < delta_x`.
-            - delta_y: int or float, optional (default=0)
-                Stop the optimization if the 5 minima are within
-                `delta_y` (skopt always minimizes the function).
-            - early_stopping: int, float or None, optional (default=None)
-                Training will stop if the model didn't improve in
-                last `early_stopping` rounds. If <1, fraction of
-                rounds from the total. If None, no early stopping
-                is performed. Only available for models that allow
-                in-training evaluation.
-            - cv: int, optional (default=5)
-                Number of folds for the cross-validation. If 1, the
-                training set is randomly split in a (sub)train and
-                validation set.
-            - callback: callable or list of callables, optional (default=None)
-                Callbacks for the BO.
-            - dimensions: dict, list or None, optional (default=None)
-                Custom hyperparameter space for the BO. Can be a list
-                to share the same dimensions across models or a dict
-                with the model names as key (or `all` for all models).
-                If None, ATOM's predefined dimensions are used.
-            - plot: bool, optional (default=False)
-                Whether to plot the BO's progress as it runs.
-                Creates a canvas with two plots: the first plot
-                shows the score of every trial and the second shows
-                the distance between the last consecutive steps.
-            - Additional keyword arguments for skopt's optimizer.
-
-    n_bootstrap: int or sequence, optional (default=0)
-        Number of data sets (bootstrapped from the training set) to
-        use in the bootstrap algorithm. If 0, no bootstrap is performed.
-        If sequence, the n-th value will apply to the n-th model.
-
-    n_jobs: int, optional (default=1)
-        Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
-
-    verbose: int, optional (default=0)
-        Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
-
-    warnings: bool or str, optional (default=True)
-        - If True: Default warning action (equal to "default").
-        - If False: Suppress all warnings (equal to "ignore").
-        - If str: One of the actions in python's warnings environment.
-
-        Note that changing this parameter will affect the
-        `PYTHONWARNINGS` environment.
-
-        Note that ATOM can't manage warnings that go directly
-        from C/C++ code to the stdout/stderr.
-
-    logger: str, Logger or None, optional (default=None)
-        - If None: Doesn't save a logging file.
-        - If str: Name of the log file. Use "auto" for automatic name.
-        - Else: Python `logging.Logger` instance.
-
-        Note that warnings will not be saved to the logger.
-
-    experiment: str or None, optional (default=None)
-        Name of the mlflow experiment to use for tracking. If None,
-        no mlflow tracking is performed.
-
-    gpu: bool or str, optional (default=False)
-        Train estimators on GPU (instead of CPU). Refer to the
-        documentation to check which estimators are supported.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
-
-    random_state: int or None, optional (default=None)
-        Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `np.random`.
-
-    """
-
-    def __init__(
-        self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
-        verbose, warnings, logger, experiment, gpu, random_state,
-    ):
-        super().__init__(
-            n_jobs=n_jobs,
-            verbose=verbose,
-            warnings=warnings,
-            logger=logger,
-            experiment=experiment,
-            gpu=gpu,
-            random_state=random_state,
-        )
-
-        # Parameter attributes
-        self._models = models
-        self._metric = metric
-        self.greater_is_better = greater_is_better
-        self.needs_proba = needs_proba
-        self.needs_threshold = needs_threshold
-        self.n_calls = n_calls
-        self.n_initial_points = n_initial_points
-        self.est_params = est_params
-        self.bo_params = bo_params
-        self.n_bootstrap = n_bootstrap
-
-        # Branching attributes
-        self.index = True
-        self.holdout = None
-        self._current = "master"
-        self._branches = CustomDict({self._current: Branch(self, self._current)})
-
-        # Training attributes
-        self.task = None
-        self.scaled = None
-        self._bo = {"base_estimator": "GP", "cv": 1, "callback": [], "kwargs": {}}
-        self._errors = CustomDict()
-
-    @staticmethod
-    def _prepare_metric(metric, **kwargs):
-        """Check the validity of the metric."""
-        metric_params = {}
-        for key, value in kwargs.items():
-            if isinstance(value, SEQUENCE):
-                if len(value) != len(metric):
-                    raise ValueError(
-                        f"Invalid value for the {key} parameter. Its length "
-                        "should be equal to the number of metrics, got "
-                        f"len(metric)={len(metric)} and len({key})={len(value)}."
-                    )
-            else:
-                metric_params[key] = [value for _ in metric]
-
-        metric_dict = CustomDict()
-        for args in zip(metric, *metric_params.values()):
-            scorer = get_custom_scorer(*args)
-            metric_dict[scorer.name] = scorer
-
-        return metric_dict
-
-    def _prepare_parameters(self):
-        """Check the validity of the input parameters."""
-        if self.scaled is None and not is_multidim(self.X) and not is_sparse(self.X):
-            self.scaled = check_scaling(self.X)
-
-        # Create model subclasses ================================== >>
-
-        # If left to default, select all predefined models per task
-        if self._models is None:
-            if self.goal == "class":
-                models = [m(self) for m in MODELS.values() if "class" in m.goal]
-            else:
-                models = [m(self) for m in MODELS.values() if "reg" in m.goal]
+    def __getattr__(self, item):
+        if item in self.__dict__.get("_branches").min("og"):
+            return self._branches[item]  # Get branch
+        elif item in self.branch._get_attrs():
+            return getattr(self.branch, item)  # Get attr from branch
+        elif self.__dict__.get("_models").get(item.lower()):
+            return self._models[item.lower()]  # Get model subclass
+        elif item in self.branch.columns:
+            return self.branch.dataset[item]  # Get column from dataset
+        elif item in DF_ATTRS:
+            return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
-            models = []
-            for m in lst(self._models):
-                if isinstance(m, str):
-                    if is_multidim(self.X):
-                        raise ValueError(
-                            "Multidimensional datasets are not supported by ATOM's "
-                            "predefined models. Refer to the documentation for the "
-                            "use of custom models."
-                        )
-
-                    # Get the acronym from the called model
-                    names = [n for n in MODELS if m.lower().startswith(n.lower())]
-                    if not names:
-                        raise ValueError(
-                            f"Unknown model: {m}. Choose from: {', '.join(MODELS)}."
-                        )
-                    else:
-                        acronym = names[0]
-
-                    # Check if packages for non-sklearn models are available
-                    packages = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
-                    if acronym in packages and not find_spec(packages[acronym]):
-                        raise ModuleNotFoundError(
-                            f"Unable to import the {packages[acronym]} package. "
-                            f"Install it using: pip install {packages[acronym]}"
-                        )
-
-                    models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
-
-                    # Check for regression/classification-only models
-                    if self.goal == "class" and self.goal not in models[-1].goal:
-                        raise ValueError(
-                            f"The {acronym} model can't perform classification tasks!"
-                        )
-                    elif self.goal == "reg" and self.goal not in models[-1].goal:
-                        raise ValueError(
-                            f"The {acronym} model can't perform regression tasks!"
-                        )
-
-                else:  # Model is a custom estimator
-                    models.append(CustomModel(self, estimator=m))
-
-        names = [m.name for m in models]
-        if len(set(names)) != len(names):
-            raise ValueError(
-                "Invalid value for the models parameter. It seems there are "
-                "duplicate models. Add a tag to a model's acronym to train two "
-                "different models with the same estimator, e.g. models=['LR1', 'LR2']."
+            raise AttributeError(
+                f"{self.__class__.__name__} object has no attribute {item}."
             )
 
-        self._models = CustomDict({name: model for name, model in zip(names, models)})
+    def __setattr__(self, item, value):
+        if item != "holdout" and isinstance(getattr(Branch, item, None), property):
+            setattr(self.branch, item, value)
+        else:
+            super().__setattr__(item, value)
 
-        # Define scorer ============================================ >>
+    def __delattr__(self, item):
+        if item == "branch":
+            self.branch.delete()
+        elif item in self._branches:
+            self._branches[item].delete()
+        elif item == "winner" or item in self._models:
+            self.delete(item)
+        elif item in self.__dict__:
+            del self.__dict__[item]
+        else:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{item}'."
+            )
 
-        # Assign default scorer
-        if self._metric is None:
-            if self.task.startswith("bin"):
-                self._metric = CustomDict(f1=get_custom_scorer("f1"))
-            elif self.task.startswith("multi"):
-                self._metric = CustomDict(f1_weighted=get_custom_scorer("f1_weighted"))
+    def __len__(self):
+        return len(self.dataset)
+
+    def __contains__(self, item):
+        if self.dataset is None:
+            return False
+        else:
+            return item in self.dataset
+
+    def __getitem__(self, item):
+        if self.dataset is None:
+            raise RuntimeError(
+                "This instance has no dataset annexed to it. Use the "
+                "run() method before getting an item from the trainer."
+            )
+        elif isinstance(item, int):
+            return self.dataset[self.columns[item]]
+        elif isinstance(item, str):
+            if item in self._branches.min("og"):
+                return self._branches[item]  # Get branch
+            elif item in self._models:
+                return self._models[item]  # Get model
+            elif item in self.dataset:
+                return self.dataset[item]  # Get column from dataset
             else:
-                self._metric = CustomDict(r2=get_custom_scorer("r2"))
-
-        # Ignore if it's the same scorer as previous call
-        elif not isinstance(self._metric, CustomDict):
-            self._metric = self._prepare_metric(
-                metric=lst(self._metric),
-                greater_is_better=self.greater_is_better,
-                needs_proba=self.needs_proba,
-                needs_threshold=self.needs_threshold,
-            )
-
-        # Check validity sequential parameters ===================== >>
-
-        for param in ("n_calls", "n_initial_points", "n_bootstrap"):
-            p = lst(getattr(self, param))
-            if len(p) != 1 and len(p) != len(self._models):
                 raise ValueError(
-                    f"Invalid value for the {param} parameter. Length "
-                    "should be equal to the number of models, got len"
-                    f"(models)={len(self._models)} and len({param})={len(p)}."
+                    f"{self.__class__.__name__} object has no "
+                    f"branch, model or column called {item}."
                 )
+        elif isinstance(item, list):
+            return self.dataset[item]  # Get subset of dataset
+        else:
+            raise TypeError(
+                f"{self.__class__.__name__} is only "
+                "subscriptable with types int, str or list."
+            )
 
-            for i, model in enumerate(self._models.values()):
-                value = p[i % len(p)]
-                if param == "n_calls" and (value == 1 or value < 0):
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=2, got {value}."
-                    )
-                elif param == "n_initial_points" and value <= 0:
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=1, got {value}."
-                    )
-                elif param == "n_bootstrap" and value < 0:
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=0, got {value}."
-                    )
+    # Tracking properties ========================================== >>
 
-                setattr(model, "_" + param, value)
+    @property
+    def log_bo(self) -> bool:
+        return self._tracking_params["log_bo"]
 
-        # Prepare est_params ======================================= >>
+    @log_bo.setter
+    @typechecked
+    def log_bo(self, value: bool):
+        self._tracking_params["log_bo"] = value
 
-        if self.est_params:
-            for name, model in self._models.items():
-                params = {}
-                for key, value in self.est_params.items():
-                    # Parameters for this model only
-                    if key.lower() == name.lower() or key.lower() == "all":
-                        params.update(value)
-                    # Parameters for all models
-                    elif key not in self._models:
-                        params.update({key: value})
+    @property
+    def log_model(self) -> bool:
+        return self._tracking_params["log_model"]
 
-                for key, value in params.items():
-                    if key.endswith("_fit"):
-                        model._est_params_fit[key[:-4]] = value
-                    else:
-                        model._est_params[key] = value
+    @log_model.setter
+    @typechecked
+    def log_model(self, value: bool):
+        self._tracking_params["log_model"] = value
 
-        # Prepare bo params ======================================== >>
+    @property
+    def log_plots(self) -> bool:
+        return self._tracking_params["log_plots"]
 
-        base_estimators = ["GP", "RF", "ET", "GBRT"]
-        exc = ["max_time", "delta_x", "delta_y", "plot", "early_stopping", "dimensions"]
+    @log_plots.setter
+    @typechecked
+    def log_plots(self, value: bool):
+        self._tracking_params["log_plots"] = value
 
-        if self.bo_params:
-            if self.bo_params.get("base_estimator"):
-                self._bo["base_estimator"] = self.bo_params["base_estimator"]
-                if isinstance(self._bo["base_estimator"], str):
-                    if self._bo["base_estimator"].upper() not in base_estimators:
-                        raise ValueError(
-                            "Invalid value for the base_estimator parameter, "
-                            f"got {self.bo_params['base_estimator']}. Choose "
-                            f"from: {', '.join(base_estimators)}."
-                        )
+    @property
+    def log_data(self) -> bool:
+        return self._tracking_params["log_data"]
 
-            if self.bo_params.get("callback"):
-                self._bo["callback"].extend(lst(self.bo_params["callback"]))
+    @log_data.setter
+    @typechecked
+    def log_data(self, value: bool):
+        self._tracking_params["log_data"] = value
 
-            if "max_time" in self.bo_params:
-                if self.bo_params["max_time"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the max_time parameter. Value "
-                        f"should be >0, got {self.bo_params['max_time']}."
-                    )
-                max_time_callback = DeadlineStopper(self.bo_params["max_time"])
-                self._bo["callback"].append(max_time_callback)
+    @property
+    def log_pipeline(self):
+        return self._tracking_params["log_pipeline"]
 
-            if "delta_x" in self.bo_params:
-                if self.bo_params["delta_x"] < 0:
-                    raise ValueError(
-                        "Invalid value for the delta_x parameter. "
-                        f"Value should be >=0, got {self.bo_params['delta_x']}."
-                    )
-                delta_x_callback = DeltaXStopper(self.bo_params["delta_x"])
-                self._bo["callback"].append(delta_x_callback)
+    @log_pipeline.setter
+    @typechecked
+    def log_pipeline(self, value: bool):
+        self._tracking_params["log_pipeline"] = value
 
-            if "delta_y" in self.bo_params:
-                if self.bo_params["delta_y"] < 0:
-                    raise ValueError(
-                        "Invalid value for the delta_y parameter. Value "
-                        f"should be >=0, got {self.bo_params['delta_y']}."
-                    )
-                delta_y_callback = DeltaYStopper(self.bo_params["delta_y"], n_best=5)
-                self._bo["callback"].append(delta_y_callback)
+    # Utility properties =========================================== >>
 
-            if self.bo_params.get("plot"):
-                self._bo["callback"].append(PlotCallback(self))
+    @property
+    def branch(self) -> Branch:
+        """Return the current branch."""
+        return self._branches[self._current]
 
-            if "cv" in self.bo_params:
-                if self.bo_params["cv"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the cv parameter. Value "
-                        f"should be >=0, got {self.bo_params['cv']}."
-                    )
-                self._bo["cv"] = self.bo_params["cv"]
+    @property
+    def models(self) -> Union[str, List[str]]:
+        """Return the names of all models."""
+        if isinstance(self._models, CustomDict):
+            return flt([model.name for model in self._models.values()])
+        else:
+            return self._models
 
-            if "early_stopping" in self.bo_params:
-                if self.bo_params["early_stopping"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the early_stopping parameter. Value "
-                        f"should be >=0, got {self.bo_params['early_stopping']}."
-                    )
-                for model in self._models.values():
-                    if hasattr(model, "custom_fit"):
-                        model._early_stopping = self.bo_params["early_stopping"]
+    @property
+    def metric(self) -> Union[str, List[str]]:
+        """Return the name of the metric."""
+        if isinstance(self._metric, CustomDict):
+            return flt([metric.name for metric in self._metric.values()])
+        else:
+            return self._metric
 
-            # Add hyperparameter dimensions to every model subclass
-            if self.bo_params.get("dimensions"):
-                for name, model in self._models.items():
-                    # If not dict, the dimensions are for all models
-                    if not isinstance(self.bo_params["dimensions"], dict):
-                        model._dimensions = lst(self.bo_params["dimensions"])
-                    else:
-                        # Dimensions for every specific model
-                        for key, value in self.bo_params["dimensions"].items():
-                            if key.lower() == name.lower() or key.lower() == "all":
-                                model._dimensions.extend(list(lst(value)))
+    @property
+    def errors(self) -> CustomDict:
+        """Return the errors encountered during model training."""
+        return self._errors
 
-            # The remaining bo_params are added as kwargs to the optimizer
-            self._bo["kwargs"] = {
-                k: v for k, v in self.bo_params.items()
-                if k not in list(self._bo) + exc
-            }
+    @property
+    def winners(self) -> List[str]:
+        """Return the model names ordered by performance."""
+        if self._models:  # Returns None if not fitted
+            models = sorted(self._models.values(), key=lambda x: get_best_score(x))
+            return [m.name for m in models[::-1]]
 
-    def _core_iteration(self):
-        """Fit and evaluate the models in the pipeline."""
-        t_init = datetime.now()  # Measure the time the whole pipeline takes
+    @property
+    def winner(self) -> Model:
+        """Return the best performing model."""
+        if self._models:  # Returns None if not fitted
+            return self._models[self.winners[0]]
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        if not self.__class__.__name__.startswith("SuccessiveHalving"):
-            self.log(f"Models: {', '.join(lst(self.models))}", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
+    @property
+    def results(self) -> pd.DataFrame:
+        """Return the results as a pd.DataFrame."""
 
-        to_remove = []
-        for i, m in enumerate(self._models.values()):
-            model_time = datetime.now()
-
-            try:  # If an error occurs, skip the model
-                if self.experiment:  # Start mlflow run
-                    m._run = mlflow.start_run(run_name=m.name)
-
-                # If it has predefined or custom dimensions, run the BO
-                if (m._dimensions or hasattr(m, "get_dimensions")) and m._n_calls > 0:
-                    m.bayesian_optimization()
-
-                m.fit()
-
-                if m._n_bootstrap:
-                    m.bootstrap()
-
-                # Get the total time spend on this model
-                setattr(m, "time", time_to_str(model_time))
-                self.log("-" * 49 + f"\nTotal time: {m.time}", 1)
-
-            except Exception as ex:
-                self.log(
-                    "\nException encountered while running the "
-                    f"{m.name} model. Removing model from pipeline. ", 1
-                )
-                self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
-                self.log(f"{type(ex).__name__}: {ex}", 1)
-
-                # Append exception to errors dictionary
-                self._errors[m.name] = ex
-
-                # Add model to "garbage collector"
-                # Cannot remove immediately to maintain the iteration order
-                to_remove.append(m.name)
-
-                if self.bo_params and self.bo_params.get("plot"):
-                    PlotCallback.c += 1  # Next model
-                    plt.close()  # Close the crashed plot
-            finally:
-                if self.experiment:
-                    mlflow.end_run()
-
-        delete(self, to_remove)  # Remove faulty models
-
-        # If there's only one model and it failed, raise that exception
-        # If multiple models and all failed, raise RuntimeError
-        if not self._models:
-            if len(self.errors) == 1:
-                raise self.errors[0]
+        def frac(m: Model) -> float:
+            """Return the fraction of the train set used for the model."""
+            n_models = len(m.branch.train) / m._train_idx
+            if n_models == int(n_models):
+                return round(1.0 / n_models, 2)
             else:
-                raise RuntimeError(
-                    "All models failed to run. Use the errors attribute "
-                    "or the logging file to investigate the exceptions."
+                return round(m._train_idx / len(m.branch.train), 2)
+
+        df = pd.DataFrame(
+            data=[m.results for m in self._models.values()],
+            columns=self._models[0].results.index if self._models else [],
+            index=lst(self.models),
+        ).dropna(axis=1, how="all")
+
+        # For sh and ts runs, include the fraction of training set
+        if any(m._train_idx != len(m.branch.train) for m in self._models.values()):
+            df = df.set_index(
+                pd.MultiIndex.from_arrays(
+                    [[frac(m) for m in self._models.values()], self.models],
+                    names=["frac", "model"],
+                )
+            ).sort_index(level=0, ascending=True)
+
+        return df
+
+    # Prediction methods =========================================== >>
+
+    @composed(crash, method_to_log, typechecked)
+    def predict(self, X: X_TYPES, **kwargs) -> np.ndarray:
+        """Get the winning model's predictions on new data."""
+        check_is_fitted(self, attributes="_models")
+        return self.winner.predict(X, **kwargs)
+
+    @composed(crash, method_to_log, typechecked)
+    def predict_proba(self, X: X_TYPES, **kwargs) -> np.ndarray:
+        """Get the winning model's probability predictions on new data."""
+        check_is_fitted(self, attributes="_models")
+        return self.winner.predict_proba(X, **kwargs)
+
+    @composed(crash, method_to_log, typechecked)
+    def predict_log_proba(self, X: X_TYPES, **kwargs) -> np.ndarray:
+        """Get the winning model's log probability predictions on new data."""
+        check_is_fitted(self, attributes="_models")
+        return self.winner.predict_log_proba(X, **kwargs)
+
+    @composed(crash, method_to_log, typechecked)
+    def decision_function(self, X: X_TYPES, **kwargs) -> np.ndarray:
+        """Get the winning model's decision function on new data."""
+        check_is_fitted(self, attributes="_models")
+        return self.winner.decision_function(X, **kwargs)
+
+    @composed(crash, method_to_log, typechecked)
+    def score(
+        self,
+        X: X_TYPES,
+        y: Y_TYPES,
+        metric: Optional[Union[str, callable]] = None,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        **kwargs,
+    ) -> FLOAT:
+        """Get the winning model's score on new data."""
+        check_is_fitted(self, attributes="_models")
+        return self.winner.score(X, y, metric, sample_weight, **kwargs)
+
+    # Utility methods ============================================== >>
+
+    def _get_og_branches(self):
+        """Return branches containing the original dataset."""
+        return [branch for branch in self._branches.values() if branch.pipeline.empty]
+
+    def _get_rows(
+        self,
+        index: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        return_test: bool = True,
+        branch: Optional[Branch] = None,
+    ) -> List[Any]:
+        """Get a subset of the rows.
+
+        Parameters
+        ----------
+        index: int, str, slice, sequence or None, default=None
+            Names or indices of the rows to select. If None,
+            returns the complete dataset or the test set.
+
+        return_test: bool, default=True
+            Whether to return the test or the complete dataset
+            when no index is provided.
+
+        branch: Branch or None, default=None
+            Get columns from specified branch. If None, use the
+            current branch.
+
+        Returns
+        -------
+        list
+            Indices of the included rows.
+
+        """
+        if not branch:
+            branch = self.branch
+
+        indices = list(branch.dataset.index)
+        if branch.holdout is not None:
+            indices += list(branch.holdout.index)
+
+        if index is None:
+            inc = list(branch._idx[1]) if return_test else list(branch.X.index)
+        elif isinstance(index, slice):
+            inc = indices[index]
+        else:
+            inc = []
+            for idx in lst(index):
+                if idx in indices:
+                    inc.append(idx)
+                elif isinstance(idx, int):
+                    if -len(indices) <= idx <= len(indices):
+                        inc.append(indices[idx])
+                    else:
+                        raise ValueError(
+                            f"Invalid value for the index parameter. Value {index} is "
+                            f"out of range for a dataset with length {len(indices)}."
+                        )
+                else:
+                    raise ValueError(
+                        "Invalid value for the index parameter. "
+                        f"Value {idx} not found in the dataset."
+                    )
+
+        if not inc:
+            raise ValueError(
+                "Invalid value for the index parameter, got "
+                f"{index}. At least one row has to be selected."
+            )
+
+        return inc
+
+    def _get_columns(
+        self,
+        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        include_target: bool = True,
+        return_inc_exc: bool = False,
+        only_numerical: bool = False,
+        branch: Optional[Branch] = None,
+    ) -> Union[List[str], Tuple[List[str], List[str]]]:
+        """Get a subset of the columns.
+
+        Select columns in the dataset by name, index or dtype. Duplicate
+        columns are ignored. Exclude columns if their name start with `!`.
+
+        Parameters
+        ----------
+        columns: int, str, slice, sequence or None
+            Names, indices or dtypes of the columns to select. If None,
+            it returns all columns in the dataframe.
+
+        include_target: bool, default=True
+            Whether to include the target column in the dataframe to
+            select from.
+
+        return_inc_exc: bool, default=False
+            Whether to return only included columns or the tuple
+            (included, excluded).
+
+        only_numerical: bool, default=False
+            Whether to return only numerical columns.
+
+        branch: Branch or None, default=None
+            Get columns from specified branch. If None, use the current
+            branch.
+
+        Returns
+        -------
+        list
+            Names of the included columns.
+
+        list
+            Names of the excluded columns. Only returned if
+            return_inc_exc=True.
+
+        """
+        if not branch:
+            branch = self.branch
+
+        # Select dataframe from which to get the columns
+        df = branch.dataset if include_target else branch.X
+
+        inc, exc = [], []
+        if columns is None:
+            if only_numerical:
+                return list(df.select_dtypes(include=["number"]).columns)
+            else:
+                return list(df.columns)
+        elif isinstance(columns, slice):
+            inc = list(df.columns[columns])
+        else:
+            for col in lst(columns):
+                if isinstance(col, int):
+                    try:
+                        inc.append(df.columns[col])
+                    except IndexError:
+                        raise ValueError(
+                            f"Invalid value for the columns parameter. Value {col} "
+                            f"is out of range for a dataset with {df.shape[1]} columns."
+                        )
+                else:
+                    array = inc
+                    if col.startswith("!") and col not in df.columns:
+                        array = exc
+                        col = col[1:]
+
+                    if col in df.columns:
+                        array.append(col)
+                    else:
+                        try:
+                            array.extend(list(df.select_dtypes(col).columns))
+                        except TypeError:
+                            raise ValueError(
+                                "Invalid value for the columns parameter. "
+                                f"Column {col} not found in the dataset."
+                            )
+
+        if len(inc) + len(exc) == 0:
+            raise ValueError(
+                "Invalid value for the columns parameter, got "
+                f"{columns}. At least one column has to be selected."
+            )
+        elif inc and exc:
+            raise ValueError(
+                "Invalid value for the columns parameter. You can either "
+                "include or exclude columns, not combinations of these."
+            )
+        elif return_inc_exc:
+            return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
+
+        if exc:
+            # If columns were excluded with `!`, select all but those
+            inc = [col for col in df.columns if col not in exc]
+
+        return list(dict.fromkeys(inc))  # Avoid duplicates
+
+    def _get_models(
+        self,
+        models: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        ensembles: bool = True,
+    ) -> List[str]:
+        """Get names of models in the trainer.
+
+        If there are multiple models that start with the same acronym,
+        all are returned. If the input is a number as string, select
+        all models that end with that number (for successive halving
+        and train sizing). Exclude models if their name start with `!`.
+        The input is case-insensitive. Duplicate models are ignored.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Names or indices of the models to select. If None, it
+            returns all models in the trainer.
+
+        ensembles: bool, default=True
+            Whether to include ensemble models in the output. If False,
+            they are silently ignored.
+
+        Returns
+        -------
+        list
+            List of model names.
+
+        """
+        inc, exc = [], []
+        available_models = self._models.min("og")
+        if models is None:
+            inc.extend(available_models)
+        elif isinstance(models, slice):
+            inc.extend(available_models[models])
+        else:
+            for model in lst(models):
+                if isinstance(model, int):
+                    try:
+                        inc.append(available_models[model].name)
+                    except KeyError:
+                        raise ValueError(
+                            "Invalid value for the models parameter. Value "
+                            f"{model} is out of range for a pipeline with "
+                            f"{len(available_models)} models."
+                        )
+                else:
+                    array = inc
+                    if model.startswith("!"):
+                        array = exc
+                        model = model[1:]
+
+                    if model.lower() == "winner":
+                        array.append(self.winner.name)
+                    elif model in available_models:
+                        array.append(available_models[model].name)
+                    else:
+                        to_add = []
+                        for key, value in available_models.items():
+                            key, m = key.lower(), model.lower()
+                            if key.startswith(m):
+                                to_add.append(value.name)
+                            elif m.replace(".", "").isdigit() and key.endswith(m):
+                                to_add.append(value.name)
+
+                        if to_add:
+                            array.extend(to_add)
+                        else:
+                            raise ValueError(
+                                f"Could not find any model that matches {model}. The "
+                                f"available models are: {', '.join(available_models)}."
+                            )
+
+        if inc and exc:
+            raise ValueError(
+                "Invalid value for the models parameter. You can either "
+                "include or exclude models, not combinations of these."
+            )
+
+        if exc:
+            # If models were excluded with `!`, select all but those
+            inc = [m for m in available_models if m not in exc]
+
+        if not ensembles:
+            inc = [
+                model for model in inc
+                if not model.startswith("Stack") and not model.startswith("Vote")
+            ]
+
+        return list(dict.fromkeys(inc))  # Avoid duplicates
+
+    @crash
+    def available_models(self) -> pd.DataFrame:
+        """Give an overview of the available predefined models.
+
+        Returns
+        -------
+        pd.DataFrame
+            Information about the predefined models available for the
+            current task. Columns include:
+                - acronym: Model's acronym (used to call the model).
+                - fullname: Complete name of the model.
+                - estimator: The model's underlying estimator.
+                - module: The estimator's module.
+                - needs_scaling: Whether the model requires feature scaling.
+                - accepts_sparse: Whether the model supports sparse matrices.
+                - supports_gpu: Whether the model has GPU support.
+
+        """
+        rows = []
+        for model in MODELS.values():
+            m = model(self, fast_init=True)
+            if self.goal in m.goal:
+                rows.append(
+                    {
+                        "acronym": m.acronym,
+                        "fullname": m.fullname,
+                        "estimator": m.est_class.__name__,
+                        "module": m.est_class.__module__,
+                        "needs_scaling": str(m.needs_scaling),
+                        "accepts_sparse": str(m.accepts_sparse),
+                        "supports_gpu": str(m.supports_gpu),
+                    }
                 )
 
-        self.log(f"\n\nFinal results {'=' * 20} >>", 1)
-        self.log(f"Duration: {time_to_str(t_init)}\n{'-' * 37}", 1)
+        return pd.DataFrame(rows)
 
-        # Get max length of the model names
-        maxlen = max([len(m.fullname) for m in self._models.values()])
+    @composed(crash, method_to_log)
+    def clear(self):
+        """Clear attributes from all models.
 
-        # Get best score of all the models
-        best_score = max([get_best_score(m) for m in self._models.values()])
+        Reset attributes to their initial state, deleting potentially
+        large data arrays. Use this method to free some memory before
+        saving the class. The cleared attributes per model are:
+            - Prediction attributes.
+            - Metrics scores.
+            - Shap values.
 
+        """
+        for model in self._models.values():
+            model.clear()
+
+    @composed(crash, method_to_log, typechecked)
+    def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
+        """Delete models from the trainer.
+
+        If all models are removed, the metric is reset. Use this
+        method to drop unwanted models from the pipeline or to free
+        some memory before saving. Deleted models are not removed
+        from any active mlflow experiment.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Models to delete. If None, delete them all.
+
+        """
+        models = self._get_models(models)
+        if not models:
+            self.log("No models to delete.", 1)
+        else:
+            delete(self, models)
+            if len(models) == 1:
+                self.log(f"Model {models[0]} successfully deleted.", 1)
+            else:
+                self.log(f"Deleting {len(models)} models...", 1)
+                for m in models:
+                    self.log(f" --> Model {m} successfully deleted.", 1)
+
+    @composed(crash, typechecked)
+    def evaluate(
+        self,
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        threshold: FLOAT = 0.5,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> pd.DataFrame:
+        """Get all models' scores for the provided metrics.
+
+        Parameters
+        ----------
+        metric: str, func, scorer, sequence or None, default=None
+            Metric to calculate. If None, it returns an overview of
+            the most common metrics per task.
+
+        threshold: float, default=0.5
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only used when:
+                - The task is binary classification.
+                - The model has a `predict_proba` method.
+                - The metric evaluates predicted target values.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
+
+        sample_weight: sequence or None, default=None
+            Sample weights corresponding to y in `dataset`.
+
+        Returns
+        -------
+        pd.DataFrame
+            Scores of the models.
+
+        """
+        check_is_fitted(self, attributes="_models")
+
+        scores = pd.DataFrame()
         for m in self._models.values():
-            out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"
-            if get_best_score(m) == best_score and len(self._models) > 1:
-                out += " !"
+            scores = scores.append(
+                m.evaluate(metric, dataset, threshold, sample_weight)
+            )
 
-            self.log(out, 1)
+        return scores
+
+    @composed(crash, typechecked)
+    def get_class_weight(self, dataset: str = "train") -> dict:
+        """Return class weights for a balanced dataset.
+
+        Statistically, the class weights re-balance the data set so
+        that the sampled data set represents the target population
+        as closely as possible. The returned weights are inversely
+        proportional to the class frequencies in the selected data set.
+
+        Parameters
+        ----------
+        dataset: str, default="train"
+            Data set from which to get the weights. Choose from:
+            "train", "test" or "dataset".
+
+        Returns
+        -------
+        dict
+            Classes with the corresponding weights.
+
+        """
+        if self.goal != "class":
+            raise PermissionError(
+                "The balance method is only available for classification tasks!"
+            )
+
+        if dataset not in ("train", "test", "dataset"):
+            raise ValueError(
+                "Invalid value for the dataset parameter. "
+                "Choose from: train, test or dataset."
+            )
+
+        y = self.classes[dataset]
+        return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
+
+    @composed(crash, method_to_log, typechecked)
+    def merge(self, other: Any, suffix: str = "2"):
+        """Merge another trainer into this one.
+
+        Branches, models, metrics and attributes of the other trainer
+        are merged into this one. If there are branches and/or models
+        with the same name, they are merged adding the `suffix`
+        parameter to their name. The errors and missing attributes are
+        extended with those of the other instance. It's only possible
+        to merge two instances if they are initialized with the same
+        dataset and trained with the same metric.
+
+        Parameters
+        ----------
+        other: trainer
+            Class instance with which to merge.
+
+        suffix: str, default="2"
+            Conflicting branches and models are merged adding `suffix`
+            to the end of their names.
+
+        """
+        if not hasattr(other, "_branches"):
+            raise TypeError(
+                "Invalid type for the other parameter. Expecting a "
+                f"trainer instance, got {other.__class__.__name__}."
+            )
+
+        # Check that both instances have the same original dataset
+        current_og = self._get_og_branches()[0]
+        other_og = other._get_og_branches()[0]
+        if not current_og._data.equals(other_og._data):
+            raise ValueError(
+                "Invalid value for the other parameter. The provided trainer "
+                "was initialized with a different dataset than this one."
+            )
+
+        # Check that both instances have the same metric
+        if not self._metric:
+            self._metric = other._metric
+        elif other.metric and self.metric != other.metric:
+            raise ValueError(
+                "Invalid value for the other parameter. The provided trainer uses "
+                f"a different metric ({other.metric}) than this one ({self.metric})."
+            )
+
+        self.log("Merging instances...", 1)
+        for name, branch in other._branches.min("og").items():
+            self.log(f" --> Merging branch {name}.", 1)
+            if name in self._branches:
+                name = f"{name}{suffix}"
+            branch.name = name
+            self._branches[name] = branch
+
+        for name, model in other._models.items():
+            self.log(f" --> Merging model {name}.", 1)
+            if name in self._models:
+                name = f"{name}{suffix}"
+            model.name = name
+            self._models[name] = model
+
+        self.log(" --> Merging attributes.", 1)
+        if hasattr(self, "missing"):
+            self.missing.extend([x for x in other.missing if x not in self.missing])
+        for name, error in other._errors.items():
+            if name in self._errors:
+                name = f"{name}{suffix}"
+            self._errors[name] = error
+
+    @composed(crash, method_to_log, typechecked)
+    def stacking(
+        self,
+        name: str = "Stack",
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        **kwargs,
+    ):
+        """Train a Stacking model.
+
+        Parameters
+        ----------
+        name: str, default="Stack"
+            Name of the model. The name is always presided with the
+            model's acronym: `stack`.
+
+        models: sequence or None, default=None
+            Models that feed the voting estimator. If None, it selects
+            all non-ensemble models trained on the current branch.
+
+        **kwargs
+            Additional keyword arguments for sklearn's stacking instance.
+            The model's acronyms can be used for the `final_estimator`
+            parameter.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        models = self._get_models(models or self.branch._get_depending_models(), False)
+
+        if len(models) < 2:
+            raise ValueError(
+                "Invalid value for the models parameter. A Stacking model should "
+                f"contain at least two underlying estimators, got {models}."
+            )
+
+        if not name.lower().startswith("stack"):
+            name = f"Stack{name}"
+
+        if name in self._models:
+            raise ValueError(
+                "Invalid value for the name parameter. It seems a model with "
+                f"the name {name} already exists. Add a different name to "
+                "train multiple Stacking models within the same instance."
+            )
+
+        if isinstance(kwargs.get("final_estimator"), str):
+            if kwargs["final_estimator"] not in MODELS:
+                raise ValueError(
+                    "Invalid value for the final_estimator parameter. Unknown model: "
+                    f"{kwargs['final_estimator']}. Choose from: {', '.join(MODELS)}."
+                )
+            else:
+                model = MODELS[kwargs["final_estimator"]](self)
+                if self.goal not in model.goal:
+                    raise ValueError(
+                        "Invalid value for the final_estimator parameter. Model "
+                        f"{model.fullname} can not perform {self.task} tasks."
+                    )
+
+                kwargs["final_estimator"] = model.get_estimator()
+
+        self._models[name] = Stacking(self, name, models=self._models[models], **kwargs)
+
+        if self.experiment:
+            self[name]._run = mlflow.start_run(run_name=self[name].name)
+
+        self[name].fit()
+
+        if self.experiment:
+            mlflow.end_run()
+
+    @composed(crash, method_to_log, typechecked)
+    def voting(
+        self,
+        name: str = "Vote",
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        **kwargs,
+    ):
+        """Train a Voting model.
+
+        Parameters
+        ----------
+        name: str, default="Vote"
+            Name of the model. The name is always presided with the
+            model's acronym: `vote`.
+
+        models: sequence or None, default=None
+            Models that feed the voting estimator. If None, it selects
+            all non-ensemble models trained on the current branch.
+
+        **kwargs
+            Additional keyword arguments for sklearn's voting instance.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        models = self._get_models(models or self.branch._get_depending_models(), False)
+
+        if len(models) < 2:
+            raise ValueError(
+                "Invalid value for the models parameter. A Voting model should "
+                f"contain at least two underlying estimators, got {models}."
+            )
+
+        if not name.lower().startswith("vote"):
+            name = f"Vote{name}"
+
+        if name in self._models:
+            raise ValueError(
+                "Invalid value for the name parameter. It seems a model with "
+                f"the name {name} already exists. Add a different name to "
+                "train multiple Voting models within the same instance."
+            )
+
+        self._models[name] = Voting(self, name, models=self._models[models], **kwargs)
+
+        if self.experiment:
+            self[name]._run = mlflow.start_run(run_name=self[name].name)
+
+        self[name].fit()
+
+        if self.experiment:
+            mlflow.end_run()

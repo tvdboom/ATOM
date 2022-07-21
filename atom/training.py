@@ -15,7 +15,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from typeguard import typechecked
 
-from atom.basetrainer import BaseTrainer
+from atom.baserunner import BaseRunner
 from atom.plots import BaseModelPlotter
 from atom.utils import (
     INT, SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score,
@@ -23,14 +23,14 @@ from atom.utils import (
 )
 
 
-class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
+class Direct(BaseEstimator, BaseRunner, BaseModelPlotter):
     """Direct training approach.
 
     Fit and evaluate over the models. Contrary to SuccessiveHalving
     and TrainSizing, the direct approach only iterates once over the
     models, using the full dataset.
 
-    See basetrainer.py for a description of the parameters.
+    See baserunner.py for a description of the parameters.
 
     """
 
@@ -65,7 +65,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self._core_iteration()
 
 
-class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
+class SuccessiveHalving(BaseEstimator, BaseRunner, BaseModelPlotter):
     """Successive halving training approach.
 
     The successive halving technique is a bandit-based algorithm that
@@ -77,11 +77,11 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
     reason, it is recommended to only use this technique with similar
     models, e.g. only using tree-based models.
 
-    See basetrainer.py for a description of the remaining parameters.
+    See baserunner.py for a description of the remaining parameters.
 
     Parameters
     ----------
-    skip_runs: int, optional (default=0)
+    skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
 
     """
@@ -162,7 +162,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self._models = models  # Restore all models
 
 
-class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
+class TrainSizing(BaseEstimator, BaseRunner, BaseModelPlotter):
     """Train Sizing training approach.
 
     When training models, there is usually a trade-off between model
@@ -172,11 +172,11 @@ class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
     the training set. The models are fitted multiple times,
     ever-increasing the number of samples in the training set.
 
-    See basetrainer.py for a description of the remaining parameters.
+    See baserunner.py for a description of the remaining parameters.
 
     Parameters
     ----------
-    train_sizes: int or sequence, optional (default=5)
+    train_sizes: int or sequence, default=5
         Sequence of training set sizes used to run the trainings.
             - If int: Number of equally distributed splits, i.e. for a
                       value N it's equal to np.linspace(1.0/N, 1.0, N).

@@ -122,25 +122,21 @@ Additional things to take into account:
 
 Deep learning models can be used through ATOM's [custom models](#custom-models)
 as long as they follow [sklearn's API](https://scikit-learn.org/stable/developers/develop.html).
-For example, models implemented with the Keras package should use the scikeras
-wrappers [KerasClassifier](https://www.adriangb.com/scikeras/refs/heads/master/generated/scikeras.wrappers.KerasClassifier.html#scikeras.wrappers.KerasClassifier)
+For example, models implemented with the Keras package should use the
+[scikeras](https://www.adriangb.com/scikeras/stable/) wrappers
+[KerasClassifier](https://www.adriangb.com/scikeras/refs/heads/master/generated/scikeras.wrappers.KerasClassifier.html#scikeras.wrappers.KerasClassifier)
 or [KerasRegressor](https://www.adriangb.com/scikeras/refs/heads/master/generated/scikeras.wrappers.KerasRegressor.html#scikeras.wrappers.KerasRegressor).
 
 Many deep learning use cases, for example in computer vision, use datasets
 with more than 2 dimensions, e.g. image data can have shape (n_samples,
-length, width, rgb). These data structures are not intended to store in
-a two-dimensional pandas dataframe, but, since ATOM requires a dataframe
-for its internal API, datasets with more than two dimensions are stored
-in a single column called "multidim feature", where every row
-contains one (multidimensional) sample. Note that the [data cleaning](../data_cleaning),
-[feature engineering](../feature_engineering) and some [plotting](../plots)
-methods are unavailable when this is the case.
-
-See in this [example](../../examples/deep_learning) how to use ATOM to train
-and validate a Convolutional Neural Network implemented with Keras.
+length, width, rgb). Luckily, scikeras has a workaround to be able to work
+with such datasets. Learn with this [example](../../examples/deep_learning)
+how to use ATOM to train and validate a Convolutional Neural Network on an
+image dataset.
 
 !!! warning
-    Keras' models can only use [custom hyperparameter tuning](../training/#hyperparameter-tuning)
+    Models implemented with [keras](https://keras.io/) can only use
+    [custom hyperparameter tuning](../training/#hyperparameter-tuning)
     when `n_jobs=1` or `bo_params={"cv": 1}`. Using n_jobs > 1 and
     cv > 1 raises a PicklingError due to incompatibilities of the APIs.
 
@@ -174,7 +170,7 @@ out their individual weaknesses. Read more in sklearn's [documentation](https://
 
 A voting model is created from a trainer through the [voting](../../API/ATOM/atomclassifier/#voting)
 method. The voting model is added automatically to the list of
-models in the pipeline, under the `Vote` acronym. The underlying
+models in the trainer, under the `Vote` acronym. The underlying
 estimator is a custom adaptation of [VotingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html)
 or [VotingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html)
 depending on the task. The differences between ATOM's and sklearn's
@@ -207,7 +203,7 @@ prediction. Read more in sklearn's [documentation](https://scikit-learn.org/stab
 
 A stacking model is created from a trainer through the [stacking](../../API/ATOM/atomclassifier/#stacking)
 method. The stacking model is added automatically to the list of
-models in the pipeline, under the `Stack` acronym. The underlying
+models in the trainer, under the `Stack` acronym. The underlying
 estimator is a custom adaptation of [StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html)
 or [StackingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html)
 depending on the task. The only difference between ATOM's and sklearn's

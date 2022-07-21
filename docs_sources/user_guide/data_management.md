@@ -15,11 +15,10 @@ different data sets:
   The training set in the current [branch](#branches) can be accessed
   through the `train` attribute. It's features and target can be
   accessed through `X_train` and `y_train` respectively.
-* The **test set** is used to evaluate the models in the pipeline. The
-  model scores on this set give an indication on how the model performs
-  on new data. The test set can be accessed through the `test` attribute.
-  It's features and target can be accessed through `X_test` and `y_test`
-  respectively.
+* The **test set** is used to evaluate the models. The model scores on
+  this set give an indication on how the model performs on new data. The
+  test set can be accessed through the `test` attribute. It's features
+  and target can be accessed through `X_test` and `y_test` respectively.
 * The **holdout set** is an optional, separate set that should only be
   used to evaluate the final model's performance. Create this set when
   you are going to use the test set for an intermediate validation step.

@@ -25,72 +25,72 @@ method. Read more in the [user guide](../../../user_guide/nlp/#text-cleaning).
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>decode: bool, optional (default=True)</strong><br>
+<strong>decode: bool, default=True</strong><br>
 Whether to decode unicode characters to their ascii representations.
 </p>
 <p>
-<strong>lower_case: bool, optional (default=True)</strong><br>
+<strong>lower_case: bool, default=True</strong><br>
 Whether to convert all characters to lower case.
 </p>
 <p>
-<strong>drop_email: bool, optional (default=True)</strong><br>
+<strong>drop_email: bool, default=True</strong><br>
 Whether to drop email addresses from the text.
 </p>
 <p>
-<strong>regex_email: str, optional (default=None)</strong><br>
+<strong>regex_email: str, default=None</strong><br>
 Regex used to search for email addresses. If None, it uses
 <code>r"[\w.-]+@[\w-]+\.[\w.-]+"</code>.
 </p>
 <p>
-<strong>drop_url: bool, optional (default=True)</strong><br>
+<strong>drop_url: bool, default=True</strong><br>
 Whether to drop URL links from the text.
 </p>
 <p>
-<strong>regex_url: str, optional (default=None)</strong><br>
+<strong>regex_url: str, default=None</strong><br>
 Regex used to search for URLs. If None, it uses
 <code>r"https?://\S+|www\.\S+"</code>.
 </p>
 <p>
-<strong>drop_html: bool, optional (default=True)</strong><br>
+<strong>drop_html: bool, default=True</strong><br>
 Whether to drop HTML tags from the text. This option is
 particularly useful if the data was scraped from a website.
 </p>
 <p>
-<strong>regex_html: str, optional (default=None)</strong><br>
+<strong>regex_html: str, default=None</strong><br>
 Regex used to search for html tags. If None, it uses
 <code>r"<.*?>"</code>.
 </p>
 <p>
-<strong>drop_emoji: bool, optional (default=True)</strong><br>
+<strong>drop_emoji: bool, default=True</strong><br>
 Whether to drop emojis from the text.
 </p>
 <p>
-<strong>regex_emoji: str, optional (default=None)</strong><br>
+<strong>regex_emoji: str, default=None</strong><br>
 Regex used to search for emojis. If None, it uses
 <code>r":[a-z_]+:"</code>.
 </p>
 <p>
-<strong>drop_number: bool, optional (default=False)</strong><br>
+<strong>drop_number: bool, default=False</strong><br>
 Whether to drop numbers from the text.
 </p>
 <p>
-<strong>regex_number: str, optional (default=None)</strong><br>
+<strong>regex_number: str, default=None</strong><br>
 Regex used to search for numbers. If None, it uses <code>r"\b\d+\b"</code>.
 Note that numbers adjacent to letters are not removed.
 </p>
 <p>
-<strong>drop_punctuation: bool, optional (default=True)</strong><br>
+<strong>drop_punctuation: bool, default=True</strong><br>
 Whether to drop punctuations from the text. Characters considered
 punctuation are <code>!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~</code>.
 </p>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
@@ -174,7 +174,7 @@ Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </tr>
 <tr>
@@ -203,7 +203,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -237,7 +237,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -258,7 +258,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -310,7 +310,7 @@ Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </tr>
 <tr>

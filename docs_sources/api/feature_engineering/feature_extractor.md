@@ -22,14 +22,14 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#e
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>features: str or sequence, optional (default=["day", "month", "year"])</strong><br>
+<strong>features: str or sequence, default=["day", "month", "year"]</strong><br>
 Features to create from the datetime columns. Note that
 created features with zero variance (e.g. the feature hour
 in a column that only contains dates) are ignored. Allowed
 values are datetime attributes from `pandas.Series.dt`.
 </p>
 <p>
-<strong>fmt: str, sequence or None, optional (default=None)</strong><br>
+<strong>fmt: str, sequence or None, default=None</strong><br>
 Format (<code>strptime</code>) of the categorical columns that
 need to be converted to datetime. If sequence, the n-th format
 corresponds to the n-th categorical column that can be successfully
@@ -37,7 +37,7 @@ converted. If None, the format is inferred automatically from the
 first non NaN value. Values that can not be converted are returned
 as NaT.
 </p>
-<strong>encoding_type: str, optional (default="ordinal")</strong><br>
+<strong>encoding_type: str, default="ordinal"</strong><br>
 Type of encoding to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"ordinal": Encode features in increasing order.</li>
@@ -46,18 +46,18 @@ their cyclic nature. Note that this creates two columns for
 every feature. Non-cyclic features still use ordinal encoding.</li>
 </ul>
 <p>
-<strong>drop_columns: bool, optional (default=True)</strong><br>
+<strong>drop_columns: bool, default=True</strong><br>
 Whether to drop the original columns after extracting the
 features from it.
 </p>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
@@ -151,7 +151,7 @@ Extract the new features.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </tr>
@@ -178,7 +178,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -212,7 +212,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -233,7 +233,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -284,7 +284,7 @@ Extract the new features.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </tr>

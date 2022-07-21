@@ -21,7 +21,7 @@ values". This class can be accessed from atom through the
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>strat_num: str, int or float, optional (default="drop")</strong><br>
+<strong>strat_num: str, int or float, default="drop"</strong><br>
 Imputing strategy for numerical columns. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"drop": Drop rows containing missing values.</li>
@@ -31,7 +31,7 @@ Imputing strategy for numerical columns. Choose from:
 <li>"most_frequent": Impute with most frequent value.</li>
 <li>int or float: Impute with provided numerical value.</li>
 </ul>
-<strong>strat_cat: str, optional (default="drop")</strong><br>
+<strong>strat_cat: str, default="drop"</strong><br>
 Imputing strategy for categorical columns. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"drop": Drop rows containing missing values.</li>
@@ -39,30 +39,30 @@ Imputing strategy for categorical columns. Choose from:
 <li>str: Impute with provided string.</li>
 </ul>
 <p>
-<strong>max_nan_rows: int, float or None, optional (default=None)</strong><br>
+<strong>max_nan_rows: int, float or None, default=None</strong><br>
 Maximum number or fraction of missing values in a row
 (if more, the row is removed). If None, ignore this step.
 </p>
 <p>
-<strong>max_nan_cols: int, float, optional (default=None)</strong><br>
+<strong>max_nan_cols: int, float, default=None</strong><br>
 Maximum number or fraction of missing values in a column
 (if more, the column is removed). If None, ignore this step.
 </p>
-<strong>gpu: bool or str, optional (default=False)</strong><br>
+<strong>gpu: bool or str, default=False</strong><br>
 Train strategies on GPU (instead of CPU). Not for strat_num="knn".
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Always use CPU implementation.</li>
 <li>If True: Use GPU implementation if possible.</li>
 <li>If "force": Force GPU implementation.</li>
 </ul>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
@@ -167,7 +167,7 @@ Fit to data.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -200,7 +200,7 @@ dropped during the transformation.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
@@ -238,7 +238,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -272,7 +272,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -293,7 +293,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -345,7 +345,7 @@ during the transformation.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>

@@ -14,7 +14,6 @@ from sklearn.datasets import (
     load_breast_cancer, load_diabetes, load_digits, load_wine,
 )
 from sklearn.model_selection import train_test_split
-from tensorflow import keras
 
 from atom.utils import merge
 
@@ -40,12 +39,6 @@ kwargs = dict(test_size=0.3, random_state=1)
 bin_train, bin_test = train_test_split(merge(X_bin, y_bin), **kwargs)
 class_train, class_test = train_test_split(merge(X_class, y_class), **kwargs)
 reg_train, reg_test = train_test_split(merge(X_reg, y_reg), **kwargs)
-
-# Image data
-(X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
-X_train = X_train.reshape(60000, 28, 28, 1)
-X_test = X_test.reshape(10000, 28, 28, 1)
-mnist = (X_train, y_train), (X_test, y_test)
 
 # Sparse data
 X_sparse = pd.DataFrame(

@@ -51,13 +51,13 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    features: str or sequence, optional (default=["day", "month", "year"])
+    features: str or sequence, default=["day", "month", "year"]
         Features to create from the datetime columns. Note that
         created features with zero variance (e.g. the feature hour
         in a column that only contains dates) are ignored. Allowed
         values are datetime attributes from `pandas.Series.dt`.
 
-    fmt: str, sequence or None, optional (default=None)
+    fmt: str, sequence or None, default=None
         Format (`strptime`) of the categorical columns that need
         to be converted to datetime. If sequence, the n-th format
         corresponds to the n-th categorical column that can be
@@ -65,7 +65,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         automatically from the first non NaN value. Values that can
         not be converted are returned as NaT.
 
-    encoding_type: str, optional (default="ordinal")
+    encoding_type: str, default="ordinal"
         Type of encoding to use. Choose from:
             - "ordinal": Encode features in increasing order.
             - "cyclic": Encode features using sine and cosine to capture
@@ -73,17 +73,17 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                         columns for every feature. Non-cyclic features
                         still use ordinal encoding.
 
-    drop_columns: bool, optional (default=True)
+    drop_columns: bool, default=True
         Whether to drop the original columns after extracting the
         features from it.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -122,7 +122,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -142,6 +142,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 pos = 2 * np.pi * (values - min_val) / np.array(max_val)
                 X.insert(idx, f"{name}_sin", np.sin(pos))
                 X.insert(idx, f"{name}_cos", np.cos(pos))
+
+            return X.copy()  # Avoid dataframe fragmentation
 
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
@@ -218,7 +220,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                         min_val, max_val = 1, 4
 
                 # Add every new feature after the previous one
-                encode_variable(
+                X = encode_variable(
                     idx=X.columns.get_loc(name),
                     name=f"{name}_{fx}",
                     values=values,
@@ -241,38 +243,38 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="dfs")
+    strategy: str, default="dfs"
         Strategy to crate new features. Choose from:
             - "dfs": Deep Feature Synthesis.
             - "gfg": Genetic Feature Generation.
 
-    n_features: int or None, optional (default=None)
+    n_features: int or None, default=None
         Maximum number of newly generated features to add to the
         dataset. If None, select all created features.
 
-    operators: str, sequence or None, optional (default=None)
+    operators: str, sequence or None, default=None
         Mathematical operators to apply on the features. None for all.
         Choose from: add, sub, mul, div, abs, sqrt, log, inv, sin, cos,
         tan.
 
-    n_jobs: int, optional (default=1)
+    n_jobs: int, default=1
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
-    random_state: int or None, optional (default=None)
+    random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
 
@@ -440,7 +442,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -521,7 +523,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     Parameters
     ----------
-    strategy: str or None, optional (default=None)
+    strategy: str or None, default=None
         Feature selection strategy to use. Choose from:
             - None: Do not perform any feature selection strategy.
             - "univariate": Univariate statistical F-test.
@@ -536,7 +538,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - "dfo": Dragonfly Optimization.
             - "genetic": Genetic Optimization.
 
-    solver: str, estimator or None, optional (default=None)
+    solver: str, estimator or None, default=None
         Solver/model to use for the feature selection strategy. See the
         corresponding documentation for an extended description of the
         choices. If None, use the estimator's default value (only pca).
@@ -570,7 +572,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 task, e.g. `solver="LGB_reg"` (not necessary if called
                 from atom). No default option.
 
-    n_features: int, float or None, optional (default=None)
+    n_features: int, float or None, default=None
         Number of features to select. Choose from:
             - if None: Select all features.
             - if < 1: Fraction of the total features to select.
@@ -586,43 +588,43 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         This parameter is ignored if any of the following strategies
         is selected: pso, hho, gwo, dfo, genetic.
 
-    max_frac_repeated: float or None, optional (default=1.)
+    max_frac_repeated: float or None, default=1.
         Remove features with the same value in at least this fraction
         of the total rows. The default is to keep all features with
         non-zero variance, i.e. remove the features that have the same
         value in all samples. If None, skip this step.
 
-    max_correlation: float or None, optional (default=1.)
+    max_correlation: float or None, default=1.
         Minimum absolute Pearson correlation to identify correlated
         features. For each group, it removes all except the feature
         with the highest correlation to `y` (if provided, else it
         removes all but the first). The default value removes equal
         columns. If None, skip this step.
 
-    n_jobs: int, optional (default=1)
+    n_jobs: int, default=1
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    gpu: bool or str, optional (default=False)
+    gpu: bool or str, default=False
         Train strategy on GPU (instead of CPU). Only for strategy="pca".
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.
             - If "force": Force GPU implementation.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
             - 0 to not print anything.
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
-    random_state: int or None, optional (default=None)
+    random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
 
@@ -707,7 +709,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -1070,7 +1072,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, sequence or None, default=None
             Does nothing. Only for continuity of API.
 
         Returns

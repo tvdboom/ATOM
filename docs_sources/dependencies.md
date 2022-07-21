@@ -5,7 +5,6 @@
 
 As of the moment, ATOM supports the following Python versions:
 
-* [Python 3.7](https://www.python.org/downloads/release/python-370/)
 * [Python 3.8](https://www.python.org/downloads/release/python-380/)
 * [Python 3.9](https://www.python.org/downloads/release/python-390/)
 * [Python 3.10](https://www.python.org/downloads/release/python-3100/)
@@ -26,11 +25,11 @@ And operating systems:
 ATOM is built on top of several existing Python libraries. These
 packages are necessary for its correct functioning.
 
-* **[numpy](https://numpy.org/)** (>=1.21.5)
+* **[numpy](https://numpy.org/)** (~=1.22)
 * **[scipy](https://www.scipy.org/)** (>=1.7.3)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.2.0)
-* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.3.8.2)
+* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.0)
 * **[mlflow](https://mlflow.org/)** (>=1.26)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.5)
 * **[tqdm](https://tqdm.github.io/)** (>=4.64)
@@ -42,7 +41,7 @@ packages are necessary for its correct functioning.
 * **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.4.1)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.9.0)
-* **[featuretools](https://www.featuretools.com/)** (>=1.10.0)
+* **[featuretools](https://www.featuretools.com/)** (>=1.12.0)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
 * **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.24)
 * **[matplotlib](https://matplotlib.org/)** (>=3.5.0)

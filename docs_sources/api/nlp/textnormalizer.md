@@ -20,7 +20,7 @@ method. Read more in the [user guide](../../../user_guide/nlp/#normalization).
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>stopwords: bool or str, optional (default=True)</strong><br>
+<strong>stopwords: bool or str, default=True</strong><br>
 Whether to remove a predefined dictionary of stopwords.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Don't remove any predefined stopwords.</li>
@@ -28,10 +28,10 @@ Whether to remove a predefined dictionary of stopwords.
 <li>If str: Language from <code>nltk.corpus.stopwords.words</code>.</li>
 </ul>
 <p>
-<strong>custom_stopwords: sequence or None, optional (default=None)</strong><br>
+<strong>custom_stopwords: sequence or None, default=None</strong><br>
 Custom stopwords to remove from the text.
 </p>
-<strong>stem: bool or str, optional (default=False)</strong><br>
+<strong>stem: bool or str, default=False</strong><br>
 Whether to apply stemming using <a href="https://www.nltk.org/_modules/nltk/stem/snowball.html">SnowballStemmer</a>.
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If False: Don't apply stemming.</li>
@@ -39,17 +39,17 @@ Whether to apply stemming using <a href="https://www.nltk.org/_modules/nltk/stem
 <li>If str: Language from <code>SnowballStemmer.languages</code>.</li>
 </ul>
 <p>
-<strong>lemmatize: bool, optional (default=True)</strong><br>
+<strong>lemmatize: bool, default=True</strong><br>
 Whether to apply lemmatization using <a href="https://www.nltk.org/_modules/nltk/stem/wordnet.html">WordNetLemmatizer</a>.
 </p>
-<strong>verbose: int, optional (default=0)</strong><br>
+<strong>verbose: int, default=0</strong><br>
 Verbosity level of the class. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<strong>logger: str, Logger or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
@@ -121,7 +121,7 @@ Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </tr>
 <tr>
@@ -150,7 +150,7 @@ Get parameters for this estimator.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>deep: bool, optional (default=True)</strong><br>
+<strong>deep: bool, default=True</strong><br>
 If True, will return the parameters for this estimator and contained
 subobjects that are estimators.
 </p>
@@ -184,7 +184,7 @@ Write a message to the logger and print it to stdout.
 Message to write to the logger and print to stdout.
 </p>
 <p>
-<strong>level: int, optional (default=0)</strong><br>
+<strong>level: int, default=0</strong><br>
 Minimum verbosity level to print the message.
 </p>
 </td>
@@ -205,7 +205,7 @@ Save the instance to a pickle file.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
+<strong>filename: str, default="auto"</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
 </tr>
@@ -257,7 +257,7 @@ Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
 </p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<strong>y: int, str, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </tr>
 <tr>
