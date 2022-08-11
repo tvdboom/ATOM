@@ -2882,11 +2882,11 @@
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
 y, metric=None, sample_weight=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L254">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L254">[source]</a>
 </span>
 </div>
 
-<p>Get a metric score on unseen data. New data is first transformed
+<p>Get a metric score on new data. New data is first transformed
 through the model's pipeline. Transformers that are only applied
 on the training set are skipped. If called from a trainer, the best
 model in the pipeline (under the <code>winner</code> attribute) is used. If
@@ -2903,7 +2903,7 @@ Feature set with shape=(n_samples, n_features).
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 <p>
 <strong>metric: str, func, scorer or None, default=None</strong><br>
@@ -2944,7 +2944,7 @@ To get the metric results on the train or test set, use the
 </div>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;MNB&quot;</span><span class="p">,</span> <span class="s2">&quot;KNN&quot;</span><span class="p">,</span> <span class="s2">&quot;kSVM&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;precision&quot;</span><span class="p">)</span>

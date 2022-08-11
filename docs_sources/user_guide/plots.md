@@ -42,11 +42,11 @@ also change it for all other instances in the module. Use the
 [reset_aesthetics](../../API/ATOM/atomclassifier#reset-aesthetics) method
 to reset all the aesthetics to their default value. The default values are:
 
-* style: "darkgrid"
-* palette: "GnBu_r_d"
-* title_fontsize: 20
-* label_fontsize: 16
-* tick_fontsize: 12
+* **style:** "darkgrid"
+* **palette:** "GnBu_r_d"
+* **title_fontsize:** 20
+* **label_fontsize:** 16
+* **tick_fontsize:** 12
 
 <br>
 
@@ -118,189 +118,18 @@ A list of available plots can be found hereunder. Note that not all
 plots can be called from every class and that their availability can
 depend on the task at hand.
 
-<table>
-<tr>
-<td><a href="../../API/plots/plot_correlation">plot_correlation</a></td>
-<td>Plot the data's correlation matrix.</td>
-</tr>
+:: atom.plots:FSPlotter
+    :: members:
+        toc_only: True
+        url: ../../API/plots/
+        exclude:
+            - canvas
+            - reset_aesthetics
 
-<tr>
-<td><a href="../../API/plots/plot_scatter_matrix">plot_scatter_matrix</a></td>
-<td>Plot the data's scatter matrix.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_distribution">plot_distribution</a></td>
-<td>Plot column distributions.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_qq">plot_qq</a></td>
-<td>Plot a quantile-quantile plot.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_wordcloud">plot_wordcloud</a></td>
-<td>Plot a wordcloud from the corpus.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_ngrams">plot_ngrams</a></td>
-<td>Plot n-gram frequencies.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_pca">plot_pca</a></td>
-<td>Plot the explained variance ratio vs the number of components.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_components">plot_components</a></td>
-<td>Plot the explained variance ratio per components.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_rfecv">plot_rfecv</a></td>
-<td>Plot the rfecv results.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_pipeline">plot_pipeline</a></td>
-<td>Plot a diagram of the pipeline.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_successive_halving">plot_successive_halving</a></td>
-<td>Plot of the models" scores per iteration of the successive halving.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_learning_curve">plot_learning_curve</a></td>
-<td>Plot the model's learning curve.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_results">plot_results</a></td>
-<td>Plot a boxplot of the bootstrap results.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_bo">plot_bo</a></td>
-<td>Plot the bayesian optimization scores.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_evals">plot_evals</a></td>
-<td>Plot evaluation curves for the train and test set.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_roc">plot_roc</a></td>
-<td>Plot the Receiver Operating Characteristics curve.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_prc">plot_prc</a></td>
-<td>Plot the precision-recall curve.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_det">plot_det</a></td>
-<td>Plot the detection error tradeoff curve.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_gains">plot_gains</a></td>
-<td>Plot the cumulative gains curve.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_lift">plot_lift</a></td>
-<td>Plot the lift curve.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_errors">plot_errors</a></td>
-<td>Plot a model's prediction errors.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_residuals">plot_residuals</a></td>
-<td>Plot a model's residuals.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_feature_importance">plot_feature_importance</a></td>
-<td>Plot a tree-based model's feature importance.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_permutation_importance">plot_permutation_importance</a></td>
-<td>Plot the feature permutation importance of models.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_partial_dependence">plot_partial_dependence</a></td>
-<td>Plot the partial dependence of features.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_parshap">plot_parshap</a></td>
-<td>Plot the partial correlation of shap values.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_confusion_matrix">plot_confusion_matrix</a></td>
-<td>Plot a model's confusion matrix.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_threshold">plot_threshold</a></td>
-<td>Plot metric performances against threshold values.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_probabilities">plot_probabilities</a></td>
-<td>Plot the probability distribution of the classes in the target column.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_calibration">plot_calibration</a></td>
-<td>Plot the calibration curve for a binary classifier.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/bar_plot">bar_plot</a></td>
-<td>Plot SHAP's bar plot.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/beeswarm_plot">beeswarm_plot</a></td>
-<td>Plot SHAP's beeswarm plot.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/decision_plot">decision_plot</a></td>
-<td>Plot SHAP's decision plot.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/force_plot">force_plot</a></td>
-<td>Plot SHAP's force plot.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/heatmap_plot">heatmap_plot</a></td>
-<td>Plot SHAP's heatmap plot.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/scatter_plot">scatter_plot</a></td>
-<td>Plot SHAP's scatter plot.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/waterfall_plot">waterfall_plot</a></td>
-<td>Plot SHAP's waterfall plot.</td>
-</tr>
-</table>
+:: atom.plots:ATOMPlotter
+    :: members:
+        toc_only: True
+        url: ../../API/plots/
+        exclude:
+            - canvas
+            - reset_aesthetics

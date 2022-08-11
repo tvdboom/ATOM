@@ -143,7 +143,7 @@ Compute the mean and std to be used for scaling.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -152,7 +152,7 @@ Does nothing. Implemented for continuity of the API.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>Scaler</strong><br>
-Fitted instance of self.
+Estimator instance.
 </tr>
 </table>
 <br />
@@ -175,7 +175,7 @@ Fit to data, then transform it.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -309,7 +309,7 @@ Perform standardization by centering and scaling.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>

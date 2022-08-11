@@ -9,10 +9,11 @@ Description: Module containing the BaseModel class.
 
 import os
 import tempfile
+from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from inspect import Parameter, signature
-from typing import Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 from unittest.mock import patch
 
 import dill as pickle
@@ -38,14 +39,14 @@ from tqdm import tqdm
 from typeguard import typechecked
 
 from atom.data_cleaning import Scaler
-from atom.patches import fit, inverse_transform, score, transform
 from atom.pipeline import Pipeline
 from atom.plots import BaseModelPlotter
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
-    ShapExplanation, Table, composed, crash, custom_transform, flt,
-    get_best_score, get_custom_scorer, get_pl_name, it, lst, merge,
-    method_to_log, time_to_str, variable_return,
+    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
+    CustomDict, Predictor, Scorer, ShapExplanation, Table, composed, crash,
+    custom_transform, fit, flt, get_best_score, get_custom_scorer, get_pl_name,
+    inverse_transform, it, lst, merge, method_to_log, score, time_to_str,
+    transform, variable_return,
 )
 
 
@@ -53,10 +54,11 @@ class BaseModel(BaseModelPlotter):
     """Base class for all models."""
 
     def __init__(self, *args, **kwargs):
-        self.T = args[0]  # Trainer instance
+        self.T = args[0]  # Parent class
         self.name = self.acronym if len(args) == 1 else args[1]
         self.scaler = None
         self.estimator = None
+        self.explainer_dashboard = None
 
         self._run = None  # mlflow run (if experiment is active)
         self._group = self.name  # sh and ts models belong to the same group
@@ -103,7 +105,7 @@ class BaseModel(BaseModelPlotter):
             if getattr(self, "needs_scaling", None) and self.T.scaled is False:
                 self.scaler = Scaler().fit(self.X_train)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         out_1 = f"{self.fullname}\n --> Estimator: {self.estimator.__class__.__name__}"
         out_2 = [
             f"{m.name}: {round(get_best_score(self, i), 4)}"
@@ -111,7 +113,7 @@ class BaseModel(BaseModelPlotter):
         ]
         return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         if item in self.__dict__.get("branch")._get_attrs():
             return getattr(self.branch, item)  # Get attr from branch
         elif item in self.__dict__.get("branch").columns:
@@ -123,29 +125,31 @@ class BaseModel(BaseModelPlotter):
                 f"'{self.__class__.__name__}' object has no attribute '{item}'."
             )
 
-    def __contains__(self, item):
+    def __contains__(self, item: str) -> bool:
         return item in self.dataset
 
-    def __getitem__(self, item):
-        if isinstance(item, (str, list)):
+    def __getitem__(self, item: Union[INT, str, list]) -> PANDAS_TYPES:
+        if isinstance(item, int):
+            return self.dataset[self.columns[item]]
+        elif isinstance(item, (str, list)):
             return self.dataset[item]  # Get a subset of the dataset
         else:
             raise TypeError(
-                f"'{self.__class__.__name__}' object is "
-                "only subscriptable with types str or list."
+                f"'{self.__class__.__name__}' object is only "
+                "subscriptable with types int, str or list."
             )
 
     @property
-    def _gpu(self):
+    def _gpu(self) -> bool:
         """Return if the model uses the GPU implementation."""
         return "sklearn" not in self.est_class.__module__
 
     @property
-    def _dims(self):
+    def _dims(self) -> List[str]:
         """Get the names of the hyperparameter dimension space."""
         return [d.name for d in self._dimensions]
 
-    def _sign(self, method="__init__"):
+    def _sign(self, method: str = "__init__") -> OrderedDict:
         """Get the estimator's parameters."""
         return signature(getattr(self.est_class, method)).parameters
 
@@ -168,7 +172,7 @@ class BaseModel(BaseModelPlotter):
                     f"estimator {self.get_estimator().__class__.__name__}."
                 )
 
-    def _get_default_params(self):
+    def _get_default_params(self) -> CustomDict:
         """Get the estimator's default parameters for the BO dimensions."""
         x0 = CustomDict()
         for dim in self._dimensions:
@@ -207,11 +211,15 @@ class BaseModel(BaseModelPlotter):
 
         return x0
 
-    def _get_param(self, params, parameter):
+    def _get_param(self, params: CustomDict, parameter: str) -> Any:
         """Get the estimator's parameter from est_params or BO."""
         return params.get(parameter) or self._est_params.get(parameter)
 
-    def _get_early_stopping_rounds(self, params, max_iter):
+    def _get_early_stopping_rounds(
+        self,
+        params: CustomDict,
+        max_iter: int,
+    ) -> Optional[int]:
         """Get the number of rounds for early stopping."""
         if "early_stopping_rounds" in params:
             return params.pop("early_stopping_rounds")
@@ -220,7 +228,7 @@ class BaseModel(BaseModelPlotter):
         elif self._early_stopping < 1:
             return int(max_iter * self._early_stopping)
 
-    def get_parameters(self, x):
+    def get_parameters(self, x: list) -> CustomDict:
         """Get a dictionary of the model's hyperparameters."""
         return CustomDict(
             {
@@ -229,7 +237,7 @@ class BaseModel(BaseModelPlotter):
             }
         )
 
-    def get_estimator(self, **params):
+    def get_estimator(self, **params) -> Predictor:
         """Return the model's estimator with unpacked parameters."""
         for param in ("n_jobs", "random_state"):
             if param in self._sign():
@@ -262,7 +270,7 @@ class BaseModel(BaseModelPlotter):
 
             """
 
-            def fit_model(train_idx, val_idx):
+            def fit_model(train_idx: list, val_idx: list) -> FLOAT:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation
@@ -521,7 +529,7 @@ class BaseModel(BaseModelPlotter):
         self.T.log(table.print_line(), 2)
 
         # Prepare keyword arguments for the optimizer
-        bo_kwargs = self.T._bo.copy()  # Don't pop params from trainer
+        bo_kwargs = self.T._bo.copy()  # Don't pop params from parent
         kwargs = dict(
             func=lambda x: optimize(**self.get_parameters(x)),
             dimensions=self._dimensions,
@@ -704,7 +712,7 @@ class BaseModel(BaseModelPlotter):
     # Utility properties =========================================== >>
 
     @property
-    def results(self):
+    def results(self) -> pd.Series:
         """Overview of the training results."""
         return pd.Series(
             {
@@ -722,43 +730,283 @@ class BaseModel(BaseModelPlotter):
         )
 
     @property
-    def metric_train(self):
+    def metric_train(self) -> Union[FLOAT, List[FLOAT]]:
         """Metric scores on the training set."""
         return flt([self._scores["train"][name] for name in self.T._metric])
 
     @property
-    def metric_test(self):
+    def metric_test(self) -> Union[FLOAT, List[FLOAT]]:
         """Metric scores on the test set."""
         return flt([self._scores["test"][name] for name in self.T._metric])
+
+    # Data Properties ============================================== >>
+
+    @property
+    def dataset(self) -> pd.DataFrame:
+        return merge(self.X, self.y)
+
+    @property
+    def train(self) -> pd.DataFrame:
+        return merge(self.X_train, self.y_train)
+
+    @property
+    def test(self) -> pd.DataFrame:
+        return merge(self.X_test, self.y_test)
+
+    @property
+    def holdout(self) -> Optional[pd.DataFrame]:
+        if self.branch.holdout is not None:
+            if self.scaler:
+                return merge(
+                    self.scaler.transform(self.branch.holdout.iloc[:, :-1]),
+                    self.branch.holdout.iloc[:, -1],
+                )
+            else:
+                return self.branch.holdout
+
+    @property
+    def X(self) -> pd.DataFrame:
+        return pd.concat([self.X_train, self.X_test])
+
+    @property
+    def y(self) -> pd.Series:
+        return pd.concat([self.y_train, self.y_test])
+
+    @property
+    def X_train(self) -> pd.DataFrame:
+        if self.scaler:
+            return self.scaler.transform(self.branch.X_train[:self._train_idx])
+        else:
+            return self.branch.X_train[:self._train_idx]
+
+    @property
+    def X_test(self) -> pd.DataFrame:
+        if self.scaler:
+            return self.scaler.transform(self.branch.X_test)
+        else:
+            return self.branch.X_test
+
+    @property
+    def X_holdout(self) -> Optional[pd.DataFrame]:
+        if self.branch.holdout is not None:
+            return self.holdout.iloc[:, :-1]
+
+    @property
+    def y_train(self) -> pd.Series:
+        return self.branch.y_train[:self._train_idx]
+
+    @property
+    def y_holdout(self) -> Optional[pd.Series]:
+        if self.branch.holdout is not None:
+            return self.holdout.iloc[:, -1]
+
+    # Prediction properties ======================================== >>
+
+    @property
+    def predict_train(self) -> pd.Series:
+        if self._pred[0] is None:
+            self._pred[0] = pd.Series(
+                data=self.estimator.predict(self.X_train),
+                index=self.X_train.index,
+                name="predict_train",
+            )
+
+        return self._pred[0]
+
+    @property
+    def predict_test(self) -> pd.Series:
+        if self._pred[1] is None:
+            self._pred[1] = pd.Series(
+                data=self.estimator.predict(self.X_test),
+                index=self.X_test.index,
+                name="predict_test",
+            )
+
+        return self._pred[1]
+
+    @property
+    def predict_holdout(self) -> Optional[pd.Series]:
+        if self.T.holdout is not None and self._pred[2] is None:
+            self._pred[2] = pd.Series(
+                data=self.estimator.predict(self.X_holdout),
+                index=self.X_holdout.index,
+                name="predict_holdout",
+            )
+
+        return self._pred[2]
+
+    @property
+    def predict_proba_train(self) -> pd.DataFrame:
+        if self._pred[3] is None:
+            self._pred[3] = pd.DataFrame(
+                data=self.estimator.predict_proba(self.X_train),
+                index=self.X_train.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[3]
+
+    @property
+    def predict_proba_test(self) -> pd.DataFrame:
+        if self._pred[4] is None:
+            self._pred[4] = pd.DataFrame(
+                data=self.estimator.predict_proba(self.X_test),
+                index=self.X_test.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[4]
+
+    @property
+    def predict_proba_holdout(self) -> Optional[pd.DataFrame]:
+        if self.T.holdout is not None and self._pred[5] is None:
+            self._pred[5] = pd.DataFrame(
+                data=self.estimator.predict_proba(self.X_holdout),
+                index=self.X_holdout.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[5]
+
+    @property
+    def predict_log_proba_train(self) -> pd.DataFrame:
+        if self._pred[6] is None:
+            self._pred[6] = pd.DataFrame(
+                data=self.estimator.predict_log_proba(self.X_train),
+                index=self.X_train.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[6]
+
+    @property
+    def predict_log_proba_test(self) -> pd.DataFrame:
+        if self._pred[7] is None:
+            self._pred[7] = pd.DataFrame(
+                data=self.estimator.predict_log_proba(self.X_test),
+                index=self.X_test.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[7]
+
+    @property
+    def predict_log_proba_holdout(self) -> Optional[pd.DataFrame]:
+        if self.T.holdout is not None and self._pred[8] is None:
+            self._pred[8] = pd.DataFrame(
+                data=self.estimator.predict_log_proba(self.X_holdout),
+                index=self.X_holdout.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[8]
+
+    @property
+    def decision_function_train(self) -> PANDAS_TYPES:
+        if self._pred[9] is None:
+            data = self.estimator.decision_function(self.X_train)
+            if data.ndim == 1:
+                self._pred[9] = pd.Series(
+                    data=data,
+                    index=self.X_train.index,
+                    name="decision_function_train",
+                )
+            else:
+                self._pred[9] = pd.DataFrame(
+                    data=data,
+                    index=self.X_train.index,
+                    columns=self.mapping.get(self.target),
+                )
+
+        return self._pred[9]
+
+    @property
+    def decision_function_test(self) -> PANDAS_TYPES:
+        if self._pred[10] is None:
+            data = self.estimator.decision_function(self.X_test)
+            if data.ndim == 1:
+                self._pred[10] = pd.Series(
+                    data=data,
+                    index=self.X_test.index,
+                    name="decision_function_test",
+                )
+            else:
+                self._pred[10] = pd.DataFrame(
+                    data=data,
+                    index=self.X_test.index,
+                    columns=self.mapping.get(self.target),
+                )
+
+        return self._pred[10]
+
+    @property
+    def decision_function_holdout(self) -> Optional[PANDAS_TYPES]:
+        if self.T.holdout is not None and self._pred[11] is None:
+            data = self.estimator.decision_function(self.X_holdout)
+            if data.ndim == 1:
+                self._pred[11] = pd.Series(
+                    data=data,
+                    index=self.X_holdout.index,
+                    name="decision_function_holdout",
+                )
+            else:
+                self._pred[11] = pd.DataFrame(
+                    data=data,
+                    index=self.X_holdout.index,
+                    columns=self.mapping.get(self.target),
+                )
+
+        return self._pred[11]
+
+    @property
+    def score_train(self) -> FLOAT:
+        if self._pred[12] is None:
+            self._pred[12] = self.estimator.score(self.X_train, self.y_train)
+
+        return self._pred[12]
+
+    @property
+    def score_test(self) -> FLOAT:
+        if self._pred[13] is None:
+            self._pred[13] = self.estimator.score(self.X_test, self.y_test)
+
+        return self._pred[13]
+
+    @property
+    def score_holdout(self) -> Optional[FLOAT]:
+        if self.T.holdout is not None and self._pred[14] is None:
+            self._pred[14] = self.estimator.score(self.X_holdout, self.y_holdout)
+
+        return self._pred[14]
 
     # Prediction methods =========================================== >>
 
     def _prediction(
         self,
-        X,
-        y=None,
-        metric=None,
-        sample_weight=None,
-        verbose=None,
-        method="predict"
-    ):
-        """Get predictions on unseen data or rows in the dataset.
+        X: Union[slice, Y_TYPES, X_TYPES],
+        y: Optional[Y_TYPES] = None,
+        metric: Optional[Union[str, callable]] = None,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        verbose: Optional[INT] = None,
+        method: str = "predict",
+    ) -> Union[FLOAT, PANDAS_TYPES]:
+        """Get predictions on new data or rows in the dataset.
 
         New data is first transformed through the model's pipeline.
         Transformers that are only applied on the training set are
-        skipped. The model should have the provided method.
+        skipped. The model should implement the provided method.
 
         Parameters
         ----------
         X: int, str, slice, sequence or dataframe-like
-            Index names or positions of rows in the dataset, or unseen
+            Index names or positions of rows in the dataset, or new
             feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's SCORERS,
@@ -778,102 +1026,274 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        float or np.array
-            Calculated prediction.
+        float, pd.Series or pd.DataFrame
+            Calculated predictions. The return type depends on the method
+            called.
 
         """
-        if not hasattr(self.estimator, method):
+        if method != "score" and not hasattr(self.estimator, method):
             raise AttributeError(
                 f"{self.estimator.__class__.__name__} doesn't have a {method} method!"
             )
 
-        try:  # Return from prediction attributes
-            # Raises ValueError if X doesn't select indices
+        # Two options: select from existing predictions (X has to be able
+        # to get rows from dataset) or calculate predictions from new data
+        try:
+            # Raises ValueError if X can't select indices
             rows = self.T._get_rows(X, branch=self.branch)
+        except ValueError:
+            rows = None
 
-            indices = list(self.dataset.index)
-            pred = np.concatenate(
-                [getattr(self, f"{method}_train"), getattr(self, f"{method}_test")]
-            )
-
-            # If there is a holdout set, add its indices and predictions
-            if self.holdout is not None:
-                indices += list(self.holdout.index)
-                pred = np.concatenate([pred, getattr(self, f"{method}_holdout")])
-
-            # Since the pred attrs don't have an index, we need
-            # to know the index positions of the requested rows
-            return flt(pred[[indices.index(i) for i in rows]])
-
-        except ValueError:  # Calculate new predictions
             # When there is a pipeline, apply transformations first
+            X, y = self.T._prepare_input(X, y)
+            X = self.T._set_index(X)
+            if y is not None:
+                y.index = X.index
+
             for transformer in self.pipeline:
                 if not transformer._train_only:
                     X, y = custom_transform(transformer, self.branch, (X, y), verbose)
 
             # Scale the data if needed
             if self.scaler:
-                X = self.scaler.transform(X)
+                X, y = custom_transform(self.scaler, self.branch, (X, y), verbose)
 
-            if y is None:
-                return getattr(self.estimator, method)(X)
+        if method != "score":
+            if rows:
+                # Concatenate the predictions for all sets and retrieve indices
+                predictions = pd.concat(
+                    [
+                        getattr(self, f"{method}_{set_}")
+                        for set_ in ("train", "test", "holdout")
+                    ]
+                )
+                return predictions.loc[rows]
             else:
-                if metric is None:
-                    if self.T.goal == "class":
-                        metric = get_custom_scorer("accuracy")
-                    else:
-                        metric = get_custom_scorer("r2")
-                else:
-                    metric = get_custom_scorer(metric)
+                predictions = getattr(self.estimator, method)(X)
 
-                return metric(self.estimator, X, y, sample_weight)
+                if predictions.ndim == 1:
+                    return pd.Series(data=predictions, index=X.index, name=method)
+                else:
+                    return pd.DataFrame(
+                        data=predictions,
+                        index=X.index,
+                        columns=self.mapping.get(self.target),
+                    )
+        else:
+            if metric is None:
+                if self.T.goal == "class":
+                    metric = get_custom_scorer("accuracy")
+                else:
+                    metric = get_custom_scorer("r2")
+            else:
+                metric = get_custom_scorer(metric)
+
+            if rows:
+                # Define X and y for the score method
+                if self.holdout is None:
+                    data = self.dataset
+                else:
+                    data = pd.concat([self.dataset, self.holdout], axis=0)
+
+                X, y = data.loc[rows, self.features], data.loc[rows, self.target]
+
+            return metric(self.estimator, X, y, sample_weight)
 
     @composed(crash, method_to_log, typechecked)
     def predict(
         self,
-        X: Union[slice, X_TYPES, Y_TYPES],
+        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
+        /,
+        *,
         verbose: Optional[INT] = None,
-    ):
-        """Get predictions on new data."""
+    ) -> pd.Series:
+        """Get class predictions on new data or rows in the dataset.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new
+            feature set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        pd.Series
+            Predicted classes with shape=(n_samples,).
+
+        """
         return self._prediction(X, verbose=verbose, method="predict")
 
     @composed(crash, method_to_log, typechecked)
     def predict_proba(
         self,
-        X: Union[slice, X_TYPES, Y_TYPES],
+        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
+        /,
+        *,
         verbose: Optional[INT] = None,
-    ):
-        """Get probability predictions on new data."""
+    ) -> pd.DataFrame:
+        """Get class probabilities on new data or rows in the dataset.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_proba` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new
+            feature set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        pd.DataFrame
+            Predicted class probabilities with shape=(n_samples,
+            n_classes).
+
+        """
         return self._prediction(X, verbose=verbose, method="predict_proba")
 
     @composed(crash, method_to_log, typechecked)
     def predict_log_proba(
         self,
-        X: Union[slice, X_TYPES, Y_TYPES],
+        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
+        /,
+        *,
         verbose: Optional[INT] = None,
-    ):
-        """Get log probability predictions on new data."""
+    ) -> pd.DataFrame:
+        """Get class log-probabilities on new data or rows in the dataset.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_log_proba` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new feature
+            set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        pd.DataFrame
+            Predicted class log-probabilities with shape=(n_samples,
+            n_classes).
+
+        """
         return self._prediction(X, verbose=verbose, method="predict_log_proba")
 
     @composed(crash, method_to_log, typechecked)
     def decision_function(
         self,
-        X: Union[slice, X_TYPES, Y_TYPES],
+        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
+        /,
+        *,
         verbose: Optional[INT] = None,
-    ):
-        """Get the decision function on new data."""
+    ) -> PANDAS_TYPES:
+        """Get confidence scores on new data or rows in the dataset.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `decision_function` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new feature
+            set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        pd.Series or pd.DataFrame
+            Predicted confidence scores, with shape=(n_samples,) for
+            binary classification tasks and (n_samples, n_classes) for
+            multiclass classification tasks.
+
+        """
         return self._prediction(X, verbose=verbose, method="decision_function")
 
     @composed(crash, method_to_log, typechecked)
     def score(
         self,
-        X: X_TYPES,
-        y: Y_TYPES,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
+        /,
+        y: Optional[Y_TYPES] = None,
+        metric: Optional[Union[str, callable]] = None,
+        *,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
         verbose: Optional[INT] = None,
-    ):
-        """Get the score function on new data."""
+    ) -> FLOAT:
+        """Get a metric score on new data.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. If called from atom, the best model (under the `winner`
+        attribute) is used. If called from a model, that model is used.
+
+        Read more in the [user guide][predicting].
+
+        !!! info
+            If the `metric` parameter is left to its default value, the
+            method uses the same metric as sklearn's `score` method.
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new feature
+            set with shape=(n_samples, n_features).
+
+        y: int, str or sequence
+            Target column corresponding to X.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
+
+        metric: str, func, scorer or None, default=None
+            Metric to calculate. Choose from any of sklearn's scorers,
+            a function with signature `metric(y_true, y_pred) -> score`
+            or a scorer object. If None, it returns mean accuracy for
+            classification tasks and r2 for regression tasks.
+
+        sample_weight: sequence or None, default=None
+            Sample weights corresponding to y.
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        float
+            Metric score of X with respect to y.
+
+        """
         return self._prediction(
             X=X,
             y=y,
@@ -883,162 +1303,9 @@ class BaseModel(BaseModelPlotter):
             method="score",
         )
 
-    # Prediction properties ======================================== >>
-
-    @property
-    def predict_train(self):
-        if self._pred[0] is None:
-            self._pred[0] = self.estimator.predict(self.X_train)
-        return self._pred[0]
-
-    @property
-    def predict_test(self):
-        if self._pred[1] is None:
-            self._pred[1] = self.estimator.predict(self.X_test)
-        return self._pred[1]
-
-    @property
-    def predict_holdout(self):
-        if self.T.holdout is not None and self._pred[2] is None:
-            self._pred[2] = self.estimator.predict(self.X_holdout)
-        return self._pred[2]
-
-    @property
-    def predict_proba_train(self):
-        if self._pred[3] is None:
-            self._pred[3] = self.estimator.predict_proba(self.X_train)
-        return self._pred[3]
-
-    @property
-    def predict_proba_test(self):
-        if self._pred[4] is None:
-            self._pred[4] = self.estimator.predict_proba(self.X_test)
-        return self._pred[4]
-
-    @property
-    def predict_proba_holdout(self):
-        if self.T.holdout is not None and self._pred[5] is None:
-            self._pred[5] = self.estimator.predict_proba(self.X_holdout)
-        return self._pred[5]
-
-    @property
-    def predict_log_proba_train(self):
-        if self._pred[6] is None:
-            self._pred[6] = self.estimator.predict_log_proba(self.X_train)
-        return self._pred[6]
-
-    @property
-    def predict_log_proba_test(self):
-        if self._pred[7] is None:
-            self._pred[7] = self.estimator.predict_log_proba(self.X_test)
-        return self._pred[7]
-
-    @property
-    def predict_log_proba_holdout(self):
-        if self.T.holdout is not None and self._pred[8] is None:
-            self._pred[8] = self.estimator.predict_log_proba(self.X_holdout)
-        return self._pred[8]
-
-    @property
-    def decision_function_train(self):
-        if self._pred[9] is None:
-            self._pred[9] = self.estimator.decision_function(self.X_train)
-        return self._pred[9]
-
-    @property
-    def decision_function_test(self):
-        if self._pred[10] is None:
-            self._pred[10] = self.estimator.decision_function(self.X_test)
-        return self._pred[10]
-
-    @property
-    def decision_function_holdout(self):
-        if self.T.holdout is not None and self._pred[11] is None:
-            self._pred[11] = self.estimator.decision_function(self.X_holdout)
-        return self._pred[11]
-
-    @property
-    def score_train(self):
-        if self._pred[12] is None:
-            self._pred[12] = self.estimator.score(self.X_train, self.y_train)
-        return self._pred[12]
-
-    @property
-    def score_test(self):
-        if self._pred[13] is None:
-            self._pred[13] = self.estimator.score(self.X_test, self.y_test)
-        return self._pred[13]
-
-    @property
-    def score_holdout(self):
-        if self.T.holdout is not None and self._pred[14] is None:
-            self._pred[14] = self.estimator.score(self.X_holdout, self.y_holdout)
-        return self._pred[14]
-
-    # Data Properties ============================================== >>
-
-    @property
-    def dataset(self):
-        return merge(self.X, self.y)
-
-    @property
-    def train(self):
-        return merge(self.X_train, self.y_train)
-
-    @property
-    def test(self):
-        return merge(self.X_test, self.y_test)
-
-    @property
-    def holdout(self):
-        if self.branch.holdout is not None:
-            if self.scaler:
-                return merge(
-                    self.scaler.transform(self.branch.holdout.iloc[:, :-1]),
-                    self.branch.holdout.iloc[:, -1],
-                )
-            else:
-                return self.branch.holdout
-
-    @property
-    def X(self):
-        return pd.concat([self.X_train, self.X_test])
-
-    @property
-    def y(self):
-        return pd.concat([self.y_train, self.y_test])
-
-    @property
-    def X_train(self):
-        if self.scaler:
-            return self.scaler.transform(self.branch.X_train[:self._train_idx])
-        else:
-            return self.branch.X_train[:self._train_idx]
-
-    @property
-    def X_test(self):
-        if self.scaler:
-            return self.scaler.transform(self.branch.X_test)
-        else:
-            return self.branch.X_test
-
-    @property
-    def X_holdout(self):
-        if self.branch.holdout is not None:
-            return self.holdout.iloc[:, :-1]
-
-    @property
-    def y_train(self):
-        return self.branch.y_train[:self._train_idx]
-
-    @property
-    def y_holdout(self):
-        if self.branch.holdout is not None:
-            return self.holdout.iloc[:, -1]
-
     # Utility methods ============================================== >>
 
-    def _final_output(self):
+    def _final_output(self) -> str:
         """Returns the model's final output as a string."""
         # If bootstrap was used, we use a different format
         if self.mean_bootstrap is None:
@@ -1088,8 +1355,45 @@ class BaseModel(BaseModelPlotter):
             pl = self.export_pipeline()
             mlflow.sklearn.log_model(pl, f"pipeline_{self.name}")
 
-    def _calculate_score(self, scorer, dataset, threshold=0.5, sample_weight=None):
-        """Calculate a metric score using the prediction attributes."""
+    def _calculate_score(
+        self,
+        scorer: Scorer,
+        dataset: str,
+        threshold: FLOAT = 0.5,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> FLOAT:
+        """Calculate a metric score using the prediction attributes.
+
+        Instead of using the scorer to make new predictions and
+        recalculate the same metrics, use the model's prediction
+        attributes and store calculated metrics in self._scores.
+
+        Parameters
+        ----------
+        scorer: Scorer
+            Metrics to calculate. If None, a selection of the most
+            common metrics per task are used.
+
+        dataset: str
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
+
+        threshold: float, default=0.5
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only used when:
+                - The task is binary classification.
+                - The model has a `predict_proba` method.
+                - The metric evaluates predicted target values.
+
+        sample_weight: sequence or None, default=None
+            Sample weights corresponding to y in `dataset`.
+
+        Returns
+        -------
+        float
+            Metric score on the selected data set.
+
+        """
         has_pred_proba = hasattr(self.estimator, "predict_proba")
         has_dec_func = hasattr(self.estimator, "decision_function")
 
@@ -1105,7 +1409,7 @@ class BaseModel(BaseModelPlotter):
 
         y_pred = getattr(self, f"{attr}_{dataset}")
         if self.T.task.startswith("bin") and attr == "predict_proba":
-            y_pred = y_pred[:, 1]
+            y_pred = y_pred.iloc[:, 1]
 
             # Exclude metrics that use probability estimates (e.g. ap, auc)
             if scorer.__class__.__name__ == "_PredictScorer":
@@ -1192,6 +1496,7 @@ class BaseModel(BaseModelPlotter):
             - Prediction attributes.
             - Metrics scores.
             - Shap values.
+            - Dashboard instance.
 
         """
         self._pred = [None] * 15
@@ -1201,9 +1506,10 @@ class BaseModel(BaseModelPlotter):
             holdout=CustomDict(),
         )
         self._shap = ShapExplanation(self)
+        self.explainer_dashboard = None
 
     @composed(crash, method_to_log)
-    def cross_validate(self, **kwargs):
+    def cross_validate(self, **kwargs) -> pd.DataFrame:
         """Evaluate the model using cross-validation.
 
         This method cross-validates the whole pipeline on the complete
@@ -1215,7 +1521,7 @@ class BaseModel(BaseModelPlotter):
         **kwargs
             Additional keyword arguments for sklearn's cross_validate
             function. If the scoring method is not specified, it uses
-            the trainer's metric.
+            atom's metric.
 
         Returns
         -------
@@ -1223,7 +1529,7 @@ class BaseModel(BaseModelPlotter):
             Overview of the results.
 
         """
-        # Assign scoring from predefined or trainer if not specified
+        # Assign scoring from atom if not specified
         if kwargs.get("scoring"):
             scoring = get_custom_scorer(kwargs.pop("scoring"))
             scoring = {scoring.name: scoring}
@@ -1271,7 +1577,9 @@ class BaseModel(BaseModelPlotter):
         The dashboard allows you to investigate SHAP values, permutation
         importances, interaction effects, partial dependence plots, all
         kinds of performance plots, and even individual decision trees.
-        By default, the dashboard opens in an external dash app.
+        By default, the dashboard opens in an external dash app. The
+        created dashboard instance can be accessed through the
+        `explainer_dashboard` attribute.
 
         Parameters
         ----------
@@ -1286,11 +1594,6 @@ class BaseModel(BaseModelPlotter):
         **kwargs
             Additional keyword arguments for the ExplainerDashboard
             instance.
-
-        Returns
-        -------
-        ExplainerDashboard
-            Created dashboard object.
 
         """
         from explainerdashboard import (
@@ -1308,7 +1611,7 @@ class BaseModel(BaseModelPlotter):
             if self.holdout is None:
                 raise ValueError(
                     "Invalid value for the dataset parameter. No holdout "
-                    "data set was specified when initializing the trainer."
+                    "data set was specified when initializing atom."
                 )
             X, y = self.holdout.iloc[:, :-1], self.holdout.iloc[:, -1]
         else:
@@ -1333,29 +1636,27 @@ class BaseModel(BaseModelPlotter):
         if hasattr(self._shap.explainer, "shap_interaction_values"):
             explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
 
-        dashboard = ExplainerDashboard(
+        self.explainer_dashboard = ExplainerDashboard(
             explainer=explainer,
             mode=kwargs.pop("mode", "external"),
             **kwargs,
         )
-        dashboard.run()
+        self.explainer_dashboard.run()
 
         if filename:
             if not filename.endswith(".html"):
                 filename += ".html"
-            dashboard.save_html(filename)
+            self.explainer_dashboard.save_html(filename)
             self.T.log("Dashboard successfully saved.", 1)
-
-        return dashboard
 
     @composed(crash, method_to_log)
     def delete(self):
-        """Delete the model from the trainer.
+        """Delete the model.
 
-        If it's the last model in the trainer, the metric is reset.
-        Use this method to drop unwanted models from the pipeline or
-        to free some memory before saving. The model is not removed
-        from any active mlflow experiment.
+        If it's the last model in atom, the metric is reset. Use this
+        method to drop unwanted models from the pipeline or to free
+        some memory before saving. The model is not removed from any
+        active mlflow experiment.
 
         """
         self.T.delete(self.name)
@@ -1367,7 +1668,7 @@ class BaseModel(BaseModelPlotter):
         dataset: str = "test",
         threshold: FLOAT = 0.5,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
-    ):
+    ) -> pd.Series:
         """Get the model's scores for the provided metrics.
 
         Parameters
@@ -1411,7 +1712,7 @@ class BaseModel(BaseModelPlotter):
         if dataset == "holdout" and self.T.holdout is None:
             raise ValueError(
                 "Invalid value for the dataset parameter. No holdout "
-                "data set was specified when initializing the trainer."
+                "data set was specified when initializing the instance."
             )
 
         # Predefined metrics to show
@@ -1466,7 +1767,7 @@ class BaseModel(BaseModelPlotter):
         self,
         memory: Optional[Union[bool, str, Memory]] = None,
         verbose: Optional[INT] = None,
-    ):
+    ) -> Pipeline:
         """Export the model's pipeline to a sklearn-like object.
 
         If the model used feature scaling, the Scaler is added
@@ -1575,6 +1876,68 @@ class BaseModel(BaseModelPlotter):
         self.T.log(f"Model {self.name} successfully retrained.", 1)
 
     @composed(crash, method_to_log, typechecked)
+    def inverse_transform(
+        self,
+        X: Optional[X_TYPES] = None,
+        /,
+        y: Optional[Y_TYPES] = None,
+        *,
+        verbose: Optional[INT] = None,
+    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+        """Inversely transform new data through the pipeline.
+
+        Transformers that are only applied on the training set are
+        skipped. The rest should all implement a `inverse_transform`
+        method. If only `X` or only `y` is provided, it ignores
+        transformers that require the other parameter. This can be
+        of use to, for example, inversely transform only the target
+        column. If called from a model that used automated feature
+        scaling, the scaling is inversed as well.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Transformed feature set with shape=(n_samples, n_features).
+            If None, X is ignored in the transformers.
+
+        y: int, str, dict, sequence or None, default=None
+            - If None: y is ignored in the transformers.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
+
+        verbose: int or None, default=None
+            Verbosity level for the transformers. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        pd.DataFrame
+            Original feature set. Only returned if provided.
+
+        y: pd.Series
+            Original target column. Only returned if provided.
+
+        """
+        X, y = self.T._prepare_input(X, y)
+
+        # Inversely scale the data if needed
+        if self.scaler:
+            X, y = custom_transform(self.scaler, self.branch, (X, y), verbose)
+
+        for transformer in reversed(self.pipeline):
+            if not transformer._train_only:
+                X, y = custom_transform(
+                    transformer=transformer,
+                    branch=self.branch,
+                    data=(X, y),
+                    verbose=verbose,
+                    method="inverse_transform",
+                )
+
+        return variable_return(X, y)
+
+    @composed(crash, method_to_log, typechecked)
     def rename(self, name: Optional[str] = None):
         """Change the model's tag.
 
@@ -1631,47 +1994,55 @@ class BaseModel(BaseModelPlotter):
     @composed(crash, method_to_log, typechecked)
     def transform(
         self,
-        X: X_TYPES,
+        X: Optional[X_TYPES] = None,
+        /,
         y: Optional[Y_TYPES] = None,
+        *,
         verbose: Optional[INT] = None,
-    ):
-        """Transform new data through the model's branch.
+    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+        """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
-        skipped. If the model used feature scaling, the data is also
-        scaled.
+        skipped. If only `X` or only `y` is provided, it ignores
+        transformers that require the other parameter. This can be
+        of use to, for example, transform only the target column. If
+        called from a model that used automated feature scaling, the
+        data is scaled as well.
 
         Parameters
         ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored. If None,
+            X is ignored in the transformers.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored in the transformers.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
-
-            Feature set with shape=(n_samples, n_features).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         verbose: int or None, default=None
             Verbosity level for the transformers. If None, it uses the
-            estimator's own verbosity.
+            transformer's own verbosity.
 
         Returns
         -------
         pd.DataFrame
-            Transformed feature set.
+            Transformed feature set. Only returned if provided.
 
         y: pd.Series
             Transformed target column. Only returned if provided.
 
         """
+        X, y = self.T._prepare_input(X, y)
+
         for transformer in self.pipeline:
             if not transformer._train_only:
                 X, y = custom_transform(transformer, self.branch, (X, y), verbose)
 
+        # Scale the data if needed
         if self.scaler:
-            X = self.scaler.transform(X)
+            X, y = custom_transform(self.scaler, self.branch, (X, y), verbose)
 
         return variable_return(X, y)

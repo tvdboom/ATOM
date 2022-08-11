@@ -3071,13 +3071,13 @@ y: int, str or sequence<br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 <strong>y: int, str or sequence, default=-1</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 <p style="margin-top:5px">
 This parameter is ignored if the target column is provided
@@ -3349,7 +3349,7 @@ sklearn estimators.
 </p>
 <p>
 <strong>models: list</strong><br>
-List of models in the trainer.
+Names of the models in the instance.
 </p>
 <p>
 <strong>metric: str or list</strong><br>
@@ -3432,7 +3432,7 @@ manage the pipeline.</p>
 <table style="font-size:16px;margin-top:5px">
 <tr>
 <td><a href="#add">add</a></td>
-<td>Add a transformer to the current branch.</td>
+<td>Add a transformer to the pipeline.</td>
 </tr>
 
 <tr>
@@ -3462,7 +3462,7 @@ manage the pipeline.</p>
 
 <tr>
 <td><a href="#delete">delete</a></td>
-<td>Delete models from the trainer.</td>
+<td>Delete models.</td>
 </tr>
 
 <tr>
@@ -3492,7 +3492,7 @@ manage the pipeline.</p>
 
 <tr>
 <td><a href="#merge">merge</a></td>
-<td>Merge another trainer into this one.</td>
+<td>Merge another instance of the same class into this one.</td>
 </tr>
 
 <tr>
@@ -3554,7 +3554,7 @@ columns=None, train_only=False, **fit_params)
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L887">[source]</a>
 </span>
 </div>
-<p>Add a transformer to the current branch. If the transformer is
+<p>Add a transformer to the pipeline. If the transformer is
 not fitted, it is fitted on the complete training set. Afterwards,
 the data set is transformed and the transformer is added to atom's
 pipeline. If the transformer is a sklearn Pipeline, every transformer
@@ -3597,8 +3597,8 @@ is left to its default value, it adopts atom's value.</p>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>transformer: estimator</strong><br>
-Transformer to add to the pipeline. Should implement a <code>transform</code> method.
+<strong>transformer: Transformer</strong><br>
+Estimator to add to the pipeline. Should implement a <code>transform</code> method.
 </p>
 <p>
 <strong>columns: int, str, slice, sequence or None, default=None</strong><br>
@@ -3612,7 +3612,7 @@ include or exclude columns, not combinations of these.
 <strong>train_only: bool, default=False</strong><br>
 Whether to apply the estimator only on the training set or
 on the complete dataset. Note that if True, the transformation
-is skipped when making predictions on unseen data.
+is skipped when making predictions on new data.
 </p>
 <p>
 <strong>**fit_params</strong><br>
@@ -3647,11 +3647,11 @@ is saved to atom's pipeline.</p>
 <td width="80%" class="td_params">
 <p>
 <strong>func: callable</strong><br>
-Function to apply to the dataset.
+Function to apply.
 </p>
 <p>
 <strong>columns: int or str</strong><br>
-Name or index of the column in the dataset to create or transform.
+Name or index of the column to create or transform.
 </p>
 <p>
 <strong>args: tuple, default=()</strong><br>
@@ -3691,7 +3691,7 @@ Keyword arguments for <a href="https://epistasislab.github.io/tpot/api/#regressi
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">available_models</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L500">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L500">[source]</a>
 </span>
 </div>
 <p>Give an overview of the available predefined models.</p>
@@ -3764,7 +3764,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">clear</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L536">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L536">[source]</a>
 </span>
 </div>
 <p>Reset all model attributes to their initial state, deleting potentially
@@ -3780,10 +3780,10 @@ the class. The cleared attributes per model are:</p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L551">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L551">[source]</a>
 </span>
 </div>
-<p>Delete models from the trainer. If all models are removed, the metric
+<p>Delete models. If all models are removed, the metric
 is reset. Use this method to drop unwanted models from the pipeline
 or to free some memory before saving. Deleted models are not removed
 from any active mlflow experiment.</p>
@@ -3875,7 +3875,7 @@ Names or indices of the columns to drop.
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
 dataset="test", sample_weight=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L578">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L578">[source]</a>
 </span>
 </div>
 <p>Get all the models' scores for the provided metrics.</p>
@@ -3931,7 +3931,7 @@ and additionally:
 <li>Always outputs pandas objects.</li>
 <li>Uses transformers that are only applied on the training set (see the
     <a href="#balance">balance</a> or <a href="#prune">prune</a> methods)
-    to fit the pipeline, not to make predictions on unseen data.</li>
+    to fit the pipeline, not to make predictions on new data.</li>
 </ul></p>
 </div>
 <table style="font-size:16px">
@@ -3999,23 +3999,23 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L659">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L659">[source]</a>
 </span>
 </div>
-<p>Merge another trainer into this one. Branches, models, metrics and
-attributes of the other trainer are merged into this one. If there
-are branches and/or models with the same name, they are merged
-adding the <code>suffix</code> parameter to their name. The errors and missing
-attributes are extended with those of the other instance. It's only
-possible to merge two instances if they are initialized with the same
-dataset and trained with the same metric.</p>
+<p>Merge another instance of the same class into this one. Branches,
+models, metrics and attributes of the other instance are merged into
+this one. If there are branches and/or models with the same name,
+they are merged adding the <code>suffix</code> parameter to their name. The
+errors and missing attributes are extended with those of the other
+instance. It's only possible to merge two instances if they are
+initialized with the same dataset and trained with the same metric.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>other: trainer</strong><br>
-Trainer instance with which to merge.
+<strong>other: ATOMRegressor</strong><br>
+Instance with which to merge. Should be of the same class as self.
 </p>
 <p>
 <strong>suffix: str, default="2"</strong><br>
@@ -4184,7 +4184,7 @@ If None, transform all columns.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(name="Stack",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L728">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L728">[source]</a>
 </span>
 </div>
 <p>Add a <a href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
@@ -4236,7 +4236,7 @@ saves it to the logger.
 <em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L798">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L798">[source]</a>
 </span>
 </div>
 <p>Add a <a href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
@@ -4389,7 +4389,7 @@ define the intervals. Ignores numerical columns. See
 <p><a name="encode"></a></p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">encode</strong>(strategy="LeaveOneOut",
-max_onehot=10, ordinal=None, rare_to_value=None)
+max_onehot=10, ordinal=None, rare_to_value=None, value="rare")
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1151">[source]</a>
 </span>
@@ -4596,8 +4596,7 @@ created by the class are attached to atom.</p>
 <li>When strategy is not one of univariate or pca, and solver=None, atom
      uses the winning model (if it exists) as solver.</li>
 <li>When strategy is sfs, rfecv or any of the advanced strategies and no
-    scoring is specified, atom uses the metric in the trainer (if it exists)
-    as scoring parameter.</li></p>
+    scoring is specified, atom's metric is used (if it exists) as scoring.</li></p>
 </div>
 <p><br /><br /></p>
 <h2 id="training">Training</h2>
@@ -4697,7 +4696,7 @@ fashion. The following steps are applied to every model (per iteration):</p>
 description of the parameters.
 <br /><br /><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
 
 <span class="c1"># Initialize atom</span>
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>

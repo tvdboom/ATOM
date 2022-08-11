@@ -8,6 +8,7 @@ Description: Module containing the training classes.
 """
 
 from copy import copy
+from logging import Logger
 from typing import Optional, Union
 
 import numpy as np
@@ -15,7 +16,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from typeguard import typechecked
 
-from atom.baserunner import BaseRunner
+from atom.basetrainer import BaseTrainer
 from atom.plots import BaseModelPlotter
 from atom.utils import (
     INT, SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score,
@@ -23,14 +24,14 @@ from atom.utils import (
 )
 
 
-class Direct(BaseEstimator, BaseRunner, BaseModelPlotter):
+class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
     """Direct training approach.
 
     Fit and evaluate over the models. Contrary to SuccessiveHalving
     and TrainSizing, the direct approach only iterates once over the
     models, using the full dataset.
 
-    See baserunner.py for a description of the parameters.
+    See basetrainer.py for a description of the parameters.
 
     """
 
@@ -47,7 +48,7 @@ class Direct(BaseEstimator, BaseRunner, BaseModelPlotter):
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
-        """Run the trainer.
+        """Train and evaluate the models.
 
         Parameters
         ----------
@@ -59,13 +60,13 @@ class Direct(BaseEstimator, BaseRunner, BaseModelPlotter):
 
         """
         self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
-        self.task = infer_task(self.y_train, goal=self.goal)
+        self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
         self._core_iteration()
 
 
-class SuccessiveHalving(BaseEstimator, BaseRunner, BaseModelPlotter):
+class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
     """Successive halving training approach.
 
     The successive halving technique is a bandit-based algorithm that
@@ -77,7 +78,7 @@ class SuccessiveHalving(BaseEstimator, BaseRunner, BaseModelPlotter):
     reason, it is recommended to only use this technique with similar
     models, e.g. only using tree-based models.
 
-    See baserunner.py for a description of the remaining parameters.
+    See basetrainer.py for a description of the remaining parameters.
 
     Parameters
     ----------
@@ -100,7 +101,7 @@ class SuccessiveHalving(BaseEstimator, BaseRunner, BaseModelPlotter):
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
-        """Run the trainer.
+        """Train and evaluate the models.
 
         Parameters
         ----------
@@ -112,7 +113,7 @@ class SuccessiveHalving(BaseEstimator, BaseRunner, BaseModelPlotter):
 
         """
         self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
-        self.task = infer_task(self.y_train, goal=self.goal)
+        self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
         if self.skip_runs < 0:
@@ -162,7 +163,7 @@ class SuccessiveHalving(BaseEstimator, BaseRunner, BaseModelPlotter):
         self._models = models  # Restore all models
 
 
-class TrainSizing(BaseEstimator, BaseRunner, BaseModelPlotter):
+class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
     """Train Sizing training approach.
 
     When training models, there is usually a trade-off between model
@@ -172,7 +173,7 @@ class TrainSizing(BaseEstimator, BaseRunner, BaseModelPlotter):
     the training set. The models are fitted multiple times,
     ever-increasing the number of samples in the training set.
 
-    See baserunner.py for a description of the remaining parameters.
+    See basetrainer.py for a description of the remaining parameters.
 
     Parameters
     ----------
@@ -199,7 +200,7 @@ class TrainSizing(BaseEstimator, BaseRunner, BaseModelPlotter):
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
-        """Run the trainer.
+        """Train and evaluate the models.
 
         Parameters
         ----------
@@ -211,7 +212,7 @@ class TrainSizing(BaseEstimator, BaseRunner, BaseModelPlotter):
 
         """
         self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
-        self.task = infer_task(self.y_train, goal=self.goal)
+        self.task = infer_task(self.y, goal=self.goal)
         self._prepare_parameters()
 
         # Convert integer train_sizes to sequence
@@ -250,7 +251,156 @@ class TrainSizing(BaseEstimator, BaseRunner, BaseModelPlotter):
 
 
 class DirectClassifier(Direct):
-    """Direct trainer for classification tasks."""
+    """Direct trainer for classification tasks.
+
+    Parameters
+    ----------
+    models: str, estimator or sequence, default=None
+        Models to fit to the data. Allowed inputs are: an acronym from
+        any of ATOM's predefined models, an ATOMModel or a custom
+        estimator as class or instance. If None, all the predefined
+        models are used.
+
+    metric: str, func, scorer, sequence or None, default=None
+        Metric on which to fit the models. Choose from any of sklearn's
+        SCORERS, a function with signature `metric(y_true, y_pred)`, a
+        scorer object or a sequence of these. If multiple metrics are
+        selected, only the first is used to optimize the BO. If None, a
+        default scorer is selected:
+            - "f1" for binary classification
+            - "f1_weighted" for multiclass classification
+            - "r2" for regression
+
+    greater_is_better: bool or sequence, default=True
+        Whether the metric is a score function or a loss function,
+        i.e. if True, a higher score is better and if False, lower
+        is better. This parameter is ignored if the metric is a
+        string or a scorer. If sequence, the n-th value applies to
+        the n-th metric.
+
+    needs_proba: bool or sequence, default=False
+        Whether the metric function requires probability estimates out
+        of a classifier. If True, make sure that every selected model
+        has a `predict_proba` method. This parameter is ignored if the
+        metric is a string or a scorer. If sequence, the n-th value
+        applies to the n-th metric.
+
+    needs_threshold: bool or sequence, default=False
+        Whether the metric function takes a continuous decision
+        certainty. This only works for estimators that have either a
+        `decision_function` or `predict_proba` method. This parameter
+        is ignored if the metric is a string or a scorer. If sequence,
+        the n-th value applies to the n-th metric.
+
+    n_calls: int or sequence, default=15
+        Maximum number of iterations of the BO. It includes the random
+        points of `n_initial_points`. If 0, skip the BO and fit the
+        model on its default Parameters. If sequence, the n-th value
+        applies to the n-th model.
+
+    n_initial_points: int or sequence, default=5
+        Initial number of random tests of the BO before fitting the
+        surrogate function. If equal to `n_calls`, the optimizer will
+        technically be performing a random search. If sequence, the
+        n-th value applies to the n-th model.
+
+    est_params: dict or None, default=None
+        Additional parameters for the estimators. See the corresponding
+        documentation for the available options. For multiple models,
+        use the acronyms as key (or 'all' for all models) and a dict
+        of the parameters as value. Add _fit to the parameter's name
+        to pass it to the fit method instead of the initializer.
+
+    bo_params: dict or None, default=None
+        Additional parameters to for the BO. These can include:
+            - base_estimator: str, default="GP"
+                Surrogate model to use. Choose from:
+                    - "GP" for Gaussian Process
+                    - "RF" for Random Forest
+                    - "ET" for Extra-Trees
+                    - "GBRT" for Gradient Boosted Regression Trees
+            - max_time: int, default=np.inf
+                Stop the optimization after `max_time` seconds.
+            - delta_x: int or float, default=0
+                Stop the optimization when `|x1 - x2| < delta_x`.
+            - delta_y: int or float, default=0
+                Stop the optimization if the 5 minima are within
+                `delta_y` (skopt always minimizes the function).
+            - early_stopping: int, float or None, default=None
+                Training will stop if the model didn't improve in
+                last `early_stopping` rounds. If <1, fraction of
+                rounds from the total. If None, no early stopping
+                is performed. Only available for models that allow
+                in-training evaluation.
+            - cv: int, default=5
+                Number of folds for the cross-validation. If 1, the
+                training set is randomly split in a (sub)train and
+                validation set.
+            - callback: callable or list of callables, default=None
+                Callbacks for the BO.
+            - dimensions: dict, list or None, default=None
+                Custom hyperparameter space for the BO. Can be a list
+                to share the same dimensions across models or a dict
+                with the model names as key (or `all` for all models).
+                If None, ATOM's predefined dimensions are used.
+            - plot: bool, default=False
+                Whether to plot the BO's progress as it runs.
+                Creates a canvas with two plots: the first plot
+                shows the score of every trial and the second shows
+                the distance between the last consecutive steps.
+            - Additional keyword arguments for skopt's optimizer.
+
+    n_bootstrap: int or sequence, default=0
+        Number of data sets (bootstrapped from the training set) to
+        use in the bootstrap algorithm. If 0, no bootstrap is performed.
+        If sequence, the n-th value will apply to the n-th model.
+
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+            - If >0: Number of cores to use.
+            - If -1: Use all available cores.
+            - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+            - 0 to not print anything.
+            - 1 to print basic information.
+            - 2 to print detailed information.
+
+    warnings: bool or str, default=True
+        - If True: Default warning action (equal to "default").
+        - If False: Suppress all warnings (equal to "ignore").
+        - If str: One of the actions in python's warnings environment.
+
+        Note that changing this parameter will affect the
+        `PYTHONWARNINGS` environment.
+
+        Note that ATOM can't manage warnings that go directly
+        from C/C++ code to the stdout/stderr.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic name.
+        - Else: Python `logging.Logger` instance.
+
+        Note that warnings will not be saved to the logger.
+
+    experiment: str or None, default=None
+        Name of the mlflow experiment to use for tracking. If None,
+        no mlflow tracking is performed.
+
+    gpu: bool or str, default=False
+        Train estimators on GPU (instead of CPU). Refer to the
+        documentation to check which estimators are supported.
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`.
+
+    """
 
     @typechecked
     def __init__(
@@ -268,7 +418,7 @@ class DirectClassifier(Direct):
         n_jobs: INT = 1,
         verbose: INT = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
         gpu: Union[bool, str] = False,
         random_state: Optional[INT] = None,
@@ -300,7 +450,7 @@ class DirectRegressor(Direct):
         n_jobs: INT = 1,
         verbose: INT = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
         gpu: Union[bool, str] = False,
         random_state: Optional[INT] = None,
@@ -333,7 +483,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         n_jobs: INT = 1,
         verbose: INT = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
         gpu: Union[bool, str] = False,
         random_state: Optional[INT] = None,
@@ -367,7 +517,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         n_jobs: INT = 1,
         verbose: INT = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
         gpu: Union[bool, str] = False,
         random_state: Optional[INT] = None,
@@ -401,7 +551,7 @@ class TrainSizingClassifier(TrainSizing):
         n_jobs: INT = 1,
         verbose: INT = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
         gpu: Union[bool, str] = False,
         random_state: Optional[INT] = None,
@@ -435,7 +585,7 @@ class TrainSizingRegressor(TrainSizing):
         n_jobs: INT = 1,
         verbose: INT = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         experiment: Optional[str] = None,
         gpu: Union[bool, str] = False,
         random_state: Optional[INT] = None,

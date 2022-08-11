@@ -2886,10 +2886,9 @@ data=None, transform_data=True, verbose=None)
 </span>
 </div>
 
-<p>Load a class instance from a pickle file. If the file is a trainer that
-was saved using <code>save_data=False</code>, it is possible to load new data into
-it. For atom pickles, all data transformations can be applied to the loaded
-data.</p>
+<p>Load a class instance from a pickle file. If the file is an atom
+instance that was saved using <code>save_data=False</code>, it's possible to
+load new data into it and apply all data transformations.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -2898,10 +2897,10 @@ data.</p>
 <strong>filename: str</strong><br>
 Name of the pickle file to load.
 </p>
-<strong>data: tuple of indexables or None, default=None</strong><br>
-Tuple containing the features and target data. Only use this parameter
-if the file is a trainer that was saved using <code>save_data=False</code> (see
-the <a href="../atomclassifier/#save">save</a> method). Allowed formats are:
+<strong>data: sequence of indexables or None, default=None</strong><br>
+Tuple containing the dataset. Only use this parameter if the file is an
+atom instance that was saved using <code>save_data=False</code> (see the
+<a href="../atomclassifier/#save">save</a> method). Allowed formats are:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>X</li>
 <li>X, y</li>
@@ -2920,7 +2919,7 @@ y: int, str or sequence<br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 <strong>transform_data: bool, default=True</strong><br>
 If False, the <code>data</code> is left as provided. If True, it is transformed
@@ -2944,7 +2943,7 @@ Unpickled instance.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span><span class="p">,</span> <span class="n">ATOMLoader</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span><span class="p">,</span> <span class="n">ATOMLoader</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;AP&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>

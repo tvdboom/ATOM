@@ -37,7 +37,7 @@ Description: Module containing all available models. All classes must
         Instance attributes
         -------------------
         T: class
-            Trainer from which the model is called.
+            Parent class from which the model is called.
 
         name: str
             Name of the model. Defaults to the same as the acronym
@@ -1709,7 +1709,7 @@ class MultilayerPerceptron(BaseModel):
 # Ensembles ======================================================== >>
 
 class Stacking(BaseModel):
-    """Class for stacking the models in the trainer."""
+    """Stacking ensemble."""
 
     acronym = "Stack"
     fullname = "Stacking"
@@ -1756,7 +1756,7 @@ class Stacking(BaseModel):
 
 
 class Voting(BaseModel):
-    """Soft Voting/Majority Rule voting."""
+    """Voting ensemble."""
 
     acronym = "Vote"
     fullname = "Voting"

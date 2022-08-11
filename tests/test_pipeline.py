@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -105,7 +105,7 @@ def test_decision_function(pipeline):
 def test_score(pipeline):
     """Assert that the pipeline uses score normally."""
     pl = pipeline(model=True)
-    assert isinstance(pl.score(X_bin, y_bin), np.float64)
+    assert isinstance(pl.score(X_bin, y_bin), float)
 
 
 def test_transform(pipeline):

@@ -3,6 +3,11 @@
     font-weight: normal;
 }
 
+/* Prevent the selection of >>>, ... and output in code blocks,*/
+.language-pycon .gp, .language-pycon .go {
+    user-select: none;
+}
+
 
 /* Table format for about page*/
 .md-typeset__table {

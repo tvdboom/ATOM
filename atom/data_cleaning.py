@@ -9,6 +9,7 @@ Description: Module containing the data cleaning transformers.
 
 from collections import defaultdict
 from inspect import signature
+from logging import Logger
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
@@ -72,32 +73,33 @@ class TransformerMixin:
     def fit(
         self,
         X: Optional[X_TYPES] = None,
+        /,
         y: Optional[Y_TYPES] = None,
         **fit_params,
     ):
         """Does nothing.
 
-         Implemented for continuity of the API of transformers without
-         a fit method.
+        Implemented for continuity of the API.
 
         Parameters
         ----------
         X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         **fit_params
             Additional keyword arguments for the fit method.
 
         Returns
         -------
-        transformer
-            Fitted instance of self.
+        self
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -109,6 +111,7 @@ class TransformerMixin:
     def fit_transform(
         self,
         X: Optional[X_TYPES] = None,
+        /,
         y: Optional[Y_TYPES] = None,
         **fit_params,
     ):
@@ -117,13 +120,14 @@ class TransformerMixin:
         Parameters
         ----------
         X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -131,68 +135,263 @@ class TransformerMixin:
         Returns
         -------
         pd.DataFrame
-            Transformed feature set.
+            Transformed feature set. Only returned if provided.
 
         pd.Series
-            Target column corresponding to X. Only returned if provided.
+            Transformed target column. Only returned if provided.
 
         """
         return self.fit(X, y, **fit_params).transform(X, y)
 
 
-class FunctionTransformer(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Custom transformer for functions.
+class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Balance the number of samples per class in the target column.
 
-    Similar to sklearn's FunctionTransformer but transforms a single
-    column. Creates or replaces the provided column.
+    When oversampling, the newly created samples have an increasing
+    integer index for numerical indices, and an index of the form
+    [estimator]_N for non-numerical indices, where N stands for the
+    N-th sample in the data set. Use only for classification tasks.
+
+    Parameters
+    ----------
+    strategy: str or estimator, default="ADASYN"
+        Type of algorithm with which to balance the dataset. Choose
+        from the name of any estimator in the imbalanced-learn package
+        or provide a custom instance of such.
+
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+            - If >0: Number of cores to use.
+            - If -1: Use all available cores.
+            - If <-1: Use number of cores - 1 - value.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+            - 0 to not print anything.
+            - 1 to print basic information.
+            - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`.
+
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
+
+    Attributes
+    ----------
+    [strategy]: imblearn estimator
+        Object (lowercase strategy) used to balance the data,
+        e.g. `balancer.adasyn` for the default strategy.
+
+    mapping: dict
+        Target values mapped to their respective encoded integer.
+
+    Examples
+    --------
+
 
     """
 
-    def __init__(self, func, columns, args, verbose, logger, **kwargs):
-        super().__init__(verbose=verbose, logger=logger)
-        self.func = func
-        self.columns = columns
-        self.args = args
+    @typechecked
+    def __init__(
+        self,
+        strategy: Union[str, Any] = "ADASYN",
+        *,
+        n_jobs: INT = 1,
+        verbose: INT = 0,
+        logger: Optional[Union[str, Logger]] = None,
+        random_state: Optional[INT] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            n_jobs=n_jobs,
+            verbose=verbose,
+            logger=logger,
+            random_state=random_state,
+        )
+        self.strategy = strategy
         self.kwargs = kwargs
 
-    def __repr__(self, N_CHAR_MAX=700):
-        return f"FunctionTransformer(func={self.func.__name__}, columns={self.columns})"
+        self.mapping = {}
+        self._is_fitted = True
 
-    def transform(self, X, y=None):
-        """Apply function to the dataset.
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Y_TYPES = -1):
+        """Balance the data.
 
-        If the provided column is not in the dataset, a new
-        column is created at the right. If the column already
-        exists, it is replaced.
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str or sequence, default=-1
+            Target column corresponding to X.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
+
+        Returns
+        -------
+        pd.DataFrame
+            Balanced dataframe.
+
+        pd.Series
+            Transformed target column.
 
         """
-        self.log(f"Applying function {self.func.__name__}...", 1)
 
-        dataset = X if y is None else merge(X, y)
-        X[self.columns] = self.func(dataset, *self.args, **self.kwargs)
+        def log_changes(y):
+            """Print the changes per target class."""
+            for key, value in self.mapping.items():
+                diff = counts[key] - np.sum(y == value)
+                if diff > 0:
+                    self.log(f" --> Removing {diff} samples from class {key}.", 2)
+                elif diff < 0:
+                    self.log(f" --> Adding {-diff} samples to class {key}.", 2)
 
-        return variable_return(X, y)
+        X, y = self._prepare_input(X, y)
 
+        strategies = CustomDict(
+            # clustercentroids=ClusterCentroids,  # Has no sample_indices_
+            condensednearestneighbour=CondensedNearestNeighbour,
+            editednearestneighborus=EditedNearestNeighbours,
+            repeatededitednearestneighbours=RepeatedEditedNearestNeighbours,
+            allknn=AllKNN,
+            instancehardnessthreshold=InstanceHardnessThreshold,
+            nearmiss=NearMiss,
+            neighbourhoodcleaningrule=NeighbourhoodCleaningRule,
+            onesidedselection=OneSidedSelection,
+            randomundersampler=RandomUnderSampler,
+            tomeklinks=TomekLinks,
+            randomoversampler=RandomOverSampler,
+            smote=SMOTE,
+            smotenc=SMOTENC,
+            smoten=SMOTEN,
+            adasyn=ADASYN,
+            borderlinesmote=BorderlineSMOTE,
+            kmeanssmote=KMeansSMOTE,
+            svmsmote=SVMSMOTE,
+            smoteenn=SMOTEENN,
+            smotetomek=SMOTETomek,
+        )
 
-class DropTransformer(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Custom transformer to drop columns."""
+        if isinstance(self.strategy, str):
+            if self.strategy not in strategies:
+                raise ValueError(
+                    f"Invalid value for the strategy parameter, got {self.strategy}. "
+                    f"Choose from: {', '.join(strategies)}."
+                )
+            estimator = strategies[self.strategy](**self.kwargs)
+        elif not hasattr(self.strategy, "fit_resample"):
+            raise TypeError(
+                "Invalid type for the strategy parameter. A "
+                "custom estimator must have a fit_resample method."
+            )
+        elif callable(self.strategy):
+            estimator = self.strategy(**self.kwargs)
+        else:
+            estimator = self.strategy
 
-    def __init__(self, columns, verbose, logger):
-        super().__init__(verbose=verbose, logger=logger)
-        self.columns = columns
+        # Create dict of class counts in y
+        counts = {}
+        if not self.mapping:
+            self.mapping = {str(v): v for v in y.sort_values().unique()}
+        for key, value in self.mapping.items():
+            counts[key] = np.sum(y == value)
 
-    def __repr__(self, N_CHAR_MAX=700):
-        return f"DropTransformer(columns={self.columns})"
+        # Add n_jobs or random_state if its one of the estimator's parameters
+        for param in ("n_jobs", "random_state"):
+            if param in estimator.get_params():
+                estimator.set_params(**{param: getattr(self, param)})
 
-    def transform(self, X, y=None):
-        """Drop columns from the dataset."""
-        self.log("Applying DropTransformer...", 1)
+        if "over_sampling" in estimator.__module__:
+            self.log(f"Oversampling with {estimator.__class__.__name__}...", 1)
 
-        for col in self.columns:
-            self.log(f" --> Dropping column {col}.", 2)
-            X = X.drop(col, axis=1)
+            index = X.index  # Save indices for later reassignment
+            X, y = estimator.fit_resample(X, y)
 
-        return variable_return(X, y)
+            # Create indices for the new samples
+            if index.dtype.kind in "ifu":
+                new_index = range(max(index) + 1, max(index) + len(X) - len(index) + 1)
+            else:
+                new_index = [
+                    f"{estimator.__class__.__name__.lower()}_{i}"
+                    for i in range(1, len(X) - len(index) + 1)
+                ]
+
+            # Assign the old + new indices
+            X.index = list(index) + list(new_index)
+            y.index = list(index) + list(new_index)
+
+            log_changes(y)
+
+        elif "under_sampling" in estimator.__module__:
+            self.log(f"Undersampling with {estimator.__class__.__name__}...", 1)
+
+            estimator.fit_resample(X, y)
+
+            # Select chosen rows (imblearn doesn't return them in order)
+            samples = sorted(estimator.sample_indices_)
+            X, y = X.iloc[samples, :], y.iloc[samples]
+
+            log_changes(y)
+
+        elif "combine" in estimator.__module__:
+            self.log(f"Balancing with {estimator.__class__.__name__}...", 1)
+
+            index = X.index
+            X_new, y_new = estimator.fit_resample(X, y)
+
+            # Select rows that were kept by the undersampler
+            if estimator.__class__.__name__ == "SMOTEENN":
+                samples = sorted(estimator.enn_.sample_indices_)
+            elif estimator.__class__.__name__ == "SMOTETomek":
+                samples = sorted(estimator.tomek_.sample_indices_)
+
+            # Select the remaining samples from the old dataframe
+            old_samples = [s for s in samples if s < len(X)]
+            X, y = X.iloc[old_samples, :], y.iloc[old_samples]
+
+            # Create indices for the new samples
+            if index.dtype.kind in "ifu":
+                new_index = range(max(index) + 1, max(index) + len(X_new) - len(X) + 1)
+            else:
+                new_index = [
+                    f"{estimator.__class__.__name__.lower()}_{i}"
+                    for i in range(1, len(X_new) - len(X) + 1)
+                ]
+
+            # Select the new samples and assign the new indices
+            X_new = X_new.iloc[-len(X_new) + len(old_samples):, :]
+            X_new.index = new_index
+            y_new = y_new.iloc[-len(y_new) + len(old_samples):]
+            y_new.index = new_index
+
+            # First, output the samples created
+            for key, value in self.mapping.items():
+                diff = np.sum(y_new == value)
+                if diff > 0:
+                    self.log(f" --> Adding {diff} samples to class: {key}.", 2)
+
+            # Then, output the samples dropped
+            for key, value in self.mapping.items():
+                diff = counts[key] - np.sum(y == value)
+                if diff > 0:
+                    self.log(f" --> Removing {diff} samples from class: {key}.", 2)
+
+            # Add the new samples to the old dataframe
+            X, y = X.append(X_new), y.append(y_new)
+
+        # Add the estimator as attribute to the instance
+        setattr(self, estimator.__class__.__name__.lower(), estimator)
+
+        return X, y
 
 
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
@@ -230,7 +429,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <strategy>: sklearn transformer
+    [strategy]: sklearn transformer
         Object with which the data is scaled.
 
     feature_names_in_: np.array
@@ -239,15 +438,20 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     n_features_in_: int
         Number of features seen during fit.
 
+    Examples
+    --------
+
+
     """
 
     @typechecked
     def __init__(
         self,
         strategy: str = "standard",
+        *,
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         **kwargs,
     ):
         super().__init__(gpu=gpu, verbose=verbose, logger=logger)
@@ -267,13 +471,13 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
         Scaler
-            Fitted instance of self.
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -318,7 +522,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -352,7 +556,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -421,7 +625,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <strategy>: sklearn transformer
+    [strategy]: sklearn transformer
         Object with which the data is transformed.
 
     feature_names_in_: np.array
@@ -436,8 +640,9 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "yeojohnson",
+        *,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[INT] = None,
         **kwargs,
     ):
@@ -458,13 +663,13 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
         Normalizer
-            Fitted instance of self.
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -508,7 +713,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -546,7 +751,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -649,6 +854,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
+        *,
         drop_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
         strip_categorical: bool = True,
         drop_max_cardinality: bool = True,
@@ -658,7 +864,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         encode_target: bool = True,
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.drop_types = drop_types
@@ -681,18 +887,19 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Parameters
         ----------
         X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
         Cleaner
-            Fitted instance of self.
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -721,13 +928,14 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Parameters
         ----------
         X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -821,29 +1029,28 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     ):
         """Inversely transform the label encoding.
 
-        Note that this method only inversely transforms the
-        label encoding. The rest of the transformations can't
-        be inverted. If `encode_target=False`, the data is
-        returned as is.
+        This method only inversely transforms the label encoding.
+        The rest of the transformations can't be inverted. If
+        `encode_target=False`, the data is returned as is.
 
         Parameters
         ----------
-        X: dataframe-like
+        X: dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
         pd.DataFrame
-            Transformed feature set. Only returned if provided.
+            Unchanged feature set. Only returned if provided.
 
         pd.Series
-            Target column corresponding to X. Only returned if provided.
+            Original target column. Only returned if provided.
 
         """
         X, y = self._prepare_input(X, y)
@@ -928,11 +1135,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strat_num: Union[SCALAR, str] = "drop",
         strat_cat: str = "drop",
+        *,
         max_nan_rows: Optional[SCALAR] = None,
         max_nan_cols: Optional[Union[FLOAT]] = None,
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strat_num = strat_num
@@ -957,13 +1165,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
         Imputer
-            Fitted instance of self.
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -1060,11 +1268,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str or sequence
-            - If None: y is ignored.
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+        y: int, str, sequence or None, default=None
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -1072,7 +1281,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             Imputed dataframe.
 
         pd.Series
-            Target column corresponding to X.
+            Transformed target column.
 
         """
         check_is_fitted(self)
@@ -1234,11 +1443,12 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "quantile",
+        *,
         bins: Union[INT, SEQUENCE_TYPES, dict] = 5,
         labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.strategy = strategy
@@ -1259,13 +1469,13 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
         Discretizer
-            Fitted instance of self.
+            Estimator instance.
 
         """
 
@@ -1366,7 +1576,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1471,12 +1681,13 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: Union[str, Any] = "LeaveOneOut",
+        *,
         max_onehot: Optional[INT] = 10,
         ordinal: Optional[Dict[str, SEQUENCE_TYPES]] = None,
         rare_to_value: Optional[SCALAR] = None,
         value: str = "rare",
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -1510,14 +1721,14 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         y: int, str or sequence
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
         Encoder
-            Fitted instance of self.
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -1604,17 +1815,27 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             self._categories[name] = column.sort_values().unique().tolist()
 
             # Perform encoding type dependent on number of unique values
-            ordi = self.ordinal or {}
-            if name in ordi or len(self._categories[name]) == 2:
+            ordinal = self.ordinal or {}
+            if name in ordinal or len(self._categories[name]) == 2:
+
+                # Check that provided classes match those of column
+                ordinal = ordinal.get(name, self._categories[name])
+                if column.nunique(dropna=True) != len(ordinal):
+                    self.log(
+                        f" --> The number of classes passed to feature {name} in the "
+                        f"ordinal parameter ({len(ordinal)}) don't match the number "
+                        f"of classes in the data ({column.nunique(dropna=True)}).", 1,
+                        severity="warning"
+                    )
+
                 # Create custom mapping from 0 to N - 1
-                mapping = {
-                    v: i for i, v in enumerate(ordi.get(name, self._categories[name]))
-                }
+                mapping = {v: i for i, v in enumerate(ordinal)}
                 mapping.setdefault(np.NaN, -1)  # Encoder always needs mapping of NaN
                 self.mapping[name] = mapping
 
                 self._encoders[name] = OrdinalEncoder(
                     mapping=[{"col": name, "mapping": mapping}],
+                    cols=[name],  # Specify to not skip bool columns
                     handle_missing="return_nan",
                     handle_unknown="value",
                 ).fit(X[[name]])
@@ -1660,7 +1881,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1688,7 +1909,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             # Count the propagated missing values
             n_nans = column.isna().sum()
             if n_nans:
-                self.log(f"   >>> Propagating {n_nans} missing values.", 2)
+                self.log(f"   --> Propagating {n_nans} missing values.", 2)
 
             # Get the new encoded columns
             new_cols = self._encoders[name].transform(X[[name]])
@@ -1699,7 +1920,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             # Check for unknown classes
             uc = len([i for i in column.unique() if i not in self._categories[name]])
             if uc:
-                self.log(f"   >>> Handling {uc} unknown classes.", 2)
+                self.log(f"   --> Handling {uc} unknown classes.", 2)
 
             # Insert the new columns at old location
             for i, new_col in enumerate(sorted(new_cols)):
@@ -1772,7 +1993,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <strategy>: sklearn estimator
+    [strategy]: sklearn estimator
         Object used to prune the data, e.g. `pruner.iforest` for the
         isolation forest strategy.
 
@@ -1782,11 +2003,12 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: Union[str, SEQUENCE_TYPES] = "zscore",
+        *,
         method: Union[SCALAR, str] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -1807,11 +2029,11 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -1819,7 +2041,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed feature set.
 
         pd.Series
-            Target column corresponding to X. Only returned if provided.
+            Transformed target column. Only returned if provided.
 
         """
         X, y = self._prepare_input(X, y)
@@ -1955,247 +2177,3 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 return X, y
         else:
             return X
-
-
-class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Balance the number of samples per class in the target column.
-
-    When oversampling, the newly created samples have an increasing
-    integer index for numerical indices, and an index of the form
-    [estimator]_N for non-numerical indices, where N stands for the
-    N-th sample in the data set. Use only for classification tasks.
-
-    Parameters
-    ----------
-    strategy: str or estimator, default="ADASYN"
-        Type of algorithm with which to balance the dataset. Choose
-        from any of the estimators in the imbalanced-learn package or
-        provide a custom one (has to have a `fit_resample` method).
-
-    n_jobs: int, default=1
-        Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - value.
-
-    verbose: int, default=0
-        Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
-
-    logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
-    random_state: int or None, default=None
-        Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `np.random`.
-
-    **kwargs
-        Additional keyword arguments for the `strategy` estimator.
-
-    Attributes
-    ----------
-    <strategy>: imblearn estimator
-        Object (lowercase strategy) used to balance the data,
-        e.g. `balancer.adasyn` for the default strategy.
-
-    mapping: dict
-        Target values mapped to their respective encoded integer.
-
-    """
-
-    @typechecked
-    def __init__(
-        self,
-        strategy: Union[str, Any] = "ADASYN",
-        n_jobs: INT = 1,
-        verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
-        random_state: Optional[INT] = None,
-        **kwargs,
-    ):
-        super().__init__(
-            n_jobs=n_jobs,
-            verbose=verbose,
-            logger=logger,
-            random_state=random_state,
-        )
-        self.strategy = strategy
-        self.kwargs = kwargs
-
-        self.mapping = {}
-        self._is_fitted = True
-
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES = -1):
-        """Balance the data.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str or sequence, default=-1
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
-
-        Returns
-        -------
-        pd.DataFrame
-            Balanced dataframe.
-
-        pd.Series
-            Target column corresponding to X.
-
-        """
-
-        def log_changes(y):
-            """Print the changes per target class."""
-            for key, value in self.mapping.items():
-                diff = counts[key] - np.sum(y == value)
-                if diff > 0:
-                    self.log(f" --> Removing {diff} samples from class {key}.", 2)
-                elif diff < 0:
-                    self.log(f" --> Adding {-diff} samples to class {key}.", 2)
-
-        X, y = self._prepare_input(X, y)
-
-        strategies = CustomDict(
-            # clustercentroids=ClusterCentroids,
-            condensednearestneighbour=CondensedNearestNeighbour,
-            editednearestneighborus=EditedNearestNeighbours,
-            repeatededitednearestneighbours=RepeatedEditedNearestNeighbours,
-            allknn=AllKNN,
-            instancehardnessthreshold=InstanceHardnessThreshold,
-            nearmiss=NearMiss,
-            neighbourhoodcleaningrule=NeighbourhoodCleaningRule,
-            onesidedselection=OneSidedSelection,
-            randomundersampler=RandomUnderSampler,
-            tomeklinks=TomekLinks,
-            randomoversampler=RandomOverSampler,
-            smote=SMOTE,
-            smotenc=SMOTENC,
-            smoten=SMOTEN,
-            adasyn=ADASYN,
-            borderlinesmote=BorderlineSMOTE,
-            kmeanssmote=KMeansSMOTE,
-            svmsmote=SVMSMOTE,
-            smoteenn=SMOTEENN,
-            smotetomek=SMOTETomek,
-        )
-
-        if isinstance(self.strategy, str):
-            if self.strategy not in strategies:
-                raise ValueError(
-                    f"Invalid value for the strategy parameter, got {self.strategy}. "
-                    f"Choose from: {', '.join(strategies)}."
-                )
-            estimator = strategies[self.strategy](**self.kwargs)
-        elif not hasattr(self.strategy, "fit_resample"):
-            raise TypeError(
-                "Invalid type for the strategy parameter. A "
-                "custom estimator must have a fit_resample method."
-            )
-        elif callable(self.strategy):
-            estimator = self.strategy(**self.kwargs)
-        else:
-            estimator = self.strategy
-
-        # Create dict of class counts in y
-        counts = {}
-        if not self.mapping:
-            self.mapping = {str(v): v for v in y.sort_values().unique()}
-        for key, value in self.mapping.items():
-            counts[key] = np.sum(y == value)
-
-        # Add n_jobs or random_state if its one of the estimator's parameters
-        for param in ("n_jobs", "random_state"):
-            if param in estimator.get_params():
-                estimator.set_params(**{param: getattr(self, param)})
-
-        if "over_sampling" in estimator.__module__:
-            self.log(f"Oversampling with {estimator.__class__.__name__}...", 1)
-
-            index = X.index  # Save indices for later reassignment
-            X, y = estimator.fit_resample(X, y)
-
-            # Create indices for the new samples
-            if index.dtype.kind in "ifu":
-                new_index = range(max(index) + 1, max(index) + len(X) - len(index) + 1)
-            else:
-                new_index = [
-                    f"{estimator.__class__.__name__.lower()}_{i}"
-                    for i in range(1, len(X) - len(index) + 1)
-                ]
-
-            # Assign the old + new indices
-            X.index = list(index) + list(new_index)
-            y.index = list(index) + list(new_index)
-
-            log_changes(y)
-
-        elif "under_sampling" in estimator.__module__:
-            self.log(f"Undersampling with {estimator.__class__.__name__}...", 1)
-
-            estimator.fit_resample(X, y)
-
-            # Select chosen rows (imblearn doesn't return them in order)
-            samples = sorted(estimator.sample_indices_)
-            X, y = X.iloc[samples, :], y.iloc[samples]
-
-            log_changes(y)
-
-        elif "combine" in estimator.__module__:
-            self.log(f"Balancing with {estimator.__class__.__name__}...", 1)
-
-            index = X.index
-            X_new, y_new = estimator.fit_resample(X, y)
-
-            # Select rows that were kept by the undersampler
-            if estimator.__class__.__name__ == "SMOTEENN":
-                samples = sorted(estimator.enn_.sample_indices_)
-            elif estimator.__class__.__name__ == "SMOTETomek":
-                samples = sorted(estimator.tomek_.sample_indices_)
-
-            # Select the remaining samples from the old dataframe
-            old_samples = [s for s in samples if s < len(X)]
-            X, y = X.iloc[old_samples, :], y.iloc[old_samples]
-
-            # Create indices for the new samples
-            if index.dtype.kind in "ifu":
-                new_index = range(max(index) + 1, max(index) + len(X_new) - len(X) + 1)
-            else:
-                new_index = [
-                    f"{estimator.__class__.__name__.lower()}_{i}"
-                    for i in range(1, len(X_new) - len(X) + 1)
-                ]
-
-            # Select the new samples and assign the new indices
-            X_new = X_new.iloc[-len(X_new) + len(old_samples):, :]
-            X_new.index = new_index
-            y_new = y_new.iloc[-len(y_new) + len(old_samples):]
-            y_new.index = new_index
-
-            # First, output the samples created
-            for key, value in self.mapping.items():
-                diff = np.sum(y_new == value)
-                if diff > 0:
-                    self.log(f" --> Adding {diff} samples to class: {key}.", 2)
-
-            # Then, output the samples dropped
-            for key, value in self.mapping.items():
-                diff = counts[key] - np.sum(y == value)
-                if diff > 0:
-                    self.log(f" --> Removing {diff} samples from class: {key}.", 2)
-
-            # Add the new samples to the old dataframe
-            X, y = X.append(X_new), y.append(y_new)
-
-        # Add the estimator as attribute to the instance
-        setattr(self, estimator.__class__.__name__.lower(), estimator)
-
-        return X, y

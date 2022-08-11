@@ -3257,19 +3257,19 @@ None will raise an exception.</p>
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
-<li>If int: Index of the target column in X.</li>
+<li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 </tr>
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>FeatureSelector</strong><br>
-Fitted instance of self.
+Estimator instance.
 </tr>
 </table>
 <p><br /></p>
@@ -3291,12 +3291,12 @@ Leaving it None will raise an exception.</p>
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
-<li>If int: Index of the target column in X.</li>
+<li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 </tr>
 <tr>
@@ -3460,7 +3460,7 @@ Estimator instance.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -3477,7 +3477,7 @@ Transformed feature set.
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -3486,7 +3486,7 @@ Transformed feature set.
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.feature_engineering</span> <span class="kn">import</span> <span class="n">FeatureSelector</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.feature_engineering</span> <span class="kn">import</span> <span class="n">FeatureSelector</span>
 
 <span class="n">feature_selector</span> <span class="o">=</span> <span class="n">FeatureSelector</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;pca&quot;</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">feature_selector</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>

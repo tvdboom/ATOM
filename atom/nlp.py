@@ -9,6 +9,7 @@ Description: Module containing the NLP transformers.
 
 import re
 import unicodedata
+from logging import Logger
 from string import punctuation
 from typing import Optional, Union
 
@@ -129,7 +130,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         regex_number: Optional[str] = None,
         drop_punctuation: bool = True,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.decode = decode
@@ -160,7 +161,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -337,7 +338,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         trigram_freq: Optional[SCALAR] = None,
         quadgram_freq: Optional[SCALAR] = None,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.bigram_freq = bigram_freq
@@ -358,7 +359,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -371,7 +372,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         def replace_ngrams(row, ngram, sep="<&&>"):
             """Replace a ngram with one word unified by underscores."""
             row = "&>" + sep.join(row) + "<&"  # Indicate words with separator
-            row = row.replace(  # Replace ngrams' separator with underscore
+            row = row.replace(  # Replace ngrams separator with underscore
                 "&>" + sep.join(ngram) + "<&",
                 "&>" + "_".join(ngram) + "<&",
             )
@@ -472,7 +473,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         stem: Union[bool, str] = False,
         lemmatize: bool = True,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.stopwords = stopwords
@@ -490,7 +491,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -616,7 +617,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <strategy>: sklearn transformer
+    [strategy]: sklearn transformer
         Estimator instance (lowercase strategy) used to vectorize the
         corpus, e.g. `vectorizer.tfidf` for the TF-IDF strategy.
 
@@ -635,7 +636,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return_sparse: bool = True,
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         **kwargs,
     ):
         super().__init__(gpu=gpu, verbose=verbose, logger=logger)
@@ -657,13 +658,13 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
         Vectorizer
-            Fitted instance of self.
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -709,7 +710,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns

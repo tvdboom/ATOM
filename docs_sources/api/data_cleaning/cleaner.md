@@ -127,6 +127,11 @@ Number of features seen during fit.
 
 <table style="font-size:16px">
 <tr>
+<td><a href="#inverse-transform">inverse_transform</a></td>
+<td>Inversely transform the data.</td>
+</tr>
+
+<tr>
 <td><a href="#fit">fit</a></td>
 <td>Fit to data.</td>
 </tr>
@@ -151,7 +156,6 @@ Number of features seen during fit.
 <td>Save the instance to a pickle file.</td>
 </tr>
 
-
 <tr>
 <td><a href="#set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
@@ -163,6 +167,49 @@ Number of features seen during fit.
 </tr>
 </table>
 <br>
+
+
+<a name="inverse-transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">inverse_transform</strong>(X=None, y=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L718">[source]</a>
+</span>
+</div>
+Inversely transform the label encoding. This method only inversely
+transforms the label encoding. The rest of the transformations can't
+be inverted. If `encode_target=False`, the data is returned as is.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: dataframe-like or None, default=None</strong><br>
+Does nothing. Implemented for continuity of the API.
+</p>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
+</ul>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>pd.DataFrame</strong><br>
+Unchanged feature set. Only returned if provided.
+</p>
+<p>
+<strong>pd.Series</strong><br>
+Original target column. Only returned if provided.
+</p>
+</td>
+</tr>
+</table>
+<br />
 
 
 <a name="fit"></a>
@@ -177,12 +224,12 @@ Fit to data.
 <strong>X: dataframe-like or None, default=None</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
-<li>If int: Index of the target column in X.</li>
+<li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 </td>
 </tr>
@@ -190,7 +237,7 @@ Feature set with shape=(n_samples, n_features).
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>Cleaner</strong><br>
-Fitted instance of self.
+Estimator instance.
 </tr>
 </table>
 <br />
@@ -212,12 +259,12 @@ Apply the data cleaning steps to the data.
 <strong>X: dataframe-like or None, default=None</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
-<li>If int: Index of the target column in X.</li>
+<li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 </tr>
 <tr>
@@ -354,12 +401,12 @@ Apply the data cleaning steps to the data.
 <strong>X: dataframe-like or None, default=None</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
-<li>If int: Index of the target column in X.</li>
+<li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 </tr>
 <tr>

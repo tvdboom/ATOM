@@ -21,7 +21,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/t
 * By default, the estimator adopts the default parameters provided by
   its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
-* The `random_state` parameter is set equal to that of the trainer.
+* The `random_state` parameter is set equal to that of the parent.
 
 <table style="font-size:16px">
 <tr>
@@ -233,35 +233,35 @@ attributes that are never used, saving time and memory.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Prediction attributes:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>predict_train: np.array</strong><br>
-Predictions of the model on the training set.
+<strong>predict_train: pd.Series</strong><br>
+Class predictions on the training set.
 </p>
 <p>
-<strong> predict_test: np.array</strong><br>
-Predictions of the model on the test set.
+<strong> predict_test: pd.Series</strong><br>
+Class predictions on the test set.
 </p>
 <p>
-<strong>predict_proba_train: np.array</strong><br>
-Predicted probabilities of the model on the training set (only if classifier).
+<strong>predict_proba_train: pd.DataFrame</strong><br>
+Predicted class probabilities on the training set (only if classifier).
 </p>
 <p>
-<strong>predict_proba_test: np.array</strong><br>
-Predicted probabilities of the model on the test set (only if classifier).
+<strong>predict_proba_test: pd.DataFrame</strong><br>
+Predicted class probabilities on the test set (only if classifier).
 </p>
 <p>
-<strong>predict_log_proba_train: np.array</strong><br>
-Predicted log probabilities of the model on the training set (only if classifier).
+<strong>predict_log_proba_train: pd.DataFrame</strong><br>
+Predicted class log-probabilities on the training set (only if classifier).
 </p>
 <p>
-<strong>predict_log_proba_test: np.array</strong><br>
-Predicted log probabilities of the model on the test set (only if classifier).
+<strong>predict_log_proba_test: pd.DataFrame</strong><br>
+Predicted class log-probabilities on the test set (only if classifier).
 </p>
 <p>
-<strong>score_train: np.float64</strong><br>
+<strong>score_train: float</strong><br>
 Model's score on the training set.
 </p>
 <p>
-<strong>score_test: np.float64</strong><br>
+<strong>score_test: float</strong><br>
 Model's score on the test set.
 </p>
 </td>
@@ -295,7 +295,7 @@ or `atom.tree.predict(X)`. The remaining utility methods can be found hereunder.
 
 <tr>
 <td><a href="#delete">delete</a></td>
-<td>Delete the model from the trainer.</td>
+<td>Delete the model.</td>
 </tr>
 
 <tr>
@@ -319,6 +319,11 @@ or `atom.tree.predict(X)`. The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#inverse-transform">inverse_transform</a></td>
+<td>Inversely transform new data through the pipeline.</td>
+</tr>
+
+<tr>
 <td><a href="#rename">rename</a></td>
 <td>Change the model's tag.</td>
 </tr>
@@ -330,7 +335,7 @@ or `atom.tree.predict(X)`. The remaining utility methods can be found hereunder.
 
 <tr>
 <td><a href="#transform">transform</a></td>
-<td>Transform new data through the model's branch.</td>
+<td>Transform new data through the pipeline.</td>
 </tr>
 </table>
 <br>
@@ -379,6 +384,7 @@ saving the class. The cleared attributes per model are:
 * [Prediction attributes](../../../user_guide/predicting).
 * [Metrics scores](../../../user_guide/training/#metric).
 * [Shap values](../../../user_guide/plots/#shap).
+* [Dashboard instance](../../../user_guide/data_management/#dashboard).
 
 <br /><br /><br />
 
@@ -401,7 +407,7 @@ function is stored under the `cv` attribute.
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's cross_validate
 function. If the scoring method is not specified, it uses
-the trainer's metric.
+atom's metric.
 </td>
 </tr>
 <tr>
@@ -422,10 +428,10 @@ Overview of the results.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L317">[source]</a>
 </span>
 </div>
-Delete the model from the trainer. If it's the last model in the
-trainer, the metric is reset. Use this method to drop unwanted
-models from the pipeline or to free some memory before saving.
-The model is not removed from any active mlflow experiment.
+If it's the last model in atom, the metric is reset. Use this
+method to drop unwanted models from the pipeline or to free
+some memory before saving. The model is not removed from any
+active mlflow experiment.
 <br /><br /><br />
 
 
@@ -440,7 +446,9 @@ Create an interactive dashboard to analyze the model. The dashboard
 allows you to investigate SHAP values, permutation importances,
 interaction effects, partial dependence plots, all kinds of
 performance plots, and even individual decision trees. By default,
-the dashboard opens in an external dash app.
+the dashboard opens in an external dash app. The created dashboard
+instance can be accessed through the `explainer_dashboard` attribute.
+Read more in the [user guide](../../../user_guide/data_management/#dashboard).
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -543,7 +551,7 @@ fitted on the training set.
     <li>Uses transformers that are only applied on the training set (see the
         <a href="../../ATOM/atomclassifier/#balance">balance</a> or
         <a href="../../ATOM/atomclassifier/#prune">prune</a> methods)
-        to fit the pipeline, not to make predictions on unseen data.</li>
+        to fit the pipeline, not to make predictions on new data.</li>
     </ul>
 
 <table style="font-size:16px">
@@ -611,6 +619,60 @@ can't be evaluated.
 <br />
 
 
+<a name="inverse-transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">inverse_transform</strong>(X=None, y=None, verbose=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1679">[source]</a>
+</span>
+</div>
+Inversely transform new data through the pipeline. Transformers that
+are only applied on the training set are skipped. The rest should all
+implement a `inverse_transform` method. If only `X` or only `y` is
+provided, it ignores transformers that require the other parameter.
+This can be of use to, for example, inversely transform only the target
+column. If called from a model that used automated feature scaling,
+the scaling is inversed as well.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: dataframe-like or None, default=None</strong><br>
+Transformed feature set with shape=(n_samples, n_features).
+If None, X is ignored in the transformers.
+</p>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored in the transformers.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
+</ul>
+<p>
+<strong>verbose: int or None, default=None</strong><br>
+Verbosity level of the output. If None, it uses the transformer's
+own verbosity.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>pd.DataFrame</strong><br>
+Original feature set. Only returned if provided.
+</p>
+<p>
+<strong>pd.Series</strong><br>
+Original target column. Only returned if provided.
+</p>
+</td>
+</tr>
+</table>
+<br /><br />
+
+
 <a name="rename"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
@@ -658,23 +720,27 @@ Name of the file. Use "auto" for automatic naming.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L895">[source]</a>
 </span>
 </div>
-Transform new data through the model's branch. Transformers that
-are only applied on the training set are skipped. If the model
-used feature scaling, the data is also scaled.
+Transform new data through the pipeline. Transformers that are only
+applied on the training set are skipped. If only `X` or only `y` is
+provided, it ignores transformers that require the other parameter.
+This can be of use to, for example, transform only the target column.
+If called from a model that used automated feature scaling, the data
+is scaled as well.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
 <strong>X: dataframe-like</strong><br>
-Features to transform, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features). If None, X is ignored
+in the transformers.
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored in the transformers.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 <p>
 <strong>verbose: int or None, default=None</strong><br>
@@ -687,7 +753,7 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="80%" class="td_params">
 <p>
 <strong>pd.DataFrame</strong><br>
-Transformed feature set.
+Transformed feature set. Only returned if provided.
 </p>
 <p>
 <strong>pd.Series</strong><br>

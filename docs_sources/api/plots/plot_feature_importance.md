@@ -12,8 +12,8 @@ show=None, title=None, figsize=None, filename=None, display=True)
 Plot a model's feature importance. The importances are normalized in
 order to be able to compare them between models. Only for models whose
 estimator has a `feature_importances_` or `coef_` attribute. The
-trainer's `feature_importance` attribute is updated with the extracted
-importance ranking.
+`feature_importance` attribute is updated with the extracted  importance
+ranking.
 
 <table style="font-size:16px">
 <tr>

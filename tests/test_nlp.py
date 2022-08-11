@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """Automated Tool for Optimized Modelling (ATOM)
 
@@ -192,15 +192,25 @@ def test_return_sparse():
 
 def test_error_sparse_with_dense():
     """Assert that an error is raised when dense and sparse are combined."""
+
+    def test_func(df):
+        df["new column"] = 1  # Create dense column
+        return df
+
     atom = ATOMClassifier(X_text, y10, random_state=1)
-    atom.apply(lambda x: 1, columns="new")  # Create dense column
+    atom.apply(test_func)
     with pytest.raises(ValueError, match=r".*value for the return_sparse.*"):
         atom.vectorize(strategy="BOW", return_sparse=True)
 
 
 def test_sparse_with_dense():
     """Assert that the output is dense when return_sparse=False."""
+
+    def test_func(df):
+        df["new column"] = 1  # Create dense column
+        return df
+
     atom = ATOMClassifier(X_text, y10, random_state=1)
-    atom.apply(lambda x: 1, columns="new")  # Create dense column
+    atom.apply(test_func)
     atom.vectorize(strategy="BOW", return_sparse=False)
     assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)

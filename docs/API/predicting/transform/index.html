@@ -2879,33 +2879,37 @@
 <h1 id="transform">transform</h1>
 <hr />
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None)
+<em>method</em> <strong style="color:#008AB8">transform</strong>(X=None, y=None, verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L762">[source]</a>
 </span>
 </div>
 
-<p>Transform unseen data through the current branch. Transformers that are
-only applied on the training set are skipped. This method can only be
-called from atom, not from the models.</p>
+<p>Transform new data through the pipeline. Transformers that are
+only applied on the training set are skipped. If only X or only y
+is provided, transformers that require the other parameter are
+ignored (e.g. to transform only the target column). If called from
+a <a href="../../../user_guide/models">model</a> that used <a href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
+the data is scaled as well.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dataframe-like</strong><br>
+<strong>X: dataframe-like or None, default=None</strong><br>
 Features to transform, with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored in the transformers.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 <p>
 <strong>verbose: int or None, default=None</strong><br>
-Verbosity level of the output. If None, it uses the transformer's own verbosity.
+Verbosity level of the output. If None, it uses the transformer's
+own verbosity.
 </p>
 </td>
 </tr>
@@ -2914,7 +2918,7 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="80%" class="td_params">
 <p>
 <strong>pd.DataFrame</strong><br>
-Transformed feature set.
+Transformed feature set. Only returned if provided.
 </p>
 <p>
 <strong>pd.Series</strong><br>
@@ -2925,16 +2929,45 @@ Transformed target column. Only returned if provided.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">model</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;knn&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;zscore&quot;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;min_max&quot;</span><span class="p">,</span> <span class="n">max_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+<span class="gp">... </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
 
-<span class="c1"># Transform new data through all transformers in the branch</span>
-<span class="n">X_transformed</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_new</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">... </span><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_new</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+<span class="gp">... </span><span class="n">atom</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_new</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="go">         x0  x1</span>
+<span class="go">0  0.666667   2</span>
+<span class="go">1  2.000000  -1</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+<span class="gp">... </span><span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">... </span><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+<span class="gp">... </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_new</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+<span class="gp">... </span><span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_new</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="go">         x0        x1</span>
+<span class="go">0  0.000000  1.632993</span>
+<span class="go">1  1.234427 -0.816497</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 
               
             </article>

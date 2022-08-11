@@ -44,13 +44,13 @@ y: int, str or sequence<br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 <strong>y: int, str or sequence, default=-1</strong><br>
 <ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 <p style="margin-top:5px">
 This parameter is ignored if the target column is provided
@@ -335,7 +335,7 @@ sklearn estimators.
 </p>
 <p>
 <strong>models: list</strong><br>
-List of models in the trainer.
+Names of the models in the instance.
 </p>
 <p>
 <strong>metric: str or list</strong><br>
@@ -426,7 +426,7 @@ manage the pipeline.
 <table style="font-size:16px;margin-top:5px">
 <tr>
 <td><a href="#add">add</a></td>
-<td>Add a transformer to the current branch.</td>
+<td>Add a transformer to the pipeline.</td>
 </tr>
 
 <tr>
@@ -456,7 +456,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#delete">delete</a></td>
-<td>Delete models from the trainer.</td>
+<td>Delete models.</td>
 </tr>
 
 <tr>
@@ -480,13 +480,18 @@ manage the pipeline.
 </tr>
 
 <tr>
+<td><a href="#inverse-transform">inverse_transform</a></td>
+<td>Inversely transform new data through the pipeline.</td>
+</tr>
+
+<tr>
 <td><a href="#log">log</a></td>
 <td>Save information to the logger and print to stdout.</td>
 </tr>
 
 <tr>
 <td><a href="#merge">merge</a></td>
-<td>Merge another trainer into this one.</td>
+<td>Merge another instance of the same class into this one.</td>
 </tr>
 
 <tr>
@@ -535,6 +540,11 @@ manage the pipeline.
 </tr>
 
 <tr>
+<td><a href="#transform">transform</a></td>
+<td>Transform new data through the pipeline.</td>
+</tr>
+
+<tr>
 <td><a href="#voting">voting</a></td>
 <td>Train a Voting model.</td>
 </tr>
@@ -550,18 +560,18 @@ columns=None, train_only=False, **fit_params)
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L887">[source]</a>
 </span>
 </div>
-Add a transformer to the current branch. If the transformer is
-not fitted, it is fitted on the complete training set. Afterwards,
-the data set is transformed and the transformer is added to atom's
-pipeline. If the transformer is a sklearn Pipeline, every transformer
-is merged independently with atom.
+Add a transformer to the pipeline. If the transformer is not fitted,
+it is fitted on the complete training set. Afterwards, the data set
+is transformed and the transformer is added to atom's pipeline. If
+the transformer is a sklearn Pipeline, every transformer is merged
+independently with atom.
 
 !!! warning
 
     * The transformer should have fit and/or transform methods with arguments
-      `X` (accepting an array-like object of shape=(n_samples, n_features))
+      `X` (accepting a dataframe-like object of shape=(n_samples, n_features))
       and/or `y` (accepting a sequence of shape=(n_samples,)).
-    * The transform method should return a feature set as an array-like
+    * The transform method should return a feature set as a dataframe-like
       object of shape=(n_samples, n_features) and/or a target column as a
       sequence of shape=(n_samples,).
 
@@ -589,8 +599,8 @@ is merged independently with atom.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>transformer: estimator</strong><br>
-Transformer to add to the pipeline. Should implement a <code>transform</code> method.
+<strong>transformer: Transformer</strong><br>
+Estimator to add to the pipeline. Should implement a <code>transform</code> method.
 </p>
 <p>
 <strong>columns: int, str, slice, sequence or None, default=None</strong><br>
@@ -598,13 +608,14 @@ Names, indices or dtypes of the columns in the dataset to transform.
 If None, transform all columns. Add <code>!</code> in front of a name
 or dtype to exclude that column, e.g. <code>atom.add(Transformer(), columns="!Location")</code>
 transforms all columns except <code>Location</code>. You can either
-include or exclude columns, not combinations of these.
+include or exclude columns, not combinations of these. The target
+column is always included if required by the transformer.
 </p>
 <p>
 <strong>train_only: bool, default=False</strong><br>
 Whether to apply the estimator only on the training set or
 on the complete dataset. Note that if True, the transformation
-is skipped when making predictions on unseen data.
+is skipped when making predictions on new data.
 </p>
 <p>
 <strong>**fit_params</strong><br>
@@ -619,21 +630,20 @@ Additional keyword arguments for the fit method of the transformer.
 <a name="apply"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">apply</strong>(func,
-columns, args=(), **kwargs)
+inverse_func=None, kw_args=None, inv_kw_args=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L934">[source]</a>
 </span>
 </div>
-Transform one column in the dataset using a function (can
-be a lambda). If the provided column is present in the dataset,
-that same column is transformed. If it's not a column in the
-dataset, a new column with that name is created. The first
-parameter of the function is the complete dataset.
+Apply a function to the dataset. The function should have signature
+`func(dataset, **kw_args) -> dataset` and return the transformed
+dataset. This is useful for stateless transformations such as taking
+the log, doing custom scaling, etc...
 
 !!! note
     This approach is preferred over changing the dataset directly
-    through the property's `@setter` since the transformation
-    is saved to atom's pipeline.
+    through the property's `@setter` since the transformation is 
+    stored in the pipeline.
 
 <table style="font-size:16px">
 <tr>
@@ -641,19 +651,24 @@ parameter of the function is the complete dataset.
 <td width="80%" class="td_params">
 <p>
 <strong>func: callable</strong><br>
-Function to apply to the dataset.
+Function to apply.
 </p>
 <p>
 <strong>columns: int or str</strong><br>
-Name or index of the column in the dataset to create or transform.
+Name or index of the column to create or transform.
 </p>
 <p>
-<strong>args: tuple, default=()</strong><br>
-Positional arguments for the function (after the dataset).
+<strong>inverse_func: callable or None, default=None</strong><br>
+Inverse function of <code>func</code>. If None, the inverse_transform
+method returns the input unchanged.
 </p>
 <p>
-<strong>**kwargs</strong><br>
+<strong>kw_args: dict or None, default=None</strong><br>
 Additional keyword arguments for the function.
+</p>
+<p>
+<strong>inv_kw_args: dict or None, default=None</strong><br>
+Additional keyword arguments for the inverse function.
 </p>
 </td>
 </tr>
@@ -689,7 +704,7 @@ Keyword arguments for <a href="https://epistasislab.github.io/tpot/api/#regressi
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">available_models</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L500">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L500">[source]</a>
 </span>
 </div>
 Give an overview of the available predefined models.
@@ -766,7 +781,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">clear</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L536">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L536">[source]</a>
 </span>
 </div>
 Reset all model attributes to their initial state, deleting potentially
@@ -776,6 +791,7 @@ the class. The cleared attributes per model are:
 * [Prediction attributes](../../../user_guide/predicting).
 * [Metrics scores](../../../user_guide/training/#metric).
 * [Shap values](../../../user_guide/plots/#shap).
+* [Dashboard instance](../../../user_guide/data_management/#dashboard).
 
 <br /><br /><br />
 
@@ -784,10 +800,10 @@ the class. The cleared attributes per model are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L551">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L551">[source]</a>
 </span>
 </div>
-Delete models from the trainer. If all models are removed, the metric
+Delete models. If all models are removed, the metric
 is reset. Use this method to drop unwanted models from the pipeline
 or to free some memory before saving. Deleted models are not removed
 from any active mlflow experiment.
@@ -885,7 +901,7 @@ Names or indices of the columns to drop.
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
 dataset="test", sample_weight=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L578">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L578">[source]</a>
 </span>
 </div>
 Get all the models' scores for the provided metrics.
@@ -943,7 +959,7 @@ on the training set.
     <li>Always outputs pandas objects.</li>
     <li>Uses transformers that are only applied on the training set (see the
         <a href="#balance">balance</a> or <a href="#prune">prune</a> methods)
-        to fit the pipeline, not to make predictions on unseen data.</li>
+        to fit the pipeline, not to make predictions on new data.</li>
     </ul>
 
 <table style="font-size:16px">
@@ -985,6 +1001,59 @@ Current branch as a sklearn-like Pipeline object.
 <br />
 
 
+<a name="inverse-transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">inverse_transform</strong>(X=None, y=None, verbose=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L762">[source]</a>
+</span>
+</div>
+Inversely transform new data through the pipeline. Transformers that
+are only applied on the training set are skipped. The rest should all
+implement a `inverse_transform` method. If only `X` or only `y` is
+provided, it ignores transformers that require the other parameter.
+This can be of use to, for example, inversely transform only the target
+column.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: dataframe-like or None, default=None</strong><br>
+Transformed feature set with shape=(n_samples, n_features).
+If None, X is ignored in the transformers.
+</p>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored in the transformers.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
+</ul>
+<p>
+<strong>verbose: int or None, default=None</strong><br>
+Verbosity level of the output. If None, it uses the transformer's
+own verbosity.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>pd.DataFrame</strong><br>
+Original feature set. Only returned if provided.
+</p>
+<p>
+<strong>pd.Series</strong><br>
+Original target column. Only returned if provided.
+</p>
+</td>
+</tr>
+</table>
+<br /><br />
+
+
 <a name="log"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
@@ -1015,23 +1084,23 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L659">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L659">[source]</a>
 </span>
 </div>
-Merge another trainer into this one. Branches, models, metrics and
-attributes of the other trainer are merged into this one. If there
-are branches and/or models with the same name, they are merged
-adding the `suffix` parameter to their name. The errors and missing
-attributes are extended with those of the other instance. It's only
-possible to merge two instances if they are initialized with the same
-dataset and trained with the same metric.
+Merge another instance of the same class into this one. Branches,
+models, metrics and attributes of the other instance are merged into
+this one. If there are branches and/or models with the same name,
+they are merged adding the `suffix` parameter to their name. The
+errors and missing attributes are extended with those of the other
+instance. It's only possible to merge two instances if they are
+initialized with the same dataset and trained with the same metric.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>other: trainer</strong><br>
-Trainer instance with which to merge.
+<strong>other: ATOMRegressor</strong><br>
+Instance with which to merge. Should be of the same class as self.
 </p>
 <p>
 <strong>suffix: str, default="2"</strong><br>
@@ -1214,7 +1283,7 @@ If None, transform all columns.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(name="Stack",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L728">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L728">[source]</a>
 </span>
 </div>
 Add a [Stacking](../../../user_guide/models/#stacking) model to the pipeline.
@@ -1267,12 +1336,63 @@ saves it to the logger.
 <br /><br /><br />
 
 
+<a name="transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">transform</strong>(X=None, y=None, verbose=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L762">[source]</a>
+</span>
+</div>
+Transform new data through the pipeline. Transformers that are only
+applied on the training set are skipped. If only `X` or only `y` is
+provided, it ignores transformers that require the other parameter.
+This can be of use to, for example, transform only the target column.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>X: dataframe-like or None, default=None</strong><br>
+Feature set with shape=(n_samples, n_features). If None, X is ignored
+in the transformers.
+</p>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored in the transformers.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
+</ul>
+<p>
+<strong>verbose: int or None, default=None</strong><br>
+Verbosity level of the output. If None, it uses the transformer's
+own verbosity.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>pd.DataFrame</strong><br>
+Transformed feature set. Only returned if provided.
+</p>
+<p>
+<strong>pd.Series</strong><br>
+Transformed target column. Only returned if provided.
+</p>
+</td>
+</tr>
+</table>
+<br /><br />
+
+
 <a name="voting"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L798">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L798">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/models/#voting) model to the pipeline.
@@ -1315,23 +1435,8 @@ in the pipeline.
 
 <table style="font-size:16px;margin-top:5px">
 <tr>
-<td><a href="#scale">scale</a></td>
-<td>Scale the dataset.</td>
-</tr>
-
-<tr>
-<td><a href="#normalize">normalize</a></td>
-<td>Transform the data to follow a Normal/Gaussian distribution.</td>
-</tr>
-
-<tr>
 <td><a href="#clean">clean</a></td>
 <td>Applies standard data cleaning steps on the dataset.</td>
-</tr>
-
-<tr>
-<td><a href="#impute">impute</a></td>
-<td>Handle missing values in the dataset.</td>
 </tr>
 
 <tr>
@@ -1345,48 +1450,33 @@ in the pipeline.
 </tr>
 
 <tr>
+<td><a href="#impute">impute</a></td>
+<td>Handle missing values in the dataset.</td>
+</tr>
+
+<tr>
+<td><a href="#normalize">normalize</a></td>
+<td>Transform the data to follow a Normal/Gaussian distribution.</td>
+</tr>
+
+<tr>
 <td><a href="#prune">prune</a></td>
 <td>Prune outliers from the training set.</td>
 </tr>
+
+<tr>
+<td><a href="#scale">scale</a></td>
+<td>Scale the dataset.</td>
+</tr>
 </table>
 <br>
-
-
-<a name="scale"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">scale</strong>(strategy="standard", **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L999">[source]</a>
-</span>
-</div>
-Applies one of sklearn's scalers. Non-numerical columns are ignored. The
-estimator created by the class is attached to atom. See the
-[Scaler](../data_cleaning/scaler.md) class for a description of the parameters.
-<br /><br /><br />
-
-
-<a name="normalize"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">normalize</strong>(strategy="yeojohnson", **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1019">[source]</a>
-</span>
-</div>
-Transform the data to follow a Normal/Gaussian distribution. This
-transformation is useful for modeling issues related to heteroscedasticity
-(non-constant variance), or other situations where normality is desired.
-Missing values are disregarded in fit and maintained in transform.
-Categorical columns are ignored. The estimator created by the class is
-attached to atom. See the See the [Normalizer](../data_cleaning/normalizer.md)
-class for a description of the parameters.
-<br /><br /><br />
 
 
 <a name="clean"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">clean</strong>(drop_types=None,
 strip_categorical=True, drop_max_cardinality=True, drop_min_cardinality=True,
-drop_duplicates=False, drop_missing_target=True)
+drop_duplicates=False, drop_missing_target=True, encode_target=True)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1045">[source]</a>
 </span>
@@ -1400,27 +1490,9 @@ to choose which transformations to perform. The available steps are:
 * Drop columns with minimum cardinality.
 * Drop duplicate rows.
 * Drop rows with missing values in the target column.
+* Encode the target column.
 
 See the [Cleaner](../data_cleaning/cleaner.md) class for a description of the parameters.
-<br /><br /><br />
-
-
-<a name="impute"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num="drop",
-strat_cat="drop", max_nan_rows=None, max_nan_cols=None, missing=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1093">[source]</a>
-</span>
-</div>
-Impute or remove missing values according to the selected strategy.
-Also removes rows and columns with too many missing values. The
-imputer is fitted only on the training set to avoid data leakage.
-Use the `missing` attribute to customize what are considered "missing
-values". See [Imputer](../data_cleaning/imputer.md) for a description
-of the parameters. Note that since the Imputer can remove rows from
-both the train and test set, the size of the sets may change after
-the transformation.
 <br /><br /><br />
 
 
@@ -1435,14 +1507,14 @@ bins=5, labels=None)
 Bin continuous data into intervals. For each feature, the bin edges are
 computed during fit and, together with the number of bins, they will
 define the intervals. Ignores numerical columns. See
-[Discretizer](../data_cleaning/discretizer) for a description of the parameters.
+[Discretizer](../data_cleaning/discretizer.md) for a description of the parameters.
 <br /><br /><br />
 
 
 <a name="encode"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">encode</strong>(strategy="LeaveOneOut",
-max_onehot=10, ordinal=None, rare_to_value=None)
+max_onehot=10, ordinal=None, rare_to_value=None, value="rare")
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1151">[source]</a>
 </span>
@@ -1467,6 +1539,42 @@ value `other` in order to prevent too high cardinality. See
 <br /><br /><br />
 
 
+<a name="impute"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num="drop",
+strat_cat="drop", max_nan_rows=None, max_nan_cols=None, missing=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1093">[source]</a>
+</span>
+</div>
+Impute or remove missing values according to the selected strategy.
+Also removes rows and columns with too many missing values. The
+imputer is fitted only on the training set to avoid data leakage.
+Use the `missing` attribute to customize what are considered "missing
+values". See [Imputer](../data_cleaning/imputer.md) for a description
+of the parameters. Note that since the Imputer can remove rows from
+both the train and test set, the size of the sets may change after
+the transformation.
+<br /><br /><br />
+
+
+<a name="normalize"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">normalize</strong>(strategy="yeojohnson", **kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1019">[source]</a>
+</span>
+</div>
+Transform the data to follow a Normal/Gaussian distribution. This
+transformation is useful for modeling issues related to heteroscedasticity
+(non-constant variance), or other situations where normality is desired.
+Missing values are disregarded in fit and maintained in transform.
+Categorical columns are ignored. The estimator created by the class is
+attached to atom. See the See the [Normalizer](../data_cleaning/normalizer.md)
+class for a description of the parameters.
+<br /><br /><br />
+
+
 <a name="prune"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="zscore",
@@ -1488,6 +1596,19 @@ description of the parameters.
 <br /><br /><br />
 
 
+<a name="scale"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">scale</strong>(strategy="standard", **kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L999">[source]</a>
+</span>
+</div>
+Applies one of sklearn's scalers. Non-numerical columns are ignored. The
+estimator created by the class is attached to atom. See the
+[Scaler](../data_cleaning/scaler.md) class for a description of the parameters.
+<br /><br /><br />
+
+
 
 ## NLP
 
@@ -1501,13 +1622,13 @@ text to meaningful numeric values, ready to be ingested by a model.
 </tr>
 
 <tr>
-<td><a href="#tokenize">tokenize</a></td>
-<td>Convert documents into sequences of words</td>
+<td><a href="#textnormalize">textnormalize</a></td>
+<td>Convert words to a more uniform standard.</td>
 </tr>
 
 <tr>
-<td><a href="#textnormalize">textnormalize</a></td>
-<td>Convert words to a more uniform standard.</td>
+<td><a href="#tokenize">tokenize</a></td>
+<td>Convert documents into sequences of words</td>
 </tr>
 
 <tr>
@@ -1538,6 +1659,23 @@ parameters.
 <br /><br /><br />
 
 
+<a name="textnormalize"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">textnormalize</strong>(stopwords=True,
+custom_stopwords=None, stem=False, lemmatize=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1357">[source]</a>
+</span>
+</div>
+Convert words to a more uniform standard. The transformations
+are applied on the column named `corpus`, in the same order the
+parameters are presented. If there is no column with that name,
+an exception is raised. If the provided documents are strings,
+words are separated by spaces. See the [TextNormalizer](../nlp/textnormalizer.md)
+class for a description of the parameters.
+<br /><br /><br />
+
+
 <a name="tokenize"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">tokenize</strong>(bigram_freq=None,
@@ -1553,23 +1691,6 @@ transformations are applied on the column named `corpus`. If
 there is no column with that name, an exception is raised. See
 the [Tokenizer](../nlp/tokenizer.md) class for a description
 of the parameters.
-<br /><br /><br />
-
-
-<a name="textnormalize"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">textnormalize</strong>(stopwords=True,
-custom_stopwords=None, stem=False, lemmatize=True)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1357">[source]</a>
-</span>
-</div>
-Convert words to a more uniform standard. The transformations
-are applied on the column named `corpus`, in the same order the
-parameters are presented. If there is no column with that name,
-an exception is raised. If the provided documents are strings,
-words are separated by spaces. See the [TextNormalizer](../nlp/textnormalizer.md)
-class for a description of the parameters.
 <br /><br /><br />
 
 
@@ -1675,8 +1796,7 @@ created by the class are attached to atom.
     <li>When strategy is not one of univariate or pca, and solver=None, atom
          uses the winning model (if it exists) as solver.</li>
     <li>When strategy is sfs, rfecv or any of the advanced strategies and no
-        scoring is specified, atom uses the metric in the trainer (if it exists)
-        as scoring parameter.</li>
+        scoring is specified, atom's metric is used (if it exists) as scoring.</li>
 
 <br /><br />
 

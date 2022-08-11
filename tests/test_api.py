@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -7,6 +7,7 @@ Description: Unit tests for api.py
 
 """
 
+import numpy as np
 import pytest
 from pandas.testing import assert_frame_equal
 from sklearn.linear_model import HuberRegressor
@@ -50,8 +51,8 @@ def test_load():
     assert trainer2.__class__.__name__ == "DirectClassifier"
 
 
-def test_load_data_with_no_trainer():
-    """Assert that an error is raised when data is provided without a trainer."""
+def test_load_data_with_no_atom():
+    """Assert that an error is raised when data is provided without atom."""
     Imputer().save("imputer")
     pytest.raises(TypeError, ATOMLoader, "imputer", data=(X_bin,))
 
@@ -85,7 +86,7 @@ def test_transform_data():
     """Assert that the data is transformed correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale(columns=slice(3, 10))
-    atom.apply(lambda df: df["mean radius"] + 2, columns="mean radius")
+    atom.apply(np.exp, columns=2)
     atom.feature_generation(strategy="dfs", n_features=5)
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
     atom.save("atom", save_data=False)

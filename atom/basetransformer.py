@@ -31,9 +31,10 @@ from atom.utils import (
 
 
 class BaseTransformer:
-    """Base class for trainers and transformers in the package.
+    """Base class for transformers in the package.
 
-    Contains shared properties and standard methods across transformers.
+    Note that this includes atom and runners. Contains shared
+    properties, data preparation methods and utility methods.
 
     Parameters
     ----------
@@ -214,6 +215,7 @@ class BaseTransformer:
     @typechecked
     def _prepare_input(
         X: Optional[X_TYPES] = None,
+        /,
         y: Optional[Y_TYPES] = None,
     ) -> Tuple[Optional[pd.DataFrame], Optional[pd.Series]]:
         """Prepare the input data.
@@ -224,13 +226,14 @@ class BaseTransformer:
         Parameters
         ----------
         X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -238,12 +241,12 @@ class BaseTransformer:
             Feature dataset. Only returned if provided.
 
         pd.Series or None
-            Target column corresponding to X. Only returned if provided.
+            Transformed target column. Only returned if provided.
 
         """
         if X is None and y is None:
-            raise ValueError("X and y can not be both None!")
-        if X is not None:
+            raise ValueError("X and y can't be both None!")
+        elif X is not None:
             X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
             # If text dataset, change the name of the column to corpus
@@ -254,11 +257,10 @@ class BaseTransformer:
             X.columns = [str(col) for col in X.columns]
 
         # Prepare target column
-        if isinstance(y, SEQUENCE):
+        if isinstance(y, (dict, *SEQUENCE)):
             if not isinstance(y, pd.Series):
                 # Check that y is one-dimensional
-                ndim = np.array(y).ndim
-                if ndim != 1:
+                if ndim := np.array(y).ndim > 1:
                     raise ValueError(f"y should be one-dimensional, got ndim={ndim}.")
 
                 # Check X and y have the same number of rows
@@ -352,7 +354,12 @@ class BaseTransformer:
 
         """
         # Stratification is not possible when the data can not change order
-        if self.shuffle is False or self.stratify is False:
+        if self.stratify is False:
+            return None
+        elif self.shuffle is False:
+            self.log(
+                "Stratification is not possible when shuffle=False.", 3, "warning"
+            )
             return None
         elif self.stratify is True:
             return df.iloc[:, -1]
@@ -395,7 +402,7 @@ class BaseTransformer:
             Data set(s) provided. Should follow the API input format.
 
         y: int, str or sequence, default=-1
-            Target column corresponding to X.
+            Transformed target column.
 
         use_n_rows: bool, default=True
             Whether to use the `n_rows` parameter on the dataset.
@@ -706,7 +713,7 @@ class BaseTransformer:
         save_data: bool, default=True
             Whether to save the dataset with the instance. This
             parameter is ignored if the method is not called from
-            a trainer.
+            atom.
 
         """
         if not save_data and hasattr(self, "dataset"):

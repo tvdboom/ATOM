@@ -2887,13 +2887,12 @@ show=None, n_repeats=10, title=None, figsize=None, filename=None, display=True)
 </div>
 
 <p>Plot the feature permutation importance of models. Calculating
-permutations can be time-consuming, especially if <code>n_repeats</code>
-is high. For this reason, the permutations are stored under the
-<code>permutations</code> attribute. If the plot is called again for the
-same model with the same <code>n_repeats</code>, it will use the stored
-values, making the method considerably faster. The trainer's
-<code>feature_importance</code> attribute is updated with the extracted
-importance ranking.</p>
+permutations can be time-consuming, especially if <code>n_repeats</code> is high.
+For this reason, the permutations are stored under the <code>permutations</code>
+attribute. If the plot is called again for the same model with the same
+<code>n_repeats</code>, it will use the stored values, making the method
+considerably faster. The <code>feature_importance</code> attribute is updated with
+the extracted importance ranking.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -2940,7 +2939,7 @@ Plot object. Only returned if <code>display=None</code>.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="s2">&quot;LDA&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;average_precision&quot;</span><span class="p">)</span>

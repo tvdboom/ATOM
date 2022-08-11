@@ -1,3 +1,0 @@
-xgboost>=0.90
-lightgbm>=3.3.2
-catboost>=1.0.4

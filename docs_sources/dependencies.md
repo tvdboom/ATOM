@@ -35,10 +35,10 @@ packages are necessary for its correct functioning.
 * **[tqdm](https://tqdm.github.io/)** (>=4.64)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.1.0)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.13)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.0.1)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.1.0)
 * **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.9.0)
 * **[nltk](https://www.nltk.org/)** (>=3.7)
-* **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)
+* **[evalml](https://evalml.alteryx.com/en/stable/)** (>=054.0)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.4.1)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.9.0)
 * **[featuretools](https://www.featuretools.com/)** (>=1.12.0)
@@ -69,11 +69,23 @@ not required for any of its functionalities. These libraries are only
 necessary to [contribute](../contributing) to the project. Install them
 using `pip install atom-ml[dev]`.
 
+**Linting**
+
 * **[isort](https://pycqa.github.io/isort/)** (>=5.10.1)
 * **[flake8](https://github.com/pycqa/flake8)** (>=4.0.1)
+
+**Testing**
+
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.1.0)
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=3.0.0)
 * **[tensorflow](https://www.tensorflow.org/)** (>=2.3.1)
+
+**Documentation**
+
+* **[pyyaml](https://pyyaml.org/)** (>=6.0)
 * **[mkdocs](https://www.mkdocs.org/)** (>=1.2.3)
 * **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=8.2.5)
+* **[mkdocs-autorefs](https://mkdocstrings.github.io/autorefs/)** (>=0.4.1)
 * **[mkdocs-jupyter](https://github.com/danielfrg/mkdocs-jupyter)** (>=0.20.1)
+* **[mkdocs-simple-hooks](https://github.com/aklajnert/mkdocs-simple-hooks)** (>=0.1.5)
+* **[mike](https://github.com/jimporter/mike)** (>=1.1.2)

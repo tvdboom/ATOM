@@ -20,9 +20,9 @@ from atom.utils import (
 
 
 def _final_estimator_has(attr):
-    """Check that final_estimator has `attr`.
+    """Check that final_estimator has attribute `attr`.
 
-    Used together with `available_if` in `Pipeline`.
+    Used together with `available_if` in Pipeline.
 
     """
 
@@ -45,7 +45,7 @@ class Pipeline(pipeline.Pipeline):
         - Accepts transformers that only are fitted on a subset
           of the provided dataset.
         - Uses transformers that are only applied on the training set
-          to fit the pipeline, not to make predictions on unseen data.
+          to fit the pipeline, not to make predictions on new data.
         - The instance is considered fitted at initialization if all
           the underlying transformers/estimator in the pipeline are.
 
@@ -66,6 +66,15 @@ class Pipeline(pipeline.Pipeline):
         self._is_fitted = False
         if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
             self._is_fitted = True
+
+    def _can_transform(self):
+        return (
+            self._final_estimator == "passthrough"
+            or hasattr(self._final_estimator, "transform")
+        )
+
+    def _can_inverse_transform(self):
+        return all(hasattr(t, "inverse_transform") for _, _, t in self._iter())
 
     def _iter(self, with_final=True, filter_passthrough=True, filter_train_only=True):
         """Generate (idx, (name, trans)) tuples from self.steps.
@@ -123,14 +132,15 @@ class Pipeline(pipeline.Pipeline):
         Parameters
         ----------
         X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features). None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored. None
             if the pipeline only uses y.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -138,7 +148,7 @@ class Pipeline(pipeline.Pipeline):
         Returns
         -------
         Pipeline
-            Fitted instance of self.
+            Estimator instance.
 
         """
         fit_params_steps = self._check_fit_params(**fit_params)
@@ -151,20 +161,59 @@ class Pipeline(pipeline.Pipeline):
         self._is_fitted = True
         return self
 
+    @available_if(_can_transform)
+    def transform(self, X=None, y=None):
+        """Transform the data.
+
+        Call `transform` of each transformer in the pipeline. The
+        transformed data are finally passed to the final estimator
+        that calls the `transform` method. Only valid if the final
+        estimator implements `transform`. This also works where final
+        estimator is `None` in which case all prior transformations
+        are applied.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored. None
+            if the pipeline only uses y.
+
+        y: int, str, dict, sequence or None, default=None
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed feature set. Only returned if provided.
+
+        pd.Series
+            Transformed target column. Only returned if provided.
+
+        """
+        for _, _, transformer in self._iter():
+            X, y = self._memory_transform(transformer, X, y)
+
+        return variable_return(X, y)
+
     def fit_transform(self, X=None, y=None, **fit_params):
         """Fit the pipeline and transform the data.
 
         Parameters
         ----------
         X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features). None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored. None
             if the estimator only uses y.
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence or None, default=None
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -185,6 +234,40 @@ class Pipeline(pipeline.Pipeline):
 
             fit_params_last_step = fit_params_steps[self.steps[-1][0]]
             X, y, _ = fit_transform_one(last_step, X, y, **fit_params_last_step)
+
+        return variable_return(X, y)
+
+    @available_if(_can_inverse_transform)
+    def inverse_transform(self, X=None, y=None):
+        """Inverse transform for each step in a reverse order.
+
+        All estimators in the pipeline must implement the
+        `inverse_transform` method.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored. None
+            if the pipeline only uses y.
+
+        y: int, str, dict, sequence or None, default=None
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed feature set. Only returned if provided.
+
+        pd.Series
+            Transformed target column. Only returned if provided.
+
+        """
+        for _, _, transformer in reversed(list(self._iter())):
+            X, y = self._memory_transform(transformer, X, y, method="inverse_transform")
 
         return variable_return(X, y)
 
@@ -284,10 +367,10 @@ class Pipeline(pipeline.Pipeline):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence
-            - If int: Index of the target column in X.
+        y: int, str, dict, sequence
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y.
@@ -302,82 +385,3 @@ class Pipeline(pipeline.Pipeline):
             X, y = self._memory_transform(transformer, X, y)
 
         return self.steps[-1][-1].score(X, y, sample_weight=sample_weight)
-
-    def _can_transform(self):
-        return (
-            self._final_estimator == "passthrough"
-            or hasattr(self._final_estimator, "transform")
-        )
-
-    @available_if(_can_transform)
-    def transform(self, X=None, y=None):
-        """Transform the data.
-
-        Call `transform` of each transformer in the pipeline. The
-        transformed data are finally passed to the final estimator
-        that calls the `transform` method. Only valid if the final
-        estimator implements `transform`. This also works where final
-        estimator is `None` in which case all prior transformations
-        are applied.
-
-        Parameters
-        ----------
-        X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features). None
-            if the pipeline only uses y.
-
-        y: int, str, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
-
-        Returns
-        -------
-        pd.DataFrame
-            Transformed feature set. Only returned if provided.
-
-        pd.Series
-            Transformed target column. Only returned if provided.
-
-        """
-        for _, _, transformer in self._iter():
-            X, y = self._memory_transform(transformer, X, y)
-
-        return variable_return(X, y)
-
-    def _can_inverse_transform(self):
-        return all(hasattr(t, "inverse_transform") for _, _, t in self._iter())
-
-    @available_if(_can_inverse_transform)
-    def inverse_transform(self, X=None, y=None):
-        """Inverse transform for each step in a reverse order.
-
-        All estimators in the pipeline must implement the
-        `inverse_transform` method.
-
-        Parameters
-        ----------
-        X: dataframe-like or None, default=None
-            Feature set with shape=(n_samples, n_features). None
-            if the pipeline only uses y.
-
-        y: int, str, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
-
-        Returns
-        -------
-        pd.DataFrame
-            Transformed feature set. Only returned if provided.
-
-        pd.Series
-            Transformed target column. Only returned if provided.
-
-        """
-        for _, _, transformer in reversed(list(self._iter())):
-            X, y = self._memory_transform(transformer, X, y, method="inverse_transform")
-
-        return variable_return(X, y)

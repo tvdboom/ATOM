@@ -10,13 +10,12 @@ show=None, n_repeats=10, title=None, figsize=None, filename=None, display=True)
 </div>
 
 Plot the feature permutation importance of models. Calculating
-permutations can be time-consuming, especially if `n_repeats`
-is high. For this reason, the permutations are stored under the
-`permutations` attribute. If the plot is called again for the
-same model with the same `n_repeats`, it will use the stored
-values, making the method considerably faster. The trainer's
-`feature_importance` attribute is updated with the extracted
-importance ranking.
+permutations can be time-consuming, especially if `n_repeats` is high.
+For this reason, the permutations are stored under the `permutations`
+attribute. If the plot is called again for the same model with the same
+`n_repeats`, it will use the stored values, making the method
+considerably faster. The `feature_importance` attribute is updated with
+the extracted importance ranking.
 
 <table style="font-size:16px">
 <tr>

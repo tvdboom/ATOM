@@ -3068,7 +3068,7 @@ Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </tr>
 <tr>
@@ -3194,7 +3194,7 @@ Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </tr>
 <tr>
@@ -3212,14 +3212,14 @@ Transformed corpus.
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">textclean</span><span class="p">()</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">TextCleaner</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">TextCleaner</span>
 
 <span class="n">cleaner</span> <span class="o">=</span> <span class="n">TextCleaner</span><span class="p">()</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">cleaner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>

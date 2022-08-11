@@ -2985,7 +2985,7 @@ matplotlib figure.</p>
 and <a href="../../API/models/lgb">LightGBM</a> model on the train and test set.
 We could also draw the lines for both models in the same axes, but
 then the plot would become too cluttered.</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;xgb&quot;</span><span class="p">,</span> <span class="s2">&quot;lgb&quot;</span><span class="p">],</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
 <span class="k">with</span> <span class="n">atom</span><span class="o">.</span><span class="n">canvas</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;XGBoost vs LightGBM&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;canvas&quot;</span><span class="p">):</span>

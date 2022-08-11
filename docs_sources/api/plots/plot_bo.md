@@ -21,8 +21,8 @@ and the second shows the distance between the last consecutive steps.
 <td width="80%" class="td_params">
 <p>
 <strong>models: int, str, slice, sequence or None, default=None</strong><br>
-Name of the models to plot. If None, all models in the trainer that used bayesian
-optimization are selected.
+Name of the models to plot. If None, all models that used
+hyperparameter tuning are selected.
 </p>
 <p>
 <strong>metric: int or str, default=0</strong><br>

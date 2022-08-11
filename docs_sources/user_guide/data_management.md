@@ -26,10 +26,9 @@ different data sets:
   not considered part of atom's dataset (the `dataset` attribute only
   returns the train and test sets). The holdout set is left untouched
   until predictions are made on it, i.e. it does not undergo any pipeline
-  transformations. The holdout set is stored in the trainer's `holdout`
-  attribute. It's features and target can not be accessed separately.
-  See [here](../../examples/holdout_set) an example that shows how to
-  use the holdout data set.
+  transformations. The holdout set is stored in atom's `holdout` attribute.
+  It's features and target can not be accessed separately. See [here](../../examples/holdout_set)
+  an example that shows how to use the holdout data set.
 
 The data can be provided in different formats. If the data sets are not
 specified beforehand, you can input the features and target separately
@@ -72,7 +71,7 @@ To avoid this, specify the `index` parameter. If the dataset has an
 
 * An identifier doesn't usually contain any useful information
   on the target column, and should therefore be removed before training.
-* [Predictions](../predicting) of specific rows can be accessed through
+* [Predictions][predicting] of specific rows can be accessed through
   their index.
 
 <br>
@@ -107,17 +106,17 @@ example, on one pipeline with an undersampling strategy and the other
 with an oversampling strategy. To be able to do this, ATOM has the
 branching system.
 
-The branching system helps the user to manage multiple pipelines within
-the same atom instance. Every pipeline is stored in a branch, which can
-be accessed through the `branch` property. A branch contains a copy of
-the dataset, and all transformers and models that are fitted on that
-specific dataset. Transformers and models called from atom use the
-dataset in the current branch, as well as data attributes such as
-`atom.dataset`. Use the branch's \__repr__ to get an overview of the
-transformers in the branch. It's not allowed to change the data in a
-branch after fitting a model with it. Doing this would cause unexpected
-model behaviour and break down the plotting methods. Instead, create a
-new branch for every unique pipeline.
+The branching system helps the user to manage multiple data pipelines
+within the same atom instance. Branches are created and accessed
+through atom's `branch` property. A branch contains a specific pipeline,
+the dataset transformed through that pipeline, and all data and utility
+attributes that refer to that dataset. Transformers and models called
+from atom use the dataset in the current branch, as well as data
+attributes such as `atom.dataset`. Use the branch's \__repr__ to get an
+overview of the transformers in the branch. It's not allowed to change
+the data in a branch after fitting a model with it. Doing this would
+cause unexpected model behaviour and break down the plotting methods.
+Instead, create a new branch for every unique pipeline.
 
 By default, atom starts with one branch called "master". To start a new
 branch, set a new name to the property, e.g. `atom.branch = "undersample"`.
@@ -147,69 +146,8 @@ branching use cases.
 
 The branch class has the following methods.
 
-<table style="font-size:16px;margin-top:5px">
-<tr>
-<td><a href="#delete">delete</a></td>
-<td>Delete the branch from the atom instance.</td>
-</tr>
-
-<tr>
-<td><a href="#rename">rename</a></td>
-<td>Change the name of the branch.</td>
-</tr>
-
-<tr>
-<td><a href="#status">status</a></td>
-<td>Get an overview of the pipeline and models in the branch.</td>
-</tr>
-</table>
-<br>
-
-
-<a name="delete"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">delete</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L362">[source]</a>
-</span>
-</div>
-Delete the branch and all the models in it. Same as executing `del atom.branch`.
-<br /><br /><br />
-
-
-<a name="rename"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">rename</strong>(name)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L395">[source]</a>
-</span>
-</div>
-Change the name of the branch.
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>name: str</strong><br>
-New name for the branch. Can not be empty nor equal to an existing branch.
-</p>
-</td>
-</tr>
-</table>
-<br />
-
-
-<a name="status"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">status</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L417">[source]</a>
-</span>
-</div>
-Get an overview of the pipeline and models in the branch. This method
-prints the same information as the \__repr__ and also saves it to the
-logger.
-<br /><br /><br />
+:: atom.branch:Branch
+    :: members
 
 
 ## Memory considerations
@@ -226,8 +164,8 @@ by the user. If the dataset is occupying too much memory, consider
 using the [shrink](../../API/ATOM/atomclassifier/#shrink) method to
 convert the dtypes to their smallest possible matching dtype.
 
-Apart from the dataset itself, the model's [predictions](./predicting)
-(e.g. `predict_proba_train`), metric scores and [shap values](./plots/#shap)
+Apart from the dataset itself, a model's [prediction attributes][prediction-attributes]
+(e.g. `atom.lr.predict_proba_train`), metric scores and [shap values][shap]
 are also stored as attributes of the model to avoid having to recalculate
 them every time they are needed. This data can occupy a considerable
 amount of memory for large datasets. You can delete all these attributes
@@ -239,13 +177,12 @@ the class.
 
 ## Data transformations
 
-Performing data transformations is a common requirement of many
-datasets before they are ready to be ingested by a model. ATOM
-provides various classes to apply [data cleaning](../data_cleaning)
-and [feature engineering](../feature_engineering) transformations
-to the data. This tooling should be able to help you apply most
-of the typically needed transformations to get the data ready for
-modelling. For further fine-tuning, it's also possible to transform
+Performing data transformations is a common requirement of many datasets
+before they are ready to be ingested by a model. ATOM provides various
+classes to apply [data cleaning](../data_cleaning) and [feature engineering](../feature_engineering)
+transformations to the data. This tooling should be able to help you
+apply most of the typically needed transformations to get the data ready
+for modelling. For further fine-tuning, it's also possible to transform
 the data using custom transformers (see the [add](../../API/ATOM/atomclassifier/#add)
 method) or through a function (see the [apply](../../API/ATOM/atomclassifier/#apply)
 method). Remember that all transformations are only applied to the
@@ -271,3 +208,23 @@ the method finishes running).
 !!! warning
     AutoML algorithms aren't intended to run for only a few minutes. If left
     to its default parameters, the method can take a very long time to finish!
+
+<br>
+
+## Dashboard
+
+ATOM uses the [explainerdashboard](https://github.com/oegedijk/explainerdashboard)
+library to provide a quick and easy way to analyze and explain the predictions
+and workings of the trained models. The dashboard is created running the
+[dashboard](../../API/models/gnb/#dashboard) method. By default, it renders
+in a new tab in your default browser, but if preferable, you can render it
+inside the notebook using `atom.tree.dashboard(mode="inline")`. 
+
+The dashboard allows you to investigate SHAP values, permutation importances,
+interaction effects, partial dependence plots, performance plots, and even
+individual decision trees. Using this tool, any data scientist can create an
+interactive explainable AI web app with just two lines of code.
+
+!!! note
+    Plots displayed by the dashboard are not created by ATOM and can differ
+    from those retrieved through the package.

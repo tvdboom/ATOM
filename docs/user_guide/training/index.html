@@ -3005,8 +3005,10 @@ pipeline applies the following steps iteratively for all models:</p>
 </li>
 </ul>
 <p>The direct fashion repeats the aforementioned steps only once, while the
-other two approaches repeats them more than once. Every approach can be
-directly called from atom through the <a href="../../API/ATOM/atomclassifier/#run">run</a>,
+other two approaches repeats them more than once. Just like the <a href="../data_cleaning">data cleaning</a>
+and <a href="../feature_engineering">feature engineering</a> classes, it's discouraged
+to use these classes directly. Instead, every approach can be called directly
+from atom through the <a href="../../API/ATOM/atomclassifier/#run">run</a>,
 <a href="../../API/ATOM/atomclassifier/#successive-halving">successive_halving</a>
 and <a href="../../API/ATOM/atomclassifier/#train-sizing">train_sizing</a> methods
 respectively.</p>
@@ -3014,7 +3016,7 @@ respectively.</p>
 will train a <a href="../../API/models/rf">Random Forest</a>. If you want to run
 the same model multiple times, add a tag after the acronym to
 differentiate them.</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;RF1&quot;</span><span class="p">,</span> <span class="s2">&quot;RF2&quot;</span><span class="p">],</span>
     <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;RF1&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
@@ -3151,13 +3153,13 @@ the key 'all') shares them across all models in the trainer. In
 this example, both the XGBoost and the LightGBM model use
 <code>n_estimators=200</code>. Make sure all the models do have the specified
 parameters or an exception will be raised!</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;LGB&quot;</span><span class="p">],</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">})</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;LGB&quot;</span><span class="p">],</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">})</span>
 </code></pre></div>
 <p>To specify parameters per model, use the model name as key and a dict
 of the parameters as value. In this example, the XGBoost model uses
 <code>n_estimators=200</code> and the Multi-layer Perceptron uses one hidden
 layer with 75 neurons.</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="s2">&quot;MLP&quot;</span><span class="p">],</span>
     <span class="n">est_params</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;XGB&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
@@ -3168,7 +3170,7 @@ layer with 75 neurons.</p>
 <p>Some estimators allow you to pass extra parameters to the fit method
 (besides X and y). This can be done adding <code>_fit</code> at the end of the
 parameter. For example, to change XGBoost's verbosity, we can run:</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;verbose_fit&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;XGB&quot;</span><span class="p">,</span> <span class="n">est_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;verbose_fit&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3220,7 +3222,7 @@ performing a <a href="https://www.jmlr.org/papers/volume13/bergstra12a/bergstra1
 <p>The hyperparameter tuning output can become quite wide for models
 with many hyperparameters. If you are working in a Jupyter Notebook,
 you can change the output's width running the following code in a cell:
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">IPython.core.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">IPython.core.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
 <span class="n">display</span><span class="p">(</span><span class="n">HTML</span><span class="p">(</span><span class="s2">&quot;&lt;style&gt;.container { width:100% !important; }&lt;/style&gt;&quot;</span><span class="p">))</span>
 </code></pre></div></p>
 </div>
@@ -3236,7 +3238,7 @@ hyperparameters for all models when you also want to tune other parameters
 only for specific ones. The following example tunes the <code>n_estimators</code>
 parameter for both models but the <code>max_depth</code> parameter only for the Random
 Forest.</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
     <span class="n">n_calls</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
     <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="s2">&quot;n_estimators&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="s2">&quot;max_depth&quot;</span><span class="p">}},</span>
@@ -3247,14 +3249,14 @@ from the BO adding <code>!</code> before its name. It's possible to exclude mult
 parameters, but not to combine inclusion and exclusion for the same model.
 For example, to optimize a Random Forest using all its predefined parameters
 except <code>n_estimators</code>, run:</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">})</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="s2">&quot;!n_estimators&quot;</span><span class="p">})</span>
 </code></pre></div>
 <p>If just the parameter name is provided, the predefined dimension space
 is used. It's also possible to provide custom dimension spaces, but make
 sure the dimensions are compliant with <a href="https://scikit-optimize.github.io/stable/modules/classes.html">skopt's API</a>.
 See every model's individual documentation in the API section for an
 overview of their hyperparameters and dimensions.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">skopt.space.space</span> <span class="kn">import</span> <span class="n">Categorical</span><span class="p">,</span> <span class="n">Integer</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">skopt.space.space</span> <span class="kn">import</span> <span class="n">Categorical</span><span class="p">,</span> <span class="n">Integer</span>
 
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
     <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ET&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
@@ -3286,7 +3288,7 @@ more about deep learning models.</p>
 <p>The majority of skopt's callbacks to stop the optimizer early can be
 accessed through <code>bo_params</code>. Other callbacks can be included through
 the <code>callbacks</code> key.</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
     <span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span>
     <span class="n">n_calls</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
     <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;callbacks&quot;</span><span class="p">:</span> <span class="n">custom_callback</span><span class="p">()},</span>
@@ -3294,7 +3296,7 @@ the <code>callbacks</code> key.</p>
 </code></pre></div>
 <p>It's also possible to include additional parameters for skopt's optimizer
 as key-value pairs.</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;acq_func&quot;</span><span class="p">:</span> <span class="s2">&quot;EI&quot;</span><span class="p">})</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;acq_func&quot;</span><span class="p">:</span> <span class="s2">&quot;EI&quot;</span><span class="p">})</span>
 </code></pre></div>
 <p><br></p>
 <h2 id="bootstrapping">Bootstrapping</h2>

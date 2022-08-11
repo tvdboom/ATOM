@@ -9,97 +9,116 @@ site_dir: docs/
 copyright: Copyright &copy; 2022, by Mavs.
 
 theme:
-  name: material
-  logo: img/icon_white.png
-  favicon: img/favicon.ico
-  custom_dir: docs_sources/overrides
-  features:
-    - navigation.instant
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.top
-    - navigation.tracking
-    - content.tabs.link
-  palette:
-    # Light mode
-    - amber: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: teal
-      accent: teal
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to dark mode
+    name: material
+    logo: img/icon_white.png
+    favicon: img/favicon.ico
+    custom_dir: docs_sources/overrides
+    features:
+        - navigation.instant
+        - navigation.tabs
+        - navigation.tabs.sticky
+        - navigation.top
+        - navigation.tracking
+        - content.tabs.link
+        - announce.dismiss
+    palette:
+        # Light mode
+        - amber: "(prefers-color-scheme: light)"
+          scheme: default
+          primary: teal
+          accent: teal
+          toggle:
+              icon: material/weather-sunny
+              name: Switch to dark mode
 
     # Dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: teal
-      accent: teal
-      toggle:
-        icon: material/weather-night
-        name: Switch to light mode
+        - media: "(prefers-color-scheme: dark)"
+          scheme: slate
+          primary: teal
+          accent: teal
+          toggle:
+              icon: material/weather-night
+              name: Switch to light mode
 
 extra:
-  analytics:
-    provider: google
-    property: !ENV GOOGLE_ANALYTICS_KEY
-  version:
-    provider: mike
-  social:
-    - icon: fontawesome/brands/slack
-      link: https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3
-      name: Slack
-    - icon: fontawesome/brands/github
-      link: https://github.com/tvdboom/ATOM
-      name: GitHub
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/atom-ml/
-      name: Pypi
-    - icon: fontawesome/brands/medium
-      link: https://tvdboom.medium.com/
-      name: Medium
-    - icon: fontawesome/solid/envelope
-      link: mailto:m.524687@gmail.com
-      name: Email
+    analytics:
+        provider: google
+        property: !ENV GOOGLE_ANALYTICS_KEY
+        feedback:
+            title: Was this page helpful?
+            ratings:
+                - icon: material/thumb-up-outline
+                  name: This page was helpful
+                  data: 1
+                  note: >-
+                      Thanks for your feedback!
+                - icon: material/thumb-down-outline
+                  name: This page could be improved
+                  data: 0
+                  note: >-
+                      Thanks for your feedback! Help us improve this page by
+                      using our <a href="..." target=_blank>feedback form</a>.
+    version:
+        provider: mike
+    social:
+      - icon: fontawesome/brands/slack
+        link: https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3
+        name: Slack
+      - icon: fontawesome/brands/github
+        link: https://github.com/tvdboom/ATOM
+        name: GitHub
+      - icon: fontawesome/brands/python
+        link: https://pypi.org/project/atom-ml/
+        name: Pypi
+      - icon: fontawesome/brands/medium
+        link: https://tvdboom.medium.com/
+        name: Medium
+      - icon: fontawesome/solid/envelope
+        link: mailto:m.524687@gmail.com
+        name: Email
 
 plugins:
     - search
     - autorefs
-    - mkdocs-jupyter
+    - mkdocs-jupyter:
+          include: ["*.ipynb"]
+          include_source: True
+    - mkdocs-simple-hooks:
+        hooks:
+            on_page_markdown: "docs_sources.autodocs:render"
 
 markdown_extensions:
-    - tables
-    - attr_list
     - admonition
-    - fenced_code
-    - pymdownx.highlight
-    - pymdownx.superfences
-    - pymdownx.inlinehilite
-    - pymdownx.keys
-    - pymdownx.superfences
-    - pymdownx.snippets
-    - pymdownx.arithmatex:
-        generic: true
-    - pymdownx.tabbed:
-        alternate_style: true
-    - pymdownx.emoji:
+    - md_in_html  # Allows for writing Markdown inside of HTML
+    - def_list  # Allows for definition lists (e.g. nomenclature)
+    - attr_list  # Allows for HTML attributes and CSS classes to markdown objects
+    - footnotes
+    - pymdownx.details  # Allows for collapsible admonition blocks
+    - pymdownx.magiclink  # Allows for bare links of the form <url>
+    - pymdownx.inlinehilite  # Allows for inline highlighting of code blocks
+    - pymdownx.superfences  # Allows for arbitrary nesting of code and content blocks
+    - pymdownx.arithmatex:  # Allows for rendering of equations
+          generic: true
+    - pymdownx.tabbed:  # Allows the usage of content tabs
+          alternate_style: true
+    - pymdownx.emoji:  # Automatically inlines bundled and custom icons and emojis
           emoji_index: !!python/name:materialx.emoji.twemoji
           emoji_generator: !!python/name:materialx.emoji.to_svg
+    - pymdownx.highlight:  # Allows for highlighting of code blocks
+          use_pygments: true
+          pygments_lang_class: true
 
 extra_css:
     - stylesheets/extra.css
 
 extra_javascript:
-  - stylesheets/extra.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+    - stylesheets/extra.js
+    - https://polyfill.io/v3/polyfill.min.js?features=es6
+    - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js  # MathJax configuration
 
 nav:
     - About: about.md
     - Getting started: getting_started.md
-    - Release history:
-        - v5.x.x: release_history/v5.x.x.md
-        - v4.x.x: release_history/v4.x.x.md
     - User guide:
         - Introduction: user_guide/introduction.md
         - Nomenclature: user_guide/nomenclature.md
@@ -107,8 +126,8 @@ nav:
         - Logging & Tracking: user_guide/logging.md
         - GPU: user_guide/gpu.md
         - Data cleaning: user_guide/data_cleaning.md
-        - NLP: user_guide/nlp.md
         - Feature engineering: user_guide/feature_engineering.md
+        - NLP: user_guide/nlp.md
         - Models: user_guide/models.md
         - Training: user_guide/training.md
         - Predicting: user_guide/predicting.md
@@ -116,28 +135,28 @@ nav:
     - API:
         - ATOM:
             - ATOMClassifier: API/ATOM/atomclassifier.md
-            - ATOMRegressor: API/ATOM/atomregressor.md
             - ATOMLoader: API/ATOM/atomloader.md
             - ATOMModel: API/ATOM/atommodel.md
+            - ATOMRegressor: API/ATOM/atomregressor.md
         - Data cleaning:
-             - Scaler: API/data_cleaning/scaler.md
-             - Normalizer: API/data_cleaning/normalizer.md
+             - Balancer: API/data_cleaning/balancer.md
              - Cleaner: API/data_cleaning/cleaner.md
-             - Imputer: API/data_cleaning/imputer.md
              - Discretizer: API/data_cleaning/discretizer.md
              - Encoder: API/data_cleaning/encoder.md
+             - Imputer: API/data_cleaning/imputer.md
+             - Normalizer: API/data_cleaning/normalizer.md
              - Pruner: API/data_cleaning/pruner.md
-             - Balancer: API/data_cleaning/balancer.md
+             - Scaler: API/data_cleaning/scaler.md
+        - Feature engineering:
+            - FeatureExtractor: API/feature_engineering/featureextractor.md
+            - FeatureGenerator: API/feature_engineering/featuregenerator.md
+            - FeatureGrouper: API/feature_engineering/featuregrouper.md
+            - FeatureSelector: API/feature_engineering/featureselector.md
         - NLP:
             - TextCleaner: API/nlp/textcleaner.md
-            - Tokenizer: API/nlp/tokenizer.md
             - TextNormalizer: API/nlp/textnormalizer.md
+            - Tokenizer: API/nlp/tokenizer.md
             - Vectorizer: API/nlp/vectorizer.md
-        - Feature engineering:
-            - FeatureExtractor: API/feature_engineering/feature_extractor.md
-            - FeatureGenerator: API/feature_engineering/feature_generator.md
-            - FeatureGrouper: API/feature_engineering/feature_grouper.md
-            - FeatureSelector: API/feature_engineering/feature_selector.md
         - Training:
             - DirectClassifier: API/training/directclassifier.md
             - DirectRegressor: API/training/directregressor.md
@@ -183,12 +202,11 @@ nav:
             - Stochastic Gradient Descent: API/models/sgd.md
             - Multi-layer Perceptron: API/models/mlp.md
         - Predicting:
-              - transform: API/predicting/transform.md
-              - predict: API/predicting/predict.md
-              - predict_proba: API/predicting/predict_proba.md
-              - predict_log_proba: API/predicting/predict_log_proba.md
-              - decision_function: API/predicting/decision_function.md
-              - score: API/predicting/score.md
+            - decision_function: API/predicting/decision_function.md
+            - predict: API/predicting/predict.md
+            - predict_log_proba: API/predicting/predict_log_proba.md
+            - predict_proba: API/predicting/predict_proba.md
+            - score: API/predicting/score.md
         - Plots:
             - plot_correlation: API/plots/plot_correlation.md
             - plot_scatter_matrix: API/plots/plot_scatter_matrix.md
@@ -244,6 +262,9 @@ nav:
         - Successive halving: examples/successive_halving.ipynb
         - Train sizing: examples/train_sizing.ipynb
         - Utilities: examples/utilities.ipynb
+    - Changelog:
+        - v5.x.x: changelog/v5.x.x.md
+        - v4.x.x: changelog/v4.x.x.md
     - FAQ: faq.md
     - Contributing: contributing.md
     - Dependencies: dependencies.md

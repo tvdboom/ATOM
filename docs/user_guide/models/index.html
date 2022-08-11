@@ -3026,7 +3026,7 @@ There are two ways to achieve this:</p>
 <li>Using <a href="../../API/ATOM/atommodel">ATOMModel</a> (recommended). With this
 approach you can pass the required model characteristics to the pipeline.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
 <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">RANSACRegressor</span>
 
 <span class="n">ransac</span> <span class="o">=</span> <span class="n">ATOMModel</span><span class="p">(</span>
@@ -3044,7 +3044,7 @@ approach you can pass the required model characteristics to the pipeline.</li>
 also call <a href="../../API/ATOM/atommodel">ATOMModel</a> under the hood, but it will
 leave its parameters to their default values.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
 <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">RANSACRegressor</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>

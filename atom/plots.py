@@ -295,7 +295,7 @@ class BasePlotter:
                 if self.holdout is None:
                     raise ValueError(
                         "Invalid value for the dataset parameter. No holdout "
-                        "data set was specified when initializing the trainer."
+                        "data set was specified when initializing the instance."
                     )
                 return [dataset]
             else:
@@ -412,7 +412,7 @@ class BasePlotter:
             sns.set_style(self.style)  # Reset style
 
             # Log plot to mlflow run of every model visualized
-            if self.experiment and self.log_plots:
+            if getattr(self, "experiment", None) and self.log_plots:
                 for m in set(BasePlotter._fig._used_models):
                     MlflowClient().log_figure(
                         run_id=m._run.info.run_id,
@@ -1291,8 +1291,8 @@ class BaseModelPlotter(BasePlotter):
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the models to plot. If None, all models in the
-            pipeline that used bayesian optimization are selected.
+            Name of the models to plot. If None, all models that
+            used hyperparameter tuning are selected.
 
         metric: int or str, default=0
             Index or name of the metric. Only for multi-metric runs.
@@ -1393,8 +1393,8 @@ class BaseModelPlotter(BasePlotter):
             Name of the model to plot. If None, all models in the
             pipeline are selected. Note that leaving the default
             option could raise an exception if there are multiple
-            models in the trainer. To avoid this, call the plot
-            from a model, e.g. `atom.lgb.plot_evals()`.
+            models. To avoid this, call the plot from a model, e.g.
+            `atom.lgb.plot_evals()`.
 
         dataset: str, default="both"
             Data set on which to calculate the evaluation curves.
@@ -1496,7 +1496,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_roc")
+        check_binary_task(self.task, "plot_roc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -1505,7 +1505,7 @@ class BaseModelPlotter(BasePlotter):
         for m in models:
             for set_ in dataset:
                 if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
@@ -1578,7 +1578,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_prc")
+        check_binary_task(self.task, "plot_prc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -1587,7 +1587,7 @@ class BaseModelPlotter(BasePlotter):
         for m in models:
             for set_ in dataset:
                 if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
@@ -1659,7 +1659,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_det")
+        check_binary_task(self.task, "plot_det")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -1668,7 +1668,7 @@ class BaseModelPlotter(BasePlotter):
         for m in models:
             for set_ in dataset:
                 if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
@@ -1737,7 +1737,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_gains")
+        check_binary_task(self.task, "plot_gains")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -1747,7 +1747,7 @@ class BaseModelPlotter(BasePlotter):
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}")
                 if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
@@ -1821,7 +1821,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_lift")
+        check_binary_task(self.task, "plot_lift")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -1831,7 +1831,7 @@ class BaseModelPlotter(BasePlotter):
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}")
                 if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
                 else:
                     y_pred = getattr(m, f"decision_function_{set_}")
 
@@ -1907,7 +1907,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self, "plot_errors", "regression")
+        check_goal(self.goal, "plot_errors", "regression")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -2005,7 +2005,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self, "plot_residuals", "regression")
+        check_goal(self.goal, "plot_residuals", "regression")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -2063,8 +2063,8 @@ class BaseModelPlotter(BasePlotter):
         The feature importance values are normalized in order to be
         able to compare them between models. Only for models whose
         estimator has a `feature_importances_` or `coef` attribute.
-        The trainer's `feature_importance` attribute is updated with
-        the extracted importance ranking.
+        The `feature_importance` attribute is updated with the
+        extracted importance ranking.
 
         Parameters
         ----------
@@ -2167,8 +2167,8 @@ class BaseModelPlotter(BasePlotter):
         are stored under the `permutations` attribute. If the plot
         is called again for the same model with the same `n_repeats`,
         it will use the stored values, making the method considerably
-        faster. The trainer's `feature_importance` attribute is updated
-        with the extracted importance ranking.
+        faster. The `feature_importance` attribute is updated with the
+        extracted importance ranking.
 
         Parameters
         ----------
@@ -2769,7 +2769,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self, "plot_confusion_matrix", "classification")
+        check_goal(self.goal, "plot_confusion_matrix", "classification")
         models = self._get_subclass(models)
 
         dataset = dataset.lower()
@@ -2781,7 +2781,7 @@ class BaseModelPlotter(BasePlotter):
         if dataset == "holdout" and self.holdout is None:
             raise ValueError(
                 "Invalid value for the dataset parameter. No holdout "
-                "data set was specified when initializing the trainer."
+                "data set was specified when initializing the instance."
             )
         if self.task.startswith("multi") and len(models) > 1:
             raise NotImplementedError(
@@ -2933,7 +2933,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_threshold")
+        check_binary_task(self.task, "plot_threshold")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
         check_predict_proba(models, "plot_threshold")
@@ -2952,7 +2952,7 @@ class BaseModelPlotter(BasePlotter):
                 for set_ in dataset:
                     results = []
                     for step in steps:
-                        pred = getattr(m, f"predict_proba_{set_}")[:, 1] >= step
+                        pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1] >= step
                         results.append(met(getattr(m, f"y_{set_}"), pred))
 
                     if len(models) == 1:
@@ -3027,7 +3027,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self, "plot_probabilities", "classification")
+        check_goal(self.goal, "plot_probabilities", "classification")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
         target = self._get_target(target)
@@ -3044,7 +3044,7 @@ class BaseModelPlotter(BasePlotter):
 
                     label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
                     sns.histplot(
-                        data=getattr(m, f"predict_proba_{set_}")[idx, target],
+                        data=getattr(m, f"predict_proba_{set_}").iloc[idx, target],
                         kde=True,
                         bins=50,
                         label=label + f" ({self.target}={value})",
@@ -3125,7 +3125,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_calibration")
+        check_binary_task(self.task, "plot_calibration")
         models = self._get_subclass(models)
 
         if n_bins < 5:
@@ -3143,7 +3143,7 @@ class BaseModelPlotter(BasePlotter):
                 prob = m.decision_function_test
                 prob = (prob - prob.min()) / (prob.max() - prob.min())
             elif hasattr(m.estimator, "predict_proba"):
-                prob = m.predict_proba_test[:, 1]
+                prob = m.predict_proba_test.iloc[:, 1]
 
             # Get calibration (frac of positives and predicted values)
             frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
@@ -3198,11 +3198,10 @@ class BaseModelPlotter(BasePlotter):
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the model to plot. If None, all models in the
-            pipeline are selected. Note that leaving the default
-            option could raise an exception if there are multiple
-            models in the trainer. To avoid this, call the plot
-            from a model, e.g. `atom.xgb.bar_plot()`.
+            Name of the model to plot. If None, all models are selected.
+            Note that leaving the default option could raise an exception
+            if there are multiple models. To avoid this, call the plot
+            from a model, `atom.xgb.bar_plot()`.
 
         index: int, str, sequence or None, default=None
             Index names or positions of the rows in the dataset to
@@ -3284,11 +3283,10 @@ class BaseModelPlotter(BasePlotter):
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the model to plot. If None, all models in the
-            pipeline are selected. Note that leaving the default
-            option could raise an exception if there are multiple
-            models in the trainer. To avoid this, call the plot
-            from a model, e.g. `atom.xgb.beeswarm_plot()`.
+            Name of the model to plot. If None, all models are selected.
+            Note that leaving the default option could raise an exception
+            if there are multiple models. To avoid this, call the plot
+            from a model, `atom.xgb.beeswarm_plot()`.
 
         index: tuple, slice or None, default=None
             Index names or positions of the rows in the dataset to plot.
@@ -3376,11 +3374,10 @@ class BaseModelPlotter(BasePlotter):
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the model to plot. If None, all models in the
-            pipeline are selected. Note that leaving the default
-            option could raise an exception if there are multiple
-            models in the trainer. To avoid this, call the plot
-            from a model, e.g. `atom.xgb.decision_plot()`.
+            Name of the model to plot. If None, all models are selected.
+            Note that leaving the default option could raise an exception
+            if there are multiple models. To avoid this, call the plot
+            from a model, `atom.xgb.decision_plot()`.
 
         index: int, str, sequence or None, default=None
             Index names or positions of the rows in the dataset to plot.
@@ -3471,11 +3468,10 @@ class BaseModelPlotter(BasePlotter):
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the model to plot. If None, all models in the
-            pipeline are selected. Note that leaving the default
-            option could raise an exception if there are multiple
-            models in the trainer. To avoid this, call the plot
-            from a model, e.g. `atom.xgb.force_plot()`.
+            Name of the model to plot. If None, all models are selected.
+            Note that leaving the default option could raise an exception
+            if there are multiple models. To avoid this, call the plot
+            from a model,`atom.xgb.force_plot()`.
 
         index: int, str, sequence or None, default=None
             Index names or positions of the rows in the dataset to plot.
@@ -3574,11 +3570,10 @@ class BaseModelPlotter(BasePlotter):
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the model to plot. If None, all models in the
-            pipeline are selected. Note that leaving the default
-            option could raise an exception if there are multiple
-            models in the trainer. To avoid this, call the plot
-            from a model, e.g. `atom.xgb.heatmap_plot()`.
+            Name of the model to plot. If None, all models are selected.
+            Note that leaving the default option could raise an exception
+            if there are multiple models. To avoid this, call the plot
+            from a model, `atom.xgb.heatmap_plot()`.
 
         index: slice, sequence or None, default=None
             Index names or positions of the rows in the dataset to plot.
@@ -3665,10 +3660,9 @@ class BaseModelPlotter(BasePlotter):
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the model to plot. If None, all models in the
-            pipeline are selected. Note that leaving the default
-            option could raise an exception if there are multiple
-            models in the trainer. To avoid this, call the plot
+            Name of the model to plot. If None, all models are selected.
+            Note that leaving the default option could raise an exception
+            if there are multiple models. To avoid this, call the plot
             from a model, e.g. `atom.xgb.scatter_plot()`.
 
         index: slice, sequence or None, default=None
@@ -3758,11 +3752,10 @@ class BaseModelPlotter(BasePlotter):
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the model to plot. If None, all models in the
-            pipeline are selected. Note that leaving the default
-            option could raise an exception if there are multiple
-            models in the trainer. To avoid this, call the plot
-            from a model, e.g. `atom.xgb.waterfall_plot()`.
+            Name of the model to plot. If None, all models are selected.
+            Note that leaving the default option could raise an exception
+            if there are multiple models. To avoid this, call the plot
+            from a model, `atom.xgb.waterfall_plot()`.
 
         index: int, str or None, default=None
             Index name or position of the row in the dataset to plot.

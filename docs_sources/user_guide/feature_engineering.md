@@ -105,13 +105,12 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 
 !!! tip
     DFS can create many new features and not all of them will be useful.
-    Use [FeatureSelector](./../../API/feature_engineering/feature_selector)
-    to reduce the number of features!
+    Use [FeatureSelector][featureselector] to reduce the number of features!
 
 !!! warning
     Using the div, log or sqrt operators can return new features with
     `inf` or `NaN` values. Check the warnings that may pop up or use
-    atom's [missing](/../../API/ATOM/atomclassifier/#properties) property.
+    atom's [nans](../../API/ATOM/atomclassifier/#data-attributes) attribute.
 
 !!! warning
     When using DFS with `n_jobs>1`, make sure to protect your code with

@@ -25,63 +25,18 @@ from atom.utils import (
 # Functions ======================================================== >>
 
 @typechecked
-def ATOMModel(
-    estimator: Predictor,
-    acronym: Optional[str] = None,
-    fullname: Optional[str] = None,
-    needs_scaling: bool = False,
-) -> Predictor:
-    """Convert an estimator to a model that can be ingested by ATOM.
-
-    This function adds the relevant attributes to the estimator so
-    that they can be used when initializing the CustomModel class.
-
-    Parameters
-    ----------
-    estimator: Predictor
-        Custom estimator. Should implement a `fit` and `predict` method.
-
-    acronym: str or None, default=None
-        Model's acronym. Used to call the model from the trainer.
-        If None, the capital letters in the estimator's __name__
-        are used (only if 2 or more, else it uses the entire name).
-
-    fullname: str or None, default=None
-        Full model's name. If None, the estimator's __name__ is used.
-
-    needs_scaling: bool, default=False
-        Whether the model needs scaled features. Can not be True for
-        deep learning datasets.
-
-    Returns
-    -------
-    sklearn estimator
-        Clone of the provided estimator with custom attributes.
-
-    """
-    estimator = clone(estimator)
-
-    if acronym:
-        estimator.acronym = acronym
-    if fullname:
-        estimator.fullname = fullname
-    estimator.needs_scaling = needs_scaling
-
-    return estimator
-
-
-@typechecked
 def ATOMLoader(
     filename: str,
     data: Optional[SEQUENCE_TYPES] = None,
+    *,
     transform_data: bool = True,
     verbose: Optional[INT] = None,
 ) -> Any:
     """Load a class instance from a pickle file.
 
-    If the file is a trainer that was saved using `save_data=False`,
-    it is possible to load new data into it. For atom pickles, all
-    data transformations can be applied to the loaded data.
+    If the file is an atom instance that was saved using
+    `save_data=False`, it's possible to load new data into it
+    and apply all data transformations.
 
     Parameters
     ----------
@@ -89,9 +44,9 @@ def ATOMLoader(
         Name of the pickle file to load.
 
     data: sequence of indexables or None, default=None
-        Tuple containing the dataset. Only use this parameter if the
-        file is a trainer that was saved using`save_data=False`.
-        Allowed formats are:
+        Original dataset. Only use this parameter if the file is an
+        atom instance that was saved using `save_data=False`. Allowed
+        formats are:
             - X
             - X, y
             - train, test
@@ -102,19 +57,19 @@ def ATOMLoader(
             - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
         X, train, test: dataframe-like
-            Feature set with shape=(n_samples, n_features). If no
-            y is provided, the last column is used as target.
+            Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            Target column corresponding to X.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
     transform_data: bool, default=True
         If False, the `data` is left as provided. If True, it is
-        transformed through all the steps in the instance's
-        pipeline. This parameter is ignored if the loaded file
-        is not an atom pickle.
+        transformed through all the steps in the instance's pipeline.
+        This parameter is ignored if the loaded pickle is not an atom
+        instance.
 
     verbose: int or None, default=None
         Verbosity level of the transformations applied on the new
@@ -126,6 +81,34 @@ def ATOMLoader(
     class instance
         Unpickled instance.
 
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier, ATOMLoader
+    ... from sklearn.datasets import load_breast_cancer
+
+    >>> atom = ATOMClassifier(X, y)
+    ... atom.scale()
+    ... atom.run(["LR", "RF", "SGD"], metric="AP")
+    ... atom.save("atom", save_data=False)  # Save atom to a pickle file
+
+    # Load the class and add the data to the new instance
+    >>> atom_2 = ATOMLoader("atom", data=(X, y), verbose=2)
+
+    Transforming data for branch master:
+    Scaling features...
+    ATOMClassifier successfully loaded.
+
+    >>> print(atom_2.results)
+
+         metric_train  metric_test time_fit    time
+    LR       0.998179     0.998570   0.016s  0.016s
+    RF       1.000000     0.995568   0.141s  0.141s
+    SGD      0.998773     0.994313   0.016s  0.016s
+
+    ```
+
     """
     with open(filename, "rb") as f:
         cls = pickle.load(f)
@@ -133,8 +116,8 @@ def ATOMLoader(
     if data is not None:
         if not hasattr(cls, "_branches"):
             raise TypeError(
-                "Data is provided but the class is not a "
-                f"trainer, got {cls.__class__.__name__}."
+                "Data is provided but the class is not an "
+                f"atom instance, got {cls.__class__.__name__}."
             )
         elif any(branch._data is not None for branch in cls._branches.values()):
             raise ValueError(
@@ -174,6 +157,92 @@ def ATOMLoader(
     return cls
 
 
+@typechecked
+def ATOMModel(
+    estimator: Predictor,
+    *,
+    acronym: Optional[str] = None,
+    fullname: Optional[str] = None,
+    needs_scaling: bool = False,
+) -> Predictor:
+    """Convert an estimator to a model that can be ingested by atom.
+
+    This function adds the relevant attributes to the estimator so
+    that they can be used by atom. Note that only estimators that follow
+    [sklearn's API](https://scikit-learn.org/stable/developers/develop.html)
+    are compatible.
+
+    Read more about using custom models in the [user guide][custom-models].
+
+    Parameters
+    ----------
+    estimator: Predictor
+        Custom estimator. Should implement a `fit` and `predict` method.
+
+    acronym: str or None, default=None
+        Model's acronym. Used to call the model from atom. If None, the
+        capital letters in the estimator's \__name__ are used (only if
+        two or more, else it uses the entire \__name__).
+
+    fullname: str or None, default=None
+        Full model's name. If None, the estimator's name is used.
+
+    needs_scaling: bool, default=False
+        Whether the model needs scaled features.
+
+    Returns
+    -------
+    estimator
+        Clone of the provided estimator with custom attributes.
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor, ATOMModel
+    >>> from sklearn.linear_model import RANSACRegressor
+
+    >>> ransac =  ATOMModel(
+    ...      estimator=RANSACRegressor(),
+    ...      acronym="RANSAC",
+    ...      fullname="Random Sample Consensus",
+    ...      needs_scaling=False,
+    ...  )
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(ransac, verbose=2)
+
+    Training ========================= >>
+    Models: RANSAC
+    Metric: r2
+
+    Results for Random Sample Consensus:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: -2.1784
+    Test evaluation --> r2: -9.4592
+    Time elapsed: 0.072s
+    -------------------------------------------------
+    Total time: 0.072s
+
+    Final results ==================== >>
+    Duration: 0.072s
+    -------------------------------------
+    Random Sample Consensus --> r2: -9.4592 ~
+
+    ```
+
+    """
+    estimator = clone(estimator)
+
+    if acronym:
+        estimator.acronym = acronym
+    if fullname:
+        estimator.fullname = fullname
+    estimator.needs_scaling = needs_scaling
+
+    return estimator
+
+
 # Classes ========================================================== >>
 
 class ATOMClassifier(BaseTransformer, ATOM):
@@ -196,24 +265,27 @@ class ATOMClassifier(BaseTransformer, ATOM):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            Target column corresponding to X.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
     y: int, str or sequence, default=-1
-        - If int: Index of the target column in X.
-        - If str: Name of the target column in X.
-        - Else: Target column with shape=(n_samples,).
+        Target column corresponding to X.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
 
     index: bool, int, str or sequence, default=False
-        - If False: Reset to RangeIndex.
-        - If True: Use the current index.
-        - If int: Index of the column to use as index.
-        - If str: Name of the column to use as index.
-        - If sequence: Index column with shape=(n_samples,).
+        Handle the index in the resulting dataframe.
+            - If False: Reset to RangeIndex.
+            - If True: Use the provided index.
+            - If int: Position of the column to use as index.
+            - If str: Name of the column to use as index.
+            - If sequence: Array with shape=(n_samples,) to use as index.
 
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
@@ -236,10 +308,11 @@ class ATOMClassifier(BaseTransformer, ATOM):
         an unequal distribution of target classes over the sets.
 
     stratify: bool, int, str or sequence, default=True
-        - If False: The data sets are split randomly.
-        - If True: The data sets are stratified over the target column.
-        - Else: Indices or names of the columns to stratify by. The
-                columns can not contain `NaN` values.
+        Handle stratification of the target classes over the data sets.
+            - If False: The data is split randomly.
+            - If True: The data is stratified over the target column.
+            - Else: Name or position of the columns to stratify by. The
+                    columns can't contain `NaN` values.
 
         This parameter is ignored if `shuffle=False` or if the test
         set is provided through `arrays.
@@ -282,8 +355,6 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
-
-        Note that warnings are not saved to the logger.
 
     experiment: str or None, default=None
         Name of the mlflow experiment to use for tracking. If None,
@@ -358,24 +429,27 @@ class ATOMRegressor(BaseTransformer, ATOM):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            Target column corresponding to X.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
     y: int, str or sequence, default=-1
-        - If int: Index of the target column in X.
-        - If str: Name of the target column in X.
-        - Else: Target column with shape=(n_samples,).
+        Target column corresponding to X.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
 
     index: bool, int, str or sequence, default=False
-        - If False: Reset to RangeIndex.
-        - If True: Use the current index.
-        - If int: Index of the column to use as index.
-        - If str: Name of the column to use as index.
-        - If sequence: Index column with shape=(n_samples,).
+        Handle the index in the resulting dataframe.
+            - If False: Reset to RangeIndex.
+            - If True: Use the provided index.
+            - If int: Position of the column to use as index.
+            - If str: Name of the column to use as index.
+            - If sequence: Array with shape=(n_samples,) to use as index.
 
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
@@ -435,8 +509,6 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
-
-        Note that warnings are not saved to the logger.
 
     experiment: str or None, default=None
         Name of the mlflow experiment to use for tracking. If None,

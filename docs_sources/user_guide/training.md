@@ -26,8 +26,10 @@ There are three approaches to run the training.
     - [TrainSizingRegressor](../../API/training/trainsizingregressor)
 
 The direct fashion repeats the aforementioned steps only once, while the
-other two approaches repeats them more than once. Every approach can be
-directly called from atom through the [run](../../API/ATOM/atomclassifier/#run),
+other two approaches repeats them more than once. Just like the [data cleaning](../data_cleaning)
+and [feature engineering](../feature_engineering) classes, it's discouraged
+to use these classes directly. Instead, every approach can be called directly
+from atom through the [run](../../API/ATOM/atomclassifier/#run),
 [successive_halving](../../API/ATOM/atomclassifier/#successive-halving)
 and [train_sizing](../../API/ATOM/atomclassifier/#train-sizing) methods
 respectively.
@@ -92,9 +94,10 @@ distance between the model and the data (i.e. loss functions), like
 `max_error` or `mean_squared_error`, will return the negated value of
 the metric.
 
+<br>
 
-<a name="predefined-scorers"></a>
-**Predefined scorers**<br>
+#### Predefined scorers
+
 ATOM accepts all of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
 as well as some custom acronyms and custom scorers. Since some of
 sklearn's scorers have quite long names and ATOM is all about
@@ -133,8 +136,9 @@ tasks.
 * "FNR" for False Negative Rate (miss rate)
 * "MCC" for Matthews Correlation Coefficient (also for multiclass classification)
 
+<br>
 
-**Multi-metric runs**<br>
+#### Multi-metric runs
 Sometimes it is useful to measure the performance of the models in more
 than one way. ATOM lets you run the pipeline with multiple metrics at
 the same time. To do so, provide the `metric` parameter with a list of

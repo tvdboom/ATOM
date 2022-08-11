@@ -21,10 +21,10 @@ the method only allows plotting one model.
 <td width="80%" class="td_params">
 <p>
 <strong>models: int, str, slice, sequence or None, default=None</strong><br>
-Name of the model to plot. If None, all models in the trainer are
-selected. Note that leaving the default option could raise an
-exception if there are multiple models in the trainer. To avoid
-this, call the plot from a model, e.g. <code>atom.lgb.plot_evals()</code>.
+Name of the model to plot. If None, all models are selected.
+Note that leaving the default option could raise an exception
+if there are multiple models. To avoid this, call the plot from a
+model, e.g. <code>atom.lgb.plot_evals()</code>.
 </p>
 <p>
 <strong>dataset: str, default="both"</strong><br>

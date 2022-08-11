@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -45,7 +45,7 @@ def test_wrongly_converted_columns_are_ignored():
 
 def test_datetime_features_are_used():
     """Assert that datetime64 features are used as is."""
-    X = to_df(X10_dt.copy())
+    X = to_df(X10_dt)
     X["x2"] = pd.to_datetime(X["x2"])
 
     extractor = FeatureExtractor(features="day")
@@ -92,6 +92,7 @@ def test_all_cyclic_features(fxs):
     """Assert that all cyclic columns create two features."""
     extractor = FeatureExtractor(features=fxs[0], fmt=fxs[1], encoding_type="cyclic")
     X = extractor.transform(X10_dt)
+    print(X)
     assert any(X.columns.str.contains(f"{fxs[0]}_cos"))
     assert X.shape[1] == 4 + 1  # 2 new and og is dropped
 

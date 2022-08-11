@@ -2900,10 +2900,10 @@ in the <a href="../../../user_guide/plots/#shap">user guide</a>.</p>
 <td width="80%" class="td_params">
 <p>
 <strong>models: int, str, slice, sequence or None, default=None</strong><br>
-Name of the model to plot. If None, all models in the trainer are
-selected. Note that leaving the default option could raise an
-exception if there are multiple models in the trainer. To avoid
-this, call the plot from a model, e.g. <code>atom.xgb.decision_plot()</code>.
+Name of the model to plot. If None, all models are selected.
+Note that leaving the default option could raise an exception
+if there are multiple models. To avoid this, call the plot from a
+model, e.g. <code>atom.xgb.decision_plot()</code>.
 </p>
 <p>
 <strong>index: int, str, sequence or None, default=None</strong><br>
@@ -2953,7 +2953,7 @@ Plot object. Only returned if <code>display=None</code>.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;RF&quot;</span><span class="p">)</span>
@@ -2963,7 +2963,7 @@ Plot object. Only returned if <code>display=None</code>.
     <img src="../../../img/plots/decision_plot_1.png" alt="decision_plot_1" width="700" height="700"/>
 </div>
 <p><br>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">decision_plot</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>  <span class="c1"># For a single sample</span>
+<div class="language-python highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">decision_plot</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>  <span class="c1"># For a single sample</span>
 </code></pre></div></p>
 <div align="center">
     <img src="../../../img/plots/decision_plot_2.png" alt="decision_plot_2" width="700" height="700"/>

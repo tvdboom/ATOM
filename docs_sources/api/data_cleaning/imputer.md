@@ -136,7 +136,6 @@ Number of features seen during fit.
 <td>Save the instance to a pickle file.</td>
 </tr>
 
-
 <tr>
 <td><a href="#set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
@@ -167,7 +166,7 @@ Fit to data.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -176,7 +175,7 @@ Does nothing. Implemented for continuity of the API.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>Imputer</strong><br>
-Fitted instance of self.
+Estimator instance.
 </tr>
 </table>
 <br />
@@ -200,12 +199,12 @@ dropped during the transformation.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
-<li>If int: Index of the target column in X.</li>
+<li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
 </ul>
 </tr>
 <tr>
@@ -345,10 +344,10 @@ during the transformation.
 <strong>X: dataframe-like</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
-<li>If int: Index of the target column in X.</li>
+<li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,)</li>
 </ul>

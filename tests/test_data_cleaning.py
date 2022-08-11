@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """Automated Tool for Optimized Modelling (ATOM)
 
@@ -200,7 +200,10 @@ def test_cleaner_drop_invalid_column_list_types():
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
     X["string_col"] = [str(i) for i in range(len(X))]  # String column
-    cleaner = Cleaner(["datetime64[ns]", "object"], drop_max_cardinality=False)
+    cleaner = Cleaner(
+        drop_types=["datetime64[ns]", "object"],
+        drop_max_cardinality=False,
+    )
     X = cleaner.fit_transform(X)
     assert "datetime_col" not in X.columns
     assert "string_col" not in X.columns
@@ -609,7 +612,7 @@ def test_ordinal_encoder():
 
 def test_ordinal_features():
     """Assert that ordinal features are encoded."""
-    encoder = Encoder(max_onehot=None, ordinal={"x2": ["b", "a"]})
+    encoder = Encoder(max_onehot=None, ordinal={"x2": ["b", "a", "c"]})
     X = encoder.fit_transform(X10_str2, y10)
     assert X.iloc[0, 2] == 1 and X.iloc[2, 2] == 0
 
@@ -705,7 +708,7 @@ def test_value_pruner():
 def test_categorical_cols_are_ignored():
     """Assert that categorical columns are returned untouched."""
     X, y = Pruner(method="min_max", max_sigma=2).transform(X10_str, y10)
-    pd.testing.assert_series_equal(X["x1"], to_df(X10_str.copy())["x1"])
+    pd.testing.assert_series_equal(X["x1"], to_df(X10_str)["x1"])
 
 
 def test_drop_outlier_in_target():

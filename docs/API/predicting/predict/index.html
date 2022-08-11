@@ -2881,11 +2881,11 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">predict</strong>(X, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L230">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L230">[source]</a>
 </span>
 </div>
 
-<p>Get class predictions on unseen data or rows in the dataset. New data
+<p>Get class predictions on new data or rows in the dataset. New data
 is first transformed through the model's pipeline. Transformers that
 are only applied on the training set are skipped. If called from a
 trainer, the best model in the pipeline (under the <code>winner</code> attribute)
@@ -2897,7 +2897,7 @@ must have a <code>predict</code> method.</p>
 <td width="80%" class="td_params">
 <p>
 <strong>X: int, str, slice, sequence or dataframe-like</strong><br>
-Index names or positions of rows in the dataset, or unseen feature
+Index names or positions of rows in the dataset, or new feature
 set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -2916,7 +2916,7 @@ Predicted targets with shape=(n_samples,).
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;Tree&quot;</span><span class="p">,</span> <span class="s2">&quot;AdaB&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;AP&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>

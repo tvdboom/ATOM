@@ -34,19 +34,22 @@ from sklearn.metrics import (
 from sklearn.utils import _print_elapsed_time, _safe_indexing
 
 
-# Global constants ================================================= >>
+# Current library version
+__version__ = "5.0.0"
 
+# Group of variable types for isinstance
 SEQUENCE = (list, tuple, np.ndarray, pd.Series)
 
-# Variable types
+# Groups of variable types for type hinting
 INT = Union[int, np.integer]
 FLOAT = Union[float, np.float]
 SCALAR = Union[INT, FLOAT]
 SEQUENCE_TYPES = Union[SEQUENCE]
+PANDAS_TYPES = Union[pd.Series, pd.DataFrame]
 X_TYPES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
-Y_TYPES = Union[INT, str, SEQUENCE_TYPES]
+Y_TYPES = Union[INT, str, dict, SEQUENCE_TYPES]
 
-# Attributes shared between atom and a pd.DataFrame
+# Attributes shared between atom and pd.DataFrame
 DF_ATTRS = (
     "size",
     "head",
@@ -63,7 +66,7 @@ DF_ATTRS = (
     "ndim",
 )
 
-# List of custom metrics for the evaluate method
+# List of custom metric acronyms for the evaluate method
 CUSTOM_METRICS = (
     "cm",
     "tn",
@@ -150,17 +153,17 @@ def is_sparse(df):
     return any(pd.api.types.is_sparse(df[col]) for col in df)
 
 
-def check_goal(cls, method, goal):
+def check_goal(goal, method, task):
     """Raise an error if the goal is invalid."""
-    if not goal.startswith(cls.goal):
+    if not task.startswith(goal):
         raise PermissionError(
-            f"The {method} method is only available for {goal} tasks!"
+            f"The {method} method is only available for {task} tasks!"
         )
 
 
-def check_binary_task(cls, method):
+def check_binary_task(task, method):
     """Raise an error if the task is invalid."""
-    if not cls.task.startswith("bin"):
+    if not task.startswith("bin"):
         raise PermissionError(
             f"The {method} method is only available for binary classification tasks!"
         )
@@ -174,13 +177,6 @@ def check_predict_proba(models, method):
                 f"The {method} method is only available for "
                 f"models with a predict_proba method, got {m.name}."
             )
-
-
-def get_proba_attr(model):
-    """Get the predict_proba, decision_function or predict method."""
-    for attr in ("predict_proba", "decision_function", "predict"):
-        if hasattr(model.estimator, attr):
-            return attr
 
 
 def check_scaling(X):
@@ -340,20 +336,18 @@ def prepare_logger(logger, class_name):
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-
     class_name: str
         Name of the class from which the function is called.
         Used for default name creation when log="auto".
 
     Returns
     -------
-    class
+    Logger or None
         Logger object.
 
     """
     if not logger:  # Empty string or None
         return None
-
     elif isinstance(logger, str):
         # Prepare the FileHandler's name
         if not logger.endswith(".log"):
@@ -364,7 +358,7 @@ def prepare_logger(logger, class_name):
 
         # Define file handler and set formatter
         file_handler = logging.FileHandler(logger)
-        formatter = logging.Formatter("%(asctime)s: %(message)s")
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s: %(message)s")
         file_handler.setFormatter(formatter)
 
         # Define logger
@@ -465,37 +459,6 @@ def create_acronym(fullname):
         return acronym
 
 
-def names_from_estimator(cls, est):
-    """Get the model's acronym and fullname from an estimator.
-
-    Parameters
-    ----------
-    cls: class
-        Trainer from which the function is called.
-
-    est: Estimator
-        Model to get the information from.
-
-    Returns
-    -------
-    str
-        Model's acronym.
-
-    str
-        Model's complete name.
-
-    """
-    from atom.models import MODELS
-
-    for key, value in MODELS.items():
-        model = value(cls, fast_intialization=True)
-        if model.est_class.__name__ == est.__class__.__name__:
-            return key, model.fullname
-
-    # If it's not any of the predefined models, create a new acronym
-    return create_acronym(est.__class__.__name__), est.__class__.__name__
-
-
 def get_custom_scorer(
     metric,
     greater_is_better=True,
@@ -533,14 +496,27 @@ def get_custom_scorer(
     # Copies are needed to not alter SCORERS
     if isinstance(metric, str):
         metric = metric.lower()
+
+        custom_scorers = dict(
+            tn=true_negatives,
+            fp=false_positives,
+            fn=false_negatives,
+            tp=true_positives,
+            fpr=false_positive_rate,
+            tpr=true_positive_rate,
+            tnr=true_negative_rate,
+            fnr=false_negative_rate,
+            mcc=matthews_corrcoef,
+        )
+
         if metric in SCORERS:
             scorer = copy(SCORERS[metric])
             scorer.name = metric
         elif metric in SCORERS_ACRONYMS:
             scorer = copy(SCORERS[SCORERS_ACRONYMS[metric]])
             scorer.name = SCORERS_ACRONYMS[metric]
-        elif metric in CUSTOM_SCORERS:
-            scorer = make_scorer(copy(CUSTOM_SCORERS[metric]))
+        elif metric in custom_scorers:
+            scorer = make_scorer(copy(custom_scorers[metric]))
             scorer.name = scorer._score_func.__name__
         else:
             raise ValueError(
@@ -821,12 +797,28 @@ def fit_one(transformer, X=None, y=None, message=None, **fit_params):
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
             args = []
-            transformer_params = signature(transformer.fit).parameters
-            if "X" in transformer_params and X is not None:
-                inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
-                args.append(X[inc or [c for c in X.columns if c not in exc]])
-            if "y" in transformer_params and y is not None:
+            params = signature(transformer.fit).parameters
+
+            if "X" in params:
+                if X is not None:
+                    inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
+                    if inc or exc:  # Skip if inc=[] (happens when columns=-1)
+                        args.append(X[inc or [c for c in X.columns if c not in exc]])
+
+                # X is required but has not been provided
+                if len(args) == 0:
+                    if params["X"].default != Parameter.empty:
+                        args.append(params["X"].default)  # Fill X with default
+                    else:
+                        raise ValueError(
+                            "Exception while trying to fit transformer "
+                            f"{transformer.__class__.__name__}. Parameter "
+                            "X is required but not provided."
+                        )
+
+            if "y" in params and y is not None:
                 args.append(y)
+
             transformer.fit(*args, **fit_params)
 
 
@@ -858,21 +850,25 @@ def transform_one(transformer, X=None, y=None, method="transform"):
     y = to_series(y, index=getattr(X, "index", None))
 
     args = []
-    transform_params = signature(getattr(transformer, method)).parameters
-    if "X" in transform_params:
+    params = signature(getattr(transformer, method)).parameters
+    if "X" in params:
         if X is not None:
             inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
-            args.append(X[inc or [c for c in X.columns if c not in exc]])
-        elif transform_params["X"].default != Parameter.empty:
-            args.append(transform_params["X"].default)  # Fill X with default
-        else:
-            return X, y  # If X is None and needed, skip it
+            if inc or exc:  # Skip if inc=[] (happens when columns=-1)
+                args.append(X[inc or [c for c in X.columns if c not in exc]])
 
-    if "y" in transform_params:
+        # X is required but has not been provided
+        if len(args) == 0:
+            if params["X"].default != Parameter.empty:
+                args.append(params["X"].default)  # Fill X with default
+            else:
+                return X, y  # If X is needed, skip the transformer
+
+    if "y" in params:
         if y is not None:
             args.append(y)
-        elif "X" not in transform_params:
-            return X, y  # If y is None and no X in transformer, skip it
+        elif "X" not in params:
+            return X, y  # If y is None and no X in transformer, skip the transformer
 
     output = getattr(transformer, method)(*args)
 
@@ -881,7 +877,7 @@ def transform_one(transformer, X=None, y=None, method="transform"):
         new_X = prepare_df(output[0])
         new_y = to_series(output[1], index=new_X.index, name=y.name)
     else:
-        if len(output.shape) > 1:
+        if output.ndim > 1:
             new_X = prepare_df(output)
             new_y = y if y is None else y.set_axis(new_X.index)
         else:
@@ -899,9 +895,7 @@ def fit_transform_one(transformer, X=None, y=None, message=None, **fit_params):
     return X, y, transformer
 
 
-# Functions shared by classes ======================================= >>
-
-def custom_transform(transformer, branch, data=None, verbose=None):
+def custom_transform(transformer, branch, data=None, verbose=None, method="transform"):
     """Applies a transformer on a branch.
 
     This function is generic and should work for all
@@ -924,6 +918,10 @@ def custom_transform(transformer, branch, data=None, verbose=None):
         Verbosity level for the transformation. If None, the
         estimator's verbosity is used.
 
+    method: str, default="transform"
+        Method to apply to the transformer. Choose from: transform
+        or inverse_transform.
+
     """
     # Select provided data or from the branch
     if data:
@@ -945,21 +943,10 @@ def custom_transform(transformer, branch, data=None, verbose=None):
             vb = transformer.verbose  # Save original verbosity
             transformer.verbose = verbose
 
-    # Skip transformers that transform only y when it's not provided
-    transform_params = signature(transformer.transform).parameters
-    if list(transform_params.keys()) == ["y"] and y_og is None:
-        branch.T.log(
-            f"Skipping {transformer.__class__.__name__} since it "
-            "only transforms y and no target column is provided...", 3
-        )
-        X, y = X_og, y_og
-    else:
-        if not transformer.__module__.startswith("atom"):
-            branch.T.log(
-                f"Applying {transformer.__class__.__name__} to the dataset...", 1
-            )
+    if not transformer.__module__.startswith("atom"):
+        branch.T.log(f"Applying {transformer.__class__.__name__} to the dataset...", 1)
 
-        X, y = transform_one(transformer, X_og, y_og)
+    X, y = transform_one(transformer, X_og, y_og, method)
 
     # Apply changes to the branch
     if not data:
@@ -986,28 +973,91 @@ def custom_transform(transformer, branch, data=None, verbose=None):
     return X, y
 
 
-def delete(self, models):
-    """Delete models from a trainer's pipeline.
+# Patches ========================================================== >>
 
-    Removes all traces of a model in the trainer (except for
-    the `errors` attribute). If all models are removed, the
-    metric and approach are reset.
+def inverse_transform(self, Xt):
+    """Patch function for inverse_transform method.
+
+    Monkey patch for skopt.space.space.Categorical.inverse_transform
+    method to fix bug with string and numerical categories combined.
 
     Parameters
     ----------
-    self: class
-        Trainer for which to delete the model.
+    self: Categorical
+        Instance from the patched class.
 
-    models: sequence
-        Name of the models to delete from the pipeline.
+    Xt: array-like, shape=(n_samples,)
+        List of categories.
+
+    Returns
+    -------
+    array-like, shape=(n_samples, n_categories)
+        The integer categories.
 
     """
-    for model in models:
-        self._models.pop(model)
+    return self.transformer.inverse_transform(Xt)
 
-    # If no models, reset the metric
-    if not self._models:
-        self._metric = CustomDict()
+
+def fit(self, X):
+    """Patch function for fit method.
+
+    Monkey patch for skopt.space.transformers.LabelEncoder.fit
+    method to fix bug with string and numerical categories combined.
+
+    Parameters
+    ----------
+    self: LabelEncoder
+        Instance from the patched class.
+
+    X: array-like, shape=(n_categories,)
+        List of categories.
+
+    """
+    self.mapping_ = {v: i for i, v in enumerate(X)}
+    self.inverse_mapping_ = {i: v for v, i in self.mapping_.items()}
+    return self
+
+
+def transform(self, X):
+    """Patch function for skopt.LabelEncoder transform method.
+
+    Monkey patch for skopt.space.transformers.LabelEncoder.transform
+    method to fix bug with string and numerical categories combined.
+
+    Parameters
+    ----------
+    self: LabelEncoder
+        Instance from the patched class.
+
+    X: array-like, shape=(n_samples,)
+        List of categories.
+
+    Returns
+    -------
+    array-like, shape=(n_samples, n_categories)
+        The integer categories.
+
+    """
+    return [self.mapping_[v] for v in X]
+
+
+def score(f):
+    """Patch decorator for sklearn's _score function.
+
+    Monkey patch for sklearn.model_selection._validation._score
+    function to score pipelines that drop samples during transforming.
+
+    """
+
+    def wrapper(*args, **kwargs):
+        args = list(args)  # Convert to list for item assignment
+        if len(args[0]) > 1:  # Has transformers
+            args[1], args[2] = args[0][:-1].transform(args[1], args[2])
+
+        # Return f(final_estimator, X_transformed, y_transformed, ...)
+        return f(args[0][-1], *tuple(args[1:]), **kwargs)
+
+    return wrapper
 
 
 # Decorators ======================================================= >>
@@ -1035,7 +1085,7 @@ def crash(f, cache={"last_exception": None}):
 
     We use a mutable argument to cache the last exception raised. If
     the current exception is the same (happens when there is an error
-    catch or multiple calls to crash), its not re-written in the logger.
+    catch or multiple calls to crash), it's not re-written in the logger.
 
     """
 
@@ -1047,13 +1097,13 @@ def crash(f, cache={"last_exception": None}):
             try:  # Run the function
                 return f(*args, **kwargs)
 
-            except Exception as exception:
+            except Exception as ex:
                 # If exception is not same as last, write to log
-                if exception is not cache["last_exception"]:
-                    cache["last_exception"] = exception
-                    logger.exception("\nException encountered:")
+                if ex is not cache["last_exception"]:
+                    cache["last_exception"] = ex
+                    logger.exception("Exception encountered:")
 
-                raise exception  # Always raise it
+                raise ex
         else:
             return f(*args, **kwargs)
 
@@ -1065,7 +1115,7 @@ def method_to_log(f):
 
     @wraps(f)
     def wrapper(*args, **kwargs):
-        # Get logger (for model subclasses called from BaseTrainer)
+        # Get logger for calls from models
         logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
 
         if logger is not None:
@@ -1129,7 +1179,7 @@ def false_negative_rate(y_true, y_pred):
     return float(fn / (fn + tp))
 
 
-# Scorers not predefined by sklearn
+# Scorers not implemented by sklearn
 CUSTOM_SCORERS = dict(
     tn=true_negatives,
     fp=false_positives,
@@ -1154,27 +1204,32 @@ class NotFittedError(ValueError, AttributeError):
     """
 
 
-class Transformer(Protocol):
-    """Protocol for all predictors."""
-    def fit(self, X, y, sample_weight=None): ...
-    def transform(self, X): ...
-    def get_params(self, **params): ...
-    def set_params(self, **params): ...
-
-
-class Predictor(Protocol):
-    """Protocol for all predictors."""
-    def fit(self, X, y, sample_weight=None): ...
-    def predict(self, X): ...
-    def score(self, X, y, sample_weight=None): ...
-    def get_params(self, **params): ...
-    def set_params(self, **params): ...
+class Runner(Protocol):
+    """Protocol for all runners."""
+    def run(self, **params): ...
 
 
 class Model(Protocol):
     """Protocol for all models."""
     def est_class(self): ...
     def get_estimator(self, **params): ...
+
+
+class Scorer(Protocol):
+    """Protocol for all scorers."""
+    def _score(self, method_caller, clf, X, y, sample_weight=None): ...
+
+
+class Predictor(Protocol):
+    """Protocol for all predictors."""
+    def fit(self, X, y, sample_weight=None): ...
+    def predict(self, X): ...
+
+
+class Transformer(Protocol):
+    """Protocol for all predictors."""
+    def fit(self, X, y, sample_weight=None): ...
+    def transform(self, X): ...
 
 
 class Table:
@@ -1246,8 +1301,8 @@ class PlotCallback:
 
     Parameters
     ----------
-    cls: class
-        Trainer from which the callback is called.
+    cls: Runner
+        Instance from which the callback is called.
 
     """
 
@@ -1384,16 +1439,24 @@ class ShapExplanation:
         self._expected_value = None
 
     @property
+    def attr(self):
+        """Get the predict_proba, decision_function or predict method if available."""
+        for attr in ("predict_proba", "decision_function", "predict"):
+            if hasattr(self.T.estimator, attr):
+                return attr
+
+    @property
     def explainer(self):
         """Get shap's explainer."""
         if self._explainer is None:
             try:  # Fails when model does not fit standard explainers (e.g. ensembles)
                 self._explainer = Explainer(self.T.estimator, self.T.X_train)
-            except Exception:
-                # Prediction attr to use (predict_proba > decision_function > predict)
+            except TypeError:
                 # If method is provided as first arg, selects always Permutation
-                attr = getattr(self.T.estimator, get_proba_attr(self.T))
-                self._explainer = Explainer(attr, self.T.X_train)
+                self._explainer = Explainer(
+                    model=getattr(self.T.estimator, self.attr),
+                    masker=self.T.X_train,
+                )
 
         return self._explainer
 
@@ -1486,13 +1549,14 @@ class ShapExplanation:
                 self._expected_value = self.explainer.expected_value
             else:
                 # The expected value is the average of the model output
-                self._expected_value = np.mean(
-                    getattr(self.T, f"{get_proba_attr(self.T)}_train")
-                )
+                self._expected_value = np.mean(getattr(self.T, f"{self.attr}_train"))
 
         if return_one and isinstance(self._expected_value, SEQUENCE):
             if len(self._expected_value) == self.T.y.nunique():
                 return self._expected_value[target]  # Return target expected value
+        elif not return_one and isinstance(self._expected_value, float):
+            # For binary tasks, shap returns the expected value of positive class
+            return [1 - self._expected_value, self._expected_value]
 
         return self._expected_value
 

@@ -318,7 +318,7 @@ Name of the target column.
 <td width="80%" class="td_params">
 <p>
 <strong>models: list</strong><br>
-List of models in the trainer.
+Names of the models in the instance.
 </p>
 <p>
 <strong>metric: str or list</strong><br>
@@ -411,7 +411,7 @@ Fontsize for the ticks along the plot's axes.
 
 <tr>
 <td><a href="#delete">delete</a></td>
-<td>Delete models from the trainer.</td>
+<td>Delete models.</td>
 </tr>
 
 <tr>
@@ -431,7 +431,7 @@ Fontsize for the ticks along the plot's axes.
 
 <tr>
 <td><a href="#merge">merge</a></td>
-<td>Merge another trainer into this one.</td>
+<td>Merge another instance of the same class into this one.</td>
 </tr>
 
 <tr>
@@ -471,7 +471,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">available_models</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L500">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L500">[source]</a>
 </span>
 </div>
 Give an overview of the available predefined models.
@@ -548,7 +548,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">clear</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L536">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L536">[source]</a>
 </span>
 </div>
 Reset all model attributes to their initial state, deleting potentially
@@ -558,6 +558,7 @@ the class. The cleared attributes per model are:
 * [Prediction attributes](../../../user_guide/predicting).
 * [Metrics scores](../../../user_guide/training/#metric).
 * [Shap values](../../../user_guide/plots/#shap).
+* [Dashboard instance](../../../user_guide/data_management/#dashboard).
 
 <br /><br /><br />
 
@@ -566,10 +567,10 @@ the class. The cleared attributes per model are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L551">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L551">[source]</a>
 </span>
 </div>
-Delete models from the trainer. If all models are removed, the metric
+Delete models. If all models are removed, the metric
 is reset. Use this method to drop unwanted models from the pipeline
 or to free some memory before saving. Deleted models are not removed
 from any active mlflow experiment.
@@ -590,7 +591,7 @@ Models to delete. If None, delete them all.
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
 dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L578">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L578">[source]</a>
 </span>
 </div>
 Get all the models' scores for the provided metrics.
@@ -625,7 +626,7 @@ Scores of the models.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L624">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L624">[source]</a>
 </span>
 </div>
 Return class weights for a balanced data set. Statistically, the class
@@ -710,23 +711,23 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L659">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L659">[source]</a>
 </span>
 </div>
-Merge another trainer into this one. Branches, models, metrics and
-attributes of the other trainer are merged into this one. If there
-are branches and/or models with the same name, they are merged
-adding the `suffix` parameter to their name. The errors and missing
-attributes are extended with those of the other instance. It's only
-possible to merge two instances if they are initialized with the same
-dataset and trained with the same metric.
+Merge another instance of the same class into this one. Branches,
+models, metrics and attributes of the other instance are merged into
+this one. If there are branches and/or models with the same name,
+they are merged adding the `suffix` parameter to their name. The
+errors and missing attributes are extended with those of the other
+instance. It's only possible to merge two instances if they are
+initialized with the same dataset and trained with the same metric.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>other: trainer</strong><br>
-Trainer instance with which to merge.
+<strong>other: SuccessiveHalvingRegressor</strong><br>
+Instance with which to merge. Should be of the same class as self.
 </p>
 <p>
 <strong>suffix: str, default="2"</strong><br>
@@ -838,7 +839,7 @@ Estimator instance.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(name="Stack",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L728">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L728">[source]</a>
 </span>
 </div>
 Add a [Stacking](../../../user_guide/models/#stacking) model to the pipeline.
@@ -872,7 +873,7 @@ acronyms can be used for the <code>final_estimator</code> parameter.
 <em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
 models=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L798">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L798">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/models/#voting) model to the pipeline.

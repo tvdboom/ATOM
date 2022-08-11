@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -49,21 +49,6 @@ def test_branch_delete_current():
     atom.branch = "b2"
     atom.branch.delete()
     assert "b2" not in atom._branches
-
-
-def test_branch_delete_og():
-    """Assert that an error is raised when og is deleted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(PermissionError, match=r".*can not be deleted.*"):
-        atom.branch.delete("og")
-
-
-def test_branch_delete_not_existing_branch():
-    """Assert that an error is raised when the branch doesn't exist."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    with pytest.raises(ValueError, match=r".*not found.*"):
-        atom.branch.delete("invalid")
 
 
 def test_branch_delete_last_branch():

@@ -92,14 +92,14 @@ review and accept your changes.
 
 * Update the documentation so all of your changes are reflected there.
 * Adhere to [PEP 8](https://peps.python.org/pep-0008/) standards.
-* Use a maximum of 89 characters per line. Try to keep comments and
-  docstrings below 72 characters.
+* Use a maximum of 89 characters per line. Try to keep docstrings below
+  73 characters.
 * Update the project unit tests to test your code changes as thoroughly
   as possible.
 * Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.
 * Run [isort](https://pycqa.github.io/isort/): `isort atom tests`.
-* Run [flake8](https://flake8.pycqa.org/en/latest/): `flake8 --show-source --statistics atom tests`.
+* Run [flake8p](https://github.com/john-hen/Flake8-pyproject): `flake8p --show-source --statistics atom tests`.
 
 If your contribution requires a new library dependency:
 

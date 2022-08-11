@@ -1,57 +1,42 @@
 # predict_proba
 ---------------
 
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">predict_proba</strong>(X, verbose=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetrainer.py#L236">[source]</a>
-</span>
-</div>
-
-Get class probabilities on unseen data or rows in the dataset. New
-data is first transformed through the model's pipeline. Transformers
-that are only applied on the training set are skipped. If called from
-a trainer, the best model in the pipeline (under the `winner` attribute)
-is used. If called from a model, that model is used. The estimator must
-have a `predict_proba` method.
-
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>X: int, str, slice, sequence or dataframe-like</strong><br>
-Index names or positions of rows in the dataset, or unseen feature
-set with shape=(n_samples, n_features).
-</p>
-<p>
-<strong>verbose: int or None, default=None</strong><br>
-Verbosity level of the output. If None, it uses the transformer's own verbosity.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>np.array</strong><br>
-The class probabilities of the input samples, with shape=(n_samples,)
-for binary classification tasks and (n_samples, n_classes) for
-multiclass classification tasks.
-</td>
-</tr>
-</table>
-<br />
-
-
+:: atom.basemodel:BaseModel.predict_proba
+    :: signature
+    :: description
+    :: table:
+        - parameters
+        - returns
 
 ## Example
 
-```python
-from atom import ATOMClassifier
+```pycon
+>>> from atom import ATOMClassifier
+>>> from sklearn.datasets import load_breast_cancer
 
-atom = ATOMClassifier(X, y)
-atom.run(["Tree", "AdaB"], metric="AP", n_calls=10)
+>>> # Load data and separate last 5 rows for predictions
+>>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+>>> X_new, y_new = X.iloc[-5:], y.iloc[-5:]
+>>> X, y = X.iloc[:-5], y.iloc[:-5]
 
-# Make predictions on new data
-predictions = atom.adab.predict_proba(X_new)
+>>> atom = ATOMClassifier(data)
+>>> atom.run("LR")
+
+>>> # Using new data
+>>> atom.predict_proba(X_new)
+
+          0             1
+0  1.000000  4.036791e-10
+1  1.000000  4.856420e-07
+2  0.981879  1.812090e-02
+3  1.000000  6.081561e-11
+4  0.000025  9.999746e-01
+
+>>> # Using indices
+>>> atom.predict_proba([23, 25])  # Retrieve prediction of rows 23 and 25
+
+           0         1
+23  0.000892  0.999108
+25  0.975733  0.024267
+
 ```

@@ -127,7 +127,6 @@ Number of features seen during fit.
 <td>Save the instance to a pickle file.</td>
 </tr>
 
-
 <tr>
 <td><a href="#set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
@@ -154,7 +153,7 @@ Fit to data.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -163,7 +162,7 @@ Does nothing. Implemented for continuity of the API.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
 <td width="80%" class="td_params">
 <strong>Discretizer</strong><br>
-Fitted instance of self.
+Estimator instance.
 </tr>
 </table>
 <br />
@@ -183,7 +182,7 @@ to errors if the `strategy` encoder requires target values.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>
@@ -313,7 +312,7 @@ Bin the data into intervals.
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
-<strong>y: int, str, sequence or None, default=None</strong><br>
+<strong>y: int, str, dict, sequence or None, default=None</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
 </td>

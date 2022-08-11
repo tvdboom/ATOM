@@ -2888,20 +2888,21 @@ acronym=None, fullname=None, needs_scaling=False)
 
 <p>Convert an estimator to a model that can be ingested by ATOM. Note that
 only estimators that follow <a href="https://scikit-learn.org/stable/developers/develop.html">sklearn's API</a>
-are compatible. Read more about using custom estimators in the <a href="../../../user_guide/models/#custom-models">user guide</a>.</p>
+are compatible. Read more about using custom models in the <a href="../../../user_guide/models/#custom-models">user guide</a>.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>estimator: sklearn estimator</strong><br>
-Custom model's estimator.
+<strong>estimator: Predictor</strong><br>
+Custom estimator. Should implement a <code>fit</code> and
+<code>predict</code> method.
 </p>
 <p>
 <strong>acronym: str or None, default=None</strong><br>
-Model's acronym. Used to call the model from the trainer. If
-None, the capital letters in the estimator's __name__ are used
-(only if 2 or more, else it uses the entire name).
+Model's acronym. Used to call the model from atom. If None, the
+capital letters in the estimator's __name__ are used (only if 2
+or more, else it uses the entire name).
 </p>
 <p>
 <strong>fullname: str or None, default=None</strong><br>
@@ -2925,7 +2926,7 @@ Clone of the provided estimator with custom attributes.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span><span class="p">,</span> <span class="n">ATOMModel</span>
 <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">RANSACRegressor</span>
 
 <span class="n">ransac</span> <span class="o">=</span>  <span class="n">ATOMModel</span><span class="p">(</span><span class="n">RANSACRegressor</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;RANSAC&quot;</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s2">&quot;Random Sample Consensus&quot;</span><span class="p">)</span>

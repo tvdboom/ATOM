@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -118,7 +118,8 @@ def test_canvas_too_many_plots():
     with atom.canvas(1, 2, display=False):
         atom.plot_prc()
         atom.plot_roc()
-        pytest.raises(ValueError, atom.plot_prc)
+        with pytest.raises(ValueError, match=r".*number of plots.*"):
+            atom.plot_prc()
 
 
 @patch("mlflow.tracking.MlflowClient.log_figure")

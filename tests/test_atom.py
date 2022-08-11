@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -65,7 +65,7 @@ def test_repr():
     atom.scale()
     assert "Branches: master" in str(atom)
     atom.branch = "b2"
-    assert "Branches:\n   >>> master\n   >>> b2 !" in str(atom)
+    assert "Branches:\n   --> master\n   --> b2 !" in str(atom)
 
 
 def test_iter():
@@ -326,6 +326,13 @@ def test_export_pipeline_memory(func):
     func.assert_called_once()
 
 
+def test_inverse_transform():
+    """ Assert that the inverse_transform method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
+    atom.scale()
+    pd.testing.assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
+
+
 @patch("atom.atom.ProfileReport")
 def test_report(cls):
     """Assert that the report method and file are created."""
@@ -420,7 +427,7 @@ def test_shrink_exclude_columns():
 def test_stats_mixed_sparse_dense():
     """Assert that stats show new information for mixed datasets."""
     atom = ATOMClassifier(X_sparse, y10, random_state=1)
-    atom.apply(lambda x: 1, columns="new_column")
+    atom.apply(lambda x: x + 1, columns=0)
     atom.stats()
 
 
@@ -430,7 +437,7 @@ def test_status():
     atom.status()
 
 
-def test_transform_method():
+def test_transform():
     """ Assert that the transform method works as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
@@ -449,22 +456,6 @@ def test_transform_verbose_invalid():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     pytest.raises(ValueError, atom.transform, X_bin, verbose=3)
-
-
-def test_transform_with_y():
-    """Assert that the transform method works when y is provided."""
-    atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    atom.impute(strat_num="drop")
-    X, y = atom.transform(X10_nan, y10)
-    assert len(y) < len(y10)
-
-
-def test_transform_skip_y():
-    """Assert that only transformers are skipped when not provided."""
-    atom = ATOMClassifier(X10_str, y10_str, random_state=1)
-    atom.add(LabelEncoder())
-    atom.encode()
-    assert isinstance(atom.transform(X10_str), pd.DataFrame)
 
 
 # Test base transformers =========================================== >>
@@ -537,12 +528,23 @@ def test_add_transformer_y_ignore_X():
     assert np.all((y == 0) | (y == 1))
 
 
+def test_add_invalid_columns_only_y():
+    """Assert that an error is raised when ."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    with pytest.raises(ValueError, match=r".*trying to fit transformer.*"):
+        atom.encode(columns=-1)  # Encoder.fit requires X
+
+
 def test_returned_column_already_exists():
     """Assert that an error is raised if an existing column is returned."""
-    atom = ATOMClassifier(X_text, y10, random_state=1)
-    atom.apply(lambda x: 1, columns="corpus_new")
+
+    def func_test(df):
+        df["mean texture"] = 1
+        return df
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=r".*already exists in the original.*"):
-        atom.vectorize(columns="corpus")
+        atom.apply(func_test, columns="!mean texture")
 
 
 def test_add_sparse_matrices():
@@ -627,36 +629,11 @@ def test_add_pipeline():
     assert isinstance(atom.pipeline[1], SelectFromModel)
 
 
-def test_apply_not_callable():
-    """Assert that an error is raised when func is not callable."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(TypeError, atom.apply, func=RandomForestClassifier(), columns=0)
-
-
-def test_apply_same_column():
-    """Assert that apply can transform an existing column."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(lambda x: 1, columns=0)
-    assert atom["mean radius"].sum() == atom.shape[0]
-    assert str(atom.pipeline[0]).startswith("FunctionTransformer(func=<lambda>")
-
-
-def test_apply_new_column():
-    """Assert that apply can create a new column."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(lambda x: 1, columns="new column")
-    assert atom["new column"].sum() == atom.shape[0]
-
-
-def test_apply_args_and_kwargs():
-    """Assert that args and kwargs are passed to the function."""
-
-    def test_func(df, arg_1, arg_2="mean radius"):
-        return df[arg_2] + arg_1
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(test_func, columns="new column", args=(10,), arg_2="mean texture")
-    assert atom["new column"][0] == atom["mean texture"][0] + 10
+def test_apply():
+    """Assert that a function can be applied to the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
+    atom.apply(np.exp, columns=0)
+    assert atom[0].iloc[0] == np.exp(X_bin.iloc[0, 0])
 
 
 def test_drop():
@@ -680,7 +657,7 @@ def test_scale():
 def test_normalize():
     """Assert that the normalize method transforms the features."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    X = atom.X.copy()
+    X = atom.X
     atom.normalize()
     assert not atom.X.equals(X)
     assert hasattr(atom, "yeojohnson")
@@ -867,7 +844,7 @@ def test_raises_invalid_metric_consecutive_runs():
 
 
 def test_scaling_is_passed():
-    """Assert that the scaling is passed to the trainer."""
+    """Assert that the scaling is passed to atom."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.scale("minmax")
     atom.run("LGB")
