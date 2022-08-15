@@ -636,70 +636,7 @@ def test_apply():
     assert atom[0].iloc[0] == np.exp(X_bin.iloc[0, 0])
 
 
-def test_drop():
-    """Assert that columns can be dropped through the pipeline."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.drop([0, 1])
-    assert atom.n_features == X_bin.shape[1] - 2
-    assert str(atom.pipeline[0]).startswith("DropTransformer(columns")
-
-
 # Test data cleaning transformers =================================== >>
-
-def test_scale():
-    """Assert that the scale method normalizes the features."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.scale()
-    assert check_scaling(atom.dataset)
-    assert hasattr(atom, "standard")
-
-
-def test_normalize():
-    """Assert that the normalize method transforms the features."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    X = atom.X
-    atom.normalize()
-    assert not atom.X.equals(X)
-    assert hasattr(atom, "yeojohnson")
-
-
-def test_clean():
-    """Assert that the clean method cleans the dataset."""
-    atom = ATOMClassifier(X10, y10_sn, stratify=False, random_state=1)
-    atom.clean()
-    assert len(atom.dataset) == 9
-    assert atom.mapping == {"target": {"n": 0, "y": 1}}
-
-
-def test_impute():
-    """Assert that the impute method imputes all missing values."""
-    atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    atom.impute()
-    assert atom.dataset.isna().sum().sum() == 0
-
-
-def test_discretize():
-    """Assert that the discretize method bins the numerical columns."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.discretize()
-    assert all(dtype.name == "object" for dtype in atom.X.dtypes)
-
-
-def test_encode():
-    """Assert that the encode method encodes all categorical columns."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.encode()
-    assert all(atom.X[col].dtype.kind in "ifu" for col in atom.X.columns)
-
-
-def test_prune():
-    """Assert that the prune method handles outliers in the training set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    len_train, len_test = len(atom.train), len(atom.test)
-    atom.prune(strategy="lof")
-    assert len(atom.train) != len_train and len(atom.test) == len_test
-    assert hasattr(atom, "lof")
-
 
 def test_balance_wrong_task():
     """Assert that an error is raised for regression tasks."""
@@ -716,6 +653,61 @@ def test_balance():
     assert hasattr(atom, "nearmiss")
 
 
+def test_clean():
+    """Assert that the clean method cleans the dataset."""
+    atom = ATOMClassifier(X10, y10_sn, stratify=False, random_state=1)
+    atom.clean()
+    assert len(atom.dataset) == 9
+    assert atom.mapping == {"target": {"n": 0, "y": 1}}
+
+
+def test_discretize():
+    """Assert that the discretize method bins the numerical columns."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.discretize()
+    assert all(dtype.name == "object" for dtype in atom.X.dtypes)
+
+
+def test_encode():
+    """Assert that the encode method encodes all categorical columns."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom.encode()
+    assert all(atom.X[col].dtype.kind in "ifu" for col in atom.X.columns)
+
+
+def test_impute():
+    """Assert that the impute method imputes all missing values."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.impute()
+    assert atom.dataset.isna().sum().sum() == 0
+
+
+def test_normalize():
+    """Assert that the normalize method transforms the features."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    X = atom.X
+    atom.normalize()
+    assert not atom.X.equals(X)
+    assert hasattr(atom, "yeojohnson")
+
+
+def test_prune():
+    """Assert that the prune method handles outliers in the training set."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    len_train, len_test = len(atom.train), len(atom.test)
+    atom.prune(strategy="lof")
+    assert len(atom.train) != len_train and len(atom.test) == len_test
+    assert hasattr(atom, "lof")
+
+
+def test_scale():
+    """Assert that the scale method normalizes the features."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.scale()
+    assert check_scaling(atom.dataset)
+    assert hasattr(atom, "standard")
+
+
 # Test nlp transformers ============================================ >>
 
 def test_textclean():
@@ -726,18 +718,18 @@ def test_textclean():
     assert hasattr(atom, "drops")
 
 
-def test_tokenize():
-    """Assert that the tokenize method tokenizes the corpus."""
-    atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
-    atom.tokenize()
-    assert atom["corpus"][0] == ["I", "àm", "in", "ne", "'", "w", "york"]
-
-
 def test_textnormalize():
     """Assert that the textnormalize method normalizes the corpus."""
     atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
     atom.textnormalize(stopwords=False, custom_stopwords=["yes"])
     assert atom["corpus"][0] == ["I", "àm", "in", "ne'w", "york"]
+
+
+def test_tokenize():
+    """Assert that the tokenize method tokenizes the corpus."""
+    atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
+    atom.tokenize()
+    assert atom["corpus"][0] == ["I", "àm", "in", "ne", "'", "w", "york"]
 
 
 def test_vectorize():
@@ -753,7 +745,7 @@ def test_vectorize():
 
 def test_feature_extraction():
     """Assert that the feature_extraction method creates datetime features."""
-    atom = ATOMClassifier(X10_dt, y10, verbose=2, random_state=1)
+    atom = ATOMClassifier(X10_dt, y10, random_state=1)
     atom.feature_extraction(fmt="%d/%m/%Y")
     assert atom.X.shape[1] == 6
 
@@ -763,6 +755,14 @@ def test_feature_generation():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_generation(n_features=2)
     assert atom.X.shape[1] == X_bin.shape[1] + 2
+
+
+def test_feature_grouping():
+    """Assert that the feature_grouping method group features."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.feature_grouping(group=[[0, 1], [1, 2]])
+    assert atom.X.shape[1] == X_bin.shape[1] - 3 + 12
+    assert hasattr(atom, "groups")
 
 
 def test_feature_generation_attributes():

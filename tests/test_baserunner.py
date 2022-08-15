@@ -7,11 +7,13 @@ Description: Unit tests for baserunner.py
 
 """
 
+import sys
+
 import pandas as pd
 import pytest
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 
-from atom import ATOMClassifier, ATOMRegressor
+from atom import ATOMClassifier, ATOMLoader, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
@@ -23,6 +25,18 @@ from .conftest import (
 
 
 # Test magic methods =============================================== >>
+
+def test_getstate_and_setstate():
+    """Assert that versions are checked and a warning raised."""
+    atom = ATOMClassifier(X_bin, y_bin, warnings=True)
+    atom.run(["LR", "XGB"])
+    atom.save("atom")
+
+    sys.modules.pop("sklearn")
+    sys.modules["xgboost"].__version__ = "1.0.0"  # Fake version
+    with pytest.warns(Warning, match=".*while the version in this environment.*"):
+        ATOMLoader("atom")
+
 
 def test_getattr_branch():
     """Assert that branches can be called."""

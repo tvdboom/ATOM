@@ -88,10 +88,11 @@ class TransformerMixin:
             X is ignored.
 
         y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -105,6 +106,9 @@ class TransformerMixin:
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
+
+        self.log(f"Fitting {self.__class__.__name__}...")
+
         return self
 
     @composed(crash, method_to_log, typechecked)
@@ -124,10 +128,11 @@ class TransformerMixin:
             X is ignored.
 
         y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -394,389 +399,6 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X, y
 
 
-class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Scale the data.
-
-    Apply one of sklearn's scalers. Categorical columns are ignored.
-
-    Parameters
-    ----------
-    strategy: str, default="standard"
-        Strategy with which to scale the data. Choose from:
-            - "standard": Remove mean and scale to unit variance.
-            - "minmax": Scale features to a given range.
-            - "maxabs": Scale features by their maximum absolute value.
-            - "robust": Scale using statistics that are robust to outliers.
-
-    gpu: bool or str, default=False
-        Train strategy on GPU (instead of CPU).
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
-
-    verbose: int, default=0
-        Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-
-    logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
-    **kwargs
-        Additional keyword arguments for the `strategy` estimator.
-
-    Attributes
-    ----------
-    [strategy]: sklearn transformer
-        Object with which the data is scaled.
-
-    feature_names_in_: np.array
-        Names of features seen during fit.
-
-    n_features_in_: int
-        Number of features seen during fit.
-
-    Examples
-    --------
-
-
-    """
-
-    @typechecked
-    def __init__(
-        self,
-        strategy: str = "standard",
-        *,
-        gpu: Union[bool, str] = False,
-        verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
-        **kwargs,
-    ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
-        self.strategy = strategy
-        self.kwargs = kwargs
-
-        self._num_cols = None
-        self._estimator = None
-        self._is_fitted = False
-
-    @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Fit to data.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        Scaler
-            Estimator instance.
-
-        """
-        X, y = self._prepare_input(X, y)
-        self._check_feature_names(X, reset=True)
-        self._check_n_features(X, reset=True)
-        self._num_cols = list(X.select_dtypes(include="number").columns)
-
-        strategies = CustomDict(
-            standard=StandardScaler,
-            minmax=MinMaxScaler,
-            maxabs=MaxAbsScaler,
-            robust=RobustScaler,
-        )
-
-        if self.strategy in strategies:
-            estimator = self._get_gpu(
-                estimator=strategies[self.strategy],
-                module="cuml.experimental.preprocessing",
-            )
-            self._estimator = estimator(**self.kwargs)
-        else:
-            raise ValueError(
-                f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {', '.join(strategies)}."
-            )
-
-        self.log("Fitting Scaler...", 1)
-        self._estimator.fit(X[self._num_cols])
-
-        # Add the estimator as attribute to the instance
-        setattr(self, self.strategy.lower(), self._estimator)
-
-        self._is_fitted = True
-        return self
-
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Perform standardization by centering and scaling.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        pd.DataFrame
-            Scaled dataframe.
-
-        """
-        check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
-
-        self.log("Scaling features...", 1)
-        X_transformed = self._estimator.transform(X[self._num_cols])
-
-        # If all columns were transformed, just swap sets
-        if len(self._num_cols) != X.shape[1]:
-            # Replace the numerical columns with the transformed values
-            for i, col in enumerate(self._num_cols):
-                X[col] = X_transformed[:, i]
-        else:
-            X = to_df(X_transformed, X.index, X.columns)
-
-        return X
-
-    @composed(crash, method_to_log, typechecked)
-    def inverse_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Perform inverse standardization by centering and scaling.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        pd.DataFrame
-            Scaled dataframe.
-
-        """
-        check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
-
-        self.log("Inversely scaling features...", 1)
-        X_transformed = self._estimator.inverse_transform(X[self._num_cols])
-
-        # If all columns were transformed, just swap sets
-        if len(self._num_cols) != X.shape[1]:
-            # Replace the numerical columns with the transformed values
-            for i, col in enumerate(self._num_cols):
-                X[col] = X_transformed[:, i]
-        else:
-            X = to_df(X_transformed, X.index, X.columns)
-
-        return X
-
-
-class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Transform the data to follow a Normal/Gaussian distribution.
-
-    This transformation is useful for modeling issues related to
-    heteroscedasticity (non-constant variance), or other situations
-    where normality is desired. Missing values are disregarded in
-    fit and maintained in transform. Categorical columns are ignored.
-
-    Note that the yeojohnson and boxcox strategies standardize the
-    data after transforming. Use the kwargs to change this behaviour.
-
-    Note that the quantile strategy performs a non-linear transformation.
-    This may distort linear correlations between variables measured at
-    the same scale but renders variables measured at different scales
-    more directly comparable.
-
-    Parameters
-    ----------
-    strategy: str, default="yeojohnson"
-        The transforming strategy. Choose from:
-            - "yeojohnson"
-            - "boxcox" (only works with strictly positive values)
-            - "quantile": Transform features using quantiles information.
-
-    verbose: int, default=0
-        Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-
-    logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
-    random_state: int or None, default=None
-        Seed used by the quantile strategy. If None, the random
-        number generator is the `RandomState` used by `np.random`.
-
-    **kwargs
-        Additional keyword arguments for the `strategy` estimator.
-
-    Attributes
-    ----------
-    [strategy]: sklearn transformer
-        Object with which the data is transformed.
-
-    feature_names_in_: np.array
-        Names of features seen during fit.
-
-    n_features_in_: int
-        Number of features seen during fit.
-
-    """
-
-    @typechecked
-    def __init__(
-        self,
-        strategy: str = "yeojohnson",
-        *,
-        verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
-        random_state: Optional[INT] = None,
-        **kwargs,
-    ):
-        super().__init__(verbose=verbose, logger=logger, random_state=random_state)
-        self.strategy = strategy
-        self.kwargs = kwargs
-
-        self._num_cols = None
-        self._estimator = None
-        self._is_fitted = False
-
-    @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Fit to data.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        Normalizer
-            Estimator instance.
-
-        """
-        X, y = self._prepare_input(X, y)
-        self._check_feature_names(X, reset=True)
-        self._check_n_features(X, reset=True)
-        self._num_cols = list(X.select_dtypes(include="number").columns)
-
-        kwargs = self.kwargs.copy()
-        if self.strategy.lower() in ("yeojohnson", "boxcox"):
-            self._estimator = PowerTransformer(
-                method=self.strategy.lower()[:3] + "-" + self.strategy.lower()[3:],
-                **kwargs,
-            )
-        elif self.strategy.lower() == "quantile":
-            self._estimator = QuantileTransformer(
-                output_distribution=kwargs.pop("output_distribution", "normal"),
-                random_state=kwargs.pop("random_state", self.random_state),
-                **kwargs,
-            )
-        else:
-            raise ValueError(
-                f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Choose from: yeojohnson, boxcox, quantile."
-            )
-
-        self.log("Fitting Normalizer...", 1)
-        self._estimator.fit(X[self._num_cols])
-
-        # Add the estimator as attribute to the instance
-        setattr(self, self.strategy.lower(), self._estimator)
-
-        self._is_fitted = True
-        return self
-
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Apply the transformations to the data.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        pd.DataFrame
-            Normalized dataframe.
-
-        """
-        check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
-
-        self.log("Normalizing features...", 1)
-        X_transformed = self._estimator.transform(X[self._num_cols])
-
-        # If all columns were transformed, just swap sets
-        if len(self._num_cols) != X.shape[1]:
-            # Replace the numerical columns with the transformed values
-            for i, col in enumerate(self._num_cols):
-                X[col] = X_transformed[:, i]
-        else:
-            X = to_df(X_transformed, X.index, X.columns)
-
-        return X
-
-    @composed(crash, method_to_log, typechecked)
-    def inverse_transform(
-        self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
-    ):
-        """Apply the inverse transformations to the data.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        pd.DataFrame
-            Original dataframe.
-
-        """
-        check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
-
-        self.log("Inversely normalizing features...", 1)
-        X_transformed = self._estimator.inverse_transform(X[self._num_cols])
-
-        # If all columns were transformed, just swap sets
-        if len(self._num_cols) != X.shape[1]:
-            # Replace the numerical columns with the transformed values
-            for i, col in enumerate(self._num_cols):
-                X[col] = X_transformed[:, i]
-        else:
-            X = to_df(X_transformed, X.index, X.columns)
-
-        return X
-
-
 class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Applies standard data cleaning steps on a dataset.
 
@@ -891,10 +513,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             X is ignored.
 
         y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -932,10 +555,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             X is ignored.
 
         y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -1039,10 +663,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             Does nothing. Implemented for continuity of the API.
 
         y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -1060,321 +685,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         if y is not None and self.encode_target:
             self.log(" --> Inversely label-encoding the target column.", 2)
             y = to_series(self._estimator.inverse_transform(y), y.index, y.name)
-
-        return variable_return(X, y)
-
-
-class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Handle missing values in the data.
-
-    Impute or remove missing values according to the selected strategy.
-    Also removes rows and columns with too many missing values. Use
-    the `missing` attribute to customize what are considered "missing
-    values".
-
-    Parameters
-    ----------
-    strat_num: str, int or float, default="drop"
-        Imputing strategy for numerical columns. Choose from:
-            - "drop": Drop rows containing missing values.
-            - "mean": Impute with mean of column.
-            - "median": Impute with median of column.
-            - "knn": Impute using a K-Nearest Neighbors approach.
-            - "most_frequent": Impute with most frequent value.
-            - int or float: Impute with provided numerical value.
-
-    strat_cat: str, default="drop"
-        Imputing strategy for categorical columns. Choose from:
-            - "drop": Drop rows containing missing values.
-            - "most_frequent": Impute with most frequent value.
-            - str: Impute with provided string.
-
-    max_nan_rows: int, float or None, default=None
-        Maximum number or fraction of missing values in a row
-        (if more, the row is removed). If None, ignore this step.
-
-    max_nan_cols: int, float, default=None
-        Maximum number or fraction of missing values in a column
-        (if more, the column is removed). If None, ignore this step.
-
-    gpu: bool or str, default=False
-        Train on GPU (instead of CPU). Not for strat_num="knn".
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
-
-    verbose: int, default=0
-        Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
-
-    logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
-    Attributes
-    ----------
-    missing: list
-        Values that are considered "missing". Default values are: "",
-        "?", "None", "NA", "nan", "NaN" and "inf". Note that `None`,
-        `NaN`, `+inf` and `-inf` are always considered missing since
-        they are incompatible with sklearn estimators.
-
-    feature_names_in_: np.array
-        Names of features seen during fit.
-
-    n_features_in_: int
-        Number of features seen during fit.
-
-    """
-
-    @typechecked
-    def __init__(
-        self,
-        strat_num: Union[SCALAR, str] = "drop",
-        strat_cat: str = "drop",
-        *,
-        max_nan_rows: Optional[SCALAR] = None,
-        max_nan_cols: Optional[Union[FLOAT]] = None,
-        gpu: Union[bool, str] = False,
-        verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
-    ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
-        self.strat_num = strat_num
-        self.strat_cat = strat_cat
-        self.max_nan_rows = max_nan_rows
-        self.max_nan_cols = max_nan_cols
-
-        self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
-        self._max_nan_rows = None
-        self._max_nan_cols = None
-        self._imputers = {}
-        self._num_cols = []
-        self._drop_cols = []
-        self._is_fitted = False
-
-    @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Fit to data.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        Imputer
-            Estimator instance.
-
-        """
-        X, y = self._prepare_input(X, y)
-        self._check_feature_names(X, reset=True)
-        self._check_n_features(X, reset=True)
-        self._num_cols = list(X.select_dtypes(include="number").columns)
-
-        # Check input Parameters
-        strategies = ["drop", "mean", "median", "knn", "most_frequent"]
-        if isinstance(self.strat_num, str) and self.strat_num.lower() not in strategies:
-            raise ValueError(
-                "Unknown strategy for the strat_num parameter, got "
-                f"{self.strat_num}. Choose from: {', '.join(strategies)}."
-            )
-        if self.max_nan_rows:
-            if self.max_nan_rows < 0:
-                raise ValueError(
-                    "Invalid value for the max_nan_rows parameter. "
-                    f"Value should be >0, got {self.max_nan_rows}."
-                )
-            elif self.max_nan_rows <= 1:
-                self._max_nan_rows = int(len(X.columns) * self.max_nan_rows)
-            else:
-                self._max_nan_rows = self.max_nan_rows
-
-        if self.max_nan_cols:
-            if self.max_nan_cols < 0:
-                raise ValueError(
-                    "Invalid value for the max_nan_cols parameter. "
-                    f"Value should be >0, got {self.max_nan_cols}."
-                )
-            elif self.max_nan_cols <= 1:
-                self._max_nan_cols = int(len(X) * self.max_nan_cols)
-            else:
-                self._max_nan_cols = self.max_nan_cols
-
-        self.log("Fitting Imputer...", 1)
-
-        # Replace all missing values with NaN
-        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
-
-        # Drop rows with too many NaN values
-        if self._max_nan_rows:
-            X = X.dropna(axis=0, thresh=self._max_nan_rows)
-
-        # Reset internal attrs in case of repeated fit
-        self._drop_cols = []
-        self._imputers = {}
-
-        # Assign an imputer to each column
-        estimator = self._get_gpu(SimpleImputer, "cuml.experimental.preprocessing")
-        for name, column in X.items():
-            # Remember columns with too many missing values
-            if self._max_nan_cols and column.isna().sum() > self._max_nan_cols:
-                self._drop_cols.append(name)
-                continue  # Skip to side column
-
-            # Column is numerical
-            if name in self._num_cols:
-                if isinstance(self.strat_num, str):
-                    if self.strat_num.lower() == "knn":
-                        self._imputers[name] = KNNImputer().fit(X[[name]])
-
-                    elif self.strat_num.lower() == "most_frequent":
-                        self._imputers[name] = estimator(
-                            strategy="most_frequent",
-                        ).fit(X[[name]])
-
-                    # Strategies mean or median
-                    elif self.strat_num.lower() != "drop":
-                        self._imputers[name] = estimator(
-                            strategy=self.strat_num.lower()
-                        ).fit(X[[name]])
-
-            # Column is categorical
-            elif self.strat_cat.lower() == "most_frequent":
-                self._imputers[name] = estimator(
-                    strategy="most_frequent",
-                ).fit(X[[name]])
-
-        self._is_fitted = True
-        return self
-
-    @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Impute the missing values.
-
-        Note that leaving y=None can lead to inconsistencies in
-        data length between X and y if rows are dropped during
-        the transformation.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str, sequence or None, default=None
-            Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
-
-        Returns
-        -------
-        pd.DataFrame
-            Imputed dataframe.
-
-        pd.Series
-            Transformed target column.
-
-        """
-        check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
-
-        self.log("Imputing missing values...", 1)
-
-        # Replace all missing values with NaN
-        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
-
-        # Drop rows with too many missing values
-        if self._max_nan_rows:
-            length = len(X)
-            X = X.dropna(axis=0, thresh=self._max_nan_rows)
-            if y is not None:
-                y = y[y.index.isin(X.index)]  # Select only indices that remain
-            diff = length - len(X)
-            if diff > 0:
-                self.log(
-                    f" --> Dropping {diff} samples for containing more "
-                    f"than {self._max_nan_rows} missing values.", 2
-                )
-
-        for name, column in X.items():
-            nans = column.isna().sum()
-
-            # Drop columns with too many missing values
-            if name in self._drop_cols:
-                self.log(
-                    f" --> Dropping feature {name}. Contains {nans} "
-                    f"({nans * 100 // len(X)}%) missing values.", 2
-                )
-                X = X.drop(name, axis=1)
-                continue
-
-            # Apply only if column is numerical and contains missing values
-            if name in self._num_cols and nans > 0:
-                if not isinstance(self.strat_num, str):
-                    self.log(
-                        f" --> Imputing {nans} missing values with number "
-                        f"{str(self.strat_num)} in feature {name}.", 2
-                    )
-                    X[name] = column.replace(np.NaN, self.strat_num)
-
-                elif self.strat_num.lower() == "drop":
-                    X = X.dropna(subset=[name], axis=0)
-                    if y is not None:
-                        y = y[y.index.isin(X.index)]
-                    self.log(
-                        f" --> Dropping {nans} samples due to missing "
-                        f"values in feature {name}.", 2
-                    )
-
-                elif self.strat_num.lower() == "knn":
-                    self.log(
-                        f" --> Imputing {nans} missing values using "
-                        f"the KNN imputer in feature {name}.", 2
-                    )
-                    X[name] = self._imputers[name].transform(X[[name]])
-
-                else:  # Strategies mean, median or most_frequent
-                    n = np.round(self._imputers[name].statistics_[0], 2)
-                    self.log(
-                        f" --> Imputing {nans} missing values with "
-                        f"{self.strat_num.lower()} ({n}) in feature {name}.", 2
-                    )
-                    X[name] = self._imputers[name].transform(X[[name]])
-
-            # Column is categorical and contains missing values
-            elif nans > 0:
-                if self.strat_cat.lower() not in ("drop", "most_frequent"):
-                    self.log(
-                        f" --> Imputing {nans} missing values with "
-                        f"{self.strat_cat} in feature {name}.", 2
-                    )
-                    X[name] = column.replace(np.NaN, self.strat_cat)
-
-                elif self.strat_cat.lower() == "drop":
-                    X = X.dropna(subset=[name], axis=0)
-                    if y is not None:
-                        y = y[y.index.isin(X.index)]
-                    self.log(
-                        f" --> Dropping {nans} samples due to "
-                        f"missing values in feature {name}.", 2
-                    )
-
-                elif self.strat_cat.lower() == "most_frequent":
-                    mode = self._imputers[name].statistics_[0]
-                    self.log(
-                        f" --> Imputing {nans} missing values with "
-                        f"most_frequent ({mode}) in feature {name}.", 2
-                    )
-                    X[name] = self._imputers[name].transform(X[[name]])
 
         return variable_return(X, y)
 
@@ -1937,6 +1247,516 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Handle missing values in the data.
+
+    Impute or remove missing values according to the selected strategy.
+    Also removes rows and columns with too many missing values. Use
+    the `missing` attribute to customize what are considered "missing
+    values".
+
+    Parameters
+    ----------
+    strat_num: str, int or float, default="drop"
+        Imputing strategy for numerical columns. Choose from:
+            - "drop": Drop rows containing missing values.
+            - "mean": Impute with mean of column.
+            - "median": Impute with median of column.
+            - "knn": Impute using a K-Nearest Neighbors approach.
+            - "most_frequent": Impute with most frequent value.
+            - int or float: Impute with provided numerical value.
+
+    strat_cat: str, default="drop"
+        Imputing strategy for categorical columns. Choose from:
+            - "drop": Drop rows containing missing values.
+            - "most_frequent": Impute with most frequent value.
+            - str: Impute with provided string.
+
+    max_nan_rows: int, float or None, default=None
+        Maximum number or fraction of missing values in a row
+        (if more, the row is removed). If None, ignore this step.
+
+    max_nan_cols: int, float, default=None
+        Maximum number or fraction of missing values in a column
+        (if more, the column is removed). If None, ignore this step.
+
+    gpu: bool or str, default=False
+        Train on GPU (instead of CPU). Not for strat_num="knn".
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+            - 0 to not print anything.
+            - 1 to print basic information.
+            - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    Attributes
+    ----------
+    missing: list
+        Values that are considered "missing". Default values are: "",
+        "?", "None", "NA", "nan", "NaN" and "inf". Note that `None`,
+        `NaN`, `+inf` and `-inf` are always considered missing since
+        they are incompatible with sklearn estimators.
+
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
+    """
+
+    @typechecked
+    def __init__(
+        self,
+        strat_num: Union[SCALAR, str] = "drop",
+        strat_cat: str = "drop",
+        *,
+        max_nan_rows: Optional[SCALAR] = None,
+        max_nan_cols: Optional[Union[FLOAT]] = None,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
+        logger: Optional[Union[str, Logger]] = None,
+    ):
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        self.strat_num = strat_num
+        self.strat_cat = strat_cat
+        self.max_nan_rows = max_nan_rows
+        self.max_nan_cols = max_nan_cols
+
+        self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
+        self._max_nan_rows = None
+        self._max_nan_cols = None
+        self._imputers = {}
+        self._num_cols = []
+        self._drop_cols = []
+        self._is_fitted = False
+
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Fit to data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        Imputer
+            Estimator instance.
+
+        """
+        X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
+        self._num_cols = list(X.select_dtypes(include="number").columns)
+
+        # Check input Parameters
+        strategies = ["drop", "mean", "median", "knn", "most_frequent"]
+        if isinstance(self.strat_num, str) and self.strat_num.lower() not in strategies:
+            raise ValueError(
+                "Unknown strategy for the strat_num parameter, got "
+                f"{self.strat_num}. Choose from: {', '.join(strategies)}."
+            )
+        if self.max_nan_rows:
+            if self.max_nan_rows < 0:
+                raise ValueError(
+                    "Invalid value for the max_nan_rows parameter. "
+                    f"Value should be >0, got {self.max_nan_rows}."
+                )
+            elif self.max_nan_rows <= 1:
+                self._max_nan_rows = int(len(X.columns) * self.max_nan_rows)
+            else:
+                self._max_nan_rows = self.max_nan_rows
+
+        if self.max_nan_cols:
+            if self.max_nan_cols < 0:
+                raise ValueError(
+                    "Invalid value for the max_nan_cols parameter. "
+                    f"Value should be >0, got {self.max_nan_cols}."
+                )
+            elif self.max_nan_cols <= 1:
+                self._max_nan_cols = int(len(X) * self.max_nan_cols)
+            else:
+                self._max_nan_cols = self.max_nan_cols
+
+        self.log("Fitting Imputer...", 1)
+
+        # Replace all missing values with NaN
+        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
+
+        # Drop rows with too many NaN values
+        if self._max_nan_rows:
+            X = X.dropna(axis=0, thresh=self._max_nan_rows)
+
+        # Reset internal attrs in case of repeated fit
+        self._drop_cols = []
+        self._imputers = {}
+
+        # Assign an imputer to each column
+        estimator = self._get_gpu(SimpleImputer, "cuml.experimental.preprocessing")
+        for name, column in X.items():
+            # Remember columns with too many missing values
+            if self._max_nan_cols and column.isna().sum() > self._max_nan_cols:
+                self._drop_cols.append(name)
+                continue  # Skip to side column
+
+            # Column is numerical
+            if name in self._num_cols:
+                if isinstance(self.strat_num, str):
+                    if self.strat_num.lower() == "knn":
+                        self._imputers[name] = KNNImputer().fit(X[[name]])
+
+                    elif self.strat_num.lower() == "most_frequent":
+                        self._imputers[name] = estimator(
+                            strategy="most_frequent",
+                        ).fit(X[[name]])
+
+                    # Strategies mean or median
+                    elif self.strat_num.lower() != "drop":
+                        self._imputers[name] = estimator(
+                            strategy=self.strat_num.lower()
+                        ).fit(X[[name]])
+
+            # Column is categorical
+            elif self.strat_cat.lower() == "most_frequent":
+                self._imputers[name] = estimator(
+                    strategy="most_frequent",
+                ).fit(X[[name]])
+
+        self._is_fitted = True
+        return self
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Impute the missing values.
+
+        Note that leaving y=None can lead to inconsistencies in
+        data length between X and y if rows are dropped during
+        the transformation.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, default=None
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
+
+        Returns
+        -------
+        pd.DataFrame
+            Imputed dataframe.
+
+        pd.Series
+            Transformed target column.
+
+        """
+        check_is_fitted(self)
+        X, y = self._prepare_input(X, y)
+
+        self.log("Imputing missing values...", 1)
+
+        # Replace all missing values with NaN
+        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
+
+        # Drop rows with too many missing values
+        if self._max_nan_rows:
+            length = len(X)
+            X = X.dropna(axis=0, thresh=self._max_nan_rows)
+            if y is not None:
+                y = y[y.index.isin(X.index)]  # Select only indices that remain
+            diff = length - len(X)
+            if diff > 0:
+                self.log(
+                    f" --> Dropping {diff} samples for containing more "
+                    f"than {self._max_nan_rows} missing values.", 2
+                )
+
+        for name, column in X.items():
+            nans = column.isna().sum()
+
+            # Drop columns with too many missing values
+            if name in self._drop_cols:
+                self.log(
+                    f" --> Dropping feature {name}. Contains {nans} "
+                    f"({nans * 100 // len(X)}%) missing values.", 2
+                )
+                X = X.drop(name, axis=1)
+                continue
+
+            # Apply only if column is numerical and contains missing values
+            if name in self._num_cols and nans > 0:
+                if not isinstance(self.strat_num, str):
+                    self.log(
+                        f" --> Imputing {nans} missing values with number "
+                        f"{str(self.strat_num)} in feature {name}.", 2
+                    )
+                    X[name] = column.replace(np.NaN, self.strat_num)
+
+                elif self.strat_num.lower() == "drop":
+                    X = X.dropna(subset=[name], axis=0)
+                    if y is not None:
+                        y = y[y.index.isin(X.index)]
+                    self.log(
+                        f" --> Dropping {nans} samples due to missing "
+                        f"values in feature {name}.", 2
+                    )
+
+                elif self.strat_num.lower() == "knn":
+                    self.log(
+                        f" --> Imputing {nans} missing values using "
+                        f"the KNN imputer in feature {name}.", 2
+                    )
+                    X[name] = self._imputers[name].transform(X[[name]])
+
+                else:  # Strategies mean, median or most_frequent
+                    n = np.round(self._imputers[name].statistics_[0], 2)
+                    self.log(
+                        f" --> Imputing {nans} missing values with "
+                        f"{self.strat_num.lower()} ({n}) in feature {name}.", 2
+                    )
+                    X[name] = self._imputers[name].transform(X[[name]])
+
+            # Column is categorical and contains missing values
+            elif nans > 0:
+                if self.strat_cat.lower() not in ("drop", "most_frequent"):
+                    self.log(
+                        f" --> Imputing {nans} missing values with "
+                        f"{self.strat_cat} in feature {name}.", 2
+                    )
+                    X[name] = column.replace(np.NaN, self.strat_cat)
+
+                elif self.strat_cat.lower() == "drop":
+                    X = X.dropna(subset=[name], axis=0)
+                    if y is not None:
+                        y = y[y.index.isin(X.index)]
+                    self.log(
+                        f" --> Dropping {nans} samples due to "
+                        f"missing values in feature {name}.", 2
+                    )
+
+                elif self.strat_cat.lower() == "most_frequent":
+                    mode = self._imputers[name].statistics_[0]
+                    self.log(
+                        f" --> Imputing {nans} missing values with "
+                        f"most_frequent ({mode}) in feature {name}.", 2
+                    )
+                    X[name] = self._imputers[name].transform(X[[name]])
+
+        return variable_return(X, y)
+
+
+class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Transform the data to follow a Normal/Gaussian distribution.
+
+    This transformation is useful for modeling issues related to
+    heteroscedasticity (non-constant variance), or other situations
+    where normality is desired. Missing values are disregarded in
+    fit and maintained in transform. Categorical columns are ignored.
+
+    Note that the yeojohnson and boxcox strategies standardize the
+    data after transforming. Use the kwargs to change this behaviour.
+
+    Note that the quantile strategy performs a non-linear transformation.
+    This may distort linear correlations between variables measured at
+    the same scale but renders variables measured at different scales
+    more directly comparable.
+
+    Parameters
+    ----------
+    strategy: str, default="yeojohnson"
+        The transforming strategy. Choose from:
+            - "yeojohnson"
+            - "boxcox" (only works with strictly positive values)
+            - "quantile": Transform features using quantiles information.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+            - 0 to not print anything.
+            - 1 to print basic information.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    random_state: int or None, default=None
+        Seed used by the quantile strategy. If None, the random
+        number generator is the `RandomState` used by `np.random`.
+
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
+
+    Attributes
+    ----------
+    [strategy]: sklearn transformer
+        Object with which the data is transformed.
+
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
+    """
+
+    @typechecked
+    def __init__(
+        self,
+        strategy: str = "yeojohnson",
+        *,
+        verbose: INT = 0,
+        logger: Optional[Union[str, Logger]] = None,
+        random_state: Optional[INT] = None,
+        **kwargs,
+    ):
+        super().__init__(verbose=verbose, logger=logger, random_state=random_state)
+        self.strategy = strategy
+        self.kwargs = kwargs
+
+        self._num_cols = None
+        self._estimator = None
+        self._is_fitted = False
+
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Fit to data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        Normalizer
+            Estimator instance.
+
+        """
+        X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
+        self._num_cols = list(X.select_dtypes(include="number").columns)
+
+        kwargs = self.kwargs.copy()
+        if self.strategy.lower() in ("yeojohnson", "boxcox"):
+            self._estimator = PowerTransformer(
+                method=self.strategy.lower()[:3] + "-" + self.strategy.lower()[3:],
+                **kwargs,
+            )
+        elif self.strategy.lower() == "quantile":
+            self._estimator = QuantileTransformer(
+                output_distribution=kwargs.pop("output_distribution", "normal"),
+                random_state=kwargs.pop("random_state", self.random_state),
+                **kwargs,
+            )
+        else:
+            raise ValueError(
+                f"Invalid value for the strategy parameter, got {self.strategy}. "
+                "Choose from: yeojohnson, boxcox, quantile."
+            )
+
+        self.log("Fitting Normalizer...", 1)
+        self._estimator.fit(X[self._num_cols])
+
+        # Add the estimator as attribute to the instance
+        setattr(self, self.strategy.lower(), self._estimator)
+
+        self._is_fitted = True
+        return self
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Apply the transformations to the data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        pd.DataFrame
+            Normalized dataframe.
+
+        """
+        check_is_fitted(self)
+        X, y = self._prepare_input(X, y)
+
+        self.log("Normalizing features...", 1)
+        X_transformed = self._estimator.transform(X[self._num_cols])
+
+        # If all columns were transformed, just swap sets
+        if len(self._num_cols) != X.shape[1]:
+            # Replace the numerical columns with the transformed values
+            for i, col in enumerate(self._num_cols):
+                X[col] = X_transformed[:, i]
+        else:
+            X = to_df(X_transformed, X.index, X.columns)
+
+        return X
+
+    @composed(crash, method_to_log, typechecked)
+    def inverse_transform(
+        self,
+        X: Optional[X_TYPES] = None,
+        y: Optional[Y_TYPES] = None,
+    ):
+        """Apply the inverse transformations to the data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        pd.DataFrame
+            Original dataframe.
+
+        """
+        check_is_fitted(self)
+        X, y = self._prepare_input(X, y)
+
+        self.log("Inversely normalizing features...", 1)
+        X_transformed = self._estimator.inverse_transform(X[self._num_cols])
+
+        # If all columns were transformed, just swap sets
+        if len(self._num_cols) != X.shape[1]:
+            # Replace the numerical columns with the transformed values
+            for i, col in enumerate(self._num_cols):
+                X[col] = X_transformed[:, i]
+        else:
+            X = to_df(X_transformed, X.index, X.columns)
+
+        return X
+
+
 class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Prune outliers from the data.
 
@@ -2030,10 +1850,11 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -2177,3 +1998,191 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 return X, y
         else:
             return X
+
+
+class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Scale the data.
+
+    Apply one of sklearn's scalers. Categorical columns are ignored.
+
+    Parameters
+    ----------
+    strategy: str, default="standard"
+        Strategy with which to scale the data. Choose from:
+            - "standard": Remove mean and scale to unit variance.
+            - "minmax": Scale features to a given range.
+            - "maxabs": Scale features by their maximum absolute value.
+            - "robust": Scale using statistics that are robust to outliers.
+
+    gpu: bool or str, default=False
+        Train strategy on GPU (instead of CPU).
+            - If False: Always use CPU implementation.
+            - If True: Use GPU implementation if possible.
+            - If "force": Force GPU implementation.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+            - 0 to not print anything.
+            - 1 to print basic information.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
+
+    Attributes
+    ----------
+    [strategy]: sklearn transformer
+        Object with which the data is scaled.
+
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
+    Examples
+    --------
+
+
+    """
+
+    @typechecked
+    def __init__(
+        self,
+        strategy: str = "standard",
+        *,
+        gpu: Union[bool, str] = False,
+        verbose: INT = 0,
+        logger: Optional[Union[str, Logger]] = None,
+        **kwargs,
+    ):
+        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        self.strategy = strategy
+        self.kwargs = kwargs
+
+        self._num_cols = None
+        self._estimator = None
+        self._is_fitted = False
+
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Fit to data.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        Scaler
+            Estimator instance.
+
+        """
+        X, y = self._prepare_input(X, y)
+        self._check_feature_names(X, reset=True)
+        self._check_n_features(X, reset=True)
+        self._num_cols = list(X.select_dtypes(include="number").columns)
+
+        strategies = CustomDict(
+            standard=StandardScaler,
+            minmax=MinMaxScaler,
+            maxabs=MaxAbsScaler,
+            robust=RobustScaler,
+        )
+
+        if self.strategy in strategies:
+            estimator = self._get_gpu(
+                estimator=strategies[self.strategy],
+                module="cuml.experimental.preprocessing",
+            )
+            self._estimator = estimator(**self.kwargs)
+        else:
+            raise ValueError(
+                f"Invalid value for the strategy parameter, got {self.strategy}. "
+                f"Choose from: {', '.join(strategies)}."
+            )
+
+        self.log("Fitting Scaler...", 1)
+        self._estimator.fit(X[self._num_cols])
+
+        # Add the estimator as attribute to the instance
+        setattr(self, self.strategy.lower(), self._estimator)
+
+        self._is_fitted = True
+        return self
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Perform standardization by centering and scaling.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        pd.DataFrame
+            Scaled dataframe.
+
+        """
+        check_is_fitted(self)
+        X, y = self._prepare_input(X, y)
+
+        self.log("Scaling features...", 1)
+        X_transformed = self._estimator.transform(X[self._num_cols])
+
+        # If all columns were transformed, just swap sets
+        if len(self._num_cols) != X.shape[1]:
+            # Replace the numerical columns with the transformed values
+            for i, col in enumerate(self._num_cols):
+                X[col] = X_transformed[:, i]
+        else:
+            X = to_df(X_transformed, X.index, X.columns)
+
+        return X
+
+    @composed(crash, method_to_log, typechecked)
+    def inverse_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Perform inverse standardization by centering and scaling.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        pd.DataFrame
+            Scaled dataframe.
+
+        """
+        check_is_fitted(self)
+        X, y = self._prepare_input(X, y)
+
+        self.log("Inversely scaling features...", 1)
+        X_transformed = self._estimator.inverse_transform(X[self._num_cols])
+
+        # If all columns were transformed, just swap sets
+        if len(self._num_cols) != X.shape[1]:
+            # Replace the numerical columns with the transformed values
+            for i, col in enumerate(self._num_cols):
+                X[col] = X_transformed[:, i]
+        else:
+            X = to_df(X_transformed, X.index, X.columns)
+
+        return X

@@ -98,7 +98,7 @@ the metric.
 
 #### Predefined scorers
 
-ATOM accepts all of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
+ATOM accepts all sklearn's [scorers](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
 as well as some custom acronyms and custom scorers. Since some of
 sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms

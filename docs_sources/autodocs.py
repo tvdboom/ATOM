@@ -11,12 +11,11 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from inspect import Parameter, getmembers, getsourcelines, signature
+from inspect import Parameter, getmembers, getsourcelines, signature, getdoc, isroutine
 from typing import Callable, List, Optional
 
 import regex as re
 import yaml
-from markdown import markdown
 
 
 # Variables ======================================================== >>
@@ -24,7 +23,18 @@ from markdown import markdown
 # Mapping of keywords to urls
 # Usage in docs: [anchor][key] -> [anchor][value]
 CUSTOM_URLS = dict(
-    # FeatureSelector
+    # ATOM
+    rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
+    experiment="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments",
+    # Ensembles
+    votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
+    votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
+    stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
+    stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
+    # Feature engineering
+    dfs="https://docs.featuretools.com/en/v0.16.0/automated_feature_engineering/afe.html#deep-feature-synthesis",
+    gfg="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer",
+    symbolictransformer="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer",
     selectkbest="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html",
     pca="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html",
     sfm="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html",
@@ -42,12 +52,343 @@ CUSTOM_URLS = dict(
     mutual_info_classif="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_classif.html",
     mutual_info_regression="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_regression.html",
     chi2="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.chi2.html",
-    # Ensembles
-    votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
-    votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
-    stackingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html",
-    stackingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html",
+    # Plots
+    style="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles",
+    palette="https://seaborn.pydata.org/tutorial/color_palettes.html",
+
 )
+
+
+TYPES_CONVERSION = {
+    "pandas.core.frame.DataFrame": "pd.DataFrame",
+    "pandas.core.series.Series": "pd.Series",
+    "Union[str, List[str]]": "str or list",
+    "atom.utils.CustomDict": "dict",
+    "List[str]": "list",
+    "atom.utils.Model": "[models][]",
+}
+
+
+# Classes ========================================================== >>
+
+class AutoDocs:
+    """Parses an object to documentation in markdown/html.
+
+    The docstring should follow the numpydoc style[^1]. Blocks should
+    start with `::`. The following blocks are accepted:
+        - summary (first line of docstring, required)
+        - description (detailed explanation, can contain admonitions)
+        - parameters
+        - attributes
+        - returns
+        - raises
+        - see also
+        - notes
+        - references
+        - examples
+
+    Parameters
+    ----------
+    obj: callable
+        Class, method or function to parse.
+
+    method: callable or None
+        Method of the obj to parse.
+
+    References
+    ----------
+    [1] https://numpydoc.readthedocs.io/en/latest/format.html
+
+    """
+
+    blocks = (
+        "Parameters",
+        "Attributes",
+        "Returns",
+        "Raises",
+        "See Also",
+        "Notes",
+        "References",
+        "Examples",
+        "\Z",
+    )
+
+    def __init__(self, obj: Callable, method: Optional[Callable] = None):
+        if method:
+            self.obj = getattr(obj, method)
+            self.method = method
+            self._parent_anchor = obj.__name__.lower() + "-"
+        else:
+            self.obj = obj
+            self.method = method
+            self._parent_anchor = ""
+
+        self.method = method
+        self.doc = getdoc(self.obj)
+
+    @staticmethod
+    def get_obj(command: str) -> AutoDocs:
+        """Get an AutoDocs object from a string.
+
+        The provided string must be of the form module:object or
+        module:object.method.
+
+        Parameters
+        ----------
+        command: str
+            Line with the module and object.
+
+        Returns
+        -------
+        Autodocs
+            New instance of the class.
+
+        """
+        module, name = command.split(":")
+        if "." in name:
+            name, method = name.split(".")
+            cls = getattr(importlib.import_module(module), name)
+            return AutoDocs(getattr(cls, method))
+        else:
+            return AutoDocs(getattr(importlib.import_module(module), name))
+
+    def get_signature(self) -> str:
+        """Return the object's signature."""
+        # Assign object type
+        params = signature(self.obj).parameters
+        if inspect.isclass(self.obj):
+            obj_type = "class"
+        elif any(p in params for p in ("cls", "self")):
+            obj_type = "method"
+        else:
+            obj_type = "function"
+
+        # Get signature without self, cls and type hints
+        sign = []
+        for k, v in params.items():
+            if k not in ("cls", "self"):
+                if v.default == Parameter.empty:
+                    if '**' in str(v):
+                        sign.append(f"**{k}")  # Add ** to kwargs
+                    elif '*' in str(v):
+                        sign.append(f"*{k}")  # Add * to args
+                    else:
+                        sign.append(k)
+                else:
+                    if isinstance(v.default, str):
+                        sign.append(f'{k}="{v.default}"')
+                    else:
+                        sign.append(f"{k}={v.default}")
+
+        sign = f"({', '.join(sign)})"
+
+        f = self.obj.__module__.replace('.', '/')  # Module and filename sep by /
+        if "atom" in self.obj.__module__:
+            url = f"https://github.com/tvdboom/ATOM/blob/master/{f}.py"
+        elif "sklearn" in self.obj.__module__:
+            url = f"https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/{f}.py"
+        else:
+            url = ""
+
+        anchor = f"<a id='{self._parent_anchor}{self.obj.__name__}'></a>"
+        module = self.obj.__module__ + '.' if obj_type != "method" else ""
+        obj_type = f"<em>{obj_type}</em>"
+        name = f"<strong style='color:#008AB8'>{self.obj.__name__}</strong>"
+        if url:
+            line = getsourcelines(self.obj)[1]
+            url = f"<span style='float:right'><a href={url}#L{line}>[source]</a></span>"
+
+        return f"{anchor}<div class='sign'>{obj_type} {module}{name}{sign}{url}</div>"
+
+    def get_summary(self) -> str:
+        """Return the object's summary."""
+        return next(filter(None, self.doc.splitlines()))  # Get first non-empty line
+
+    def get_description(self) -> str:
+        """Return the object's description."""
+        pattern = f".*?(?={'|'.join(self.blocks)})"
+        match = re.match(pattern, self.doc[len(self.get_summary()):], re.S)
+        return match.group() if match else ""
+
+    def get_see_also(self) -> str:
+        """Return the object's See Also block.
+
+        The block is rendered as an info admonition.
+
+        Returns
+        -------
+        str
+            Formatted block.
+
+        """
+        block = '!!! info "See Also"'
+        for line in self.get_block("See Also").splitlines():
+            if line:
+                cls = self.get_obj(line)
+                summary = f"<div style='margin: -1em 0 0 1.2em'>{cls.get_summary()}</div>"
+
+                # If it's a class, refer to the page, else to the anchor
+                if cls._parent_anchor:
+                    link = f"{cls._parent_anchor}-{cls.obj.__name__}"
+                else:
+                    link = ""
+
+                block += f"\n    [{cls.obj.__name__}][{link}]<br>    {summary}\n"
+
+        return block
+
+    def get_block(self, block: str) -> str:
+        """Return a block from the docstring.
+
+        Parameters
+        ----------
+        block: str
+            Name of the block to retrieve.
+
+        Returns
+        -------
+        str
+            Block in docstring.
+
+        """
+        pattern = f"(?<={block}\n{'-' * len(block)}).*?(?={'|'.join(self.blocks)})"
+        match = re.search(pattern, self.doc, re.S)
+        return match.group() if match else ""
+
+    def get_table(self, blocks: list) -> str:
+        """Return a table from one or multiple blocks.
+
+        Parameters
+        ----------
+        blocks: list
+            Blocks to create the table from.
+
+        Returns
+        -------
+        str
+            Table in html format.
+
+        """
+        table = ""
+        for block in blocks:
+            if isinstance(block, str):
+                name = block.capitalize()
+                config = {}
+            else:
+                name = next(iter(block)).capitalize()
+                config = block[name.lower()]
+
+            # Get from config which attributes to display
+            if config.get("include"):
+                attrs = config["include"]
+            else:
+                attrs = [
+                    m for m, _ in getmembers(self.obj, lambda x: not isroutine(x))
+                    if not m.startswith("_")
+                ]
+
+            content = ""
+            if not config.get("from_docstring", True):
+                for attr in attrs:
+                    if ":" in attr:
+                        obj = AutoDocs.get_obj(attr).obj
+                    else:
+                        obj = getattr(self.obj, attr)
+
+                    if isinstance(obj, property):
+                        obj = obj.fget
+
+                    output = str(signature(obj)).split(" -> ")[-1]
+                    header = f"{obj.__name__}: {TYPES_CONVERSION.get(output, output)}"
+
+                    text = f"<div markdown class='param'>{getdoc(obj)}</div>"
+                    content += f"<strong>{header}</strong><br>{text}"
+
+            elif match := self.get_block(name):
+                # Headers start with letter, * or [ after new line
+                for header in re.findall("^[\[*\w].*?$", match, re.M):
+                    # Get the body corresponding to the header
+                    pattern = f"(?<={re.escape(header)}\n).*?(?=\n\w|\n\*|\n\[|\Z)"
+                    body = re.search(pattern, match, re.S | re.M).group()
+
+                    # Use literal * for args and kwargs
+                    header = header.replace("*", "\*")
+
+                    # Parse the body
+                    text = ""
+                    pattern = ".+?(?=\n\n|\n +?[-*+] |\Z)"
+                    bullet = "<span class='bullet'>&bull;</span>"
+                    for i, line in enumerate(re.findall(pattern, body, re.S)):
+                        indent = len(line) - len(line.lstrip())
+                        b = line.strip()
+                        if any(b.startswith(f"{char} ") for char in ("-", "+", "*")):
+                            spaces = "&nbsp;" * max(4, indent - 4)
+                            text += f"{'<br>' if i > 0 else ''}{spaces}{bullet}{b[1:]}"
+                        elif b != "":
+                            text += f"{'<br><br>' if i > 0 else ''}{b}"
+
+                    text = f"<div markdown class='param'>{text}</div>"
+                    content += f"<strong>{header}</strong><br>{text}"
+
+            if content:
+                table += f"<tr><td class='td_title'><strong>{name}</strong></td>"
+                table += f"<td class='td_params'>{content}</td></tr>"
+
+        if table:
+            table = f"<table markdown class='table_params'>{table}</table>"
+
+        return table
+
+    def get_methods(self, config: dict) -> str:
+        """Return an overview of the methods and their blocks.
+
+        Parameters
+        ----------
+        config: dict
+            Options to configure. Choose from:
+                - toc_only: Whether to display only the toc.
+                - url: Page to link the toc to. None for current.
+                - include: Members to include.
+                - exclude: Members to exclude.
+
+        Returns
+        -------
+        str
+            Toc and blocks for all selected methods.
+
+        """
+        if config.get("include"):
+            methods = config["include"]
+        else:
+            methods = [
+                m for m, _ in getmembers(self.obj, predicate=inspect.isfunction)
+                if not m.startswith("_") and m not in config.get("exclude", [])
+            ]
+
+        # Create toc
+        toc = "<table markdown style='font-size: 0.9em'>"
+        for method in methods:
+            func = AutoDocs(self.obj, method=method)
+
+            name = f"[{method}][{func._parent_anchor}{method}]"
+            summary = func.get_summary()
+            toc += f"<tr><td>{name}</td><td>{summary}</td></tr>"
+
+        toc += "</table>"
+
+        # Create methods
+        blocks = ""
+        if not config.get("toc_only"):
+            for method in methods:
+                func = AutoDocs(self.obj, method=method)
+
+                blocks += "<br>" + func.get_signature()
+                blocks += func.get_summary() + "\n"
+                if func.obj.__module__.startswith("atom"):
+                    blocks += "\n" + func.get_description()
+                blocks += func.get_table(["Parameters", "Returns"]) + "<br>"
+
+        return toc + blocks
 
 
 # Functions ======================================================== >>
@@ -140,294 +481,3 @@ def custom_autorefs(markdown):
         start = match.end()
 
     return result + markdown[start:]
-
-
-# Classes ========================================================== >>
-
-class AutoDocs:
-    """Parses an object to documentation in markdown/html.
-
-    The docstring should follow the numpydoc style[^1]. Blocks should
-    start with `::`. The following blocks are accepted:
-        - summary (first line of docstring, required)
-        - description (detailed explanation, can contain admonitions)
-        - parameters
-        - attributes
-        - returns
-        - raises
-        - see also
-        - notes
-        - references
-        - examples
-
-    Parameters
-    ----------
-    obj: callable
-        Class, method or function to parse.
-
-    method: callable or None
-        Method of the obj to parse.
-
-    References
-    ----------
-    [1] https://numpydoc.readthedocs.io/en/latest/format.html
-
-    """
-
-    blocks = (
-        "Parameters",
-        "Attributes",
-        "Returns",
-        "Raises",
-        "See Also",
-        "Notes",
-        "References",
-        "Examples",
-        "\Z",
-    )
-
-    def __init__(self, obj: Callable, method: Optional[Callable] = None):
-        if method:
-            self.obj = getattr(obj, method)
-            self.method = method
-            self._parent_anchor = obj.__name__.lower() + "-"
-        else:
-            self.obj = obj
-            self.method = method
-            self._parent_anchor = ""
-
-        lines = self.obj.__doc__.splitlines()
-        if len(lines) > 1:
-            doc = self.obj.__doc__.splitlines()[2:]
-            row = next(filter(lambda x: x != "", doc))  # Select first non-empty line
-            indent = len(row) - len(row.lstrip())  # Measure block indentation
-            self.doc = "\n".join([line[indent:] for line in doc])
-        else:
-            self.doc = ""
-
-    @staticmethod
-    def get_obj(command: str) -> AutoDocs:
-        """Get an AutoDocs object from a string.
-
-        The provided string must be of the form module:object or
-        module:object.method.
-
-        Parameters
-        ----------
-        command: str
-            Line with the module and object.
-
-        Returns
-        -------
-        Autodocs
-            New instance of the class.
-
-        """
-        module, name = command.split(":")
-        if "." in name:
-            name, method = name.split(".")
-            cls = getattr(importlib.import_module(module), name)
-            return AutoDocs(getattr(cls, method))
-        else:
-            return AutoDocs(getattr(importlib.import_module(module), name))
-
-    def get_signature(self) -> str:
-        """Return the object's signature."""
-        # Assign object type
-        params = signature(self.obj).parameters
-        if inspect.isclass(self.obj):
-            obj_type = "class"
-        elif "self" in params or "cls" in params:
-            obj_type = "method"
-        else:
-            obj_type = "function"
-
-        # Get signature without self, cls and type hints
-        sign = []
-        for k, v in params.items():
-            if k not in ("self", "cls"):
-                if v.default == Parameter.empty:
-                    if '**' in str(v):
-                        sign.append(f"**{k}")  # Add ** to kwargs
-                    elif '*' in str(v):
-                        sign.append(f"*{k}")  # Add * to args
-                    else:
-                        sign.append(k)
-                else:
-                    if isinstance(v.default, str):
-                        sign.append(f'{k}="{v.default}"')
-                    else:
-                        sign.append(f"{k}={v.default}")
-
-        sign = f"({', '.join(sign)})"
-
-        f = self.obj.__module__.replace('.', '/')  # Module and filename sep by /
-        if "atom" in self.obj.__module__:
-            url = f"https://github.com/tvdboom/ATOM/blob/master/{f}.py"
-        elif "sklearn" in self.obj.__module__:
-            url = f"https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/{f}.py"
-        else:
-            url = ""
-
-        anchor = f"<a id='{self._parent_anchor}{self.obj.__name__}'></a>"
-        module = self.obj.__module__ + '.' if obj_type != "method" else ""
-        obj_type = f"<em>{obj_type}</em>"
-        name = f"<strong style='color:#008AB8'>{self.obj.__name__}</strong>"
-        if url:
-            line = getsourcelines(self.obj)[1]
-            url = f"<span style='float:right'><a href={url}#L{line}>[source]</a></span>"
-
-        return f"{anchor}<div class='sign'>{obj_type} {module}{name}{sign}{url}</div>"
-
-    def get_summary(self) -> str:
-        """Return the object's summary."""
-        if self.obj.__doc__.splitlines()[0] == "":
-            return self.obj.__doc__.splitlines()[1].lstrip()
-        else:
-            return self.obj.__doc__.splitlines()[0].lstrip()
-
-    def get_description(self) -> str:
-        """Return the object's description."""
-        match = re.match(f".*?(?={'|'.join(self.blocks)})", self.doc, re.S)
-        return match.group() if match else ""
-
-    def get_see_also(self) -> str:
-        """Return the object's See Also block.
-
-        The block is rendered as an info admonition.
-
-        Returns
-        -------
-        str
-            Formatted block.
-
-        """
-        block = '!!! info "See Also"'
-        for line in self.get_block("See Also").splitlines():
-            if line:
-                cls = self.get_obj(line)
-                summary = f"<div style='margin: -1em 0 0 1.2em'>{cls.get_summary()}</div>"
-
-                # If it's a class, refer to the page, else to the anchor
-                if cls._parent_anchor:
-                    link = f"{cls._parent_anchor}-{cls.obj.__name__}"
-                else:
-                    link = ""
-
-                block += f"\n    [{cls.obj.__name__}][{link}]<br>    {summary}\n"
-
-        return block
-
-    def get_block(self, block: str) -> str:
-        """Return a block from the docstring.
-
-        Parameters
-        ----------
-        block: str
-            Name of the block to retrieve.
-
-        Returns
-        -------
-        str
-            Block in docstring.
-
-        """
-        pattern = f"(?<={block}\n{'-' * len(block)}).*?(?={'|'.join(self.blocks)})"
-        match = re.search(pattern, self.doc, re.S)
-        return match.group() if match else ""
-
-    def get_table(self, blocks: List[str]) -> str:
-        """Return a table from a block.
-
-        Parameters
-        ----------
-        blocks: list of str
-            Blocks to create the table from.
-
-        Returns
-        -------
-        str
-            Table in html format.
-
-        """
-        table = ""
-        for block in map(str.capitalize, blocks):
-            match = self.get_block(block)
-
-            if match:
-                # Create td of title
-                table += f"<tr><td class='td_title'><strong>{block}</strong></td>"
-
-                # Create td of body
-                table += "<td class='td_params'>"
-
-                # Headers start with letter, * or [ after new line
-                for header in re.findall("^[\[*\w].*?$", match, re.M):
-                    # Get the body corresponding to the header
-                    pattern = f"(?<={re.escape(header)}\n).*?(?=\n\w|\n\*|\n\[|\Z)"
-                    body = re.search(pattern, match, re.S | re.M).group()
-
-                    # Use literal * for args and kwargs
-                    header = header.replace("*", "\*")
-
-                    text = body
-                    text = f"<div markdown style='margin: 0 0 1em 1.2em'>{text}</div>"
-                    table += f"<strong>{header}</strong><br>{text}"
-
-                table += "</td></tr>"
-
-        if table:
-            table = "<table markdown class='table_params'>" + table + "</table>"
-
-        return table
-
-    def get_methods(self, config: dict) -> str:
-        """Return an overview of the methods and their blocks.
-
-        Parameters
-        ----------
-        config: dict
-            Options to configure. Choose from:
-                - toc_only: Whether to display only the toc.
-                - url: Page to link the toc to. None for current.
-                - include: Members to include.
-                - exclude: Members to exclude.
-
-        Returns
-        -------
-        str
-            Toc and blocks for all selected methods.
-
-        """
-        if config.get("include"):
-            methods = config["include"]
-        else:
-            methods = [
-                m for m, _ in getmembers(self.obj, predicate=inspect.isfunction)
-                if not m.startswith("_") and m not in config.get("exclude", [])
-            ]
-
-        # Create toc
-        toc = "<table markdown style='font-size: 0.9em'>"
-        for method in methods:
-            func = AutoDocs(self.obj, method=method)
-
-            name = f"[{method}][{func._parent_anchor}{method}]"
-            summary = func.get_summary()
-            toc += f"<tr><td>{name}</td><td>{summary}</td></tr>"
-
-        toc += "</table>"
-
-        # Create methods
-        blocks = ""
-        if not config.get("toc_only"):
-            for method in methods:
-                func = AutoDocs(self.obj, method=method)
-
-                blocks += "<br>" + func.get_signature()
-                blocks += func.get_summary() + "\n"
-                if func.obj.__module__.startswith("atom"):
-                    blocks += "\n" + func.get_description()
-                blocks += func.get_table(["Parameters", "Returns"]) + "<br>"
-
-        return toc + blocks

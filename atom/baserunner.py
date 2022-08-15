@@ -18,7 +18,8 @@ from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, CustomDict, Model, check_is_fitted,
-    composed, crash, divide, flt, get_best_score, lst, method_to_log,
+    composed, crash, divide, flt, get_best_score, get_versions, lst,
+    method_to_log,
 )
 
 
@@ -39,6 +40,25 @@ class BaseRunner:
         log_data=False,
         log_pipeline=False,
     )
+
+    def __getstate__(self) -> dict:
+        # Store an extra attribute with the package versions
+        return {**self.__dict__, "_versions": get_versions(self._models)}
+
+    def __setstate__(self, state: dict):
+        versions = state.pop("_versions", None)
+        self.__dict__.update(state)
+
+        # Check that all package versions match or raise a warning
+        if versions:
+            current_versions = get_versions(state["_models"])
+            for key, value in current_versions.items():
+                if versions[key] != value:
+                    self.log(
+                        f"The loaded instance used the {key} package with version "
+                        f"{versions[key]} while the version in this environment is "
+                        f"{value}.", 1, severity="warning"
+                    )
 
     def __getattr__(self, item: str) -> Any:
         if item in self.__dict__.get("_branches").min("og"):
@@ -521,15 +541,15 @@ class BaseRunner:
         Returns
         -------
         pd.DataFrame
-            Information about the predefined models available for the
-            current task. Columns include:
-                - acronym: Model's acronym (used to call the model).
-                - fullname: Complete name of the model.
-                - estimator: The model's underlying estimator.
-                - module: The estimator's module.
-                - needs_scaling: Whether the model requires feature scaling.
-                - accepts_sparse: Whether the model supports sparse matrices.
-                - supports_gpu: Whether the model has GPU support.
+            Information about the available [predefined models][]. Columns
+            include:
+                - **acronym:** Model's acronym (used to call the model).
+                - **fullname:** Complete name of the model.
+                - **estimator:** The model's underlying estimator.
+                - **module:** The estimator's module.
+                - **needs_scaling:** Whether the model requires feature scaling.
+                - **accepts_sparse:** Whether the model supports sparse matrices.
+                - **supports_gpu:** Whether the model has GPU support.
 
         """
         rows = []

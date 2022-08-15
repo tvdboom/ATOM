@@ -74,7 +74,8 @@ def test_last_og_branch():
     atom.scale()
     assert "og" not in atom._branches
     assert len(atom._get_og_branches()) == 1  # master is the last og branch
-    atom.branch.delete("master")
+    atom.branch = "master"
+    atom.branch.delete()
     assert "og" in atom._branches
 
 
@@ -82,8 +83,9 @@ def test_branch_delete_not_current():
     """Assert that we can delete any branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
-    atom.branch.delete("master")
-    assert "master" not in atom._branches
+    assert "b2" in atom._branches
+    atom.branch.delete()
+    assert "b2" not in atom._branches
 
 
 # Test rename ====================================================== >>

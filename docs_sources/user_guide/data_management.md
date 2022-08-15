@@ -76,7 +76,7 @@ To avoid this, specify the `index` parameter. If the dataset has an
 
 <br>
 
-## Sparse data
+## Sparse datasets
 
 If atom is initialized using a scipy sparse matrix, it is converted
 internally to a dataframe of sparse columns. Read more about pandas'

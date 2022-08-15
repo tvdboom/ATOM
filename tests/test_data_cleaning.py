@@ -42,147 +42,85 @@ def test_fit_transform_no_fit():
     assert len(X) > len(X_bin)
 
 
-# Test Scaler ====================================================== >>
+# Test Balancer ==================================================== >>
 
-def test_scaler_check_is_fitted():
-    """Assert that an error is raised when not fitted."""
-    pytest.raises(NotFittedError, Scaler().transform, X_bin)
-
-
-def test_scaler_invalid_strategy():
-    """Assert that an error is raised when strategy is invalid."""
-    scaler = Scaler(strategy="invalid")
+def test_balancer_strategy_unknown_str():
+    """Assert that an error is raised when strategy is unknown."""
+    balancer = Balancer(strategy="invalid")
     with pytest.raises(ValueError, match=r".*value for the strategy.*"):
-        scaler.fit(X_bin)
+        balancer.transform(X_bin, y_bin)
 
 
-@pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])
-def test_scaler_all_strategies(strategy):
-    """Assert that all strategies work as intended."""
-    scaler = Scaler(strategy=strategy)
-    scaler.fit_transform(X_bin)
-
-
-def test_scaler_categorical_columns():
-    """Assert that categorical columns are ignored."""
-    X = Scaler().fit_transform(X10_str)
-    assert X["x2"].dtype.kind == "O"
-
-
-def test_scaler_y_is_ignored():
-    """Assert that the y parameter is ignored if provided."""
-    X_1 = Scaler().fit_transform(X_bin, y_bin)
-    X_2 = Scaler().fit_transform(X_bin)
-    pd.testing.assert_frame_equal(X_1, X_2)
-
-
-def test_scaler_kwargs():
-    """Assert that kwargs can be passed to the estimator."""
-    X = Scaler(strategy="minmax", feature_range=(1, 2)).fit_transform(X_bin)
-    assert min(X.iloc[:, 0]) >= 1 and max(X.iloc[:, 0]) <= 2
-
-
-def test_scaler_return_scaled_dataset():
-    """Assert that the returned dataframe is indeed scaled."""
-    X = Scaler().fit_transform(X_bin)
-    assert check_scaling(X)
-
-
-def test_scaler_inverse_transform():
-    """Assert that the inverse_transform method works."""
-    scaler = Scaler().fit(X_bin)
-    X_transformed = scaler.transform(X_bin)
-    X_original = scaler.inverse_transform(X_transformed)
-    pd.testing.assert_frame_equal(X_bin, X_original)
-
-
-def test_scaler_inverse_categorical_columns():
-    """Assert that categorical columns are ignored."""
-    X = Scaler().fit(X10_str).inverse_transform(X10_str)
-    assert X["x2"].dtype.kind == "O"
-
-
-def test_scaler_ignores_categorical_columns():
-    """Assert that categorical columns are ignored."""
-    X = X_bin.copy()
-    X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
-    X = Scaler().fit_transform(X)
-    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
-
-
-def test_scaler_attach_attribute():
-    """Assert that the estimator is attached as attribute to the class."""
-    scaler = Scaler(strategy="robust")
-    scaler.fit_transform(X_bin)
-    assert hasattr(scaler, "robust")
-
-
-# Test Normalizer ======================================================= >>
-
-def test_normalizer_check_is_fitted():
-    """Assert that an error is raised when not fitted."""
-    pytest.raises(NotFittedError, Normalizer().transform, X_bin)
-
-
-def test_normalizer_invalid_strategy():
+def test_balancer_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
-    normalizer = Normalizer(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
-        normalizer.fit(X_bin)
+    balancer = Balancer(strategy=StandardScaler())
+    with pytest.raises(TypeError, match=r".*type for the strategy.*"):
+        balancer.transform(X_bin, y_bin)
 
 
-@pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
-def test_normalizer_all_strategies(strategy):
-    """Assert that all strategies work as intended."""
-    normalizer = Normalizer(strategy=strategy)
-    normalizer.fit_transform(X10)
+def test_balancer_custom_estimator():
+    """Assert that the strategy can be a custom estimator."""
+    balancer = Balancer(strategy=SMOTETomek)
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
+
+    balancer = Balancer(strategy=SMOTETomek())
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
 
 
-def test_normalizer_categorical_columns():
-    """Assert that categorical columns are ignored."""
-    X = Normalizer().fit_transform(X10_str)
-    assert X["x2"].dtype.kind == "O"
+@pytest.mark.parametrize("strategy", ["allknn", "tomeklinks", "svmsmote", "smoteenn"])
+def test_balancers(strategy):
+    """Assert that balancer estimators work as intended."""
+    balancer = Balancer(strategy=strategy, sampling_strategy="all")
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
 
 
-def test_normalizer_inverse_transform():
-    """Assert that the inverse_transform method works."""
-    normalizer = Normalizer().fit(X_bin)
-    X = normalizer.inverse_transform(X_bin)
-    assert X.shape == X_bin.shape
-
-
-def test_normalizer_inverse_categorical_columns():
-    """Assert that categorical columns are ignored."""
-    X = Normalizer().fit(X10_str).inverse_transform(X10_str)
-    assert X["x2"].dtype.kind == "O"
-
-
-def test_normalizer_y_is_ignored():
-    """Assert that the y parameter is ignored if provided."""
-    X_1 = Normalizer().fit_transform(X_bin, y_bin)
-    X_2 = Normalizer().fit_transform(X_bin)
-    pd.testing.assert_frame_equal(X_1, X_2)
-
-
-def test_normalizer_kwargs():
+def test_balancer_kwargs():
     """Assert that kwargs can be passed to the estimator."""
-    X = Normalizer(strategy="yeojohnson", standardize=False).fit_transform(X_bin)
-    assert not check_scaling(X)
+    balancer = Balancer(strategy="SMOTE", k_neighbors=12)
+    balancer.transform(X_class, y_class)
+    assert balancer.smote.get_params()["k_neighbors"] == 12
 
 
-def test_normalizer_ignores_categorical_columns():
-    """Assert that categorical columns are ignored."""
-    X = X_bin.copy()
-    X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
-    X = Normalizer().fit_transform(X)
-    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+def test_oversampling_numerical_index():
+    """Assert that new samples have an increasing int index."""
+    X, y = Balancer(strategy="smote").transform(X_bin, y_bin)
+    assert list(X.index) == list(range(len(X)))
 
 
-def test_normalizer_attach_attribute():
+def test_oversampling_string_index():
+    """Assert that new samples have a new index."""
+    X, y = Balancer(strategy="smote").transform(X_idx, y_idx)
+    assert X.index[-1] == f"smote_{len(X) - len(X_idx)}"
+
+
+def test_undersampling_keeps_indices():
+    """Assert that indices are kept after transformation."""
+    X, y = Balancer(strategy="nearmiss").transform(X_bin, y_bin)
+    assert list(X.index) != list(range(len(X)))
+
+
+def test_combinations_numerical_index():
+    """Assert that new samples have an increasing int index."""
+    X, y = Balancer(strategy="smoteenn").transform(X_bin, y_bin)
+    assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
+    assert max(X.index) > max(X_bin.index)  # Samples were added
+
+
+def test_combinations_string_index():
+    """Assert that new samples have a new index."""
+    X, y = Balancer(strategy="smotetomek").transform(X_idx, y_idx)
+    assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
+    assert len(X.index.str.startswith("smotetomek") > 0)  # Samples were added
+
+
+def test_balancer_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
-    normalizer = Normalizer(strategy="quantile")
-    normalizer.fit_transform(X_bin)
-    assert hasattr(normalizer, "quantile")
+    balancer = Balancer(strategy="smote")
+    balancer.transform(X_bin, y_bin)
+    assert hasattr(balancer, "smote")
 
 
 # Test Cleaner ==================================================== >>
@@ -281,160 +219,6 @@ def test_cleaner_target_mapping_multiclass():
     """Assert that the mapping attribute is set for multiclass tasks."""
     cleaner = Cleaner().fit(y=y_class)
     assert cleaner.mapping == {"0": 0, "1": 1, "2": 2}
-
-
-# Test Imputer ===================================================== >>
-
-def test_strat_num_parameter():
-    """Assert that the strat_num parameter is set correctly."""
-    imputer = Imputer(strat_num="invalid")
-    with pytest.raises(ValueError, match=r".*Unknown strategy for the strat_num.*"):
-        imputer.fit(X_bin, y_bin)
-
-
-def test_invalid_max_nan_rows():
-    """Assert that an error is raised for invalid max_nan_rows."""
-    imputer = Imputer(max_nan_rows=-2)
-    with pytest.raises(ValueError, match=r".*value for the max_nan_rows.*"):
-        imputer.fit(X_bin, y_bin)
-
-
-def test_invalid_max_nan_cols():
-    """Assert that an error is raised for invalid max_nan_cols."""
-    imputer = Imputer(max_nan_cols=-5)
-    with pytest.raises(ValueError, match=r".*value for the max_nan_cols.*"):
-        imputer.fit(X_bin, y_bin)
-
-
-def test_imputer_check_is_fitted():
-    """Assert that an error is raised if the instance is not fitted."""
-    pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
-
-
-@pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
-def test_imputing_all_missing_values_numeric(missing):
-    """Assert that all missing values are imputed in numeric columns."""
-    X = [[missing, 1, 1], [2, 5, 2], [4, missing, 1], [2, 1, 1]]
-    y = [1, 1, 0, 0]
-    imputer = Imputer(strat_num="mean")
-    imputer.missing.append(99)
-    X, y = imputer.fit_transform(X, y)
-    assert X.isna().sum().sum() == 0
-
-
-@pytest.mark.parametrize("missing", ["", "?", "NaN", "NA", "nan", "inf"])
-def test_imputing_all_missing_values_categorical(missing):
-    """Assert that all missing values are imputed in categorical columns."""
-    X = [[missing, "a", "a"], ["b", "c", missing], ["b", "a", "c"], ["c", "a", "a"]]
-    y = [1, 1, 0, 0]
-    imputer = Imputer(strat_cat="most_frequent")
-    X, y = imputer.fit_transform(X, y)
-    assert X.isna().sum().sum() == 0
-
-
-@pytest.mark.parametrize("max_nan_rows", [5, 0.5])
-def test_rows_too_many_nans(max_nan_rows):
-    """Assert that rows with too many missing values are dropped."""
-    X = X_bin.copy()
-    for i in range(5):  # Add 5 rows with all NaN values
-        X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
-    y = [np.random.randint(2) for _ in range(len(X))]
-    imputer = Imputer(
-        strat_num="mean",
-        strat_cat="most_frequent",
-        max_nan_rows=max_nan_rows,
-    )
-    X, y = imputer.fit_transform(X, y)
-    assert len(X) == 569  # Original size
-    assert X.isna().sum().sum() == 0
-
-
-@pytest.mark.parametrize("max_nan_cols", [20, 0.5])
-def test_cols_too_many_nans(max_nan_cols):
-    """Assert that columns with too many missing values are dropped."""
-    X = X_bin.copy()
-    for i in range(5):  # Add 5 cols with all NaN values
-        X["col " + str(i)] = [np.nan for _ in range(X.shape[0])]
-    imputer = Imputer(
-        strat_num="mean",
-        strat_cat="most_frequent",
-        max_nan_cols=max_nan_cols,
-    )
-    X, y = imputer.fit_transform(X, y_bin)
-    assert len(X.columns) == 30  # Original number of columns
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_drop():
-    """Assert that imputing drop for numerical values works."""
-    imputer = Imputer(strat_num="drop")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert len(X) == 8
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_number():
-    """Assert that imputing a number for numerical values works."""
-    imputer = Imputer(strat_num=3.2)
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3.2
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_knn():
-    """Assert that imputing numerical values with KNNImputer works."""
-    imputer = Imputer(strat_num="knn")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_mean():
-    """Assert that imputing the mean for numerical values works."""
-    imputer = Imputer(strat_num="mean")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_median():
-    """Assert that imputing the median for numerical values works."""
-    imputer = Imputer(strat_num="median")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_numeric_most_frequent():
-    """Assert that imputing the most_frequent for numerical values works."""
-    imputer = Imputer(strat_num="most_frequent")
-    X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_non_numeric_string():
-    """Assert that imputing a string for non-numerical values works."""
-    imputer = Imputer(strat_cat="missing")
-    X, y = imputer.fit_transform(X10_sn, y10)
-    assert X.iloc[0, 2] == "missing"
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_non_numeric_drop():
-    """Assert that the drop strategy for non-numerical works."""
-    imputer = Imputer(strat_cat="drop")
-    X, y = imputer.fit_transform(X10_sn, y10)
-    assert len(X) == 9
-    assert X.isna().sum().sum() == 0
-
-
-def test_imputing_non_numeric_most_frequent():
-    """Assert that the most_frequent strategy for non-numerical works."""
-    imputer = Imputer(strat_cat="most_frequent")
-    X, y = imputer.fit_transform(X10_sn, y10)
-    assert X.iloc[0, 2] == "d"
-    assert X.isna().sum().sum() == 0
 
 
 # Test Discretizer ================================================= >>
@@ -639,6 +423,228 @@ def test_kwargs_parameters():
     assert encoder._encoders["x2"].get_params()["sigma"] == 0.5
 
 
+# Test Imputer ===================================================== >>
+
+def test_strat_num_parameter():
+    """Assert that the strat_num parameter is set correctly."""
+    imputer = Imputer(strat_num="invalid")
+    with pytest.raises(ValueError, match=r".*Unknown strategy for the strat_num.*"):
+        imputer.fit(X_bin, y_bin)
+
+
+def test_invalid_max_nan_rows():
+    """Assert that an error is raised for invalid max_nan_rows."""
+    imputer = Imputer(max_nan_rows=-2)
+    with pytest.raises(ValueError, match=r".*value for the max_nan_rows.*"):
+        imputer.fit(X_bin, y_bin)
+
+
+def test_invalid_max_nan_cols():
+    """Assert that an error is raised for invalid max_nan_cols."""
+    imputer = Imputer(max_nan_cols=-5)
+    with pytest.raises(ValueError, match=r".*value for the max_nan_cols.*"):
+        imputer.fit(X_bin, y_bin)
+
+
+def test_imputer_check_is_fitted():
+    """Assert that an error is raised if the instance is not fitted."""
+    pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
+
+
+@pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
+def test_imputing_all_missing_values_numeric(missing):
+    """Assert that all missing values are imputed in numeric columns."""
+    X = [[missing, 1, 1], [2, 5, 2], [4, missing, 1], [2, 1, 1]]
+    y = [1, 1, 0, 0]
+    imputer = Imputer(strat_num="mean")
+    imputer.missing.append(99)
+    X, y = imputer.fit_transform(X, y)
+    assert X.isna().sum().sum() == 0
+
+
+@pytest.mark.parametrize("missing", ["", "?", "NaN", "NA", "nan", "inf"])
+def test_imputing_all_missing_values_categorical(missing):
+    """Assert that all missing values are imputed in categorical columns."""
+    X = [[missing, "a", "a"], ["b", "c", missing], ["b", "a", "c"], ["c", "a", "a"]]
+    y = [1, 1, 0, 0]
+    imputer = Imputer(strat_cat="most_frequent")
+    X, y = imputer.fit_transform(X, y)
+    assert X.isna().sum().sum() == 0
+
+
+@pytest.mark.parametrize("max_nan_rows", [5, 0.5])
+def test_rows_too_many_nans(max_nan_rows):
+    """Assert that rows with too many missing values are dropped."""
+    X = X_bin.copy()
+    for i in range(5):  # Add 5 rows with all NaN values
+        X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
+    y = [np.random.randint(2) for _ in range(len(X))]
+    imputer = Imputer(
+        strat_num="mean",
+        strat_cat="most_frequent",
+        max_nan_rows=max_nan_rows,
+    )
+    X, y = imputer.fit_transform(X, y)
+    assert len(X) == 569  # Original size
+    assert X.isna().sum().sum() == 0
+
+
+@pytest.mark.parametrize("max_nan_cols", [20, 0.5])
+def test_cols_too_many_nans(max_nan_cols):
+    """Assert that columns with too many missing values are dropped."""
+    X = X_bin.copy()
+    for i in range(5):  # Add 5 cols with all NaN values
+        X["col " + str(i)] = [np.nan for _ in range(X.shape[0])]
+    imputer = Imputer(
+        strat_num="mean",
+        strat_cat="most_frequent",
+        max_nan_cols=max_nan_cols,
+    )
+    X, y = imputer.fit_transform(X, y_bin)
+    assert len(X.columns) == 30  # Original number of columns
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_numeric_drop():
+    """Assert that imputing drop for numerical values works."""
+    imputer = Imputer(strat_num="drop")
+    X, y = imputer.fit_transform(X10_nan, y10)
+    assert len(X) == 8
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_numeric_number():
+    """Assert that imputing a number for numerical values works."""
+    imputer = Imputer(strat_num=3.2)
+    X, y = imputer.fit_transform(X10_nan, y10)
+    assert X.iloc[0, 0] == 3.2
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_numeric_knn():
+    """Assert that imputing numerical values with KNNImputer works."""
+    imputer = Imputer(strat_num="knn")
+    X, y = imputer.fit_transform(X10_nan, y10)
+    assert X.iloc[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_numeric_mean():
+    """Assert that imputing the mean for numerical values works."""
+    imputer = Imputer(strat_num="mean")
+    X, y = imputer.fit_transform(X10_nan, y10)
+    assert X.iloc[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_numeric_median():
+    """Assert that imputing the median for numerical values works."""
+    imputer = Imputer(strat_num="median")
+    X, y = imputer.fit_transform(X10_nan, y10)
+    assert X.iloc[0, 0] == 3
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_numeric_most_frequent():
+    """Assert that imputing the most_frequent for numerical values works."""
+    imputer = Imputer(strat_num="most_frequent")
+    X, y = imputer.fit_transform(X10_nan, y10)
+    assert X.iloc[0, 0] == 3
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_non_numeric_string():
+    """Assert that imputing a string for non-numerical values works."""
+    imputer = Imputer(strat_cat="missing")
+    X, y = imputer.fit_transform(X10_sn, y10)
+    assert X.iloc[0, 2] == "missing"
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_non_numeric_drop():
+    """Assert that the drop strategy for non-numerical works."""
+    imputer = Imputer(strat_cat="drop")
+    X, y = imputer.fit_transform(X10_sn, y10)
+    assert len(X) == 9
+    assert X.isna().sum().sum() == 0
+
+
+def test_imputing_non_numeric_most_frequent():
+    """Assert that the most_frequent strategy for non-numerical works."""
+    imputer = Imputer(strat_cat="most_frequent")
+    X, y = imputer.fit_transform(X10_sn, y10)
+    assert X.iloc[0, 2] == "d"
+    assert X.isna().sum().sum() == 0
+
+
+# Test Normalizer ======================================================= >>
+
+def test_normalizer_check_is_fitted():
+    """Assert that an error is raised when not fitted."""
+    pytest.raises(NotFittedError, Normalizer().transform, X_bin)
+
+
+def test_normalizer_invalid_strategy():
+    """Assert that an error is raised when strategy is invalid."""
+    normalizer = Normalizer(strategy="invalid")
+    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+        normalizer.fit(X_bin)
+
+
+@pytest.mark.parametrize("strategy", ["yeojohnson", "boxcox", "quantile"])
+def test_normalizer_all_strategies(strategy):
+    """Assert that all strategies work as intended."""
+    normalizer = Normalizer(strategy=strategy)
+    normalizer.fit_transform(X10)
+
+
+def test_normalizer_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Normalizer().fit_transform(X10_str)
+    assert X["x2"].dtype.kind == "O"
+
+
+def test_normalizer_inverse_transform():
+    """Assert that the inverse_transform method works."""
+    normalizer = Normalizer().fit(X_bin)
+    X = normalizer.inverse_transform(X_bin)
+    assert X.shape == X_bin.shape
+
+
+def test_normalizer_inverse_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Normalizer().fit(X10_str).inverse_transform(X10_str)
+    assert X["x2"].dtype.kind == "O"
+
+
+def test_normalizer_y_is_ignored():
+    """Assert that the y parameter is ignored if provided."""
+    X_1 = Normalizer().fit_transform(X_bin, y_bin)
+    X_2 = Normalizer().fit_transform(X_bin)
+    pd.testing.assert_frame_equal(X_1, X_2)
+
+
+def test_normalizer_kwargs():
+    """Assert that kwargs can be passed to the estimator."""
+    X = Normalizer(strategy="yeojohnson", standardize=False).fit_transform(X_bin)
+    assert not check_scaling(X)
+
+
+def test_normalizer_ignores_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = X_bin.copy()
+    X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
+    X = Normalizer().fit_transform(X)
+    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+
+
+def test_normalizer_attach_attribute():
+    """Assert that the estimator is attached as attribute to the class."""
+    normalizer = Normalizer(strategy="quantile")
+    normalizer.fit_transform(X_bin)
+    assert hasattr(normalizer, "quantile")
+
+
 # Test Pruner ====================================================== >>
 
 def test_invalid_strategy_parameter():
@@ -756,82 +762,76 @@ def test_pruner_attach_attribute():
     assert hasattr(pruner, "iforest")
 
 
-# Test Balancer ==================================================== >>
+# Test Scaler ====================================================== >>
 
-def test_balancer_strategy_unknown_str():
-    """Assert that an error is raised when strategy is unknown."""
-    balancer = Balancer(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
-        balancer.transform(X_bin, y_bin)
+def test_scaler_check_is_fitted():
+    """Assert that an error is raised when not fitted."""
+    pytest.raises(NotFittedError, Scaler().transform, X_bin)
 
 
-def test_balancer_strategy_invalid_estimator():
+def test_scaler_invalid_strategy():
     """Assert that an error is raised when strategy is invalid."""
-    balancer = Balancer(strategy=StandardScaler())
-    with pytest.raises(TypeError, match=r".*type for the strategy.*"):
-        balancer.transform(X_bin, y_bin)
+    scaler = Scaler(strategy="invalid")
+    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+        scaler.fit(X_bin)
 
 
-def test_balancer_custom_estimator():
-    """Assert that the strategy can be a custom estimator."""
-    balancer = Balancer(strategy=SMOTETomek)
-    X, y = balancer.transform(X_bin, y_bin)
-    assert len(X) != len(X_bin)
-
-    balancer = Balancer(strategy=SMOTETomek())
-    X, y = balancer.transform(X_bin, y_bin)
-    assert len(X) != len(X_bin)
+@pytest.mark.parametrize("strategy", ["standard", "minmax", "maxabs", "robust"])
+def test_scaler_all_strategies(strategy):
+    """Assert that all strategies work as intended."""
+    scaler = Scaler(strategy=strategy)
+    scaler.fit_transform(X_bin)
 
 
-@pytest.mark.parametrize("strategy", ["allknn", "tomeklinks", "svmsmote", "smoteenn"])
-def test_balancers(strategy):
-    """Assert that balancer estimators work as intended."""
-    balancer = Balancer(strategy=strategy, sampling_strategy="all")
-    X, y = balancer.transform(X_bin, y_bin)
-    assert len(X) != len(X_bin)
+def test_scaler_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Scaler().fit_transform(X10_str)
+    assert X["x2"].dtype.kind == "O"
 
 
-def test_balancer_kwargs():
+def test_scaler_y_is_ignored():
+    """Assert that the y parameter is ignored if provided."""
+    X_1 = Scaler().fit_transform(X_bin, y_bin)
+    X_2 = Scaler().fit_transform(X_bin)
+    pd.testing.assert_frame_equal(X_1, X_2)
+
+
+def test_scaler_kwargs():
     """Assert that kwargs can be passed to the estimator."""
-    balancer = Balancer(strategy="SMOTE", k_neighbors=12)
-    balancer.transform(X_class, y_class)
-    assert balancer.smote.get_params()["k_neighbors"] == 12
+    X = Scaler(strategy="minmax", feature_range=(1, 2)).fit_transform(X_bin)
+    assert min(X.iloc[:, 0]) >= 1 and max(X.iloc[:, 0]) <= 2
 
 
-def test_oversampling_numerical_index():
-    """Assert that new samples have an increasing int index."""
-    X, y = Balancer(strategy="smote").transform(X_bin, y_bin)
-    assert list(X.index) == list(range(len(X)))
+def test_scaler_return_scaled_dataset():
+    """Assert that the returned dataframe is indeed scaled."""
+    X = Scaler().fit_transform(X_bin)
+    assert check_scaling(X)
 
 
-def test_oversampling_string_index():
-    """Assert that new samples have a new index."""
-    X, y = Balancer(strategy="smote").transform(X_idx, y_idx)
-    assert X.index[-1] == f"smote_{len(X) - len(X_idx)}"
+def test_scaler_inverse_transform():
+    """Assert that the inverse_transform method works."""
+    scaler = Scaler().fit(X_bin)
+    X_transformed = scaler.transform(X_bin)
+    X_original = scaler.inverse_transform(X_transformed)
+    pd.testing.assert_frame_equal(X_bin, X_original)
 
 
-def test_undersampling_keeps_indices():
-    """Assert that indices are kept after transformation."""
-    X, y = Balancer(strategy="nearmiss").transform(X_bin, y_bin)
-    assert list(X.index) != list(range(len(X)))
+def test_scaler_inverse_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = Scaler().fit(X10_str).inverse_transform(X10_str)
+    assert X["x2"].dtype.kind == "O"
 
 
-def test_combinations_numerical_index():
-    """Assert that new samples have an increasing int index."""
-    X, y = Balancer(strategy="smoteenn").transform(X_bin, y_bin)
-    assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
-    assert max(X.index) > max(X_bin.index)  # Samples were added
+def test_scaler_ignores_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = X_bin.copy()
+    X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
+    X = Scaler().fit_transform(X)
+    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
 
 
-def test_combinations_string_index():
-    """Assert that new samples have a new index."""
-    X, y = Balancer(strategy="smotetomek").transform(X_idx, y_idx)
-    assert not all(idx in X.index for idx in X_bin.index)  # Samples were dropped
-    assert len(X.index.str.startswith("smotetomek") > 0)  # Samples were added
-
-
-def test_balancer_attach_attribute():
+def test_scaler_attach_attribute():
     """Assert that the estimator is attached as attribute to the class."""
-    balancer = Balancer(strategy="smote")
-    balancer.transform(X_bin, y_bin)
-    assert hasattr(balancer, "smote")
+    scaler = Scaler(strategy="robust")
+    scaler.fit_transform(X_bin)
+    assert hasattr(scaler, "robust")

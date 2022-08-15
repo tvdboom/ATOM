@@ -79,7 +79,7 @@ def test_warnings_parameter_str():
     assert base.warnings == "always"
 
 
-@patch("atom.utils.functions.logging.getLogger")
+@patch("atom.utils.logging.getLogger")
 def test_logger_creator(cls):
     """Assert that the logger is created correctly."""
     BaseTransformer(logger=None)
@@ -89,7 +89,7 @@ def test_logger_creator(cls):
     cls.assert_called_once()
 
 
-@patch("atom.utils.functions.logging.getLogger")
+@patch("atom.utils.logging.getLogger")
 def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
     atom = ATOMClassifier(X_bin, y_bin, logger="log")
@@ -606,7 +606,7 @@ def test_log_invalid_severity():
         BaseTransformer(logger="log").log("test", severity="invalid")
 
 
-@patch("atom.utils.functions.logging.getLogger")
+@patch("atom.utils.logging.getLogger")
 def test_log(cls):
     """Assert the log method works."""
     base = BaseTransformer(verbose=2, logger="log")

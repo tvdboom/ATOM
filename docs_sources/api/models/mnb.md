@@ -1,7 +1,7 @@
 # Multinomial Naive Bayes (MNB)
 -------------------------------
 
-<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#sparse-datasets" class="md-tag" draggable=False>accept sparse</a>
 <a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
 
 Multinomial Naive Bayes implements the Naive Bayes algorithm for

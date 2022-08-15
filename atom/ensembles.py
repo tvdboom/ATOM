@@ -10,7 +10,8 @@ Description: Module containing the ensemble estimators.
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
+
 import numpy as np
 from joblib import Parallel, delayed
 from sklearn.base import clone, is_classifier
@@ -25,7 +26,7 @@ from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 
-from atom.utils import check_is_fitted, SEQUENCE_TYPES, X_TYPES, INT, Predictor
+from atom.utils import INT, SEQUENCE_TYPES, X_TYPES, Predictor, check_is_fitted
 
 
 class BaseEnsemble:

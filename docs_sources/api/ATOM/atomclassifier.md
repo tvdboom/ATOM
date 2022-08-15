@@ -1,173 +1,20 @@
 # ATOMClassifier
 ----------------
 
-<div style="font-size:20px">
-<em>class</em> atom.api.<strong style="color:#008AB8">ATOMClassifier</strong>(*arrays,
-y=-1, index=False, test_size=0.2, holdout_size=None, shuffle=True,
-stratify=True, n_rows=1, n_jobs=1, gpu=False, verbose=0, warnings=True,
-logger=None, experiment=None, random_state=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L178">[source]</a>
-</span>
-</div>
+:: atom.api:ATOMClassifier
+    :: signature
+    :: description
+    :: table:
+        - parameters
+    :: see also
 
-ATOMClassifier is ATOM's wrapper for binary and multiclass classification
-tasks. Use this class to easily apply all data transformations and model
-management provided by the package on a given dataset. Note that contrary
-to sklearn's API, an ATOMClassifier instance already contains the dataset
-on which we want to perform the analysis. Calling a method will automatically
-apply it on the dataset it contains.
-
-You can [predict](../../../user_guide/predicting), [plot](../../../user_guide/plots)
-and call any [model](../../../user_guide/models) from atom.
-
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>*arrays: sequence of indexables</strong><br>
-Dataset containing features and target. Allowed formats are:
-<ul style="line-height:1.2em;margin-top:5px">
-<li>X</li>
-<li>X, y</li>
-<li>train, test</li>
-<li>train, test, holdout</li>
-<li>X_train, X_test, y_train, y_test</li>
-<li>X_train, X_test, X_holdout, y_train, y_test, y_holdout</li>
-<li>(X_train, y_train), (X_test, y_test)</li>
-<li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
-</ul>
-X, train, test: dataframe-like<br>
-<p style="margin-top:0;margin-left:15px">
-Feature set with shape=(n_samples, n_features).
-</p>
-y: int, str or sequence<br>
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If int: Position of the target column in X.</li>
-<li>If str: Name of the target column in X.</li>
-<li>Else: Array with shape=(n_samples,) to use as target.</li>
-</ul>
-<strong>y: int, str or sequence, default=-1</strong><br>
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If int: Position of the target column in X.</li>
-<li>If str: Name of the target column in X.</li>
-<li>Else: Array with shape=(n_samples,) to use as target.</li>
-</ul>
-<p style="margin-top:5px">
-This parameter is ignored if the target column is provided
-through <code>arrays</code>.
-</p>
-<strong>index: bool, int, str or sequence, default=False</strong><br>
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If False: Reset to <a href="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html">RangeIndex</a>.</li>
-<li>If True: Use the current index.</li>
-<li>If int: Index of the column to use as index.</li>
-<li>If str: Name of the column to use as index.</li>
-<li>If sequence: Index column with shape=(n_samples,).</li>
-</ul>
-<strong>test_size: int or float, default=0.2</strong><br>
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If <=1: Fraction of the dataset to include in the test set.</li>
-<li>If >1: Number of rows to include in the test set.</li>
-</ul>
-<p style="margin-top:5px">
-This parameter is ignored if the test set is provided through
-<code>arrays</code>.
-</p>
-<strong>holdout_size: int, float or None, default=None</strong><br>
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If None: No holdout data set is kept apart.</li>
-<li>If <=1: Fraction of the dataset to include in the holdout set.</li>
-<li>If >1: Number of rows to include in the holdout set.</li>
-</ul>
-<p style="margin-top:5px">
-This parameter is ignored if the holdout set is provided through
-<code>arrays</code>.
-</p>
-<p>
-<strong>shuffle: bool, default=True</strong><br>
-Whether to shuffle the dataset before splitting the train and
-test set. Be aware that not shuffling the dataset can cause
-an unequal distribution of target classes over the sets.
-</p>
-<strong>stratify: bool, int, str or sequence, default=True</strong><br>
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If False: The data sets are split randomly.</li>
-<li>If True: The data sets are stratified over the target column.</li>
-<li>Else: Indices or names of the columns to stratify by. The
-columns can not contain <code>NaN</code> values.</li>
-</ul>
-<p style="margin-top:5px">
-This parameter is ignored if <code>shuffle=False</code> or if the test
-set is provided through <code>arrays</code>.
-</p>
-<strong>n_rows: int or float, default=1</strong><br>
-Random subsample of the provided dataset to use. The default
-value selects all the rows.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If <=1: Select this fraction of the dataset.</li>
-<li>If >1: Select this exact number of rows. Only if the input
-doesn't already specify the data sets (i.e. X or X, y).</li>
-</ul>
-<strong>n_jobs: int, default=1</strong><br>
-Number of cores to use for parallel processing.
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If >0: Number of cores to use.</li>
-<li>If -1: Use all available cores.</li>
-<li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
-</ul>
-<p style="margin-top:5px">
-Beware that using multiple processes on the same machine may cause
-memory issues for large datasets.
-</p>
-<strong>gpu: bool or str, default=False</strong><br>
-Train estimators on GPU (instead of CPU). Refer to the
-<a href="../../../user_guide/gpu">documentation</a>
-to check which estimators are supported.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If False: Always use CPU implementation.</li>
-<li>If True: Use GPU implementation if possible.</li>
-<li>If "force": Force GPU implementation.</li>
-</ul>
-<strong>verbose: int, default=0</strong><br>
-Verbosity level of the class. Choose from:
-<ul style="line-height:1.2em;margin-top:5px">
-<li>0 to not print anything.</li>
-<li>1 to print basic information.</li>
-<li>2 to print detailed information.</li>
-</ul>
-<strong>warnings: bool or str, default=False</strong><br>
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If True: Default warning action (equal to "default").</li>
-<li>If False: Suppress all warnings (equal to "ignore").</li>
-<li>If str: One of the actions in python's warnings environment.</li>
-</ul>
-<p style="margin-top:5px">
-Changing this parameter affects the <code>PYTHONWARNINGS</code> environment.
-<br>ATOM can't manage warnings that go directly from C/C++ code to stdout.
-</p>
-<strong>logger: str, Logger or None, default=None</strong><br>
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If None: Doesn't save a logging file.</li>
-<li>If str: Name of the log file. Use "auto" for automatic naming.</li>
-<li>Else: Python <code>logging.Logger</code> instance.</li>
-</ul>
-<p>
-<strong>experiment: str or None, default=None</strong><br>
-Name of the mlflow experiment to use for tracking. If None,
-no mlflow tracking is performed.
-</p>
-<p>
-<strong>random_state: int or None, default=None</strong><br>
-Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>np.random</code>.
-</p>
-</td>
-</tr>
-</table>
 <br>
 
+## Example
 
+:: examples
+
+<br>
 
 ## Magic methods
 
@@ -183,8 +30,6 @@ different results per branch.
 
 <br>
 
-
-
 ## Attributes
 
 ### Data attributes
@@ -195,247 +40,64 @@ of the data attributes will automatically update the rest as well.
 Changing the branch will also change the response from these attributes
 accordingly.
 
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>pipeline: pd.Series</strong><br>
-Series containing all transformers fitted on the data in the current branch.
-Use this attribute only to access the individual instances. To visualize the
-pipeline, use the status method from the branch or the
-<a href="../../plots/plot_pipeline">plot_pipeline</a> method.
-</p>
-<p>
-<strong>feature_importance: list</strong><br>
-Features ordered by most to least important. This attribute is created
-after running the <a href="#feature-selection">feature_selection</a>,
-<a href="../../plots/plot_permutation_importance">plot_permutation_importance</a>
-or <a href="../../plots/plot_feature_importance">plot_feature_importance</a> methods.
-</p>
-<p>
-<strong>dataset: pd.DataFrame</strong><br>
-Complete dataset in the pipeline.
-</p>
-<p>
-<strong>train: pd.DataFrame</strong><br>
-Training set.
-</p>
-<p>
-<strong>test: pd.DataFrame</strong><br>
-Test set.
-</p>
-<p>
-<strong>X: pd.DataFrame</strong><br>
-Feature set.
-</p>
-<p>
-<strong>y: pd.Series</strong><br>
-Target column.
-</p>
-<p>
-<strong>X_train: pd.DataFrame</strong><br>
-Training features.
-</p>
-<p>
-<strong>y_train: pd.Series</strong><br>
-Training target.
-</p>
-<p>
-<strong>X_test: pd.DataFrame</strong><br>
-Test features.
-</p>
-<p>
-<strong>y_test: pd.Series</strong><br>
-Test target.
-</p>
-<p>
-<strong>shape: tuple</strong><br>
-Dataset's shape: (n_rows x n_columns).
-</p>
-<p>
-<strong>columns: pd.Index</strong><br>
-Names of the columns in the dataset.
-</p>
-<p>
-<strong>n_columns: int</strong><br>
-Number of columns in the dataset.
-</p>
-<p>
-<strong>features: pd.Index</strong><br>
-Names of the features in the dataset.
-</p>
-<p>
-<strong>n_features: int</strong><br>
-Number of features in the dataset.
-</p>
-<p>
-<strong>target: str</strong><br>
-Name of the target column.
-</p>
-<p>
-<strong>mapping: dict of dicts</strong><br>
-Encoded values and their respective mapping. The column name is
-the key to its mapping dictionary. Only for columns mapped to
-a single column (e.g. Ordinal, Leave-one-out, etc...).
-</p>
-<p>
-<strong>scaled: bool or None</strong><br>
-Whether the feature set is scaled. It is considered scaled when
-it has mean=0 and std=1, or when atom has a scaler in the pipeline.
-Returns None sparse datasets.
-</p>
-<p>
-<strong>duplicates: int</strong><br>
-Number of duplicate rows in the dataset.
-</p>
-<p>
-<strong>nans: pd.Series or None</strong><br>
-Columns with the number of missing values in them. Returns None for
-sparse datasets.
-</p>
-<p>
-<strong>n_nans: int or None</strong><br>
-Number of samples containing missing values. Returns None for
-sparse datasets.
-</p>
-<p>
-<strong>numerical: pd.Index</strong><br>
-Names of the numerical features in the dataset.
-</p>
-<p>
-<strong>n_numerical: int</strong><br>
-Number of numerical features in the dataset.
-</p>
-<p>
-<strong>categorical: pd.Index</strong><br>
-Names of the categorical features in the dataset.
-</p>
-<p>
-<strong>n_categorical: int</strong><br>
-Number of categorical features in the dataset.
-</p>
-<p>
-<strong>outliers: pd.Series or None</strong><br>
-Columns in training set with amount of outlier values. Returns None for
-sparse datasets.
-</p>
-<p>
-<strong>n_outliers: int or None</strong><br>
-Number of samples in the training set containing outliers. Returns None for
-sparse datasets.
-</p>
-<p>
-<strong>classes: pd.DataFrame</strong><br>
-Distribution of classes per data set.
-</p>
-<p>
-<strong>n_classes: int</strong><br>
-Number of classes in the target column.
-</p>
-</td>
-</tr>
-</table>
-<br>
+:: table:
+    - attributes:
+        from_docstring: False
+        include:
+            - atom.branch:Branch.pipeline
+            - atom.branch:Branch.mapping
+            - atom.branch:Branch.dataset
+            - atom.branch:Branch.train
+            - atom.branch:Branch.test
+            - atom.branch:Branch.X
+            - atom.branch:Branch.y
+            - atom.branch:Branch.X_train
+            - atom.branch:Branch.y_train
+            - atom.branch:Branch.X_test
+            - atom.branch:Branch.y_test
+            - scaled
+            - duplicates
+            - nans
+            - n_nans
+            - numerical
+            - n_numerical
+            - outliers
+            - n_outliers
+            - classes
+            - n_classes
 
+<br>
 
 ### Utility attributes
 
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>missing: list</strong><br>
-List of values that are considered "missing" (used by the <a href="#clean">clean</a>
-and <a href="#impute">impute</a> methods). Default values are: "", "?", "None", "NA",
-"nan", "NaN" and "inf". Note that <code>None</code>, <code>NaN</code>, <code>+inf</code>
-and <code>-inf</code> are always considered missing since they are incompatible with
-sklearn estimators.
-</p>
-<p>
-<strong>models: list</strong><br>
-Names of the models in the instance.
-</p>
-<p>
-<strong>metric: str or list</strong><br>
-Metric(s) used to fit the models.
-</p>
-<p>
-<strong>errors: dict</strong><br>
-Dictionary of the encountered exceptions (if any).
-</p>
-<p>
-<strong>winners: list of str</strong><br>
-Model names ordered by performance on the test set (either through the
-<code>metric_test</code> or <code>mean_bootstrap</code> attribute).
-</p>
-<p>
-<strong>winner: <a href="../../../user_guide/models">model</a></strong><br>
-Model subclass that performed best on the test set (either through the
-<code>metric_test</code> or <code>mean_bootstrap</code> attribute).
-</p>
-<strong>results: pd.DataFrame</strong><br>
-Dataframe of the training results. Columns can include:
-<ul style="line-height:1.2em;margin-top:5px">
-<li><b>metric_bo:</b> Best score achieved during the BO.</li>
-<li><b>time_bo:</b> Time spent on the BO.</li>
-<li><b>metric_train:</b> Metric score on the training set.</li>
-<li><b>metric_test:</b> Metric score on the test set.</li>
-<li><b>time_fit:</b> Time spent fitting and evaluating.</li>
-<li><b>mean_bootstrap:</b> Mean score of the bootstrap results.</li>
-<li><b>std_bootstrap:</b> Standard deviation score of the bootstrap results.</li>
-<li><b>time_bootstrap:</b> Time spent on the bootstrap algorithm.</li>
-<li><b>time:</b> Total time spent on the whole run.</li>
-</ul>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Additional:</strong></td>
-<td width="80%" class="td_params">
-<strong>Attributes and methods for dataset</strong><br>
-Some attributes and methods can be called from atom but will return
-the call from the dataset in the current branch, e.g. <code>atom.dtypes</code>
-shows the types of every column in the dataset. These attributes and
-methods are: "size", "head", "tail", "loc", "iloc", "describe", "iterrows",
-"dtypes", "at", "iat".
-</td>
-</tr>
-</table>
-<br>
+:: table:
+    - attributes:
+        from_docstring: False
+        include:
+            - models
+            - metric
+            - errors
+            - n_nans
+            - winners
+            - winner
+            - outliers
+            - n_outliers
+            - classes
+            - n_classes
 
+<br>
 
 ### Plot attributes
  
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>style: str</strong><br>
-Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
-</p>
-<p>
-<strong>palette: str</strong><br>
-Color palette. See seaborn's <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
-</p>
-<p>
-<strong>title_fontsize: int</strong><br>
-Fontsize for the plot's title.
-</p>
-<p>
-<strong>label_fontsize: int</strong><br>
-Fontsize for labels and legends.
-</p>
-<p>
-<strong>tick_fontsize: int</strong><br>
-Fontsize for the ticks along the plot's axes.
-</p>
-</td>
-</tr>
-</table>
-<br><br>
-
+:: table:
+    - attributes:
+        from_docstring: False
+        include:
+            - style
+            - palette
+            - title_fontsize
+            - label_fontsize
+            - tick_fontsize
 
 
 ## Utility methods
@@ -443,316 +105,33 @@ Fontsize for the ticks along the plot's axes.
 The class contains a variety of utility methods to handle the data and
 manage the pipeline.
 
-<table style="font-size:16px;margin-top:5px">
-<tr>
-<td><a href="#add">add</a></td>
-<td>Add a transformer to the pipeline.</td>
-</tr>
-
-<tr>
-<td><a href="#apply">apply</a></td>
-<td>Apply a function to the dataset.</td>
-</tr>
-
-<tr>
-<td><a href="#automl">automl</a></td>
-<td>Search for an optimized pipeline in an automated fashion.</td>
-</tr>
-
-<tr>
-<td><a href="#available-models">available_models</a></td>
-<td>Give an overview of the available predefined models.</td>
-</tr>
-
-<tr>
-<td><a href="#canvas">canvas</a></td>
-<td>Create a figure with multiple plots.</td>
-</tr>
-
-<tr>
-<td><a href="#clear">clear</a></td>
-<td>Clear attributes from all models.</td>
-</tr>
-
-<tr>
-<td><a href="#delete">delete</a></td>
-<td>Delete models.</td>
-</tr>
-
-<tr>
-<td><a href="#distribution">distribution</a></td>
-<td>Get statistics on column distributions.</td>
-</tr>
-
-<tr>
-<td><a href="#drop">drop</a></td>
-<td>Drop columns from the dataset.</td>
-</tr>
-
-<tr>
-<td><a href="#evaluate">evaluate</a></td>
-<td>Get all models' scores for the provided metrics.</td>
-</tr>
-
-<tr>
-<td><a href="#export-pipeline">export_pipeline</a></td>
-<td>Export the pipeline to a sklearn-like Pipeline object.</td>
-</tr>
-
-<tr>
-<td><a href="#get-class-weight">get_class_weight</a></td>
-<td>Return class weights for a balanced dataset.</td>
-</tr>
-
-<tr>
-<td><a href="#inverse-transform">inverse_transform</a></td>
-<td>Inversely transform new data through the pipeline.</td>
-</tr>
-
-<tr>
-<td><a href="#log">log</a></td>
-<td>Save information to the logger and print to stdout.</td>
-</tr>
-
-<tr>
-<td><a href="#merge">merge</a></td>
-<td>Merge another instance of the same class into this one.</td>
-</tr>
-
-<tr>
-<td><a href="#report">report</a></td>
-<td>Get an extensive profile analysis of the data.</td>
-</tr>
-
-<tr>
-<td><a href="#reset">reset</a></td>
-<td>Reset the instance to it's initial state.</td>
-</tr>
-
-<tr>
-<td><a href="#reset-aesthetics">reset_aesthetics</a></td>
-<td>Reset the plot aesthetics to their default values.</td>
-</tr>
-
-<tr>
-<td><a href="#save">save</a></td>
-<td>Save the instance to a pickle file.</td>
-</tr>
-
-<tr>
-<td><a href="#save-data">save_data</a></td>
-<td>Save data to a csv file.</td>
-</tr>
-
-<tr>
-<td><a href="#shrink">shrink</a></td>
-<td>Converts the columns to the smallest possible matching dtype.</td>
-</tr>
-
-<tr>
-<td><a href="#stacking">stacking</a></td>
-<td>Train a Stacking model.</td>
-</tr>
-
-<tr>
-<td><a href="#stats">stats</a></td>
-<td>Print out a list of basic statistics on the dataset.</td>
-</tr>
-
-<tr>
-<td><a href="#status">status</a></td>
-<td>Get an overview of atom's branches, models and errors.</td>
-</tr>
-
-<tr>
-<td><a href="#transform">transform</a></td>
-<td>Transform new data through the pipeline.</td>
-</tr>
-
-<tr>
-<td><a href="#voting">voting</a></td>
-<td>Train a Voting model.</td>
-</tr>
-</table>
-<br>
-
-
-<a name="add"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">add</strong>(transformer,
-columns=None, train_only=False, **fit_params)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L887">[source]</a>
-</span>
-</div>
-Add a transformer to the pipeline. If the transformer is not fitted,
-it is fitted on the complete training set. Afterwards, the data set
-is transformed and the transformer is added to atom's pipeline. If
-the transformer is a sklearn Pipeline, every transformer is merged
-independently with atom.
-
-!!! warning
-
-    * The transformer should have fit and/or transform methods with arguments
-      `X` (accepting a dataframe-like object of shape=(n_samples, n_features))
-      and/or `y` (accepting a sequence of shape=(n_samples,)).
-    * The transform method should return a feature set as a dataframe-like
-      object of shape=(n_samples, n_features) and/or a target column as a
-      sequence of shape=(n_samples,).
-
-!!! note
-    If the transform method doesn't return a dataframe:
-
-    * The column naming happens as follows. If the transformer has a
-      `get_feature_names` or `get_feature_names_out` method, it is used.
-      If not, and it returns the same number of columns, the names are
-      kept equal. If the number of columns change, old columns will keep
-      their name (as long as the column is unchanged) and new columns will
-      receive the name `x[N-1]`, where N stands for the n-th feature. This
-      means that a transformer should only transform, add or drop columns,
-      not combinations of these.
-    * The index remains the same as before the transformation. This means
-      that the transformer should not add, remove or shuffle rows unless it
-      returns a dataframe.
-
-!!! note
-    If the transformer has a `n_jobs` and/or `random_state` parameter that
-    is left to its default value, it adopts atom's value.
-
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>transformer: Transformer</strong><br>
-Estimator to add to the pipeline. Should implement a <code>transform</code> method.
-</p>
-<p>
-<strong>columns: int, str, slice, sequence or None, default=None</strong><br>
-Names, indices or dtypes of the columns in the dataset to transform.
-If None, transform all columns. Add <code>!</code> in front of a name
-or dtype to exclude that column, e.g. <code>atom.add(Transformer(), columns="!Location")</code>
-transforms all columns except <code>Location</code>. You can either
-include or exclude columns, not combinations of these. The target
-column is always included if required by the transformer.
-</p>
-<p>
-<strong>train_only: bool, default=False</strong><br>
-Whether to apply the estimator only on the training set or
-on the complete dataset. Note that if True, the transformation
-is skipped when making predictions on new data.
-</p>
-<p>
-<strong>**fit_params</strong><br>
-Additional keyword arguments for the fit method of the transformer.
-</p>
-</td>
-</tr>
-</table>
-<br />
-
-
-<a name="apply"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">apply</strong>(func,
-inverse_func=None, kw_args=None, inv_kw_args=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L934">[source]</a>
-</span>
-</div>
-Apply a function to the dataset. The function should have signature
-`func(dataset, **kw_args) -> dataset` and return the transformed
-dataset. This is useful for stateless transformations such as taking
-the log, doing custom scaling, etc...
-
-!!! note
-    This approach is preferred over changing the dataset directly
-    through the property's `@setter` since the transformation is 
-    stored in the pipeline.
-
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>func: callable</strong><br>
-Function to apply.
-</p>
-<p>
-<strong>columns: int or str</strong><br>
-Name or index of the column to create or transform.
-</p>
-<p>
-<strong>inverse_func: callable or None, default=None</strong><br>
-Inverse function of <code>func</code>. If None, the inverse_transform
-method returns the input unchanged.
-</p>
-<p>
-<strong>kw_args: dict or None, default=None</strong><br>
-Additional keyword arguments for the function.
-</p>
-<p>
-<strong>inv_kw_args: dict or None, default=None</strong><br>
-Additional keyword arguments for the inverse function.
-</p>
-</td>
-</tr>
-</table>
-<br />
-
-
-<a name="automl"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">automl</strong>(**kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L264">[source]</a>
-</span>
-</div>
-Uses the [TPOT](http://epistasislab.github.io/tpot/) package to perform
-an automated search of transformers and a final estimator that maximizes
-a metric on the dataset. The resulting transformations and estimator are
-merged with atom's pipeline. The tpot instance can be accessed through the
-`tpot` attribute. Read more in the [user guide](../../../user_guide/data_management/#automl).
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**kwargs</strong><br>
-Keyword arguments for <a href="https://epistasislab.github.io/tpot/api/#classification">TPOTClassifier</a>.
-</td>
-</tr>
-</table>
-<br />
-
-
-<a name="available-models"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">available_models</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L500">[source]</a>
-</span>
-</div>
-Give an overview of the available predefined models.
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>pd.DataFrame</strong><br>
-Information about the predefined models available for the current task.
-Columns include:
-<ul style="line-height:1.2em;margin-top:5px">
-<li><b>acronym:</b> Model's acronym (used to call the model).</li>
-<li><b>fullname:</b> Complete name of the model.</li>
-<li><b>estimator:</b> The model's underlying estimator.</li>
-<li><b>module:</b> The estimator's module.</li>
-<li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
-<li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
-<li><b>supports_gpu:</b> Whether the model has GPU support.</li>
-</ul>
-</td>
-</tr>
-</table>
-<br />
+:: methods:
+    toc_only: False
+    include:
+        - add
+        - apply
+        - automl
+        - available_models
+        - canvas
+        - clear
+        - delete
+        - distribution
+        - evaluate
+        - get_class_weight
+        - inverse_transform
+        - log
+        - merge
+        - report
+        - reset
+        - reset_aesthetics
+        - save
+        - save_data
+        - shrink
+        - stacking
+        - stats
+        - status
+        - transform
+        - voting
 
 
 <a name="canvas"></a>
@@ -1999,34 +1378,3 @@ fashion. The following steps are applied to every model (per iteration):
 See [TrainSizingClassifier](../training/trainsizingclassifier.md) for a
 description of the parameters.
 <br /><br /><br />
-
-
-
-## Example
-
-```python
-from atom import ATOMClassifier
-
-# Initialize atom
-atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
-
-# Apply data cleaning methods
-atom.prune(strategy="zscore", max_sigma=2)
-atom.balance(strategy="smote")
-
-# Fit the models to the data
-atom.run(
-    models=["QDA", "CatB"],
-    metric="precision",
-    n_calls=25,
-    n_initial_points=10,
-    n_bootstrap=4,
-)
-
-# Analyze the results
-atom.plot_roc(figsize=(9, 6), filename="roc.png")  
-atom.catb.plot_feature_importance(filename="catboost_feature_importance.png")
-
-# Get the predictions on new data
-pred = atom.qda.predict(X_new)
-```

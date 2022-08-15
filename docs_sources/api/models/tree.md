@@ -1,7 +1,7 @@
 # Decision Tree (Tree)
 ----------------------
 
-<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#sparse-datasets" class="md-tag" draggable=False>accept sparse</a>
 
 A single decision tree classifier/regressor.
 

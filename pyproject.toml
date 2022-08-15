@@ -63,7 +63,7 @@ models = [
 dev = [
     # Linting
     "isort>=5.10.1",
-    "flake8>=4.0.1",
+    "flake8>=5.0.4",
     "flake8-pyproject>=0.9.1",  # To configure flake8 with pyproject.toml
     # Tetsing
     "pytest>=7.1.0",
@@ -89,6 +89,7 @@ excludes = ["tests/mlruns"]
 source-includes = ["tests/"]
 
 [tool.flake8]
+max-line-length = 89
 ignore = [
     "W605",  # Invalid escape sequence: \s, \w, etc... (removed due to docstrings)
     "W503",  # Line break before binary operator

@@ -137,7 +137,7 @@ def ATOMLoader(
                 branch._data, branch._idx = data, idx
 
             if transform_data:
-                if not v1.pipeline.empty:
+                if len(cls._branches) > 2 and not v1.pipeline.empty:
                     cls.log(f"Transforming data for branch {b1}:", 1)
 
                 for i, est1 in enumerate(v1.pipeline):
@@ -246,7 +246,17 @@ def ATOMModel(
 # Classes ========================================================== >>
 
 class ATOMClassifier(BaseTransformer, ATOM):
-    """ATOM class for classification tasks.
+    """Main class for binary and multiclass classification tasks.
+
+    Apply all data transformations and model management provided by
+    the package on a given dataset. Note that, contrary to sklearn's
+    API, the instance contains the dataset on which to perform the
+    analysis. Calling a method will automatically apply it on the
+    dataset it contains.
+
+    All [data cleaning][], [feature engineering][], [model training]
+    [training], [predicting][], and [plotting][plots] functionality
+    can be accessed from an instacne of this class.
 
     Parameters
     ----------
@@ -261,14 +271,10 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - (X_train, y_train), (X_test, y_test)
             - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        X, train, test: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str or sequence
-            Target column corresponding to X.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+        Where X is the feature set with shape=(n_samples, n_features),
+        y is the target column corresponding to X (see the `y` parameter
+        for the possible values), and train, test and holdout are the
+        complete data sets with features and target.
 
     y: int, str or sequence, default=-1
         Target column corresponding to X.
@@ -281,7 +287,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     index: bool, int, str or sequence, default=False
         Handle the index in the resulting dataframe.
-            - If False: Reset to RangeIndex.
+            - If False: Reset to [RangeIndex][].
             - If True: Use the provided index.
             - If int: Position of the column to use as index.
             - If str: Name of the column to use as index.
@@ -311,18 +317,19 @@ class ATOMClassifier(BaseTransformer, ATOM):
         Handle stratification of the target classes over the data sets.
             - If False: The data is split randomly.
             - If True: The data is stratified over the target column.
-            - Else: Name or position of the columns to stratify by. The
-                    columns can't contain `NaN` values.
+            - Else: Name or position of the columns to stratify by.
 
         This parameter is ignored if `shuffle=False` or if the test
-        set is provided through `arrays.
+        set is provided through `arrays`.
+
+        Stratification columns can't contain `NaN` values.
 
     n_rows: int or float, default=1
-        Random subsample of the provided dataset to use. The default
-        value selects all the rows.
-        - If <=1: Select this fraction of the dataset.
-        - If >1: Select this exact number of rows. Only if the input
-                 doesn't already specify the data sets (i.e. X or X, y).
+        Subsample of the dataset to use. The default value selects all
+        the rows.
+        - If <=1: Fraction of the dataset to select.
+        - If >1: Exact number of rows to select. Only if `arrays` is X
+                 or X, y.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -357,12 +364,109 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
-        Name of the mlflow experiment to use for tracking. If None,
-        no mlflow tracking is performed.
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
 
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
+
+    See Also
+    --------
+    atom.api:ATOMRegressor
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> # Initialize atom
+    >>> atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+
+    << ================== ATOM ================== >>
+    Algorithm task: binary classification.
+    Parallel processing with 2 cores.
+
+    Dataset stats ==================== >>
+    Shape: (569, 31)
+    Memory: 138.96 kB
+    Scaled: False
+    Outlier values: 160 (1.1%)
+    -------------------------------------
+    Train set size: 456
+    Test set size: 113
+    -------------------------------------
+    |   |     dataset |       train |        test |
+    | - | ----------- | ----------- | ----------- |
+    | 0 |   212 (1.0) |   170 (1.0) |    42 (1.0) |
+    | 1 |   357 (1.7) |   286 (1.7) |    71 (1.7) |
+
+    >>> # Apply data cleaning and feature engineering methods
+    >>> atom.balance(strategy="smote")
+
+    Oversampling with SMOTE...
+     --> Adding 116 samples to class 0.
+
+    >>> atom.feature_selection(strategy="rfecv", solver="xgb", n_features=22)
+
+    Fitting FeatureSelector...
+    Performing feature selection ...
+     --> RFECV selected 26 features from the dataset.
+       --> Dropping feature mean perimeter (rank 4).
+       --> Dropping feature mean symmetry (rank 3).
+       --> Dropping feature perimeter error (rank 2).
+       --> Dropping feature worst compactness (rank 5).
+
+    >>> # Train models
+    >>> atom.run(
+    ...    models=["LR", "RF", "XGB"],
+    ...    metric="precision",
+    ...    n_bootstrap=4,
+    ... )
+
+    Training ========================= >>
+    Models: LR, RF, XGB
+    Metric: precision
+
+    Results for Logistic Regression:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 0.9895
+    Test evaluation --> precision: 0.9467
+    Time elapsed: 0.028s
+    -------------------------------------------------
+    Total time: 0.028s
+
+    Results for Random Forest:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 1.0
+    Test evaluation --> precision: 0.9221
+    Time elapsed: 0.181s
+    -------------------------------------------------
+    Total time: 0.181s
+
+    Results for XGBoost:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 1.0
+    Test evaluation --> precision: 0.9091
+    Time elapsed: 0.124s
+    -------------------------------------------------
+    Total time: 0.124s
+
+    Final results ==================== >>
+    Duration: 0.333s
+    -------------------------------------
+    Logistic Regression --> precision: 0.9467 !
+    Random Forest       --> precision: 0.9221
+    XGBoost             --> precision: 0.9091
+
+    >>> # Analyze the results
+    >>> atom.plot_results()
+
+    ```
+
+    ![plot_results](../../img/plots/plot_results_1.png)
 
     """
 
@@ -410,7 +514,18 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
-    """ATOM class for regression tasks.
+    """Main wrapper for regression tasks.
+
+    ATOM's main class for regression tasks.
+    Apply all data transformations and model management provided by
+    the package on a given dataset. Note that, contrary to sklearn's
+    API, the instance contains the dataset on which to perform the
+    analysis. Calling a method will automatically apply it on the
+    dataset it contains.
+
+    All [data cleaning][], [feature engineering][], [model training]
+    [training], [predicting][], and [plotting][plots] functionality
+    can be accessed from an instacne of this class.
 
     Parameters
     ----------
@@ -425,14 +540,10 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - (X_train, y_train), (X_test, y_test)
             - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        X, train, test: dataframe-like
-            Feature set with shape=(n_samples, n_features).
-
-        y: int, str or sequence
-            Target column corresponding to X.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+        Where X is the feature set with shape=(n_samples, n_features),
+        y is the target column corresponding to X (see the `y` parameter
+        for the possible values), and train, test and holdout are the
+        complete data sets with features and target.
 
     y: int, str or sequence, default=-1
         Target column corresponding to X.
@@ -445,7 +556,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     index: bool, int, str or sequence, default=False
         Handle the index in the resulting dataframe.
-            - If False: Reset to RangeIndex.
+            - If False: Reset to [RangeIndex][].
             - If True: Use the provided index.
             - If int: Position of the column to use as index.
             - If str: Name of the column to use as index.
@@ -469,14 +580,13 @@ class ATOMRegressor(BaseTransformer, ATOM):
     shuffle: bool, default=True
         Whether to shuffle the dataset before splitting the train and
         test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of the target classes over the sets.
+        an unequal distribution of target classes over the sets.
 
     n_rows: int or float, default=1
-        Random subsample of the provided dataset to use. The default
-        value selects all the rows.
+        Subsample of the dataset to use. The default value selects all
+        the rows.
         - If <=1: Select this fraction of the dataset.
-        - If >1: Select this exact number of rows. Only if the input
-                 doesn't already specify the data sets (i.e. X or X, y).
+        - If >1: Select this exact number of rows.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -517,6 +627,102 @@ class ATOMRegressor(BaseTransformer, ATOM):
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
+
+    See Also
+    --------
+    atom.api:ATOMClassifier
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> # Initialize atom
+    >>> atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+
+    << ================== ATOM ================== >>
+    Algorithm task: binary classification.
+    Parallel processing with 2 cores.
+    Dataset stats ==================== >>
+    Shape: (569, 31)
+    Memory: 138.96 kB
+    Scaled: False
+    Outlier values: 160 (1.1%)
+    -------------------------------------
+    Train set size: 456
+    Test set size: 113
+    -------------------------------------
+    |   |     dataset |       train |        test |
+    | - | ----------- | ----------- | ----------- |
+    | 0 |   212 (1.0) |   170 (1.0) |    42 (1.0) |
+    | 1 |   357 (1.7) |   286 (1.7) |    71 (1.7) |
+
+    >>> # Apply data cleaning and feature engineering methods
+    >>> atom.balance(strategy="smote")
+
+    Oversampling with SMOTE...
+     --> Adding 116 samples to class 0.
+
+    >>> atom.feature_selection(strategy="rfecv", solver="xgb", n_features=22)
+
+    Fitting FeatureSelector...
+    Performing feature selection ...
+     --> RFECV selected 26 features from the dataset.
+       --> Dropping feature mean perimeter (rank 4).
+       --> Dropping feature mean symmetry (rank 3).
+       --> Dropping feature perimeter error (rank 2).
+       --> Dropping feature worst compactness (rank 5).
+
+    >>> # Train models
+    >>> atom.run(
+    ...    models=["LR", "RF", "XGB"],
+    ...    metric="precision",
+    ...    n_bootstrap=4,
+    ... )
+
+    Training ========================= >>
+    Models: LR, RF, XGB
+    Metric: precision
+
+    Results for Logistic Regression:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 0.9895
+    Test evaluation --> precision: 0.9467
+    Time elapsed: 0.028s
+    -------------------------------------------------
+    Total time: 0.028s
+
+    Results for Random Forest:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 1.0
+    Test evaluation --> precision: 0.9221
+    Time elapsed: 0.181s
+    -------------------------------------------------
+    Total time: 0.181s
+
+    Results for XGBoost:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 1.0
+    Test evaluation --> precision: 0.9091
+    Time elapsed: 0.124s
+    -------------------------------------------------
+    Total time: 0.124s
+
+    Final results ==================== >>
+    Duration: 0.333s
+    -------------------------------------
+    Logistic Regression --> precision: 0.9467 !
+    Random Forest       --> precision: 0.9221
+    XGBoost             --> precision: 0.9091
+
+    >>> # Analyze the results
+    >>> atom.plot_results()
+
+    ```
+
+    ![plot_results](../../img/plots/plot_results_1.png)
 
     """
 

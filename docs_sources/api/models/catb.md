@@ -2,7 +2,7 @@
 -----------------
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
-<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#sparse-datasets" class="md-tag" draggable=False>accept sparse</a>
 <a href="../../../user_guide/gpu" class="md-tag" draggable=False>supports_gpu</a>
 
 CatBoost is a machine learning method based on gradient boosting over

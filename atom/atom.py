@@ -30,7 +30,7 @@ from atom.data_cleaning import (
     Scaler,
 )
 from atom.feature_engineering import (
-    FeatureExtractor, FeatureGenerator, FeatureSelector,
+    FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
 )
 from atom.models import MODELS, MODELS_ENSEMBLES, CustomModel
 from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
@@ -178,7 +178,13 @@ class ATOM(BaseRunner, ATOMPlotter):
 
     @property
     def scaled(self) -> bool:
-        """Whether the feature set is scaled."""
+        """Whether the feature set is scaled.
+
+        A data set is considered scaled when it has mean=0 and std=1,
+        or when atom has a scaler in the pipeline. Returns None for
+        [sparse datasets][].
+
+        """
         if not is_sparse(self.X):
             est_names = [est.__class__.__name__.lower() for est in self.pipeline]
             return check_scaling(self.X) or any("scaler" in name for name in est_names)
@@ -977,8 +983,36 @@ class ATOM(BaseRunner, ATOMPlotter):
         a sklearn Pipeline, every estimator is merged independently
         with atom.
 
-        If the estimator has a `n_jobs` and/or `random_state` parameter
-        that is left to its default value, it adopts atom's value.
+        !!! warning
+
+            * The transformer should have fit and/or transform methods
+              with arguments `X` (accepting a dataframe-like object of
+              shape=(n_samples, n_features)) and/or `y` (accepting a
+              sequence of shape=(n_samples,)).
+            * The transform method should return a feature set as a
+              dataframe-like object of shape=(n_samples, n_features)
+              and/or a target column as a sequence of shape=(n_samples,).
+
+        !!! note
+            If the transform method doesn't return a dataframe:
+
+            * The column naming happens as follows. If the transformer
+              has a `get_feature_names` or `get_feature_names_out`
+              method, it is used. If not, and it returns the same number
+              of columns, the names are kept equal. If the number of
+              columns change, old columns will keep their name (as long
+              as the column is unchanged) and new columns will receive
+              the name `x[N-1]`, where N stands for the n-th feature.
+              This means that a transformer should only transform, add
+              or drop columns, not combinations of these.
+            * The index remains the same as before the transformation.
+              This means that the transformer should not add, remove or
+              shuffle rows unless it returns a dataframe.
+
+        !!! note
+            If the transformer has a `n_jobs` and/or `random_state`
+            parameter that is left to its default value, it adopts
+            atom's value.
 
         Parameters
         ----------
@@ -987,8 +1021,13 @@ class ATOM(BaseRunner, ATOMPlotter):
             `transform` method.
 
         columns: int, str, slice, sequence or None, default=None
-            Names or indices of the columns in the dataset to transform.
-            If None, transform all columns.
+            Names, indices or dtypes of the columns in the dataset to
+            transform. If None, transform all columns. Add `!` in front
+            of a name or dtype to exclude that column, e.g.
+            `atom.add(Transformer(), columns="!Location")`</code>`
+            transforms all columns except `Location`. You can either
+            include or exclude columns, not combinations of these. The
+            target column is always included if required by the transformer.
 
         train_only: bool, default=False
             Whether to apply the estimator only on the training set or
@@ -996,7 +1035,7 @@ class ATOM(BaseRunner, ATOMPlotter):
             is skipped when making predictions on new data.
 
         **fit_params
-            Additional keyword arguments for the estimator's fit method.
+            Additional keyword arguments for the transformer's fit method.
 
         """
         if transformer.__class__.__name__ == "Pipeline":
@@ -1019,20 +1058,18 @@ class ATOM(BaseRunner, ATOMPlotter):
     ):
         """Apply a function to the dataset.
 
-        The function should have signature `func(dataset, **kw_args)`
-        and return the transformed dataset. This is useful for
-        stateless transformations such as taking the log, doing
-        custom scaling, etc...
+        The function should have signature `func(dataset, **kw_args)
+        -> dataset`. This method is useful for stateless transformations
+        such as taking the log, doing custom scaling, etc...
 
-        This approach is preferred over changing the dataset directly
-        through the property's `@setter` since the transformation is
-        stored in the pipeline.
+        !!! note
+            This approach is preferred over changing the dataset directly
+            through the property's `@setter` since the transformation is
+            stored in the pipeline.
 
         !!! tip
             Use `#!python atom.apply(lambda df: df.drop("column_name",
-            axis=1))` or `#!python atom.apply(lambda df: df.drop(df.columns,
-            axis=1), columns="column_name)` to store the removal of
-            columns in the pipeline.
+            axis=1))` to store the removal of columns in the pipeline.
 
         Parameters
         ----------
@@ -1500,8 +1537,6 @@ class ATOM(BaseRunner, ATOMPlotter):
         successfully converted to a datetime format (less than 30% NaT
         values after conversion) are also used.
 
-        See feature_engineering.py for a description of the parameters.
-
         """
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, signature(FeatureExtractor).parameters)
@@ -1524,13 +1559,10 @@ class ATOM(BaseRunner, ATOMPlotter):
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
-        """Apply automated feature engineering.
+        """Generate new features.
 
         Create new combinations of existing features to capture the
-        non-linear relations between the original features. Attributes
-        created by the class are attached to atom.
-
-        See feature_engineering.py for a description of the parameters.
+        non-linear relations between the original features.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1550,6 +1582,38 @@ class ATOM(BaseRunner, ATOMPlotter):
             self.branch.genetic_features = feature_generator.genetic_features
 
     @composed(crash, method_to_log, typechecked)
+    def feature_grouping(
+        self,
+        group: Union[str, SEQUENCE_TYPES],
+        name: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        *,
+        operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        drop_columns: bool = True,
+        **kwargs,
+    ):
+        """Extract statistics from similar features.
+
+        Replace groups of features with related characteristics with new
+        features that summarize statistical properties of te group. The
+        statistical operators are calculated over every row of the group.
+        The group names and features can be accessed through the `groups`
+        method.
+
+        """
+        columns = kwargs.pop("columns", None)
+        kwargs = self._prepare_kwargs(kwargs, signature(FeatureGrouper).parameters)
+        feature_grouper = FeatureGrouper(
+            group=group,
+            name=name,
+            operators=operators,
+            drop_columns=drop_columns,
+            **kwargs,
+        )
+
+        self._add_transformer(feature_grouper, columns=columns)
+        self.branch.groups = feature_grouper.groups
+
+    @composed(crash, method_to_log, typechecked)
     def feature_selection(
         self,
         strategy: Optional[str] = None,
@@ -1560,14 +1624,22 @@ class ATOM(BaseRunner, ATOMPlotter):
         max_correlation: Optional[float] = 1.0,
         **kwargs,
     ):
-        """Apply feature selection techniques.
+        """Reduce the number of features in the data.
 
-        Remove features according to the selected strategy. Ties
-        between features with equal scores are broken in an unspecified
-        way. Additionally, remove multicollinear and low variance
-        features.
+        Apply feature selection or dimensionality reduction, either to
+        improve the estimators' accuracy or to boost their performance
+        on very high-dimensional datasets. Additionally, remove
+        multicollinear and low variance features.
 
-        See feature_engineering.py for a description of the parameters.
+        !!! note
+            * When strategy="univariate" and solver=None, [f_classif][]
+              is used as default solver.
+            * When strategy is not one of univariate or pca, and
+              solver=None, the winning model (if it exists) is used as
+              solver.
+            * When strategy is sfs, rfecv or any of the [advanced strategies][]
+              and no scoring is specified, atom's metric (if it exists)
+              is used as scoring.
 
         """
         if isinstance(strategy, str):
@@ -1689,8 +1761,8 @@ class ATOM(BaseRunner, ATOMPlotter):
             if model in self._models:
                 self._models.pop(model)
                 self.log(
-                    f"\nWarning: Consecutive runs of the same model ({model}) "
-                    "were detected. The former model has been overwritten.", 3
+                    f"Consecutive runs of model {model}. The former "
+                    " model has been overwritten.", 1, severity="warning"
                 )
 
         self._models.update(trainer._models)

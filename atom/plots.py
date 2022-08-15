@@ -74,7 +74,13 @@ class BaseFigure:
 
     """
 
-    def __init__(self, nrows=1, ncols=1, create_figure=True, is_canvas=False):
+    def __init__(
+        self,
+        nrows: int = 1,
+        ncols: int = 1,
+        create_figure: bool = True,
+        is_canvas: bool = False,
+    ):
         self.nrows = nrows
         self.ncols = ncols
         self.create_figure = create_figure
@@ -88,7 +94,7 @@ class BaseFigure:
             self.gridspec = GridSpec(nrows=self.nrows, ncols=self.ncols, figure=figure)
 
     @property
-    def figure(self):
+    def figure(self) -> plt.Figure:
         """Get the current figure and increase the subplot index."""
         self._idx += 1
 
@@ -103,7 +109,7 @@ class BaseFigure:
             return plt.gcf()
 
     @property
-    def grid(self):
+    def grid(self) -> GridSpec:
         """Return the position of the current axes in the grid."""
         return self.gridspec[self._idx]
 
@@ -130,7 +136,8 @@ class BasePlotter:
     # Properties =================================================== >>
 
     @property
-    def aesthetics(self):
+    def aesthetics(self) -> dict:
+        """All plot aesthetic attributes."""
         return self._aesthetics
 
     @aesthetics.setter
@@ -143,7 +150,8 @@ class BasePlotter:
         self.tick_fontsize = value.get("tick_fontsize", self.tick_fontsize)
 
     @property
-    def style(self):
+    def style(self) -> str:
+        """Plotting [style][]."""
         return self._aesthetics["style"]
 
     @style.setter
@@ -159,7 +167,8 @@ class BasePlotter:
         self._aesthetics["style"] = value
 
     @property
-    def palette(self):
+    def palette(self) -> str:
+        """Color [palette][]."""
         return self._aesthetics["palette"]
 
     @palette.setter
@@ -169,12 +178,13 @@ class BasePlotter:
         self._aesthetics["palette"] = value
 
     @property
-    def title_fontsize(self):
+    def title_fontsize(self) -> int:
+        """Fontsize for the plot's title."""
         return self._aesthetics["title_fontsize"]
 
     @title_fontsize.setter
     @typechecked
-    def title_fontsize(self, value: int):
+    def title_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the title_fontsize parameter. "
@@ -183,12 +193,13 @@ class BasePlotter:
         self._aesthetics["title_fontsize"] = value
 
     @property
-    def label_fontsize(self):
+    def label_fontsize(self) -> int:
+        """Fontsize for labels and legends."""
         return self._aesthetics["label_fontsize"]
 
     @label_fontsize.setter
     @typechecked
-    def label_fontsize(self, value: int):
+    def label_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the label_fontsize parameter. "
@@ -197,12 +208,13 @@ class BasePlotter:
         self._aesthetics["label_fontsize"] = value
 
     @property
-    def tick_fontsize(self):
+    def tick_fontsize(self) -> int:
+        """Fontsize for the ticks along the plot's axes."""
         return self._aesthetics["tick_fontsize"]
 
     @tick_fontsize.setter
     @typechecked
-    def tick_fontsize(self, value: int):
+    def tick_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the tick_fontsize parameter. "
@@ -211,7 +223,7 @@ class BasePlotter:
         self._aesthetics["tick_fontsize"] = value
 
     def reset_aesthetics(self):
-        """Reset the plot aesthetics to their default values."""
+        """Reset the plot [aesthetics][] to their default values."""
         self.aesthetics = dict(
             style="darkgrid",
             palette="GnBu_r_d",
@@ -2063,8 +2075,6 @@ class BaseModelPlotter(BasePlotter):
         The feature importance values are normalized in order to be
         able to compare them between models. Only for models whose
         estimator has a `feature_importances_` or `coef` attribute.
-        The `feature_importance` attribute is updated with the
-        extracted importance ranking.
 
         Parameters
         ----------
@@ -2116,10 +2126,6 @@ class BaseModelPlotter(BasePlotter):
             for col, fx in zip(m.features, fi):
                 df.at[col, m.name] = fx / max(fi)
 
-        # Save the best feature order
-        best_fxs = df.fillna(0).sort_values(by=df.columns[-1], ascending=False)
-        self.branch.feature_importance = list(best_fxs.index.values)
-
         # Select best and sort ascending (by sum of total importances)
         df = df.nlargest(show, columns=df.columns[-1])
         df = df.reindex(sorted(df.index, key=lambda i: df.loc[i].sum()))
@@ -2167,8 +2173,7 @@ class BaseModelPlotter(BasePlotter):
         are stored under the `permutations` attribute. If the plot
         is called again for the same model with the same `n_repeats`,
         it will use the stored values, making the method considerably
-        faster. The `feature_importance` attribute is updated with the
-        extracted importance ranking.
+        faster.
 
         Parameters
         ----------
@@ -2243,9 +2248,6 @@ class BaseModelPlotter(BasePlotter):
         get_idx = df.groupby("features", as_index=False)["score"].sum()
         get_idx = get_idx.sort_values("score", ascending=False)
         column_order = get_idx["features"].values[:show]
-
-        # Save the best feature order
-        self.branch.feature_importance = list(get_idx.columns.values)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -2900,7 +2902,7 @@ class BaseModelPlotter(BasePlotter):
             are selected.
 
         metric: str, func, scorer, sequence or None, default=None
-            Metric to plot. Choose from any of sklearn's SCORERS, a
+            Metric to plot. Choose from any of sklearn's scorers, a
             function with signature `metric(y_true, y_pred)`, a scorer
             object or a sequence of these. If None, the metric used
             to run the pipeline is plotted.

@@ -13,7 +13,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import f_regression
 
 from atom.feature_engineering import (
-    FeatureExtractor, FeatureGenerator, FeatureSelector,
+    FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
 )
 from atom.utils import to_df
 
@@ -193,6 +193,73 @@ def test_default_feature_names():
     assert "x32" in X and "x33" in X
 
 
+# Test FeatureGrouper ============================================= >>
+
+def test_groups_invalid_int():
+    """Assert that an error is raised when len(groups) != len(names)."""
+    grouper = FeatureGrouper(group=[0, 99])
+    with pytest.raises(ValueError, match=r".*out of range.*"):
+        grouper.transform(X_bin)
+
+
+def test_groups_invalid_str():
+    """Assert that an error is raised when len(groups) != len(names)."""
+    grouper = FeatureGrouper(group=[0, "invalid"])
+    with pytest.raises(ValueError, match=r".*not find any column.*"):
+        grouper.transform(X_bin)
+
+
+def test_unequal_groups_names():
+    """Assert that an error is raised when len(groups) != len(names)."""
+    grouper = FeatureGrouper(group=[0, 1, 2], name=["a", "b"])
+    with pytest.raises(ValueError, match=r".*does not match.*"):
+        grouper.transform(X_bin)
+
+
+def test_operator_not_in_libraries():
+    """Assert that an error is raised when an operator is not in np or stats."""
+    grouper = FeatureGrouper(group=[0, 1, 2], operators="invalid")
+    with pytest.raises(ValueError, match=r".*operators parameter.*"):
+        grouper.transform(X_bin)
+
+
+def test_invalid_operator():
+    """Assert that an error is raised when the result is not one-dimensional."""
+    grouper = FeatureGrouper(group=[0, 1, 2], operators="log")
+    with pytest.raises(ValueError, match=r".*one-dimensional.*"):
+        grouper.transform(X_bin)
+
+
+@pytest.mark.parametrize("groups", ["mean.+", "float", [0, 1], [[0, 1], [2, 3]]])
+def test_groups_are_created(groups):
+    """Assert that the groups are made."""
+    grouper = FeatureGrouper(group=groups)
+    X = grouper.transform(X_bin)
+    assert "mean(group_1)" in X.columns
+    assert X.columns[0] != X_bin.columns[0]
+
+
+def test_custom_names_and_operators():
+    """Assert that custom names and operators can be used."""
+    grouper = FeatureGrouper(group=[0, 1], name="gr", operators="var")
+    X = grouper.transform(X_bin)
+    assert "var(gr)" in X.columns
+
+
+def test_columns_are_kept():
+    """Assert that group columns can be kept."""
+    grouper = FeatureGrouper(group=[0, 1, 2], drop_columns=False)
+    X = grouper.transform(X_bin)
+    assert X.columns[0] == X_bin.columns[0]
+
+
+def test_attribute_is_created():
+    """Assert that the groups attribute is created."""
+    grouper = FeatureGrouper(group=[[0, 1], [2, 3]])
+    grouper.transform(X_bin)
+    assert list(grouper.groups.keys()) == ["group_1", "group_2"]
+
+
 # Test FeatureSelector ============================================= >>
 
 def test_unknown_strategy_parameter():
@@ -311,7 +378,7 @@ def test_univariate_strategy_custom_solver():
     selector = FeatureSelector("univariate", solver=f_regression, n_features=9)
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 9
-    assert set(selector.feature_importance) == set(X.columns)
+    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_pca_strategy():
@@ -379,7 +446,7 @@ def test_sfm_strategy_fitted_solver():
     )
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 7
-    assert set(selector.feature_importance) == set(X.columns)
+    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_sfm_strategy_not_fitted_solver():
@@ -389,7 +456,7 @@ def test_sfm_strategy_not_fitted_solver():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 5
-    assert set(selector.feature_importance) == set(X.columns)
+    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_sfs_strategy():
@@ -415,7 +482,7 @@ def test_RFE_strategy():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 13
-    assert set(selector.feature_importance) == set(X.columns)
+    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_rfecv_strategy_before_pipeline_classification():
@@ -428,7 +495,7 @@ def test_rfecv_strategy_before_pipeline_classification():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 4
-    assert set(selector.feature_importance) == set(X.columns)
+    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_rfecv_strategy_before_pipeline_regression():
@@ -436,7 +503,7 @@ def test_rfecv_strategy_before_pipeline_regression():
     selector = FeatureSelector("rfecv", solver="RF_reg", n_features=16, random_state=1)
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
-    assert set(selector.feature_importance) == set(X.columns)
+    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_kwargs_parameter_threshold():

@@ -475,8 +475,8 @@ def test_plot_partial_dependence_binary():
         atom.plot_partial_dependence(columns=[(0, 2), 2], display=False)
 
     # Unknown feature
-    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
-        atom.plot_partial_dependence(columns=["test", 2], display=False)
+    with pytest.raises(ValueError, match=r".*not find any column.*"):
+        atom.plot_partial_dependence(columns=["invalid", 2], display=False)
 
     # Different features for multiple models
     atom.branch = "b2"

@@ -2,7 +2,7 @@
 --------------------------------
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
-<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#sparse-datasets" class="md-tag" draggable=False>accept sparse</a>
 
 The Complement Naive Bayes classifier was designed to correct the
 “severe assumptions” made by the standard [Multinomial Naive Bayes](../mnb)

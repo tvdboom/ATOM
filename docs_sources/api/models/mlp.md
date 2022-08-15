@@ -2,7 +2,7 @@
 ------------------------------
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
-<a href="../../../user_guide/data_management/#sparse-data" class="md-tag" draggable=False>accept sparse</a>
+<a href="../../../user_guide/data_management/#sparse-datasets" class="md-tag" draggable=False>accept sparse</a>
 
 Multi-layer Perceptron (MLP) is a supervised learning algorithm that
 learns a function by training on a dataset. Given a set of features

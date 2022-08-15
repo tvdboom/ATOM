@@ -44,9 +44,9 @@ from atom.plots import BaseModelPlotter
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
     CustomDict, Predictor, Scorer, ShapExplanation, Table, composed, crash,
-    custom_transform, fit, flt, get_best_score, get_custom_scorer, get_pl_name,
-    inverse_transform, it, lst, merge, method_to_log, score, time_to_str,
-    transform, variable_return,
+    custom_transform, fit, flt, get_best_score, get_custom_scorer,
+    get_feature_importance, get_pl_name, inverse_transform, it, lst, merge,
+    method_to_log, score, time_to_str, transform, variable_return,
 )
 
 
@@ -712,6 +712,24 @@ class BaseModel(BaseModelPlotter):
     # Utility properties =========================================== >>
 
     @property
+    def feature_importance(self) -> Optional[pd.Series]:
+        """Normalized feature importance scores.
+
+        The scores are extracted from the estimator's `coef_` or
+        `feature_importances_` attribute, checked in that order.
+
+        """
+        # Returns None for estimators without coef_ or feature_importances_
+        data = get_feature_importance(self.estimator)
+        if data:
+            return pd.Series(
+                data=data / max(data),
+                index=self.features,
+                name="feature_importance",
+                dtype="float",
+            ).sort_values(ascending=False)
+
+    @property
     def results(self) -> pd.Series:
         """Overview of the training results."""
         return pd.Series(
@@ -1003,13 +1021,14 @@ class BaseModel(BaseModelPlotter):
             feature set with shape=(n_samples, n_features).
 
         y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         metric: str, func, scorer or None, default=None
-            Metric to calculate. Choose from any of sklearn's SCORERS,
+            Metric to calculate. Choose from any of sklearn's scorers,
             a function with signature metric(y_true, y_pred) or a scorer
             object. If None, it returns mean accuracy for classification
             tasks and r2 for regression tasks. Only for method="score".

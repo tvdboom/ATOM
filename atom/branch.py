@@ -52,26 +52,15 @@ class Branch:
     parent: str
         Name of the parent branch.
 
-    mapping: CustomDict, default={}
-        Encoded values and their respective mapping. The column name is
-        the key to its mapping dictionary. Only for columns mapped to
-        a single column (e.g. Ordinal, Leave-one-out, etc...).
-
-    pipeline: pd.Series or None, default=None
-        Estimators fitted on the data in the branch.
-
-    feature_importance: list, default=None
-        Features ordered by most to least important.
-
     """
 
     def __init__(self, *args, parent=None):
         self.T = args[0]
         self.name = args[1]
         self.parent = self.T._current
-        self.mapping = CustomDict()
-        self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
-        self.feature_importance = None
+
+        self._pipeline = pd.Series(data=[], name=self.name, dtype="object")
+        self._mapping = CustomDict()
 
         self._data = None
         self._idx = None
@@ -84,7 +73,7 @@ class Branch:
             self.parent = parent.name
 
             # Copy the branch attrs and point to the rest
-            for attr in ("_data", "_idx", "mapping", "pipeline", "feature_importance"):
+            for attr in ("_data", "_idx", "_pipeline", "_mapping"):
                 setattr(self, attr, copy(getattr(parent, attr)))
             for attr in vars(parent):
                 if not hasattr(self, attr):  # If not already assigned...
@@ -215,6 +204,37 @@ class Branch:
         return value
 
     @property
+    def pipeline(self) -> pd.Series:
+        """Transformers fitted on the data.
+
+        Use this attribute only to access the individual instances. To
+        visualize the pipeline, use the [plot_pipeline][] method.
+
+        """
+        return self._pipeline
+
+    @pipeline.setter
+    @typechecked
+    def pipeline(self, value: pd.Series):
+        self._pipeline = value
+
+    @property
+    def mapping(self) -> dict:
+        """Encoded values and their respective mapped values.
+
+        The column name is the key to its mapping dictionary. Only for
+        columns mapped to a single column (e.g. Ordinal, Leave-one-out,
+        etc...).
+
+        """
+        return self._mapping
+
+    @mapping.setter
+    @typechecked
+    def mapping(self, value: dict):
+        self._mapping = value
+
+    @property
     def dataset(self) -> pd.DataFrame:
         """Complete data set."""
         return self._data
@@ -295,17 +315,6 @@ class Branch:
         self._data = pd.concat([merge(df, self.train[self.target]), self.test])
 
     @property
-    def X_test(self) -> pd.DataFrame:
-        """Features of the test set."""
-        return self.test.drop(self.target, axis=1)
-
-    @X_test.setter
-    @typechecked
-    def X_test(self, value: X_TYPES):
-        df = self._check_setter("X_test", value)
-        self._data = pd.concat([self.train, merge(df, self.test[self.target])])
-
-    @property
     def y_train(self) -> pd.Series:
         """Target column of the training set."""
         return self.train[self.target]
@@ -315,6 +324,17 @@ class Branch:
     def y_train(self, value: SEQUENCE_TYPES):
         series = self._check_setter("y_train", value)
         self._data = pd.concat([merge(self.X_train, series), self.test])
+
+    @property
+    def X_test(self) -> pd.DataFrame:
+        """Features of the test set."""
+        return self.test.drop(self.target, axis=1)
+
+    @X_test.setter
+    @typechecked
+    def X_test(self, value: X_TYPES):
+        df = self._check_setter("X_test", value)
+        self._data = pd.concat([self.train, merge(df, self.test[self.target])])
 
     @property
     def y_test(self) -> pd.Series:

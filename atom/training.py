@@ -263,7 +263,7 @@ class DirectClassifier(Direct):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        SCORERS, a function with signature `metric(y_true, y_pred)`, a
+        scorers, a function with signature `metric(y_true, y_pred)`, a
         scorer object or a sequence of these. If multiple metrics are
         selected, only the first is used to optimize the BO. If None, a
         default scorer is selected:

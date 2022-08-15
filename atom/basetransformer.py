@@ -230,10 +230,11 @@ class BaseTransformer:
             X is ignored.
 
         y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -672,7 +673,7 @@ class BaseTransformer:
 
     @composed(crash, typechecked)
     def log(self, msg: Union[SCALAR, str], level: INT = 0, severity: str = "info"):
-        """Print and save output to log file.
+        """Print message and save to log file.
 
         Parameters
         ----------
@@ -680,8 +681,7 @@ class BaseTransformer:
             Message to save to the logger and print to stdout.
 
         level: int, default=0
-            Minimum verbosity level to print the message. If 42, don't
-            save to log.
+            Minimum verbosity level to print the message.
 
         severity: str, default="info"
             Severity level of the message. Choose from: debug, info,
@@ -697,7 +697,10 @@ class BaseTransformer:
         if self.verbose >= level:
             print(msg)
 
-        if self.logger is not None and level != 42:
+        if severity == "warning":
+            warnings.warn(msg)
+
+        if self.logger is not None:
             for text in str(msg).split("\n"):
                 getattr(self.logger, severity)(str(text))
 

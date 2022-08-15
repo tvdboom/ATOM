@@ -80,9 +80,9 @@ extra:
 plugins:
     - search
     - autorefs
-    - mkdocs-jupyter:
-          include: ["*.ipynb"]
-          include_source: True
+#    - mkdocs-jupyter:
+#          include: ["*.ipynb"]
+#          include_source: True
     - mkdocs-simple-hooks:
         hooks:
             on_page_markdown: "docs_sources.autodocs:render"

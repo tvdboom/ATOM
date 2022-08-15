@@ -103,21 +103,21 @@ operators can be chosen through the `operators` parameter. Choose from:
 
 ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.com/) package.
 
+!!! warning
+    * Using the `div`, `log` or `sqrt` operators can return new
+      features with `inf` or `NaN` values. Check the warnings that
+      may pop up or use atom's [missing][atomclassifier-missing]
+      property.
+    * When using dfs with `n_jobs>1`, make sure to protect your code
+      with `if __name__ == "__main__"`. Featuretools uses [dask](https://dask.org/),
+      which uses python multiprocessing for parallelization. The spawn method on multiprocessing starts a
+      new python process, which requires it to import the \__main__
+      module before it can do its task.
+
 !!! tip
-    DFS can create many new features and not all of them will be useful.
-    Use [FeatureSelector][featureselector] to reduce the number of features!
-
-!!! warning
-    Using the div, log or sqrt operators can return new features with
-    `inf` or `NaN` values. Check the warnings that may pop up or use
-    atom's [nans](../../API/ATOM/atomclassifier/#data-attributes) attribute.
-
-!!! warning
-    When using DFS with `n_jobs>1`, make sure to protect your code with
-    `if __name__ == "__main__"`. Featuretools uses [dask](https://dask.org/),
-    which uses python multiprocessing for parallelization. The spawn
-    method on multiprocessing starts a new python process, which requires
-    it to import the \__main__ module before it can do its task.
+    dfs can create many new features and not all of them will be
+    useful. Use the [FeatureSelector][] class to reduce the number
+    of features.
 
 <br>
 
@@ -144,12 +144,27 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
 
 <br>
 
+## Grouping similar features
+
+When your dataset contains many similar features corresponding to a
+certain natural group or entity, it's possible to replace these
+features for a handful of them, that should capture the relations of
+the group, in order to lose as little information as possible. To
+achieve this, the [FeatureGrouper][] class computes certain statistical
+properties that describe the group's distribution, like the mean or the
+median, and replaces the columns with the result of these statistical
+calculations over every row in the dataset. The goal of this approach
+is to reduce the number of columns in the dataset, avoiding the
+[curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality).
+
+
+<br>
+
 ## Selecting useful features
 
-The [FeatureSelector](../../API/feature_engineering/feature_selector) class
-provides tooling to select the relevant features from a dataset. It can
-be accessed from atom through the [feature_selection](../../API/ATOM/atomclassifier/#feature-selection)
-method.
+The [FeatureSelector][] class provides tooling to select the relevant
+features from a dataset. It can be accessed from atom through the
+[feature_selection][atomclassifier-feature_selection] method.
 
 !!! tip
     Use the [plot_feature_importance](../../API/plots/plot_feature_importance)
@@ -158,7 +173,7 @@ method.
     attribute, use [plot_permutation_importance](../../API/plots/plot_permutation_importance) instead.
 
 !!! warning
-    The RFE and rfecv strategies don't work when the solver is a 
+    The rfe and rfecv strategies don't work when the solver is a 
     [CatBoost](https://catboost.ai/) model due to incompatibility
     of the APIs.
 

@@ -57,15 +57,13 @@ Example steps taken by ATOM's pipeline:
 	* Balance the training set
 2. Feature engineering
     * Create new non-linear features
-	* Remove multi-collinear features
-	* Remove features with too low variance
 	* Select the most promising features
 3. Train and validate multiple models
-	* Select hyperparameters using a Bayesian Optimization approach
-	* Train and test the models on the provided data
-	* Assess the robustness of the output using a bootstrap algorithm
+	* Apply hyperparameter tuning
+	* Fit the models on the training set
+    * Evaluate the results on the test set
 4. Analyze the results
-    * Get the model scores on various metrics
+    * Get the scores on various metrics
     * Make plots to compare the model performances
 
 
