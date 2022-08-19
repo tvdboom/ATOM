@@ -62,9 +62,10 @@
 /* Signature layout */
 .sign {
     font-size: 1.1em;
+    overflow-x: auto;
     background: rgba(0, 0, 0, 0.05);
     padding: 1%;
-    overflow-x: auto;
+    margin-bottom: 1em;
 }
 
 /* Parameter table layout */

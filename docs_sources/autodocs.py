@@ -26,6 +26,9 @@ CUSTOM_URLS = dict(
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
     experiment="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments",
+    kstest="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test",
+    pipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
+    profilereport="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html",
     # Ensembles
     votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
     votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
@@ -152,16 +155,32 @@ class AutoDocs:
         else:
             return AutoDocs(getattr(importlib.import_module(module), name))
 
+    @staticmethod
+    def parse_body(body: str) -> str:
+        text = ""
+        pattern = ".+?(?=\n\n|\n +?[-*+] |\Z)"
+        bullet = "<span class='bullet'>&bull;</span>"
+        for i, line in enumerate(re.findall(pattern, body, re.S)):
+            indent = len(line) - len(line.lstrip())
+            b = line.strip()
+            if any(b.startswith(f"{char} ") for char in ("-", "+", "*")):
+                spaces = "&nbsp;" * max(4, indent - 4)
+                text += f"{'<br>' if i > 0 else ''}{spaces}{bullet}{b[1:]}"
+            elif b != "":
+                text += f"{'<br><br>' if i > 0 else ''}{b}"
+
+        return text
+
     def get_signature(self) -> str:
         """Return the object's signature."""
         # Assign object type
         params = signature(self.obj).parameters
         if inspect.isclass(self.obj):
-            obj_type = "class"
+            obj = "class"
         elif any(p in params for p in ("cls", "self")):
-            obj_type = "method"
+            obj = "method"
         else:
-            obj_type = "function"
+            obj = "function"
 
         # Get signature without self, cls and type hints
         sign = []
@@ -191,14 +210,15 @@ class AutoDocs:
             url = ""
 
         anchor = f"<a id='{self._parent_anchor}{self.obj.__name__}'></a>"
-        module = self.obj.__module__ + '.' if obj_type != "method" else ""
-        obj_type = f"<em>{obj_type}</em>"
+        module = self.obj.__module__ + '.' if obj != "method" else ""
+        obj = f"<em>{obj}</em>"
         name = f"<strong style='color:#008AB8'>{self.obj.__name__}</strong>"
         if url:
             line = getsourcelines(self.obj)[1]
             url = f"<span style='float:right'><a href={url}#L{line}>[source]</a></span>"
 
-        return f"{anchor}<div class='sign'>{obj_type} {module}{name}{sign}{url}</div>"
+        # \n\n in front of signature to break potential lists in markdown
+        return f"\n\n{anchor}<div class='sign'>{obj} {module}{name}{sign}{url}</div>"
 
     def get_summary(self) -> str:
         """Return the object's summary."""
@@ -221,7 +241,7 @@ class AutoDocs:
             Formatted block.
 
         """
-        block = '!!! info "See Also"'
+        block = "<br>" + '\n!!! info "See Also"'
         for line in self.get_block("See Also").splitlines():
             if line:
                 cls = self.get_obj(line)
@@ -300,9 +320,10 @@ class AutoDocs:
 
                     output = str(signature(obj)).split(" -> ")[-1]
                     header = f"{obj.__name__}: {TYPES_CONVERSION.get(output, output)}"
-
                     text = f"<div markdown class='param'>{getdoc(obj)}</div>"
-                    content += f"<strong>{header}</strong><br>{text}"
+
+                    anchor = f"<a id='{self.obj.__name__.lower()}-{obj.__name__}'></a>"
+                    content += f"{anchor}<strong>{header}</strong><br>{text}"
 
             elif match := self.get_block(name):
                 # Headers start with letter, * or [ after new line
@@ -311,24 +332,12 @@ class AutoDocs:
                     pattern = f"(?<={re.escape(header)}\n).*?(?=\n\w|\n\*|\n\[|\Z)"
                     body = re.search(pattern, match, re.S | re.M).group()
 
-                    # Use literal * for args and kwargs
-                    header = header.replace("*", "\*")
+                    header = header.replace("*", "\*")  # Use literal * for args/kwargs
+                    text = f"<div markdown class='param'>{self.parse_body(body)}</div>"
 
-                    # Parse the body
-                    text = ""
-                    pattern = ".+?(?=\n\n|\n +?[-*+] |\Z)"
-                    bullet = "<span class='bullet'>&bull;</span>"
-                    for i, line in enumerate(re.findall(pattern, body, re.S)):
-                        indent = len(line) - len(line.lstrip())
-                        b = line.strip()
-                        if any(b.startswith(f"{char} ") for char in ("-", "+", "*")):
-                            spaces = "&nbsp;" * max(4, indent - 4)
-                            text += f"{'<br>' if i > 0 else ''}{spaces}{bullet}{b[1:]}"
-                        elif b != "":
-                            text += f"{'<br><br>' if i > 0 else ''}{b}"
-
-                    text = f"<div markdown class='param'>{text}</div>"
-                    content += f"<strong>{header}</strong><br>{text}"
+                    obj_name = header.split(":")[0]
+                    anchor = f"<a id='{self.obj.__name__.lower()}-{obj_name}'></a>"
+                    content += f"{anchor}<strong>{header}</strong><br>{text}"
 
             if content:
                 table += f"<tr><td class='td_title'><strong>{name}</strong></td>"
@@ -385,8 +394,13 @@ class AutoDocs:
                 blocks += "<br>" + func.get_signature()
                 blocks += func.get_summary() + "\n"
                 if func.obj.__module__.startswith("atom"):
-                    blocks += "\n" + func.get_description()
-                blocks += func.get_table(["Parameters", "Returns"]) + "<br>"
+                    if description := func.get_description():
+                        blocks += "\n\n" + description + "\n"
+                if table := func.get_table(["Parameters", "Returns"]):
+                    blocks += table + "<br>"
+                else:
+                    # \n to exit markdown and <br> to insert space
+                    blocks += "\n" + "<br>"
 
         return toc + blocks
 
@@ -422,45 +436,60 @@ def render(markdown: str, **kwargs) -> str:
         # Commands should always be dicts with the configuration as a list in values
         if isinstance(command, str):
             if ":" in command:
-                obj = AutoDocs.get_obj(command)
+                autodocs = AutoDocs.get_obj(command)
                 markdown = markdown[:match.start()] + markdown[match.end():]
                 continue
             else:
                 command = {command: None}  # Has no options specified
 
         if "signature" in command:
-            text = obj.get_signature()
+            text = autodocs.get_signature()
         elif "description" in command:
-            text = obj.get_summary() + "\n\n" + obj.get_description()
+            text = autodocs.get_summary() + "\n\n" + autodocs.get_description()
         elif "table" in command:
-            text = obj.get_table(command["table"])
+            text = autodocs.get_table(command["table"])
         elif "see also" in command:
-            text = obj.get_see_also()
+            text = autodocs.get_see_also()
         elif "notes" in command:
-            text = obj.get_block("Notes")
+            text = autodocs.get_block("Notes")
         elif "references" in command:
-            text = obj.get_block("References")
+            text = autodocs.get_block("References")
         elif "examples" in command:
-            text = obj.get_block("Examples")
+            text = autodocs.get_block("Examples")
         elif "methods" in command:
-            text = obj.get_methods(command["methods"] or {})
+            text = autodocs.get_methods(command["methods"] or {})
         else:
             text = ""
 
         markdown = markdown[:match.start()] + text + markdown[match.end():]
+        markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)
 
 
-def custom_autorefs(markdown):
+def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
     """Custom handling of autorefs links.
 
     ATOM's documentation accepts some custom formatting for autorefs
     links in order to make the documentation cleaner and easier to
     write. The custom transformations are:
         - Replace keywords with full url (registered in CUSTOM_URLS).
+        - Replace keyword `self` with the name of the class.
         - Replace spaces with dashes.
         - Convert all links to lower case.
+
+    Parameters
+    ----------
+    markdown: str
+        Markdown source text of page.
+
+    autodocs: Autodocs
+        Class for which the page is created.
+
+    Returns
+    -------
+    str
+        Modified source text of page.
 
     """
     result, start = "", 0
@@ -476,6 +505,9 @@ def custom_autorefs(markdown):
         if link in CUSTOM_URLS:
             # Replace keyword with custom url
             text = f"[{anchor}]({CUSTOM_URLS[link]})"
+        if "self" in link and autodocs:
+            link = link.replace("self", autodocs.obj.__name__.lower())
+            text = f"[{anchor}][{link}]"
 
         result += markdown[start:match.start()] + text
         start = match.end()

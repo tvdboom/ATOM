@@ -219,7 +219,7 @@ class Branch:
         self._pipeline = value
 
     @property
-    def mapping(self) -> dict:
+    def mapping(self) -> CustomDict:
         """Encoded values and their respective mapped values.
 
         The column name is the key to its mapping dictionary. Only for
@@ -231,7 +231,7 @@ class Branch:
 
     @mapping.setter
     @typechecked
-    def mapping(self, value: dict):
+    def mapping(self, value: CustomDict):
         self._mapping = value
 
     @property

@@ -352,9 +352,13 @@ class ATOM(BaseRunner, ATOMPlotter):
     ) -> pd.DataFrame:
         """Get statistics on column distributions.
 
-        Compute the Kolmogorov-Smirnov test for various distributions
-        against columns in the dataset. Only for numerical columns.
-        Missing values are ignored.
+        Compute the [Kolmogorov-Smirnov test][kstest] for various
+        distributions against columns in the dataset. Only for numerical
+        columns. Missing values are ignored.
+
+        !!! tip
+            Use the [plot_distribution][] method to plot a column's
+            distribution.
 
         Parameters
         ----------
@@ -364,17 +368,17 @@ class ATOM(BaseRunner, ATOMPlotter):
             ones is used.
 
         columns: int, str, slice, sequence or None, default=None
-            Names, indices or dtypes of the columns in the dataset to
+            Names, positions or dtypes of the columns in the dataset to
             perform the test on. If None, select all numerical columns.
 
         Returns
         -------
         pd.DataFrame
             Statistic results with multiindex levels:
-                - dist: Name of the distribution.
-                - stat: Statistic results:
-                    - score: KS-test score.
-                    - p_value: Corresponding p-value.
+                - **dist:** Name of the distribution.
+                - **stat:** Statistic results:
+                    - **score:** KS-test score.
+                    - **p_value:** Corresponding p-value.
 
         """
         if distributions is None:
@@ -427,17 +431,29 @@ class ATOM(BaseRunner, ATOMPlotter):
         memory: Optional[Union[bool, str, Memory]] = None,
         verbose: Optional[INT] = None,
     ) -> Pipeline:
-        """Export atom's pipeline to a sklearn-like Pipeline object.
+        """Export atom's pipeline.
 
         Optionally, you can add a model as final estimator. The
         returned pipeline is already fitted on the training set.
+
+        !!! info
+            The returned pipeline behaves similarly to sklearn's
+            [Pipeline][], and additionally:
+
+            - Accepts transformers that change the target column.
+            - Accepts transformers that drop rows.
+            - Accepts transformers that only are fitted on a subset of
+              the provided dataset.
+            - Always returns pandas objects.
+            - Uses transformers that are only applied on the training
+              set to fit the pipeline, not to make predictions.
 
         Parameters
         ----------
         model: str or None, default=None
             Name of the model to add as a final estimator to the
-            pipeline. If the model used feature scaling, the Scaler
-            is added before the model. If None, only the
+            pipeline. If the model used [automated feature scaling][],
+            the scaler is added before the model. If None, only the
             transformers are added.
 
         memory: bool, str, Memory or None, default=None
@@ -456,7 +472,8 @@ class ATOM(BaseRunner, ATOMPlotter):
         Returns
         -------
         Pipeline
-            Current branch as a sklearn-like Pipeline object.
+            Sklearn-like Pipeline object with all transformers in the
+            current branch.
 
         """
         if len(self.pipeline) == 0 and not model:
@@ -509,8 +526,7 @@ class ATOM(BaseRunner, ATOMPlotter):
         skipped. The rest should all implement a `inverse_transform`
         method. If only `X` or only `y` is provided, it ignores
         transformers that require the other parameter. This can be
-        of use to, for example, inversely transform only the target
-        column.
+        used to transform only the target column.
 
         Parameters
         ----------
@@ -584,7 +600,7 @@ class ATOM(BaseRunner, ATOMPlotter):
 
         Returns
         -------
-        ProfileReport
+        [ProfileReport][]
             Created report object.
 
         """
@@ -620,7 +636,7 @@ class ATOM(BaseRunner, ATOMPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = "auto", *, dataset: str = "dataset"):
-        """Save the data in the current branch to a csv file.
+        """Save the data in the current branch to a `.csv` file.
 
         Parameters
         ----------
@@ -655,9 +671,6 @@ class ATOM(BaseRunner, ATOMPlotter):
         memory optimization. Note that applying transformers to the
         data may alter the types again.
 
-        Partially from: https://github.com/fastai/fastai/blob/master/
-        fastai/tabular/core.py
-
         Parameters
         ----------
         obj2cat: bool, default=True
@@ -674,8 +687,13 @@ class ATOM(BaseRunner, ATOMPlotter):
             that is compressed is the most frequent value in the column.
 
         columns: int, str, slice, sequence or None, default=None
-            Names, indices or dtypes of the columns in the dataset to
+            Names, positions or dtypes of the columns in the dataset to
             shrink. If None, transform all columns.
+
+        Notes
+        -----
+        Partially from: https://github.com/fastai/fastai/blob/master/
+        fastai/tabular/core.py
 
         """
         columns = self._get_columns(columns)
@@ -752,6 +770,14 @@ class ATOM(BaseRunner, ATOMPlotter):
     def stats(self, _vb: INT = -2, /):
         """Print basic information about the dataset.
 
+        !!! tip
+            For classification tasks, the count and balance of classes
+            is shown, followed by the ratio (between parentheses) of
+            the class with respect to the rest of the classes in the
+            same data set, i.e. the class with the fewest samples is
+            followed by `(1.0)`. This information can be used to quickly
+            assess if the data set is unbalanced.
+
         Parameters
         ----------
         _vb: int, default=-2
@@ -826,7 +852,12 @@ class ATOM(BaseRunner, ATOMPlotter):
 
     @composed(crash, method_to_log)
     def status(self):
-        """Get an overview of atom's status."""
+        """Get an overview of the branches and models.
+
+        This method prints the same information as the \__repr__ and
+        also saves it to the logger.
+
+        """
         self.log(str(self))
 
     @composed(crash, method_to_log, typechecked)
@@ -1103,14 +1134,17 @@ class ATOM(BaseRunner, ATOMPlotter):
     def balance(self, strategy: str = "adasyn", **kwargs):
         """Balance the number of rows per class in the target column.
 
-        Use only for classification tasks. The estimator created by
-        the class is attached to atom.
+        When oversampling, the newly created samples have an increasing
+        integer index for numerical indices, and an index of the form
+        [estimator]_N for non-numerical indices, where N stands for the
+        N-th sample in the data set.
 
-        This transformation is only applied to the training set in
-        order to maintain the original distribution of target classes
-        in the test set.
+        See the [Balancer][] class for a description of the parameters.
 
-        See [Balancer][balancer] for a description of the parameters.
+        !!! note
+            This transformation is only applied to the training set in
+            order to maintain the original distribution of target
+            classes in the test set.
 
         """
         if self.goal != "class":
@@ -1147,15 +1181,16 @@ class ATOM(BaseRunner, ATOMPlotter):
 
         Use the parameters to choose which transformations to perform.
         The available steps are:
-            - Drop columns with specific data types.
-            - Strip categorical features from white spaces.
-            - Drop categorical columns with maximal cardinality.
-            - Drop columns with minimum cardinality.
-            - Drop duplicate rows.
-            - Drop rows with missing values in the target column.
-            - Encode the target column (can't be True for regression tasks).
 
-        See data_cleaning.py for a description of the parameters.
+        - Drop columns with specific data types.
+        - Strip categorical features from white spaces.
+        - Drop categorical columns with maximal cardinality.
+        - Drop columns with minimum cardinality.
+        - Drop duplicate rows.
+        - Drop rows with missing values in the target column.
+        - Encode the target column (can't be True for regression tasks).
+
+        See the [Cleaner][] class for a description of the parameters.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1193,7 +1228,7 @@ class ATOM(BaseRunner, ATOMPlotter):
         and, together with the number of bins, they will define the
         intervals. Ignores numerical columns.
 
-        See data_cleaning.py for a description of the parameters.
+        See the [Discretizer][] class for a description of the parameters.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1217,9 +1252,10 @@ class ATOM(BaseRunner, ATOMPlotter):
 
         The encoding type depends on the number of classes in the
         column:
-            - If n_classes=2 or ordinal feature, use Ordinal-encoding.
-            - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
-            - If n_classes > `max_onehot`, use `strategy`-encoding.
+
+        - If n_classes=2 or ordinal feature, use Ordinal-encoding.
+        - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
+        - If n_classes > `max_onehot`, use `strategy`-encoding.
 
         Missing values are propagated to the output column. Unknown
         classes encountered during transforming are converted to
@@ -1227,7 +1263,7 @@ class ATOM(BaseRunner, ATOMPlotter):
         low occurrences with the value `other` in order to prevent
         too high cardinality.
 
-        See data_cleaning.py for a description of the parameters.
+        See the [Encoder][] class for a description of the parameters.
 
         """
         columns = kwargs.pop("columns", None)

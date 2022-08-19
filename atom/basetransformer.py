@@ -716,7 +716,8 @@ class BaseTransformer:
         save_data: bool, default=True
             Whether to save the dataset with the instance. This
             parameter is ignored if the method is not called from
-            atom.
+            atom. If False, remember to add the data to [ATOMLoader][]
+            when loading the file.
 
         """
         if not save_data and hasattr(self, "dataset"):

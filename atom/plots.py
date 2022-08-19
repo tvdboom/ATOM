@@ -443,12 +443,13 @@ class BasePlotter:
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: Optional[bool] = True,
+        display: bool = True,
     ):
         """Create a figure with multiple plots.
 
         This `@contextmanager` allows you to draw many plots in one
         figure. The default option is to add two plots side by side.
+        See the [user guide][canvas] for an example.
 
         Parameters
         ----------
@@ -469,9 +470,8 @@ class BasePlotter:
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool or None, default=True
-            Whether to render the plot. The None option doesn't do
-            anything. Use the `as` syntax to get the figure object.
+        display: bool, default=True
+            Whether to render the plot.
 
         """
         BasePlotter._fig = BaseFigure(nrows=nrows, ncols=ncols, is_canvas=True)

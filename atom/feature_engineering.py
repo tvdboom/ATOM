@@ -345,14 +345,14 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     !!! warning
         * Using the `div`, `log` or `sqrt` operators can return new
           features with `inf` or `NaN` values. Check the warnings that
-          may pop up or use atom's [missing][atomclassifier-missing]
-          property.
+          may pop up or use atom's [nans][atomclassifier-nans] attribute.
         * When using dfs with `n_jobs>1`, make sure to protect your code
           with `if __name__ == "__main__"`. Featuretools uses
           [dask](https://dask.org/), which uses python multiprocessing
           for parallelization. The spawn method on multiprocessing
           starts a new python process, which requires it to import the
           \__main__ module before it can do its task.
+        * gfg can be slow for very large populations.
 
     !!! tip
         dfs can create many new features and not all of them will be

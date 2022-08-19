@@ -1283,7 +1283,7 @@ def name_cols(array, original_df, col_names):
     return temp_cols
 
 
-def reorder_cols(df, original_df, col_names):
+def reorder_cols(transformer, df, original_df, col_names):
     """Reorder the columns to their original order.
 
     This function is necessary in case only a subset of the
@@ -1292,6 +1292,9 @@ def reorder_cols(df, original_df, col_names):
 
     Parameters
     ----------
+    transformer: Transformer
+        Instance that transformed `df`.
+
     df: pd.DataFrame
         Dataset to reorder.
 
@@ -1306,7 +1309,7 @@ def reorder_cols(df, original_df, col_names):
     for col in df:
         if col in original_df and col not in col_names:
             raise ValueError(
-                f"Column '{col}' returned by the transformer "
+                f"Column '{col}' returned by transformer {transformer} "
                 "already exists in the original dataset."
             )
 
@@ -1402,7 +1405,7 @@ def transform_one(transformer, X=None, y=None, method="transform"):
 
         # Reorder columns if only a subset was used
         if len(use_cols) != X.shape[1]:
-            return reorder_cols(out, X, use_cols)
+            return reorder_cols(transformer, out, X, use_cols)
         else:
             return out
 

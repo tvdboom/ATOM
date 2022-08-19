@@ -7,10 +7,12 @@ Description: Module containing the data cleaning transformers.
 
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from inspect import signature
 from logging import Logger
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -197,9 +199,113 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     mapping: dict
         Target values mapped to their respective encoded integer.
 
+    See Also
+    --------
+    atom.data_cleaning:Encoder
+    atom.data_cleaning:Imputer
+    atom.data_cleaning:Pruner
+
     Examples
     --------
 
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.train)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0         18.030         16.85  ...                  0.08225       0
+        1         10.950         21.35  ...                  0.09606       0
+        2         14.250         22.15  ...                  0.11320       0
+        3         17.570         15.05  ...                  0.07919       0
+        4         10.600         18.95  ...                  0.07587       1
+        ..           ...           ...  ...                      ...     ...
+        451        8.888         14.64  ...                  0.10840       1
+        452       21.090         26.57  ...                  0.12840       0
+        453       16.160         21.54  ...                  0.07619       0
+        454       11.260         19.83  ...                  0.07613       1
+        455       12.000         15.65  ...                  0.07924       1
+
+        [456 rows x 31 columns]
+
+        >>> atom.balance(strategy="smote", verbose=2)
+
+        Oversampling with SMOTE...
+            --> Adding 116 samples to class 0.
+
+        >>> # Note that the number of rows has increased
+        >>> print(atom.train)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0      11.420000     20.380000  ...                 0.173000       0
+        1       9.876000     17.270000  ...                 0.073800       1
+        2      13.470000     14.060000  ...                 0.093260       1
+        3      16.300000     15.700000  ...                 0.072300       1
+        4      12.250000     17.940000  ...                 0.081320       1
+        ..           ...           ...  ...                      ...     ...
+        567    12.975558     20.580996  ...                 0.118509       0
+        568    11.786135     17.120749  ...                 0.091266       0
+        569    16.194544     19.737215  ...                 0.106434       0
+        570    16.780524     21.261883  ...                 0.086889       0
+        571    20.705316     22.635645  ...                 0.085362       0
+
+        [572 rows x 31 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.data_cleaning import Balancer
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> print(X)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0          17.99         10.38  ...          0.4601                  0.11890
+        1          20.57         17.77  ...          0.2750                  0.08902
+        2          19.69         21.25  ...          0.3613                  0.08758
+        3          11.42         20.38  ...          0.6638                  0.17300
+        4          20.29         14.34  ...          0.2364                  0.07678
+        ..           ...           ...  ...             ...                      ...
+        564        21.56         22.39  ...          0.2060                  0.07115
+        565        20.13         28.25  ...          0.2572                  0.06637
+        566        16.60         28.08  ...          0.2218                  0.07820
+        567        20.60         29.33  ...          0.4087                  0.12400
+        568         7.76         24.54  ...          0.2871                  0.07039
+
+        [569 rows x 30 columns]
+
+        >>> balancer = Balancer(strategy="smote", verbose=2)
+        >>> X, y = balancer.transform(X, y)
+
+        Oversampling with SMOTE...
+            --> Adding 145 samples to class 0.
+
+        >>> # Note that the number of rows has increased
+        >>> print(X)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0      17.990000     10.380000  ...        0.460100                 0.118900
+        1      20.570000     17.770000  ...        0.275000                 0.089020
+        2      19.690000     21.250000  ...        0.361300                 0.087580
+        3      11.420000     20.380000  ...        0.663800                 0.173000
+        4      20.290000     14.340000  ...        0.236400                 0.076780
+        ..           ...           ...  ...             ...                      ...
+        709    14.824550     17.497674  ...        0.345200                 0.100678
+        710    20.170649     23.997572  ...        0.538881                 0.099281
+        711    21.006050     22.305044  ...        0.277181                 0.076740
+        712    20.791828     25.103989  ...        0.388202                 0.122836
+        713    17.081185     23.560768  ...        0.342508                 0.082558
+
+        [714 rows x 30 columns]
+
+        ```
 
     """
 
@@ -227,7 +333,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES = -1):
+    def transform(self, X: X_TYPES, y: Y_TYPES = -1) -> Tuple[pd.DataFrame, pd.Series]:
         """Balance the data.
 
         Parameters
@@ -404,13 +510,14 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Use the parameters to choose which transformations to perform.
     The available steps are:
-        - Drop columns with specific data types.
-        - Strip categorical features from white spaces.
-        - Drop categorical columns with maximal cardinality.
-        - Drop columns with minimum cardinality.
-        - Drop duplicate rows.
-        - Drop rows with missing values in the target column.
-        - Encode the target column.
+
+    - Drop columns with specific data types.
+    - Strip categorical features from white spaces.
+    - Drop categorical columns with maximal cardinality.
+    - Drop columns with minimum cardinality.
+    - Drop duplicate rows.
+    - Drop rows with missing values in the target column.
+    - Encode the target column.
 
     Parameters
     ----------
@@ -471,6 +578,16 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Target values mapped to their respective encoded integer. Only
         available if encode_target=True.
 
+    See Also
+    --------
+    atom.data_cleaning:Encoder
+    atom.data_cleaning:Discretizer
+    atom.data_cleaning:Scaler
+
+    Examples
+    --------
+
+
     """
 
     @typechecked
@@ -503,7 +620,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: Optional[X_TYPES] = None, y: Optional[Y_TYPES] = None):
+    def fit(self, X: Optional[X_TYPES] = None, y: Optional[Y_TYPES] = None) -> Cleaner:
         """Fit to data.
 
         Parameters
@@ -545,7 +662,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: Optional[X_TYPES] = None, y: Optional[Y_TYPES] = None):
+    def transform(
+        self,
+        X: Optional[X_TYPES] = None,
+        y: Optional[Y_TYPES] = None,
+    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
         """Apply the data cleaning steps to the data.
 
         Parameters

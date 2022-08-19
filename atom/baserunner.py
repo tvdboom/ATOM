@@ -137,6 +137,7 @@ class BaseRunner:
 
     @property
     def log_bo(self) -> bool:
+        """Whether to track every trial of the hyperparameter tuning."""
         return self._tracking_params["log_bo"]
 
     @log_bo.setter
@@ -146,6 +147,7 @@ class BaseRunner:
 
     @property
     def log_model(self) -> bool:
+        """Whether to save the model's estimator after fitting."""
         return self._tracking_params["log_model"]
 
     @log_model.setter
@@ -155,6 +157,7 @@ class BaseRunner:
 
     @property
     def log_plots(self) -> bool:
+        """Whether to save plots as artifacts."""
         return self._tracking_params["log_plots"]
 
     @log_plots.setter
@@ -164,6 +167,7 @@ class BaseRunner:
 
     @property
     def log_data(self) -> bool:
+        """Whether to save the train and test sets."""
         return self._tracking_params["log_data"]
 
     @log_data.setter
@@ -172,7 +176,8 @@ class BaseRunner:
         self._tracking_params["log_data"] = value
 
     @property
-    def log_pipeline(self):
+    def log_pipeline(self) -> bool:
+        """Whether to save the model's pipeline."""
         return self._tracking_params["log_pipeline"]
 
     @log_pipeline.setter
@@ -574,13 +579,15 @@ class BaseRunner:
     def clear(self):
         """Clear attributes from all models.
 
-        Reset attributes to their initial state, deleting potentially
-        large data arrays. Use this method to free some memory before
-        saving the class. The cleared attributes per model are:
-            - Prediction attributes.
-            - Metrics scores.
-            - Shap values.
-            - Dashboard instance.
+        Reset all model attributes to their initial state, deleting
+        potentially large data arrays. Use this method to free some
+        memory before [saving][self-save] the instance. The cleared
+        attributes per model are:
+
+        - [Prediction attributes][]
+        - [Metric scores][metric]
+        - [Shap values][shap]
+        - [Dashboard instance][dashboard]
 
         """
         for model in self._models.values():
@@ -590,16 +597,16 @@ class BaseRunner:
     def delete(self, models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None):
         """Delete models.
 
-        If all models are removed, the metric is reset. Use this
-        method to drop unwanted models from the pipeline or to free
-        some memory before saving. Deleted models are not removed
-        from any active mlflow experiment.
+        If all models are removed, the metric is reset. Use this method
+        to drop unwanted models from the pipeline or to free some memory
+        before [saving][self-save]. Deleted models are not removed from
+        any active [mlflow experiment][tracking].
 
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name, index or regex pattern of the models to delete.
-            If None, it deletes all models.
+            Names, positions or regex pattern of the models to delete.
+            If None, all models are deleted.
 
         """
         models = self._get_models(models)
@@ -630,16 +637,16 @@ class BaseRunner:
             Metric to calculate. If None, it returns an overview of
             the most common metrics per task.
 
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
+
         threshold: float, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
                 - The task is binary classification.
                 - The model has a `predict_proba` method.
                 - The metric evaluates predicted target values.
-
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.
@@ -772,7 +779,7 @@ class BaseRunner:
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
-        """Train a Stacking model.
+        """Add a [Stacking][] model to the pipeline.
 
         Parameters
         ----------
@@ -781,7 +788,7 @@ class BaseRunner:
             model's acronym: `stack`.
 
         models: sequence or None, default=None
-            Models that feed the voting estimator. If None, it selects
+            Models that feed the stacking estimator. If None, it selects
             all non-ensemble models trained on the current branch.
 
         **kwargs
@@ -842,7 +849,7 @@ class BaseRunner:
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
-        """Train a Voting model.
+        """Add a [Voting][] model to the pipeline.
 
         Parameters
         ----------
