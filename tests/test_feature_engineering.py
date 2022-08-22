@@ -310,10 +310,24 @@ def test_n_features_parameter():
         selector.fit(X_reg, y_reg)
 
 
-def test_max_frac_repeated_parameter():
-    """Assert that an error is raised when max_frac_repeated is invalid."""
-    selector = FeatureSelector(strategy=None, max_frac_repeated=1.1)
-    with pytest.raises(ValueError, match=r".*the max_frac_repeated parameter.*"):
+def test_min_repeated_parameter():
+    """Assert that an error is raised when min_repeated is invalid."""
+    selector = FeatureSelector(strategy=None, min_repeated=1.1)
+    with pytest.raises(ValueError, match=r".*the min_repeated parameter.*"):
+        selector.fit(X_reg, y_reg)
+
+
+def test_max_repeated_parameter():
+    """Assert that an error is raised when max_repeated is invalid."""
+    selector = FeatureSelector(strategy=None, max_repeated=1.1)
+    with pytest.raises(ValueError, match=r".*the max_repeated parameter.*"):
+        selector.fit(X_reg, y_reg)
+
+
+def test_max_repeated_smaller_min_repeated():
+    """Assert that an error is raised when min_repeated > max_repeated."""
+    selector = FeatureSelector(strategy=None, min_repeated=100, max_repeated=2)
+    with pytest.raises(ValueError, match=r".*can't be lower.*"):
         selector.fit(X_reg, y_reg)
 
 
@@ -331,11 +345,22 @@ def test_error_y_is_None():
         selector.fit(X_reg)
 
 
-def test_remove_low_variance():
-    """Assert that the remove_low_variance function works as intended."""
+@pytest.mark.parametrize("min_repeated", [2, 0.1])
+def test_remove_high_variance(min_repeated):
+    """Assert that high variance features are removed."""
     X = X_bin.copy()
-    X["invalid"] = 3  # Add column with minimum variance
-    selector = FeatureSelector(max_frac_repeated=1.0)
+    X["invalid"] = [f"{i}" for i in range(len(X))]  # Add column with maximum variance
+    selector = FeatureSelector(min_repeated=min_repeated, max_repeated=None)
+    X = selector.fit_transform(X)
+    assert X.shape[1] == X_bin.shape[1]
+
+
+@pytest.mark.parametrize("max_repeated", [400, 0.9])
+def test_remove_low_variance(max_repeated):
+    """Assert that low variance features are removed."""
+    X = X_bin.copy()
+    X["invalid"] = "test"  # Add column with minimum variance
+    selector = FeatureSelector(min_repeated=None, max_repeated=max_repeated)
     X = selector.fit_transform(X)
     assert X.shape[1] == X_bin.shape[1]
 
@@ -526,7 +551,7 @@ def test_kwargs_parameter_tol():
         solver="arpack",
         tol=0.001,
         n_features=12,
-        max_frac_repeated=None,
+        max_repeated=None,
         max_correlation=None,
         random_state=1,
     )
@@ -542,7 +567,7 @@ def test_kwargs_parameter_scoring(strategy):
         solver="tree_class",
         scoring="auc",
         n_features=12,
-        max_frac_repeated=None,
+        max_repeated=None,
         max_correlation=None,
         random_state=1,
     )

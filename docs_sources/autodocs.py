@@ -29,6 +29,8 @@ CUSTOM_URLS = dict(
     kstest="https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test",
     pipeline="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html",
     profilereport="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html",
+    # Data cleaning
+    clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     # Ensembles
     votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
     votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",

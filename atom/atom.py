@@ -1170,8 +1170,6 @@ class ATOM(BaseRunner, ATOMPlotter):
         *,
         drop_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
         strip_categorical: bool = True,
-        drop_max_cardinality: bool = True,
-        drop_min_cardinality: bool = True,
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
         encode_target: bool = True,
@@ -1184,8 +1182,6 @@ class ATOM(BaseRunner, ATOMPlotter):
 
         - Drop columns with specific data types.
         - Strip categorical features from white spaces.
-        - Drop categorical columns with maximal cardinality.
-        - Drop columns with minimum cardinality.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
         - Encode the target column (can't be True for regression tasks).
@@ -1198,8 +1194,6 @@ class ATOM(BaseRunner, ATOMPlotter):
         cleaner = Cleaner(
             drop_types=drop_types,
             strip_categorical=strip_categorical,
-            drop_max_cardinality=drop_max_cardinality,
-            drop_min_cardinality=drop_min_cardinality,
             drop_duplicates=drop_duplicates,
             drop_missing_target=drop_missing_target,
             encode_target=encode_target if self.goal == "class" else False,
@@ -1656,7 +1650,8 @@ class ATOM(BaseRunner, ATOMPlotter):
         *,
         solver: Optional[Union[str, callable]] = None,
         n_features: Optional[SCALAR] = None,
-        max_frac_repeated: Optional[SCALAR] = 1.0,
+        min_repeated: Optional[SCALAR] = 2,
+        max_repeated: Optional[SCALAR] = 1.0,
         max_correlation: Optional[float] = 1.0,
         **kwargs,
     ):
@@ -1700,7 +1695,8 @@ class ATOM(BaseRunner, ATOMPlotter):
             strategy=strategy,
             solver=solver,
             n_features=n_features,
-            max_frac_repeated=max_frac_repeated,
+            min_repeated=min_repeated,
+            max_repeated=max_repeated,
             max_correlation=max_correlation,
             **kwargs,
         )

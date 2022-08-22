@@ -159,6 +159,18 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     [estimator]_N for non-numerical indices, where N stands for the
     N-th sample in the data set. Use only for classification tasks.
 
+    This class can be accessed from atom through the [balance]
+    [atomclassifier-balance] method. Read more in the [user guide]
+    [balancing-the-data].
+
+    !!! warning
+        The [clustercentroids][] estimator is unavailable because of
+        incompatibilities of the APIs.
+
+    !!! tip
+        Use atom's [classes][atomclassifier-classes] attribute for an
+        overview of the target class distribution per data set.
+
     Parameters
     ----------
     strategy: str or estimator, default="ADASYN"
@@ -513,11 +525,13 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     - Drop columns with specific data types.
     - Strip categorical features from white spaces.
-    - Drop categorical columns with maximal cardinality.
-    - Drop columns with minimum cardinality.
     - Drop duplicate rows.
     - Drop rows with missing values in the target column.
     - Encode the target column.
+
+    This class can be accessed from atom through the [clean]
+    [atomclassifier-clean] method. Read more in the [user guide]
+    [standard-data-cleaning].
 
     Parameters
     ----------
@@ -526,15 +540,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     strip_categorical: bool, default=True
         Whether to strip spaces from the categorical columns.
-
-    drop_max_cardinality: bool, default=True
-        Whether to drop categorical columns with maximum cardinality,
-        i.e. the number of unique values is equal to the number of
-        samples. Usually the case for names, IDs, etc...
-
-    drop_min_cardinality: bool, default=True
-        Whether to drop columns with minimum cardinality, i.e. all
-        values in the column are the same.
 
     drop_duplicates: bool, default=False
         Whether to drop duplicate rows. Only the first occurrence of
@@ -587,6 +592,86 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     Examples
     --------
 
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> y = ["a" if i else "b" for i in y]
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.y)
+
+        0      b
+        1      b
+        2      b
+        3      b
+        4      a
+              ..
+        995    b
+        996    a
+        997    a
+        998    b
+        999    b
+
+        Name: target, Length: 1000, dtype: object
+
+        >>> atom.clean(verbose=2)
+
+        Fitting Cleaner...
+        Cleaning the data...
+         --> Label-encoding the target column.
+
+        >>> print(atom.y)
+
+        0      1
+        1      1
+        2      1
+        3      1
+        4      0
+              ..
+        995    1
+        996    0
+        997    0
+        998    1
+        999    1
+
+        Name: target, Length: 1000, dtype: int32
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> import numpy as np
+        >>> from atom.data_cleaning import Cleaner
+
+        >>> y = ["a" if i else "b" for i in np.randint(100)]
+
+        >>> cleaner = Cleaner(verbose=2)
+        >>> y = cleaner.fit_transform(y=y)
+
+        Fitting Cleaner...
+        Cleaning the data...
+         --> Label-encoding the target column.
+
+        >>> print(y)
+
+        0     0
+        1     0
+        2     1
+        3     0
+        4     0
+             ..
+        95    1
+        96    1
+        97    0
+        98    0
+        99    0
+
+        Name: target, Length: 100, dtype: int32
+
+        ```
 
     """
 
@@ -596,8 +681,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         drop_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
         strip_categorical: bool = True,
-        drop_max_cardinality: bool = True,
-        drop_min_cardinality: bool = True,
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
         encode_target: bool = True,
@@ -608,8 +691,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         super().__init__(gpu=gpu, verbose=verbose, logger=logger)
         self.drop_types = drop_types
         self.strip_categorical = strip_categorical
-        self.drop_max_cardinality = drop_max_cardinality
-        self.drop_min_cardinality = drop_min_cardinality
         self.drop_duplicates = drop_duplicates
         self.drop_missing_target = drop_missing_target
         self.encode_target = encode_target
@@ -701,9 +782,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
             for name, column in X.items():
-                # Count occurrences in the column
-                n_unique = column.nunique(dropna=True)
-
                 # Drop features with invalid data type
                 if column.dtype.name in lst(self.drop_types):
                     self.log(
@@ -719,26 +797,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                         X[name] = column.apply(
                             lambda val: val.strip() if isinstance(val, str) else val
                         )
-
-                    # Drop features where all values are different
-                    if self.drop_max_cardinality and n_unique == len(X):
-                        self.log(
-                            f" --> Dropping feature {name} "
-                            f"due to maximum cardinality.", 2
-                        )
-                        X = X.drop(name, axis=1)
-                        continue
-
-                # Drop features with minimum cardinality (all values are the same)
-                if self.drop_min_cardinality:
-                    all_nan = column.isna().sum() == len(X)
-                    if n_unique == 1 or all_nan:
-                        self.log(
-                            f" --> Dropping feature {name} due to minimum "
-                            f"cardinality. Contains only 1 class: "
-                            f"{'NaN' if all_nan else column.unique()[0]}."
-                        )
-                        X = X.drop(name, axis=1)
 
             # Drop duplicate samples
             if self.drop_duplicates:
@@ -1049,6 +1107,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     Two category-encoders estimators are unavailable:
         - OneHotEncoder: Use the `max_onehot` parameter.
         - HashingEncoder: Incompatibility of APIs.
+
+    !!! tip
+        Use atom's [categorical][atomclassifier-categorical] attribute
+        for a list of the categorical features in the dataset.
 
     Parameters
     ----------
@@ -1376,6 +1438,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     the `missing` attribute to customize what are considered "missing
     values".
 
+    !!! tip
+        Use atom's [missing][atomclassifier-nans] attribute to check
+        the amount of missing values per column.
+
     Parameters
     ----------
     strat_num: str, int or float, default="drop"
@@ -1699,6 +1765,10 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     the same scale but renders variables measured at different scales
     more directly comparable.
 
+    !!! tip
+        Use atom's [plot_distribution](../../API/plots/plot_distribution) method
+        to examine a column's distribution.
+
     Parameters
     ----------
     strategy: str, default="yeojohnson"
@@ -1884,6 +1954,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     Replace or remove outliers. The definition of outlier depends
     on the selected strategy and can greatly differ from one another.
     Ignores categorical columns.
+
+    !!! tip
+        Use atom's [outliers][atomclassifier-outliers] attribute to
+        check the number of outliers per column.
 
     Parameters
     ----------
@@ -2125,6 +2199,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale the data.
 
     Apply one of sklearn's scalers. Categorical columns are ignored.
+
+    !!! tip
+        Use atom's [scaled][atomclassifier-scaled] attribute
+        to check whether the dataset is scaled.
 
     Parameters
     ----------

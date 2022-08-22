@@ -103,21 +103,6 @@ operators can be chosen through the `operators` parameter. Choose from:
 
 ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.com/) package.
 
-!!! warning
-    * Using the `div`, `log` or `sqrt` operators can return new
-      features with `inf` or `NaN` values. Check the warnings that
-      may pop up or use atom's [nans][atomclassifier-nans] attribute.
-    * When using dfs with `n_jobs>1`, make sure to protect your code
-      with `if __name__ == "__main__"`. Featuretools uses [dask](https://dask.org/),
-      which uses python multiprocessing for parallelization. The spawn method on multiprocessing starts a
-      new python process, which requires it to import the \__main__
-      module before it can do its task.
-
-!!! tip
-    dfs can create many new features and not all of them will be
-    useful. Use the [FeatureSelector][] class to reduce the number
-    of features.
-
 <br>
 
 **Genetic Feature Generation**<br>
@@ -137,9 +122,6 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
  class from the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html)
  package for the genetic algorithm. Read more about this implementation
  [here](https://gplearn.readthedocs.io/en/stable/intro.html#transformer).
-
-!!! warning
-    gfg can be slow for very large populations!
 
 <br>
 
@@ -164,17 +146,6 @@ is to reduce the number of columns in the dataset, avoiding the
 The [FeatureSelector][] class provides tooling to select the relevant
 features from a dataset. It can be accessed from atom through the
 [feature_selection][atomclassifier-feature_selection] method.
-
-!!! tip
-    Use the [plot_feature_importance](../../API/plots/plot_feature_importance)
-    method to examine how much a specific feature contributes to the
-    final predictions. If the model doesn't have a `feature_importances_`
-    attribute, use [plot_permutation_importance](../../API/plots/plot_permutation_importance) instead.
-
-!!! warning
-    The rfe and rfecv strategies don't work when the solver is a 
-    [CatBoost](https://catboost.ai/) model due to incompatibility
-    of the APIs.
 
 <br>
 
@@ -320,15 +291,19 @@ operators such as mutation, crossover and selection. Read more
 
 ### Other selection methods
 
-**Removing features with low variance**<br>
+**Removing features with low or high variance**<br>
 Variance is the expectation of the squared deviation of a random
 variable from its mean. Features with low variance have many values
-repeated, which means the model will not learn much from them.
-[FeatureSelector](../../API/feature_engineering/feature_selector) removes
-all features where the same value is repeated in at least
-`max_frac_repeated` fraction of the rows. The default option is to
-remove a feature if all values in it are the same. Read more in sklearn's
-[documentation](https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance).
+repeated, which means the model can't learn much from them. In a
+similar way, features with very high variance have very few values
+repeated, which makes it also difficult for a model to learn from
+this feature.
+
+[FeatureSelector][] removes a categorical feature when the maximum
+number of occurrences for any value is below `min_repeated` or when
+the same value is repeated in at least `max_repeated` fraction of the
+rows. The default option is to remove a feature if all values in it are
+either different or exactly the same.
 
 <br style="display: block; margin-top: 2em; content: ' '">
 

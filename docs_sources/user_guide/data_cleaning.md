@@ -9,52 +9,31 @@ classes to apply the most common transformations fast and easy.
 
 !!! note
     All of atom's data cleaning methods automatically adopt the relevant
-    transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
-    atom. A different choice can be added as parameter to the method call,
-    e.g. `atom.scale(verbose=2)`.
+    transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`)
+    from atom. A different choice can be added as parameter to the method
+    call, e.g. `atom.scale(verbose=2)`.
 
 !!! note
-    Like the [add](../../API/ATOM/atomclassifier/#add) method, the data cleaning
-    methods accept the `columns` parameter to only transform a subset of the
+    Like the [add][atomclassifier-add] method, the data cleaning methods
+    accept the `columns` parameter to only transform a subset of the
     dataset's features, e.g. `atom.scale(columns=[0, 1])`.
 
 
 <br>
 
-## Scaling the feature set
+## Balancing the data
 
-Standardization of a dataset is a common requirement for many machine
-learning estimators; they might behave badly if the individual features
-do not more or less look like standard normally distributed data (e.g.
-Gaussian with zero mean and unit variance). The [Scaler](../../API/data_cleaning/scaler)
-class let you quickly scale atom's dataset using one of sklearn's scalers.
-It can be accessed from atom through the [scale](../../API/ATOM/atomclassifier/#scale)
-method. 
-
-!!! tip
-    Use atom's [scaled](../../API/ATOM/atomclassifier/#data-attributes) attribute
-    to check whether the dataset is scaled.
-
-!!! info
-    All strategies can utilize GPU speed-up. Click [here](../gpu)
-    for further information about GPU implementation.
-
-<br>
-
-## Normalizing the feature set
-
-Use the [Normalizer](../../API/data_cleaning/normalizer) class to
-transform the feature set to follow a Normal (Gaussian)-like
-distribution. In general, data must be transformed when using models
-that assume normality in the residuals. Examples of such models are
-[Logistic Regression](../../API/models/lr), [Linear Discriminant Analysis](../../API/models/lda)
-and [Gaussian Naive Bayes](../../API/models/gnb). The class can be
-accessed from atom through the [normalize](../../API/ATOM/atomclassifier/#normalize)
+One of the common issues found in datasets that are used for
+classification is imbalanced classes. Data imbalance usually reflects
+an unequal distribution of classes within a dataset. For example, in
+a credit card fraud detection dataset, most of the transactions are
+non-fraud, and a very few cases are fraud. This leaves us with a very
+unbalanced ratio of fraud vs non-fraud cases. The [Balancer](../../API/data_cleaning/balancer)
+class can oversample the minority class or undersample the majority
+class using any of the transformers implemented in the
+[imblearn](https://imbalanced-learn.org/stable/index.html) package. It
+can be  accessed from atom through the [balance](../../API/ATOM/atomclassifier/#balance)
 method.
-
-!!! tip
-    Use atom's [plot_distribution](../../API/plots/plot_distribution) method
-    to examine a column's distribution.
 
 <br>
 
@@ -70,28 +49,9 @@ perform. The available steps are:
 
 * Drop columns with specific data types.
 * Strip categorical features from white spaces.
-* Drop categorical columns with maximal cardinality.
-* Drop columns with minimum cardinality.
 * Drop duplicate rows.
 * Drop rows with missing values in the target column.
 * Encode the target column.
-
-<br>
-
-## Imputing missing values
-
-For various reasons, many real world datasets contain missing values,
-often encoded as blanks, NaNs or other placeholders. Such datasets
-however are incompatible with ATOM's models which assume that all
-values in an array are numerical, and that all have and hold meaning.
-The [Imputer](../../API/data_cleaning/imputer) class handles missing
-values in the dataset by either dropping or imputing the value. It can 
-be accessed from atom through the [impute](../../API/ATOM/atomclassifier/#impute)
-method.
-
-!!! tip
-    Use atom's [missing](../../API/ATOM/atomclassifier/#data-attributes) attribute
-    to check the amount of missing values per column.
 
 <br>
 
@@ -139,9 +99,31 @@ the dataset considerably, making it often an undesirable strategy for
 high cardinality features. Other strategies like [LeaveOneOut](https://contrib.scikit-learn.org/category_encoders/leaveoneout.html)
 transform the column in place.
 
-!!! tip
-    Use atom's [categorical](../../API/ATOM/atomclassifier/#data-attributes)
-    attribute for a list of the categorical features in the dataset.
+<br>
+
+## Imputing missing values
+
+For various reasons, many real world datasets contain missing values,
+often encoded as blanks, NaNs or other placeholders. Such datasets
+however are incompatible with ATOM's models which assume that all
+values in an array are numerical, and that all have and hold meaning.
+The [Imputer](../../API/data_cleaning/imputer) class handles missing
+values in the dataset by either dropping or imputing the value. It can 
+be accessed from atom through the [impute](../../API/ATOM/atomclassifier/#impute)
+method.
+
+<br>
+
+## Normalizing the feature set
+
+Use the [Normalizer](../../API/data_cleaning/normalizer) class to
+transform the feature set to follow a Normal (Gaussian)-like
+distribution. In general, data must be transformed when using models
+that assume normality in the residuals. Examples of such models are
+[Logistic Regression](../../API/models/lr), [Linear Discriminant Analysis](../../API/models/lda)
+and [Gaussian Naive Bayes](../../API/models/gnb). The class can be
+accessed from atom through the [normalize](../../API/ATOM/atomclassifier/#normalize)
+method.
 
 <br>
 
@@ -156,11 +138,6 @@ understanding and even removing these outlier samples. The [Pruner](../../API/da
 class offers 7 different strategies to detect outliers (described
 hereunder). It can be accessed from atom through the [prune](../../API/ATOM/atomclassifier/#prune)
 method.
-
-!!! tip
-    Use atom's [outliers](../../API/ATOM/atomclassifier/#data-attributes) attribute
-    to check the number of outliers per column.
-
 
 **z-score**<br>
 The z-score of a value in the dataset is defined as the number of standard
@@ -229,18 +206,16 @@ membership. Read more in sklearn's [documentation](https://scikit-learn.org/stab
 
 <br>
 
-## Balancing the data
+## Scaling the feature set
 
-One of the common issues found in datasets that are used for
-classification is imbalanced classes. Data imbalance usually reflects
-an unequal distribution of classes within a dataset. For example, in
-a credit card fraud detection dataset, most of the transactions are
-non-fraud, and a very few cases are fraud. This leaves us with a very
-unbalanced ratio of fraud vs non-fraud cases. The [Balancer](../../API/data_cleaning/balancer)
-class can oversample the minority class or undersample the majority
-class using any of the transformers implemented in the
-[imblearn](https://imbalanced-learn.org/stable/index.html) package. It
-can be  accessed from atom through the [balance](../../API/ATOM/atomclassifier/#balance)
-method.
+Standardization of a dataset is a common requirement for many machine
+learning estimators; they might behave badly if the individual features
+do not more or less look like standard normally distributed data (e.g.
+Gaussian with zero mean and unit variance). The [Scaler](../../API/data_cleaning/scaler)
+class let you quickly scale atom's dataset using one of sklearn's scalers.
+It can be accessed from atom through the [scale](../../API/ATOM/atomclassifier/#scale)
+method. 
 
-
+!!! info
+    All strategies can utilize GPU speed-up. Click [here](../gpu)
+    for further information about GPU implementation.

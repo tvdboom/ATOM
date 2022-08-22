@@ -1074,11 +1074,24 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         This parameter is ignored if any of the following strategies
         is selected: pso, hho, gwo, dfo, go.
 
-    max_frac_repeated: float or None, default=1.
-        Remove features with the same value in at least this fraction
-        of the total rows. The default is to keep all features with
+    min_repeated: int, float or None, default=2
+        Remove categorical features if there isn't any repeated value
+        in at least `min_repeated` rows. The default is to keep all
+        features with non-maximum variance, i.e. remove the features
+        which number of unique values is equal to the number of rows
+        (usually the case for names, IDs, etc...).
+            - If None: No check for minimum repetition.
+            - If >1: Minimum repetition number.
+            - If <=1: Minimum repetition fraction.
+
+    max_repeated: int, float or None, default=1.
+        Remove categorical features with the same value in at least
+        `max_repeated` rows. The default is to keep all features with
         non-zero variance, i.e. remove the features that have the same
-        value in all samples. If None, skip this step.
+        value in all samples.
+            - If None: No check for maximum repetition.
+            - If >1: Maximum number of repeated occurences.
+            - If <=1: Maximum fraction of repeated occurences.
 
     max_correlation: float or None, default=1.
         Minimum absolute [Pearson correlation][pearson] to identify
@@ -1237,7 +1250,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         *,
         solver: Optional[Union[str, callable]] = None,
         n_features: Optional[SCALAR] = None,
-        max_frac_repeated: Optional[SCALAR] = 1.0,
+        min_repeated: Optional[SCALAR] = 2,
+        max_repeated: Optional[SCALAR] = 1.0,
         max_correlation: Optional[FLOAT] = 1.0,
         n_jobs: INT = 1,
         gpu: Union[bool, str] = False,
@@ -1256,7 +1270,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self.strategy = strategy
         self.solver = solver
         self.n_features = n_features
-        self.max_frac_repeated = max_frac_repeated
+        self.min_repeated = min_repeated
+        self.max_repeated = max_repeated
         self.max_correlation = max_correlation
         self.kwargs = kwargs
 
@@ -1266,6 +1281,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         self._n_features = None
         self._kwargs = kwargs.copy()
+        self._high_variance = {}
         self._low_variance = {}
         self._estimator = None
         self._is_fitted = False
@@ -1389,10 +1405,34 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         else:
             self._n_features = self.n_features
 
-        if self.max_frac_repeated is not None and not 0 <= self.max_frac_repeated <= 1:
+        if self.min_repeated is None:
+            min_repeated = 1
+        elif self.min_repeated < 0:
             raise ValueError(
-                "Invalid value for the max_frac_repeated parameter. Value "
-                f"should be between 0 and 1, got {self.max_frac_repeated}."
+                "Invalid value for the min_repeated parameter. Value "
+                f"should be >0, got {self.min_repeated}."
+            )
+        elif self.min_repeated < 1:
+            min_repeated = self.min_repeated * len(X)
+        else:
+            min_repeated = int(self.min_repeated)
+
+        if self.max_repeated is None:
+            max_repeated = len(X)
+        elif self.max_repeated < 0:
+            raise ValueError(
+                "Invalid value for the max_repeated parameter. Value "
+                f"should be >0, got {self.max_repeated}."
+            )
+        elif self.max_repeated <= 1:
+            max_repeated = self.max_repeated * len(X)
+        else:
+            max_repeated = int(self.max_repeated)
+
+        if min_repeated > max_repeated:
+            raise ValueError(
+                "The min_repeated parameter can't be higher than "
+                f"max_repeated, got {min_repeated} > {max_repeated}. "
             )
 
         if self.max_correlation is not None and not 0 <= self.max_correlation <= 1:
@@ -1403,12 +1443,20 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         self.log("Fitting FeatureSelector...", 1)
 
+        # Remove features with too high variance
+        if self.min_repeated is not None:
+            for name, column in X.select_dtypes(exclude="number").items():
+                max_counts = column.value_counts()
+                if min_repeated > max_counts.max():
+                    self._high_variance[name] = [max_counts.idxmax(), max_counts.max()]
+                    X = X.drop(name, axis=1)
+                    break
+
         # Remove features with too low variance
-        if self.max_frac_repeated:
-            for name, column in X.items():
+        if self.max_repeated is not None:
+            for name, column in X.select_dtypes(exclude="number").items():
                 for category, count in column.value_counts().items():
-                    # If count < fraction of total, drop column
-                    if count >= self.max_frac_repeated * len(X):
+                    if count >= max_repeated:
                         self._low_variance[name] = [category, 100 * count / len(X)]
                         X = X.drop(name, axis=1)
                         break
@@ -1681,6 +1729,15 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         X, y = self._prepare_input(X, y)
 
         self.log("Performing feature selection ...", 1)
+
+        # Remove features with too high variance
+        for key, value in self._high_variance.items():
+            self.log(
+                f" --> Feature {key} was removed due to high variance. "
+                f"Value {value[0]} was the most repeated value with "
+                f"{value[1]} ({value[1] / len(X):.1f}%) occurrences.", 2
+            )
+            X = X.drop(key, axis=1)
 
         # Remove features with too low variance
         for key, value in self._low_variance.items():
