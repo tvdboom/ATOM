@@ -53,12 +53,20 @@ attributes accordingly.
             - atom.branch:Branch.y_train
             - atom.branch:Branch.X_test
             - atom.branch:Branch.y_test
+            - atom.branch:Branch.shape
+            - atom.branch:Branch.columns
+            - atom.branch:Branch.n_columns
+            - atom.branch:Branch.features
+            - atom.branch:Branch.n_features
+            - atom.branch:Branch.target
             - scaled
             - duplicates
             - nans
             - n_nans
             - numerical
             - n_numerical
+            - categorical
+            - n_categorical
             - outliers
             - n_outliers
             - classes
@@ -175,21 +183,6 @@ running.
         - normalize
         - prune
         - scale
-
-
-<a name="discretize"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">discretize</strong>(strategy="quantile",
-bins=5, labels=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1127">[source]</a>
-</span>
-</div>
-Bin continuous data into intervals. For each feature, the bin edges are
-computed during fit and, together with the number of bins, they will
-define the intervals. Ignores numerical columns. See
-[Discretizer](../data_cleaning/discretizer.md) for a description of the parameters.
-<br /><br /><br />
 
 
 <a name="encode"></a>

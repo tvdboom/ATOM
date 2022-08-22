@@ -1773,7 +1773,7 @@ are attached to atom.
 <a name="feature-selection"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">feature_selection</strong>(strategy=None,
-solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., **kwargs)
+solver=None, n_features=None, max_repeated=1., max_correlation=1., **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1489">[source]</a>
 </span>
