@@ -47,23 +47,25 @@ def ATOMLoader(
         Original dataset. Only use this parameter if the file is an
         atom instance that was saved using `save_data=False`. Allowed
         formats are:
-            - X
-            - X, y
-            - train, test
-            - train, test, holdout
-            - X_train, X_test, y_train, y_test
-            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
-            - (X_train, y_train), (X_test, y_test)
-            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        X, train, test: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        - X
+        - X, y
+        - train, test
+        - train, test, holdout
+        - X_train, X_test, y_train, y_test
+        - X_train, X_test, X_holdout, y_train, y_test, y_holdout
+        - (X_train, y_train), (X_test, y_test)
+        - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        y: int, str or sequence
-            Target column corresponding to X.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+        **X, train, test: dataframe-like**<br>
+        Feature set with shape=(n_samples, n_features).
+
+        **y: int, str or sequence**<br>
+        Target column corresponding to X.
+
+        - If int: Position of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Array with shape=(n_samples,) to use as target.
 
     transform_data: bool, default=True
         If False, the `data` is left as provided. If True, it is
@@ -169,8 +171,7 @@ def ATOMModel(
 
     This function adds the relevant attributes to the estimator so
     that they can be used by atom. Note that only estimators that follow
-    [sklearn's API](https://scikit-learn.org/stable/developers/develop.html)
-    are compatible.
+    [sklearn's API][api] are compatible.
 
     Read more about using custom models in the [user guide][custom-models].
 
@@ -262,36 +263,44 @@ class ATOMClassifier(BaseTransformer, ATOM):
     ----------
     *arrays: sequence of indexables
         Dataset containing features and target. Allowed formats are:
-            - X
-            - X, y
-            - train, test
-            - train, test, holdout
-            - X_train, X_test, y_train, y_test
-            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
-            - (X_train, y_train), (X_test, y_test)
-            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        Where X is the feature set with shape=(n_samples, n_features),
-        y is the target column corresponding to X (see the `y` parameter
-        for the possible values), and train, test and holdout are the
-        complete data sets with features and target.
+        - X
+        - X, y
+        - train, test
+        - train, test, holdout
+        - X_train, X_test, y_train, y_test
+        - X_train, X_test, X_holdout, y_train, y_test, y_holdout
+        - (X_train, y_train), (X_test, y_test)
+        - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
+
+        **X, train, test: dataframe-like**<br>
+        Feature set with shape=(n_samples, n_features).
+
+        **y: int, str or sequence**<br>
+        Target column corresponding to X.
+
+        - If int: Position of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Array with shape=(n_samples,) to use as target.
 
     y: int, str or sequence, default=-1
         Target column corresponding to X.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+
+        - If int: Position of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Array with shape=(n_samples,) to use as target.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
 
     index: bool, int, str or sequence, default=False
         Handle the index in the resulting dataframe.
-            - If False: Reset to [RangeIndex][].
-            - If True: Use the provided index.
-            - If int: Position of the column to use as index.
-            - If str: Name of the column to use as index.
-            - If sequence: Array with shape=(n_samples,) to use as index.
+
+        - If False: Reset to [RangeIndex][].
+        - If True: Use the provided index.
+        - If int: Position of the column to use as index.
+        - If str: Name of the column to use as index.
+        - If sequence: Array with shape=(n_samples,) to use as index.
 
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
@@ -315,45 +324,49 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     stratify: bool, int, str or sequence, default=True
         Handle stratification of the target classes over the data sets.
-            - If False: The data is split randomly.
-            - If True: The data is stratified over the target column.
-            - Else: Name or position of the columns to stratify by.
+
+        - If False: The data is split randomly.
+        - If True: The data is stratified over the target column.
+        - Else: Name or position of the columns to stratify by. The
+          columns can't contain `NaN` values.
 
         This parameter is ignored if `shuffle=False` or if the test
         set is provided through `arrays`.
 
-        Stratification columns can't contain `NaN` values.
-
     n_rows: int or float, default=1
         Subsample of the dataset to use. The default value selects all
         the rows.
+
         - If <=1: Fraction of the dataset to select.
         - If >1: Exact number of rows to select. Only if `arrays` is X
                  or X, y.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
 
     gpu: bool or str, default=False
-        Train estimators on GPU (instead of CPU). Refer to the
-        documentation to check which estimators are supported.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        Train estimators on GPU. Refer to the [documentation][gpu] to
+        check which estimators are supported.
+
+        - If False: Always use CPU implementation.
+        - If True: Use GPU implementation if possible.
+        - If "force": Force GPU implementation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     warnings: bool or str, default=False
         - If True: Default warning action (equal to "default").
         - If False: Suppress all warnings (equal to "ignore").
-        - If str: One of the actions in python's warnings environment.
+        - If str: One of python's [warnings filters][warnings].
 
         Changing this parameter affects the `PYTHONWARNINGS` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
@@ -531,36 +544,44 @@ class ATOMRegressor(BaseTransformer, ATOM):
     ----------
     *arrays: sequence of indexables
         Dataset containing features and target. Allowed formats are:
-            - X
-            - X, y
-            - train, test
-            - train, test, holdout
-            - X_train, X_test, y_train, y_test
-            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
-            - (X_train, y_train), (X_test, y_test)
-            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        Where X is the feature set with shape=(n_samples, n_features),
-        y is the target column corresponding to X (see the `y` parameter
-        for the possible values), and train, test and holdout are the
-        complete data sets with features and target.
+        - X
+        - X, y
+        - train, test
+        - train, test, holdout
+        - X_train, X_test, y_train, y_test
+        - X_train, X_test, X_holdout, y_train, y_test, y_holdout
+        - (X_train, y_train), (X_test, y_test)
+        - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
+
+        **X, train, test: dataframe-like**<br>
+        Feature set with shape=(n_samples, n_features).
+
+        **y: int, str or sequence**<br>
+        Target column corresponding to X.
+
+        - If int: Position of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Array with shape=(n_samples,) to use as target.
 
     y: int, str or sequence, default=-1
         Target column corresponding to X.
-            - If int: Position of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+
+        - If int: Position of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Array with shape=(n_samples,) to use as target.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
 
     index: bool, int, str or sequence, default=False
         Handle the index in the resulting dataframe.
-            - If False: Reset to [RangeIndex][].
-            - If True: Use the provided index.
-            - If int: Position of the column to use as index.
-            - If str: Name of the column to use as index.
-            - If sequence: Array with shape=(n_samples,) to use as index.
+
+        - If False: Reset to [RangeIndex][].
+        - If True: Use the provided index.
+        - If int: Position of the column to use as index.
+        - If str: Name of the column to use as index.
+        - If sequence: Array with shape=(n_samples,) to use as index.
 
     test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
@@ -585,32 +606,37 @@ class ATOMRegressor(BaseTransformer, ATOM):
     n_rows: int or float, default=1
         Subsample of the dataset to use. The default value selects all
         the rows.
-        - If <=1: Select this fraction of the dataset.
-        - If >1: Select this exact number of rows.
+
+        - If <=1: Fraction of the dataset to select.
+        - If >1: Exact number of rows to select. Only if `arrays` is X
+                 or X, y.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
 
     gpu: bool or str, default=False
-        Train estimators on GPU (instead of CPU). Refer to the
-        documentation to check which estimators are supported.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        Train estimators on GPU. Refer to the [documentation][gpu] to
+        check which estimators are supported.
+
+        - If False: Always use CPU implementation.
+        - If True: Use GPU implementation if possible.
+        - If "force": Force GPU implementation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     warnings: bool or str, default=False
         - If True: Default warning action (equal to "default").
         - If False: Suppress all warnings (equal to "ignore").
-        - If str: One of the actions in python's warnings environment.
+        - If str: One of python's [warnings filters][warnings].
 
         Changing this parameter affects the `PYTHONWARNINGS` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
@@ -621,8 +647,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - Else: Python `logging.Logger` instance.
 
     experiment: str or None, default=None
-        Name of the mlflow experiment to use for tracking. If None,
-        no mlflow tracking is performed.
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
 
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random

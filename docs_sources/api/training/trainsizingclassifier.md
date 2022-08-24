@@ -179,7 +179,7 @@ Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
 </p>
 <strong>gpu: bool or str, default=False</strong><br>
-Train models on GPU (instead of CPU). Refer to the
+Train models on GPU. Refer to the
 <a href="../../../user_guide/gpu">documentation</a>
 to check which estimators are supported.
 <ul style="line-height:1.2em;margin-top:5px">

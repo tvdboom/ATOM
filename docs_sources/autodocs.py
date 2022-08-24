@@ -23,6 +23,9 @@ import yaml
 # Mapping of keywords to urls
 # Usage in docs: [anchor][key] -> [anchor][value]
 CUSTOM_URLS = dict(
+    # API
+    api="https://scikit-learn.org/stable/developers/develop.html",
+    warnings="https://docs.python.org/3/library/warnings.html#the-warnings-filter",
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
     experiment="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments",
@@ -31,6 +34,21 @@ CUSTOM_URLS = dict(
     profilereport="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html",
     # Data cleaning
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
+    onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
+    hashingencoder="https://contrib.scikit-learn.org/category_encoders/hashing.html",
+    quantile="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html",
+    boxcox="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html",
+    yeojohnson="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html",
+    iforest="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html",
+    ee="https://scikit-learn.org/stable/modules/generated/sklearn.covariance.EllipticEnvelope.html",
+    lof="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html",
+    svm="https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html",
+    dbscan="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html",
+    optics="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.OPTICS.html",
+    standard="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html",
+    minmax="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html",
+    maxabs="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html",
+    robust="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html",
     # Ensembles
     votingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html",
     votingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
@@ -159,22 +177,39 @@ class AutoDocs:
 
     @staticmethod
     def parse_body(body: str) -> str:
-        text = ""
-        pattern = ".+?(?=\n\n|\n +?[-*+] |\Z)"
-        bullet = "<span class='bullet'>&bull;</span>"
-        for i, line in enumerate(re.findall(pattern, body, re.S)):
-            indent = len(line) - len(line.lstrip())
-            b = line.strip()
-            if any(b.startswith(f"{char} ") for char in ("-", "+", "*")):
-                spaces = "&nbsp;" * max(4, indent - 4)
-                text += f"{'<br>' if i > 0 else ''}{spaces}{bullet}{b[1:]}"
-            elif b != "":
-                text += f"{'<br><br>' if i > 0 else ''}{b}"
+        """Parse a parameter's body to the right Markdown format.
 
-        return text
+        Allow lists to not have to start with a new line when there's
+        no preceding line.
+
+        Parameters
+        ----------
+        body: str
+            A parameter's body.
+
+        Returns
+        -------
+        str
+            The body parsed to accept ATOM's docstring list format.
+
+        """
+        text = "\n"
+        if any(body.lstrip().startswith(c) for c in ("- ", "* ", "+ ")):
+            text += "\n"
+
+        text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(True)])
+
+        return text + "\n"
 
     def get_signature(self) -> str:
-        """Return the object's signature."""
+        """Return the object's signature.
+
+        Returns
+        -------
+        str
+            Object's signature.
+
+        """
         # Assign object type
         params = signature(self.obj).parameters
         if inspect.isclass(self.obj):
@@ -223,11 +258,31 @@ class AutoDocs:
         return f"\n\n{anchor}<div class='sign'>{obj} {module}{name}{sign}{url}</div>"
 
     def get_summary(self) -> str:
-        """Return the object's summary."""
+        """Return the object's summary.
+
+        The summary is the first line of the docstring.
+
+        Returns
+        -------
+        str
+            Object's summary.
+
+        """
         return next(filter(None, self.doc.splitlines()))  # Get first non-empty line
 
     def get_description(self) -> str:
-        """Return the object's description."""
+        """Return the object's description.
+
+        The description is the first part of the docstring where the
+        object is explained (before any other block). The summary is
+        excluded.
+
+        Returns
+        -------
+        str
+            Object's description.
+
+        """
         pattern = f".*?(?={'|'.join(self.blocks)})"
         match = re.match(pattern, self.doc[len(self.get_summary()):], re.S)
         return match.group() if match else ""
@@ -240,7 +295,7 @@ class AutoDocs:
         Returns
         -------
         str
-            Formatted block.
+            Object's See Also block.
 
         """
         block = "<br>" + '\n!!! info "See Also"'
@@ -495,7 +550,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
 
     """
     result, start = "", 0
-    for match in re.finditer("\[([ \w_-]*?)\]\[([ \w_-]*?)\]", markdown):
+    for match in re.finditer("\[([' \w_-]*?)\]\[([' \w_-]*?)\]", markdown):
         anchor = match.group(1)
         link = match.group(2)
 

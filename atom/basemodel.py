@@ -1022,10 +1022,11 @@ class BaseModel(BaseModelPlotter):
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's scorers,

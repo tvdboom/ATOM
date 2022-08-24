@@ -92,9 +92,11 @@
 .td_params .param {
     margin: 0 0 1.2em 1.2em;
 }
-.td_params .bullet {
-    line-height: normal;
-    font-size: 1.3em;
+.td_params .param ul {
+    margin-top: -0.3em;
+}
+.td_params .param li {
+    margin-top: -0.3em;
 }
 
 

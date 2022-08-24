@@ -7,6 +7,8 @@ Description: Module containing the NLP transformers.
 
 """
 
+from __future__ import annotations
+
 import re
 import unicodedata
 from logging import Logger
@@ -43,6 +45,10 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     transformations are applied on the column named `corpus`, in
     the same order the parameters are presented. If there is no
     column with that name, an exception is raised.
+
+    This class can be accessed from atom through the [textclean]
+    [atomclassifier-textclean] method. Read more in the [user guide]
+    [text-cleaning].
 
     Parameters
     ----------
@@ -96,9 +102,10 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -111,11 +118,120 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Encountered regex matches. The row indices correspond to
         the document index from which the occurrence was dropped.
 
+    See Also
+    --------
+    atom.nlp:TextNormalizer
+    atom.nlp:Tokenizer
+    atom.nlp:Vectorizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0          17.99         10.38  ...                  0.11890       0
+        1          12.25         17.94  ...                  0.08132       1
+        2          13.87         20.70  ...                  0.08492       1
+        3          12.06         12.74  ...                  0.07898       1
+        4          12.62         17.15  ...                  0.07330       1
+        ..           ...           ...  ...                      ...     ...
+        564        11.34         18.61  ...                  0.06783       1
+        565        11.43         17.31  ...                  0.08096       1
+        566        11.06         14.96  ...                  0.09080       1
+        567        13.20         15.82  ...                  0.08385       1
+        568        20.55         20.86  ...                  0.07569       0
+
+        [569 rows x 31 columns]
+
+        >>> atom.scale(verbose=2)
+
+        Fitting Scaler...
+        Scaling features...
+
+        >>> # Note the reduced number of rows
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0       1.052603     -2.089926  ...                 1.952598       0
+        1      -0.529046     -0.336627  ...                -0.114004       1
+        2      -0.082657      0.303467  ...                 0.083968       1
+        3      -0.581401     -1.542600  ...                -0.242685       1
+        4      -0.427093     -0.519842  ...                -0.555040       1
+        ..           ...           ...  ...                      ...     ...
+        564    -0.779796     -0.181242  ...                -0.855847       1
+        565    -0.754996     -0.482735  ...                -0.133801       1
+        566    -0.856949     -1.027742  ...                 0.407321       1
+        567    -0.267275     -0.828293  ...                 0.025126       1
+        568     1.758008      0.340573  ...                -0.423609       0
+
+        [569 rows x 31 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.data_cleaning import Scaler
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0          17.99         10.38  ...          0.4601                  0.11890
+        1          20.57         17.77  ...          0.2750                  0.08902
+        2          19.69         21.25  ...          0.3613                  0.08758
+        3          11.42         20.38  ...          0.6638                  0.17300
+        4          20.29         14.34  ...          0.2364                  0.07678
+        ..           ...           ...  ...             ...                      ...
+        564        21.56         22.39  ...          0.2060                  0.07115
+        565        20.13         28.25  ...          0.2572                  0.06637
+        566        16.60         28.08  ...          0.2218                  0.07820
+        567        20.60         29.33  ...          0.4087                  0.12400
+        568         7.76         24.54  ...          0.2871                  0.07039
+
+        [569 rows x 30 columns]
+
+        >>> scaler = Scaler(verbose=2)
+        >>> X = scaler.fit_transform(X)
+
+        Fitting Scaler...
+        Scaling features...
+
+        >>> # Note the reduced number of rows
+        >>> print(X)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0       1.097064     -2.073335  ...        2.750622                 1.937015
+        1       1.829821     -0.353632  ...       -0.243890                 0.281190
+        2       1.579888      0.456187  ...        1.152255                 0.201391
+        3      -0.768909      0.253732  ...        6.046041                 4.935010
+        4       1.750297     -1.151816  ...       -0.868353                -0.397100
+        ..           ...           ...  ...             ...                      ...
+        564     2.110995      0.721473  ...       -1.360158                -0.709091
+        565     1.704854      2.085134  ...       -0.531855                -0.973978
+        566     0.702284      2.045574  ...       -1.104549                -0.318409
+        567     1.838341      2.336457  ...        1.919083                 2.219635
+        568    -1.808401      1.221792  ...       -0.048138                -0.751207
+
+        [569 rows x 30 columns]
+
+
+        ```
+
     """
 
     @typechecked
     def __init__(
         self,
+        *,
         decode: bool = True,
         lower_case: bool = True,
         drop_email: bool = True,
@@ -151,7 +267,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drops = pd.DataFrame()
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -595,7 +711,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         in X (besides `corpus`) that are non-sparse.
 
     gpu: bool or str, default=False
-        Train LabelEncoder on GPU (instead of CPU). Only for
+        Train LabelEncoder on GPU. Only for
         `encode_target=True`.
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.

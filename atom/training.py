@@ -390,7 +390,7 @@ class DirectClassifier(Direct):
         no mlflow tracking is performed.
 
     gpu: bool or str, default=False
-        Train estimators on GPU (instead of CPU). Refer to the
+        Train estimators on GPU. Refer to the
         documentation to check which estimators are supported.
             - If False: Always use CPU implementation.
             - If True: Use GPU implementation if possible.

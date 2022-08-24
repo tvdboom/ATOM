@@ -83,22 +83,21 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     encoding_type: str, default="ordinal"
         Type of encoding to use. Choose from:
-            - "ordinal": Encode features in increasing order.
-            - "cyclic": Encode features using sine and cosine to capture
-                        their cyclic nature.
 
-            Note that using encoding_type="cyclic" creates two columns
-            for every feature. Non-cyclic features still use ordinal
-            encoding.
+        - "ordinal": Encode features in increasing order.
+        - "cyclic": Encode features using sine and cosine to capture
+          their cyclic nature. This approach creates two columns for
+          every feature. Non-cyclic features still use ordinal encoding.
 
     drop_columns: bool, default=True
         Whether to drop the original columns after transformation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -363,8 +362,9 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     strategy: str, default="dfs"
         Strategy to crate new features. Choose from:
-            - "[dfs][]": Deep Feature Synthesis.
-            - "[gfg][]": Genetic Feature Generation.
+
+        - "[dfs][]": Deep Feature Synthesis.
+        - "[gfg][]": Genetic Feature Generation.
 
     n_features: int or None, default=None
         Maximum number of newly generated features to add to the
@@ -377,15 +377,17 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -409,9 +411,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     genetic_features: pd.DataFrame
         Information on the newly created non-linear features. Only for
         the gfg strategy. Columns include:
-            - **name:** Name of the feature (generated automatically).
-            - **description:** Operators used to create this feature.
-            - **fitness:** Fitness score.
+
+        - **name:** Name of the feature (generated automatically).
+        - **description:** Operators used to create this feature.
+        - **fitness:** Fitness score.
 
     feature_names_in_: np.array
         Names of features seen during fit.
@@ -537,9 +540,10 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         y: int, str or sequence
             Target column corresponding to X.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -755,9 +759,10 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -1012,57 +1017,59 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     ----------
     strategy: str or None, default=None
         Feature selection strategy to use. Choose from:
-            - None: Do not perform any feature selection strategy.
-            - "[univariate][selectkbest]": Univariate statistical F-test.
-            - "[pca][]": Principal Component Analysis.
-            - "[sfm][]": Select best features according to a model.
-            - "[sfs][]": Sequential Feature Selection.
-            - "[rfe][]": Recursive Feature Elimination.
-            - "[rfecv][]": RFE with cross-validated selection.
-            - "[pso][]": Particle Swarm Optimization.
-            - "[hho][]": Harris Hawks Optimization.
-            - "[gwo][]": Grey Wolf Optimization.
-            - "[dfo][]": Dragonfly Optimization.
-            - "[go][]": Genetic Optimization.
+
+        - None: Do not perform any feature selection strategy.
+        - "[univariate][selectkbest]": Univariate statistical F-test.
+        - "[pca][]": Principal Component Analysis.
+        - "[sfm][]": Select best features according to a model.
+        - "[sfs][]": Sequential Feature Selection.
+        - "[rfe][]": Recursive Feature Elimination.
+        - "[rfecv][]": RFE with cross-validated selection.
+        - "[pso][]": Particle Swarm Optimization.
+        - "[hho][]": Harris Hawks Optimization.
+        - "[gwo][]": Grey Wolf Optimization.
+        - "[dfo][]": Dragonfly Optimization.
+        - "[go][]": Genetic Optimization.
 
     solver: str, estimator or None, default=None
         Solver/estimator to use for the feature selection strategy. See
         the corresponding documentation for an extended description of
         the choices. If None, the default value is used (only for pca).
-            - for "univariate", choose from:
-                - "[f_classif][]"
-                - "[f_regression][]"
-                - "[mutual_info_classif][]"
-                - "[mutual_info_regression][]"
-                - "[chi2][]"
-                - Any function with signature `func(X, y) -> (scores, p-values)`.
-            - for "pca", choose from:
-                - If dense data:
-                    - "auto" (default)
-                    - "full"
-                    - "arpack"
-                    - "randomized"
-                - If sparse data:
-                    - "randomized" (default)
-                    - "arpack"
-                - If gpu implementation:
-                    - "full" (default)
-                    - "jacobi"
-                    - "auto"
 
-        For the remaining strategies, it's the base estimator. For sfm,
-        rfe and rfecv, it should have either a `feature_importances_`
-        or `coef_` attribute after fitting. You can use one of ATOM's
-        [predefined models][]. Add `_class` or `_reg` after the model's
-        name to specify a classification or regression task, e.g.
-        `solver="LGB_reg"` (not necessary if called from atom). No
-        default option.
+        - for "univariate", choose from:
+            - "[f_classif][]"
+            - "[f_regression][]"
+            - "[mutual_info_classif][]"
+            - "[mutual_info_regression][]"
+            - "[chi2][]"
+            - Any function with signature `func(X, y) -> (scores, p-values)`.
+        - for "pca", choose from:
+            - If dense data:
+                - "auto" (default)
+                - "full"
+                - "arpack"
+                - "randomized"
+            - If sparse data:
+                - "randomized" (default)
+                - "arpack"
+            - If gpu implementation:
+                - "full" (default)
+                - "jacobi"
+                - "auto"
+        - for the remaining strategies:<br>
+          The base estimator. For sfm, rfe and rfecv, it should have
+          either a `feature_importances_` or `coef_` attribute after
+          fitting. You can use one of the [predefined models][]. Add
+          `_class` or `_reg` after the model's  name to specify a
+          classification or regression task, e.g. `solver="LGB_reg"`
+          (not necessary if called from atom). No default option.
 
     n_features: int, float or None, default=None
         Number of features to select.
-            - If None: Select all features.
-            - If <1: Fraction of the total features to select.
-            - If >=1: Number of features to select.
+
+        - If None: Select all features.
+        - If <1: Fraction of the total features to select.
+        - If >=1: Number of features to select.
 
         If strategy="sfm" and the threshold parameter is not specified,
         the threshold is automatically set to `-inf` to select
@@ -1080,18 +1087,20 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         features with non-maximum variance, i.e. remove the features
         which number of unique values is equal to the number of rows
         (usually the case for names, IDs, etc...).
-            - If None: No check for minimum repetition.
-            - If >1: Minimum repetition number.
-            - If <=1: Minimum repetition fraction.
+
+        - If None: No check for minimum repetition.
+        - If >1: Minimum repetition number.
+        - If <=1: Minimum repetition fraction.
 
     max_repeated: int, float or None, default=1.
         Remove categorical features with the same value in at least
         `max_repeated` rows. The default is to keep all features with
         non-zero variance, i.e. remove the features that have the same
         value in all samples.
-            - If None: No check for maximum repetition.
-            - If >1: Maximum number of repeated occurences.
-            - If <=1: Maximum fraction of repeated occurences.
+
+        - If None: No check for maximum repetition.
+        - If >1: Maximum number of repeated occurences.
+        - If <=1: Maximum fraction of repeated occurences.
 
     max_correlation: float or None, default=1.
         Minimum absolute [Pearson correlation][pearson] to identify
@@ -1102,21 +1111,24 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
 
     gpu: bool or str, default=False
-        Train strategy on GPU (instead of CPU). Only for strategy="pca".
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        Train strategy on GPU. Only for strategy="pca".
+
+        - If False: Always use CPU implementation.
+        - If True: Use GPU implementation if possible.
+        - If "force": Force GPU implementation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -1135,9 +1147,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     ----------
     collinear: pd.DataFrame
         Information on the removed collinear features. Columns include:
-            - **drop:** Name of the dropped feature.
-            - **corr_feature:** Names of the correlated features.
-            - **corr_value:** Corresponding correlation coefficients.
+
+        - **drop:** Name of the dropped feature.
+        - **corr_feature:** Names of the correlated features.
+        - **corr_value:** Corresponding correlation coefficients.
 
     feature_importance: pd.Series
         Normalized importance scores calculated by the solver for the
@@ -1301,10 +1314,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------

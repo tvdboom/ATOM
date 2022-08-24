@@ -166,7 +166,7 @@ manage the pipeline.
 The data cleaning methods can help you scale the data, handle missing
 values, categorical columns, outliers and unbalanced datasets. All
 attributes of the data cleaning classes are attached to atom after
-running.
+running. Read more in the [user guide][data-cleaning].
 
 !!! tip
     Use the [report][atomclassifier-report] method to examine the data and
@@ -184,153 +184,22 @@ running.
         - prune
         - scale
 
-
-<a name="encode"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">encode</strong>(strategy="LeaveOneOut",
-max_onehot=10, ordinal=None, rare_to_value=None, value="rare")
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1151">[source]</a>
-</span>
-</div>
-Perform encoding of categorical features. The encoding type depends
-on the number of unique values in the column:
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If n_unique=2 or ordinal feature, use Label-encoding.</li>
-<li>If 2 < n_unique <= max_onehot, use OneHot-encoding.</li>
-<li>If n_unique > max_onehot, use `strategy`-encoding.</li>
-</ul>
-Missing values are propagated to the output column. Unknown classes
-encountered during transforming are converted to `np.NaN`. The class
-is also capable of replacing classes with low occurrences with the
-value `other` in order to prevent too high cardinality. See
-[Encoder](../data_cleaning/encoder.md) for a description of the parameters.
-
-!!! note
-    This method only encodes the categorical features. It does not encode
-    the target column! Use the [clean](#clean) method for that.
-
-<br /><br /><br />
-
-
-<a name="impute"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num="drop",
-strat_cat="drop", max_nan_rows=None, max_nan_cols=None, missing=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1093">[source]</a>
-</span>
-</div>
-Impute or remove missing values according to the selected strategy.
-Also removes rows and columns with too many missing values. The
-imputer is fitted only on the training set to avoid data leakage.
-Use the `missing` attribute to customize what are considered "missing
-values". See [Imputer](../data_cleaning/imputer.md) for a description
-of the parameters. Note that since the Imputer can remove rows from
-both the train and test set, the size of the sets may change after
-the transformation.
-<br /><br /><br />
-
-
-<a name="normalize"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">normalize</strong>(strategy="yeojohnson", **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1019">[source]</a>
-</span>
-</div>
-Transform the data to follow a Normal/Gaussian distribution. This
-transformation is useful for modeling issues related to heteroscedasticity
-(non-constant variance), or other situations where normality is desired.
-Missing values are disregarded in fit and maintained in transform.
-Categorical columns are ignored. The estimator created by the class is
-attached to atom. See the See the [Normalizer](../data_cleaning/normalizer.md)
-class for a description of the parameters.
-<br /><br /><br />
-
-
-<a name="prune"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="zscore",
-method="drop", max_sigma=3, include_target=False, **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1194">[source]</a>
-</span>
-</div>
-Prune outliers from the training set. The definition of outlier depends
-on the selected strategy and can greatly differ from one each other. 
-Ignores categorical columns. The estimators created by the class
-are attached to atom. See [Pruner](../data_cleaning/pruner.md) for a
-description of the parameters.
-
-!!! note
-    This transformation is only applied to the training set in order
-    to maintain the original distribution of samples in the test set.
-
-<br /><br /><br />
-
-
-<a name="scale"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">scale</strong>(strategy="standard", **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L999">[source]</a>
-</span>
-</div>
-Applies one of sklearn's scalers. Non-numerical columns are ignored. The
-estimator created by the class is attached to atom. See the
-[Scaler](../data_cleaning/scaler.md) class for a description of the parameters.
-<br /><br /><br />
-
-
+<br>
 
 ## NLP
 
 The Natural Language Processing (NLP) transformers help to convert raw
-text to meaningful numeric values, ready to be ingested by a model.
+text to meaningful numeric values, ready to be ingested by a model. All
+transformations are applied only on the column in the dataset called
+`corpus`. Read more in the [user guide][nlp].
 
-<table style="font-size:16px;margin-top:5px">
-<tr>
-<td><a href="#textclean">textclean</a></td>
-<td>Applies standard text cleaning to the corpus.</td>
-</tr>
-
-<tr>
-<td><a href="#textnormalize">textnormalize</a></td>
-<td>Convert words to a more uniform standard.</td>
-</tr>
-
-<tr>
-<td><a href="#tokenize">tokenize</a></td>
-<td>Convert documents into sequences of words</td>
-</tr>
-
-<tr>
-<td><a href="#vectorize">vectorize</a></td>
-<td>Transform the corpus into meaningful vectors of numbers.</td>
-</tr>
-</table>
-<br>
-
-
-<a name="textclean"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">textclean</strong>(decode=True,
-lower_case=True, drop_emails=True, regex_emails=None, drop_url=True,
-regex_url=None, drop_html=True, regex_html=None, drop_emojis, regex_emojis=None,
-drop_numbers=True, regex_numbers=None, drop_punctuation=True)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1269">[source]</a>
-</span>
-</div>
-Applies standard text cleaning to the corpus. Transformations include
-normalizing characters and dropping noise from the text (emails, HTML
-tags, URLs, etc...). The transformations are applied on the column
-named `corpus`, in the same order the parameters are presented. If
-there is no column with that name, an exception is raised. See the
-[TextCleaner](../nlp/textcleaner.md) class for a description of the
-parameters.
-<br /><br /><br />
+:: methods:
+    toc_only: False
+    include:
+        - textclean
+        - textnormalize
+        - tokenize
+        - vectorize
 
 
 <a name="textnormalize"></a>
@@ -391,89 +260,18 @@ description of the parameters.
 
 To further pre-process the data, it's possible to extract features
 from datetime columns, create new non-linear features transforming
-the existing ones or, if the dataset is too large, remove features
-using one of the provided strategies.
+the existing ones, group similar features or, if the dataset is too
+large, remove features. Read more in the [user guide][feature-engineering].
 
-<table style="font-size:16px;margin-top:5px">
-<tr>
-<td><a href="#feature-extraction">feature_extraction</a></td>
-<td>Extract features from datetime columns.</td>
-</tr>
+:: methods:
+    toc_only: False
+    include:
+        - feature_extraction
+        - feature_generation
+        - feature_grouping
+        - feature_selection
 
-<tr>
-<td><a href="#feature-generation">feature_generation</a></td>
-<td>Create new features from combinations of existing ones.</td>
-</tr>
-
-<tr>
-<td><a href="#feature-selection">feature_selection</a></td>
-<td>Remove features according to the selected strategy.</td>
-</tr>
-</table>
 <br>
-
-
-<a name="feature-extraction"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">feature_extraction</strong>(features=["day", "month", "year"],
-fmt=None, encoding_type="ordinal", drop_columns=True)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1422">[source]</a>
-</span>
-</div>
-Extract features (hour, day, month, year, etc..) from datetime columns.
-Columns of dtype `datetime64` are used as is. Categorical columns that
-can be successfully converted to a datetime format (less than 30% NaT
-values after conversion) are also used. See the [FeatureExtractor](../feature_engineering/feature_extractor.md) class for a
-description of the parameters.
-<br /><br /><br />
-
-
-<a name="feature-generation"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="dfs",
-n_features=None, operators=None, **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1455">[source]</a>
-</span>
-</div>
-Create new combinations of existing features to capture the non-linear
-relations between the original features. See [FeatureGenerator](../feature_engineering/feature_generator.md)
-for a description of the parameters. Attributes created by the class
-are attached to atom.
-<br /><br /><br />
-
-
-<a name="feature-selection"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">feature_selection</strong>(strategy=None,
-solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1489">[source]</a>
-</span>
-</div>
-Remove features according to the selected strategy. Ties between
-features with equal scores are broken in an unspecified way.
-Additionally, remove multicollinear and low variance features.
-See [FeatureSelector](../feature_engineering/feature_selector.md)
-for a description of the parameters. Plotting methods and attributes
-created by the class are attached to atom.
-
-!!! note
-    <ul style="line-height:1.2em;margin-top:5px">
-    <li>When strategy="univariate" and solver=None, [f_classif](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html)
-        is used as default solver.</li>
-    <li>When the strategy requires a model and it's one of ATOM's
-        [predefined models](../../../user_guide/models/#predefined-models), the
-        algorithm automatically selects the classifier (no need to add `_class`
-        to the solver).</li>
-    <li>When strategy is not one of univariate or pca, and solver=None, atom
-        uses the winning model (if it exists) as solver.</li>
-    <li>When strategy is sfs, rfecv or any of the advanced strategies and no
-        scoring is specified, atom's metric is used (if it exists) as scoring.</li>
-
-<br /><br />
-
 
 
 ## Training

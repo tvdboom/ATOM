@@ -1146,6 +1146,10 @@ class ATOM(BaseRunner, ATOMPlotter):
             order to maintain the original distribution of target
             classes in the test set.
 
+        !!! tip
+            Use atom's [classes][self-classes] attribute for an overview
+            of the target class distribution per data set.
+
         """
         if self.goal != "class":
             raise PermissionError(
@@ -1224,6 +1228,10 @@ class ATOM(BaseRunner, ATOMPlotter):
 
         See the [Discretizer][] class for a description of the parameters.
 
+        !!! tip
+            Use the [plot_distribution][] method to visualize a column's
+            distribution and decide on the bins.
+
         """
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, signature(Discretizer).parameters)
@@ -1252,12 +1260,20 @@ class ATOM(BaseRunner, ATOMPlotter):
         - If n_classes > `max_onehot`, use `strategy`-encoding.
 
         Missing values are propagated to the output column. Unknown
-        classes encountered during transforming are converted to
-        `np.NaN`. The class is also capable of replacing classes with
-        low occurrences with the value `other` in order to prevent
-        too high cardinality.
+        classes encountered during transforming are imputed according
+        to the selected strategy. Rare classes can be replaced with a
+        value in order to prevent too high cardinality.
 
         See the [Encoder][] class for a description of the parameters.
+
+        !!! note
+            This method only encodes the categorical features. It does
+            not encode the target column! Use the [clean][self-clean]
+            method for that.
+
+        !!! tip
+            Use the [categorical][self-categorical] attribute  for a
+            list of the categorical features in the dataset.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1289,12 +1305,16 @@ class ATOM(BaseRunner, ATOMPlotter):
     ):
         """Handle missing values in the dataset.
 
-        Impute or remove missing values according to the selected strategy.
-        Also removes rows and columns with too many missing values. Use
-        the `missing` attribute to customize what are considered "missing
-        values".
+        Impute or remove missing values according to the selected
+        strategy. Also removes rows and columns with too many missing
+        values. Use the `missing` attribute to customize what are
+        considered "missing values".
 
-        See data_cleaning.py for a description of the parameters.
+        See the [Imputer][] class for a description of the parameters.
+
+        !!! tip
+            Use the [nans][self-nans] attribute to check the amount of
+            missing values per column.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1318,11 +1338,14 @@ class ATOM(BaseRunner, ATOMPlotter):
         This transformation is useful for modeling issues related
         to heteroscedasticity (non-constant variance), or other
         situations where normality is desired. Missing values are
-        disregarded in fit and maintained in transform. Categorical
-        columns are ignored. The estimator created by the class is
-        attached to atom.
+        disregarded in fit and maintained in transform. Ignores
+        categorical columns.
 
-        See data_cleaning.py for a description of the parameters.
+        See the [Normalizer][] class for a description of the parameters.
+
+        !!! tip
+            Use the [plot_distribution][] method to examine a column's
+            distribution.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1350,14 +1373,18 @@ class ATOM(BaseRunner, ATOMPlotter):
 
         Replace or remove outliers. The definition of outlier depends
         on the selected strategy and can greatly differ from one
-        another. Ignores categorical columns. The estimators
-        created by the class are attached to atom.
+        another. Ignores categorical columns.
 
-        This transformation is only applied to the training set in
-        order to maintain the original distribution of samples in
-        the test set.
+        See the [Pruner][] class for a description of the parameters.
 
-        See data_cleaning.py for a description of the parameters.
+        !!! note
+            This transformation is only applied to the training set in
+            order to maintain the original distribution of samples in
+            the test set.
+
+        !!! tip
+            Use the [outliers][self-outliers] attribute to check the
+            number of outliers per column.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1381,10 +1408,13 @@ class ATOM(BaseRunner, ATOMPlotter):
     def scale(self, strategy: str = "standard", **kwargs):
         """Scale the data.
 
-        Apply one of sklearn's scalers. Categorical columns are ignored.
-        The estimator created by the class is attached to atom.
+        Apply one of sklearn's scalers. Ignores categorical columns.
 
-        See data_cleaning.py for a description of the parameters.
+        See the [Scaler][] class for a description of the parameters.
+
+        !!! tip
+            Use the [scaled][self-scaled] attribute to check whether
+            the dataset is scaled.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1425,7 +1455,8 @@ class ATOM(BaseRunner, ATOMPlotter):
         the same order the parameters are presented. If there is no
         column with that name, an exception is raised.
 
-        See nlp.py for a description of the parameters.
+        See the [TextCleaner][] class for a description of the
+        parameters.
 
         """
         columns = kwargs.pop("columns", None)

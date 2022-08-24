@@ -48,10 +48,10 @@ from sklearn.covariance import EllipticEnvelope
 from sklearn.ensemble import IsolationForest
 from sklearn.impute import KNNImputer, SimpleImputer
 from sklearn.neighbors import LocalOutlierFactor
-from sklearn.preprocessing import FunctionTransformer as skFunctionTransformer
 from sklearn.preprocessing import (
-    KBinsDiscretizer, LabelEncoder, MaxAbsScaler, MinMaxScaler,
-    PowerTransformer, QuantileTransformer, RobustScaler, StandardScaler,
+    FunctionTransformer, KBinsDiscretizer, LabelEncoder, MaxAbsScaler,
+    MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler,
+    StandardScaler,
 )
 from sklearn.svm import OneClassSVM
 from typeguard import typechecked
@@ -91,10 +91,11 @@ class TransformerMixin:
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -131,10 +132,11 @@ class TransformerMixin:
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -167,10 +169,6 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         The [clustercentroids][] estimator is unavailable because of
         incompatibilities of the APIs.
 
-    !!! tip
-        Use atom's [classes][atomclassifier-classes] attribute for an
-        overview of the target class distribution per data set.
-
     Parameters
     ----------
     strategy: str or estimator, default="ADASYN"
@@ -180,15 +178,17 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - value.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 - value.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -355,9 +355,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         y: int, str or sequence, default=-1
             Target column corresponding to X.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -554,17 +555,18 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         is ignored if `y` is not provided.
 
     gpu: bool or str, default=False
-        Train LabelEncoder on GPU (instead of CPU). Only for
-        `encode_target=True`.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        Train LabelEncoder on GPU. Only for encode_target=True.
+
+        - If False: Always use CPU implementation.
+        - If True: Use GPU implementation if possible.
+        - If "force": Force GPU implementation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -712,10 +714,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -758,10 +761,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -843,10 +847,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -872,51 +877,74 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Bin continuous data into intervals.
 
     For each feature, the bin edges are computed during fit and,
-    together with the number of bins, they will define the intervals.
-    Ignores numerical columns.
+    together with the number of bins, they define the intervals.
+    Ignores categorical columns.
+
+    This class can be accessed from atom through the [discretize]
+    [atomclassifier-discretize] method. Read more in the [user guide]
+    [binning-numerical-features].
+
+    !!! tip
+        The transformation returns categorical columns. Use the
+        [Encoder][] class to convert them back to numerical types.
 
     Parameters
     ----------
     strategy: str, default="quantile"
         Strategy used to define the widths of the bins. Choose from:
-            - "uniform": All bins have identical widths.
-            - "quantile": All bins have the same number of points.
-            - "kmeans": Values in each bin have the same nearest center
-                        of a 1D k-means cluster.
-            - "custom": Use custom bin edges provided through `bins`.
+
+        - "uniform": All bins have identical widths.
+        - "quantile": All bins have the same number of points.
+        - "kmeans": Values in each bin have the same nearest center of
+          a 1D k-means cluster.
+        - "custom": Use custom bin edges provided through `bins`.
 
     bins: int, sequence or dict, default=5
-        - If int: Number of bins to produce for all columns. Not allowed
-                  if strategy="custom".
-        - If sequence: Number of bins per column, where the n-th value
-                       corresponds to the n-th column that is transformed.
-                       If strategy="custom", it's the bin edges with
-                       length=n_bins + 1.
+        Bin number or bin edges in which to split every column.
+
+        - If int: Number of bins to produce for all columns. Only for
+          strategy!="custom".
+        - If sequence:
+            - For strategy!="custom": Number of bins per column,
+              allowing for non-uniform width. The n-th value corresponds
+              to the n-th column that is transformed. Note that
+              categorical columns are automatically ignored.
+            - For strategy="custom": Bin edges with length=n_bins - 1.
+              The outermost edges are always `-inf` and `+inf`, e.g.
+              bins `[1, 2]` indicate `(-inf, 1], (1, 2], (2, inf]`.
         - If dict: One of the aforementioned options per column, where
-                   the key is the column's name.
+          the key is the column's name.
 
     labels: sequence, dict or None, default=None
         Label names with which to replace the binned intervals.
-        - If None: Use default labels of the form [min_edge]-[max_edge].
+
+        - If None: Use default labels of the form `(min_edge, max_edge]`.
         - If sequence: Labels to use for all columns.
         - If dict: Labels per column, where the key is the column's name.
 
     gpu: bool or str, default=False
-        Train estimator on GPU (instead of CPU). Not for strategy="custom".
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        Train transformer on GPU. Not for strategy="custom".
+
+        - If False: Always use CPU implementation.
+        - If True: Use GPU implementation if possible.
+        - If "force": Force GPU implementation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
+
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`. Only
+        for strategy="quantile".
 
     Attributes
     ----------
@@ -925,6 +953,123 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     n_features_in_: int
         Number of features seen during fit.
+
+    See Also
+    --------
+    atom.data_cleaning:Encoder
+    atom.data_cleaning:Imputer
+    atom.data_cleaning:Normalizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom["mean radius"])
+
+        0      17.99
+        1      20.57
+        2      19.69
+        3      11.42
+        4      20.29
+               ...
+        564    21.56
+        565    20.13
+        566    16.60
+        567    20.60
+        568     7.76
+
+        Name: mean radius, Length: 569, dtype: float64
+
+        >>> atom.discretize(
+        ...     strategy="custom",
+        ...     bins=[13, 18],
+        ...     labels=["small", "medium", "large"],
+        ...     verbose=2,
+        ...     columns="mean radius",
+        ... )
+
+        Fitting Discretizer...
+        Binning the features...
+         --> Discretizing feature mean radius in 3 bins.
+
+        >>> print(atom["mean radius"])
+
+        0       small
+        1      medium
+        2      medium
+        3      medium
+        4       small
+                ...
+        564     large
+        565     small
+        566     large
+        567     small
+        568     small
+
+        Name: mean radius, Length: 569, dtype: category
+        Categories (3, object): ['small' < 'medium' < 'large']
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.data_cleaning import Discretizer
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> print(X["mean radius"])
+
+        0      17.99
+        1      20.57
+        2      19.69
+        3      11.42
+        4      20.29
+               ...
+        564    21.56
+        565    20.13
+        566    16.60
+        567    20.60
+        568     7.76
+
+        Name: mean radius, Length: 569, dtype: float64
+
+        >>> disc = Discretizer(
+        ...     strategy="custom",
+        ...     bins=[13, 18],
+        ...     labels=["small", "medium", "large"],
+        ...     verbose=2,
+        ... )
+        >>> X["mean radius"] = disc.fit_transform(X[["mean radius"]])["mean radius"]
+
+        Fitting Discretizer...
+        Binning the features...
+         --> Discretizing feature mean radius in 3 bins.
+
+        >>> print(X["mean radius"])
+
+        0       small
+        1      medium
+        2      medium
+        3      medium
+        4       small
+                ...
+        564     large
+        565     small
+        566     large
+        567     small
+        568     small
+
+        Name: mean radius, Length: 569, dtype: category
+        Categories (3, object): ['small' < 'medium' < 'large']
+
+        ```
 
     """
 
@@ -938,8 +1083,14 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
+        random_state: Optional[INT] = None,
     ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        super().__init__(
+            gpu=gpu,
+            verbose=verbose,
+            logger=logger,
+            random_state=random_state,
+        )
         self.strategy = strategy
         self.bins = bins
         self.labels = labels
@@ -950,7 +1101,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> Discretizer:
         """Fit to data.
 
         Parameters
@@ -972,7 +1123,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             """Get labels for the specified bins."""
             if isinstance(labels, dict):
                 default = [
-                    f"{np.round(bins[i], 2)}-{np.round(bins[i+1], 1)}"
+                    f"({np.round(bins[i], 2)}, {np.round(bins[i+1], 1)}]"
                     for i in range(len(bins[:-1]))
                 ]
                 labels = labels.get(col, default)
@@ -1016,7 +1167,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.strategy.lower() != "custom":
                 if isinstance(bins, SEQUENCE):
                     try:
-                        bins = bins[i]  # Fet the i-th n_bins for the i-th column
+                        bins = bins[i]  # Fetch the i-th bin for the i-th column
                     except IndexError:
                         raise ValueError(
                             "Invalid value for the bins parameter. The length of "
@@ -1032,6 +1183,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                     n_bins=bins,
                     encode="ordinal",
                     strategy=self.strategy.lower(),
+                    random_state=self.random_state,
                 ).fit(X[[col]])
 
                 # Save labels for transform method
@@ -1046,9 +1198,11 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                         f"Invalid type for the bins parameter, got {bins}. Only "
                         "a sequence of bin edges is accepted when strategy='custom'."
                     )
+                else:
+                    bins = [-np.inf] + list(bins) + [np.inf]
 
                 # Make of pd.cut a transformer
-                self._discretizers[col] = skFunctionTransformer(
+                self._discretizers[col] = FunctionTransformer(
                     func=pd.cut,
                     kw_args={"bins": bins, "labels": get_labels(labels, bins)},
                 ).fit(X[[col]])
@@ -1057,7 +1211,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Bin the data into intervals.
 
         Parameters
@@ -1088,6 +1242,8 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 for i, label in enumerate(self._labels[col]):
                     X[col] = X[col].replace(i, label)
 
+            self.log(f" --> Discretizing feature {col} in {X[col].nunique()} bins.")
+
         return X
 
 
@@ -1095,22 +1251,25 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     """Perform encoding of categorical features.
 
     The encoding type depends on the number of classes in the column:
-        - If n_classes=2 or ordinal feature, use Ordinal-encoding.
-        - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
-        - If n_classes > `max_onehot`, use `strategy`-encoding.
+
+    - If n_classes=2 or ordinal feature, use Ordinal-encoding.
+    - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
+    - If n_classes > `max_onehot`, use `strategy`-encoding.
 
     Missing values are propagated to the output column. Unknown
     classes encountered during transforming are imputed according
     to the selected strategy. Rare classes can be replaced with a
     value in order to prevent too high cardinality.
 
-    Two category-encoders estimators are unavailable:
-        - OneHotEncoder: Use the `max_onehot` parameter.
-        - HashingEncoder: Incompatibility of APIs.
+    This class can be accessed from atom through the [encode]
+    [atomclassifier-encode] method. Read more in the [user guide]
+    [encoding-categorical-features].
 
-    !!! tip
-        Use atom's [categorical][atomclassifier-categorical] attribute
-        for a list of the categorical features in the dataset.
+    !!! warning
+        Two category-encoders estimators are unavailable:
+
+        * [OneHotEncoder][]: Use the max_onehot parameter.
+        * [HashingEncoder][]: Incompatibility of APIs.
 
     Parameters
     ----------
@@ -1126,16 +1285,17 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     ordinal: dict or None, default=None
         Order of ordinal features, where the dict key is the feature's
-        name and the value is the class order, e.g. {"salary": ["low",
-        "medium", "high"]}.
+        name and the value is the class order, e.g. `{"salary": ["low",
+        "medium", "high"]}`.
 
     rare_to_value: int, float or None, default=None
         Replaces rare class occurrences in categorical columns with the
         string in parameter `value`. This transformation is done before
         the encoding of the column.
-            - If None: Skip this step.
-            - If int: Minimum number of occurrences in a class.
-            - If float: Minimum fraction of occurrences in a class.
+
+        - If None: Skip this step.
+        - If int: Minimum number of occurrences in a class.
+        - If float: Minimum fraction of occurrences in a class.
 
     value: str, default="rare"
         Value with which to replace rare classes. This parameter is
@@ -1143,9 +1303,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -1159,14 +1320,136 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     mapping: dict of dicts
         Encoded values and their respective mapping. The column name is
-        the key to its mapping dictionary. Only for columns mapped to
-        a single column (e.g. Ordinal, Leave-one-out, etc...).
+        the key to its mapping dictionary. Only for columns mapped to a
+        single column (e.g. Ordinal, Leave-one-out, etc...).
 
     feature_names_in_: np.array
         Names of features seen during fit.
 
     n_features_in_: int
         Number of features seen during fit.
+
+    See Also
+    --------
+    atom.data_cleaning:Cleaner
+    atom.data_cleaning:Imputer
+    atom.data_cleaning:Pruner
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+        >>> from numpy.random import randint
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(X))]
+        >>> X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
+        >>> X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.X)
+
+             mean radius  mean texture  ...  cat_feature_2  cat_feature_3
+        0          13.62         23.23  ...             x0             x0
+        1          14.86         16.94  ...             x0             x5
+        2          16.74         21.59  ...             x2            x15
+        3          13.37         16.39  ...             x1            x18
+        4          11.37         18.89  ...             x0            x13
+        ..           ...           ...  ...            ...            ...
+        564        14.06         17.18  ...             x2             x1
+        565        11.29         13.04  ...             x0            x10
+        566        14.26         19.65  ...             x0             x5
+        567        12.05         14.63  ...             x2            x14
+        568        18.81         19.98  ...             x1            x13
+
+        [569 rows x 33 columns]
+
+        >>> atom.encode(strategy="leaveoneout", max_onehot=10, verbose=2)
+
+        Fitting Encoder...
+        Encoding categorical columns...
+         --> Ordinal-encoding feature cat_feature_1. Contains 2 classes.
+         --> OneHot-encoding feature cat_feature_2. Contains 3 classes.
+         --> LeaveOneOut-encoding feature cat_feature_3. Contains 20 classes.
+
+        >>> # Note the one-hot encoded column with name [feature]_[class]
+        >>> print(atom.X)
+
+             mean radius  mean texture  ...  cat_feature_2_x2  cat_feature_3
+        0          13.62         23.23  ...               0.0       0.714286
+        1          14.86         16.94  ...               0.0       0.555556
+        2          16.74         21.59  ...               1.0       0.681818
+        3          13.37         16.39  ...               0.0       0.739130
+        4          11.37         18.89  ...               0.0       0.521739
+        ..           ...           ...  ...               ...            ...
+        564        14.06         17.18  ...               1.0       0.772727
+        565        11.29         13.04  ...               0.0       0.766667
+        566        14.26         19.65  ...               0.0       0.555556
+        567        12.05         14.63  ...               1.0       0.411765
+        568        18.81         19.98  ...               0.0       0.521739
+
+        [569 rows x 35 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.data_cleaning import Encoder
+        >>> from sklearn.datasets import load_breast_cancer
+        >>> from numpy.random import randint
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> X["cat_feature_1"] = [f"x{i}" for i in randint(0, 2, len(X))]
+        >>> X["cat_feature_2"] = [f"x{i}" for i in randint(0, 3, len(X))]
+        >>> X["cat_feature_3"] = [f"x{i}" for i in randint(0, 20, len(X))]
+        >>> print(X)
+
+             mean radius  mean texture  ...  cat_feature_2  cat_feature_3
+        0          13.62         23.23  ...             x0             x0
+        1          14.86         16.94  ...             x0             x5
+        2          16.74         21.59  ...             x2            x15
+        3          13.37         16.39  ...             x1            x18
+        4          11.37         18.89  ...             x0            x13
+        ..           ...           ...  ...            ...            ...
+        564        14.06         17.18  ...             x2             x1
+        565        11.29         13.04  ...             x0            x10
+        566        14.26         19.65  ...             x0             x5
+        567        12.05         14.63  ...             x2            x14
+        568        18.81         19.98  ...             x1            x13
+
+        [569 rows x 33 columns]
+
+        >>> encoder = Encoder(strategy="leaveoneout", max_onehot=10, verbose=2)
+        >>> X = encoder.fit_transform(X, y)
+
+        Fitting Encoder...
+        Encoding categorical columns...
+         --> Ordinal-encoding feature cat_feature_1. Contains 2 classes.
+         --> OneHot-encoding feature cat_feature_2. Contains 3 classes.
+         --> LeaveOneOut-encoding feature cat_feature_3. Contains 20 classes.
+
+        >>> # Note the one-hot encoded column with name [feature]_[class]
+        >>> print(X)
+
+             mean radius  mean texture  ...  cat_feature_2_x2  cat_feature_3
+        0          17.99         10.38  ...               1.0       0.379310
+        1          20.57         17.77  ...               1.0       0.714286
+        2          19.69         21.25  ...               0.0       0.586207
+        3          11.42         20.38  ...               0.0       0.678571
+        4          20.29         14.34  ...               0.0       0.714286
+        ..           ...           ...  ...               ...            ...
+        564        21.56         22.39  ...               0.0       0.580645
+        565        20.13         28.25  ...               0.0       0.518519
+        566        16.60         28.08  ...               1.0       0.600000
+        567        20.60         29.33  ...               1.0       0.586207
+        568         7.76         24.54  ...               1.0       0.678571
+
+        [569 rows x 35 columns]
+
+        ```
 
     """
 
@@ -1201,7 +1484,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES = None):
+    def fit(self, X: X_TYPES, y: Y_TYPES = None) -> Encoder:
         """Fit to data.
 
         Note that leaving y=None can lead to errors if the `strategy`
@@ -1213,6 +1496,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
+            Target column corresponding to X.
+
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
@@ -1366,7 +1651,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Encode the data.
 
         Parameters
@@ -1438,46 +1723,50 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     the `missing` attribute to customize what are considered "missing
     values".
 
-    !!! tip
-        Use atom's [missing][atomclassifier-nans] attribute to check
-        the amount of missing values per column.
+    This class can be accessed from atom through the [impute]
+    [atomclassifier-impute] method. Read more in the [user guide]
+    [imputing-missing-values].
 
     Parameters
     ----------
     strat_num: str, int or float, default="drop"
         Imputing strategy for numerical columns. Choose from:
-            - "drop": Drop rows containing missing values.
-            - "mean": Impute with mean of column.
-            - "median": Impute with median of column.
-            - "knn": Impute using a K-Nearest Neighbors approach.
-            - "most_frequent": Impute with most frequent value.
-            - int or float: Impute with provided numerical value.
+
+        - "drop": Drop rows containing missing values.
+        - "mean": Impute with mean of column.
+        - "median": Impute with median of column.
+        - "knn": Impute using a K-Nearest Neighbors approach.
+        - "most_frequent": Impute with most frequent value.
+        - int or float: Impute with provided numerical value.
 
     strat_cat: str, default="drop"
         Imputing strategy for categorical columns. Choose from:
-            - "drop": Drop rows containing missing values.
-            - "most_frequent": Impute with most frequent value.
-            - str: Impute with provided string.
+
+        - "drop": Drop rows containing missing values.
+        - "most_frequent": Impute with most frequent value.
+        - str: Impute with provided string.
 
     max_nan_rows: int, float or None, default=None
         Maximum number or fraction of missing values in a row
         (if more, the row is removed). If None, ignore this step.
 
-    max_nan_cols: int, float, default=None
+    max_nan_cols: int, float or None, default=None
         Maximum number or fraction of missing values in a column
         (if more, the column is removed). If None, ignore this step.
 
     gpu: bool or str, default=False
-        Train on GPU (instead of CPU). Not for strat_num="knn".
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        Train transformer on GPU. Not for strat_num="knn".
+
+        - If False: Always use CPU implementation.
+        - If True: Use GPU implementation if possible.
+        - If "force": Force GPU implementation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -1497,6 +1786,109 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     n_features_in_: int
         Number of features seen during fit.
+
+    See Also
+    --------
+    atom.data_cleaning:Balancer
+    atom.data_cleaning:Discretizer
+    atom.data_cleaning:Encoder
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+        >>> from numpy.random import randint
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> # Add some random missing values to the data
+        >>> for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
+        >>> X.iloc[i, j] = np.nan
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.nans)
+
+        mean radius       118
+        mean texture      134
+        mean perimeter    135
+        mean area         140
+
+        dtype: int64
+
+        >>> atom.impute(strat_num="median", max_nan_rows=0.1, verbose=2)
+
+        Fitting Imputer...
+        Imputing missing values...
+         --> Dropping 3 samples for containing more than 3 missing values.
+         --> Imputing 115 missing values with median (13.3) in feature mean radius.
+         --> Imputing 131 missing values with median (18.8) in feature mean texture.
+         --> Imputing 132 missing values with median (85.86) in feature mean perimeter.
+         --> Imputing 137 missing values with median (561.3) in feature mean area.
+
+        >>> print(atom.n_nans)
+
+        0
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.data_cleaning import Imputer
+        >>> from sklearn.datasets import load_breast_cancer
+        >>> from numpy.random import randint
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> # Add some random missing values to the data
+        >>> for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
+        >>> X.iloc[i, j] = np.nan
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0          17.99           NaN  ...          0.4601                  0.11890
+        1          20.57         17.77  ...          0.2750                  0.08902
+        2          19.69         21.25  ...          0.3613                  0.08758
+        3            NaN         20.38  ...          0.6638                  0.17300
+        4            NaN         14.34  ...          0.2364                  0.07678
+        ..           ...           ...  ...             ...                      ...
+        564          NaN         22.39  ...          0.2060                  0.07115
+        565        20.13         28.25  ...          0.2572                  0.06637
+        566          NaN           NaN  ...          0.2218                  0.07820
+        567          NaN         29.33  ...          0.4087                  0.12400
+        568          NaN         24.54  ...          0.2871                  0.07039
+
+        [569 rows x 30 columns]
+
+        >>> imputer = Imputer(strat_num="median", max_nan_rows=0.1, verbose=2)
+        >>> X, y = imputer.fit_transform(X, y)
+
+        Fitting Imputer...
+        Imputing missing values...
+         --> Imputing 135 missing values with median (13.42) in feature mean radius.
+         --> Imputing 133 missing values with median (18.81) in feature mean texture.
+         --> Imputing 129 missing values with median (86.14) in feature mean perimeter.
+         --> Imputing 120 missing values with median (537.9) in feature mean area.
+
+        >>> print(X)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0         17.990         10.38  ...          0.4601                  0.11890
+        1         13.415         17.77  ...          0.2750                  0.08902
+        2         19.690         21.25  ...          0.3613                  0.08758
+        3         11.420         20.38  ...          0.6638                  0.17300
+        4         20.290         14.34  ...          0.2364                  0.07678
+        ..           ...           ...  ...             ...                      ...
+        564       21.560         22.39  ...          0.2060                  0.07115
+        565       20.130         28.25  ...          0.2572                  0.06637
+        566       13.415         28.08  ...          0.2218                  0.07820
+        567       13.415         18.81  ...          0.4087                  0.12400
+        568        7.760         24.54  ...          0.2871                  0.07039
+
+        [569 rows x 30 columns]
+
+        ```
 
     """
 
@@ -1520,14 +1912,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
         self._max_nan_rows = None
-        self._max_nan_cols = None
+        self._drop_cols = []
         self._imputers = {}
         self._num_cols = []
-        self._drop_cols = []
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> Imputer:
         """Fit to data.
 
         Parameters
@@ -1563,7 +1954,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     f"Value should be >0, got {self.max_nan_rows}."
                 )
             elif self.max_nan_rows <= 1:
-                self._max_nan_rows = int(len(X.columns) * self.max_nan_rows)
+                self._max_nan_rows = int(X.shape[1] * self.max_nan_rows)
             else:
                 self._max_nan_rows = self.max_nan_rows
 
@@ -1574,9 +1965,9 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     f"Value should be >0, got {self.max_nan_cols}."
                 )
             elif self.max_nan_cols <= 1:
-                self._max_nan_cols = int(len(X) * self.max_nan_cols)
+                max_nan_cols = int(X.shape[0] * self.max_nan_cols)
             else:
-                self._max_nan_cols = self.max_nan_cols
+                max_nan_cols = self.max_nan_cols
 
         self.log("Fitting Imputer...", 1)
 
@@ -1584,8 +1975,15 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many NaN values
-        if self._max_nan_rows:
-            X = X.dropna(axis=0, thresh=self._max_nan_rows)
+        if self._max_nan_rows is not None:
+            X = X.dropna(axis=0, thresh=X.shape[1] - self._max_nan_rows)
+            if X.empty:
+                raise ValueError(
+                    "Invalid value for the max_nan_rows parameter, got "
+                    f"{self.max_nan_rows}. All rows contain more than "
+                    f"{self._max_nan_rows} missing values. Choose a "
+                    f"larger value or set the parameter to None."
+                )
 
         # Reset internal attrs in case of repeated fit
         self._drop_cols = []
@@ -1595,9 +1993,9 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         estimator = self._get_gpu(SimpleImputer, "cuml.experimental.preprocessing")
         for name, column in X.items():
             # Remember columns with too many missing values
-            if self._max_nan_cols and column.isna().sum() > self._max_nan_cols:
+            if self.max_nan_cols and column.isna().sum() > max_nan_cols:
                 self._drop_cols.append(name)
-                continue  # Skip to side column
+                continue
 
             # Column is numerical
             if name in self._num_cols:
@@ -1626,7 +2024,11 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(
+        self,
+        X: X_TYPES,
+        y: Optional[Y_TYPES] = None,
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
         """Impute the missing values.
 
         Note that leaving y=None can lead to inconsistencies in
@@ -1640,10 +2042,11 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         y: int, str, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -1651,7 +2054,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             Imputed dataframe.
 
         pd.Series
-            Transformed target column.
+            Transformed target column. Only returned if provided.
 
         """
         check_is_fitted(self)
@@ -1663,16 +2066,15 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many missing values
-        if self._max_nan_rows:
+        if self._max_nan_rows is not None:
             length = len(X)
-            X = X.dropna(axis=0, thresh=self._max_nan_rows)
-            if y is not None:
-                y = y[y.index.isin(X.index)]  # Select only indices that remain
-            diff = length - len(X)
-            if diff > 0:
+            X = X.dropna(axis=0, thresh=X.shape[1] - self._max_nan_rows)
+            if diff := length - len(X):
+                if y is not None:
+                    y = y[y.index.isin(X.index)]  # Select only indices that remain
                 self.log(
-                    f" --> Dropping {diff} samples for containing more "
-                    f"than {self._max_nan_rows} missing values.", 2
+                    f" --> Dropping {diff} samples for containing "
+                    f"more than {self._max_nan_rows} missing values.", 2
                 )
 
         for name, column in X.items():
@@ -1757,30 +2159,34 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     where normality is desired. Missing values are disregarded in
     fit and maintained in transform. Categorical columns are ignored.
 
-    Note that the yeojohnson and boxcox strategies standardize the
-    data after transforming. Use the kwargs to change this behaviour.
+    This class can be accessed from atom through the [normalize]
+    [atomclassifier-normalize] method. Read more in the [user guide]
+    [normalizing-the-feature-set].
 
-    Note that the quantile strategy performs a non-linear transformation.
-    This may distort linear correlations between variables measured at
-    the same scale but renders variables measured at different scales
-    more directly comparable.
+    !!! warning
+        The quantile strategy performs a non-linear transformation.
+        This may distort linear correlations between variables measured
+        at the same scale but renders variables measured at different
+        scales more directly comparable.
 
-    !!! tip
-        Use atom's [plot_distribution](../../API/plots/plot_distribution) method
-        to examine a column's distribution.
+    !!! note
+        The yeojohnson and boxcox strategies scale the data after
+        transforming. Use the `kwargs` to change this behaviour.
 
     Parameters
     ----------
     strategy: str, default="yeojohnson"
         The transforming strategy. Choose from:
-            - "yeojohnson"
-            - "boxcox" (only works with strictly positive values)
-            - "quantile": Transform features using quantiles information.
+
+        - "[yeojohnson][]"
+        - "[boxcox][]" (only works with strictly positive values)
+        - "[quantile][]": Transform features using quantiles information.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -1804,6 +2210,125 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     n_features_in_: int
         Number of features seen during fit.
+        `NaN`, `+inf` and `-inf` are always considered missing since
+        they are incompatible with sklearn estimators.
+
+    See Also
+    --------
+    atom.data_cleaning:Cleaner
+    atom.data_cleaning:Pruner
+    atom.data_cleaning:Scaler
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0          16.78         18.80  ...                  0.07228       0
+        1          15.34         14.26  ...                  0.09946       0
+        2          14.22         27.85  ...                  0.07796       1
+        3          18.31         18.58  ...                  0.06938       0
+        4          18.49         17.52  ...                  0.09445       0
+        ..           ...           ...  ...                      ...     ...
+        564        13.44         21.58  ...                  0.07146       0
+        565        20.47         20.67  ...                  0.06386       0
+        566        12.98         19.35  ...                  0.09166       1
+        567        14.61         15.69  ...                  0.05695       1
+        568        23.27         22.04  ...                  0.09187       0
+
+        [569 rows x 31 columns]
+
+        >>> atom.plot_distribution(columns=0)
+
+        ```
+        ![plot_distribution_1](../../img/plots/plot_distribution_1.png)
+
+        ```pycon
+
+        >>> atom.normalize(verbose=2)
+
+        Fitting Normalizer...
+        Normalizing features...
+
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0       0.868700      0.010820  ...                -0.684572       0
+        1       0.513904     -1.257343  ...                 1.019875       0
+        2       0.200435      1.773390  ...                -0.226619       1
+        3       1.197448     -0.042755  ...                -0.945047       0
+        4       1.233326     -0.310726  ...                 0.786014       0
+        ..           ...           ...  ...                      ...     ...
+        564    -0.041166      0.635293  ...                -0.756291       0
+        565     1.595052      0.440855  ...                -1.497202       0
+        566    -0.193933      0.141884  ...                 0.642613       1
+        567     0.313768     -0.816597  ...                -2.307746       1
+        568     2.022355      0.730259  ...                 0.653756       0
+
+        [569 rows x 31 columns]
+
+
+        >>> atom.plot_distribution(columns=0)
+
+        ```
+
+        ![plot_distribution_1](../../img/plots/plot_distribution_2.png)
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.data_cleaning import Normalizer
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0          17.99         10.38  ...          0.4601                  0.11890
+        1          20.57         17.77  ...          0.2750                  0.08902
+        2          19.69         21.25  ...          0.3613                  0.08758
+        3          11.42         20.38  ...          0.6638                  0.17300
+        4          20.29         14.34  ...          0.2364                  0.07678
+        ..           ...           ...  ...             ...                      ...
+        564        21.56         22.39  ...          0.2060                  0.07115
+        565        20.13         28.25  ...          0.2572                  0.06637
+        566        16.60         28.08  ...          0.2218                  0.07820
+        567        20.60         29.33  ...          0.4087                  0.12400
+        568         7.76         24.54  ...          0.2871                  0.07039
+
+        [569 rows x 30 columns]
+
+        >>> normalizer = Normalizer(verbose=2)
+        >>> X = normalizer.fit_transform(X)
+
+        Fitting Normalizer...
+        Normalizing features...
+
+        >>> print(X)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0       1.134881     -2.678666  ...        2.197206                 1.723624
+        1       1.619346     -0.264377  ...       -0.121997                 0.537179
+        2       1.464796      0.547806  ...        1.218181                 0.453955
+        3      -0.759262      0.357721  ...        3.250202                 2.517606
+        4       1.571260     -1.233520  ...       -0.943554                -0.279402
+        ..           ...           ...  ...             ...                      ...
+        564     1.781795      0.785604  ...       -1.721528                -0.751459
+        565     1.543335      1.845150  ...       -0.480093                -1.210527
+        566     0.828589      1.817618  ...       -1.301164                -0.170872
+        567     1.624440      2.016299  ...        1.744693                 1.850944
+        568    -2.699432      1.203224  ...        0.103122                -0.820663
+
+        [569 rows x 30 columns]
+
+        ```
 
     """
 
@@ -1826,7 +2351,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> Normalizer:
         """Fit to data.
 
         Parameters
@@ -1876,7 +2401,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -1911,11 +2436,9 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(
-        self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
-    ):
-        """Apply the inverse transformations to the data.
+        self, X: X_TYPES, y: Optional[Y_TYPES] = None
+    ) -> pd.DataFrame:
+        """Apply the inverse transformation to the data.
 
         Parameters
         ----------
@@ -1955,9 +2478,9 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     on the selected strategy and can greatly differ from one another.
     Ignores categorical columns.
 
-    !!! tip
-        Use atom's [outliers][atomclassifier-outliers] attribute to
-        check the number of outliers per column.
+    This class can be accessed from atom through the [prune]
+    [atomclassifier-prune] method. Read more in the [user guide]
+    [handling-outliers].
 
     Parameters
     ----------
@@ -1965,20 +2488,22 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         Strategy with which to select the outliers. If sequence of
         strategies, only samples marked as outliers by all chosen
         strategies are dropped. Choose from:
-            - "zscore": Z-score of each data value.
-            - "iforest": Isolation Forest.
-            - "ee": Elliptic Envelope.
-            - "lof": Local Outlier Factor.
-            - "svm": One-class SVM.
-            - "dbscan": Density-Based Spatial Clustering.
-            - "optics": DBSCAN-like clustering approach.
+
+        - "zscore": Z-score of each data value.
+        - "[iforest][]": Isolation Forest.
+        - "[ee][]": Elliptic Envelope.
+        - "[lof][]": Local Outlier Factor.
+        - "[svm][]": One-class SVM.
+        - "[dbscan][]": Density-Based Spatial Clustering.
+        - "[optics][]": DBSCAN-like clustering approach.
 
     method: int, float or str, default="drop"
         Method to apply on the outliers. Only the zscore strategy
         accepts another method than "drop". Choose from:
-            - "drop": Drop any sample with outlier values.
-            - "min_max": Replace outlier with the min/max of the column.
-            - Any numerical value with which to replace the outliers.
+
+        - "drop": Drop any sample with outlier values.
+        - "min_max": Replace outlier with the min/max of the column.
+        - Any numerical value with which to replace the outliers.
 
     max_sigma: int or float, default=3
         Maximum allowed standard deviations from the mean of the
@@ -1992,9 +2517,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -2011,6 +2537,118 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     [strategy]: sklearn estimator
         Object used to prune the data, e.g. `pruner.iforest` for the
         isolation forest strategy.
+
+    See Also
+    --------
+    atom.data_cleaning:Balancer
+    atom.data_cleaning:Normalizer
+    atom.data_cleaning:Scaler
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0          11.04         14.93  ...                  0.07287       1
+        1          12.46         24.04  ...                  0.20750       0
+        2          13.47         14.06  ...                  0.09326       1
+        3          13.44         21.58  ...                  0.07146       0
+        4          11.93         21.53  ...                  0.08541       1
+        ..           ...           ...  ...                      ...     ...
+        564        14.54         27.54  ...                  0.13410       0
+        565        18.66         17.12  ...                  0.08456       0
+        566        10.95         21.35  ...                  0.09606       0
+        567        17.01         20.26  ...                  0.06469       0
+        568        12.40         17.68  ...                  0.09359       1
+
+        [569 rows x 31 columns]
+
+        >>> atom.prune(stratgey="iforest", verbose=2)
+
+        Pruning outliers...
+         --> Dropping 46 outliers.
+
+        >>> # Note the reduced number of rows
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0          11.04         14.93  ...                  0.07287       1
+        1          13.47         14.06  ...                  0.09326       1
+        2          13.44         21.58  ...                  0.07146       0
+        3          11.93         21.53  ...                  0.08541       1
+        4          13.21         25.25  ...                  0.06788       1
+        ..           ...           ...  ...                      ...     ...
+        518        14.54         27.54  ...                  0.13410       0
+        519        18.66         17.12  ...                  0.08456       0
+        520        10.95         21.35  ...                  0.09606       0
+        521        17.01         20.26  ...                  0.06469       0
+        522        12.40         17.68  ...                  0.09359       1
+
+        [523 rows x 31 columns]
+
+
+        >>> atom.plot_distribution(columns=0)
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.data_cleaning import Normalizer
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0          17.99         10.38  ...          0.4601                  0.11890
+        1          20.57         17.77  ...          0.2750                  0.08902
+        2          19.69         21.25  ...          0.3613                  0.08758
+        3          11.42         20.38  ...          0.6638                  0.17300
+        4          20.29         14.34  ...          0.2364                  0.07678
+        ..           ...           ...  ...             ...                      ...
+        564        21.56         22.39  ...          0.2060                  0.07115
+        565        20.13         28.25  ...          0.2572                  0.06637
+        566        16.60         28.08  ...          0.2218                  0.07820
+        567        20.60         29.33  ...          0.4087                  0.12400
+        568         7.76         24.54  ...          0.2871                  0.07039
+
+        [569 rows x 30 columns]
+
+        >>> normalizer = Normalizer(verbose=2)
+        >>> X = normalizer.fit_transform(X)
+
+        Fitting Pruner...
+        Pruning outliers...
+         --> Dropping 74 outliers.
+
+        >>> # Note the reduced number of rows
+        >>> print(X)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        1          20.57         17.77  ...          0.2750                  0.08902
+        2          19.69         21.25  ...          0.3613                  0.08758
+        4          20.29         14.34  ...          0.2364                  0.07678
+        5          12.45         15.70  ...          0.3985                  0.12440
+        6          18.25         19.98  ...          0.3063                  0.08368
+        ..           ...           ...  ...             ...                      ...
+        560        14.05         27.15  ...          0.2250                  0.08321
+        563        20.92         25.09  ...          0.2929                  0.09873
+        564        21.56         22.39  ...          0.2060                  0.07115
+        565        20.13         28.25  ...          0.2572                  0.06637
+        566        16.60         28.08  ...          0.2218                  0.07820
+
+        [495 rows x 30 columns]
+
+
+        ```
 
     """
 
@@ -2036,7 +2674,9 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(
+        self, X: X_TYPES, y: Optional[Y_TYPES] = None
+    ) -> Union[pd.DataFrame, Union[pd.DataFrame, pd.Series]]:
         """Apply the outlier strategy on the data.
 
         Parameters
@@ -2046,10 +2686,11 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
@@ -2200,29 +2841,32 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Apply one of sklearn's scalers. Categorical columns are ignored.
 
-    !!! tip
-        Use atom's [scaled][atomclassifier-scaled] attribute
-        to check whether the dataset is scaled.
+    This class can be accessed from atom through the [scale]
+    [atomclassifier-scale] method. Read more in the [user guide]
+    [scaling-the-feature-set].
 
     Parameters
     ----------
     strategy: str, default="standard"
         Strategy with which to scale the data. Choose from:
-            - "standard": Remove mean and scale to unit variance.
-            - "minmax": Scale features to a given range.
-            - "maxabs": Scale features by their maximum absolute value.
-            - "robust": Scale using statistics that are robust to outliers.
+
+        - "[standard][]": Remove mean and scale to unit variance.
+        - "[minmax][]": Scale features to a given range.
+        - "[maxabs][]": Scale features by their maximum absolute value.
+        - "[robust][]": Scale using statistics that are robust to outliers.
 
     gpu: bool or str, default=False
-        Train strategy on GPU (instead of CPU).
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        Train transformer on GPU.
+
+        - If False: Always use CPU implementation.
+        - If True: Use GPU implementation if possible.
+        - If "force": Force GPU implementation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -2243,9 +2887,113 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     n_features_in_: int
         Number of features seen during fit.
 
+    See Also
+    --------
+    atom.data_cleaning:Balancer
+    atom.data_cleaning:Normalizer
+    atom.data_cleaning:Scaler
+
     Examples
     --------
 
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0          17.99         10.38  ...                  0.11890       0
+        1          12.25         17.94  ...                  0.08132       1
+        2          13.87         20.70  ...                  0.08492       1
+        3          12.06         12.74  ...                  0.07898       1
+        4          12.62         17.15  ...                  0.07330       1
+        ..           ...           ...  ...                      ...     ...
+        564        11.34         18.61  ...                  0.06783       1
+        565        11.43         17.31  ...                  0.08096       1
+        566        11.06         14.96  ...                  0.09080       1
+        567        13.20         15.82  ...                  0.08385       1
+        568        20.55         20.86  ...                  0.07569       0
+
+        [569 rows x 31 columns]
+
+        >>> atom.scale(verbose=2)
+
+        Fitting Scaler...
+        Scaling features...
+
+        >>> # Note the reduced number of rows
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  worst fractal dimension  target
+        0       1.052603     -2.089926  ...                 1.952598       0
+        1      -0.529046     -0.336627  ...                -0.114004       1
+        2      -0.082657      0.303467  ...                 0.083968       1
+        3      -0.581401     -1.542600  ...                -0.242685       1
+        4      -0.427093     -0.519842  ...                -0.555040       1
+        ..           ...           ...  ...                      ...     ...
+        564    -0.779796     -0.181242  ...                -0.855847       1
+        565    -0.754996     -0.482735  ...                -0.133801       1
+        566    -0.856949     -1.027742  ...                 0.407321       1
+        567    -0.267275     -0.828293  ...                 0.025126       1
+        568     1.758008      0.340573  ...                -0.423609       0
+
+        [569 rows x 31 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.data_cleaning import Scaler
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0          17.99         10.38  ...          0.4601                  0.11890
+        1          20.57         17.77  ...          0.2750                  0.08902
+        2          19.69         21.25  ...          0.3613                  0.08758
+        3          11.42         20.38  ...          0.6638                  0.17300
+        4          20.29         14.34  ...          0.2364                  0.07678
+        ..           ...           ...  ...             ...                      ...
+        564        21.56         22.39  ...          0.2060                  0.07115
+        565        20.13         28.25  ...          0.2572                  0.06637
+        566        16.60         28.08  ...          0.2218                  0.07820
+        567        20.60         29.33  ...          0.4087                  0.12400
+        568         7.76         24.54  ...          0.2871                  0.07039
+
+        [569 rows x 30 columns]
+
+        >>> scaler = Scaler(verbose=2)
+        >>> X = scaler.fit_transform(X)
+
+        Fitting Scaler...
+        Scaling features...
+
+        >>> # Note the reduced number of rows
+        >>> print(X)
+
+             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
+        0       1.097064     -2.073335  ...        2.750622                 1.937015
+        1       1.829821     -0.353632  ...       -0.243890                 0.281190
+        2       1.579888      0.456187  ...        1.152255                 0.201391
+        3      -0.768909      0.253732  ...        6.046041                 4.935010
+        4       1.750297     -1.151816  ...       -0.868353                -0.397100
+        ..           ...           ...  ...             ...                      ...
+        564     2.110995      0.721473  ...       -1.360158                -0.709091
+        565     1.704854      2.085134  ...       -0.531855                -0.973978
+        566     0.702284      2.045574  ...       -1.104549                -0.318409
+        567     1.838341      2.336457  ...        1.919083                 2.219635
+        568    -1.808401      1.221792  ...       -0.048138                -0.751207
+
+        [569 rows x 30 columns]
+
+
+        ```
 
     """
 
@@ -2268,7 +3016,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> Scaler:
         """Fit to data.
 
         Parameters
@@ -2319,7 +3067,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Perform standardization by centering and scaling.
 
         Parameters
@@ -2353,8 +3101,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
     @composed(crash, method_to_log, typechecked)
-    def inverse_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Perform inverse standardization by centering and scaling.
+    def inverse_transform(
+        self, X: X_TYPES, y: Optional[Y_TYPES] = None
+    ) -> pd.DataFrame:
+        """Apply the inverse transformation to the data.
 
         Parameters
         ----------
