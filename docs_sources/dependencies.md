@@ -25,30 +25,31 @@ And operating systems:
 ATOM is built on top of several existing Python libraries. These
 packages are necessary for its correct functioning.
 
-* **[numpy](https://numpy.org/)** (~=1.22)
-* **[scipy](https://www.scipy.org/)** (>=1.7.3)
-* **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
-* **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.2.0)
-* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.0)
-* **[mlflow](https://mlflow.org/)** (>=1.26)
-* **[dill](https://pypi.org/project/dill/)** (>=0.3.5)
-* **[tqdm](https://tqdm.github.io/)** (>=4.64)
-* **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.1.0)
-* **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.13)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.1.0)
-* **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.9.0)
-* **[nltk](https://www.nltk.org/)** (>=3.7)
-* **[evalml](https://evalml.alteryx.com/en/stable/)** (>=054.0)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.4.1)
+* **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.0)
+* **[dill](https://pypi.org/project/dill/)** (>=0.3.5)
+* **[evalml](https://evalml.alteryx.com/en/stable/)** (>=054.0)
+* **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
+* **[gradio](https://github.com/gradio-app/gradio)** (>=3.1.7)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.9.0)
 * **[featuretools](https://www.featuretools.com/)** (>=1.12.0)
-* **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
-* **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.24)
+* **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.1.0)
 * **[matplotlib](https://matplotlib.org/)** (>=3.5.0)
+* **[mlflow](https://mlflow.org/)** (>=1.26)
+* **[nltk](https://www.nltk.org/)** (>=3.7)
+* **[numpy](https://numpy.org/)** (~=1.22)
+* **[optuna](https://optuna.org/)** (>=2.10.1)
+* **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
+* **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.2.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.11.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.41)
-* **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.1)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.14)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.1.0)
+* **[scipy](https://www.scipy.org/)** (>=1.7.3)
+* **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.13)
+* **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.1)
+* **[zoofs](https://jaswinder9051998.github.io/zoofs/)** (>=0.1.24)
+
 
 ### Optional
 
@@ -57,9 +58,9 @@ machine learning estimators that are not provided by sklearn but are
 among ATOM's [predefined models](../user_guide/models/#predefined-models).
 Install them using `pip install atom-ml[models]`.
 
-* **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=0.90)
-* **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.0.4)
+* **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
+* **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=0.90)
 
 
 ### Development
@@ -72,7 +73,8 @@ using `pip install atom-ml[dev]`.
 **Linting**
 
 * **[isort](https://pycqa.github.io/isort/)** (>=5.10.1)
-* **[flake8](https://github.com/pycqa/flake8)** (>=4.0.1)
+* **[flake8](https://github.com/pycqa/flake8)** (>=5.0.4)
+* **[flake8-pyproject](https://github.com/john-hen/Flake8-pyproject)** (>=1.1.0)
 
 **Testing**
 
@@ -82,10 +84,10 @@ using `pip install atom-ml[dev]`.
 
 **Documentation**
 
-* **[pyyaml](https://pyyaml.org/)** (>=6.0)
+* **[mike](https://github.com/jimporter/mike)** (>=1.1.2)
 * **[mkdocs](https://www.mkdocs.org/)** (>=1.2.3)
-* **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=8.2.5)
 * **[mkdocs-autorefs](https://mkdocstrings.github.io/autorefs/)** (>=0.4.1)
 * **[mkdocs-jupyter](https://github.com/danielfrg/mkdocs-jupyter)** (>=0.20.1)
+* **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=8.4.1)
 * **[mkdocs-simple-hooks](https://github.com/aklajnert/mkdocs-simple-hooks)** (>=0.1.5)
-* **[mike](https://github.com/jimporter/mike)** (>=1.1.2)
+* **[pyyaml](https://pyyaml.org/)** (>=6.0)

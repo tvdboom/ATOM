@@ -312,14 +312,14 @@ def test_n_features_parameter():
 
 def test_min_repeated_parameter():
     """Assert that an error is raised when min_repeated is invalid."""
-    selector = FeatureSelector(strategy=None, min_repeated=1.1)
+    selector = FeatureSelector(strategy=None, min_repeated=-1)
     with pytest.raises(ValueError, match=r".*the min_repeated parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_max_repeated_parameter():
     """Assert that an error is raised when max_repeated is invalid."""
-    selector = FeatureSelector(strategy=None, max_repeated=1.1)
+    selector = FeatureSelector(strategy=None, max_repeated=-1)
     with pytest.raises(ValueError, match=r".*the max_repeated parameter.*"):
         selector.fit(X_reg, y_reg)
 
@@ -327,7 +327,7 @@ def test_max_repeated_parameter():
 def test_max_repeated_smaller_min_repeated():
     """Assert that an error is raised when min_repeated > max_repeated."""
     selector = FeatureSelector(strategy=None, min_repeated=100, max_repeated=2)
-    with pytest.raises(ValueError, match=r".*can't be lower.*"):
+    with pytest.raises(ValueError, match=r".*can't be higher.*"):
         selector.fit(X_reg, y_reg)
 
 

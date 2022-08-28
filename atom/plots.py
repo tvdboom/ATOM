@@ -2356,10 +2356,10 @@ class BaseModelPlotter(BasePlotter):
             """Select feature list from provided columns."""
             # Default is to select the best or the first 3 features
             if not features:
-                if not m.branch.feature_importance:
-                    features = list(m.features[:3])
+                if (fxs := m.feature_importance) is not None:
+                    features = list(fxs.index[:3])
                 else:
-                    features = m.branch.feature_importance[:3]
+                    features = list(m.features[:3])
 
             features = lst(features)
             if len(features) > 3:

@@ -14,17 +14,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from category_encoders.leave_one_out import LeaveOneOutEncoder
+from evalml.pipelines.components.estimators import SVMClassifier
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel
-from sklearn.kernel_approximation import RBFSampler
-from sklearn.linear_model import LassoLarsCV
 from sklearn.metrics import get_scorer
-from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import (
-    LabelEncoder, OneHotEncoder, RobustScaler, StandardScaler,
-)
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.data_cleaning import Pruner, Scaler
@@ -217,55 +213,27 @@ def test_n_classes():
 
 # Test utility methods ============================================= >>
 
-@patch("tpot.TPOTClassifier")
-def test_automl_classification(cls):
-    """Assert that the automl method works for classification tasks."""
-    pl = Pipeline(
-        steps=[
-            ("standardscaler", StandardScaler()),
-            ("robustscaler", RobustScaler()),
-            ("mlpclassifier", MLPClassifier(alpha=0.001, random_state=1)),
-        ]
-    )
-    cls.return_value.fitted_pipeline_ = pl.fit(X_bin, y_bin)
+@patch("evalml.AutoMLSearch")
+def test_automl_binary_classification(cls):
+    """Assert that the automl method works for binary tasks."""
+    pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
+    cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="accuracy")
     atom.branch = "automl"  # Change branch since new pipeline
     atom.automl()
-    cls.assert_called_with(
-        n_jobs=1,
-        random_state=1,
-        scoring=atom._metric[0],  # Called using atom's metric
-        verbosity=0,
-    )
-    assert len(atom.pipeline) == 2
-    assert atom.models == ["Tree", "MLP"]
+    cls.assert_called_once()
+    assert len(atom.pipeline) == 1
+    assert atom.models == ["Tree", "kSVM"]
 
 
-@patch("tpot.TPOTRegressor")
-def test_automl_regression(cls):
-    """Assert that the automl method works for regression tasks."""
-    pl = Pipeline(
-        steps=[
-            ("rbfsampler", RBFSampler(gamma=0.95, random_state=2)),
-            ("lassolarscv", LassoLarsCV(normalize=False)),
-        ]
-    )
-    cls.return_value.fitted_pipeline_ = pl.fit(X_reg, y_reg)
-
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.automl(scoring="r2", random_state=2)
-    cls.assert_called_with(n_jobs=1, scoring="r2", verbosity=0, random_state=2)
-    assert atom.metric == "r2"
-
-
-def test_automl_invalid_scoring():
-    """Assert that an error is raised when the provided scoring is invalid."""
+def test_automl_invalid_objective():
+    """Assert that an error is raised when the provided objective is invalid."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree", metric="mse")
-    with pytest.raises(ValueError, match=r".*scoring parameter.*"):
-        atom.automl(scoring="r2")
+    with pytest.raises(ValueError, match=r".*objective parameter.*"):
+        atom.automl(objective="r2")
 
 
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
@@ -333,7 +301,7 @@ def test_inverse_transform():
     pd.testing.assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
 
 
-@patch("atom.atom.ProfileReport")
+@patch("pandas_profiling.ProfileReport")
 def test_report(cls):
     """Assert that the report method and file are created."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -792,15 +760,6 @@ def test_default_solver_univariate():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
     assert atom.pipeline[0].univariate.score_func.__name__ == "f_regression"
-
-
-def test_winner_solver_after_run():
-    """Assert that the solver is the winning model after run."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run("LR")
-    atom.branch = "fs_branch"
-    atom.feature_selection(strategy="sfm", solver=None, n_features=8)
-    assert atom.pipeline[0].sfm.estimator_ is atom.winner.estimator
 
 
 def test_default_solver_from_task():

@@ -99,7 +99,7 @@ review and accept your changes.
 * Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.
 * Run [isort](https://pycqa.github.io/isort/): `isort atom tests`.
-* Run [flake8p](https://github.com/john-hen/Flake8-pyproject): `flake8p --show-source --statistics atom tests`.
+* Run [flake8](https://github.com/john-hen/Flake8-pyproject): `flake8 --show-source --statistics atom tests`.
 
 If your contribution requires a new library dependency:
 

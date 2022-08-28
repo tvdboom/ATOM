@@ -39,7 +39,7 @@ jobs:
           pip install -U pip
           pip install flake8 flake8-pyproject
       - name: Apply linting
-        run: flake8p --show-source --statistics atom tests
+        run: flake8 --show-source --statistics atom tests
 
   build:
     runs-on: ${{ matrix.os }}

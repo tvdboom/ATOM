@@ -587,7 +587,8 @@ class BaseRunner:
         - [Prediction attributes][]
         - [Metric scores][metric]
         - [Shap values][shap]
-        - [Dashboard instance][dashboard]
+        - [App instance][adab-create_app]
+        - [Dashboard instance][adab-create_dashboard]
 
         """
         for model in self._models.values():

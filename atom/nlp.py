@@ -13,7 +13,7 @@ import re
 import unicodedata
 from logging import Logger
 from string import punctuation
-from typing import Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import nltk
 import pandas as pd
@@ -130,99 +130,115 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     === "atom"
         ```pycon
         >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
+        >>> from sklearn.datasets import fetch_20newsgroups
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> X, y = fetch_20newsgroups(
+        ...     return_X_y=True,
+        ...     categories=[
+        ...         'alt.atheism',
+        ...         'sci.med',
+        ...         'comp.windows.x',
+        ...     ],
+        ...     shuffle=True,
+        ...     random_state=1,
+        ... )
+        >>> X = np.array(X).reshape(-1, 1)
 
         >>> atom = ATOMClassifier(X, y)
         >>> print(atom.dataset)
 
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0          17.99         10.38  ...                  0.11890       0
-        1          12.25         17.94  ...                  0.08132       1
-        2          13.87         20.70  ...                  0.08492       1
-        3          12.06         12.74  ...                  0.07898       1
-        4          12.62         17.15  ...                  0.07330       1
-        ..           ...           ...  ...                      ...     ...
-        564        11.34         18.61  ...                  0.06783       1
-        565        11.43         17.31  ...                  0.08096       1
-        566        11.06         14.96  ...                  0.09080       1
-        567        13.20         15.82  ...                  0.08385       1
-        568        20.55         20.86  ...                  0.07569       0
+        0     From: thssjxy@iitmax.iit.edu (Smile) Subject:...       2
+        1     From: nancyo@fraser.sfu.ca (Nancy Patricia O'C...       0
+        2     From: beck@irzr17.inf.tu-dresden.de (Andre Bec...       1
+        3     From: keith@cco.caltech.edu (Keith Allan Schne...       0
+        4     From: strom@Watson.Ibm.Com (Rob Strom) Subjec...       0
+                                                         ...     ...
+        2841  From: dreitman@oregon.uoregon.edu (Daniel R. R...       3
+        2842  From: ethan@cs.columbia.edu (Ethan Solomita) ...       1
+        2843  From: r0506048@cml3 (Chun-Hung Lin) Subject: ...       1
+        2844  From: eshneken@ux4.cso.uiuc.edu (Edward A Shne...       2
+        2845  From: ibeshir@nyx.cs.du.edu (Ibrahim) Subject...       2
 
-        [569 rows x 31 columns]
+        [2846 rows x 2 columns]
 
-        >>> atom.scale(verbose=2)
+        >>> atom.textclean(verbose=2)
 
-        Fitting Scaler...
-        Scaling features...
+        Fitting TextCleaner...
+        Cleaning the corpus...
+         --> Decoding unicode characters to ascii.
+         --> Converting text to lower case.
+         --> Dropping 10012 emails from 2830 documents.
+         --> Dropping 0 URL links from 0 documents.
+         --> Dropping 2214 HTML tags from 1304 documents.
+         --> Dropping 2 emojis from 1 documents.
+         --> Dropping 31222 numbers from 2843 documents.
+         --> Dropping punctuation from the text.
 
-        >>> # Note the reduced number of rows
         >>> print(atom.dataset)
 
-             mean radius  mean texture  ...  worst fractal dimension  target
-        0       1.052603     -2.089926  ...                 1.952598       0
-        1      -0.529046     -0.336627  ...                -0.114004       1
-        2      -0.082657      0.303467  ...                 0.083968       1
-        3      -0.581401     -1.542600  ...                -0.242685       1
-        4      -0.427093     -0.519842  ...                -0.555040       1
-        ..           ...           ...  ...                      ...     ...
-        564    -0.779796     -0.181242  ...                -0.855847       1
-        565    -0.754996     -0.482735  ...                -0.133801       1
-        566    -0.856949     -1.027742  ...                 0.407321       1
-        567    -0.267275     -0.828293  ...                 0.025126       1
-        568     1.758008      0.340573  ...                -0.423609       0
+                                                        corpus  target
+        0     from  smile subject forsale   used guitar amp...       2
+        1     from  nancy patricia oconnor subject re amusi...       0
+        2     from  andre beck subject re animation with xp...       1
+        3     from  keith allan schneider subject re moralt...       0
+        4     from  rob strom subject re socmotss et al pri...       0
+                                                         ...     ...
+        2841  from  daniel r reitman attorney to be subject...       3
+        2842  from  ethan solomita subject forcing a window...       1
+        2843  from r0506048cml3 chunhung lin subject re xma...       1
+        2844  from  edward a shnekendorf subject airline ti...       2
+        2845  from  ibrahim subject terminal for sale orga...       2
 
-        [569 rows x 31 columns]
+        [2846 rows x 2 columns]
 
         ```
 
     === "stand-alone"
         ```pycon
-        >>> from atom.data_cleaning import Scaler
-        >>> from sklearn.datasets import load_breast_cancer
+        >>> from atom.nlp import TextCleaner
+        >>> from sklearn.datasets import fetch_20newsgroups
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> X, y = fetch_20newsgroups(
+        ...     return_X_y=True,
+        ...     categories=[
+        ...         'alt.atheism',
+        ...         'sci.med',
+        ...         'comp.windows.x',
+        ...     ],
+        ...     shuffle=True,
+        ...     random_state=1,
+        ... )
+        >>> X = np.array(X).reshape(-1, 1)
 
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0          17.99         10.38  ...          0.4601                  0.11890
-        1          20.57         17.77  ...          0.2750                  0.08902
-        2          19.69         21.25  ...          0.3613                  0.08758
-        3          11.42         20.38  ...          0.6638                  0.17300
-        4          20.29         14.34  ...          0.2364                  0.07678
-        ..           ...           ...  ...             ...                      ...
-        564        21.56         22.39  ...          0.2060                  0.07115
-        565        20.13         28.25  ...          0.2572                  0.06637
-        566        16.60         28.08  ...          0.2218                  0.07820
-        567        20.60         29.33  ...          0.4087                  0.12400
-        568         7.76         24.54  ...          0.2871                  0.07039
+        >>> textcleaner = TextCleaner(verbose=2)
+        >>> X = textcleaner.transform(X)
 
-        [569 rows x 30 columns]
+        Cleaning the corpus...
+         --> Decoding unicode characters to ascii.
+         --> Converting text to lower case.
+         --> Dropping 10012 emails from 2830 documents.
+         --> Dropping 0 URL links from 0 documents.
+         --> Dropping 2214 HTML tags from 1304 documents.
+         --> Dropping 2 emojis from 1 documents.
+         --> Dropping 31222 numbers from 2843 documents.
+         --> Dropping punctuation from the text.
 
-        >>> scaler = Scaler(verbose=2)
-        >>> X = scaler.fit_transform(X)
-
-        Fitting Scaler...
-        Scaling features...
-
-        >>> # Note the reduced number of rows
         >>> print(X)
 
-             mean radius  mean texture  ...  worst symmetry  worst fractal dimension
-        0       1.097064     -2.073335  ...        2.750622                 1.937015
-        1       1.829821     -0.353632  ...       -0.243890                 0.281190
-        2       1.579888      0.456187  ...        1.152255                 0.201391
-        3      -0.768909      0.253732  ...        6.046041                 4.935010
-        4       1.750297     -1.151816  ...       -0.868353                -0.397100
-        ..           ...           ...  ...             ...                      ...
-        564     2.110995      0.721473  ...       -1.360158                -0.709091
-        565     1.704854      2.085134  ...       -0.531855                -0.973978
-        566     0.702284      2.045574  ...       -1.104549                -0.318409
-        567     1.838341      2.336457  ...        1.919083                 2.219635
-        568    -1.808401      1.221792  ...       -0.048138                -0.751207
+                                                         corpus
+        0     from donald mackie  subject re barbecued food...
+        1     from  david stockton subject re krillean phot...
+        2     from  julia miller subject posix message cata...
+        3     from   subject re yet more rushdie re islamic...
+        4     from  joseph a muller subject jfk autograph f...
+                                                         ...
+        2841  from  joel reymont subject motif maling list\...
+        2842  from  daniel paul checkman subject re is msg ...
+        2843  from  ad absurdum per aspera subject re its a...
+        2844  from  ralf subject items for sale organizati...
+        2845  from  walter g seefeld subject klipsch kg1 sp...
 
-        [569 rows x 30 columns]
-
+        [2846 rows x 1 columns]
 
         ```
 
@@ -394,151 +410,6 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Tokenize the corpus.
-
-    Convert documents into sequences of words. Additionally,
-    create n-grams (represented by words united with underscores,
-    e.g. "New_York") based on their frequency in the corpus. The
-    transformations are applied on the column named `corpus`. If
-    there is no column with that name, an exception is raised.
-
-    Parameters
-    ----------
-    bigram_freq: int, float or None, default=None
-        Frequency threshold for bigram creation.
-            - If None: Don't create any bigrams.
-            - If int: Minimum number of occurrences to make a bigram.
-            - If float: Minimum frequency fraction to make a bigram.
-
-    trigram_freq: int, float or None, default=None
-        Frequency threshold for trigram creation.
-            - If None: Don't create any trigrams.
-            - If int: Minimum number of occurrences to make a trigram.
-            - If float: Minimum frequency fraction to make a trigram.
-
-    quadgram_freq: int, float or None, default=None
-        Frequency threshold for quadgram creation.
-            - If None: Don't create any quadgrams.
-            - If int: Minimum number of occurrences to make a quadgram.
-            - If float: Minimum frequency fraction to make a quadgram.
-
-    verbose: int, default=0
-        Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
-
-    logger: str, Logger or None, default=None
-        - If None: Doesn't save a logging file.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
-    Attributes
-    ----------
-    bigrams: pd.DataFrame
-        Created bigrams and their frequencies.
-
-    trigrams: pd.DataFrame
-        Created trigrams and their frequencies.
-
-    quadgrams: pd.DataFrame
-        Created quadgrams and their frequencies.
-
-    """
-
-    @typechecked
-    def __init__(
-        self,
-        bigram_freq: Optional[SCALAR] = None,
-        trigram_freq: Optional[SCALAR] = None,
-        quadgram_freq: Optional[SCALAR] = None,
-        verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
-    ):
-        super().__init__(verbose=verbose, logger=logger)
-        self.bigram_freq = bigram_freq
-        self.trigram_freq = trigram_freq
-        self.quadgram_freq = quadgram_freq
-
-        self.bigrams = None
-        self.trigrams = None
-        self.quadgrams = None
-
-    def transform(self, X, y=None):
-        """Tokenize the text.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
-
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        pd.DataFrame
-            Transformed corpus.
-
-        """
-
-        def replace_ngrams(row, ngram, sep="<&&>"):
-            """Replace a ngram with one word unified by underscores."""
-            row = "&>" + sep.join(row) + "<&"  # Indicate words with separator
-            row = row.replace(  # Replace ngrams separator with underscore
-                "&>" + sep.join(ngram) + "<&",
-                "&>" + "_".join(ngram) + "<&",
-            )
-            return row[2:-2].split(sep)
-
-        X, y = self._prepare_input(X, y)
-        corpus = get_corpus(X)
-
-        self.log("Tokenizing the corpus...", 1)
-
-        if isinstance(X[corpus].iloc[0], str):
-            try:  # Download tokenizer if not already on machine
-                nltk.data.find("tokenizers/punkt")
-            except LookupError:
-                nltk.download("punkt")
-            X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
-
-        ngrams = {
-            "bigrams": BigramCollocationFinder,
-            "trigrams": TrigramCollocationFinder,
-            "quadgrams": QuadgramCollocationFinder,
-        }
-
-        for attr, finder in ngrams.items():
-            frequency = getattr(self, f"{attr[:-1]}_freq")
-            if frequency:
-                # Search for all n-grams in the corpus
-                ngram_fd = finder.from_documents(X[corpus]).ngram_fd
-
-                if frequency < 1:
-                    frequency = int(frequency * len(ngram_fd))
-
-                rows = []
-                occur, counts = 0, 0
-                for ngram, freq in ngram_fd.items():
-                    if freq >= frequency:
-                        occur += 1
-                        counts += freq
-                        X[corpus] = X[corpus].apply(replace_ngrams, args=(ngram,))
-                        rows.append({attr[:-1]: "_".join(ngram), "frequency": freq})
-
-                # Sort ngrams by frequency and add the dataframe as attribute
-                df = pd.DataFrame(rows).sort_values("frequency", ascending=False)
-                setattr(self, attr, df.reset_index(drop=True))
-
-                self.log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
-
-        return X
-
-
 class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Normalize the corpus.
 
@@ -548,42 +419,151 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     an exception is raised. If the provided documents are strings,
     words are separated by spaces.
 
+    This class can be accessed from atom through the [textnormalize]
+    [atomclassifier-textnormalize] method. Read more in the [user guide]
+    [text-normalization].
+
     Parameters
     ----------
     stopwords: bool or str, default=True
         Whether to remove a predefined dictionary of stopwords.
-            - If False: Don't remove any predefined stopwords.
-            - If True: Drop predefined english stopwords from the text.
-            - If str: Language from `nltk.corpus.stopwords.words`.
+
+        - If False: Don't remove any predefined stopwords.
+        - If True: Drop predefined english stopwords from the text.
+        - If str: Language from `nltk.corpus.stopwords.words`.
 
     custom_stopwords: sequence or None, default=None
         Custom stopwords to remove from the text.
 
     stem: bool or str, default=False
-        Whether to apply stemming using SnowballStemmer.
-            - If False: Don't apply stemming.
-            - If True: Apply stemmer based on the english language.
-            - If str: Language from `SnowballStemmer.languages`.
+        Whether to apply stemming using [SnowballStemmer][].
+
+        - If False: Don't apply stemming.
+        - If True: Apply stemmer based on the english language.
+        - If str: Language from `SnowballStemmer.languages`.
 
     lemmatize: bool, default=True
         Whether to apply lemmatization using WordNetLemmatizer.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
+    See Also
+    --------
+    atom.nlp:TextCleaner
+    atom.nlp:Tokenizer
+    atom.nlp:Vectorizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+                                       corpus  target
+        0                    running the test       0
+        1            hi there this is a test!       1
+        2                      this is a test       0
+        3  new york is larger than washington       1
+        4                    New york is nice       0
+        5                   I àm in ne'w york       1
+        6                     another line...       1
+        7                            new york       0
+
+        >>> atom.textnormalize(stopwords="english", lemmatize=True, verbose=2)
+
+        Fitting TextNormalizer...
+        Normalizing the corpus...
+         --> Dropping stopwords.
+         --> Applying lemmatization.
+
+        >>> print(atom.dataset)
+
+                                   corpus  target
+        0                     [run, test]       0
+        1                     [hi, test!]       1
+        2                          [test]       0
+        3  [new, york, large, washington]       1
+        4               [New, york, nice]       0
+        5             [I, àm, ne'w, york]       1
+        6              [another, line...]       1
+        7                     [new, york]       0
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.nlp import TextNormalizer
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> textnormalizer = TextNormalizer(
+        ...     stopwords="english",
+        ...     lemmatize=True,
+        ...     verbose=2,
+        ... )
+        >>> X = textcleaner.transform(X)
+
+        Fitting TextNormalizer...
+        Normalizing the corpus...
+         --> Dropping stopwords.
+         --> Applying lemmatization.
+
+        >>> print(X)
+
+                                   corpus
+        0             [I, àm, ne'w, york]
+        1               [New, york, nice]
+        2                     [new, york]
+        3                     [hi, test!]
+        4              [another, line...]
+        5  [new, york, large, washington]
+        6                     [run, test]
+        7                          [test]
+
+        ```
+
     """
 
     @typechecked
     def __init__(
         self,
+        *,
         stopwords: Union[bool, str] = True,
         custom_stopwords: Optional[SEQUENCE_TYPES] = None,
         stem: Union[bool, str] = False,
@@ -597,7 +577,8 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    def transform(self, X, y=None):
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Normalize the text.
 
         Parameters
@@ -688,22 +669,300 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
+class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Tokenize the corpus.
+
+    Convert documents into sequences of words. Additionally,
+    create n-grams (represented by words united with underscores,
+    e.g. "New_York") based on their frequency in the corpus. The
+    transformations are applied on the column named `corpus`. If
+    there is no column with that name, an exception is raised.
+
+    This class can be accessed from atom through the [tokenize]
+    [atomclassifier-tokenize] method. Read more in the [user guide]
+    [tokenization].
+
+    Parameters
+    ----------
+    bigram_freq: int, float or None, default=None
+        Frequency threshold for bigram creation.
+
+        - If None: Don't create any bigrams.
+        - If int: Minimum number of occurrences to make a bigram.
+        - If float: Minimum frequency fraction to make a bigram.
+
+    trigram_freq: int, float or None, default=None
+        Frequency threshold for trigram creation.
+
+        - If None: Don't create any trigrams.
+        - If int: Minimum number of occurrences to make a trigram.
+        - If float: Minimum frequency fraction to make a trigram.
+
+    quadgram_freq: int, float or None, default=None
+        Frequency threshold for quadgram creation.
+
+        - If None: Don't create any quadgrams.
+        - If int: Minimum number of occurrences to make a quadgram.
+        - If float: Minimum frequency fraction to make a quadgram.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    Attributes
+    ----------
+    bigrams: pd.DataFrame
+        Created bigrams and their frequencies.
+
+    trigrams: pd.DataFrame
+        Created trigrams and their frequencies.
+
+    quadgrams: pd.DataFrame
+        Created quadgrams and their frequencies.
+
+    See Also
+    --------
+    atom.nlp:TextCleaner
+    atom.nlp:TextNormalizer
+    atom.nlp:Vectorizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+                                       corpus  target
+        0                            new york       0
+        1  new york is larger than washington       1
+        2                    New york is nice       0
+        3                   I àm in ne'w york       1
+        4                      this is a test       0
+        5                     another line...       1
+        6                    running the test       0
+        7            hi there this is a test!       1
+
+        >>> atom.tokenize(verbose=2)
+
+        Fitting Tokenizer...
+        Tokenizing the corpus...
+
+        >>> print(atom.dataset)
+
+                                              corpus  target
+        0                                [new, york]       0
+        1  [new, york, is, larger, than, washington]       1
+        2                      [New, york, is, nice]       0
+        3                [I, àm, in, ne, ', w, york]       1
+        4                        [this, is, a, test]       0
+        5                       [another, line, ...]       1
+        6                       [running, the, test]       0
+        7          [hi, there, this, is, a, test, !]       1
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.nlp import TextCleaner
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> tokenizer = Tokenizer(bigram_freq=2, verbose=2)
+        >>> X = tokenizer.transform(X)
+
+        Fitting Tokenizer...
+        Tokenizing the corpus...
+         --> Creating 5 bigrams on 10 locations.
+
+        >>> print(X)
+
+                                             corpus
+        0               [I, àm, in, ne, ', w, york]
+        1                      [New, york_is, nice]
+        2                                [new_york]
+        3           [hi, there, this_is, a_test, !]
+        4                      [another, line, ...]
+        5  [new, york_is, larger, than, washington]
+        6                      [running, the, test]
+        7                         [this_is, a_test]
+
+        ```
+
+    """
+
+    @typechecked
+    def __init__(
+        self,
+        bigram_freq: Optional[SCALAR] = None,
+        trigram_freq: Optional[SCALAR] = None,
+        quadgram_freq: Optional[SCALAR] = None,
+        *,
+        verbose: INT = 0,
+        logger: Optional[Union[str, Logger]] = None,
+    ):
+        super().__init__(verbose=verbose, logger=logger)
+        self.bigram_freq = bigram_freq
+        self.trigram_freq = trigram_freq
+        self.quadgram_freq = quadgram_freq
+
+        self.bigrams = None
+        self.trigrams = None
+        self.quadgrams = None
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+        """Tokenize the text.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features). If X is
+            not a pd.DataFrame, it should be composed of a single
+            feature containing the text documents.
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed corpus.
+
+        """
+
+        def replace_ngrams(row: List[str], ngram: Tuple[str]) -> List[str]:
+            """Replace a ngram with one word unified by underscores.
+
+            Parameters
+            ----------
+            row: list of str
+                Document in the corpus.
+
+            ngram: tuple of str
+                Words in the ngram.
+
+            Returns
+            -------
+            str
+               Document in the corpus with unified ngrams.
+
+            """
+            sep = "<&&>"  # Separator between words in a ngram.
+
+            row = "&>" + sep.join(row) + "<&"  # Indicate words with separator
+            row = row.replace(  # Replace ngrams separator with underscore
+                "&>" + sep.join(ngram) + "<&",
+                "&>" + "_".join(ngram) + "<&",
+            )
+
+            return row[2:-2].split(sep)
+
+        X, y = self._prepare_input(X, y)
+        corpus = get_corpus(X)
+
+        self.log("Tokenizing the corpus...", 1)
+
+        if isinstance(X[corpus].iloc[0], str):
+            try:  # Download tokenizer if not already on machine
+                nltk.data.find("tokenizers/punkt")
+            except LookupError:
+                nltk.download("punkt")
+            X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
+
+        ngrams = {
+            "bigrams": BigramCollocationFinder,
+            "trigrams": TrigramCollocationFinder,
+            "quadgrams": QuadgramCollocationFinder,
+        }
+
+        for attr, finder in ngrams.items():
+            frequency = getattr(self, f"{attr[:-1]}_freq")
+            if frequency:
+                # Search for all n-grams in the corpus
+                ngram_fd = finder.from_documents(X[corpus]).ngram_fd
+
+                if frequency < 1:
+                    frequency = int(frequency * len(ngram_fd))
+
+                rows = []
+                occur, counts = 0, 0
+                for ngram, freq in ngram_fd.items():
+                    if freq >= frequency:
+                        occur += 1
+                        counts += freq
+                        X[corpus] = X[corpus].apply(replace_ngrams, args=(ngram,))
+                        rows.append({attr[:-1]: "_".join(ngram), "frequency": freq})
+
+                if rows:
+                    # Sort ngrams by frequency and add the dataframe as attribute
+                    df = pd.DataFrame(rows).sort_values("frequency", ascending=False)
+                    setattr(self, attr, df.reset_index(drop=True))
+
+                    self.log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
+                else:
+                    self.log(f" --> No {attr} found in the corpus.")
+
+        return X
+
+
 class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Vectorize text data.
 
     Transform the corpus into meaningful vectors of numbers. The
     transformation is applied on the column named `corpus`. If
-    there is no column with that name, an exception is raised. The
-    transformed columns are named after the word they are embedding
-    with the prefix `corpus_`.
+    there is no column with that name, an exception is raised.
+
+    If strategy="bow" or "tfidf", the transformed columns are named
+    after the word they are embedding with the prefix `corpus_`. If
+    strategy="hashing", the columns are named hash[N], where N stands
+    for the n-th hashed column.
+
+    This class can be accessed from atom through the [vectorize]
+    [atomclassifier-vectorize] method. Read more in the [user guide]
+    [vectorization].
 
     Parameters
     ----------
     strategy: str, default="bow"
         Strategy with which to vectorize the text. Choose from:
-            - "bow": Bag of Words.
-            - "tfidf": Term Frequency - Inverse Document Frequency.
-            - "hashing": Vectorize to a matrix of token occurrences.
+
+        - "[bow][]": Bag of Words.
+        - "[tfidf][]": Term Frequency - Inverse Document Frequency.
+        - "[hashing][]": Vectorize to a matrix of token occurrences.
 
     return_sparse: bool, default=True
         Whether to return the transformation output as a dataframe
@@ -711,17 +970,18 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         in X (besides `corpus`) that are non-sparse.
 
     gpu: bool or str, default=False
-        Train LabelEncoder on GPU. Only for
-        `encode_target=True`.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        Train transformer on GPU.
+
+        - If False: Always use CPU implementation.
+        - If True: Use GPU implementation if possible.
+        - If "force": Force GPU implementation.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
@@ -735,7 +995,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     [strategy]: sklearn transformer
         Estimator instance (lowercase strategy) used to vectorize the
-        corpus, e.g. `vectorizer.tfidf` for the TF-IDF strategy.
+        corpus, e.g. `vectorizer.tfidf` for the tfidf strategy.
 
     feature_names_in_: np.array
         Names of features seen during fit.
@@ -743,12 +1003,110 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     n_features_in_: int
         Number of features seen during fit.
 
+
+    See Also
+    --------
+    atom.nlp:TextCleaner
+    atom.nlp:TextNormalizer
+    atom.nlp:Tokenizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+                                       corpus  target
+        0                            new york       0
+        1                   I àm in ne'w york       1
+        2                      this is a test       0
+        3                    running the test       0
+        4                     another line...       1
+        5            hi there this is a test!       1
+        6                    New york is nice       0
+        7  new york is larger than washington       1
+
+        >>> atom.vectorize(strategy="tfidf", verbose=2)
+
+        Fitting Vectorizer...
+        Vectorizing the corpus...
+
+        >>> print(atom.dataset)
+
+           corpus_another  corpus_in  corpus_is  ...  corpus_york  corpus_àm  target
+        0        0.000000   0.000000   0.000000  ...     0.627914   0.000000       0
+        1        0.000000   0.523358   0.000000  ...     0.422242   0.523358       1
+        2        0.000000   0.000000   0.614189  ...     0.000000   0.000000       0
+        3        0.000000   0.000000   0.000000  ...     0.000000   0.000000       0
+        4        0.707107   0.000000   0.000000  ...     0.000000   0.000000       1
+        5        0.000000   0.000000   0.614189  ...     0.000000   0.000000       1
+        6        0.000000   0.000000   0.614189  ...     0.495524   0.000000       0
+        7        0.000000   0.000000   0.614189  ...     0.495524   0.000000       1
+        [8 rows x 13 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.nlp import TextCleaner
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> vectorizer = Vectorizer(strategy="tfidf", verbose=2)
+        >>> X = vectorizer.fit_transform(X)
+
+        Fitting Vectorizer...
+        Vectorizing the corpus...
+
+        >>> print(X)
+
+           corpus_another  corpus_hi  ...  corpus_york  corpus_àm
+        0        0.000000   0.000000  ...     0.343774   0.542162
+        1        0.000000   0.000000  ...     0.415657   0.000000
+        2        0.000000   0.000000  ...     0.659262   0.000000
+        3        0.000000   0.525049  ...     0.000000   0.000000
+        4        0.707107   0.000000  ...     0.000000   0.000000
+        5        0.000000   0.000000  ...     0.304821   0.000000
+        6        0.000000   0.000000  ...     0.000000   0.000000
+        7        0.000000   0.000000  ...     0.000000   0.000000
+
+        [8 rows x 18 columns]
+
+        ```
+
     """
 
     @typechecked
     def __init__(
         self,
         strategy: str = "bow",
+        *,
         return_sparse: bool = True,
         gpu: Union[bool, str] = False,
         verbose: INT = 0,
@@ -764,7 +1122,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> Vectorizer:
         """Fit to data.
 
         Parameters
@@ -816,7 +1174,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Vectorize the text.
 
         Parameters
@@ -847,10 +1205,10 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         matrix = self._estimator.transform(X[corpus])
         if hasattr(self._estimator, "get_feature_names_out"):
-            columns = [f"{corpus}_{w}" for w in self._estimator.get_feature_names_out()]
+            columns = [f"corpus_{w}" for w in self._estimator.get_feature_names_out()]
         else:
             # Hashing has no words to put as column names
-            columns = [f"hash{i}" for i in range(matrix.shape[1])]
+            columns = [f"hash{i}" for i in range(1, matrix.shape[1] + 1)]
 
         X = X.drop(corpus, axis=1)  # Drop original corpus column
 

@@ -16,7 +16,6 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from joblib.memory import Memory
-from pandas_profiling import ProfileReport
 from scipy import stats
 from sklearn.preprocessing import FunctionTransformer
 from typeguard import typechecked
@@ -270,78 +269,91 @@ class ATOM(BaseRunner, ATOMPlotter):
     def automl(self, **kwargs):
         """Search for an optimized pipeline in an automated fashion.
 
-        Uses the TPOT package to perform an automated search of
-        transformers and a final estimator that maximizes a metric
-        on the dataset. The resulting transformations and estimator
-        are merged with atom's pipeline. The tpot instance can be
-        accessed through the `tpot` attribute.
+        Automated machine learning (AutoML) automates the selection,
+        composition and parameterization of machine learning pipelines.
+        Automating the machine learning often provides faster, more
+        accurate outputs than hand-coded algorithms. ATOM uses the
+        [evalML][] package for AutoML optimization. The resulting
+        transformers and final estimator are merged with atom's pipeline
+        (check the [`pipeline`][self-pipeline] and [`models`][self-models]
+        attributes after the method finishes running). The created
+        [AutoMLSearch][] instance can be accessed through the `evalml`
+        attribute.
+
+        !!! warning
+            AutoML algorithms aren't intended to run for only a few minutes.
+            The method may need a very long time to achieve optimal results.
 
         Parameters
         ----------
         **kwargs
-            Keyword arguments for tpot's classifier/regressor.
+            Additional keyword arguments for the AutoMLSearch instance.
 
         """
-        from tpot import TPOTClassifier, TPOTRegressor
+        from evalml import AutoMLSearch
+
+        self.log("Searching for optimal pipeline...", 1)
 
         # Define the scoring parameter
-        if self._metric and not kwargs.get("scoring"):
-            kwargs["scoring"] = self._metric[0]
-        elif kwargs.get("scoring"):
-            metric_ = BaseTrainer._prepare_metric([kwargs["scoring"]])
+        if self._metric and not kwargs.get("objective"):
+            kwargs["objective"] = self._metric[0]
+        elif kwargs.get("objective"):
+            kwargs["objective"] = BaseTrainer._prepare_metric([kwargs["objective"]])
             if not self._metric:
-                self._metric = metric_  # Update the pipeline's metric
-            elif metric_[0].name != self.metric[0]:
+                self._metric = kwargs["objective"]  # Update the pipeline's metric
+            elif kwargs["objective"][0].name != self.metric[0]:
                 raise ValueError(
-                    "Invalid value for the scoring parameter! The scoring "
-                    "should be equal to the primary metric. Expected "
-                    f"{self.metric[0]}, got {metric_[0].name}."
+                    "Invalid value for the objective parameter! The metric "
+                    "should be the same as the primary metric. Expected "
+                    f"{self.metric[0]}, got {kwargs['objective'][0].name}."
                 )
 
-        kwargs = dict(
+        self.evalml = AutoMLSearch(
+            X_train=self.X_train,
+            y_train=self.y_train,
+            X_holdout=self.X_test,
+            y_holdout=self.y_test,
+            problem_type=self.task.split(" ")[0],
+            objective=kwargs.pop("objective", "auto"),
             n_jobs=kwargs.pop("n_jobs", self.n_jobs),
-            verbosity=kwargs.pop("verbosity", self.verbose),
-            random_state=kwargs.pop("random_state", self.random_state),
+            verbose=kwargs.pop("verbose", True if self.verbose > 1 else False),
+            random_seed=kwargs.pop("random_seed", self.random_state),
             **kwargs,
         )
-        if self.goal == "class":
-            self.branch.tpot = TPOTClassifier(**kwargs)
-        else:
-            self.branch.tpot = TPOTRegressor(**kwargs)
-
-        self.log("Fitting automl algorithm...", 1)
-
-        self.tpot.fit(self.X_train, self.y_train)
+        self.evalml.search()
 
         self.log("\nMerging automl results with atom...", 1)
 
-        # A pipeline could consist of just a single estimator
-        if len(self.tpot.fitted_pipeline_) > 1:
-            for name, est in self.tpot.fitted_pipeline_[:-1].named_steps.items():
+        # Add transformers and model to atom
+        for est in self.evalml.best_pipeline:
+            if hasattr(est, "transform"):
                 self._add_transformer(est)
+                self.log(f" --> Adding {est.__class__.__name__} to the pipeline...", 2)
+            else:
+                for key, value in MODELS.items():
+                    model = value(self, fast_init=True)
+                    if model.est_class.__name__ == est._component_obj.__class__.__name__:
+                        est.acronym, est.fullname = key, model.fullname
 
-        # Add the final estimator as a model to atom
-        est = self.tpot.fitted_pipeline_[-1]
-        for key, value in MODELS.items():
-            model = value(self, fast_init=True)
-            if model.est_class.__name__ == est.__class__.__name__:
-                est.acronym, est.fullname = key, model.fullname
+                # If it's not any of the predefined models, create a new acronym
+                if not hasattr(est, "acronym"):
+                    est.acronym = create_acronym(est.__class__.__name__)
+                    est.fullname = est.__class__.__name__
 
-        # If it's not any of the predefined models, create a new acronym
-        if not hasattr(est, "acronym"):
-            est.acronym = create_acronym(est.__class__.__name__)
-            est.fullname = est.__class__.__name__
+                model = CustomModel(self, estimator=est)
+                model.estimator = model.est
 
-        model = CustomModel(self, estimator=est)
-        model.estimator = model.est
+                # Save metric scores on train and test set
+                for metric in self._metric.values():
+                    model._calculate_score(metric, "train")
+                    model._calculate_score(metric, "test")
 
-        # Save metric scores on train and test set
-        for metric in self._metric.values():
-            model._calculate_score(metric, "train")
-            model._calculate_score(metric, "test")
-
-        self._models.update({model.name: model})
-        self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
+                self._models.update({model.name: model})
+                self.log(
+                    f" --> Adding model {model.fullname} "
+                    f"({model.name}) to the pipeline...", 2
+                )
+                break  # Avoid non-linear pipelines
 
     @composed(crash, typechecked)
     def distribution(
@@ -576,11 +588,16 @@ class ATOM(BaseRunner, ATOMPlotter):
         n_rows: Optional[SCALAR] = None,
         filename: Optional[str] = None,
         **kwargs,
-    ) -> ProfileReport:
+    ):
         """Create an extensive profile analysis report of the data.
 
-        The profile report is rendered in HTML5 and CSS3. Note that
-        this method can be slow for n_rows>10k.
+        ATOM uses the [pandas-profiling][profiling] package for the
+        analysis. The report is rendered directly in the notebook. The
+        created [ProfileReport][] instance can be accessed through the
+        `profile` attribute.
+
+        !!! warning
+            This method can be slow for large datasets.
 
         Parameters
         ----------
@@ -596,26 +613,24 @@ class ATOM(BaseRunner, ATOMPlotter):
             anything.
 
         **kwargs
-            Additional keyword arguments for the ProfileReport instance.
-
-        Returns
-        -------
-        [ProfileReport][]
-            Created report object.
+            Additional keyword arguments for the [ProfileReport][]
+            instance.
 
         """
+        from pandas_profiling import ProfileReport
+
         self.log("Creating profile report...", 1)
 
         n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
-        profile = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
+        self.profile = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
 
         if filename:
             if not filename.endswith(".html"):
                 filename += ".html"
-            profile.to_file(filename)
+            self.profile.to_file(filename)
             self.log("Report successfully saved.", 1)
 
-        return profile
+        self.profile.to_notebook_iframe()
 
     @composed(crash, method_to_log)
     def reset(self):
@@ -1072,9 +1087,11 @@ class ATOM(BaseRunner, ATOMPlotter):
         if transformer.__class__.__name__ == "Pipeline":
             # Recursively add all transformers to the pipeline
             for name, est in transformer.named_steps.items():
+                self.log(f"Adding {est.__class__.__name__} to the pipeline...", 1)
                 self._add_transformer(est, columns, train_only, **fit_params)
-
         else:
+            self.log(
+                f"Adding {transformer.__class__.__name__} to the pipeline...", 1)
             self._add_transformer(transformer, columns, train_only, **fit_params)
 
     @composed(crash, method_to_log, typechecked)
@@ -1500,7 +1517,8 @@ class ATOM(BaseRunner, ATOMPlotter):
         an exception is raised. If the provided documents are strings,
         words are separated by spaces.
 
-        See nlp.py for a description of the parameters.
+        See the [TextNormalizer][] class for a description of the
+        parameters.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1531,7 +1549,7 @@ class ATOM(BaseRunner, ATOMPlotter):
         transformations are applied on the column named `corpus`. If
         there is no column with that name, an exception is raised.
 
-        See nlp.py for a description of the parameters.
+        See the [Tokenizer][] class for a description of the parameters.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1555,12 +1573,15 @@ class ATOM(BaseRunner, ATOMPlotter):
 
         Transform the corpus into meaningful vectors of numbers. The
         transformation is applied on the column named `corpus`. If
-        there is no column with that name, an exception is raised. The
-        transformed columns are named after the word they are embedding
-        (if the column is already present in the provided dataset,
-        `_[strategy]` is added behind the name).
+        there is no column with that name, an exception is raised.
 
-        See nlp.py for a description of the parameters.
+        If strategy="bow" or "tfidf", the transformed columns are named
+        after the word they are embedding with the prefix `corpus_`. If
+        strategy="hashing", the columns are named hash[N], where N stands
+        for the n-th hashed column.
+
+        See the [Vectorizer][] class for a description of the
+        parameters.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1598,6 +1619,9 @@ class ATOM(BaseRunner, ATOMPlotter):
         successfully converted to a datetime format (less than 30% NaT
         values after conversion) are also used.
 
+        See the [FeatureExtractor][] class for a description of the
+        parameters.
+
         """
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, signature(FeatureExtractor).parameters)
@@ -1624,6 +1648,9 @@ class ATOM(BaseRunner, ATOMPlotter):
 
         Create new combinations of existing features to capture the
         non-linear relations between the original features.
+
+        See the [FeatureGenerator][] class for a description of the
+        parameters.
 
         """
         columns = kwargs.pop("columns", None)
@@ -1660,6 +1687,9 @@ class ATOM(BaseRunner, ATOMPlotter):
         The group names and features can be accessed through the `groups`
         method.
 
+        See the [FeatureGrouper][] class for a description of the
+        parameters.
+
         """
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, signature(FeatureGrouper).parameters)
@@ -1693,27 +1723,26 @@ class ATOM(BaseRunner, ATOMPlotter):
         on very high-dimensional datasets. Additionally, remove
         multicollinear and low variance features.
 
+        See the [FeatureSelector][] class for a description of the
+        parameters.
+
         !!! note
             * When strategy="univariate" and solver=None, [f_classif][]
-              is used as default solver.
-            * When strategy is not one of univariate or pca, and
-              solver=None, the winning model (if it exists) is used as
-              solver.
-            * When strategy is sfs, rfecv or any of the [advanced strategies][]
-              and no scoring is specified, atom's metric (if it exists)
-              is used as scoring.
+              or [f_regression][] is used as default solver.
+            * When strategy is "sfs", "rfecv" or any of the
+              [advanced strategies][] and no scoring is specified,
+              atom's metric (if it exists) is used as scoring.
 
         """
         if isinstance(strategy, str):
             if strategy.lower() == "univariate" and solver is None:
                 solver = "f_classif" if self.goal == "class" else "f_regression"
-            elif strategy.lower() not in ("univariate", "pca"):
-                if solver is None and self.winner:
-                    solver = self.winner.estimator
-                elif isinstance(solver, str):
-                    # In case the user already filled the task...
-                    if not solver.endswith("_class") and not solver.endswith("_reg"):
-                        solver += f"_{self.goal}"
+            elif (
+                strategy.lower() not in ("univariate", "pca")
+                and isinstance(solver, str)
+                and (not solver.endswith("_class") and not solver.endswith("_reg"))
+            ):
+                solver += f"_{self.goal}"
 
             # If the run method was called before, use the main metric
             if strategy.lower() not in ("univariate", "pca", "sfm", "rfe"):
@@ -1840,6 +1869,7 @@ class ATOM(BaseRunner, ATOMPlotter):
         self,
         models: Optional[Union[str, callable, Predictor, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        *,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
@@ -1850,13 +1880,23 @@ class ATOM(BaseRunner, ATOMPlotter):
         n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
-        """Fit the models in a direct fashion.
+        """Train and evaluate the models in a direct fashion.
 
-        Fit and evaluate over the models. Contrary to SuccessiveHalving
-        and TrainSizing, the direct approach only iterates once over the
-        models, using the full dataset.
+        Contrary to [successive_halving][self-successive_halving] and
+        [train_sizing][self-train_sizing], the direct approach only
+        iterates once over the models, using the full dataset.
 
-        See the basetrainer.py module for a description of the parameters.
+        The following steps are applied to every model:
+
+        1. Apply [hyperparameter tuning][] (optional).
+        2. Fit the model on the training set using the best combination
+           of hyperparameters found.
+        3. Evaluate the model on the test set.
+        4. Train the model on various bootstrapped samples of the
+           training set and evaluate again on the test set (optional).
+
+        See the [DirectClassifier][] or [DirectRegressor][] class for a
+        description of the parameters.
 
         """
         metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)
@@ -1902,7 +1942,17 @@ class ATOM(BaseRunner, ATOMPlotter):
         this technique with similar models, e.g. only using tree-based
         models.
 
-        See the basetrainer.py module for a description of the parameters.
+        The following steps are applied to every model (per iteration):
+
+        1. Apply [hyperparameter tuning][] (optional).
+        2. Fit the model on the training set using the best combination
+           of hyperparameters found.
+        3. Evaluate the model on the test set.
+        4. Train the model on various bootstrapped samples of the
+           training set and evaluate again on the test set (optional).
+
+        See the [SuccessiveHalvingClassifier][] or [SuccessiveHalvingRegressor][]
+        class for a description of the parameters.
 
         """
         metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)
@@ -1936,7 +1986,7 @@ class ATOM(BaseRunner, ATOMPlotter):
         n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
-        """Fit the models in a train sizing fashion.
+        """Train and evaluate the models in a train sizing fashion.
 
         When training models, there is usually a trade-off between
         model performance and computation time, that is regulated by
@@ -1946,7 +1996,17 @@ class ATOM(BaseRunner, ATOMPlotter):
         multiple times, ever-increasing the number of samples in the
         training set.
 
-        See the basetrainer.py module for a description of the parameters.
+        The following steps are applied to every model (per iteration):
+
+        1. Apply [hyperparameter tuning][] (optional).
+        2. Fit the model on the training set using the best combination
+           of hyperparameters found.
+        3. Evaluate the model on the test set.
+        4. Train the model on various bootstrapped samples of the
+           training set and evaluate again on the test set (optional).
+
+        See the [TrainSizingClassifier][] or [TrainSizingRegressor][]
+        class for a description of the parameters.
 
         """
         metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)

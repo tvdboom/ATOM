@@ -138,50 +138,30 @@ def test_cleaner_drop_invalid_column_list_types():
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
     X["string_col"] = [str(i) for i in range(len(X))]  # String column
-    cleaner = Cleaner(
-        drop_types=["datetime64[ns]", "object"],
-        drop_max_cardinality=False,
-    )
+    cleaner = Cleaner(drop_types=["datetime64[ns]", "object"])
     X = cleaner.fit_transform(X)
     assert "datetime_col" not in X.columns
     assert "string_col" not in X.columns
-
-
-def test_cleaner_drop_maximum_cardinality():
-    """Assert that categorical columns with maximum cardinality are dropped."""
-    X = X_bin.copy()
-    # Create column with all different values
-    X["invalid_column"] = [str(i) for i in range(len(X))]
-    X = Cleaner().fit_transform(X)
-    assert "invalid_column" not in X.columns
-
-
-def test_cleaner_drop_minimum_cardinality():
-    """Assert that columns with minimum cardinality are dropped."""
-    X = X_bin.copy()
-    X["invalid_column"] = 2.3  # Create column with only one value
-    X = Cleaner().fit_transform(X)
-    assert "invalid_column" not in X.columns
 
 
 def test_cleaner_strip_categorical_features():
     """Assert that categorical features are stripped from blank spaces."""
     X = X_bin.copy()
     X["string_col"] = [" " + str(i) + " " for i in range(len(X))]
-    X = Cleaner(drop_max_cardinality=False).fit_transform(X)
+    X = Cleaner().fit_transform(X)
     series = pd.Series([str(i) for i in range(len(X))], name="string_col")
     pd.testing.assert_series_equal(X["string_col"], series)
 
 
 def test_cleaner_strip_ignores_nan():
     """Assert that the stripping ignores missing values."""
-    X = Cleaner(drop_max_cardinality=False).fit_transform(X10_sn)
+    X = Cleaner().fit_transform(X10_sn)
     assert X.isna().sum().sum() == 1
 
 
 def test_cleaner_drop_duplicate_rows():
     """Assert that that duplicate rows are removed."""
-    X = Cleaner(drop_max_cardinality=False, drop_duplicates=True).fit_transform(X10)
+    X = Cleaner(drop_duplicates=True).fit_transform(X10)
     assert len(X) == 7
 
 
@@ -268,9 +248,9 @@ def test_discretizer_strategies(strategy):
 
 def test_custom_strategy():
     """Assert that custom binning can be performed."""
-    discretizer = Discretizer(strategy="custom", bins=[0, 25, 50])
+    discretizer = Discretizer(strategy="custom", bins=[0, 25])
     X = discretizer.fit_transform(X_bin)
-    assert X["mean texture"].unique().tolist() == ["0-25", "25-50"]
+    assert X["mean texture"].unique().tolist() == ["(0, 25]", "(25, inf]"]
 
 
 def test_bins_is_sequence():
@@ -305,7 +285,7 @@ def test_labels_custom_strategy():
     """Assert that custom labels can be added to the custom strategy."""
     discretizer = Discretizer(
         strategy="custom",
-        bins=[0, 10, 20, 50],
+        bins=[10, 20],
         labels={"mean texture": ["l1", "l2", "l3"]},
     )
     X = discretizer.fit_transform(X_bin)

@@ -1597,11 +1597,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 **self._kwargs,
             )
             if prefit:
-                if len(self._estimator.get_support()) != X.shape[1]:
+                if list(solver.feature_names_in_) != list(X.columns):
                     raise ValueError(
                         "Invalid value for the solver parameter. The "
                         f"{solver.__class__.__name__} estimator "
-                        "is fitted with different columns than X!"
+                        "is fitted using different columns than X!"
                     )
                 self._estimator.estimator_ = solver
             else:

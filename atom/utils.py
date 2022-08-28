@@ -693,6 +693,17 @@ def variable_return(X, y):
         return X, y
 
 
+def catch_return(output):
+    """Get not None arguments from transformer output."""
+    if isinstance(output, tuple):
+        if output[0] is None:
+            return output[1]
+        elif output[1] is None:
+            return output[0]
+
+    return output
+
+
 def is_sparse(df):
     """Check if the dataframe contains any sparse columns."""
     return any(pd.api.types.is_sparse(df[col]) for col in df)
@@ -1207,7 +1218,7 @@ def get_feature_importance(est, attributes=None):
 
     Returns
     -------
-    np.array
+    list
         Estimator's feature importance.
 
     """
@@ -1234,7 +1245,7 @@ def get_feature_importance(est, attributes=None):
         else:
             data = np.linalg.norm(data, axis=0, ord=1)
 
-    return data
+        return list(data)
 
 
 # Pipeline functions =============================================== >>
@@ -1433,7 +1444,7 @@ def transform_one(transformer, X=None, y=None, method="transform"):
         elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
-    output = getattr(transformer, method)(*args)
+    output = catch_return(getattr(transformer, method)(*args))
 
     # Transform can return X, y or both
     if isinstance(output, tuple):
@@ -1466,8 +1477,8 @@ def custom_transform(transformer, branch, data=None, verbose=None, method="trans
 
     Parameters
     ----------
-    transformer: estimator
-        Transformer to apply to the data.
+    transformer: Transformer
+        Estimator to apply to the data.
 
     branch: Branch
         Transformer's branch.
@@ -1479,7 +1490,7 @@ def custom_transform(transformer, branch, data=None, verbose=None, method="trans
 
     verbose: int or None, default=None
         Verbosity level for the transformation. If None, the
-        estimator's verbosity is used.
+        transformer's verbosity is used.
 
     method: str, default="transform"
         Method to apply to the transformer. Choose from: transform
@@ -1495,7 +1506,7 @@ def custom_transform(transformer, branch, data=None, verbose=None, method="trans
         else:
             X_og, y_og = branch.X, branch.y
 
-    # Adapt the estimator's verbosity
+    # Adapt the transformer's verbosity
     if verbose is not None:
         if verbose < 0 or verbose > 2:
             raise ValueError(
@@ -1505,9 +1516,6 @@ def custom_transform(transformer, branch, data=None, verbose=None, method="trans
         elif hasattr(transformer, "verbose"):
             vb = transformer.verbose  # Save original verbosity
             transformer.verbose = verbose
-
-    if not transformer.__module__.startswith("atom"):
-        branch.T.log(f"Applying {transformer.__class__.__name__} to the dataset...", 1)
 
     X, y = transform_one(transformer, X_og, y_og, method)
 

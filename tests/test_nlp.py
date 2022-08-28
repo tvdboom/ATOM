@@ -175,7 +175,7 @@ def test_hashing():
     """Assert that the Hashing strategy works as intended."""
     X = Vectorizer(strategy="Hashing", n_features=10).fit_transform(X_text)
     assert X.shape == (10, 10)
-    assert "hash0" in X
+    assert "hash1" in X
 
 
 @patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})

@@ -88,12 +88,12 @@ def ATOMLoader(
 
     ```pycon
     >>> from atom import ATOMClassifier, ATOMLoader
-    ... from sklearn.datasets import load_breast_cancer
+    >>> from sklearn.datasets import load_breast_cancer
 
     >>> atom = ATOMClassifier(X, y)
-    ... atom.scale()
-    ... atom.run(["LR", "RF", "SGD"], metric="AP")
-    ... atom.save("atom", save_data=False)  # Save atom to a pickle file
+    >>> atom.scale()
+    >>> atom.run(["LR", "RF", "SGD"], metric="AP")
+    >>> atom.save("atom", save_data=False)  # Save atom to a pickle file
 
     # Load the class and add the data to the new instance
     >>> atom_2 = ATOMLoader("atom", data=(X, y), verbose=2)
@@ -527,9 +527,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
-    """Main wrapper for regression tasks.
+    """Main class for regression tasks.
 
-    ATOM's main class for regression tasks.
     Apply all data transformations and model management provided by
     the package on a given dataset. Note that, contrary to sklearn's
     API, the instance contains the dataset on which to perform the

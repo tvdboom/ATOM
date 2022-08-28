@@ -147,9 +147,10 @@ def test_LR():
 
 def test_RNN():
     """Assert that the RNN model works when called just for the estimator."""
+    fs = FeatureSelector("rfe", solver="RNN_class", n_features=10)
     with pytest.raises(ValueError):
         # Fails cause RNN has no coef_ nor feature_importances_ attribute
-        FeatureSelector("sfm", solver="RNN_class").fit_transform(X_bin, y_bin)
+        fs.fit_transform(X_bin, y_bin)
 
 
 def test_MLP_custom_hidden_layer_sizes():

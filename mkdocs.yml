@@ -53,6 +53,9 @@ extra:
       - icon: fontawesome/brands/github
         link: https://github.com/tvdboom/ATOM
         name: GitHub
+      - icon: fontawesome/brands/stack-overflow
+        link: https://stackoverflow.com/questions/tagged/atom-ml
+        name: StackOverflow
       - icon: fontawesome/brands/python
         link: https://pypi.org/project/atom-ml/
         name: Pypi
@@ -151,42 +154,42 @@ nav:
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
         - Models:
-            - Dummy Estimator: API/models/dummy.md
-            - Gaussian Process: API/models/gp.md
-            - Gaussian Naive Bayes: API/models/gnb.md
-            - Multinomial Naive Bayes: API/models/mnb.md
+            - AdaBoost: API/models/adab.md
+            - Automated Relevance Determination: API/models/ard.md
+            - Bagging: API/models/bag.md
+            - Bayesian Ridge: API/models/br.md
             - Bernoulli Naive Bayes: API/models/bnb.md
+            - CatBoost: API/models/catb.md
             - Categorical Naive Bayes: API/models/catnb.md
             - Complement Naive Bayes: API/models/cnb.md
-            - Ordinary Least Squares: API/models/ols.md
-            - Ridge Estimator: API/models/ridge.md
-            - Lasso Regression: API/models/lasso.md
-            - ElasticNet Regression: API/models/en.md
-            - Least Angle Regression: API/models/lars.md
-            - Bayesian Ridge: API/models/br.md
-            - Automated Relevance Determination: API/models/ard.md
-            - Huber Regression: API/models/huber.md
-            - Perceptron: API/models/perc.md
-            - Logistic Regression: API/models/lr.md
-            - Linear Discriminant Analysis: API/models/lda.md
-            - Quadratic Discriminant Analysis: API/models/qda.md
-            - K-Nearest Neighbors: API/models/knn.md
-            - Radius Nearest Neighbors: API/models/rnn.md
             - Decision Tree: API/models/tree.md
-            - Bagging: API/models/bag.md
+            - Dummy Estimator: API/models/dummy.md
+            - ElasticNet Regression: API/models/en.md
             - Extra-Trees: API/models/et.md
-            - Random Forest: API/models/rf.md
-            - AdaBoost: API/models/adab.md
+            - Gaussian Naive Bayes: API/models/gnb.md
+            - Gaussian Process: API/models/gp.md
             - Gradient Boosting Machine: API/models/gbm.md
+            - Huber Regression: API/models/huber.md
             - HistGBM: API/models/hgbm.md
-            - XGBoost: API/models/xgb.md
-            - LightGBM: API/models/lgb.md
-            - CatBoost: API/models/catb.md
-            - Linear SVM: API/models/lsvm.md
+            - K-Nearest Neighbors: API/models/knn.md
             - Kernel SVM: API/models/ksvm.md
-            - Passive Aggressive: API/models/pa.md
-            - Stochastic Gradient Descent: API/models/sgd.md
+            - Lasso Regression: API/models/lasso.md
+            - Least Angle Regression: API/models/lars.md
+            - LightGBM: API/models/lgb.md
+            - Linear Discriminant Analysis: API/models/lda.md
+            - Linear SVM: API/models/lsvm.md
+            - Logistic Regression: API/models/lr.md
             - Multi-layer Perceptron: API/models/mlp.md
+            - Multinomial Naive Bayes: API/models/mnb.md
+            - Ordinary Least Squares: API/models/ols.md
+            - Passive Aggressive: API/models/pa.md
+            - Perceptron: API/models/perc.md
+            - Quadratic Discriminant Analysis: API/models/qda.md
+            - Radius Nearest Neighbors: API/models/rnn.md
+            - Random Forest: API/models/rf.md
+            - Ridge Estimator: API/models/ridge.md
+            - Stochastic Gradient Descent: API/models/sgd.md
+            - XGBoost: API/models/xgb.md
         - Predicting:
             - decision_function: API/predicting/decision_function.md
             - predict: API/predicting/predict.md

@@ -110,7 +110,7 @@ class TransformerMixin:
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
-        self.log(f"Fitting {self.__class__.__name__}...")
+        self.log(f"Fitting {self.__class__.__name__}...", 1)
 
         return self
 
@@ -121,7 +121,7 @@ class TransformerMixin:
         /,
         y: Optional[Y_TYPES] = None,
         **fit_params,
-    ):
+    ) -> TransformerMixin:
         """Fit to data, then transform it.
 
         Parameters
@@ -151,6 +151,43 @@ class TransformerMixin:
 
         """
         return self.fit(X, y, **fit_params).transform(X, y)
+
+    @composed(crash, method_to_log, typechecked)
+    def inverse_transform(
+        self,
+        X: Optional[X_TYPES] = None,
+        /,
+        y: Optional[Y_TYPES] = None,
+    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
+        """Does nothing.
+
+        Returns the input unchanged. Implemented for continuity of the
+        API.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored.
+
+        y: int, str, dict, sequence or None, default=None
+            Target column corresponding to X.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed feature set. Only returned if provided.
+
+        pd.Series
+            Transformed target column. Only returned if provided.
+
+        """
+        return variable_return(X, y)
 
 
 class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
@@ -1242,7 +1279,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 for i, label in enumerate(self._labels[col]):
                     X[col] = X[col].replace(i, label)
 
-            self.log(f" --> Discretizing feature {col} in {X[col].nunique()} bins.")
+            self.log(f" --> Discretizing feature {col} in {X[col].nunique()} bins.", 2)
 
         return X
 
@@ -2676,7 +2713,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log, typechecked)
     def transform(
         self, X: X_TYPES, y: Optional[Y_TYPES] = None
-    ) -> Union[pd.DataFrame, Union[pd.DataFrame, pd.Series]]:
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
         """Apply the outlier strategy on the data.
 
         Parameters

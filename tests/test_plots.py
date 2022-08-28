@@ -235,9 +235,12 @@ def test_plot_rfecv(scoring):
     """Assert that the plot_rfecv method work as intended """
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(PermissionError, atom.plot_rfecv)
-    atom.run("lr", metric="precision")
-    atom.branch = "fs_branch"
-    atom.feature_selection(strategy="rfecv", n_features=10, scoring=scoring)
+    atom.feature_selection(
+        strategy="rfecv",
+        solver="lr",
+        n_features=10,
+        scoring=scoring,
+    )
     atom.plot_rfecv(display=False)
 
 
@@ -456,7 +459,7 @@ def test_plot_partial_dependence_binary():
     """Assert that the plot_partial_dependence method work for binary tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_partial_dependence)
-    atom.run(["Tree", "LGB"], metric="f1")
+    atom.run(["RNN", "LGB"], metric="f1")
 
     # Invalid kind parameter
     with pytest.raises(ValueError, match=r".*for the kind parameter.*"):
@@ -481,14 +484,14 @@ def test_plot_partial_dependence_binary():
     # Different features for multiple models
     atom.branch = "b2"
     atom.feature_selection(strategy="pca", n_features=5)
-    atom.run(["tree2"])
+    atom.run(["Tree"])
     with pytest.raises(ValueError, match=r".*models use the same features.*"):
         atom.plot_partial_dependence(columns=(0, 1), display=False)
 
     atom.branch.delete()
-    atom.plot_partial_dependence(kind="both", display=False)
+    atom.plot_partial_dependence(columns=[0, 1, 2], kind="both", display=False)
     atom.lgb.plot_feature_importance(show=5, display=False)
-    atom.lgb.plot_partial_dependence(display=False)
+    atom.rnn.plot_partial_dependence(display=False)
 
 
 @pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])

@@ -42,9 +42,9 @@ from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import BaseModelPlotter
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
-    CustomDict, Predictor, Scorer, ShapExplanation, Table, composed, crash,
-    custom_transform, fit, flt, get_best_score, get_custom_scorer,
+    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SCALAR, SEQUENCE_TYPES, X_TYPES,
+    Y_TYPES, CustomDict, Predictor, Scorer, ShapExplanation, Table, composed,
+    crash, custom_transform, fit, flt, get_best_score, get_custom_scorer,
     get_feature_importance, get_pl_name, inverse_transform, it, lst, merge,
     method_to_log, score, time_to_str, transform, variable_return,
 )
@@ -720,8 +720,7 @@ class BaseModel(BaseModelPlotter):
 
         """
         # Returns None for estimators without coef_ or feature_importances_
-        data = get_feature_importance(self.estimator)
-        if data:
+        if data := get_feature_importance(self.estimator):
             return pd.Series(
                 data=data / max(data),
                 index=self.features,
@@ -1510,13 +1509,16 @@ class BaseModel(BaseModelPlotter):
     def clear(self):
         """Clear attributes from the model.
 
-        Reset attributes to their initial state, deleting potentially
-        large data arrays. Use this method to free some memory before
-        saving the class. The cleared attributes per model are:
-            - Prediction attributes.
-            - Metrics scores.
-            - Shap values.
-            - Dashboard instance.
+        Reset the model attributes to their initial state, deleting
+        potentially large data arrays. Use this method to free some
+        memory before [saving][self-save] the instance. The cleared
+        attributes are:
+
+        - [Prediction attributes][]
+        - [Metric scores][metric]
+        - [Shap values][shap]
+        - [App instance][self-create_app]
+        - [Dashboard instance][self-create_dashboard]
 
         """
         self._pred = [None] * 15
@@ -1527,6 +1529,144 @@ class BaseModel(BaseModelPlotter):
         )
         self._shap = ShapExplanation(self)
         self.explainer_dashboard = None
+
+    @composed(crash, method_to_log)
+    def create_app(self, **kwargs):
+        """Create an interactive app to test model predictions.
+
+        Demo your machine learning model with a friendly web interface.
+        This app launches directly in the notebook or on an external
+        browser page. The created [Interface][] instance can be accessed
+        through the `app` attribute. Read more in the [user guide][app].
+
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments for the [Interface][] instance
+            or the [Interface.launch][launch] method.
+
+        """
+        from gradio import Interface
+        from gradio.components import Dropdown, Textbox
+
+        self.T.log("Launching app...", 1)
+
+        inputs = []
+        og_branch = self.T._get_og_branches()[0].name
+        for name, column in self.T._branches[og_branch].X.items():
+            if column.dtype.kind in "ifu":
+                inputs.append(Textbox(label=name))
+            else:
+                inputs.append(Dropdown(list(column.unique()), label=name))
+
+        interface_sign = signature(Interface).parameters
+        launch_sign = signature(Interface.launch).parameters
+
+        self.app = Interface(
+            fn=lambda *x: self.inverse_transform(
+                y=self.predict(pd.DataFrame([x], columns=self.features))
+            )[0],
+            inputs=inputs,
+            outputs="label",
+            allow_flagging=kwargs.pop("allow_flagging", "never"),
+            **{k: v for k, v in kwargs.items() if k in interface_sign},
+        )
+
+        self.app.launch(**{k: v for k, v in kwargs.items() if k in launch_sign})
+
+    @composed(crash, typechecked, method_to_log)
+    def create_dashboard(
+        self,
+        dataset: str = "test",
+        filename: Optional[str] = None,
+        **kwargs,
+    ):
+        """Create an interactive dashboard to analyze the model.
+
+        ATOM uses the [explainerdashboard][explainerdashboard_package]
+        package to provide a quick and easy way to analyze and explain
+        the predictions and workings of the model. The dashboard allows
+        you to investigate SHAP values, permutation importances,
+        interaction effects, partial dependence plots, all kinds of
+        performance plots, and even individual decision trees.
+
+        By default, the dashboard renders in a new tab in your default
+        browser, but if preferable, you can render it inside the notebook
+        using the `mode="inline"` parameter. The created
+        [ExplainerDashboard][] instance can be accessed through the
+        `dashboard` attribute.
+
+        !!! note
+            Plots displayed by the dashboard are not created by ATOM and
+            can differ from those retrieved through this package.
+
+        Parameters
+        ----------
+        dataset: str, default="test"
+            Data set to get the report from. Choose from: "train", "test",
+            "both" (train and test) or "holdout".
+
+        filename: str or None, default=None
+            Name to save the file with (as .html). None to not save
+            anything.
+
+        **kwargs
+            Additional keyword arguments for the [ExplainerDashboard][]
+            instance.
+
+        """
+        from explainerdashboard import (
+            ClassifierExplainer, ExplainerDashboard, RegressionExplainer,
+        )
+
+        self.T.log("Creating dashboard...", 1)
+
+        dataset = dataset.lower()
+        if dataset == "both":
+            X, y = self.X, self.y
+        elif dataset in ("train", "test"):
+            X, y = getattr(self, f"X_{dataset}"), getattr(self, f"y_{dataset}")
+        elif dataset == "holdout":
+            if self.holdout is None:
+                raise ValueError(
+                    "Invalid value for the dataset parameter. No holdout "
+                    "data set was specified when initializing atom."
+                )
+            X, y = self.holdout.iloc[:, :-1], self.holdout.iloc[:, -1]
+        else:
+            raise ValueError(
+                "Invalid value for the dataset parameter, got "
+                f"{dataset}. Choose from: train, test, both or holdout."
+            )
+
+        params = dict(permutation_metric=self.T._metric.values(), n_jobs=self.T.n_jobs)
+        if self.T.goal == "class":
+            explainer = ClassifierExplainer(self.estimator, X, y, **params)
+        else:
+            explainer = RegressionExplainer(self.estimator, X, y, **params)
+
+        # Add shap values from the internal ShapExplanation object
+        explainer.set_shap_values(
+            base_value=self._shap.get_expected_value(return_one=False),
+            shap_values=self._shap.get_shap_values(X, return_all_classes=True),
+        )
+
+        # Some explainers (like Linear) don't have interaction values
+        if hasattr(self._shap.explainer, "shap_interaction_values"):
+            explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
+
+        self.dashboard = ExplainerDashboard(
+            explainer=explainer,
+            mode=kwargs.pop("mode", "external"),
+            **kwargs,
+        )
+        self.dashboard.run()
+
+        if filename:
+            if not filename.endswith(".html"):
+                filename += ".html"
+            self.dashboard.save_html(filename)
+            self.T.log("Dashboard successfully saved.", 1)
 
     @composed(crash, method_to_log)
     def cross_validate(self, **kwargs) -> pd.DataFrame:
@@ -1584,90 +1724,6 @@ class BaseModel(BaseModelPlotter):
         df.loc["std"] = df.std()
 
         return df
-
-    @composed(crash, typechecked, method_to_log)
-    def dashboard(
-        self,
-        dataset: str = "test",
-        filename: Optional[str] = None,
-        **kwargs,
-    ):
-        """Create an interactive dashboard to analyze the model.
-
-        The dashboard allows you to investigate SHAP values, permutation
-        importances, interaction effects, partial dependence plots, all
-        kinds of performance plots, and even individual decision trees.
-        By default, the dashboard opens in an external dash app. The
-        created dashboard instance can be accessed through the
-        `explainer_dashboard` attribute.
-
-        Parameters
-        ----------
-        dataset: str, default="test"
-            Data set to get the report from. Choose from: "train", "test",
-            "both" (train and test) or "holdout".
-
-        filename: str or None, default=None
-            Name to save the file with (as .html). None to not save
-            anything.
-
-        **kwargs
-            Additional keyword arguments for the ExplainerDashboard
-            instance.
-
-        """
-        from explainerdashboard import (
-            ClassifierExplainer, ExplainerDashboard, RegressionExplainer,
-        )
-
-        self.T.log("Creating dashboard...", 1)
-
-        dataset = dataset.lower()
-        if dataset == "both":
-            X, y = self.X, self.y
-        elif dataset in ("train", "test"):
-            X, y = getattr(self, f"X_{dataset}"), getattr(self, f"y_{dataset}")
-        elif dataset == "holdout":
-            if self.holdout is None:
-                raise ValueError(
-                    "Invalid value for the dataset parameter. No holdout "
-                    "data set was specified when initializing atom."
-                )
-            X, y = self.holdout.iloc[:, :-1], self.holdout.iloc[:, -1]
-        else:
-            raise ValueError(
-                "Invalid value for the dataset parameter, got "
-                f"{dataset}. Choose from: train, test, both or holdout."
-            )
-
-        params = dict(permutation_metric=self.T._metric.values(), n_jobs=self.T.n_jobs)
-        if self.T.goal == "class":
-            explainer = ClassifierExplainer(self.estimator, X, y, **params)
-        else:
-            explainer = RegressionExplainer(self.estimator, X, y, **params)
-
-        # Add shap values from the internal ShapExplanation object
-        explainer.set_shap_values(
-            base_value=self._shap.get_expected_value(return_one=False),
-            shap_values=self._shap.get_shap_values(X, return_all_classes=True),
-        )
-
-        # Some explainers (like Linear) don't have interaction values
-        if hasattr(self._shap.explainer, "shap_interaction_values"):
-            explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
-
-        self.explainer_dashboard = ExplainerDashboard(
-            explainer=explainer,
-            mode=kwargs.pop("mode", "external"),
-            **kwargs,
-        )
-        self.explainer_dashboard.run()
-
-        if filename:
-            if not filename.endswith(".html"):
-                filename += ".html"
-            self.explainer_dashboard.save_html(filename)
-            self.T.log("Dashboard successfully saved.", 1)
 
     @composed(crash, method_to_log)
     def delete(self):
