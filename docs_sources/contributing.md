@@ -107,8 +107,7 @@ If your contribution requires a new library dependency:
 * The library should support Python 3.8 and higher.
 * Make sure the code works with the latest version of the library.
 * Update the dependencies in the documentation.
-* Add the library with the minimum required version to `requirements.txt`
-  and `setup.py`.
+* Add the library with the minimum required version to `pyproject.toml`.
 
 After submitting your pull request, GitHub will automatically run the tests
 on your changes and make sure that the updated code builds successfully.

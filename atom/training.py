@@ -17,14 +17,14 @@ from sklearn.base import BaseEstimator
 from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
-from atom.plots import BaseModelPlotter
+from atom.plots import ModelPlot
 from atom.utils import (
     INT, SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score,
     infer_task, lst, method_to_log,
 )
 
 
-class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
+class Direct(BaseEstimator, BaseTrainer, ModelPlot):
     """Direct training approach.
 
     Fit and evaluate over the models. Contrary to SuccessiveHalving
@@ -66,7 +66,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self._core_iteration()
 
 
-class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
+class SuccessiveHalving(BaseEstimator, BaseTrainer, ModelPlot):
     """Successive halving training approach.
 
     The successive halving technique is a bandit-based algorithm that
@@ -163,7 +163,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self._models = models  # Restore all models
 
 
-class TrainSizing(BaseEstimator, BaseTrainer, BaseModelPlotter):
+class TrainSizing(BaseEstimator, BaseTrainer, ModelPlot):
     """Train Sizing training approach.
 
     When training models, there is usually a trade-off between model

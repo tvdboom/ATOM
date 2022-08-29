@@ -58,8 +58,7 @@ jobs:
         run: |
           pip install -U pip
           pip install -U pytest pytest-cov tensorflow
-          pip install -r requirements.txt
-          pip install -r requirements-optional.txt
+          pip install -e .
       - name: Run tests
         run: pytest --cov=atom --cov-report=xml tests/
       - name: Upload coverage to Codecov

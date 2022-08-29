@@ -121,7 +121,7 @@ class TransformerMixin:
         /,
         y: Optional[Y_TYPES] = None,
         **fit_params,
-    ) -> TransformerMixin:
+    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
         """Fit to data, then transform it.
 
         Parameters

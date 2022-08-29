@@ -12,8 +12,8 @@ Do you have a question? Before you do, please read the following guidelines.
 ### Question or problem?
 
 For quick questions there's no need to open an issue. Check first if the
-question isn't already answered on the [FAQ](https://tvdboom.github.io/ATOM/latest/faq/)
-section. If not, reach us through the [discussions](https://github.com/tvdboom/ATOM/discussions)
+question isn't already answered on the [FAQ](../faq) section. If not, reach
+us through the [discussions](https://github.com/tvdboom/ATOM/discussions)
 page or on the [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)
 channel.
 
@@ -91,13 +91,15 @@ make sure that you have done everything necessary so we can efficiently
 review and accept your changes.
 
 * Update the documentation so all of your changes are reflected there.
-* Adhere to [PEP 8](https://www.python.org/dev/peps/pep-0008/) standards.
-* Use a maximum of 89 characters per line. Try to keep comments and
-  docstrings below 72 characters.
+* Adhere to [PEP 8](https://peps.python.org/pep-0008/) standards.
+* Use a maximum of 89 characters per line. Try to keep docstrings below
+  73 characters.
 * Update the project unit tests to test your code changes as thoroughly
   as possible.
 * Make sure that your code is properly commented with docstrings and
   comments explaining your rationale behind non-obvious coding practices.
+* Run [isort](https://pycqa.github.io/isort/): `isort atom tests`.
+* Run [flake8](https://github.com/john-hen/Flake8-pyproject): `flake8 --show-source --statistics atom tests`.
 
 If your contribution requires a new library dependency:
 
@@ -105,8 +107,7 @@ If your contribution requires a new library dependency:
 * The library should support Python 3.8 and higher.
 * Make sure the code works with the latest version of the library.
 * Update the dependencies in the documentation.
-* Add the library with the minimum required version to `requirements.txt`
-  and `setup.py`.
+* Add the library with the minimum required version to `pyproject.toml`.
 
 After submitting your pull request, GitHub will automatically run the tests
 on your changes and make sure that the updated code builds successfully.

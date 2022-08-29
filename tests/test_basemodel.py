@@ -551,7 +551,7 @@ def test_clear():
     """Assert that the clear method resets the model's attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    atom.beeswarm_plot(display=False)
+    atom.plot_shap_beeswarm(display=False)
     assert atom.lr._pred[3] is not None
     assert atom.lr._scores["train"]
     assert not atom.lr._shap._shap_values.empty

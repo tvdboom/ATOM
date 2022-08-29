@@ -4,19 +4,19 @@
 ATOM provides many plotting methods to analyze the data or compare the
 model performances. Descriptions and examples can be found in the API
 section. ATOM uses the packages [matplotlib](https://matplotlib.org/),
-[seaborn](https://seaborn.pydata.org/), [shap](https://github.com/slundberg/shap)
-and [wordcloud](http://amueller.github.io/word_cloud/) for plotting.
+[seaborn](https://seaborn.pydata.org/), [shap](https://github.com/slundberg/shap),
+[wordcloud](http://amueller.github.io/word_cloud/) and [schemdraw](https://schemdraw.readthedocs.io/en/latest/)
+for plotting.
 
 Plots that compare model performances (methods with the `models`
-parameter) can be called directly from a trainer, e.g. `atom.plot_roc()`,
-or from one of the models, e.g. `atom.LGB.plot_roc()`. If called from
-a trainer, it makes the plot for all models in its pipeline. If called
-from a specific model, it makes the plot only for that model.
+parameter) can be called directly from atom, e.g. `atom.plot_roc()`,
+or from one of the models, e.g. `atom.adab.plot_roc()`. If called from
+atom, use the `models` parameter to specify which models to plot. If
+called from a specific model, it makes the plot only for that model and
+the `models` parameter becomes unavailable.
 
-Plots that analyze the dataset (methods without the `models` parameter)
-can only be called from atom. The rest of the trainers are supposed
-to be used only when the goal is just modelling, not data manipulation.
-
+Plots that analyze the data (methods without the `models` parameter)
+can only be called from atom, and not from the models.
 
 <br>
 
@@ -39,8 +39,8 @@ The plot aesthetics can be customized using the plot attributes, e.g.
 with plotting methods. Note that the plot attributes are attached to the
 class and not the instance. This means that changing the attribute will
 also change it for all other instances in the module. Use the
-[reset_aesthetics](../../API/ATOM/atomclassifier#reset-aesthetics) method
-to reset all the aesthetics to their default value. The default values are:
+[reset_aesthetics][atomclassifier-reset_aesthetics] method to reset all
+the aesthetics to their default value. The default values are:
 
 * **style:** "darkgrid"
 * **palette:** "GnBu_r_d"
@@ -52,8 +52,8 @@ to reset all the aesthetics to their default value. The default values are:
 
 ## Canvas
 
-Sometimes it is desirable to draw multiple plots side by side in order
-to be able to compare them easier. Use the [canvas](../../API/ATOM/atomclassifier/#canvas)
+Sometimes it's desirable to draw multiple plots side by side in order
+to be able to compare them easier. Use the [canvas][atomclassifier-canvas]
 method for this. The canvas method is a `@contextmanager`, i.e. it's
 used through the `with` command. Plots in a canvas will ignore the
 figsize, filename and display parameters. Instead, call these parameters
@@ -77,9 +77,7 @@ with atom.canvas(2, 2, title="XGBoost vs LightGBM", filename="canvas"):
     atom.lgb.plot_prc(dataset="both", title="PRC - LightGBM")
 ```
 
-<div align="center">
-    <img src="../../img/plots/canvas.png" alt="canvas" width="1000" height="700"/>
-</div>
+![canvas](../img/plots/canvas.png)
 
 <br>
 
@@ -89,12 +87,9 @@ The [SHAP](https://github.com/slundberg/shap) (SHapley Additive exPlanations)
 python package uses a game theoretic approach to explain the output of
 any machine learning model. It connects optimal credit allocation with
 local explanations using the classic [Shapley values](https://en.wikipedia.org/wiki/Shapley_value)
-from game theory and their related extensions. ATOM implements methods to
-plot 7 of SHAP's plotting functions directly from its API. The seven
-plots are: [bar_plot](../../API/plots/bar_plot), [beeswarm_plot](../../API/plots/beeswarm_plot),
-[decision_plot](../../API/plots/decision_plot), [force_plot](../../API/plots/force_plot),
-[heatmap_plot](../../API/plots/heatmap_plot), [scatter_plot](../../API/plots/scatter_plot)
-and [waterfall_plot](../../API/plots/waterfall_plot).
+from game theory and their related extensions. ATOM implements methods
+to plot 7 of SHAP's plotting functions directly from its API. Check the
+available shap plots [here](#shap-plots).
 
 Calculating the Shapley values is computationally expensive, especially
 for model agnostic explainers like [Permutation](https://shap.readthedocs.io/en/latest/generated/shap.explainers.Permutation.html).
@@ -104,11 +99,7 @@ them when needed again.
 
 Since the plots are not made by ATOM, we can't draw multiple models in
 the same figure. Selecting more than one model will raise an exception.
-To avoid this, call the plot directly from a model, e.g. `atom.xgb.force_plot()`.
-
-!!! info
-    You can recognize the SHAP plots by the fact that they end (instead
-    of start) with the word `plot`.
+To avoid this, call the plot directly from a model, e.g. `atom.adab.plot_shap_force()`.
 
 <br>
 
@@ -118,18 +109,38 @@ A list of available plots can be found hereunder. Note that not all
 plots can be called from every class and that their availability can
 depend on the task at hand.
 
-:: atom.plots:FSPlotter
-    :: members:
+### Feature selection plots
+
+:: atom.plots:FeatureSelectorPlot
+    :: methods:
         toc_only: True
-        url: ../../API/plots/
         exclude:
             - canvas
             - reset_aesthetics
 
-:: atom.plots:ATOMPlotter
-    :: members:
+### Data plots
+
+:: atom.plots:DataPlot
+    :: methods:
         toc_only: True
-        url: ../../API/plots/
+        exclude:
+            - canvas
+            - reset_aesthetics
+
+### Model plots
+
+:: atom.plots:ModelPlot
+    :: methods:
+        toc_only: True
+        exclude:
+            - canvas
+            - reset_aesthetics
+
+### Shap plots
+
+:: atom.plots:ShapPlot
+    :: methods:
+        toc_only: True
         exclude:
             - canvas
             - reset_aesthetics

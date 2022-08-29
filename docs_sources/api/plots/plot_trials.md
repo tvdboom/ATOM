@@ -1,5 +1,5 @@
-# plot_bo
----------
+# plot_trials
+-------------
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">plot_bo</strong>(models=None,

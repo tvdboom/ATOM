@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -44,7 +44,7 @@ from typeguard import typechecked
 from wordcloud import WordCloud
 
 from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, check_binary_task, check_goal,
+    INT, SCALAR, SEQUENCE_TYPES, Model, check_binary_task, check_goal,
     check_is_fitted, check_predict_proba, composed, crash, get_best_score,
     get_corpus, get_custom_scorer, get_feature_importance, lst,
     partial_dependence, plot_from_model,
@@ -114,7 +114,7 @@ class BaseFigure:
         return self.gridspec[self._idx]
 
 
-class BasePlotter:
+class BasePlot:
     """Parent class for all plotting methods.
 
     This base class defines the plot properties that can
@@ -235,8 +235,18 @@ class BasePlotter:
     # Methods ====================================================== >>
 
     @staticmethod
-    def _draw_line(ax, y):
-        """Draw a line across the axis."""
+    def _draw_line(ax: plt.Axes, y: SCALAR):
+        """Draw a line across the axis.
+
+        Parameters
+        ----------
+        ax: plt.Axes
+            Plot's axes object.
+
+        y: int or float
+            Value on the y-axis to draw the line.
+
+        """
         ax.plot(
             [0, 1],
             [0, 1] if y == "diagonal" else [y, y],
@@ -251,14 +261,19 @@ class BasePlotter:
     @staticmethod
     def _get_figure(**kwargs):
         """Return existing figure if in canvas, else a new figure."""
-        if BasePlotter._fig and BasePlotter._fig.is_canvas:
-            return BasePlotter._fig.figure
+        if BasePlot._fig and BasePlot._fig.is_canvas:
+            return BasePlot._fig.figure
         else:
-            BasePlotter._fig = BaseFigure(**kwargs)
-            return BasePlotter._fig.figure
+            BasePlot._fig = BaseFigure(**kwargs)
+            return BasePlot._fig.figure
 
-    def _get_subclass(self, models, max_one=False, ensembles=True):
-        """Return model subclasses.
+    def _get_subclass(
+        self,
+        models: Union[str, List[str]],
+        max_one: bool = False,
+        ensembles: bool = True,
+    ) -> Union[Model, List[Model]]:
+        """Get model subclasses from names.
 
         Parameters
         ----------
@@ -272,6 +287,11 @@ class BasePlotter:
         ensembles: bool, default=True
             If False, drop ensemble models automatically.
 
+        Returns
+        -------
+        model or list of models
+            Model subclasses retrieved from the names.
+
         """
         models = list(self._models[self._get_models(models, ensembles)].values())
 
@@ -280,8 +300,20 @@ class BasePlotter:
 
         return models[0] if max_one else models
 
-    def _get_metric(self, metric):
-        """Check and return the index of the provided metric."""
+    def _get_metric(self, metric: Union[int, str]) -> int:
+        """Check and return the provided metric index.
+
+        Parameters
+        ----------
+        metric: int or str
+            Name or position of the metric to get.
+
+        Returns
+        -------
+        int
+            Position index of the metric.
+
+        """
         if isinstance(metric, str):
             name = get_custom_scorer(metric).name
             if name in self.metric:
@@ -295,8 +327,53 @@ class BasePlotter:
             f"or name of a metric used to run the pipeline, got {metric}."
         )
 
-    def _get_set(self, dataset, allow_holdout=True):
-        """Check and return the provided parameter metric."""
+    def _get_target(self, target: Union[int, str]) -> int:
+        """Check and return the provided target's index.
+
+        Parameters
+        ----------
+        metric: int or str
+            Name or position of the target to get.
+
+        Returns
+        -------
+        int
+            Position index of the target.
+
+        """
+        if isinstance(target, str):
+            try:
+                return self.mapping[self.target][target]
+            except (TypeError, KeyError):
+                raise ValueError(
+                    f"Invalid value for the target parameter. Value {target} "
+                    "not found in the mapping of the target column."
+                )
+        elif not 0 <= target < self.y.nunique(dropna=False):
+            raise ValueError(
+                "Invalid value for the target parameter. There are "
+                f"{self.y.nunique(dropna=False)} classes, got {target}."
+            )
+
+        return target
+
+    def _get_set(self, dataset: str, allow_holdout: bool = True) -> List[str]:
+        """Check and return the provided metric.
+
+        Parameters
+        ----------
+        dataset: str
+            Name of the data set to retrieve.
+
+        allow_holdout: bool, default=True
+            Whether to allow the retrieval of the holdout set.
+
+        Returns
+        -------
+        list of str
+            Selected data sets.
+
+        """
         dataset = dataset.lower()
         if dataset == "both":
             return ["train", "test"]
@@ -321,27 +398,24 @@ class BasePlotter:
                 f"{dataset}. Choose from: train, test or both."
             )
 
-    def _get_target(self, target):
-        """Check and return the provided target's index."""
-        if isinstance(target, str):
-            try:
-                return self.mapping[self.target][target]
-            except (TypeError, KeyError):
-                raise ValueError(
-                    f"Invalid value for the target parameter. Value {target} "
-                    "not found in the mapping of the target column."
-                )
-        elif not 0 <= target < self.y.nunique(dropna=False):
-            raise ValueError(
-                "Invalid value for the target parameter. There are "
-                f"{self.y.nunique(dropna=False)} classes, got {target}."
-            )
-
-        return target
-
     @staticmethod
-    def _get_show(show, model):
-        """Check and return the provided parameter show."""
+    def _get_show(show: Optional[int], model: Union[Model, List[Model]]) -> int:
+        """Check and return the number of features to show.
+
+        Parameters
+        ----------
+        show: int or None
+            Number of features to show. If None, select all (max 200).
+
+        model: Model or list
+            Models from which to get the features.
+
+        Returns
+        -------
+        int
+            Number of features to show.
+
+        """
         max_fxs = max([m.n_features for m in lst(model)])
         if show is None or show > max_fxs:
             # Limit max features shown to avoid maximum figsize error
@@ -354,7 +428,12 @@ class BasePlotter:
 
         return show
 
-    def _plot(self, fig=None, ax=None, **kwargs):
+    def _plot(
+        self,
+        fig: Optional[plt.Figure] = None,
+        ax: Optional[plt.Axes] = None,
+        **kwargs,
+    ) -> Optional[plt.Figure]:
         """Make the plot.
 
         Customize the axes to the default layout and plot the figure
@@ -384,6 +463,11 @@ class BasePlotter:
                 - plotname: Name of the plot.
                 - display: Whether to render the plot. If None, return the figure.
 
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            Created figure.
+
         """
         if kwargs.get("title"):
             ax.set_title(kwargs.get("title"), fontsize=self.title_fontsize, pad=20)
@@ -404,7 +488,7 @@ class BasePlotter:
         if ax is not None:
             ax.tick_params(axis="both", labelsize=self.tick_fontsize)
 
-        if fig and not getattr(BasePlotter._fig, "is_canvas", None):
+        if fig and not getattr(BasePlot._fig, "is_canvas", None):
             # Set name with which to save the file
             if kwargs.get("filename"):
                 if kwargs["filename"].endswith("auto"):
@@ -425,7 +509,7 @@ class BasePlotter:
 
             # Log plot to mlflow run of every model visualized
             if getattr(self, "experiment", None) and self.log_plots:
-                for m in set(BasePlotter._fig._used_models):
+                for m in set(BasePlot._fig._used_models):
                     MlflowClient().log_figure(
                         run_id=m._run.info.run_id,
                         figure=fig,
@@ -474,13 +558,13 @@ class BasePlotter:
             Whether to render the plot.
 
         """
-        BasePlotter._fig = BaseFigure(nrows=nrows, ncols=ncols, is_canvas=True)
+        BasePlot._fig = BaseFigure(nrows=nrows, ncols=ncols, is_canvas=True)
         try:
             yield plt.gcf()
         finally:
             if title:
                 plt.suptitle(title, fontsize=self.title_fontsize + 4)
-            BasePlotter._fig.is_canvas = False  # Close the canvas
+            BasePlot._fig.is_canvas = False  # Close the canvas
             self._plot(
                 fig=plt.gcf(),
                 figsize=figsize or (6 + 4 * ncols, 2 + 4 * nrows),
@@ -491,83 +575,13 @@ class BasePlotter:
             )
 
 
-class FSPlotter(BasePlotter):
-    """Plots for the FeatureSelector class."""
+class FeatureSelectorPlot(BasePlot):
+    """Feature selection plots.
 
-    @composed(crash, typechecked)
-    def plot_pca(
-        self,
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the explained variance ratio vs number of components.
+    These plots are accessible from atom or from the FeatureSelector
+    class when the appropriate feature selection strategy is used.
 
-        If the underlying estimator is pca (for dense datasets), all
-        possible components are plotted. If the underlying estimator
-        is TruncatedSVD (for sparse datasets), it only shows the
-        selected components. The blue star marks the number of
-        components selected by the user.
-
-        Parameters
-        ----------
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        if not hasattr(self, "pca"):
-            raise PermissionError(
-                "The plot_pca method is only available if pca was applied on the data!"
-            )
-
-        var = np.array(self.pca.explained_variance_ratio_[:self.pca._comps])
-        var_all = np.array(self.pca.explained_variance_ratio_)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        ax.scatter(
-            x=self.pca._comps,
-            y=var.sum(),
-            marker="*",
-            s=130,
-            c="blue",
-            edgecolors="b",
-            zorder=3,
-            label=f"Variance ratio retained: {round(var.sum(), 3)}",
-        )
-        ax.plot(range(1, len(var_all) + 1), np.cumsum(var_all), marker="o")
-        ax.axhline(var.sum(), ls="--", color="k")
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
-
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("lower right", 1),
-            xlabel="First N principal components",
-            ylabel="Cumulative variance ratio",
-            figsize=figsize,
-            plotname="plot_pca",
-            filename=filename,
-            display=display,
-        )
+    """
 
     @composed(crash, typechecked)
     def plot_components(
@@ -629,7 +643,7 @@ class FSPlotter(BasePlotter):
         ).sort_values()
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         scr.plot.barh(label=f"Total variance retained: {var.sum():.3f}", width=0.6)
         ax.set_xlim(0, max(scr) + 0.1 * max(scr))  # Make extra space for numbers
         for i, v in enumerate(scr):
@@ -643,6 +657,81 @@ class FSPlotter(BasePlotter):
             xlabel="Explained variance ratio",
             figsize=figsize or (10, 4 + show // 2),
             plotname="plot_components",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, typechecked)
+    def plot_pca(
+        self,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the explained variance ratio vs number of components.
+
+        If the underlying estimator is pca (for dense datasets), all
+        possible components are plotted. If the underlying estimator
+        is TruncatedSVD (for sparse datasets), it only shows the
+        selected components. The blue star marks the number of
+        components selected by the user.
+
+        Parameters
+        ----------
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        if not hasattr(self, "pca"):
+            raise PermissionError(
+                "The plot_pca method is only available if pca was applied on the data!"
+            )
+
+        var = np.array(self.pca.explained_variance_ratio_[:self.pca._comps])
+        var_all = np.array(self.pca.explained_variance_ratio_)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax.scatter(
+            x=self.pca._comps,
+            y=var.sum(),
+            marker="*",
+            s=130,
+            c="blue",
+            edgecolors="b",
+            zorder=3,
+            label=f"Variance ratio retained: {round(var.sum(), 3)}",
+        )
+        ax.plot(range(1, len(var_all) + 1), np.cumsum(var_all), marker="o")
+        ax.axhline(var.sum(), ls="--", color="k")
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
+
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("lower right", 1),
+            xlabel="First N principal components",
+            ylabel="Cumulative variance ratio",
+            figsize=figsize,
+            plotname="plot_pca",
             filename=filename,
             display=display,
         )
@@ -694,7 +783,7 @@ class FSPlotter(BasePlotter):
             ylabel = "score"
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
 
         n_features = self.rfecv.get_params()["min_features_to_select"]
         mean = self.rfecv.cv_results_["mean_test_score"]
@@ -738,41 +827,143 @@ class FSPlotter(BasePlotter):
         )
 
 
-class BaseModelPlotter(BasePlotter):
-    """Plots for the BaseModel class."""
+class DataPlot(BasePlot):
+    """Data plots.
 
-    @composed(crash, plot_from_model, typechecked)
-    def plot_pipeline(
+    These plots are only accessible from atom since they are used
+    for understanding and interpretation of the dataset. The other
+    runners should be used for model training only, not for data
+    manipulation.
+
+    """
+
+    @composed(crash, typechecked)
+    def plot_correlation(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        draw_hyperparameter_tuning: bool = True,
-        color_branches: Optional[bool] = None,
+        columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
+        method: str = "pearson",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (8, 7),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot a correlation matrix.
+
+        Parameters
+        ----------
+        columns: slice, sequence or None, default=None
+            Slice, names or indices of the columns to plot. If None,
+            plot all columns in the dataset. Selected categorical
+            columns are ignored.
+
+        method: str, default="pearson"
+            Method of correlation. Choose from: pearson, kendall or
+            spearman.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(8, 7)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        columns = self._get_columns(columns, only_numerical=True)
+        if method.lower() not in ("pearson", "kendall", "spearman"):
+            raise ValueError(
+                f"Invalid value for the method parameter, got {method}. "
+                "Choose from: pearson, kendall or spearman."
+            )
+
+        # Compute the correlation matrix
+        corr = self.dataset[columns].corr(method=method.lower())
+
+        # Drop first row and last column (diagonal line)
+        corr = corr.iloc[1:].drop(columns[-1], axis=1)
+
+        # Generate a mask for the upper triangle
+        # k=1 means keep outermost diagonal line
+        mask = np.zeros_like(corr, dtype=bool)
+        mask[np.triu_indices_from(mask, k=1)] = True
+
+        sns.set_style("white")  # Only for this plot
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        sns.heatmap(
+            data=corr,
+            mask=mask,
+            cmap=sns.diverging_palette(220, 10, as_cmap=True),
+            vmax=0.3,
+            center=0,
+            linewidths=0.5,
+            ax=ax,
+            cbar_kws={"shrink": 0.8},
+        )
+        sns.set_style(self.style)  # Set back to original style
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            figsize=figsize,
+            plotname="plot_correlation",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, typechecked)
+    def plot_distribution(
+        self,
+        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
+        distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        show: Optional[INT] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
+        **kwargs,
     ):
-        """Plot a diagram of the pipeline.
+        """Plot column distributions.
+
+        Additionally, it is possible to plot any of `scipy.stats`
+        probability distributions fitted to the column. Missing
+        values are ignored.
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models for which to draw the pipeline.
-            If None, all pipelines are plotted.
+        columns: int, str, slice or sequence, default=0
+            Slice, names or indices of the columns to plot. It is only
+            possible to plot one categorical column. If more than just
+            one categorical columns are selected, all categorical
+            columns are ignored.
 
-        draw_hyperparameter_tuning: bool, default=True
-            Whether to draw if the models used Hyperparameter Tuning.
+        distributions: str, sequence or None, default=None
+            Names of the `scipy.stats` distributions to fit to the
+            columns. If None, no distribution is fitted. Only for
+            numerical columns.
 
-        color_branches: bool or None, default=None
-            Whether to draw every branch in a different color. If None,
-            branches are colored when there is more than one.
+        show: int or None, default=None
+            Number of classes (ordered by number of occurrences) to
+            show in the plot. None to show all. Only for categorical
+            columns.
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
         figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
-            size to the pipeline drawn.
+            size to the plot's type.
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
@@ -782,409 +973,497 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot. If None, it returns the
             matplotlib figure.
 
+        **kwargs
+            Additional keyword arguments for seaborn's histplot.
+
         Returns
         -------
         matplotlib.figure.Figure
             Plot object. Only returned if `display=None`.
 
         """
+        columns = self._get_columns(columns)
+        palette_1 = cycle(sns.color_palette())
+        palette_2 = sns.color_palette("Blues_r", 3)
 
-        def get_length(pl, i):
-            """Get the maximum length of the name of a block."""
-            if len(pl) > i:
-                return max(len(pl[i].__class__.__name__) * 0.5, 7)
-            else:
-                return 0
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
 
-        def check_y(xy):
-            """Return y unless there is something right, then jump."""
-            while any(pos[0] > xy[0] and pos[1] == xy[1] for pos in positions.values()):
-                xy = Point((xy[0], xy[1] + height))
+        cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
+        if len(columns) == 1 and columns[0] in cat_columns:
+            series = self.dataset[columns].value_counts(ascending=True)
 
-            return xy[1]
+            if show is None or show > len(series):
+                show = len(series)
+            elif show < 1:
+                raise ValueError(
+                    "Invalid value for the show parameter."
+                    f"Value should be >0, got {show}."
+                )
 
-        def add_wire(x, y):
-            """Draw a connecting wire between two estimators."""
-            d.add(
-                Wire(shape="z", k=(x - d.here[0]) / (length + 1), arrow="->")
-                .to((x, y))
-                .color(branch["color"])
+            data = series[-show:]  # Subset of series to plot
+            data.plot.barh(
+                ax=ax,
+                width=0.6,
+                label=f"{columns[0]}: {len(series)} classes",
             )
 
-            # Update arrowhead manually
-            d.elements[-1].segments[-1].arrowwidth = 0.3
-            d.elements[-1].segments[-1].arrowlength = 0.5
+            # Add the counts at the end of the bar
+            for i, v in enumerate(data):
+                ax.text(v + 0.01 * max(data), i - 0.08, v, fontsize=self.tick_fontsize)
 
-        models = self._get_subclass(models)
-        palette = cycle(sns.color_palette())
-
-        # Define branches to plot
-        branches = []
-        for branch in self._branches.min("og").values():
-            draw_models, draw_ensembles = [], []
-            for m in models:
-                if m.name in branch._get_depending_models():
-                    if m.acronym not in ("Stack", "Vote"):
-                        draw_models.append(m)
-                    else:
-                        draw_ensembles.append(m)
-
-                        # Additionally, add all dependent models (if not already there)
-                        draw_models.extend(
-                            [i for i in m._models.values() if i not in draw_models]
-                        )
-
-            if not models or draw_models:
-                branches.append(
-                    {
-                        "name": branch.name,
-                        "pipeline": list(branch.pipeline),
-                        "models": draw_models,
-                        "ensembles": draw_ensembles,
-                    }
+            return self._plot(
+                fig=fig,
+                ax=ax,
+                xlim=(min(data) - 0.1 * min(data), max(data) + 0.1 * max(data)),
+                title=title,
+                xlabel="Counts",
+                legend=("lower right", 1),
+                figsize=figsize or (10, 4 + show // 2),
+                plotname="plot_distribution",
+                filename=filename,
+                display=display,
+            )
+        else:
+            kde = kwargs.pop("kde", False if distributions else True)
+            bins = kwargs.pop("bins", 40)
+            for i, col in enumerate(columns):
+                sns.histplot(
+                    data=self.dataset,
+                    x=col,
+                    kde=kde,
+                    label=col,
+                    bins=bins,
+                    color=next(palette_1),
+                    ax=ax,
+                    **kwargs,
                 )
 
-        # Define colors per branch
-        colors = {}
-        for branch in branches:
-            if color_branches or (color_branches is None and len(branches) > 1):
-                colors[branch["name"]] = branch["color"] = next(palette)
-            else:
-                branch["color"] = "black"
+                if distributions:
+                    x = np.linspace(*ax.get_xlim(), 100)
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        sns.set_style("white")  # Only for this plot
+                    # Drop the missing values form the column
+                    missing = self.missing + [np.inf, -np.inf]
+                    values = self.dataset[col].replace(missing, np.NaN).dropna()
 
-        # Create schematic drawing
-        d = Drawing(unit=1, backend="matplotlib")
-        d.config(fontsize=self.label_fontsize)
-        d.add(Subroutine(w=8, s=0.7).label("Raw data"))
+                    # Get the hist values
+                    h = np.histogram(values, bins=bins)
 
-        height = 3  # Height of every block
-        length = 5  # Minimal arrow length
+                    # Get a line for each distribution
+                    for j, dist in enumerate(lst(distributions)):
+                        params = getattr(stats, dist).fit(values)
 
-        # Define the x-position for every block
-        x_pos = [d.here[0] + length]
-        for i in range(max(len(b["pipeline"]) for b in branches)):
-            len_block = reduce(max, [get_length(b["pipeline"], i) for b in branches])
-            x_pos.append(x_pos[-1] + length + len_block)
+                        # Calculate pdf and scale to match observed data
+                        pdf = getattr(stats, dist).pdf(x, *params)
+                        scale = np.trapz(h[0], h[1][:-1]) / np.trapz(pdf, x)
 
-        # Add positions for hyperparameter tuning and models
-        x_pos.append(x_pos[-1])
-        if draw_hyperparameter_tuning and any(not m.bo.empty for m in models):
-            x_pos[-1] = x_pos[-2] + length + 11
+                        label = dist if i == 0 else None  # Label for the first iter
+                        plt.plot(x, pdf * scale, lw=2, c=palette_2[j], label=label)
 
-        positions = {0: d.here}  # Contains the position of every element
-        for branch in branches:
-            d.here = positions[0]
+            return self._plot(
+                fig=fig,
+                ax=ax,
+                title=title,
+                xlabel="Values",
+                ylabel="Counts",
+                legend=("best", len(columns) + len(lst(distributions))),
+                figsize=figsize or (10, 6),
+                plotname="plot_distribution",
+                filename=filename,
+                display=display,
+            )
 
-            for i, est in enumerate(branch["pipeline"]):
-                # If the estimator has already been seen, don't draw
-                if id(est) in positions:
-                    # Change location to estimator's end
-                    d.here = positions[id(est)]
-                    continue
-
-                # Draw transformer
-                add_wire(x_pos[i], check_y(d.here))
-                d.add(
-                    RoundBox(w=max(len(est.__class__.__name__) * 0.5, 7))
-                    .label(est.__class__.__name__, color="k")
-                    .color(branch["color"])
-                    .anchor("W")
-                    .drop("E")
-                )
-
-                positions[id(est)] = d.here
-
-            for model in branch["models"]:
-                # Position at last transformer or at start
-                if branch["pipeline"]:
-                    d.here = positions[id(est)]
-                else:
-                    d.here = positions[0]
-
-                # Draw hyperparameter tuning
-                if draw_hyperparameter_tuning and not model.bo.empty:
-                    add_wire(x_pos[-2], check_y(d.here))
-                    d.add(
-                        Data(w=11)
-                        .label("Hyperparameter\nTuning", color="k")
-                        .color(branch["color"])
-                        .drop("E")
-                    )
-
-                # Remove classifier/regressor from model's name
-                name = model.estimator.__class__.__name__
-                if name.lower().endswith("classifier"):
-                    name = name[:-10]
-                elif name.lower().endswith("regressor"):
-                    name = name[:-9]
-
-                # For a single branch, center models
-                if len(branches) == 1:
-                    offset = height * (len(branch["models"]) - 1) / 2
-                else:
-                    offset = 0
-
-                # Draw model
-                add_wire(x_pos[-1], check_y((d.here[0], d.here[1] - offset)))
-                d.add(
-                    Data(w=max(len(name) * 0.5, 7))
-                    .label(name, color="k")
-                    .color(branch["color"])
-                    .anchor("W")
-                    .drop("E")
-                )
-
-                positions[id(model)] = d.here
-
-        # Draw ensembles
-        max_pos = max(pos[0] for pos in positions.values())  # Max length model names
-        for branch in branches:
-            for model in branch["ensembles"]:
-                # Determine y-position of the ensemble
-                y_pos = [positions[id(m)][1] for m in model._models.values()]
-                offset = height / 2 * (len(branch["ensembles"]) - 1)
-                y = min(y_pos) + (max(y_pos) - min(y_pos)) * 0.5 - offset
-                y = check_y((max_pos + length, max(min(y_pos), y)))
-
-                d.here = (max_pos + length, y)
-
-                d.add(
-                    Data(w=max(len(model.fullname) * 0.5, 7))
-                    .label(model.fullname, color="k")
-                    .color(branch["color"])
-                    .anchor("W")
-                    .drop("E")
-                )
-
-                positions[id(model)] = d.here
-
-                # Draw a wire from every model to the ensemble
-                for m in model._models.values():
-                    d.here = positions[id(m)]
-                    add_wire(max_pos + length, y)
-
-        bbox = d.get_bbox()
-        figure = d.draw(ax=ax, showframe=False, show=False)
-        xlim, ylim = ax.get_xlim(), ax.get_ylim()
-        plt.axis("off")
-
-        # Draw lines for legend (outside plot)
-        for k, v in colors.items():
-            plt.plot((-9e9, -9e9), (-9e9, -9e9), color=v, lw=2, zorder=-2, label=k)
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=figure.fig,
-            ax=figure.ax,
-            title=title,
-            xlim=xlim,
-            ylim=(ylim[0] - 2, ylim[1] + 2),
-            legend=("upper left", 6) if colors else None,
-            figsize=figsize or (bbox.xmax // 4, 2.5 + (bbox.ymax - bbox.ymin + 1) // 4),
-            plotname="plot_pipeline",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_successive_halving(
-            self,
-            models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-            metric: Union[INT, str] = 0,
-            title: Optional[str] = None,
-            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-            filename: Optional[str] = None,
-            display: Optional[bool] = True,
-    ):
-        """Plot scores per iteration of the successive halving.
-
-        Only use if the models were fitted using successive_halving.
-        Ensemble models are ignored.
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        metric: int or str, default=0
-            Index or name of the metric. Only for multi-metric runs.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, ensembles=False)
-        metric = self._get_metric(metric)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-
-        # Prepare dataframes for seaborn lineplot (one df per line)
-        # Not using sns hue parameter because of legend formatting
-        lines = defaultdict(pd.DataFrame)
-        for m in models:
-            n_models = len(m.branch._idx[0]) // m._train_idx  # Number of models in iter
-            if m.metric_bootstrap is None:
-                values = {"x": [n_models], "y": [get_best_score(m, metric)]}
-            else:
-                if len(self._metric) == 1:
-                    bootstrap = m.metric_bootstrap
-                else:
-                    bootstrap = m.metric_bootstrap[metric]
-                values = {"x": [n_models] * len(bootstrap), "y": bootstrap}
-
-            # Add the scores to the group's dataframe
-            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
-
-        for m, df in zip(models, lines.values()):
-            df = df.reset_index(drop=True)
-            kwargs = dict(err_style="band" if df["x"].nunique() > 1 else "bars", ax=ax)
-            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, **kwargs)
-
-        n_models = [len(self.train) // m._train_idx for m in models]
-        ax.set_xlim(max(n_models) + 0.1, min(n_models) - 0.1)
-        ax.set_xticks(range(1, max(n_models) + 1))
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("lower right", len(lines)),
-            xlabel="n_models",
-            ylabel=self._metric[metric].name,
-            figsize=figsize,
-            plotname="plot_successive_halving",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_learning_curve(
-            self,
-            models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-            metric: Union[INT, str] = 0,
-            title: Optional[str] = None,
-            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-            filename: Optional[str] = None,
-            display: Optional[bool] = True,
-    ):
-        """Plot the learning curve: score vs number of training samples.
-
-        Only use with models fitted using train sizing. Ensemble
-        models are ignored.
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        metric: int or str, default=0
-            Index or name of the metric. Only for multi-metric runs.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, ensembles=False)
-        metric = self._get_metric(metric)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-
-        # Prepare dataframes for seaborn lineplot (one df per line)
-        # Not using sns hue parameter because of legend formatting
-        lines = defaultdict(pd.DataFrame)
-        for m in models:
-            if m.metric_bootstrap is None:
-                values = {"x": [m._train_idx], "y": [get_best_score(m, metric)]}
-            else:
-                if len(self._metric) == 1:
-                    bootstrap = m.metric_bootstrap
-                else:
-                    bootstrap = m.metric_bootstrap[metric]
-                values = {"x": [m._train_idx] * len(bootstrap), "y": bootstrap}
-
-            # Add the scores to the group's dataframe
-            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
-
-        for m, df in zip(models, lines.values()):
-            df = df.reset_index(drop=True)
-            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, ax=ax)
-
-        ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("lower right", len(lines)),
-            xlabel="Number of training samples",
-            ylabel=self._metric[metric].name,
-            figsize=figsize,
-            plotname="plot_learning_curve",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_results(
+    @composed(crash, typechecked)
+    def plot_ngrams(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        metric: Union[INT, str] = 0,
+        ngram: Union[INT, str] = "words",
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        show: INT = 10,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot of the model results after the evaluation.
+        """Plot n-gram frequencies.
 
-        If all models applied bootstrap, the plot is a boxplot. If
-        not, the plot is a barplot. Models are ordered based on
-        their score from the top down. The score is either the
-        `mean_bootstrap` or `metric_test` attribute of the model,
-        selected in that order.
+        The text for the plot is extracted from the column
+        named `corpus`. If there is no column with that name,
+        an exception is raised. If the documents are not
+        tokenized, the words are separated by spaces.
+
+        Parameters
+        ----------
+        ngram: str or int, default="bigram"
+            Number of contiguous words to search for (size of
+            n-gram). Choose from: words (1), bigrams (2),
+            trigrams (3), quadgrams (4).
+
+        index: int, str, sequence or None, default=None
+            Index names or positions of the documents in the corpus to
+            include in the search. If None, it selects all documents in
+            the dataset.
+
+        show: int, default=10
+            Number of n-grams (ordered by number of occurrences) to
+            show in the plot.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, default=None
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of n-grams shown.
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+
+        def get_text(column):
+            """Get the complete corpus as sequence of tokens."""
+            if isinstance(column.iloc[0], str):
+                return column.apply(lambda row: row.split())
+            else:
+                return column
+
+        corpus = get_corpus(self.X)
+        rows = self.dataset.loc[self._get_rows(index, return_test=False)]
+
+        if str(ngram).lower() in ("1", "word", "words"):
+            ngram = "words"
+            series = pd.Series(
+                [word for row in get_text(rows[corpus]) for word in row]
+            ).value_counts(ascending=True)
+        else:
+            if str(ngram).lower() in ("2", "bigram", "bigrams"):
+                ngram, finder = "bigrams", BigramCollocationFinder
+            elif str(ngram).lower() in ("3", "trigram", "trigrams"):
+                ngram, finder = "trigrams", TrigramCollocationFinder
+            elif str(ngram).lower() in ("4", "quadgram", "quadgrams"):
+                ngram, finder = "quadgrams", QuadgramCollocationFinder
+            else:
+                raise ValueError(
+                    f"Invalid value for the ngram parameter, got {ngram}. "
+                    "Choose from: words, bigram, trigram, quadgram."
+                )
+
+            ngram_fd = finder.from_documents(get_text(rows[corpus])).ngram_fd
+            series = pd.Series(
+                data=[x[1] for x in ngram_fd.items()],
+                index=[" ".join(x[0]) for x in ngram_fd.items()],
+            ).sort_values(ascending=True)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+
+        data = series[-show:]  # Subset of series to plot
+        data[-show:].plot.barh(ax=ax, width=0.6, label=f"Total {ngram}: {len(series)}")
+
+        # Add the counts at the end of the bar
+        for i, v in enumerate(data[-show:]):
+            ax.text(v + 0.01 * max(data), i - 0.08, v, fontsize=self.tick_fontsize)
+
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            xlim=(min(data) - 0.1 * min(data), max(data) + 0.1 * max(data)),
+            title=title,
+            xlabel="Counts",
+            legend=("lower right", 1),
+            figsize=figsize or (10, 4 + show // 2),
+            plotname="plot_ngrams",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, typechecked)
+    def plot_qq(
+        self,
+        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
+        distributions: Union[str, SEQUENCE_TYPES] = "norm",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot a quantile-quantile plot.
+
+        Parameters
+        ----------
+        columns: int, str, slice or sequence, default=0
+            Slice, names or indices of the columns to plot. Selected
+            categorical columns are ignored.
+
+        distributions: str, sequence or None, default="norm"
+            Names of the `scipy.stats` distributions to fit to the
+            columns.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        columns = self._get_columns(columns)
+        palette = cycle(sns.color_palette())
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+
+        percentiles = np.linspace(0, 100, 101)
+        for col in columns:
+            color = next(palette)
+            m = cycle(["+", "1", "x", "*", "d", "p", "h"])
+            qn_b = np.percentile(self.dataset[col], percentiles)
+            for dist in lst(distributions):
+                stat = getattr(stats, dist)
+                params = stat.fit(self.dataset[col])
+
+                # Get the theoretical percentiles
+                samples = stat.rvs(*params, size=101, random_state=self.random_state)
+                qn_a = np.percentile(samples, percentiles)
+
+                label = col + (" - " + dist if len(lst(distributions)) > 1 else "")
+                plt.scatter(qn_a, qn_b, color=color, marker=next(m), s=50, label=label)
+
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        plt.plot((-9e9, 9e9), (-9e9, 9e9), "k--", lw=2, alpha=0.7, zorder=-2)
+
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            xlim=xlim,
+            ylim=ylim,
+            xlabel="Theoretical quantiles",
+            ylabel="Observed quantiles",
+            legend=("best", len(columns) + len(lst(distributions))),
+            figsize=figsize or (10, 6),
+            plotname="plot_qq",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, typechecked)
+    def plot_scatter_matrix(
+        self,
+        columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 10),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+        **kwargs,
+    ):
+        """Plot a matrix of scatter plots.
+
+        A subset of max 250 random samples are selected from every
+        column to not clutter the plot.
+
+        Parameters
+        ----------
+        columns: slice, sequence or None, default=None
+            Slice, names or indices of the columns to plot. If None,
+            plot all columns in the dataset. Selected categorical
+            columns are ignored.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, default=(10, 10))
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        **kwargs
+            Additional keyword arguments for seaborn's pairplot.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        if getattr(BasePlot._fig, "is_canvas", None):
+            raise PermissionError(
+                "The plot_scatter_matrix method can not be called from "
+                "a canvas because of incompatibility of the APIs."
+            )
+
+        columns = self._get_columns(columns, only_numerical=True)
+
+        # Use max 250 samples to not clutter the plot
+        samples = self.dataset[columns].sample(
+            n=min(len(self.dataset), 250), random_state=self.random_state
+        )
+
+        diag_kind = kwargs.get("diag_kind", "kde")
+        grid = sns.pairplot(samples, diag_kind=diag_kind, **kwargs)
+
+        # Set right fontsize for all axes in grid
+        for axi in grid.axes.flatten():
+            axi.tick_params(axis="both", labelsize=self.tick_fontsize)
+            axi.set_xlabel(axi.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+            axi.set_ylabel(axi.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
+
+        return self._plot(
+            fig=plt.gcf(),
+            title=title,
+            figsize=figsize or (10, 10),
+            plotname="plot_scatter_matrix",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, typechecked)
+    def plot_wordcloud(
+        self,
+        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+        **kwargs,
+    ):
+        """Plot a wordcloud from the corpus.
+
+        The text for the plot is extracted from the column
+        named `corpus`. If there is no column with that name,
+        an exception is raised.
+
+        Parameters
+        ----------
+        index: int, str, sequence or None, default=None
+            Index names or positions of the documents in the corpus to
+            include in the wordcloud. If None, it selects all documents
+            in the dataset.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        **kwargs
+            Additional keyword arguments for the WordCloud class.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+
+        def get_text(column):
+            """Get the complete corpus as one long string."""
+            if isinstance(column.iloc[0], str):
+                return " ".join(column)
+            else:
+                return " ".join([" ".join(row) for row in column])
+
+        corpus = get_corpus(self.X)
+        rows = self.dataset.loc[self._get_rows(index, return_test=False)]
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+
+        background_color = kwargs.pop("background_color", "white")
+        random_state = kwargs.pop("random_state", self.random_state)
+        wordcloud = WordCloud(
+            width=figsize[0] * 100 if figsize else 1000,
+            height=figsize[1] * 100 if figsize else 600,
+            background_color=background_color,
+            random_state=random_state,
+            **kwargs,
+        )
+
+        plt.imshow(wordcloud.generate(get_text(rows[corpus])))
+        plt.axis("off")
+
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            figsize=figsize or (10, 6),
+            plotname="plot_wordcloud",
+            filename=filename,
+            display=display,
+        )
+
+
+class ModelPlot(BasePlot):
+    """Model plots.
+
+    These plots are accessible from the runners or from the models.
+    If called from a runner, the `models` parameter has to be specified
+    (if None, uses all models). If called from a model, that model is
+    used and the `models` parameter becomes unavailable.
+
+    """
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_calibration(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        n_bins: INT = 10,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 10),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the calibration curve for a binary classifier.
+
+        Well calibrated classifiers are probabilistic classifiers for
+        which the output of the `predict_proba` method can be directly
+        interpreted as a confidence level. For instance a well
+        calibrated (binary) classifier should classify the samples such
+        that among the samples to which it gave a `predict_proba` value
+        close to 0.8, approx. 80% actually belong to the positive class.
+
+        This figure shows two plots: the calibration curve, where the
+        x-axis represents the average predicted probability in each bin
+        and the y-axis is the fraction of positives, i.e. the proportion
+        of samples whose class is the positive class (in each bin); and
+        a distribution of all predicted probabilities of the classifier.
+        Code snippets from https://scikit-learn.org/stable/auto_examples/
+        calibration/plot_calibration_curve.html
 
         Parameters
         ----------
@@ -1192,15 +1471,116 @@ class BaseModelPlotter(BasePlotter):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        metric: int or str, default=0
-            Index or name of the metric. Only for multi-metric runs.
+        n_bins: int, default=10
+            Number of bins used for calibration. Minimum of 5
+            required.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 10)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_binary_task(self.task, "plot_calibration")
+        models = self._get_subclass(models)
+
+        if n_bins < 5:
+            raise ValueError(
+                "Invalid value for the n_bins parameter."
+                f"Value should be >=5, got {n_bins}."
+            )
+
+        fig = self._get_figure()
+        gs = GridSpecFromSubplotSpec(4, 1, BasePlot._fig.grid, hspace=0.05)
+        ax1 = fig.add_subplot(gs[:3, 0])
+        ax2 = fig.add_subplot(gs[3:4, 0], sharex=ax1)
+        for m in models:
+            if hasattr(m.estimator, "decision_function"):
+                prob = m.decision_function_test
+                prob = (prob - prob.min()) / (prob.max() - prob.min())
+            elif hasattr(m.estimator, "predict_proba"):
+                prob = m.predict_proba_test.iloc[:, 1]
+
+            # Get calibration (frac of positives and predicted values)
+            frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
+
+            ax1.plot(pred, frac_pos, marker="o", lw=2, label=f"{m.name}")
+            ax2.hist(prob, n_bins, range=(0, 1), label=m.name, histtype="step", lw=2)
+
+        plt.setp(ax1.get_xticklabels(), visible=False)
+        self._draw_line(ax=ax1, y="diagonal")
+
+        BasePlot._fig._used_models.extend(models)
+        self._plot(
+            ax=ax1,
+            title=title,
+            legend=("lower right" if len(models) > 1 else False, len(models)),
+            ylabel="Fraction of positives",
+            ylim=(-0.05, 1.05),
+        )
+        return self._plot(
+            fig=fig,
+            ax=ax2,
+            xlabel="Predicted value",
+            ylabel="Count",
+            figsize=figsize,
+            plotname="plot_calibration",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_confusion_matrix(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        normalize: bool = False,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot a model's confusion matrix.
+
+        For one model, the plot shows a heatmap. For multiple models,
+        it compares TP, FP, FN and TN in a barplot (not implemented
+        for multiclass classification tasks). Only for classification
+        tasks.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the confusion matrix.
+            Choose from:` "train", "test" or "holdout".
+
+        normalize: bool, default=False
+           Whether to normalize the matrix.
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
         figsize: tuple, default=None
             Figure's size, format as (x, y). If None, it adapts the
-            size to the number of models shown.
+            size to the plot's type.
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
@@ -1216,103 +1596,143 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-
-        def get_bootstrap(m):
-            """Get the bootstrap results for a specific metric."""
-            # Use getattr since ensembles don't have the attribute
-            if isinstance(getattr(m, "metric_bootstrap", None), np.ndarray):
-                if len(self._metric) == 1:
-                    return m.metric_bootstrap
-                else:
-                    return m.metric_bootstrap[metric]
-
-        def std(m):
-            """Get the standard deviation of the bootstrap results."""
-            if getattr(m, "std_bootstrap", None):
-                return lst(m.std_bootstrap)[metric]
-            else:
-                return 0
-
         check_is_fitted(self, attributes="_models")
+        check_goal(self.goal, "plot_confusion_matrix", "classification")
         models = self._get_subclass(models)
-        metric = self._get_metric(metric)
+
+        dataset = dataset.lower()
+        if dataset not in ("train", "test", "holdout"):
+            raise ValueError(
+                "Unknown value for the dataset parameter. "
+                "Choose from: train, test or holdout."
+            )
+        if dataset == "holdout" and self.holdout is None:
+            raise ValueError(
+                "Invalid value for the dataset parameter. No holdout "
+                "data set was specified when initializing the instance."
+            )
+        if self.task.startswith("multi") and len(models) > 1:
+            raise NotImplementedError(
+                "The plot_confusion_matrix method does not support the comparison"
+                " of various models for multiclass classification tasks."
+            )
+
+        # Create dataframe to plot with barh if len(models) > 1
+        df = pd.DataFrame(
+            index=[
+                "True negatives",
+                "False positives",
+                "False negatives",
+                "True positives",
+            ]
+        )
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        for m in models:
+            cm = confusion_matrix(
+                getattr(m, f"y_{dataset}"), getattr(m, f"predict_{dataset}")
+            )
+            if normalize:
+                cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
-        names = []
-        models = sorted(models, key=lambda m: get_best_score(m, metric))
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]  # First color
+            if len(models) == 1:  # Create matrix heatmap
+                im = ax.imshow(cm, interpolation="nearest", cmap=plt.get_cmap("Blues"))
 
-        all_bootstrap = all(isinstance(get_bootstrap(m), np.ndarray) for m in models)
-        for i, m in enumerate(models):
-            names.append(m.name)
-            if all_bootstrap:
-                ax.boxplot(
-                    x=get_bootstrap(m),
-                    vert=False,
-                    positions=[i],
-                    widths=0.5,
-                    boxprops=dict(color=color),
+                # Create an axes on the right side of ax. The under of
+                # cax are 5% of ax and the padding between cax and ax
+                # are fixed at 0.3 inch.
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("right", size="5%", pad=0.3)
+                cbar = ax.figure.colorbar(im, cax=cax)
+                ax.set(
+                    xticks=np.arange(cm.shape[1]),
+                    yticks=np.arange(cm.shape[0]),
+                    xticklabels=m.mapping.get(m.target, m.y.sort_values().unique()),
+                    yticklabels=m.mapping.get(m.target, m.y.sort_values().unique()),
                 )
+
+                # Loop over data dimensions and create text annotations
+                fmt = ".2f" if normalize else "d"
+                for i in range(cm.shape[0]):
+                    for j in range(cm.shape[1]):
+                        ax.text(
+                            x=j,
+                            y=i,
+                            s=format(cm[i, j], fmt),
+                            ha="center",
+                            va="center",
+                            fontsize=self.tick_fontsize,
+                            color="w" if cm[i, j] > cm.max() / 2.0 else "k",
+                        )
+
+                cbar.set_label(
+                    label="Count",
+                    fontsize=self.label_fontsize,
+                    labelpad=15,
+                    rotation=270,
+                )
+                cbar.ax.tick_params(labelsize=self.tick_fontsize)
+                ax.grid(False)
+
             else:
-                ax.barh(
-                    y=i,
-                    width=get_best_score(m, metric),
-                    height=0.5,
-                    xerr=std(m),
-                    color=color,
-                )
+                df[m.name] = cm.ravel()
 
-        min_lim = 0.95 * (get_best_score(models[0], metric) - std(models[0]))
-        max_lim = 1.01 * (get_best_score(models[-1], metric) + std(models[-1]))
-        ax.set_yticks(range(len(models)))
-        ax.set_yticklabels(names)
+        BasePlot._fig._used_models.extend(models)
+        if len(models) > 1:
+            df.plot.barh(ax=ax, width=0.6)
+            figsize = figsize or (10, 6)
+            self._plot(
+                ax=ax,
+                title=title,
+                legend=("best", len(models)),
+                xlabel="Count",
+            )
+        else:
+            figsize = figsize or (8, 6)
+            self._plot(
+                ax=ax,
+                title=title,
+                xlabel="Predicted label",
+                ylabel="True label",
+            )
 
-        BasePlotter._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
-            ax=ax,
-            title=title,
-            xlabel=self._metric[metric].name,
-            xlim=(min_lim, max_lim) if not all_bootstrap else None,
-            figsize=figsize or (10, 4 + len(models) // 2),
-            plotname="plot_results",
+            figsize=figsize,
+            plotname="plot_confusion_matrix",
             filename=filename,
             display=display,
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def plot_bo(
+    def plot_det(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        metric: Union[INT, str] = 0,
+        dataset: str = "test",
         title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 8),
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the bayesian optimization scores.
+        """Plot the detection error tradeoff curve.
 
-        Only for models that ran hyperparameter tuning. This is the
-        same plot as produced by `bo_params={"plot": True}` while
-        running the BO. Creates a canvas with two plots: the first
-        plot shows the score of every trial and the second shows
-        the distance between the last consecutive steps.
+        Only for binary classification tasks.
 
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name of the models to plot. If None, all models that
-            used hyperparameter tuning are selected.
+            Name or index of the models to plot. If None, all models
+            are selected.
 
-        metric: int or str, default=0
-            Index or name of the metric. Only for multi-metric runs.
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, default=(10, 8)
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
@@ -1330,54 +1750,129 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
+        check_binary_task(self.task, "plot_det")
         models = self._get_subclass(models)
-        metric = self._get_metric(metric)
-
-        # Check there is at least one model that run the BO
-        if all(m.bo.empty for m in models):
-            raise PermissionError(
-                "The plot_bo method is only available for models that "
-                "ran the bayesian optimization hyperparameter tuning!"
-            )
+        dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        gs = GridSpecFromSubplotSpec(4, 1, BasePlotter._fig.grid, hspace=0.05)
-        ax1 = fig.add_subplot(gs[0:3, 0])
-        ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         for m in models:
-            if m.metric_bo:  # Only models that did run the BO
-                y = m.bo["score"].apply(lambda value: lst(value)[metric])
-                if len(models) == 1:
-                    label = f"Score={round(lst(m.metric_bo)[metric], 3)}"
+            for set_ in dataset:
+                if hasattr(m.estimator, "predict_proba"):
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
                 else:
-                    label = f"{m.name} (Score={round(lst(m.metric_bo)[metric], 3)})"
+                    y_pred = getattr(m, f"decision_function_{set_}")
 
-                # Draw bullets on all markers except the maximum
-                markers = [i for i in range(len(m.bo))]
-                markers.remove(int(np.argmax(y)))
+                # Get fpr-fnr pairs for different thresholds
+                fpr, fnr, _ = det_curve(getattr(m, f"y_{set_}"), y_pred)
 
-                ax1.plot(range(1, len(y) + 1), y, "-o", markevery=markers, label=label)
-                ax2.plot(range(2, len(y) + 1), np.abs(np.diff(y)), "-o")
-                ax1.scatter(np.argmax(y) + 1, max(y), zorder=10, s=100, marker="*")
+                plt.plot(fpr, fnr, lw=2, label=m.name)
 
-        plt.setp(ax1.get_xticklabels(), visible=False)
-        ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
-
-        self._plot(
-            ax=ax1,
-            title=title,
-            legend=("lower right", len(models)),
-            ylabel=self._metric[metric].name,
-        )
-
-        BasePlotter._fig._used_models.extend(models)
+        BasePlot._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
-            ax=ax2,
-            xlabel="Call",
-            ylabel="d",
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="FPR",
+            ylabel="FNR",
             figsize=figsize,
-            plotname="plot_bo",
+            plotname="plot_det",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_errors(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot a model's prediction errors.
+
+        Plot the actual targets from a set against the predicted values
+        generated by the regressor. A linear fit is made on the data.
+        The gray, intersected line shows the identity line. This pot can
+        be useful to detect noise or heteroscedasticity along a range of
+        the target domain. Only for regression tasks.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test", "both" (train and test) or "holdout".
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_goal(self.goal, "plot_errors", "regression")
+        models = self._get_subclass(models)
+        dataset = self._get_set(dataset)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        for m in models:
+            for set_ in dataset:
+                r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
+                ax.scatter(
+                    x=getattr(self, f"y_{set_}"),
+                    y=getattr(m, f"predict_{set_}"),
+                    alpha=0.8,
+                    label=label,
+                )
+
+                # Fit the points using linear regression
+                from atom.models import OrdinaryLeastSquares
+
+                model = OrdinaryLeastSquares(self, fast_init=True).get_estimator()
+                model.fit(
+                    X=np.array(getattr(self, f"y_{set_}")).reshape(-1, 1),
+                    y=getattr(m, f"predict_{set_}"),
+                )
+
+                # Draw the fit
+                x = np.linspace(*ax.get_xlim(), 100)
+                ax.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
+
+        self._draw_line(ax=ax, y="diagonal")
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="True value",
+            ylabel="Predicted value",
+            figsize=figsize,
+            plotname="plot_errors",
             filename=filename,
             display=display,
         )
@@ -1444,11 +1939,11 @@ class BaseModelPlotter(BasePlotter):
             )
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         for set_ in dataset:
             ax.plot(range(len(m.evals[set_])), m.evals[set_], lw=2, label=set_)
 
-        BasePlotter._fig._used_models.append(m)
+        BasePlot._fig._used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -1458,604 +1953,6 @@ class BaseModelPlotter(BasePlotter):
             ylabel=m.evals["metric"],
             figsize=figsize,
             plotname="plot_evals",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_roc(
-        self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the Receiver Operating Characteristics curve.
-
-        The legend shows the Area Under the ROC Curve (AUC) score.
-        Only for binary classification tasks.
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_roc")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        for m in models:
-            for set_ in dataset:
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
-
-                # Get False (True) Positive Rate as arrays
-                fpr, tpr, _ = roc_curve(getattr(m, f"y_{set_}"), y_pred)
-
-                roc = f" (AUC={round(m.evaluate('auc', set_)['roc_auc'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
-                ax.plot(fpr, tpr, lw=2, label=label)
-
-        self._draw_line(ax=ax, y="diagonal")
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("lower right", len(models)),
-            xlabel="FPR",
-            ylabel="TPR",
-            figsize=figsize,
-            plotname="plot_roc",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_prc(
-        self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the precision-recall curve.
-
-        The legend shows the average precision (AP) score. Only for
-        binary classification tasks.
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_prc")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        for m in models:
-            for set_ in dataset:
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
-
-                # Get precision-recall pairs for different thresholds
-                prec, rec, _ = precision_recall_curve(getattr(m, f"y_{set_}"), y_pred)
-
-                ap = f" (AP={round(m.evaluate('ap', set_)['average_precision'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
-                plt.plot(rec, prec, lw=2, label=label)
-
-        self._draw_line(ax=ax, y=m.y_test.sort_values().iloc[-1] / len(m.y_test))
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
-            xlabel="Recall",
-            ylabel="Precision",
-            figsize=figsize,
-            plotname="plot_prc",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_det(
-        self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the detection error tradeoff curve.
-
-        Only for binary classification tasks.
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_det")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        for m in models:
-            for set_ in dataset:
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
-
-                # Get fpr-fnr pairs for different thresholds
-                fpr, fnr, _ = det_curve(getattr(m, f"y_{set_}"), y_pred)
-
-                plt.plot(fpr, fnr, lw=2, label=m.name)
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
-            xlabel="FPR",
-            ylabel="FNR",
-            figsize=figsize,
-            plotname="plot_det",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_gains(
-        self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the cumulative gains curve.
-
-        Only for binary classification tasks. Code snippet from
-        https://github.com/reiinakano/scikit-plot/
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_gains")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        for m in models:
-            for set_ in dataset:
-                y_true = getattr(m, f"y_{set_}")
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
-
-                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
-                x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
-
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                ax.plot(x, gains, lw=2, label=label)
-
-        self._draw_line(ax=ax, y="diagonal")
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
-            xlabel="Fraction of sample",
-            ylabel="Gain",
-            xlim=(0, 1),
-            ylim=(0, 1.02),
-            figsize=figsize,
-            plotname="plot_gains",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_lift(
-        self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the lift curve.
-
-        Only for binary classification tasks. Code snippet from
-        https://github.com/reiinakano/scikit-plot/
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_lift")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        for m in models:
-            for set_ in dataset:
-                y_true = getattr(m, f"y_{set_}")
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
-
-                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
-                x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
-
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                ax.plot(x, gains / x, lw=2, label=label)
-
-        self._draw_line(ax=ax, y=1)
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
-            xlabel="Fraction of sample",
-            ylabel="Lift",
-            xlim=(0, 1),
-            figsize=figsize,
-            plotname="plot_lift",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_errors(
-        self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot a model's prediction errors.
-
-        Plot the actual targets from a set against the predicted values
-        generated by the regressor. A linear fit is made on the data.
-        The gray, intersected line shows the identity line. This pot can
-        be useful to detect noise or heteroscedasticity along a range of
-        the target domain. Only for regression tasks.
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_goal(self.goal, "plot_errors", "regression")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        for m in models:
-            for set_ in dataset:
-                r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
-                ax.scatter(
-                    x=getattr(self, f"y_{set_}"),
-                    y=getattr(m, f"predict_{set_}"),
-                    alpha=0.8,
-                    label=label,
-                )
-
-                # Fit the points using linear regression
-                from atom.models import OrdinaryLeastSquares
-
-                model = OrdinaryLeastSquares(self, fast_init=True).get_estimator()
-                model.fit(
-                    X=np.array(getattr(self, f"y_{set_}")).reshape(-1, 1),
-                    y=getattr(m, f"predict_{set_}"),
-                )
-
-                # Draw the fit
-                x = np.linspace(*ax.get_xlim(), 100)
-                ax.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
-
-        self._draw_line(ax=ax, y="diagonal")
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
-            xlabel="True value",
-            ylabel="Predicted value",
-            figsize=figsize,
-            plotname="plot_errors",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_residuals(
-        self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot a model's residuals.
-
-        The plot shows the residuals (difference between the predicted
-        and the true value) on the vertical axis and the independent
-        variable on the horizontal axis. The gray, intersected line
-        shows the identity line. This plot can be useful to analyze the
-        variance of the error of the regressor. If the points are
-        randomly dispersed around the horizontal axis, a linear
-        regression model is appropriate for the data; otherwise, a
-        non-linear model is more appropriate. Only for regression tasks.
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_goal(self.goal, "plot_residuals", "regression")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        gs = GridSpecFromSubplotSpec(1, 4, BasePlotter._fig.grid, wspace=0.05)
-        ax1 = fig.add_subplot(gs[0, :3])
-        ax2 = fig.add_subplot(gs[0, 3:4])
-        for m in models:
-            for set_ in dataset:
-                r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
-                res = np.subtract(
-                    getattr(m, f"predict_{set_}"),
-                    getattr(self, f"y_{set_}"),
-                )
-
-                ax1.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
-                ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
-
-        ax2.set_yticklabels([])
-        self._draw_line(ax=ax2, y=0)
-        self._plot(ax=ax2, xlabel="Distribution")
-
-        if title:
-            if not BasePlotter._fig.is_canvas:
-                plt.suptitle(title, fontsize=self.title_fontsize, y=0.98)
-            else:
-                ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax1,
-            legend=("lower right", len(models)),
-            ylabel="Residuals",
-            xlabel="True value",
-            figsize=figsize,
-            plotname="plot_residuals",
             filename=filename,
             display=display,
         )
@@ -2131,7 +2028,7 @@ class BaseModelPlotter(BasePlotter):
         df = df.reindex(sorted(df.index, key=lambda i: df.loc[i].sum()))
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         df.plot.barh(
             ax=ax,
             width=0.75 if len(models) > 1 else 0.6,
@@ -2141,7 +2038,7 @@ class BaseModelPlotter(BasePlotter):
             for i, v in enumerate(df[df.columns[0]]):
                 ax.text(v + 0.01, i - 0.08, f"{v:.2f}", fontsize=self.tick_fontsize)
 
-        BasePlotter._fig._used_models.extend(models)
+        BasePlot._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2156,24 +2053,19 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def plot_permutation_importance(
+    def plot_gains(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
-        n_repeats: INT = 10,
+        dataset: str = "test",
         title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the feature permutation importance of models.
+        """Plot the cumulative gains curve.
 
-        Calculating permutations can be time-consuming, especially
-        if `n_repeats` is high. For this reason, the permutations
-        are stored under the `permutations` attribute. If the plot
-        is called again for the same model with the same `n_repeats`,
-        it will use the stored values, making the method considerably
-        faster.
+        Only for binary classification tasks. Code snippet from
+        https://github.com/reiinakano/scikit-plot/
 
         Parameters
         ----------
@@ -2181,17 +2073,284 @@ class BaseModelPlotter(BasePlotter):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        show: int or None, default=None
-            Number of features (ordered by importance) to show.
-            None to show all.
-
-        n_repeats: int, default=10
-            Number of times to permute each feature.
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, default=None
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_binary_task(self.task, "plot_gains")
+        models = self._get_subclass(models)
+        dataset = self._get_set(dataset)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        for m in models:
+            for set_ in dataset:
+                y_true = getattr(m, f"y_{set_}")
+                if hasattr(m.estimator, "predict_proba"):
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
+
+                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
+                x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
+
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                ax.plot(x, gains, lw=2, label=label)
+
+        self._draw_line(ax=ax, y="diagonal")
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="Fraction of sample",
+            ylabel="Gain",
+            xlim=(0, 1),
+            ylim=(0, 1.02),
+            figsize=figsize,
+            plotname="plot_gains",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_learning_curve(
+            self,
+            models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+            metric: Union[INT, str] = 0,
+            title: Optional[str] = None,
+            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+            filename: Optional[str] = None,
+            display: Optional[bool] = True,
+    ):
+        """Plot the learning curve: score vs number of training samples.
+
+        Only use with models fitted using train sizing. Ensemble
+        models are ignored.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        metric: int or str, default=0
+            Index or name of the metric. Only for multi-metric runs.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        models = self._get_subclass(models, ensembles=False)
+        metric = self._get_metric(metric)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+
+        # Prepare dataframes for seaborn lineplot (one df per line)
+        # Not using sns hue parameter because of legend formatting
+        lines = defaultdict(pd.DataFrame)
+        for m in models:
+            if m.metric_bootstrap is None:
+                values = {"x": [m._train_idx], "y": [get_best_score(m, metric)]}
+            else:
+                if len(self._metric) == 1:
+                    bootstrap = m.metric_bootstrap
+                else:
+                    bootstrap = m.metric_bootstrap[metric]
+                values = {"x": [m._train_idx] * len(bootstrap), "y": bootstrap}
+
+            # Add the scores to the group's dataframe
+            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
+
+        for m, df in zip(models, lines.values()):
+            df = df.reset_index(drop=True)
+            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, ax=ax)
+
+        ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("lower right", len(lines)),
+            xlabel="Number of training samples",
+            ylabel=self._metric[metric].name,
+            figsize=figsize,
+            plotname="plot_learning_curve",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_lift(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the lift curve.
+
+        Only for binary classification tasks. Code snippet from
+        https://github.com/reiinakano/scikit-plot/
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test", "both" (train and test) or "holdout".
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_binary_task(self.task, "plot_lift")
+        models = self._get_subclass(models)
+        dataset = self._get_set(dataset)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        for m in models:
+            for set_ in dataset:
+                y_true = getattr(m, f"y_{set_}")
+                if hasattr(m.estimator, "predict_proba"):
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
+
+                gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
+                x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
+
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                ax.plot(x, gains / x, lw=2, label=label)
+
+        self._draw_line(ax=ax, y=1)
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="Fraction of sample",
+            ylabel="Lift",
+            xlim=(0, 1),
+            figsize=figsize,
+            plotname="plot_lift",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_parshap(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        target: Union[INT, str] = 1,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the partial correlation of shap values.
+
+        Plots the train and test correlation between the shap value of
+        every feature with its target value, after removing the effect
+        of all other features (partial correlation). This plot is
+        useful to identify the features that are contributing most to
+        overfitting. Features that lie below the bisector (diagonal
+        line) performed worse on the test set than on the training set.
+        If the estimator has a `feature_importances_` or `coef_`
+        attribute, its normalized values are shown in a color map.
+
+        Idea from: https://towardsdatascience.com/which-of-your-features
+        -are-overfitting-c46d0762e769
+
+        Code snippets from: https://github.com/raphaelvallat/pingouin/
+        blob/master/pingouin/correlation.py
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        columns: int, str, sequence or None, default=None
+            Names or indices of the features to plot. None to show all.
+
+        target: int or str, default=1
+            Index or name of the class in the target column to look at.
+            Only for multi-class classification tasks.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
@@ -2211,74 +2370,120 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        show = self._get_show(show, models)
+        target = self._get_target(target)
 
-        if n_repeats <= 0:
-            raise ValueError(
-                "Invalid value for the n_repeats parameter."
-                f"Value should be >0, got {n_repeats}."
-            )
-
-        rows = []
-        for m in models:
-            # If permutations are already calculated and n_repeats is
-            # same, use known permutations (for efficient re-plotting)
-            if (
-                not hasattr(m, "permutations")
-                or m.permutations.importances.shape[1] == n_repeats
-            ):
-                # Permutation importances returns Bunch object
-                m.permutations = permutation_importance(
-                    estimator=m.estimator,
-                    X=m.X_test,
-                    y=m.y_test,
-                    scoring=self._metric[0],
-                    n_repeats=n_repeats,
-                    n_jobs=self.n_jobs,
-                    random_state=self.random_state,
-                )
-
-            # Append permutation scores to the dataframe
-            for i, feature in enumerate(m.features):
-                for score in m.permutations.importances[i, :]:
-                    rows.append({"features": feature, "score": score, "model": m.name})
-
-        # Get the column names sorted by sum of scores
-        df = pd.DataFrame(rows)
-        get_idx = df.groupby("features", as_index=False)["score"].sum()
-        get_idx = get_idx.sort_values("score", ascending=False)
-        column_order = get_idx["features"].values[:show]
+        fxs_importance = {}
+        markers = cycle(["o", "^", "s", "p", "D", "H", "p", "*"])
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        sns.boxplot(
-            x="score",
-            y="features",
-            hue="model",
-            data=df,
-            ax=ax,
-            order=column_order,
-            width=0.75 if len(models) > 1 else 0.6,
-        )
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        for m in models:
+            fxs = self._get_columns(columns, include_target=False, branch=m.branch)
+            marker = next(markers)
 
-        ax.yaxis.label.set_visible(False)
-        if len(models) > 1:
-            # Remove seaborn's legend title
-            handles, labels = ax.get_legend_handles_labels()
-            ax.legend(handles=handles[1:], labels=labels[1:])
-        else:
-            # Hide the legend created by seaborn
-            ax.legend().set_visible(False)
+            parshap = {}
+            for set_ in ("train", "test"):
+                X, y = getattr(m, f"X_{set_}"), getattr(m, f"y_{set_}")
+                data = pd.concat([X, y], axis=1)
 
-        BasePlotter._fig._used_models.extend(models)
+                # Calculating shap values is computationally expensive,
+                # therefore select a random subsample for large data sets
+                if len(data) > 500:
+                    data = data.sample(500, random_state=self.random_state)
+
+                # Replace data with the calculated shap values
+                data.iloc[:, :-1] = m._shap.get_shap_values(data.iloc[:, :-1], target)
+
+                parshap[set_] = pd.Series(index=data.columns[:-1], dtype=float)
+                for fx in fxs:
+                    # All other features are covariates
+                    covariates = [f for f in data.columns[:-1] if f != fx]
+                    cols = [fx, data.columns[-1], *covariates]
+
+                    # Compute covariance
+                    V = data[cols].cov()
+
+                    # Inverse covariance matrix
+                    Vi = np.linalg.pinv(V, hermitian=True)
+                    diag = Vi.diagonal()
+
+                    D = np.diag(np.sqrt(1 / diag))
+
+                    # Partial correlation matrix
+                    partial_corr = -1 * (D @ Vi @ D)  # @ is matrix multiplication
+
+                    # Semi-partial correlation matrix
+                    with np.errstate(divide="ignore"):
+                        V_sqrt = np.sqrt(np.diag(V))[..., None]
+                        Vi_sqrt = np.sqrt(np.abs(diag - Vi ** 2 / diag[..., None])).T
+                        semi_partial_correlation = partial_corr / V_sqrt / Vi_sqrt
+
+                    # X covariates are removed
+                    parshap[set_][fx] = semi_partial_correlation[1, 0]
+
+            # Get the feature importance or coefficients
+            fi = get_feature_importance(m.estimator)
+            if fi is not None:
+                fi = pd.Series(fi, index=m.features, dtype=float)
+                fxs_importance[m.name] = fi.sort_values()[fxs]
+
+            sns.scatterplot(
+                x=parshap["train"],
+                y=parshap["test"],
+                marker=marker,
+                s=50,
+                hue=fxs_importance.get(m.name, None),
+                palette="Reds",
+                legend=False,
+                ax=ax,
+            )
+
+            # Add hidden point for nice legend
+            if len(models) > 1:
+                ax.scatter(
+                    x=parshap["train"][0],
+                    y=parshap["test"][0],
+                    marker=marker,
+                    s=20,
+                    zorder=-2,
+                    color="k",
+                    label=m.name,
+                )
+
+            # Calculate offset for feature names (5% of height)
+            offset = .05 * (ax.get_ylim()[1] - ax.get_ylim()[0])
+
+            # Add feature names above the markers
+            for txt in parshap["train"].index:
+                xy = (parshap["train"][txt], parshap["test"][txt] + offset / 2)
+                ax.annotate(txt, xy, ha="center", va="bottom")
+
+        # Draw color bar if feature importances are defined
+        if fxs_importance:
+            cbar = plt.colorbar(
+                mappable=plt.cm.ScalarMappable(plt.Normalize(0, 1), cmap="Reds"),
+                ax=ax,
+            )
+            cbar.set_label(
+                label="Normalized feature importance",
+                labelpad=15,
+                fontsize=self.label_fontsize,
+                rotation=270,
+            )
+            cbar.ax.tick_params(labelsize=self.tick_fontsize)
+
+        self._draw_line(ax=ax, y="diagonal")
+
+        BasePlot._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
             title=title,
-            legend=("lower right" if len(models) > 1 else False, len(models)),
-            xlabel="Score",
-            figsize=figsize or (10, 4 + show // 2),
-            plotname="plot_permutation_importance",
+            legend=("best", len(models)) if len(models) > 1 else None,
+            xlabel="Training set",
+            ylabel="Test set",
+            figsize=figsize,
+            plotname="plot_parshap",
             filename=filename,
             display=display,
         )
@@ -2405,7 +2610,7 @@ class BaseModelPlotter(BasePlotter):
         axes = []
         fig = self._get_figure()
         n_cols = 3 if not columns else len(lst(columns))
-        gs = GridSpecFromSubplotSpec(1, n_cols, BasePlotter._fig.grid)
+        gs = GridSpecFromSubplotSpec(1, n_cols, BasePlot._fig.grid)
         for i in range(n_cols):
             axes.append(fig.add_subplot(gs[0, i]))
 
@@ -2520,14 +2725,14 @@ class BaseModelPlotter(BasePlotter):
 
         if title:
             # Place title if not in canvas, else above first or middle image
-            if len(cols) == 1 or (len(cols) == 2 and BasePlotter._fig.is_canvas):
+            if len(cols) == 1 or (len(cols) == 2 and BasePlot._fig.is_canvas):
                 axes[0].set_title(title, fontsize=self.title_fontsize, pad=20)
             elif len(cols) == 3:
                 axes[1].set_title(title, fontsize=self.title_fontsize, pad=20)
-            elif not BasePlotter._fig.is_canvas:
+            elif not BasePlot._fig.is_canvas:
                 plt.suptitle(title, fontsize=self.title_fontsize)
 
-        BasePlotter._fig._used_models.extend(models)
+        BasePlot._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
             figsize=figsize,
@@ -2537,32 +2742,24 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def plot_parshap(
+    def plot_permutation_importance(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
-        target: Union[INT, str] = 1,
+        show: Optional[INT] = None,
+        n_repeats: INT = 10,
         title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the partial correlation of shap values.
+        """Plot the feature permutation importance of models.
 
-        Plots the train and test correlation between the shap value of
-        every feature with its target value, after removing the effect
-        of all other features (partial correlation). This plot is
-        useful to identify the features that are contributing most to
-        overfitting. Features that lie below the bisector (diagonal
-        line) performed worse on the test set than on the training set.
-        If the estimator has a `feature_importances_` or `coef_`
-        attribute, its normalized values are shown in a color map.
-
-        Idea from: https://towardsdatascience.com/which-of-your-features
-        -are-overfitting-c46d0762e769
-
-        Code snippets from: https://github.com/raphaelvallat/pingouin/
-        blob/master/pingouin/correlation.py
+        Calculating permutations can be time-consuming, especially
+        if `n_repeats` is high. For this reason, the permutations
+        are stored under the `permutations` attribute. If the plot
+        is called again for the same model with the same `n_repeats`,
+        it will use the stored values, making the method considerably
+        faster.
 
         Parameters
         ----------
@@ -2570,17 +2767,17 @@ class BaseModelPlotter(BasePlotter):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        columns: int, str, sequence or None, default=None
-            Names or indices of the features to plot. None to show all.
+        show: int or None, default=None
+            Number of features (ordered by importance) to show.
+            None to show all.
 
-        target: int or str, default=1
-            Index or name of the class in the target column to look at.
-            Only for multi-class classification tasks.
+        n_repeats: int, default=10
+            Number of times to permute each feature.
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, default=(10, 6)
+        figsize: tuple or None, default=None
             Figure's size, format as (x, y). If None, it adapts the
             size to the number of features shown.
 
@@ -2600,141 +2797,341 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        target = self._get_target(target)
+        show = self._get_show(show, models)
 
-        fxs_importance = {}
-        markers = cycle(["o", "^", "s", "p", "D", "H", "p", "*"])
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        for m in models:
-            fxs = self._get_columns(columns, include_target=False, branch=m.branch)
-            marker = next(markers)
-
-            parshap = {}
-            for set_ in ("train", "test"):
-                X, y = getattr(m, f"X_{set_}"), getattr(m, f"y_{set_}")
-                data = pd.concat([X, y], axis=1)
-
-                # Calculating shap values is computationally expensive,
-                # therefore select a random subsample for large data sets
-                if len(data) > 500:
-                    data = data.sample(500, random_state=self.random_state)
-
-                # Replace data with the calculated shap values
-                data.iloc[:, :-1] = m._shap.get_shap_values(data.iloc[:, :-1], target)
-
-                parshap[set_] = pd.Series(index=data.columns[:-1], dtype=float)
-                for fx in fxs:
-                    # All other features are covariates
-                    covariates = [f for f in data.columns[:-1] if f != fx]
-                    cols = [fx, data.columns[-1], *covariates]
-
-                    # Compute covariance
-                    V = data[cols].cov()
-
-                    # Inverse covariance matrix
-                    Vi = np.linalg.pinv(V, hermitian=True)
-                    diag = Vi.diagonal()
-
-                    D = np.diag(np.sqrt(1 / diag))
-
-                    # Partial correlation matrix
-                    partial_corr = -1 * (D @ Vi @ D)  # @ is matrix multiplication
-
-                    # Semi-partial correlation matrix
-                    with np.errstate(divide="ignore"):
-                        V_sqrt = np.sqrt(np.diag(V))[..., None]
-                        Vi_sqrt = np.sqrt(np.abs(diag - Vi ** 2 / diag[..., None])).T
-                        semi_partial_correlation = partial_corr / V_sqrt / Vi_sqrt
-
-                    # X covariates are removed
-                    parshap[set_][fx] = semi_partial_correlation[1, 0]
-
-            # Get the feature importance or coefficients
-            fi = get_feature_importance(m.estimator)
-            if fi is not None:
-                fi = pd.Series(fi, index=m.features, dtype=float)
-                fxs_importance[m.name] = fi.sort_values()[fxs]
-
-            sns.scatterplot(
-                x=parshap["train"],
-                y=parshap["test"],
-                marker=marker,
-                s=50,
-                hue=fxs_importance.get(m.name, None),
-                palette="Reds",
-                legend=False,
-                ax=ax,
+        if n_repeats <= 0:
+            raise ValueError(
+                "Invalid value for the n_repeats parameter."
+                f"Value should be >0, got {n_repeats}."
             )
 
-            # Add hidden point for nice legend
-            if len(models) > 1:
-                ax.scatter(
-                    x=parshap["train"][0],
-                    y=parshap["test"][0],
-                    marker=marker,
-                    s=20,
-                    zorder=-2,
-                    color="k",
-                    label=m.name,
+        rows = []
+        for m in models:
+            # If permutations are already calculated and n_repeats is
+            # same, use known permutations (for efficient re-plotting)
+            if (
+                not hasattr(m, "permutations")
+                or m.permutations.importances.shape[1] == n_repeats
+            ):
+                # Permutation importances returns Bunch object
+                m.permutations = permutation_importance(
+                    estimator=m.estimator,
+                    X=m.X_test,
+                    y=m.y_test,
+                    scoring=self._metric[0],
+                    n_repeats=n_repeats,
+                    n_jobs=self.n_jobs,
+                    random_state=self.random_state,
                 )
 
-            # Calculate offset for feature names (5% of height)
-            offset = .05 * (ax.get_ylim()[1] - ax.get_ylim()[0])
+            # Append permutation scores to the dataframe
+            for i, feature in enumerate(m.features):
+                for score in m.permutations.importances[i, :]:
+                    rows.append({"features": feature, "score": score, "model": m.name})
 
-            # Add feature names above the markers
-            for txt in parshap["train"].index:
-                xy = (parshap["train"][txt], parshap["test"][txt] + offset / 2)
-                ax.annotate(txt, xy, ha="center", va="bottom")
+        # Get the column names sorted by sum of scores
+        df = pd.DataFrame(rows)
+        get_idx = df.groupby("features", as_index=False)["score"].sum()
+        get_idx = get_idx.sort_values("score", ascending=False)
+        column_order = get_idx["features"].values[:show]
 
-        # Draw color bar if feature importances are defined
-        if fxs_importance:
-            cbar = plt.colorbar(
-                mappable=plt.cm.ScalarMappable(plt.Normalize(0, 1), cmap="Reds"),
-                ax=ax,
-            )
-            cbar.set_label(
-                label="Normalized feature importance",
-                labelpad=15,
-                fontsize=self.label_fontsize,
-                rotation=270,
-            )
-            cbar.ax.tick_params(labelsize=self.tick_fontsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        sns.boxplot(
+            x="score",
+            y="features",
+            hue="model",
+            data=df,
+            ax=ax,
+            order=column_order,
+            width=0.75 if len(models) > 1 else 0.6,
+        )
 
-        self._draw_line(ax=ax, y="diagonal")
+        ax.yaxis.label.set_visible(False)
+        if len(models) > 1:
+            # Remove seaborn's legend title
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles=handles[1:], labels=labels[1:])
+        else:
+            # Hide the legend created by seaborn
+            ax.legend().set_visible(False)
 
-        BasePlotter._fig._used_models.extend(models)
+        BasePlot._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
             title=title,
-            legend=("best", len(models)) if len(models) > 1 else None,
-            xlabel="Training set",
-            ylabel="Test set",
-            figsize=figsize,
-            plotname="plot_parshap",
+            legend=("lower right" if len(models) > 1 else False, len(models)),
+            xlabel="Score",
+            figsize=figsize or (10, 4 + show // 2),
+            plotname="plot_permutation_importance",
             filename=filename,
             display=display,
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def plot_confusion_matrix(
+    def plot_pipeline(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        normalize: bool = False,
+        draw_hyperparameter_tuning: bool = True,
+        color_branches: Optional[bool] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot a model's confusion matrix.
+        """Plot a diagram of the pipeline.
 
-        For one model, the plot shows a heatmap. For multiple models,
-        it compares TP, FP, FN and TN in a barplot (not implemented
-        for multiclass classification tasks). Only for classification
-        tasks.
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models for which to draw the pipeline.
+            If None, all pipelines are plotted.
+
+        draw_hyperparameter_tuning: bool, default=True
+            Whether to draw if the models used Hyperparameter Tuning.
+
+        color_branches: bool or None, default=None
+            Whether to draw every branch in a different color. If None,
+            branches are colored when there is more than one.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, default=None
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the pipeline drawn.
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+
+        def get_length(pl, i):
+            """Get the maximum length of the name of a block."""
+            if len(pl) > i:
+                return max(len(pl[i].__class__.__name__) * 0.5, 7)
+            else:
+                return 0
+
+        def check_y(xy):
+            """Return y unless there is something right, then jump."""
+            while any(pos[0] > xy[0] and pos[1] == xy[1] for pos in positions.values()):
+                xy = Point((xy[0], xy[1] + height))
+
+            return xy[1]
+
+        def add_wire(x, y):
+            """Draw a connecting wire between two estimators."""
+            d.add(
+                Wire(shape="z", k=(x - d.here[0]) / (length + 1), arrow="->")
+                .to((x, y))
+                .color(branch["color"])
+            )
+
+            # Update arrowhead manually
+            d.elements[-1].segments[-1].arrowwidth = 0.3
+            d.elements[-1].segments[-1].arrowlength = 0.5
+
+        models = self._get_subclass(models)
+        palette = cycle(sns.color_palette())
+
+        # Define branches to plot
+        branches = []
+        for branch in self._branches.min("og").values():
+            draw_models, draw_ensembles = [], []
+            for m in models:
+                if m.name in branch._get_depending_models():
+                    if m.acronym not in ("Stack", "Vote"):
+                        draw_models.append(m)
+                    else:
+                        draw_ensembles.append(m)
+
+                        # Additionally, add all dependent models (if not already there)
+                        draw_models.extend(
+                            [i for i in m._models.values() if i not in draw_models]
+                        )
+
+            if not models or draw_models:
+                branches.append(
+                    {
+                        "name": branch.name,
+                        "pipeline": list(branch.pipeline),
+                        "models": draw_models,
+                        "ensembles": draw_ensembles,
+                    }
+                )
+
+        # Define colors per branch
+        colors = {}
+        for branch in branches:
+            if color_branches or (color_branches is None and len(branches) > 1):
+                colors[branch["name"]] = branch["color"] = next(palette)
+            else:
+                branch["color"] = "black"
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        sns.set_style("white")  # Only for this plot
+
+        # Create schematic drawing
+        d = Drawing(unit=1, backend="matplotlib")
+        d.config(fontsize=self.label_fontsize)
+        d.add(Subroutine(w=8, s=0.7).label("Raw data"))
+
+        height = 3  # Height of every block
+        length = 5  # Minimal arrow length
+
+        # Define the x-position for every block
+        x_pos = [d.here[0] + length]
+        for i in range(max(len(b["pipeline"]) for b in branches)):
+            len_block = reduce(max, [get_length(b["pipeline"], i) for b in branches])
+            x_pos.append(x_pos[-1] + length + len_block)
+
+        # Add positions for hyperparameter tuning and models
+        x_pos.append(x_pos[-1])
+        if draw_hyperparameter_tuning and any(not m.bo.empty for m in models):
+            x_pos[-1] = x_pos[-2] + length + 11
+
+        positions = {0: d.here}  # Contains the position of every element
+        for branch in branches:
+            d.here = positions[0]
+
+            for i, est in enumerate(branch["pipeline"]):
+                # If the estimator has already been seen, don't draw
+                if id(est) in positions:
+                    # Change location to estimator's end
+                    d.here = positions[id(est)]
+                    continue
+
+                # Draw transformer
+                add_wire(x_pos[i], check_y(d.here))
+                d.add(
+                    RoundBox(w=max(len(est.__class__.__name__) * 0.5, 7))
+                    .label(est.__class__.__name__, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(est)] = d.here
+
+            for model in branch["models"]:
+                # Position at last transformer or at start
+                if branch["pipeline"]:
+                    d.here = positions[id(est)]
+                else:
+                    d.here = positions[0]
+
+                # Draw hyperparameter tuning
+                if draw_hyperparameter_tuning and not model.bo.empty:
+                    add_wire(x_pos[-2], check_y(d.here))
+                    d.add(
+                        Data(w=11)
+                        .label("Hyperparameter\nTuning", color="k")
+                        .color(branch["color"])
+                        .drop("E")
+                    )
+
+                # Remove classifier/regressor from model's name
+                name = model.estimator.__class__.__name__
+                if name.lower().endswith("classifier"):
+                    name = name[:-10]
+                elif name.lower().endswith("regressor"):
+                    name = name[:-9]
+
+                # For a single branch, center models
+                if len(branches) == 1:
+                    offset = height * (len(branch["models"]) - 1) / 2
+                else:
+                    offset = 0
+
+                # Draw model
+                add_wire(x_pos[-1], check_y((d.here[0], d.here[1] - offset)))
+                d.add(
+                    Data(w=max(len(name) * 0.5, 7))
+                    .label(name, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(model)] = d.here
+
+        # Draw ensembles
+        max_pos = max(pos[0] for pos in positions.values())  # Max length model names
+        for branch in branches:
+            for model in branch["ensembles"]:
+                # Determine y-position of the ensemble
+                y_pos = [positions[id(m)][1] for m in model._models.values()]
+                offset = height / 2 * (len(branch["ensembles"]) - 1)
+                y = min(y_pos) + (max(y_pos) - min(y_pos)) * 0.5 - offset
+                y = check_y((max_pos + length, max(min(y_pos), y)))
+
+                d.here = (max_pos + length, y)
+
+                d.add(
+                    Data(w=max(len(model.fullname) * 0.5, 7))
+                    .label(model.fullname, color="k")
+                    .color(branch["color"])
+                    .anchor("W")
+                    .drop("E")
+                )
+
+                positions[id(model)] = d.here
+
+                # Draw a wire from every model to the ensemble
+                for m in model._models.values():
+                    d.here = positions[id(m)]
+                    add_wire(max_pos + length, y)
+
+        bbox = d.get_bbox()
+        figure = d.draw(ax=ax, showframe=False, show=False)
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        plt.axis("off")
+
+        # Draw lines for legend (outside plot)
+        for k, v in colors.items():
+            plt.plot((-9e9, -9e9), (-9e9, -9e9), color=v, lw=2, zorder=-2, label=k)
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=figure.fig,
+            ax=figure.ax,
+            title=title,
+            xlim=xlim,
+            ylim=(ylim[0] - 2, ylim[1] + 2),
+            legend=("upper left", 6) if colors else None,
+            figsize=figsize or (bbox.xmax // 4, 2.5 + (bbox.ymax - bbox.ymin + 1) // 4),
+            plotname="plot_pipeline",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_prc(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the precision-recall curve.
+
+        The legend shows the average precision (AP) score. Only for
+        binary classification tasks.
 
         Parameters
         ----------
@@ -2743,18 +3140,14 @@ class BaseModelPlotter(BasePlotter):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the confusion matrix.
-            Choose from:` "train", "test" or "holdout".
-
-        normalize: bool, default=False
-           Whether to normalize the matrix.
+            Data set on which to calculate the metric. Choose from:
+            "train", "test", "both" (train and test) or "holdout".
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the plot's type.
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
@@ -2771,110 +3164,510 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self.goal, "plot_confusion_matrix", "classification")
+        check_binary_task(self.task, "plot_prc")
         models = self._get_subclass(models)
-
-        dataset = dataset.lower()
-        if dataset not in ("train", "test", "holdout"):
-            raise ValueError(
-                "Unknown value for the dataset parameter. "
-                "Choose from: train, test or holdout."
-            )
-        if dataset == "holdout" and self.holdout is None:
-            raise ValueError(
-                "Invalid value for the dataset parameter. No holdout "
-                "data set was specified when initializing the instance."
-            )
-        if self.task.startswith("multi") and len(models) > 1:
-            raise NotImplementedError(
-                "The plot_confusion_matrix method does not support the comparison"
-                " of various models for multiclass classification tasks."
-            )
-
-        # Create dataframe to plot with barh if len(models) > 1
-        df = pd.DataFrame(
-            index=[
-                "True negatives",
-                "False positives",
-                "False negatives",
-                "True positives",
-            ]
-        )
+        dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         for m in models:
-            cm = confusion_matrix(
-                getattr(m, f"y_{dataset}"), getattr(m, f"predict_{dataset}")
-            )
-            if normalize:
-                cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
+            for set_ in dataset:
+                if hasattr(m.estimator, "predict_proba"):
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
 
-            if len(models) == 1:  # Create matrix heatmap
-                im = ax.imshow(cm, interpolation="nearest", cmap=plt.get_cmap("Blues"))
+                # Get precision-recall pairs for different thresholds
+                prec, rec, _ = precision_recall_curve(getattr(m, f"y_{set_}"), y_pred)
 
-                # Create an axes on the right side of ax. The under of
-                # cax are 5% of ax and the padding between cax and ax
-                # are fixed at 0.3 inch.
-                divider = make_axes_locatable(ax)
-                cax = divider.append_axes("right", size="5%", pad=0.3)
-                cbar = ax.figure.colorbar(im, cax=cax)
-                ax.set(
-                    xticks=np.arange(cm.shape[1]),
-                    yticks=np.arange(cm.shape[0]),
-                    xticklabels=m.mapping.get(m.target, m.y.sort_values().unique()),
-                    yticklabels=m.mapping.get(m.target, m.y.sort_values().unique()),
-                )
+                ap = f" (AP={round(m.evaluate('ap', set_)['average_precision'], 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
+                plt.plot(rec, prec, lw=2, label=label)
 
-                # Loop over data dimensions and create text annotations
-                fmt = ".2f" if normalize else "d"
-                for i in range(cm.shape[0]):
-                    for j in range(cm.shape[1]):
-                        ax.text(
-                            x=j,
-                            y=i,
-                            s=format(cm[i, j], fmt),
-                            ha="center",
-                            va="center",
-                            fontsize=self.tick_fontsize,
-                            color="w" if cm[i, j] > cm.max() / 2.0 else "k",
-                        )
+        self._draw_line(ax=ax, y=m.y_test.sort_values().iloc[-1] / len(m.y_test))
 
-                cbar.set_label(
-                    label="Count",
-                    fontsize=self.label_fontsize,
-                    labelpad=15,
-                    rotation=270,
-                )
-                cbar.ax.tick_params(labelsize=self.tick_fontsize)
-                ax.grid(False)
-
-            else:
-                df[m.name] = cm.ravel()
-
-        BasePlotter._fig._used_models.extend(models)
-        if len(models) > 1:
-            df.plot.barh(ax=ax, width=0.6)
-            figsize = figsize or (10, 6)
-            self._plot(
-                ax=ax,
-                title=title,
-                legend=("best", len(models)),
-                xlabel="Count",
-            )
-        else:
-            figsize = figsize or (8, 6)
-            self._plot(
-                ax=ax,
-                title=title,
-                xlabel="Predicted label",
-                ylabel="True label",
-            )
-
+        BasePlot._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="Recall",
+            ylabel="Precision",
             figsize=figsize,
-            plotname="plot_confusion_matrix",
+            plotname="plot_prc",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_probabilities(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        target: Union[INT, str] = 1,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the probability distribution of the target classes.
+
+        Only for classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test", "both" (train and test) or "holdout".
+
+        target: int or str, default=1
+            Probability of being that class in the target column
+            (as index or name). Only for multiclass classification.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_goal(self.goal, "plot_probabilities", "classification")
+        models = self._get_subclass(models)
+        dataset = self._get_set(dataset)
+        target = self._get_target(target)
+        check_predict_proba(models, "plot_probabilities")
+        palette = cycle(sns.color_palette())
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        for m in models:
+            for set_ in dataset:
+                for value in m.y.sort_values().unique():
+                    # Get indices per class
+                    idx = np.where(getattr(m, f"y_{set_}") == value)[0]
+
+                    label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                    sns.histplot(
+                        data=getattr(m, f"predict_proba_{set_}").iloc[idx, target],
+                        kde=True,
+                        bins=50,
+                        label=label + f" ({self.target}={value})",
+                        color=next(palette),
+                        ax=ax,
+                    )
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="Probability",
+            ylabel="Counts",
+            xlim=(0, 1),
+            figsize=figsize,
+            plotname="plot_probabilities",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_residuals(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot a model's residuals.
+
+        The plot shows the residuals (difference between the predicted
+        and the true value) on the vertical axis and the independent
+        variable on the horizontal axis. The gray, intersected line
+        shows the identity line. This plot can be useful to analyze the
+        variance of the error of the regressor. If the points are
+        randomly dispersed around the horizontal axis, a linear
+        regression model is appropriate for the data; otherwise, a
+        non-linear model is more appropriate. Only for regression tasks.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test", "both" (train and test) or "holdout".
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_goal(self.goal, "plot_residuals", "regression")
+        models = self._get_subclass(models)
+        dataset = self._get_set(dataset)
+
+        fig = self._get_figure()
+        gs = GridSpecFromSubplotSpec(1, 4, BasePlot._fig.grid, wspace=0.05)
+        ax1 = fig.add_subplot(gs[0, :3])
+        ax2 = fig.add_subplot(gs[0, 3:4])
+        for m in models:
+            for set_ in dataset:
+                r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
+                res = np.subtract(
+                    getattr(m, f"predict_{set_}"),
+                    getattr(self, f"y_{set_}"),
+                )
+
+                ax1.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
+                ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
+
+        ax2.set_yticklabels([])
+        self._draw_line(ax=ax2, y=0)
+        self._plot(ax=ax2, xlabel="Distribution")
+
+        if title:
+            if not BasePlot._fig.is_canvas:
+                plt.suptitle(title, fontsize=self.title_fontsize, y=0.98)
+            else:
+                ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax1,
+            legend=("lower right", len(models)),
+            ylabel="Residuals",
+            xlabel="True value",
+            figsize=figsize,
+            plotname="plot_residuals",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_results(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        metric: Union[INT, str] = 0,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot of the model results after the evaluation.
+
+        If all models applied bootstrap, the plot is a boxplot. If
+        not, the plot is a barplot. Models are ordered based on
+        their score from the top down. The score is either the
+        `mean_bootstrap` or `metric_test` attribute of the model,
+        selected in that order.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        metric: int or str, default=0
+            Index or name of the metric. Only for multi-metric runs.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=None
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of models shown.
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+
+        def get_bootstrap(m):
+            """Get the bootstrap results for a specific metric."""
+            # Use getattr since ensembles don't have the attribute
+            if isinstance(getattr(m, "metric_bootstrap", None), np.ndarray):
+                if len(self._metric) == 1:
+                    return m.metric_bootstrap
+                else:
+                    return m.metric_bootstrap[metric]
+
+        def std(m):
+            """Get the standard deviation of the bootstrap results."""
+            if getattr(m, "std_bootstrap", None):
+                return lst(m.std_bootstrap)[metric]
+            else:
+                return 0
+
+        check_is_fitted(self, attributes="_models")
+        models = self._get_subclass(models)
+        metric = self._get_metric(metric)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+
+        names = []
+        models = sorted(models, key=lambda m: get_best_score(m, metric))
+        color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]  # First color
+
+        all_bootstrap = all(isinstance(get_bootstrap(m), np.ndarray) for m in models)
+        for i, m in enumerate(models):
+            names.append(m.name)
+            if all_bootstrap:
+                ax.boxplot(
+                    x=get_bootstrap(m),
+                    vert=False,
+                    positions=[i],
+                    widths=0.5,
+                    boxprops=dict(color=color),
+                )
+            else:
+                ax.barh(
+                    y=i,
+                    width=get_best_score(m, metric),
+                    height=0.5,
+                    xerr=std(m),
+                    color=color,
+                )
+
+        min_lim = 0.95 * (get_best_score(models[0], metric) - std(models[0]))
+        max_lim = 1.01 * (get_best_score(models[-1], metric) + std(models[-1]))
+        ax.set_yticks(range(len(models)))
+        ax.set_yticklabels(names)
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            xlabel=self._metric[metric].name,
+            xlim=(min_lim, max_lim) if not all_bootstrap else None,
+            figsize=figsize or (10, 4 + len(models) // 2),
+            plotname="plot_results",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_roc(
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the Receiver Operating Characteristics curve.
+
+        The legend shows the Area Under the ROC Curve (AUC) score.
+        Only for binary classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        dataset: str, default="test"
+            Data set on which to calculate the metric. Choose from:
+            "train", "test", "both" (train and test) or "holdout".
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_binary_task(self.task, "plot_roc")
+        models = self._get_subclass(models)
+        dataset = self._get_set(dataset)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+        for m in models:
+            for set_ in dataset:
+                if hasattr(m.estimator, "predict_proba"):
+                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
+
+                # Get False (True) Positive Rate as arrays
+                fpr, tpr, _ = roc_curve(getattr(m, f"y_{set_}"), y_pred)
+
+                roc = f" (AUC={round(m.evaluate('auc', set_)['roc_auc'], 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
+                ax.plot(fpr, tpr, lw=2, label=label)
+
+        self._draw_line(ax=ax, y="diagonal")
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("lower right", len(models)),
+            xlabel="FPR",
+            ylabel="TPR",
+            figsize=figsize,
+            plotname="plot_roc",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_successive_halving(
+            self,
+            models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+            metric: Union[INT, str] = 0,
+            title: Optional[str] = None,
+            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+            filename: Optional[str] = None,
+            display: Optional[bool] = True,
+    ):
+        """Plot scores per iteration of the successive halving.
+
+        Only use if the models were fitted using successive_halving.
+        Ensemble models are ignored.
+
+        Parameters
+        ----------
+        models: int, str, slice, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        metric: int or str, default=0
+            Index or name of the metric. Only for multi-metric runs.
+
+        title: str or None, default=None
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, default=(10, 6)
+            Figure's size, format as (x, y).
+
+        filename: str or None, default=None
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        models = self._get_subclass(models, ensembles=False)
+        metric = self._get_metric(metric)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlot._fig.grid)
+
+        # Prepare dataframes for seaborn lineplot (one df per line)
+        # Not using sns hue parameter because of legend formatting
+        lines = defaultdict(pd.DataFrame)
+        for m in models:
+            n_models = len(m.branch._idx[0]) // m._train_idx  # Number of models in iter
+            if m.metric_bootstrap is None:
+                values = {"x": [n_models], "y": [get_best_score(m, metric)]}
+            else:
+                if len(self._metric) == 1:
+                    bootstrap = m.metric_bootstrap
+                else:
+                    bootstrap = m.metric_bootstrap[metric]
+                values = {"x": [n_models] * len(bootstrap), "y": bootstrap}
+
+            # Add the scores to the group's dataframe
+            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
+
+        for m, df in zip(models, lines.values()):
+            df = df.reset_index(drop=True)
+            kwargs = dict(err_style="band" if df["x"].nunique() > 1 else "bars", ax=ax)
+            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, **kwargs)
+
+        n_models = [len(self.train) // m._train_idx for m in models]
+        ax.set_xlim(max(n_models) + 0.1, min(n_models) - 0.1)
+        ax.set_xticks(range(1, max(n_models) + 1))
+
+        BasePlot._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("lower right", len(lines)),
+            xlabel="n_models",
+            ylabel=self._metric[metric].name,
+            figsize=figsize,
+            plotname="plot_successive_halving",
             filename=filename,
             display=display,
         )
@@ -2947,7 +3740,7 @@ class BaseModelPlotter(BasePlotter):
             metric_list = [get_custom_scorer(m)._score_func for m in lst(metric)]
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         steps = np.linspace(0, 1, steps)
         for m in models:
             for met in metric_list:
@@ -2965,7 +3758,7 @@ class BaseModelPlotter(BasePlotter):
                         label = f"{m.name}{l_set} ({met.__name__})"
                     ax.plot(steps, results, label=label, lw=2)
 
-        BasePlotter._fig._used_models.extend(models)
+        BasePlot._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2980,38 +3773,36 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def plot_probabilities(
+    def plot_trials(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        target: Union[INT, str] = 1,
+        metric: Union[INT, str] = 0,
         title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        figsize: Tuple[SCALAR, SCALAR] = (10, 8),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the probability distribution of the target classes.
+        """Plot the hyperparameter tuning trials.
 
-        Only for classification tasks.
+        Only for models that ran hyperparameter tuning. This is the
+        same plot as produced by `bo_params={"plot": True}` while
+        running the BO. Creates a canvas with two plots: the first
+        plot shows the score of every trial and the second shows
+        the distance between the last consecutive steps.
 
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
+            Name of the models to plot. If None, all models that
+            used hyperparameter tuning are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
-
-        target: int or str, default=1
-            Probability of being that class in the target column
-            (as index or name). Only for multiclass classification.
+        metric: int or str, default=0
+            Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, default=(10, 6)
+        figsize: tuple, default=(10, 8)
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
@@ -3029,156 +3820,71 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self.goal, "plot_probabilities", "classification")
         models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-        target = self._get_target(target)
-        check_predict_proba(models, "plot_probabilities")
-        palette = cycle(sns.color_palette())
+        metric = self._get_metric(metric)
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        for m in models:
-            for set_ in dataset:
-                for value in m.y.sort_values().unique():
-                    # Get indices per class
-                    idx = np.where(getattr(m, f"y_{set_}") == value)[0]
-
-                    label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                    sns.histplot(
-                        data=getattr(m, f"predict_proba_{set_}").iloc[idx, target],
-                        kde=True,
-                        bins=50,
-                        label=label + f" ({self.target}={value})",
-                        color=next(palette),
-                        ax=ax,
-                    )
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
-            xlabel="Probability",
-            ylabel="Counts",
-            xlim=(0, 1),
-            figsize=figsize,
-            plotname="plot_probabilities",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_calibration(
-        self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        n_bins: INT = 10,
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 10),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the calibration curve for a binary classifier.
-
-        Well calibrated classifiers are probabilistic classifiers for
-        which the output of the `predict_proba` method can be directly
-        interpreted as a confidence level. For instance a well
-        calibrated (binary) classifier should classify the samples such
-        that among the samples to which it gave a `predict_proba` value
-        close to 0.8, approx. 80% actually belong to the positive class.
-
-        This figure shows two plots: the calibration curve, where the
-        x-axis represents the average predicted probability in each bin
-        and the y-axis is the fraction of positives, i.e. the proportion
-        of samples whose class is the positive class (in each bin); and
-        a distribution of all predicted probabilities of the classifier.
-        Code snippets from https://scikit-learn.org/stable/auto_examples/
-        calibration/plot_calibration_curve.html
-
-        Parameters
-        ----------
-        models: int, str, slice, sequence or None, default=None
-            Name or index of the models to plot. If None, all models
-            are selected.
-
-        n_bins: int, default=10
-            Number of bins used for calibration. Minimum of 5
-            required.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 10)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_calibration")
-        models = self._get_subclass(models)
-
-        if n_bins < 5:
-            raise ValueError(
-                "Invalid value for the n_bins parameter."
-                f"Value should be >=5, got {n_bins}."
+        # Check there is at least one model that run the BO
+        if all(m.bo.empty for m in models):
+            raise PermissionError(
+                "The plot_bo method is only available for models that "
+                "ran the bayesian optimization hyperparameter tuning!"
             )
 
         fig = self._get_figure()
-        gs = GridSpecFromSubplotSpec(4, 1, BasePlotter._fig.grid, hspace=0.05)
-        ax1 = fig.add_subplot(gs[:3, 0])
-        ax2 = fig.add_subplot(gs[3:4, 0], sharex=ax1)
+        gs = GridSpecFromSubplotSpec(4, 1, BasePlot._fig.grid, hspace=0.05)
+        ax1 = fig.add_subplot(gs[0:3, 0])
+        ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
         for m in models:
-            if hasattr(m.estimator, "decision_function"):
-                prob = m.decision_function_test
-                prob = (prob - prob.min()) / (prob.max() - prob.min())
-            elif hasattr(m.estimator, "predict_proba"):
-                prob = m.predict_proba_test.iloc[:, 1]
+            if m.metric_bo:  # Only models that did run the BO
+                y = m.bo["score"].apply(lambda value: lst(value)[metric])
+                if len(models) == 1:
+                    label = f"Score={round(lst(m.metric_bo)[metric], 3)}"
+                else:
+                    label = f"{m.name} (Score={round(lst(m.metric_bo)[metric], 3)})"
 
-            # Get calibration (frac of positives and predicted values)
-            frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
+                # Draw bullets on all markers except the maximum
+                markers = [i for i in range(len(m.bo))]
+                markers.remove(int(np.argmax(y)))
 
-            ax1.plot(pred, frac_pos, marker="o", lw=2, label=f"{m.name}")
-            ax2.hist(prob, n_bins, range=(0, 1), label=m.name, histtype="step", lw=2)
+                ax1.plot(range(1, len(y) + 1), y, "-o", markevery=markers, label=label)
+                ax2.plot(range(2, len(y) + 1), np.abs(np.diff(y)), "-o")
+                ax1.scatter(np.argmax(y) + 1, max(y), zorder=10, s=100, marker="*")
 
         plt.setp(ax1.get_xticklabels(), visible=False)
-        self._draw_line(ax=ax1, y="diagonal")
+        ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 
-        BasePlotter._fig._used_models.extend(models)
         self._plot(
             ax=ax1,
             title=title,
-            legend=("lower right" if len(models) > 1 else False, len(models)),
-            ylabel="Fraction of positives",
-            ylim=(-0.05, 1.05),
+            legend=("lower right", len(models)),
+            ylabel=self._metric[metric].name,
         )
+
+        BasePlot._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax2,
-            xlabel="Predicted value",
-            ylabel="Count",
+            xlabel="Call",
+            ylabel="d",
             figsize=figsize,
-            plotname="plot_calibration",
+            plotname="plot_bo",
             filename=filename,
             display=display,
         )
 
-    # SHAP plots =================================================== >>
+
+class ShapPlot(BasePlot):
+    """Shap plots.
+
+    ATOM wrapper for plots made by the shap package, using Shapley
+    values for model interpretation. These plots are accessible from
+    the runners or from the models. Only one model can be plotted at
+    the same time since the plots are not made by ATOM.
+
+    """
 
     @composed(crash, plot_from_model, typechecked)
-    def bar_plot(
+    def plot_shap_bar(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
@@ -3249,12 +3955,12 @@ class BaseModelPlotter(BasePlotter):
         explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         shap.plots.bar(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlotter._fig._used_models.append(m)
+        BasePlot._fig._used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3266,7 +3972,7 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def beeswarm_plot(
+    def plot_shap_beeswarm(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
@@ -3335,12 +4041,12 @@ class BaseModelPlotter(BasePlotter):
         explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         shap.plots.beeswarm(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlotter._fig._used_models.append(m)
+        BasePlot._fig._used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3352,7 +4058,7 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def decision_plot(
+    def plot_shap_decision(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
@@ -3424,7 +4130,7 @@ class BaseModelPlotter(BasePlotter):
         target = self._get_target(target)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         shap.decision_plot(
             base_value=m._shap.get_expected_value(target),
             shap_values=m._shap.get_shap_values(rows, target),
@@ -3437,7 +4143,7 @@ class BaseModelPlotter(BasePlotter):
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlotter._fig._used_models.append(m)
+        BasePlot._fig._used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3449,7 +4155,7 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def force_plot(
+    def plot_shap_force(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
@@ -3506,7 +4212,7 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only if `display=None` and `matplotlib=True`.
 
         """
-        if getattr(BasePlotter._fig, "is_canvas", None):
+        if getattr(BasePlot._fig, "is_canvas", None):
             raise PermissionError(
                 "The force_plot method can not be called from a canvas "
                 "because of incompatibility between the ATOM and shap API."
@@ -3529,7 +4235,7 @@ class BaseModelPlotter(BasePlotter):
         )
 
         if kwargs.get("matplotlib"):
-            BasePlotter._fig._used_models.append(m)
+            BasePlot._fig._used_models.append(m)
             return self._plot(
                 fig=plt.gcf(),
                 title=title,
@@ -3550,7 +4256,7 @@ class BaseModelPlotter(BasePlotter):
                 display(plot)
 
     @composed(crash, plot_from_model, typechecked)
-    def heatmap_plot(
+    def plot_shap_heatmap(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
@@ -3622,12 +4328,12 @@ class BaseModelPlotter(BasePlotter):
         explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         shap.plots.heatmap(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlotter._fig._used_models.append(m)
+        BasePlot._fig._used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3639,7 +4345,7 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def scatter_plot(
+    def plot_shap_scatter(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
@@ -3709,13 +4415,13 @@ class BaseModelPlotter(BasePlotter):
         explanation = m._shap.get_explanation(rows, target, feature)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         shap.plots.scatter(explanation, color=explanation, ax=ax, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
         ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlotter._fig._used_models.append(m)
+        BasePlot._fig._used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3727,7 +4433,7 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def waterfall_plot(
+    def plot_shap_waterfall(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str]] = None,
@@ -3802,612 +4508,18 @@ class BaseModelPlotter(BasePlotter):
         explanation = m._shap.get_explanation(rows, target, only_one=True)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax = fig.add_subplot(BasePlot._fig.grid)
         shap.plots.waterfall(explanation, max_display=show, show=False)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlotter._fig._used_models.append(m)
+        BasePlot._fig._used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
             title=title,
             figsize=figsize or (10, 4 + show // 2),
             plotname="waterfall_plot",
-            filename=filename,
-            display=display,
-        )
-
-
-class ATOMPlotter(FSPlotter, BaseModelPlotter):
-    """Plots for the ATOM class."""
-
-    @composed(crash, typechecked)
-    def plot_correlation(
-        self,
-        columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        method: str = "pearson",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (8, 7),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot a correlation matrix.
-
-        Parameters
-        ----------
-        columns: slice, sequence or None, default=None
-            Slice, names or indices of the columns to plot. If None,
-            plot all columns in the dataset. Selected categorical
-            columns are ignored.
-
-        method: str, default="pearson"
-            Method of correlation. Choose from: pearson, kendall or
-            spearman.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(8, 7)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        columns = self._get_columns(columns, only_numerical=True)
-        if method.lower() not in ("pearson", "kendall", "spearman"):
-            raise ValueError(
-                f"Invalid value for the method parameter, got {method}. "
-                "Choose from: pearson, kendall or spearman."
-            )
-
-        # Compute the correlation matrix
-        corr = self.dataset[columns].corr(method=method.lower())
-
-        # Drop first row and last column (diagonal line)
-        corr = corr.iloc[1:].drop(columns[-1], axis=1)
-
-        # Generate a mask for the upper triangle
-        # k=1 means keep outermost diagonal line
-        mask = np.zeros_like(corr, dtype=bool)
-        mask[np.triu_indices_from(mask, k=1)] = True
-
-        sns.set_style("white")  # Only for this plot
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        sns.heatmap(
-            data=corr,
-            mask=mask,
-            cmap=sns.diverging_palette(220, 10, as_cmap=True),
-            vmax=0.3,
-            center=0,
-            linewidths=0.5,
-            ax=ax,
-            cbar_kws={"shrink": 0.8},
-        )
-        sns.set_style(self.style)  # Set back to original style
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            figsize=figsize,
-            plotname="plot_correlation",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, typechecked)
-    def plot_scatter_matrix(
-        self,
-        columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 10),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-        **kwargs,
-    ):
-        """Plot a matrix of scatter plots.
-
-        A subset of max 250 random samples are selected from every
-        column to not clutter the plot.
-
-        Parameters
-        ----------
-        columns: slice, sequence or None, default=None
-            Slice, names or indices of the columns to plot. If None,
-            plot all columns in the dataset. Selected categorical
-            columns are ignored.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple or None, default=(10, 10))
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for seaborn's pairplot.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        if getattr(BasePlotter._fig, "is_canvas", None):
-            raise PermissionError(
-                "The plot_scatter_matrix method can not be called from "
-                "a canvas because of incompatibility of the APIs."
-            )
-
-        columns = self._get_columns(columns, only_numerical=True)
-
-        # Use max 250 samples to not clutter the plot
-        samples = self.dataset[columns].sample(
-            n=min(len(self.dataset), 250), random_state=self.random_state
-        )
-
-        diag_kind = kwargs.get("diag_kind", "kde")
-        grid = sns.pairplot(samples, diag_kind=diag_kind, **kwargs)
-
-        # Set right fontsize for all axes in grid
-        for axi in grid.axes.flatten():
-            axi.tick_params(axis="both", labelsize=self.tick_fontsize)
-            axi.set_xlabel(axi.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
-            axi.set_ylabel(axi.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
-
-        return self._plot(
-            fig=plt.gcf(),
-            title=title,
-            figsize=figsize or (10, 10),
-            plotname="plot_scatter_matrix",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, typechecked)
-    def plot_distribution(
-        self,
-        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
-        distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
-        title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-        **kwargs,
-    ):
-        """Plot column distributions.
-
-        Additionally, it is possible to plot any of `scipy.stats`
-        probability distributions fitted to the column. Missing
-        values are ignored.
-
-        Parameters
-        ----------
-        columns: int, str, slice or sequence, default=0
-            Slice, names or indices of the columns to plot. It is only
-            possible to plot one categorical column. If more than just
-            one categorical columns are selected, all categorical
-            columns are ignored.
-
-        distributions: str, sequence or None, default=None
-            Names of the `scipy.stats` distributions to fit to the
-            columns. If None, no distribution is fitted. Only for
-            numerical columns.
-
-        show: int or None, default=None
-            Number of classes (ordered by number of occurrences) to
-            show in the plot. None to show all. Only for categorical
-            columns.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the plot's type.
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for seaborn's histplot.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        columns = self._get_columns(columns)
-        palette_1 = cycle(sns.color_palette())
-        palette_2 = sns.color_palette("Blues_r", 3)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-
-        cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
-        if len(columns) == 1 and columns[0] in cat_columns:
-            series = self.dataset[columns].value_counts(ascending=True)
-
-            if show is None or show > len(series):
-                show = len(series)
-            elif show < 1:
-                raise ValueError(
-                    "Invalid value for the show parameter."
-                    f"Value should be >0, got {show}."
-                )
-
-            data = series[-show:]  # Subset of series to plot
-            data.plot.barh(
-                ax=ax,
-                width=0.6,
-                label=f"{columns[0]}: {len(series)} classes",
-            )
-
-            # Add the counts at the end of the bar
-            for i, v in enumerate(data):
-                ax.text(v + 0.01 * max(data), i - 0.08, v, fontsize=self.tick_fontsize)
-
-            return self._plot(
-                fig=fig,
-                ax=ax,
-                xlim=(min(data) - 0.1 * min(data), max(data) + 0.1 * max(data)),
-                title=title,
-                xlabel="Counts",
-                legend=("lower right", 1),
-                figsize=figsize or (10, 4 + show // 2),
-                plotname="plot_distribution",
-                filename=filename,
-                display=display,
-            )
-        else:
-            kde = kwargs.pop("kde", False if distributions else True)
-            bins = kwargs.pop("bins", 40)
-            for i, col in enumerate(columns):
-                sns.histplot(
-                    data=self.dataset,
-                    x=col,
-                    kde=kde,
-                    label=col,
-                    bins=bins,
-                    color=next(palette_1),
-                    ax=ax,
-                    **kwargs,
-                )
-
-                if distributions:
-                    x = np.linspace(*ax.get_xlim(), 100)
-
-                    # Drop the missing values form the column
-                    missing = self.missing + [np.inf, -np.inf]
-                    values = self.dataset[col].replace(missing, np.NaN).dropna()
-
-                    # Get the hist values
-                    h = np.histogram(values, bins=bins)
-
-                    # Get a line for each distribution
-                    for j, dist in enumerate(lst(distributions)):
-                        params = getattr(stats, dist).fit(values)
-
-                        # Calculate pdf and scale to match observed data
-                        pdf = getattr(stats, dist).pdf(x, *params)
-                        scale = np.trapz(h[0], h[1][:-1]) / np.trapz(pdf, x)
-
-                        label = dist if i == 0 else None  # Label for the first iter
-                        plt.plot(x, pdf * scale, lw=2, c=palette_2[j], label=label)
-
-            return self._plot(
-                fig=fig,
-                ax=ax,
-                title=title,
-                xlabel="Values",
-                ylabel="Counts",
-                legend=("best", len(columns) + len(lst(distributions))),
-                figsize=figsize or (10, 6),
-                plotname="plot_distribution",
-                filename=filename,
-                display=display,
-            )
-
-    @composed(crash, typechecked)
-    def plot_qq(
-        self,
-        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
-        distributions: Union[str, SEQUENCE_TYPES] = "norm",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot a quantile-quantile plot.
-
-        Parameters
-        ----------
-        columns: int, str, slice or sequence, default=0
-            Slice, names or indices of the columns to plot. Selected
-            categorical columns are ignored.
-
-        distributions: str, sequence or None, default="norm"
-            Names of the `scipy.stats` distributions to fit to the
-            columns.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        columns = self._get_columns(columns)
-        palette = cycle(sns.color_palette())
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-
-        percentiles = np.linspace(0, 100, 101)
-        for col in columns:
-            color = next(palette)
-            m = cycle(["+", "1", "x", "*", "d", "p", "h"])
-            qn_b = np.percentile(self.dataset[col], percentiles)
-            for dist in lst(distributions):
-                stat = getattr(stats, dist)
-                params = stat.fit(self.dataset[col])
-
-                # Get the theoretical percentiles
-                samples = stat.rvs(*params, size=101, random_state=self.random_state)
-                qn_a = np.percentile(samples, percentiles)
-
-                label = col + (" - " + dist if len(lst(distributions)) > 1 else "")
-                plt.scatter(qn_a, qn_b, color=color, marker=next(m), s=50, label=label)
-
-        xlim, ylim = ax.get_xlim(), ax.get_ylim()
-        plt.plot((-9e9, 9e9), (-9e9, 9e9), "k--", lw=2, alpha=0.7, zorder=-2)
-
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            xlim=xlim,
-            ylim=ylim,
-            xlabel="Theoretical quantiles",
-            ylabel="Observed quantiles",
-            legend=("best", len(columns) + len(lst(distributions))),
-            figsize=figsize or (10, 6),
-            plotname="plot_qq",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, typechecked)
-    def plot_wordcloud(
-        self,
-        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-        **kwargs,
-    ):
-        """Plot a wordcloud from the corpus.
-
-        The text for the plot is extracted from the column
-        named `corpus`. If there is no column with that name,
-        an exception is raised.
-
-        Parameters
-        ----------
-        index: int, str, sequence or None, default=None
-            Index names or positions of the documents in the corpus to
-            include in the wordcloud. If None, it selects all documents
-            in the dataset.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for the WordCloud class.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-
-        def get_text(column):
-            """Get the complete corpus as one long string."""
-            if isinstance(column.iloc[0], str):
-                return " ".join(column)
-            else:
-                return " ".join([" ".join(row) for row in column])
-
-        corpus = get_corpus(self.X)
-        rows = self.dataset.loc[self._get_rows(index, return_test=False)]
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-
-        background_color = kwargs.pop("background_color", "white")
-        random_state = kwargs.pop("random_state", self.random_state)
-        wordcloud = WordCloud(
-            width=figsize[0] * 100 if figsize else 1000,
-            height=figsize[1] * 100 if figsize else 600,
-            background_color=background_color,
-            random_state=random_state,
-            **kwargs,
-        )
-
-        plt.imshow(wordcloud.generate(get_text(rows[corpus])))
-        plt.axis("off")
-
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            figsize=figsize or (10, 6),
-            plotname="plot_wordcloud",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, typechecked)
-    def plot_ngrams(
-        self,
-        ngram: Union[INT, str] = "words",
-        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
-        show: INT = 10,
-        title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot n-gram frequencies.
-
-        The text for the plot is extracted from the column
-        named `corpus`. If there is no column with that name,
-        an exception is raised. If the documents are not
-        tokenized, the words are separated by spaces.
-
-        Parameters
-        ----------
-        ngram: str or int, default="bigram"
-            Number of contiguous words to search for (size of
-            n-gram). Choose from: words (1), bigrams (2),
-            trigrams (3), quadgrams (4).
-
-        index: int, str, sequence or None, default=None
-            Index names or positions of the documents in the corpus to
-            include in the search. If None, it selects all documents in
-            the dataset.
-
-        show: int, default=10
-            Number of n-grams (ordered by number of occurrences) to
-            show in the plot.
-
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of n-grams shown.
-
-        filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-
-        def get_text(column):
-            """Get the complete corpus as sequence of tokens."""
-            if isinstance(column.iloc[0], str):
-                return column.apply(lambda row: row.split())
-            else:
-                return column
-
-        corpus = get_corpus(self.X)
-        rows = self.dataset.loc[self._get_rows(index, return_test=False)]
-
-        if str(ngram).lower() in ("1", "word", "words"):
-            ngram = "words"
-            series = pd.Series(
-                [word for row in get_text(rows[corpus]) for word in row]
-            ).value_counts(ascending=True)
-        else:
-            if str(ngram).lower() in ("2", "bigram", "bigrams"):
-                ngram, finder = "bigrams", BigramCollocationFinder
-            elif str(ngram).lower() in ("3", "trigram", "trigrams"):
-                ngram, finder = "trigrams", TrigramCollocationFinder
-            elif str(ngram).lower() in ("4", "quadgram", "quadgrams"):
-                ngram, finder = "quadgrams", QuadgramCollocationFinder
-            else:
-                raise ValueError(
-                    f"Invalid value for the ngram parameter, got {ngram}. "
-                    "Choose from: words, bigram, trigram, quadgram."
-                )
-
-            ngram_fd = finder.from_documents(get_text(rows[corpus])).ngram_fd
-            series = pd.Series(
-                data=[x[1] for x in ngram_fd.items()],
-                index=[" ".join(x[0]) for x in ngram_fd.items()],
-            ).sort_values(ascending=True)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-
-        data = series[-show:]  # Subset of series to plot
-        data[-show:].plot.barh(ax=ax, width=0.6, label=f"Total {ngram}: {len(series)}")
-
-        # Add the counts at the end of the bar
-        for i, v in enumerate(data[-show:]):
-            ax.text(v + 0.01 * max(data), i - 0.08, v, fontsize=self.tick_fontsize)
-
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            xlim=(min(data) - 0.1 * min(data), max(data) + 0.1 * max(data)),
-            title=title,
-            xlabel="Counts",
-            legend=("lower right", 1),
-            figsize=figsize or (10, 4 + show // 2),
-            plotname="plot_ngrams",
             filename=filename,
             display=display,
         )

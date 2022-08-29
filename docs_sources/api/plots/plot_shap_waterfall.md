@@ -1,17 +1,26 @@
-# beeswarm_plot
----------------
+# plot_shap_waterfall
+---------------------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">beeswarm_plot</strong>(models=None,
+<em>method</em> <strong style="color:#008AB8">waterfall_plot</strong>(models=None,
 index=None, show=None, target=1, title=None, figsize=None, filename=None,
 display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3274">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3745">[source]</a>
 </span>
 </div>
 
-Plot SHAP's beeswarm plot. The plot is colored by feature values.
-Read more about SHAP plots in the [user guide](../../../user_guide/plots/#shap).
+Plot SHAP's waterfall plot for a single prediction. The SHAP value
+of a feature represents the impact of the evidence provided by that
+feature on the model’s output. The waterfall plot is designed to
+visually display how the SHAP values (evidence) of each feature move
+the model output from our prior expectation under the background
+data distribution, to the final model prediction given the evidence
+of all the features. Features are sorted by the magnitude of their
+SHAP values with the smallest magnitude features grouped together
+at the bottom of the plot when the number of features in the models
+exceeds the `show` parameter. Read more about SHAP plots in the
+[user guide](../../../user_guide/plots/#shap).
 
 <table style="font-size:16px">
 <tr>
@@ -22,22 +31,22 @@ Read more about SHAP plots in the [user guide](../../../user_guide/plots/#shap).
 Name of the model to plot. If None, all models are selected.
 Note that leaving the default option could raise an exception
 if there are multiple models. To avoid this, call the plot from a
-model, e.g. <code>atom.xgb.beeswarm_plot()</code>.
+model, e.g. <code>atom.xgb.waterfall_plot()</code>.
 </p>
 <p>
-<strong>index: slice, sequence or None, default=None</strong><br>
-Index names or positions of the rows in the dataset to plot.
-If None, it selects all rows in the test set. The beeswarm
-plot does not support plotting a single sample.
+<strong>index: int, str or None, default=None</strong><br>
+Index or position of the row in the dataset to plot. If None, it
+selects the first row in the test set. The waterfall plot does
+not support plotting multiple samples.
 </p>
 <p>
 <strong>show: int or None, default=None</strong><br>
-Number of features (ordered by importance) to show. None to show all.
+Number of features to show in the plot. None to show all.
 </p>
 <p>
 <strong>target: int or str, default=1</strong><br>
-Index or name of the class in the target column to look at. Only
-for multi-class classification tasks.
+Index or name of the class in the target column to look at. Only for
+multi-class classification tasks.
 </p>
 <p>
 <strong>title: str or None, default=None</strong><br>
@@ -57,10 +66,6 @@ If None, the figure is not saved.
 <strong>display: bool or None, default=True</strong><br>
 Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
-<p>
-<strong>**kwargs</strong><br>
-Additional keyword arguments for SHAP's <a href="https://shap.readthedocs.io/en/latest/generated/shap.plots.beeswarm.html">beeswarm plot</a>.
-</p>
 </td>
 </tr>
 <tr>
@@ -78,13 +83,14 @@ Plot object. Only returned if <code>display=None</code>.
 ## Example
 
 ```python
-from atom import ATOMRegressor
+from atom import ATOMClassifier
 
-atom = ATOMRegressor(X, y)
-atom.run("RF")
-atom.beeswarm_plot()
+atom = ATOMClassifier(X, y)
+atom.run("Tree")
+atom.tree.waterfall_plot(index=120)
 ```
 
 <div align="center">
-    <img src="../../../img/plots/beeswarm_plot.png" alt="beeswarm_plot" width="700" height="700"/>
+    <img src="../../../img/plots/waterfall_plot.png" alt="waterfall_plot" width="700" height="700"/>
 </div>
+

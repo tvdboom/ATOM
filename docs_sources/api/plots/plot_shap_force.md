@@ -1,5 +1,5 @@
-# force_plot
-------------
+# plot_shap_force
+-----------------
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">force_plot</strong>(models=None,

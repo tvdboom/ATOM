@@ -1,22 +1,20 @@
-# decision_plot
----------------
+# plot_shap_heatmap
+-------------------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">decision_plot</strong>(models=None,
-index=None, show=None, target=1, title=None, figsize=None, filename=None,
-display=True, **kwargs)
+<em>method</em> <strong style="color:#008AB8">heatmap_plot</strong>(models=None,
+index=None, show=None, target=1, title=None, figsize=None,
+filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3362">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3564">[source]</a>
 </span>
 </div>
 
-Plot SHAP's decision plot. Visualize model decisions using cumulative
-SHAP values. Each plotted line explains a single model prediction. If
-a single prediction is plotted, feature values will be printed in the
-plot (if supplied). If multiple predictions are plotted together,
-feature values will not be printed. Plotting too many predictions
-together will make the plot unintelligible. Read more about SHAP plots
-in the [user guide](../../../user_guide/plots/#shap).
+Plot SHAP's heatmap plot. This plot is designed to show the population
+substructure of a dataset using supervised clustering and a heatmap.
+Supervised clustering involves clustering data points not by their original
+feature values but by their explanations. Read more about SHAP plots in the
+[user guide](../../../user_guide/plots/#shap).
 
 <table style="font-size:16px">
 <tr>
@@ -27,12 +25,13 @@ in the [user guide](../../../user_guide/plots/#shap).
 Name of the model to plot. If None, all models are selected.
 Note that leaving the default option could raise an exception
 if there are multiple models. To avoid this, call the plot from a
-model, e.g. <code>atom.xgb.decision_plot()</code>.
+model, e.g. <code>atom.xgb.heatmap_plot()</code>.
 </p>
 <p>
-<strong>index: int, str, sequence or None, default=None</strong><br>
+<strong>index: slice, sequence or None, default=None</strong><br>
 Index names or positions of the rows in the dataset to plot.
-If None, it selects all rows in the test set.
+If None, it selects all rows in the test set. The heatmap
+plot does not support plotting a single sample.
 </p>
 <p>
 <strong>show: int or None, default=None</strong><br>
@@ -49,8 +48,8 @@ Plot's title. If None, the title is left empty.
 </p>
 <p>
 <strong>figsize: tuple or None, default=None</strong><br>
-Figure's size, format as (x, y). If None, it adapts the size to the
-number of features shown.
+Figure's size, format as (x, y). If None, it adapts the
+size to the number of features shown.
 </p>
 <p>
 <strong>filename: str or None, default=None</strong><br>
@@ -63,7 +62,7 @@ Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 <p>
 <strong>**kwargs</strong><br>
-Additional keyword arguments for SHAP's <a href="https://shap.readthedocs.io/en/latest/generated/shap.plots.decision.html">decision plot</a>.
+Additional keyword arguments for SHAP's <a href="https://shap.readthedocs.io/en/latest/generated/shap.plots.heatmap.html">heatmap plot</a>.
 </p>
 </td>
 </tr>
@@ -86,17 +85,9 @@ from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
 atom.run("RF")
-atom.decision_plot()  # For multiple samples
+atom.heatmap_plot()
 ```
 
 <div align="center">
-    <img src="../../../img/plots/decision_plot_1.png" alt="decision_plot_1" width="700" height="700"/>
-</div>
-<br>
-```python
-atom.decision_plot(index=120)  # For a single sample
-```
-
-<div align="center">
-    <img src="../../../img/plots/decision_plot_2.png" alt="decision_plot_2" width="700" height="700"/>
+    <img src="../../../img/plots/heatmap_plot.png" alt="heatmap_plot" width="540" height="420"/>
 </div>

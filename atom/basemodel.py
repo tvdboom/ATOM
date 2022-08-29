@@ -40,17 +40,17 @@ from typeguard import typechecked
 
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
-from atom.plots import BaseModelPlotter
+from atom.plots import ModelPlot, ShapPlot
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SCALAR, SEQUENCE_TYPES, X_TYPES,
-    Y_TYPES, CustomDict, Predictor, Scorer, ShapExplanation, Table, composed,
-    crash, custom_transform, fit, flt, get_best_score, get_custom_scorer,
+    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
+    CustomDict, Predictor, Scorer, ShapExplanation, Table, composed, crash,
+    custom_transform, fit, flt, get_best_score, get_custom_scorer,
     get_feature_importance, get_pl_name, inverse_transform, it, lst, merge,
     method_to_log, score, time_to_str, transform, variable_return,
 )
 
 
-class BaseModel(BaseModelPlotter):
+class BaseModel(ModelPlot, ShapPlot):
     """Base class for all models."""
 
     def __init__(self, *args, **kwargs):

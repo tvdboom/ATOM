@@ -37,7 +37,7 @@ from zoofs import (
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
-from atom.plots import FSPlotter
+from atom.plots import FeatureSelectorPlot
 from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, check_scaling, composed, crash, get_custom_scorer,
@@ -982,7 +982,12 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotter):
+class FeatureSelector(
+    BaseEstimator,
+    TransformerMixin,
+    BaseTransformer,
+    FeatureSelectorPlot,
+):
     """Reduce the number of features in the data.
 
     Apply feature selection or dimensionality reduction, either to

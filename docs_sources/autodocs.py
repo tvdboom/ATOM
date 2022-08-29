@@ -426,7 +426,6 @@ class AutoDocs:
         config: dict
             Options to configure. Choose from:
                 - toc_only: Whether to display only the toc.
-                - url: Page to link the toc to. None for current.
                 - include: Members to include.
                 - exclude: Members to exclude.
 
@@ -436,6 +435,8 @@ class AutoDocs:
             Toc and blocks for all selected methods.
 
         """
+        toc_only = config.get('toc_only')
+
         if config.get("include"):
             methods = config["include"]
         else:
@@ -449,7 +450,7 @@ class AutoDocs:
         for method in methods:
             func = AutoDocs(self.obj, method=method)
 
-            name = f"[{method}][{func._parent_anchor}{method}]"
+            name = f"[{method}][{'' if toc_only else func._parent_anchor}{method}]"
             summary = func.get_summary()
             toc += f"<tr><td>{name}</td><td>{summary}</td></tr>"
 
@@ -457,7 +458,7 @@ class AutoDocs:
 
         # Create methods
         blocks = ""
-        if not config.get("toc_only"):
+        if not toc_only:
             for method in methods:
                 func = AutoDocs(self.obj, method=method)
 

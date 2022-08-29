@@ -1,5 +1,5 @@
-# scatter_plot
---------------
+# plot_shap_scatter
+-------------------
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">scatter_plot</strong>(models=None,
