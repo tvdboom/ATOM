@@ -1151,9 +1151,9 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         strategies = CustomDict(
-            bow=self._get_gpu(CountVectorizer, "cuml.feature_extraction.text"),
-            tfidf=self._get_gpu(TfidfVectorizer, "cuml.feature_extraction.text"),
-            hashing=self._get_gpu(HashingVectorizer, "cuml.feature_extraction.text"),
+            bow=self._get_engine(CountVectorizer, "cuml.feature_extraction.text"),
+            tfidf=self._get_engine(TfidfVectorizer, "cuml.feature_extraction.text"),
+            hashing=self._get_engine(HashingVectorizer, "cuml.feature_extraction.text"),
         )
 
         if self.strategy in strategies:

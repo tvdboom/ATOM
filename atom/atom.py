@@ -100,8 +100,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
-        if self.gpu:
+        if "gpu" in self.device:
             self.log("GPU training enabled.", 1)
+        if self.engine != "default":
+            self.log(f"Backend engine: {self.engine}.", 1)
 
         # System settings only to logger
         self.log("\nSystem info ====================== >>", 3)
@@ -315,6 +317,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             y_holdout=self.y_test,
             problem_type=self.task.split(" ")[0],
             objective=kwargs.pop("objective", "auto"),
+            automl_algorithm=kwargs.pop("automl_algorithm", "iterative"),
             n_jobs=kwargs.pop("n_jobs", self.n_jobs),
             verbose=kwargs.pop("verbose", True if self.verbose > 1 else False),
             random_seed=kwargs.pop("random_seed", self.random_state),

@@ -773,7 +773,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.drop_missing_target:
                 y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
 
-            estimator = self._get_gpu(LabelEncoder, "cuml.preprocessing")
+            estimator = self._get_engine(LabelEncoder, "cuml.preprocessing")
             self._estimator = estimator().fit(y)
             self.mapping = {
                 str(it(v)): i for i, v in enumerate(self._estimator.classes_)
@@ -1212,7 +1212,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                             f"len(bins)={len(bins) } and len(columns)={len(X.columns)}."
                         )
 
-                estimator = self._get_gpu(
+                estimator = self._get_engine(
                     estimator=KBinsDiscretizer,
                     module="cuml.experimental.preprocessing",
                 )
@@ -2027,7 +2027,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._imputers = {}
 
         # Assign an imputer to each column
-        estimator = self._get_gpu(SimpleImputer, "cuml.experimental.preprocessing")
+        estimator = self._get_engine(SimpleImputer, "cuml.experimental.preprocessing")
         for name, column in X.items():
             # Remember columns with too many missing values
             if self.max_nan_cols and column.isna().sum() > max_nan_cols:
@@ -3083,7 +3083,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         )
 
         if self.strategy in strategies:
-            estimator = self._get_gpu(
+            estimator = self._get_engine(
                 estimator=strategies[self.strategy],
                 module="cuml.experimental.preprocessing",
             )

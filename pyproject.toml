@@ -40,6 +40,7 @@ dependencies = [
     "shap>=0.41",
     "schemdraw>=0.14",
     "scikit-learn>=1.1.0",
+    "scikit-learn-intelex>=2021.6.3",
     "scipy>=1.7.3",
     "typeguard>=2.13",
     "wordcloud>=1.8.1",

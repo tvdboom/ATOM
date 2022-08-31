@@ -348,13 +348,20 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If -1: Use all available cores.
         - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    gpu: bool or str, default=False
-        Train estimators on GPU. Refer to the [documentation][gpu] to
-        check which estimators are supported.
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu:1"` to use the second gpu. Refer to the
+        [user guide][gpu] to check which estimators support GPU.
 
-        - If False: Always use CPU implementation.
-        - If True: Use GPU implementation if possible.
-        - If "force": Force GPU implementation.
+    engine: str, default="default"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][gpu] for an explanation regarding every choice.
+        Choose from:
+
+        - "default" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -495,7 +502,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
         n_jobs: INT = 1,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "default",
         verbose: INT = 0,
         warnings: Union[bool, str] = False,
         logger: Optional[Union[str, Logger]] = None,
@@ -504,7 +512,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
     ):
         super().__init__(
             n_jobs=n_jobs,
-            gpu=gpu,
+            device=device,
+            engine=engine,
             verbose=verbose,
             warnings=warnings,
             logger=logger,

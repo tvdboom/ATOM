@@ -11,7 +11,7 @@ As of the moment, ATOM supports the following Python versions:
 
 And operating systems:
 
- * macOS
+ * macOS (not tested)
  * Unix-like (Ubuntu, Fedora, etc...)
  * Windows 8.1+
 
@@ -45,6 +45,7 @@ packages are necessary for its correct functioning.
 * **[shap](https://github.com/slundberg/shap/)** (>=0.41)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.14)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.1.0)
+* **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2021.6.3)
 * **[scipy](https://www.scipy.org/)** (>=1.7.3)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.13)
 * **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.1)

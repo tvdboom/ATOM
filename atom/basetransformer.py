@@ -20,13 +20,14 @@ import dill as pickle
 import mlflow
 import numpy as np
 import pandas as pd
+import sklearnex
 from sklearn.model_selection import train_test_split
 from typeguard import typechecked
 
 from atom.utils import (
-    INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, Predictor,
-    composed, crash, lst, merge, method_to_log, prepare_logger, to_df,
-    to_series,
+    INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
+    Predictor, composed, crash, lst, merge, method_to_log, prepare_logger,
+    to_df, to_series,
 )
 
 
@@ -41,28 +42,31 @@ class BaseTransformer:
     **kwargs
         Standard keyword arguments for the classes. Can include:
             - n_jobs: Number of cores to use for parallel processing.
+            - device: Device on which to train the estimators.
+            - engine: Execution engine to use for the estimators.
             - verbose: Verbosity level of the output.
             - warnings: Whether to show or suppress encountered warnings.
             - logger: Name of the log file or Logger object.
             - experiment: Name of the mlflow experiment used for tracking.
-            - gpu: Whether to train the pipeline on GPU.
             - random_state: Seed used by the random number generator.
 
     """
 
     attrs = [
         "n_jobs",
+        "device",
+        "engine",
         "verbose",
         "warnings",
         "logger",
         "experiment",
-        "gpu",
         "random_state",
     ]
 
     def __init__(self, **kwargs):
         """Update the properties with the provided kwargs."""
         for key, value in kwargs.items():
+            print(key, value)
             setattr(self, key, value)
 
     # Properties =================================================== >>
@@ -90,6 +94,46 @@ class BaseTransformer:
         self._n_jobs = value
 
     @property
+    def device(self) -> str:
+        return self._device
+
+    @device.setter
+    @typechecked
+    def device(self, value: str):
+        self._device = value.lower()
+        if value.startswith("gpu"):
+            os.environ["CUDA_VISIBLE_DEVICES"] = self._get_device_number()
+
+    @property
+    def engine(self) -> str:
+        return self._engine
+
+    @engine.setter
+    @typechecked
+    def engine(self, value: str):
+        if value.lower() == "default":
+            if "gpu" in self.device:
+                raise ValueError(
+                    f"Invalid value for the engine parameters. device="
+                    f"{self.device} only supports sklearnex or cuml."
+                )
+        elif value.lower() == "cuml":
+            if "cpu" in self.device:
+                raise ValueError(
+                    f"Invalid value for the engine parameters. device="
+                    f"{self.device} only supports default or sklearnex."
+                )
+        elif value.lower() == "sklearnex":
+            sklearnex.set_config(target_offload=self.device)
+        else:
+            raise ValueError(
+                "Invalid value for the engine parameter, got "
+                f"{value}. Choose from : default, sklearnex, cuml."
+            )
+
+        self._engine = value.lower()
+
+    @property
     def verbose(self) -> INT:
         return self._verbose
 
@@ -114,12 +158,12 @@ class BaseTransformer:
             self._warnings = "default" if value else "ignore"
         else:
             opts = ["error", "ignore", "always", "default", "module", "once"]
-            if value not in opts:
+            if value.lower() not in opts:
                 raise ValueError(
                     "Invalid value for the warnings parameter, got "
                     f"{value}. Choose from: {', '.join(opts)}."
                 )
-            self._warnings = value
+            self._warnings = value.lower()
 
         warnings.simplefilter(self._warnings)  # Change the filter in this process
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses
@@ -146,20 +190,6 @@ class BaseTransformer:
             mlflow.set_experiment(value)
 
     @property
-    def gpu(self) -> Union[bool, str]:
-        return self._gpu
-
-    @gpu.setter
-    @typechecked
-    def gpu(self, value: Union[bool, str]):
-        if isinstance(value, str) and value.lower() != "force":
-            raise ValueError(
-                "Invalid value for the gpu parameter. Only True, "
-                f"False and 'force' are valid values, got {value}."
-            )
-        self._gpu = value
-
-    @property
     def random_state(self) -> INT:
         return self._random_state
 
@@ -177,39 +207,58 @@ class BaseTransformer:
 
     # Methods ====================================================== >>
 
-    def _get_gpu(self, estimator: Any, module: str = "cuml") -> Predictor:
-        """Get a GPU or CPU estimator depending on availability.
+    @typechecked
+    def _get_device_number(self) -> int:
+        """Get which GPU device to use (for multi-gpu only).
+
+        Returns
+        -------
+        int or str
+            Device(s) to use.
+
+        """
+        if len(value := self.device.split(":")) == 1:
+            return 0  # Default value
+        else:
+            try:
+                return int(value[1])
+            except (TypeError, ValueError):
+                raise ValueError(
+                    f"Invalid value for the device parameter, got {self.device}. "
+                    "The device_num value (after device_type) must be an int."
+                )
+
+    def _get_est_class(self, name: str, module: str = "") -> Predictor:
+        """Get the estimator's implementation.
+
+        The engine refers to the estimator's underlying library. The
+        default is usually sklearn, and other engines such as sklearnex
+        and cuml write wrappers over sklearn's estimators.
 
         Parameters
         ----------
-        estimator: Predictor
-            Class to get GPU implementation from.
+        name: str
+            Name of the class to get the implementation from.
 
-        module: str, default="cuml"
-            Module from which to get the GPU estimator.
+        module: str, default=""
+            Module from which to get the implementation.
 
         Returns
         -------
         Estimator
-            Provided predictor or cuml implementation.
+            Provided predictor or wrapper implementation.
 
         """
-        if self.gpu:
-            try:
-                return getattr(importlib.import_module(module), estimator.__name__)
-            except ModuleNotFoundError:
-                if str(self.gpu).lower() == "force":
-                    raise ModuleNotFoundError(
-                        "It looks like cuml is not installed. Refer to the package's "
-                        "documentation to learn how to utilize the machine's GPU."
-                    )
-                else:
-                    self.log(
-                        f" --> Unable to import {module}.{estimator.__name__}. "
-                        "Using CPU implementation instead.", 1
-                    )
-
-        return estimator
+        module = f".{module}" if module else ""
+        try:
+            return getattr(importlib.import_module(f"{self.engine}{module}"), name)
+        except AttributeError:
+            return getattr(importlib.import_module(f"sklearn{module}"), name)
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                f"Failed to import {f'{mod}.{estimator.__name__}'}. "
+                f"Package {self.engine} is not installed."
+            )
 
     @staticmethod
     @typechecked

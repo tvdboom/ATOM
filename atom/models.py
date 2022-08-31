@@ -364,7 +364,7 @@ class BernoulliNaiveBayes(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(BernoulliNB, "cuml.naive_bayes")
+        return self.T._get_engine(BernoulliNB, "cuml.naive_bayes")
 
     @staticmethod
     def get_dimensions():
@@ -457,7 +457,7 @@ class CategoricalNaiveBayes(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(CategoricalNB, "cuml.naive_bayes")
+        return self.T._get_engine(CategoricalNB, "cuml.naive_bayes")
 
     @staticmethod
     def get_dimensions():
@@ -589,7 +589,7 @@ class ElasticNet(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(ElasticNetRegressor)
+        return self.T._get_engine(ElasticNetRegressor)
 
     @staticmethod
     def get_dimensions():
@@ -664,7 +664,7 @@ class GaussianNaiveBayes(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(GaussianNB, "cuml.naive_bayes")
+        return self.T._get_engine(GaussianNB, "cuml.naive_bayes")
 
 
 class GaussianProcess(BaseModel):
@@ -823,9 +823,9 @@ class KNearestNeighbors(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return self.T._get_gpu(KNeighborsClassifier, "cuml.neighbors")
+            return self.T._get_engine(KNeighborsClassifier, "cuml.neighbors")
         else:
-            return self.T._get_gpu(KNeighborsRegressor, "cuml.neighbors")
+            return self.T._get_engine(KNeighborsRegressor, "cuml.neighbors")
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -861,9 +861,9 @@ class KernelSVM(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return self.T._get_gpu(SVC, "cuml.svm")
+            return self.T._get_engine(SVC, "cuml.svm")
         else:
-            return self.T._get_gpu(SVR, "cuml.svm")
+            return self.T._get_engine(SVR, "cuml.svm")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -930,7 +930,7 @@ class Lasso(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(LassoRegressor)
+        return self.T._get_engine(LassoRegressor)
 
     @staticmethod
     def get_dimensions():
@@ -954,7 +954,7 @@ class LeastAngleRegression(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(Lars, "cuml.experimental.linear_model")
+        return self.T._get_engine(Lars, "cuml.experimental.linear_model")
 
 
 class LightGBM(BaseModel):
@@ -1079,9 +1079,9 @@ class LinearSVM(BaseModel):
     def est_class(self):
         """Return the estimator's class."""
         if self.T.goal == "class":
-            return self.T._get_gpu(LinearSVC, "cuml.svm")
+            return self.T._get_engine(LinearSVC, "cuml.svm")
         else:
-            return self.T._get_gpu(LinearSVR, "cuml.svm")
+            return self.T._get_engine(LinearSVR, "cuml.svm")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1144,7 +1144,7 @@ class LogisticRegression(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(LR)
+        return self.T._get_engine(LR)
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1277,7 +1277,7 @@ class MultinomialNaiveBayes(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(MultinomialNB, "cuml.naive_bayes")
+        return self.T._get_engine(MultinomialNB, "cuml.naive_bayes")
 
     @staticmethod
     def get_dimensions():
@@ -1301,7 +1301,7 @@ class OrdinaryLeastSquares(BaseModel):
     @property
     def est_class(self):
         """Return the estimator's class."""
-        return self.T._get_gpu(LinearRegression)
+        return self.T._get_engine(LinearRegression)
 
 
 class PassiveAggressive(BaseModel):
@@ -1482,15 +1482,12 @@ class RandomForest(BaseModel):
     needs_scaling = False
     accepts_sparse = True
     supports_gpu = True
-    goal = ["class", "reg"]
+    _estimators = {"class": "RandomForestClassifier", "reg": "RandomForestRegressor"}
 
     @property
     def est_class(self):
         """Return the estimator's class."""
-        if self.T.goal == "class":
-            return self.T._get_gpu(RandomForestClassifier, "cuml.ensemble")
-        else:
-            return self.T._get_gpu(RandomForestRegressor, "cuml.ensemble")
+        return self.T._get_est_class(self._estimators[self.T.goal], "ensemble")
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1551,7 +1548,7 @@ class Ridge(BaseModel):
         if self.T.goal == "class":
             return RidgeClassifier
         else:
-            return self.T._get_gpu(RidgeRegressor)
+            return self.T._get_engine(RidgeRegressor)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""

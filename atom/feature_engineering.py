@@ -1571,7 +1571,7 @@ class FeatureSelector(
 
                 s = lambda p: signature(estimator).parameters[p].default
 
-                estimator = self._get_gpu(PCA)
+                estimator = self._get_engine(PCA)
                 self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
                     svd_solver=s("svd_solver") if self.solver is None else self.solver,

@@ -40,15 +40,16 @@ class BaseTrainer(BaseTransformer, BaseRunner):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
-        verbose, warnings, logger, experiment, gpu, random_state,
+        device, engine, verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
+            device=device,
+            engine=engine,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
             experiment=experiment,
-            gpu=gpu,
             random_state=random_state,
         )
 
@@ -164,11 +165,11 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                     models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 
                     # Check for regression/classification-only models
-                    if self.goal == "class" and self.goal not in models[-1].goal:
+                    if self.goal == "class" and self.goal not in models[-1]._estimators:
                         raise ValueError(
                             f"The {acronym} model can't perform classification tasks!"
                         )
-                    elif self.goal == "reg" and self.goal not in models[-1].goal:
+                    elif self.goal == "reg" and self.goal not in models[-1]._estimators:
                         raise ValueError(
                             f"The {acronym} model can't perform regression tasks!"
                         )
