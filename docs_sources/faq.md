@@ -46,8 +46,8 @@ them on the [Slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/
     it was trained on.
 
 ??? faq "Can I train models through atom using a GPU?"
-    Yes. Refer to the [user guide][gpu] to see what algorithms and models
-    have a GPU implementation. Be aware that it requires additional
+    Yes. Refer to the [user guide][gpu-acceleration] to see what algorithms
+    and models have a GPU implementation. Be aware that it requires additional
     software and hardware dependencies.
 
 ??? faq "How are numerical and categorical columns differentiated?"

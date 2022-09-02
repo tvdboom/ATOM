@@ -11,9 +11,9 @@ As of the moment, ATOM supports the following Python versions:
 
 And operating systems:
 
- * macOS (not tested)
- * Unix-like (Ubuntu, Fedora, etc...)
+ * Linux (Ubuntu, Fedora, etc...)
  * Windows 8.1+
+ * macOS (not tested)
 
 <br><br>
 

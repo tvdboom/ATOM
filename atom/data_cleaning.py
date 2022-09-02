@@ -43,17 +43,10 @@ from imblearn.under_sampling import (
 )
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
-from sklearn.cluster import DBSCAN, OPTICS
-from sklearn.covariance import EllipticEnvelope
-from sklearn.ensemble import IsolationForest
-from sklearn.impute import KNNImputer, SimpleImputer
-from sklearn.neighbors import LocalOutlierFactor
+from sklearn.impute import KNNImputer
 from sklearn.preprocessing import (
-    FunctionTransformer, KBinsDiscretizer, LabelEncoder, MaxAbsScaler,
-    MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler,
-    StandardScaler,
+    FunctionTransformer, PowerTransformer, QuantileTransformer,
 )
-from sklearn.svm import OneClassSVM
 from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
@@ -591,12 +584,19 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Whether to Label-encode the target column. This transformation
         is ignored if `y` is not provided.
 
-    gpu: bool or str, default=False
-        Train LabelEncoder on GPU. Only for encode_target=True.
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
 
-        - If False: Always use CPU implementation.
-        - If True: Use GPU implementation if possible.
-        - If "force": Force GPU implementation.
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -723,11 +723,12 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
         encode_target: bool = True,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
     ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.drop_types = drop_types
         self.strip_categorical = strip_categorical
         self.drop_duplicates = drop_duplicates
@@ -773,7 +774,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.drop_missing_target:
                 y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
 
-            estimator = self._get_engine(LabelEncoder, "cuml.preprocessing")
+            estimator = self._get_est_class("LabelEncoder", "preprocessing")
             self._estimator = estimator().fit(y)
             self.mapping = {
                 str(it(v)): i for i, v in enumerate(self._estimator.classes_)
@@ -959,12 +960,19 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If sequence: Labels to use for all columns.
         - If dict: Labels per column, where the key is the column's name.
 
-    gpu: bool or str, default=False
-        Train transformer on GPU. Not for strategy="custom".
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
 
-        - If False: Always use CPU implementation.
-        - If True: Use GPU implementation if possible.
-        - If "force": Force GPU implementation.
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1117,17 +1125,20 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         bins: Union[INT, SEQUENCE_TYPES, dict] = 5,
         labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[INT] = None,
     ):
         super().__init__(
-            gpu=gpu,
+            device=device,
+            engine=engine,
             verbose=verbose,
             logger=logger,
             random_state=random_state,
         )
+
         self.strategy = strategy
         self.bins = bins
         self.labels = labels
@@ -1212,10 +1223,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                             f"len(bins)={len(bins) } and len(columns)={len(X.columns)}."
                         )
 
-                estimator = self._get_engine(
-                    estimator=KBinsDiscretizer,
-                    module="cuml.experimental.preprocessing",
-                )
+                estimator = self._get_est_class("KBinsDiscretizer", "preprocessing")
                 self._discretizers[col] = estimator(
                     n_bins=bins,
                     encode="ordinal",
@@ -1791,12 +1799,19 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         Maximum number or fraction of missing values in a column
         (if more, the column is removed). If None, ignore this step.
 
-    gpu: bool or str, default=False
-        Train transformer on GPU. Not for strat_num="knn".
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
 
-        - If False: Always use CPU implementation.
-        - If True: Use GPU implementation if possible.
-        - If "force": Force GPU implementation.
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1937,11 +1952,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         max_nan_rows: Optional[SCALAR] = None,
         max_nan_cols: Optional[Union[FLOAT]] = None,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
     ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strat_num = strat_num
         self.strat_cat = strat_cat
         self.max_nan_rows = max_nan_rows
@@ -2026,8 +2042,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._drop_cols = []
         self._imputers = {}
 
+        # Load the imputer class from sklearn or cuml (different modules)
+        estimator = self._get_est_class(
+            name="SimpleImputer",
+            module="preprocessing" if self.engine == "cuml" else "impute",
+        )
+
         # Assign an imputer to each column
-        estimator = self._get_engine(SimpleImputer, "cuml.experimental.preprocessing")
         for name, column in X.items():
             # Remember columns with too many missing values
             if self.max_nan_cols and column.isna().sum() > max_nan_cols:
@@ -2519,6 +2540,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     [atomclassifier-prune] method. Read more in the [user guide]
     [handling-outliers].
 
+    !!! info
+        The "sklearnex" and "cuml" engines are only supported for
+        strategy="dbscan".
+
     Parameters
     ----------
     strategy: str or sequence, default="zscore"
@@ -2551,6 +2576,21 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         Whether to include the target column in the search for
         outliers. This can be useful for regression tasks. Only
         if strategy="zscore".
+
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -2697,11 +2737,13 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         method: Union[SCALAR, str] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
         **kwargs,
     ):
-        super().__init__(verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.method = method
         self.max_sigma = max_sigma
@@ -2741,12 +2783,12 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         strategies = CustomDict(
-            iforest=IsolationForest,
-            ee=EllipticEnvelope,
-            lof=LocalOutlierFactor,
-            svm=OneClassSVM,
-            dbscan=DBSCAN,
-            optics=OPTICS,
+            iforest=["IsolationForest", "ensemble"],
+            ee=["EllipticEnvelope", "covariance"],
+            lof=["LocalOutlierFactor", "neighbors"],
+            svm=["OneClassSVM", "svm"],
+            dbscan=["DBSCAN", "cluster"],
+            optics=["OPTICS", "cluster"],
         )
 
         for strat in lst(self.strategy):
@@ -2837,7 +2879,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                         )
 
             else:
-                estimator = strategies[strat](**kwargs[strat])
+                estimator = self._get_est_class(*strategies[strat])(**kwargs[strat])
                 mask = estimator.fit_predict(objective) != -1
                 outliers.append(mask)
                 if len(lst(self.strategy)) > 1:
@@ -2892,12 +2934,19 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         - "[maxabs][]": Scale features by their maximum absolute value.
         - "[robust][]": Scale using statistics that are robust to outliers.
 
-    gpu: bool or str, default=False
-        Train transformer on GPU.
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
 
-        - If False: Always use CPU implementation.
-        - If True: Use GPU implementation if possible.
-        - If "force": Force GPU implementation.
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -3039,12 +3088,13 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "standard",
         *,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
         **kwargs,
     ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.kwargs = kwargs
 
@@ -3076,17 +3126,14 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self._num_cols = list(X.select_dtypes(include="number").columns)
 
         strategies = CustomDict(
-            standard=StandardScaler,
-            minmax=MinMaxScaler,
-            maxabs=MaxAbsScaler,
-            robust=RobustScaler,
+            standard="StandardScaler",
+            minmax="MinMaxScaler",
+            maxabs="MaxAbsScaler",
+            robust="RobustScaler",
         )
 
         if self.strategy in strategies:
-            estimator = self._get_engine(
-                estimator=strategies[self.strategy],
-                module="cuml.experimental.preprocessing",
-            )
+            estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
             self._estimator = estimator(**self.kwargs)
         else:
             raise ValueError(

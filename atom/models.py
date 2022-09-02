@@ -26,13 +26,16 @@ Description: Module containing all available models. All classes must
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
-        supports_gpu: bool
-            Whether the model has a GPU implementation.
+        supports_engines: list
+            Engines that can be used to run this model.
 
-        goal: list
-            If the model can do classification ("class"), and/or
-            regression ("reg") tasks.
+        _module: str
+            Module from which to load the class. If one of engines,
+            ignore the engine name, i.e. use "ensemble" instead of
+            "sklearn.ensemble".
 
+        _estimators: CustomDict
+            Name of the estimators per goal.
 
         Instance attributes
         -------------------
@@ -47,12 +50,6 @@ Description: Module containing all available models. All classes must
         evals: dict
             Evaluation metric and scores. Only for models that allow
             in-training evaluation.
-
-        Properties
-        ----------
-        est_class: estimator's base class
-            Base class (not instance) of the underlying estimator.
-
 
         Methods
         -------
@@ -123,48 +120,9 @@ from typing import Union
 
 import numpy as np
 from scipy.spatial.distance import cdist
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
-from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.ensemble import (
-    AdaBoostClassifier, AdaBoostRegressor, BaggingClassifier, BaggingRegressor,
-    ExtraTreesClassifier, ExtraTreesRegressor, GradientBoostingClassifier,
-    GradientBoostingRegressor, HistGradientBoostingClassifier,
-    HistGradientBoostingRegressor, RandomForestClassifier,
-    RandomForestRegressor,
-)
-from sklearn.gaussian_process import (
-    GaussianProcessClassifier, GaussianProcessRegressor,
-)
-from sklearn.linear_model import ARDRegression
-from sklearn.linear_model import BayesianRidge as BayesianRidgeRegressor
-from sklearn.linear_model import ElasticNet as ElasticNetRegressor
-from sklearn.linear_model import HuberRegressor, Lars
-from sklearn.linear_model import Lasso as LassoRegressor
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import LogisticRegression as LR
-from sklearn.linear_model import (
-    PassiveAggressiveClassifier, PassiveAggressiveRegressor,
-)
-from sklearn.linear_model import Perceptron as Perc
-from sklearn.linear_model import Ridge as RidgeRegressor
-from sklearn.linear_model import RidgeClassifier, SGDClassifier, SGDRegressor
-from sklearn.naive_bayes import (
-    BernoulliNB, CategoricalNB, ComplementNB, GaussianNB, MultinomialNB,
-)
-from sklearn.neighbors import (
-    KNeighborsClassifier, KNeighborsRegressor, RadiusNeighborsClassifier,
-    RadiusNeighborsRegressor,
-)
-from sklearn.neural_network import MLPClassifier, MLPRegressor
-from sklearn.svm import SVC, SVR, LinearSVC, LinearSVR
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from skopt.space.space import Categorical, Integer, Real
 
 from atom.basemodel import BaseModel
-from atom.ensembles import (
-    StackingClassifier, StackingRegressor, VotingClassifier, VotingRegressor,
-)
 from atom.pipeline import Pipeline
 from atom.utils import CustomDict, create_acronym
 
@@ -234,22 +192,34 @@ class CustomModel(BaseModel):
 
 
 class AdaBoost(BaseModel):
-    """Adaptive Boosting (with decision tree as base estimator)."""
+    """Adaptive Boosting (with decision tree as base estimator).
+
+    AdaBoost is a meta-estimator that begins by fitting a classifier/regressor on
+    the original dataset and then fits additional copies of the algorithm on the
+    same dataset but where the weights of instances are adjusted according to the
+    error of the current prediction.
+
+    Corresponding estimators are:
+
+    - [AdaBoostClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)
+      for classification tasks.
+    - [AdaBoostRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html)
+      for regression tasks.
+
+    Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#adaboost).
+
+    """
 
     acronym = "AdaB"
     fullname = "AdaBoost"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return AdaBoostClassifier
-        else:
-            return AdaBoostRegressor
+    _module = "ensemble"
+    _estimators = CustomDict(
+        {"class": "AdaBoostClassifier", "reg": "AdaBoostRegressor"}
+    )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -274,13 +244,10 @@ class AutomaticRelevanceDetermination(BaseModel):
     fullname = "Automatic Relevant Determination"
     needs_scaling = True
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return ARDRegression
+    _module = "linear_model"
+    _estimators = CustomDict({"reg": "ARDRegression"})
 
     @staticmethod
     def get_dimensions():
@@ -301,16 +268,10 @@ class Bagging(BaseModel):
     fullname = "Bagging"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return BaggingClassifier
-        else:
-            return BaggingRegressor
+    _module = "ensemble"
+    _estimators = CustomDict({"class": "BaggingClassifier", "reg": "BaggingRegressor"})
 
     @staticmethod
     def get_dimensions():
@@ -331,13 +292,10 @@ class BayesianRidge(BaseModel):
     fullname = "Bayesian Ridge"
     needs_scaling = True
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return BayesianRidgeRegressor
+    _module = "linear_model"
+    _estimators = CustomDict({"reg": "BayesianRidge"})
 
     @staticmethod
     def get_dimensions():
@@ -358,13 +316,10 @@ class BernoulliNaiveBayes(BaseModel):
     fullname = "Bernoulli Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class"]
+    supports_engines = ["sklearn", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(BernoulliNB, "cuml.naive_bayes")
+    _module = "naive_bayes"
+    _estimators = CustomDict({"class": "BernoulliNB"})
 
     @staticmethod
     def get_dimensions():
@@ -382,18 +337,12 @@ class CatBoost(BaseModel):
     fullname = "CatBoost"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class", "reg"]
+    supports_engines = []
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        from catboost import CatBoostClassifier, CatBoostRegressor
-
-        if self.T.goal == "class":
-            return CatBoostClassifier
-        else:
-            return CatBoostRegressor
+    _module = "catboost"
+    _estimators = CustomDict(
+        {"class": "CatBoostClassifier", "reg": "CatBoostRegressor"}
+    )
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -402,7 +351,8 @@ class CatBoost(BaseModel):
             train_dir=params.pop("train_dir", ""),
             allow_writing_files=params.pop("allow_writing_files", False),
             thread_count=params.pop("n_jobs", self.T.n_jobs),
-            task_type=params.pop("task_type", "GPU" if self.T.gpu else "CPU"),
+            task_type=params.pop("task_type", "GPU" if self._gpu else "CPU"),
+            devices=str(self.T._device_id),
             verbose=params.pop("verbose", False),
             random_state=params.pop("random_state", self.T.random_state),
             **params,
@@ -451,13 +401,10 @@ class CategoricalNaiveBayes(BaseModel):
     fullname = "Categorical Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class"]
+    supports_engines = ["sklearn", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(CategoricalNB, "cuml.naive_bayes")
+    _module = "naive_bayes"
+    _estimators = CustomDict({"class": "CategoricalNB"})
 
     @staticmethod
     def get_dimensions():
@@ -475,13 +422,10 @@ class ComplementNaiveBayes(BaseModel):
     fullname = "Complement Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class"]
+    supports_engines = ["sklearn", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return ComplementNB
+    _module = "naive_bayes"
+    _estimators = CustomDict({"class": "ComplementNB"})
 
     @staticmethod
     def get_dimensions():
@@ -500,16 +444,12 @@ class DecisionTree(BaseModel):
     fullname = "Decision Tree"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return DecisionTreeClassifier
-        else:
-            return DecisionTreeRegressor
+    _module = "tree"
+    _estimators = CustomDict(
+        {"class": "DecisionTreeClassifier", "reg": "DecisionTreeRegressor"}
+    )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -539,16 +479,10 @@ class Dummy(BaseModel):
     fullname = "Dummy Estimator"
     needs_scaling = False
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return DummyClassifier
-        else:
-            return DummyRegressor
+    _module = "dummy"
+    _estimators = CustomDict({"class": "DummyClassifier", "reg": "DummyRegressor"})
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -580,16 +514,13 @@ class ElasticNet(BaseModel):
     """Linear Regression with elasticnet regularization."""
 
     acronym = "EN"
-    fullname = "ElasticNet Regression"
+    fullname = "ElasticNet"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["reg"]
+    supports_engines = ["sklearn", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(ElasticNetRegressor)
+    _module = "linear_model"
+    _estimators = CustomDict({"reg": "ElasticNet"})
 
     @staticmethod
     def get_dimensions():
@@ -608,16 +539,12 @@ class ExtraTrees(BaseModel):
     fullname = "Extra-Trees"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return ExtraTreesClassifier
-        else:
-            return ExtraTreesRegressor
+    _module = "ensemble"
+    _estimators = CustomDict(
+        {"class": "ExtraTreesClassifier", "reg": "ExtraTreesRegressor"}
+    )
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -658,13 +585,10 @@ class GaussianNaiveBayes(BaseModel):
     fullname = "Gaussian Naive Bayes"
     needs_scaling = False
     accepts_sparse = False
-    supports_gpu = True
-    goal = ["class"]
+    supports_engines = ["sklearn", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(GaussianNB, "cuml.naive_bayes")
+    _module = "naive_bayes"
+    _estimators = CustomDict({"class": "GaussianNB"})
 
 
 class GaussianProcess(BaseModel):
@@ -674,16 +598,12 @@ class GaussianProcess(BaseModel):
     fullname = "Gaussian Process"
     needs_scaling = False
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return GaussianProcessClassifier
-        else:
-            return GaussianProcessRegressor
+    _module = "gaussian_process"
+    _estimators = CustomDict(
+        {"class": "GaussianProcessClassifier", "reg": "GaussianProcessRegressor"}
+    )
 
 
 class GradientBoostingMachine(BaseModel):
@@ -693,16 +613,12 @@ class GradientBoostingMachine(BaseModel):
     fullname = "Gradient Boosting Machine"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return GradientBoostingClassifier
-        else:
-            return GradientBoostingRegressor
+    _module = "ensemble"
+    _estimators = CustomDict(
+        {"class": "GradientBoostingClassifier", "reg": "GradientBoostingRegressor"}
+    )
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -752,13 +668,10 @@ class HuberRegression(BaseModel):
     fullname = "Huber Regression"
     needs_scaling = True
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return HuberRegressor
+    _module = "linear_model"
+    _estimators = CustomDict({"reg": "HuberRegressor"})
 
     @staticmethod
     def get_dimensions():
@@ -777,16 +690,15 @@ class HistGBM(BaseModel):
     fullname = "HistGBM"
     needs_scaling = False
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return HistGradientBoostingClassifier
-        else:
-            return HistGradientBoostingRegressor
+    _module = "ensemble"
+    _estimators = CustomDict(
+        {
+            "class": "HistGradientBoostingClassifier",
+            "reg": "HistGradientBoostingRegressor",
+        }
+    )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -816,16 +728,12 @@ class KNearestNeighbors(BaseModel):
     fullname = "K-Nearest Neighbors"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return self.T._get_engine(KNeighborsClassifier, "cuml.neighbors")
-        else:
-            return self.T._get_engine(KNeighborsRegressor, "cuml.neighbors")
+    _module = "neighbors"
+    _estimators = CustomDict(
+        {"class": "KNeighborsClassifier", "reg": "KNeighborsRegressor"}
+    )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -854,16 +762,10 @@ class KernelSVM(BaseModel):
     fullname = "Kernel SVM"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return self.T._get_engine(SVC, "cuml.svm")
-        else:
-            return self.T._get_engine(SVR, "cuml.svm")
+    _module = "svm"
+    _estimators = CustomDict({"class": "SVC", "reg": "SVR"})
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -924,13 +826,10 @@ class Lasso(BaseModel):
     fullname = "Lasso Regression"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["reg"]
+    supports_engines = ["sklearn", "sklearnex"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(LassoRegressor)
+    _module = "linear_model"
+    _estimators = CustomDict({"reg": "Lasso"})
 
     @staticmethod
     def get_dimensions():
@@ -948,13 +847,10 @@ class LeastAngleRegression(BaseModel):
     fullname = "Least Angle Regression"
     needs_scaling = True
     accepts_sparse = False
-    supports_gpu = True
-    goal = ["reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(Lars, "cuml.experimental.linear_model")
+    _module = "linear_model"
+    _estimators = CustomDict({"reg": "Lars"})
 
 
 class LightGBM(BaseModel):
@@ -964,24 +860,17 @@ class LightGBM(BaseModel):
     fullname = "LightGBM"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class", "reg"]
+    supports_engines = []
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
-
-        if self.T.goal == "class":
-            return LGBMClassifier
-        else:
-            return LGBMRegressor
+    _module = "lightgbm.sklearn"
+    _estimators = CustomDict({"class": "LGBMClassifier", "reg": "LGBMRegressor"})
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         return self.est_class(
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            device=params.pop("device", "gpu" if self.T.gpu else "cpu"),
+            device=params.pop("device", "gpu" if self._gpu else "cpu"),
+            gpu_device_id=params.pop("gpu_device_id", self.T._device_id or -1),
             random_state=params.pop("random_state", self.T.random_state),
             **params,
         )
@@ -1039,13 +928,10 @@ class LinearDiscriminantAnalysis(BaseModel):
     fullname = "Linear Discriminant Analysis"
     needs_scaling = False
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["class"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return LDA
+    _module = "discriminant_analysis"
+    _estimators = CustomDict({"class": "LinearDiscriminantAnalysis"})
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1072,16 +958,10 @@ class LinearSVM(BaseModel):
     fullname = "Linear SVM"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return self.T._get_engine(LinearSVC, "cuml.svm")
-        else:
-            return self.T._get_engine(LinearSVR, "cuml.svm")
+    _module = "svm"
+    _estimators = CustomDict({"class": "LinearSVC", "reg": "LinearSVR"})
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1138,13 +1018,10 @@ class LogisticRegression(BaseModel):
     fullname = "Logistic Regression"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class"]
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(LR)
+    _module = "linear_model"
+    _estimators = CustomDict({"class": "LogisticRegression"})
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1196,16 +1073,10 @@ class MultilayerPerceptron(BaseModel):
     fullname = "Multi-layer Perceptron"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return MLPClassifier
-        else:
-            return MLPRegressor
+    _module = "neural_network"
+    _estimators = CustomDict({"class": "MLPClassifier", "reg": "MLPRegressor"})
 
     @property
     def _dims(self):
@@ -1271,13 +1142,10 @@ class MultinomialNaiveBayes(BaseModel):
     fullname = "Multinomial Naive Bayes"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class"]
+    supports_engines = ["sklearn", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(MultinomialNB, "cuml.naive_bayes")
+    _module = "naive_bayes"
+    _estimators = CustomDict({"class": "MultinomialNB"})
 
     @staticmethod
     def get_dimensions():
@@ -1295,13 +1163,10 @@ class OrdinaryLeastSquares(BaseModel):
     fullname = "Ordinary Least Squares"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["reg"]
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_engine(LinearRegression)
+    _module = "linear_model"
+    _estimators = CustomDict({"reg": "LinearRegression"})
 
 
 class PassiveAggressive(BaseModel):
@@ -1311,16 +1176,12 @@ class PassiveAggressive(BaseModel):
     fullname = "Passive Aggressive"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return PassiveAggressiveClassifier
-        else:
-            return PassiveAggressiveRegressor
+    _module = "linear_model"
+    _estimators = CustomDict(
+        {"class": "PassiveAggressiveClassifier", "reg": "PassiveAggressiveRegressor"}
+    )
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1343,13 +1204,10 @@ class Perceptron(BaseModel):
     fullname = "Perceptron"
     needs_scaling = True
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["class"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return Perc
+    _module = "linear_model"
+    _estimators = CustomDict({"class": "Perceptron"})
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1379,13 +1237,10 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     fullname = "Quadratic Discriminant Analysis"
     needs_scaling = False
     accepts_sparse = False
-    supports_gpu = False
-    goal = ["class"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return QDA
+    _module = "discriminant_analysis"
+    _estimators = CustomDict({"class": "QuadraticDiscriminantAnalysis"})
 
     @staticmethod
     def get_dimensions():
@@ -1400,8 +1255,12 @@ class RadiusNearestNeighbors(BaseModel):
     fullname = "Radius Nearest Neighbors"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
+
+    _module = "neighbors"
+    _estimators = CustomDict(
+        {"class": "RadiusNeighborsClassifier", "reg": "RadiusNeighborsRegressor"}
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1429,14 +1288,6 @@ class RadiusNearestNeighbors(BaseModel):
                 self._distances = 1
 
         return self._distances
-
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return RadiusNeighborsClassifier
-        else:
-            return RadiusNeighborsRegressor
 
     def _get_default_params(self):
         """Custom method to return a valid radius."""
@@ -1481,13 +1332,12 @@ class RandomForest(BaseModel):
     fullname = "Random Forest"
     needs_scaling = False
     accepts_sparse = True
-    supports_gpu = True
-    _estimators = {"class": "RandomForestClassifier", "reg": "RandomForestRegressor"}
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        return self.T._get_est_class(self._estimators[self.T.goal], "ensemble")
+    _module = "ensemble"
+    _estimators = CustomDict(
+        {"class": "RandomForestClassifier", "reg": "RandomForestRegressor"}
+    )
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1539,16 +1389,10 @@ class Ridge(BaseModel):
     fullname = "Ridge Estimator"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return RidgeClassifier
-        else:
-            return self.T._get_engine(RidgeRegressor)
+    _module = "linear_model"
+    _estimators = CustomDict({"class": "RidgeClassifier", "reg": "Ridge"})
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1570,16 +1414,10 @@ class StochasticGradientDescent(BaseModel):
     fullname = "Stochastic Gradient Descent"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = False
-    goal = ["class", "reg"]
+    supports_engines = ["sklearn"]
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return SGDClassifier
-        else:
-            return SGDRegressor
+    _module = "linear_model"
+    _estimators = CustomDict({"class": "SGDClassifier", "reg": "SGDRegressor"})
 
     def get_parameters(self, x):
         """Return a dictionary of the model's hyperparameters."""
@@ -1629,18 +1467,10 @@ class XGBoost(BaseModel):
     fullname = "XGBoost"
     needs_scaling = True
     accepts_sparse = True
-    supports_gpu = True
-    goal = ["class", "reg"]
+    supports_engines = []
 
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        from xgboost import XGBClassifier, XGBRegressor
-
-        if self.T.goal == "class":
-            return XGBClassifier
-        else:
-            return XGBRegressor
+    _module = "xgboost"
+    _estimators = CustomDict({"class": "XGBClassifier", "reg": "XGBRegressor"})
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -1651,7 +1481,8 @@ class XGBoost(BaseModel):
         return self.est_class(
             use_label_encoder=params.pop("use_label_encoder", False),
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
-            tree_method=params.pop("tree_method", "gpu_hist" if self.T.gpu else None),
+            tree_method=params.pop("tree_method", "gpu_hist" if self._gpu else None),
+            gpu_id=self.T._device_id,
             verbosity=params.pop("verbosity", 0),
             random_state=random_state,
             **params,
@@ -1711,7 +1542,11 @@ class Stacking(BaseModel):
     acronym = "Stack"
     fullname = "Stacking"
     needs_scaling = False
-    goal = ["class", "reg"]
+
+    _module = "atom.ensembles"
+    _estimators = CustomDict(
+        {"class": "StackingClassifier", "reg": "StackingRegressor"}
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
@@ -1723,14 +1558,6 @@ class Stacking(BaseModel):
                 "Invalid value for the models parameter. All "
                 "models must have been fitted on the current branch."
             )
-
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return StackingClassifier
-        else:
-            return StackingRegressor
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -1758,7 +1585,9 @@ class Voting(BaseModel):
     acronym = "Vote"
     fullname = "Voting"
     needs_scaling = False
-    goal = ["class", "reg"]
+
+    _module = "atom.ensembles"
+    _estimators = CustomDict({"class": "VotingClassifier", "reg": "VotingRegressor"})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
@@ -1770,14 +1599,6 @@ class Voting(BaseModel):
                 "Invalid value for the models parameter. All "
                 "models must have been fitted on the current branch."
             )
-
-    @property
-    def est_class(self):
-        """Return the estimator's class."""
-        if self.T.goal == "class":
-            return VotingClassifier
-        else:
-            return VotingRegressor
 
     def get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
@@ -1803,42 +1624,42 @@ class Voting(BaseModel):
 
 # List of available models
 MODELS = CustomDict(
-    Dummy=Dummy,
-    GP=GaussianProcess,
-    GNB=GaussianNaiveBayes,
-    MNB=MultinomialNaiveBayes,
+    AdaB=AdaBoost,
+    ARD=AutomaticRelevanceDetermination,
+    Bag=Bagging,
+    BR=BayesianRidge,
     BNB=BernoulliNaiveBayes,
+    CatB=CatBoost,
     CatNB=CategoricalNaiveBayes,
     CNB=ComplementNaiveBayes,
-    OLS=OrdinaryLeastSquares,
-    Ridge=Ridge,
-    Lasso=Lasso,
-    EN=ElasticNet,
-    Lars=LeastAngleRegression,
-    BR=BayesianRidge,
-    ARD=AutomaticRelevanceDetermination,
-    Huber=HuberRegression,
-    Perc=Perceptron,
-    LR=LogisticRegression,
-    LDA=LinearDiscriminantAnalysis,
-    QDA=QuadraticDiscriminantAnalysis,
-    KNN=KNearestNeighbors,
-    RNN=RadiusNearestNeighbors,
     Tree=DecisionTree,
-    Bag=Bagging,
+    Dummy=Dummy,
+    EN=ElasticNet,
     ET=ExtraTrees,
-    RF=RandomForest,
-    AdaB=AdaBoost,
+    GNB=GaussianNaiveBayes,
+    GP=GaussianProcess,
     GBM=GradientBoostingMachine,
+    Huber=HuberRegression,
     hGBM=HistGBM,
-    XGB=XGBoost,
-    LGB=LightGBM,
-    CatB=CatBoost,
-    lSVM=LinearSVM,
+    KNN=KNearestNeighbors,
     kSVM=KernelSVM,
-    PA=PassiveAggressive,
-    SGD=StochasticGradientDescent,
+    Lasso=Lasso,
+    Lars=LeastAngleRegression,
+    LGB=LightGBM,
+    LDA=LinearDiscriminantAnalysis,
+    lSVM=LinearSVM,
+    LR=LogisticRegression,
     MLP=MultilayerPerceptron,
+    MNB=MultinomialNaiveBayes,
+    OLS=OrdinaryLeastSquares,
+    PA=PassiveAggressive,
+    Perc=Perceptron,
+    QDA=QuadraticDiscriminantAnalysis,
+    RNN=RadiusNearestNeighbors,
+    RF=RandomForest,
+    Ridge=Ridge,
+    SGD=StochasticGradientDescent,
+    XGB=XGBoost,
 )
 
 # List of available ensembles

@@ -2155,14 +2155,14 @@ class ModelPlot(BasePlot):
 
     @composed(crash, plot_from_model, typechecked)
     def plot_learning_curve(
-            self,
-            models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-            metric: Union[INT, str] = 0,
-            *,
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        metric: Union[INT, str] = 0,
+        *,
         title: Optional[str] = None,
-            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-            filename: Optional[str] = None,
-            display: Optional[bool] = True,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
     ):
         """Plot the learning curve: score vs number of training samples.
 
@@ -3611,14 +3611,14 @@ class ModelPlot(BasePlot):
 
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
-            self,
-            models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-            metric: Union[INT, str] = 0,
-            *,
+        self,
+        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        metric: Union[INT, str] = 0,
+        *,
         title: Optional[str] = None,
-            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-            filename: Optional[str] = None,
-            display: Optional[bool] = True,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
     ):
         """Plot scores per iteration of the successive halving.
 

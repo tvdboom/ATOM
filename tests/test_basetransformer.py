@@ -9,12 +9,16 @@ Description: Unit tests for basetransformer.py
 
 import glob
 import multiprocessing
+import os
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
+import sklearnex
 from pandas.testing import assert_frame_equal
+from sklearn.naive_bayes import GaussianNB
+from sklearnex.svm import SVC
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.basetransformer import BaseTransformer
@@ -49,6 +53,36 @@ def test_negative_n_jobs():
 
     base = BaseTransformer(n_jobs=-2)
     assert base.n_jobs == multiprocessing.cpu_count() - 1
+
+
+def test_device_parameter():
+    """Assert that the device is set correctly."""
+    BaseTransformer(device="gpu")
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
+
+
+def test_engine_parameter_sklearnex():
+    """Assert that sklearnex offloads to the right device."""
+    BaseTransformer(device="gpu", engine="sklearnex")
+    assert sklearnex.get_config()["target_offload"] == "gpu"
+
+
+def test_engine_parameter_cuml_with_cpu():
+    """Assert that an error is raised when device='cpu' and engine='cuml'."""
+    with pytest.raises(ValueError, match=r".*only supports sklearn.*"):
+        BaseTransformer(device="cpu", engine="cuml")
+
+
+def test_engine_parameter_no_cuml():
+    """Assert that an error is raised when cuml is not installed."""
+    with pytest.raises(ModuleNotFoundError, match=r".*Failed to import cuml.*"):
+        BaseTransformer(device="gpu", engine="cuml")
+
+
+def test_engine_parameter_invalid():
+    """Assert that an error is raised when engine is invalid."""
+    with pytest.raises(ValueError, match=r".*Choose from : sklearn.*"):
+        BaseTransformer(engine="invalid")
 
 
 @pytest.mark.parametrize("verbose", [-2, 3])
@@ -105,32 +139,42 @@ def test_experiment_creation(mlflow):
     mlflow.assert_called_once()
 
 
-def test_gpu_setter():
-    """Assert that an error is raised for an invalid gpu value."""
-    with pytest.raises(ValueError, match=r".*gpu parameter.*"):
-        BaseTransformer(gpu="invalid")
-
-
 def test_random_state_setter():
     """Assert that an error is raised for a negative random_state."""
     with pytest.raises(ValueError, match=r".*random_state parameter.*"):
         BaseTransformer(random_state=-1)
 
 
-# Test _get_gpu ==================================================== >>
-
-def test_gpu_force():
-    """Assert that an error is raised when GPU fails."""
-    atom = ATOMClassifier(X10, y10, gpu="force", random_state=1)
-    with pytest.raises(ModuleNotFoundError, match=r".*cuml is not installed.*"):
-        atom.feature_selection("pca")
+def test_device_id_no_value():
+    """Assert that the device id can be left empty."""
+    base = BaseTransformer(device="gpu")
+    assert base._device_id == 0
 
 
-def test_gpu_fails():
-    """Assert that GPU is skipped when fails."""
-    atom = ATOMClassifier(X10, y10, gpu=True, random_state=1)
-    atom.feature_selection("pca")
-    assert atom.pca.__module__.startswith("sklearn")
+def test_device_id_int():
+    """Assert that the device id can be set."""
+    base = BaseTransformer(device="gpu:2")
+    assert base._device_id == 2
+
+
+def test_device_id_invalid():
+    """Assert that an error is raised when the device id is invalid."""
+    with pytest.raises(ValueError, match=r".*Use a single integer.*"):
+        BaseTransformer(device="gpu:2,3")
+
+
+# Test _get_est_class ============================================== >>
+
+def test_get_est_class_from_engine():
+    """Assert that the class can be retrieved from an engine."""
+    base = BaseTransformer(device="cpu", engine="sklearnex")
+    assert base._get_est_class("SVC", "svm") == SVC
+
+
+def test_get_est_class_from_default():
+    """Assert that the class is retrieved from sklearn when import fails."""
+    base = BaseTransformer(device="cpu", engine="sklearnex")
+    assert base._get_est_class("GaussianNB", "naive_bayes") == GaussianNB
 
 
 # Test _prepare_input ============================================== >>

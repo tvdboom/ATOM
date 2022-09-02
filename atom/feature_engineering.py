@@ -22,7 +22,7 @@ import pandas as pd
 from gplearn.genetic import SymbolicTransformer
 from scipy import stats
 from sklearn.base import BaseEstimator, is_regressor
-from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_selection import (
     RFE, RFECV, SelectFromModel, SelectKBest, SequentialFeatureSelector, chi2,
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
@@ -1000,17 +1000,21 @@ class FeatureSelector(
     [user guide][selecting-useful-features].
 
     !!! warning
-         - Ties between features with equal scores are broken in an
-           unspecified way.
-         - For strategy="rfecv", the `n_features` parameter is the
-           **minimum** number of features to select, not the actual
-           number of features that the transformer returns. It may very
-           well be that it returns more!
+        - Ties between features with equal scores are broken in an
+          unspecified way.
+        - For strategy="rfecv", the `n_features` parameter is the
+          **minimum** number of features to select, not the actual
+          number of features that the transformer returns. It may very
+          well be that it returns more!
 
     !!! info
-        If strategy="pca" and the provided data is dense, it's scaled to
-        mean=0 and std=1 before fitting the transformer (if it wasn't
-        already).
+        - The "sklearnex" and "cuml" engines are only supported for
+          strategy="pca" with dense datasets.
+        - If strategy="pca" and the data is dense and unscaled, it's
+          scaled to mean=0 and std=1 before fitting the PCA transformer.
+        - If strategy="pca" and the provided data is sparse, the used
+          estimator is [TruncatedSVD][], which works more efficiently
+          with sparse matrices.
 
     !!! tip
         Use the [plot_feature_importance][] method to examine how much
@@ -1039,28 +1043,32 @@ class FeatureSelector(
     solver: str, estimator or None, default=None
         Solver/estimator to use for the feature selection strategy. See
         the corresponding documentation for an extended description of
-        the choices. If None, the default value is used (only for pca).
+        the choices. If None, the default value is used (only if
+        strategy="pca"). Choose from:
 
-        - for "univariate", choose from:
+        - If strategy="univariate":
             - "[f_classif][]"
             - "[f_regression][]"
             - "[mutual_info_classif][]"
             - "[mutual_info_regression][]"
             - "[chi2][]"
             - Any function with signature `func(X, y) -> (scores, p-values)`.
-        - for "pca", choose from:
-            - If dense data:
-                - "auto" (default)
-                - "full"
-                - "arpack"
-                - "randomized"
-            - If sparse data:
+        - If strategy="pca":
+            - If data is dense:
+                - If engine="sklearn":
+                    - "auto" (default)
+                    - "full"
+                    - "arpack"
+                    - "randomized"
+                - If engine="sklearnex":
+                    - "full" (default)
+                - If engine="cuml":
+                    - "full" (default)
+                    - "jacobi"
+            - If data is sparse:
                 - "randomized" (default)
                 - "arpack"
-            - If gpu implementation:
-                - "full" (default)
-                - "jacobi"
-                - "auto"
+
         - for the remaining strategies:<br>
           The base estimator. For sfm, rfe and rfecv, it should have
           either a `feature_importances_` or `coef_` attribute after
@@ -1121,12 +1129,20 @@ class FeatureSelector(
         - If -1: Use all available cores.
         - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    gpu: bool or str, default=False
-        Train strategy on GPU. Only for strategy="pca".
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
 
-        - If False: Always use CPU implementation.
-        - If True: Use GPU implementation if possible.
-        - If "force": Force GPU implementation.
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1272,7 +1288,8 @@ class FeatureSelector(
         max_repeated: Optional[SCALAR] = 1.0,
         max_correlation: Optional[FLOAT] = 1.0,
         n_jobs: INT = 1,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[INT] = None,
@@ -1280,7 +1297,8 @@ class FeatureSelector(
     ):
         super().__init__(
             n_jobs=n_jobs,
-            gpu=gpu,
+            device=device,
+            engine=engine,
             verbose=verbose,
             logger=logger,
             random_state=random_state,
@@ -1353,13 +1371,13 @@ class FeatureSelector(
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
-        strats = CustomDict(
-            univariate=SelectKBest,
-            pca=PCA,
-            sfm=SelectFromModel,
-            sfs=SequentialFeatureSelector,
-            rfe=RFE,
-            rfecv=RFECV,
+        strategies = CustomDict(
+            univariate="SelectKBest",
+            pca="PCA",
+            sfm="SelectFromModel",
+            sfs="SequentialFeatureSelector",
+            rfe="RFE",
+            rfecv="RFECV",
             pso=ParticleSwarmOptimization,
             hho=HarrisHawkOptimization,
             gwo=GreyWolfOptimization,
@@ -1368,10 +1386,10 @@ class FeatureSelector(
         )
 
         if isinstance(self.strategy, str):
-            if self.strategy not in strats:
+            if self.strategy not in strategies:
                 raise ValueError(
                     "Invalid value for the strategy parameter, got "
-                    f"{self.strategy}. Choose from: {', '.join(strats)}"
+                    f"{self.strategy}. Choose from: {', '.join(strategies)}"
                 )
             elif self.strategy.lower() not in ("univariate", "pca"):
                 if self.solver is None:
@@ -1549,15 +1567,13 @@ class FeatureSelector(
                 solver = self.solver
 
             check_y()
-            self._estimator = SelectKBest(
-                score_func=solver,
-                k=self._n_features,
-            ).fit(X, y)
+            self._estimator = SelectKBest(solver, k=self._n_features).fit(X, y)
 
         elif self.strategy.lower() == "pca":
             # The PCA and TruncatedSVD both get all possible components to use
             # for the plots (n_components must be < n_features and <= n_rows)
             if is_sparse(X):
+                # No TruncatedSVD from cuml since it can't handle sparse input
                 self._estimator = TruncatedSVD(
                     n_components=min(len(X), X.shape[1] - 1),
                     algorithm="randomized" if self.solver is None else self.solver,
@@ -1569,9 +1585,9 @@ class FeatureSelector(
                     self.scaler = Scaler().fit(X)
                     X = self.scaler.transform(X)
 
-                s = lambda p: signature(estimator).parameters[p].default
+                estimator = self._get_est_class("PCA", "decomposition")
 
-                estimator = self._get_engine(PCA)
+                s = lambda p: signature(estimator).parameters[p].default
                 self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
                     svd_solver=s("svd_solver") if self.solver is None else self.solver,
@@ -1595,7 +1611,7 @@ class FeatureSelector(
             if not self.kwargs.get("threshold"):
                 self._kwargs["threshold"] = -np.inf
 
-            self._estimator = strats[self.strategy](
+            self._estimator = SelectFromModel(
                 estimator=solver,
                 max_features=self._n_features,
                 prefit=prefit,
@@ -1619,7 +1635,7 @@ class FeatureSelector(
             if self.kwargs.get("scoring"):
                 self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
-            self._estimator = strats[self.strategy](
+            self._estimator = SequentialFeatureSelector(
                 estimator=solver,
                 n_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
@@ -1629,7 +1645,7 @@ class FeatureSelector(
         elif self.strategy.lower() == "rfe":
             check_y()
 
-            self._estimator = strats[self.strategy](
+            self._estimator = RFE(
                 estimator=solver,
                 n_features_to_select=self._n_features,
                 **self._kwargs,
@@ -1645,7 +1661,7 @@ class FeatureSelector(
             if self._n_features == X.shape[1]:
                 self._n_features = 1
 
-            self._estimator = strats[self.strategy](
+            self._estimator = RFECV(
                 estimator=solver,
                 min_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
@@ -1683,7 +1699,7 @@ class FeatureSelector(
                     else:
                         kwargs["scoring"] = get_custom_scorer("r2")
 
-            self._estimator = strats[self.strategy](
+            self._estimator = strategies[self.strategy](
                 objective_function=kwargs.pop("objective_function", objective_function),
                 minimize=kwargs.pop("minimize", False),
                 logger=self.logger,

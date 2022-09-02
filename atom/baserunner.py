@@ -553,23 +553,23 @@ class BaseRunner:
                 - **estimator:** The model's underlying estimator.
                 - **module:** The estimator's module.
                 - **needs_scaling:** Whether the model requires feature scaling.
-                - **accepts_sparse:** Whether the model supports sparse matrices.
-                - **supports_gpu:** Whether the model has GPU support.
+                - **accepts_sparse:** Whether the model accepts sparse matrices.
+                - **supports_engines:** List of engines supported by the model.
 
         """
         rows = []
         for model in MODELS.values():
             m = model(self, fast_init=True)
-            if self.goal in m.goal:
+            if self.goal in m._estimators:
                 rows.append(
                     {
                         "acronym": m.acronym,
                         "fullname": m.fullname,
                         "estimator": m.est_class.__name__,
-                        "module": m.est_class.__module__,
+                        "module": m.est_class.__module__.split(".")[0] + m._module,
                         "needs_scaling": str(m.needs_scaling),
                         "accepts_sparse": str(m.accepts_sparse),
-                        "supports_gpu": str(m.supports_gpu),
+                        "supports_engines": ", ". join(m.supports_engines),
                     }
                 )
 
@@ -587,8 +587,8 @@ class BaseRunner:
         - [Prediction attributes][]
         - [Metric scores][metric]
         - [Shap values][shap]
-        - [App instance][adab-create_app]
-        - [Dashboard instance][adab-create_dashboard]
+        - [App instance][adaboost-create_app]
+        - [Dashboard instance][adaboost-create_dashboard]
 
         """
         for model in self._models.values():
@@ -825,7 +825,7 @@ class BaseRunner:
                 )
             else:
                 model = MODELS[kwargs["final_estimator"]](self)
-                if self.goal not in model.goal:
+                if self.goal not in model._estimators:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
                         f"{model.fullname} can not perform {self.task} tasks."

@@ -69,6 +69,7 @@ CUSTOM_URLS = dict(
     symbolictransformer="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer",
     selectkbest="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html",
     pca="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html",
+    truncatedsvd="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html",
     sfm="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html",
     sfs="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html",
     rfe="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html",

@@ -12,6 +12,7 @@ import tempfile
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
+from importlib import import_module
 from inspect import Parameter, signature
 from typing import Any, List, Optional, Tuple, Union
 from unittest.mock import patch
@@ -58,7 +59,8 @@ class BaseModel(ModelPlot, ShapPlot):
         self.name = self.acronym if len(args) == 1 else args[1]
         self.scaler = None
         self.estimator = None
-        self.explainer_dashboard = None
+        self.app = None
+        self.dashboard = None
 
         self._run = None  # mlflow run (if experiment is active)
         self._group = self.name  # sh and ts models belong to the same group
@@ -140,9 +142,20 @@ class BaseModel(ModelPlot, ShapPlot):
             )
 
     @property
+    def est_class(self) -> Predictor:
+        """Return the estimator's class (not instance)."""
+        try:
+            module = import_module(f"{self.T.engine}.{self._module}")
+        except (ModuleNotFoundError, AttributeError):
+            module = import_module(self._module)
+
+        # Goal can fail when model initialized with fast_init=True
+        return getattr(module, self._estimators.get(self.T.goal, self._estimators[0]))
+
+    @property
     def _gpu(self) -> bool:
-        """Return if the model uses the GPU implementation."""
-        return "sklearn" not in self.est_class.__module__
+        """Return whether the model uses the GPU implementation."""
+        return "gpu" in self.T.device.lower()
 
     @property
     def _dims(self) -> List[str]:

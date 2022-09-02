@@ -7,14 +7,15 @@ Description: Module containing the BaseTransformer class.
 
 """
 
-import importlib
 import multiprocessing
 import os
 import random
 import warnings
 from copy import deepcopy
+from importlib import import_module
+from importlib.util import find_spec
 from logging import Logger
-from typing import Any, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import dill as pickle
 import mlflow
@@ -25,9 +26,9 @@ from sklearn.model_selection import train_test_split
 from typeguard import typechecked
 
 from atom.utils import (
-    INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
-    Predictor, composed, crash, lst, merge, method_to_log, prepare_logger,
-    to_df, to_series,
+    INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, Estimator,
+    composed, crash, lst, merge, method_to_log, prepare_logger, to_df,
+    to_series,
 )
 
 
@@ -41,14 +42,15 @@ class BaseTransformer:
     ----------
     **kwargs
         Standard keyword arguments for the classes. Can include:
-            - n_jobs: Number of cores to use for parallel processing.
-            - device: Device on which to train the estimators.
-            - engine: Execution engine to use for the estimators.
-            - verbose: Verbosity level of the output.
-            - warnings: Whether to show or suppress encountered warnings.
-            - logger: Name of the log file or Logger object.
-            - experiment: Name of the mlflow experiment used for tracking.
-            - random_state: Seed used by the random number generator.
+
+        - n_jobs: Number of cores to use for parallel processing.
+        - device: Device on which to train the estimators.
+        - engine: Execution engine to use for the estimators.
+        - verbose: Verbosity level of the output.
+        - warnings: Whether to show or suppress encountered warnings.
+        - logger: Name of the log file or Logger object.
+        - experiment: Name of the mlflow experiment used for tracking.
+        - random_state: Seed used by the random number generator.
 
     """
 
@@ -66,13 +68,13 @@ class BaseTransformer:
     def __init__(self, **kwargs):
         """Update the properties with the provided kwargs."""
         for key, value in kwargs.items():
-            print(key, value)
             setattr(self, key, value)
 
     # Properties =================================================== >>
 
     @property
     def n_jobs(self) -> INT:
+        """Number of cores to use for parallel processing."""
         return self._n_jobs
 
     @n_jobs.setter
@@ -95,46 +97,48 @@ class BaseTransformer:
 
     @property
     def device(self) -> str:
+        """Device on which to train the estimators."""
         return self._device
 
     @device.setter
     @typechecked
     def device(self, value: str):
-        self._device = value.lower()
-        if value.startswith("gpu"):
-            os.environ["CUDA_VISIBLE_DEVICES"] = self._get_device_number()
+        self._device = value
+        if "gpu" in value.lower():
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(self._device_id)
 
     @property
     def engine(self) -> str:
+        """Execution engine to use for the estimators."""
         return self._engine
 
     @engine.setter
     @typechecked
     def engine(self, value: str):
-        if value.lower() == "default":
-            if "gpu" in self.device:
-                raise ValueError(
-                    f"Invalid value for the engine parameters. device="
-                    f"{self.device} only supports sklearnex or cuml."
-                )
+        if value.lower() == "sklearnex":
+            sklearnex.set_config(target_offload=self.device)
         elif value.lower() == "cuml":
             if "cpu" in self.device:
                 raise ValueError(
-                    f"Invalid value for the engine parameters. device="
-                    f"{self.device} only supports default or sklearnex."
+                    f"Invalid value for the engine parameter. device="
+                    f"{self.device} only supports sklearn or sklearnex."
                 )
-        elif value.lower() == "sklearnex":
-            sklearnex.set_config(target_offload=self.device)
-        else:
+            elif not find_spec("cuml"):
+                raise ModuleNotFoundError(
+                    "Failed to import cuml. Package is not installed. Refer "
+                    "to: https://rapids.ai/start.html#rapids-release-selector."
+                )
+        elif value.lower() != "sklearn":
             raise ValueError(
                 "Invalid value for the engine parameter, got "
-                f"{value}. Choose from : default, sklearnex, cuml."
+                f"{value}. Choose from : sklearn, sklearnex, cuml."
             )
 
-        self._engine = value.lower()
+        self._engine = value
 
     @property
     def verbose(self) -> INT:
+        """Verbosity level of the output."""
         return self._verbose
 
     @verbose.setter
@@ -149,6 +153,7 @@ class BaseTransformer:
 
     @property
     def warnings(self) -> str:
+        """Whether to show or suppress encountered warnings."""
         return self._warnings
 
     @warnings.setter
@@ -170,6 +175,7 @@ class BaseTransformer:
 
     @property
     def logger(self) -> Logger:
+        """Name of the log file or Logger object."""
         return self._logger
 
     @logger.setter
@@ -179,6 +185,7 @@ class BaseTransformer:
 
     @property
     def experiment(self) -> Optional[str]:
+        """Name of the mlflow experiment used for tracking."""
         return self._experiment
 
     @experiment.setter
@@ -191,6 +198,7 @@ class BaseTransformer:
 
     @property
     def random_state(self) -> INT:
+        """Seed used by the random number generator."""
         return self._random_state
 
     @random_state.setter
@@ -205,60 +213,47 @@ class BaseTransformer:
         np.random.seed(value)
         self._random_state = value
 
-    # Methods ====================================================== >>
-
-    @typechecked
-    def _get_device_number(self) -> int:
-        """Get which GPU device to use (for multi-gpu only).
-
-        Returns
-        -------
-        int or str
-            Device(s) to use.
-
-        """
+    @property
+    def _device_id(self) -> int:
+        """Which GPU device to use."""
         if len(value := self.device.split(":")) == 1:
             return 0  # Default value
         else:
             try:
-                return int(value[1])
+                return int(value[-1])
             except (TypeError, ValueError):
                 raise ValueError(
-                    f"Invalid value for the device parameter, got {self.device}. "
-                    "The device_num value (after device_type) must be an int."
+                    f"Invalid value for the device parameter. GPU device {value[-1]} "
+                    "isn't understood. Use a single integer to denote a specific "
+                    "device. Note that ATOM doesn't support multi-GPU training."
                 )
 
-    def _get_est_class(self, name: str, module: str = "") -> Predictor:
-        """Get the estimator's implementation.
+    # Methods ====================================================== >>
 
-        The engine refers to the estimator's underlying library. The
-        default is usually sklearn, and other engines such as sklearnex
-        and cuml write wrappers over sklearn's estimators.
+    def _get_est_class(self, name: str, module: str) -> Estimator:
+        """Import a class from a module.
+
+        When the import fails, for example if atom uses sklearnex and
+        that's passed to a transformer, use sklearn's (default engine).
 
         Parameters
         ----------
         name: str
-            Name of the class to get the implementation from.
+            Name of the class to get.
 
-        module: str, default=""
-            Module from which to get the implementation.
+        module: str
+            Module from which to get the class.
 
         Returns
         -------
         Estimator
-            Provided predictor or wrapper implementation.
+            Class of the estimator.
 
         """
-        module = f".{module}" if module else ""
         try:
-            return getattr(importlib.import_module(f"{self.engine}{module}"), name)
-        except AttributeError:
-            return getattr(importlib.import_module(f"sklearn{module}"), name)
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                f"Failed to import {f'{mod}.{estimator.__name__}'}. "
-                f"Package {self.engine} is not installed."
-            )
+            return getattr(import_module(f"{self.engine}.{module}"), name)
+        except (ModuleNotFoundError, AttributeError):
+            return getattr(import_module(f"sklearn.{module}"), name)
 
     @staticmethod
     @typechecked

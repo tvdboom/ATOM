@@ -164,9 +164,8 @@ the bayesian optimization and to select the winning model.
 ## Automated feature scaling
 
 Models that require feature scaling will automatically do so before
-training, unless the data is [sparse](../data_management/#sparse-data)
-or already scaled. The data is considered scaled if it has one of
-the following prerequisites:
+training, unless the data is [sparse][sparse-datasets] or already scaled.
+The data is considered scaled if it has one of the following prerequisites:
 
 * The mean value over the mean of all columns is <0.05 and the mean of
   the standard deviation over all columns lies between 0.9 and 1.1.

@@ -25,6 +25,7 @@ import yaml
 CUSTOM_URLS = dict(
     # API
     api="https://scikit-learn.org/stable/developers/develop.html",
+    sycl_device_filter="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter",
     warnings="https://docs.python.org/3/library/warnings.html#the-warnings-filter",
     # ATOM
     rangeindex="https://pandas.pydata.org/docs/reference/api/pandas.RangeIndex.html",
@@ -68,6 +69,7 @@ CUSTOM_URLS = dict(
     symbolictransformer="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer",
     selectkbest="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html",
     pca="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html",
+    truncatedsvd="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html",
     sfm="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html",
     sfs="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html",
     rfe="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html",
@@ -426,7 +428,6 @@ class AutoDocs:
         config: dict
             Options to configure. Choose from:
                 - toc_only: Whether to display only the toc.
-                - url: Page to link the toc to. None for current.
                 - include: Members to include.
                 - exclude: Members to exclude.
 
@@ -436,6 +437,8 @@ class AutoDocs:
             Toc and blocks for all selected methods.
 
         """
+        toc_only = config.get('toc_only')
+
         if config.get("include"):
             methods = config["include"]
         else:
@@ -449,7 +452,7 @@ class AutoDocs:
         for method in methods:
             func = AutoDocs(self.obj, method=method)
 
-            name = f"[{method}][{func._parent_anchor}{method}]"
+            name = f"[{method}][{'' if toc_only else func._parent_anchor}{method}]"
             summary = func.get_summary()
             toc += f"<tr><td>{name}</td><td>{summary}</td></tr>"
 
@@ -457,7 +460,7 @@ class AutoDocs:
 
         # Create methods
         blocks = ""
-        if not config.get("toc_only"):
+        if not toc_only:
             for method in methods:
                 func = AutoDocs(self.obj, method=method)
 

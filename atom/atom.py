@@ -100,7 +100,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
-        if "gpu" in self.device:
+        if "gpu" in self.device.lower():
             self.log("GPU training enabled.", 1)
         if self.engine != "default":
             self.log(f"Backend engine: {self.engine}.", 1)
@@ -334,9 +334,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                 self.log(f" --> Adding {est.__class__.__name__} to the pipeline...", 2)
             else:
                 for key, value in MODELS.items():
-                    model = value(self, fast_init=True)
-                    if model.est_class.__name__ == est._component_obj.__class__.__name__:
-                        est.acronym, est.fullname = key, model.fullname
+                    m = value(self, fast_init=True)
+                    if m.est_class.__name__ == est._component_obj.__class__.__name__:
+                        est.acronym, est.fullname = key, m.fullname
 
                 # If it's not any of the predefined models, create a new acronym
                 if not hasattr(est, "acronym"):

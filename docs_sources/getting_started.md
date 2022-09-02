@@ -7,11 +7,11 @@
 
 Install ATOM's newest release easily via `pip`:
 
-    $ pip install -U atom-ml
+    pip install -U atom-ml
 
 or via `conda`:
 
-    $ conda install -c conda-forge atom-ml
+    conda install -c conda-forge atom-ml
 
 !!! note
     Since atom was already taken, download the package under the name `atom-ml`!
@@ -23,7 +23,7 @@ or via `conda`:
 To install the [optional dependencies](../dependencies/#optional), add
 [models] after the package's name.
 
-    $ pip install -U atom-ml[models]
+    pip install -U atom-ml[models]
 
 <br style="display: block; margin-top: 2em; content: ' '">
 
@@ -34,7 +34,7 @@ Sometimes, new features and bug fixes are already implemented in the
 available. If you can't wait for that, it's possible to install the
 package directly from git.
 
-    $ pip install git+https://github.com/tvdboom/ATOM.git@development#egg=atom-ml
+    pip install git+https://github.com/tvdboom/ATOM.git@development#egg=atom-ml
 
 Don't forget to include `#egg=atom-ml` to explicitly name the project,
 this way pip can track metadata for it without having to have run the
@@ -48,7 +48,7 @@ If you are planning to [contribute](../contributing) to the project,
 you'll need the [development dependencies](../dependencies/#development).
 Install them adding [dev] after the package's name.
 
-    $ pip install -U atom-ml[dev]
+    pip install -U atom-ml[dev]
 
 Click [here](https://pypi.org/simple/atom-ml/) for a complete list of
 package files for all versions published on PyPI.

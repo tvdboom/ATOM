@@ -7,7 +7,6 @@ Description: Module containing utility constants, functions and classes.
 
 """
 
-import importlib
 import logging
 import math
 import pprint
@@ -17,6 +16,7 @@ from collections.abc import MutableMapping
 from copy import copy
 from datetime import datetime
 from functools import wraps
+from importlib import import_module
 from inspect import Parameter, signature
 from typing import Protocol, Union
 
@@ -129,6 +129,11 @@ class Model(Protocol):
 class Scorer(Protocol):
     """Protocol for all scorers."""
     def _score(self, method_caller, clf, X, y, sample_weight=None): ...
+
+
+class Estimator(Protocol):
+    """Protocol for all estimators."""
+    def fit(self, **params): ...
 
 
 class Predictor(Protocol):
@@ -751,7 +756,7 @@ def get_versions(models: CustomDict) -> dict:
             if module in sys.modules:
                 versions[module] = sys.modules[module].__version__
             else:
-                versions[module] = importlib.import_module(module).__version__
+                versions[module] = import_module(module).__version__
         except (ImportError, AttributeError):
             continue
 

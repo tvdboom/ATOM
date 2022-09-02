@@ -24,9 +24,6 @@ from nltk.collocations import (
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from sklearn.base import BaseEstimator
-from sklearn.feature_extraction.text import (
-    CountVectorizer, HashingVectorizer, TfidfVectorizer,
-)
 from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
@@ -969,12 +966,19 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         of sparse arrays. Must be False when there are other columns
         in X (besides `corpus`) that are non-sparse.
 
-    gpu: bool or str, default=False
-        Train transformer on GPU.
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
 
-        - If False: Always use CPU implementation.
-        - If True: Use GPU implementation if possible.
-        - If "force": Force GPU implementation.
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -1108,12 +1112,13 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy: str = "bow",
         *,
         return_sparse: bool = True,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
         **kwargs,
     ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.return_sparse = return_sparse
         self.kwargs = kwargs
@@ -1151,13 +1156,17 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         strategies = CustomDict(
-            bow=self._get_engine(CountVectorizer, "cuml.feature_extraction.text"),
-            tfidf=self._get_engine(TfidfVectorizer, "cuml.feature_extraction.text"),
-            hashing=self._get_engine(HashingVectorizer, "cuml.feature_extraction.text"),
+            bow="CountVectorizer",
+            tfidf="TfidfVectorizer",
+            hashing="HashingVectorizer",
         )
 
         if self.strategy in strategies:
-            self._estimator = strategies[self.strategy](**self.kwargs)
+            estimator = self._get_est_class(
+                name=strategies[self.strategy],
+                module="feature_extraction.text",
+            )
+            self._estimator = estimator(**self.kwargs)
         else:
             raise ValueError(
                 "Invalid value for the strategy parameter, got "
@@ -1212,7 +1221,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         X = X.drop(corpus, axis=1)  # Drop original corpus column
 
-        if self.gpu:
+        if "cuml" in self._estimator.__class__.__module__:
             matrix = matrix.get()  # Convert cupy sparse array back to scipy
 
             # cuML estimators have a slightly different method name

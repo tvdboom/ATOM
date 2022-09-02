@@ -7,8 +7,6 @@ Description: Unit tests for models.py
 
 """
 
-from unittest.mock import MagicMock, patch
-
 import numpy as np
 import pytest
 from sklearn.ensemble import RandomForestRegressor
@@ -24,12 +22,12 @@ from .conftest import X_bin, X_class2, X_reg, y_bin, y_class2, y_reg
 
 binary, multiclass, regression = [], [], []
 for m in MODELS.values():
-    if "class" in m.goal:
+    if "class" in m._estimators:
         if m.acronym != "CatNB":
             binary.append(m.acronym)  # CatNB needs a special dataset
         if not m.acronym.startswith("Cat"):
             multiclass.append(m.acronym)  # CatB fails with error on their side
-    if "reg" in m.goal:
+    if "reg" in m._estimators:
         regression.append(m.acronym)
 
 
@@ -85,30 +83,6 @@ def test_models_regression(model):
     )
     assert not atom.errors
     assert hasattr(atom, model)
-
-
-def test_models_gpu_classification():
-    """Assert that GPU works for classification models with BO."""
-    atom = ATOMClassifier(X_bin, y_bin, gpu="force", random_state=1)
-    with patch.dict("sys.modules", {"cuml": MagicMock()}):
-        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
-            atom.run(models="lr", n_calls=2, n_initial_points=1)
-
-    with patch.dict("sys.modules", {"cuml.svm": MagicMock()}):
-        with pytest.raises(RuntimeError, match=r".*All models failed to run.*"):
-            atom.run(models=["lsvm", "ksvm"], n_calls=2, n_initial_points=1)
-
-
-def test_models_gpu_regression():
-    """Assert that GPU works for regression models with BO."""
-    atom = ATOMRegressor(X_reg, y_reg, gpu="force", random_state=1)
-    with patch.dict("sys.modules", {"cuml": MagicMock()}):
-        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
-            atom.run(models="ridge", n_calls=2, n_initial_points=1)
-
-    with patch.dict("sys.modules", {"cuml.ensemble": MagicMock()}):
-        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
-            atom.run(models="rf", n_calls=2, n_initial_points=1)
 
 
 def test_Dummy():

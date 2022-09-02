@@ -138,9 +138,9 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         # If left to default, select all predefined models per task
         if self._models is None:
             if self.goal == "class":
-                models = [m(self) for m in MODELS.values() if "class" in m.goal]
+                models = [m(self) for m in MODELS.values() if "class" in m._estimators]
             else:
-                models = [m(self) for m in MODELS.values() if "reg" in m.goal]
+                models = [m(self) for m in MODELS.values() if "reg" in m._estimators]
         else:
             models = []
             for m in lst(self._models):
