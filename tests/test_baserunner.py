@@ -73,18 +73,18 @@ def test_getattr_dataframe():
 def test_getattr_invalid():
     """Assert that an error is raised when there is no such attribute."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(AttributeError, match=r".*object has no attribute.*"):
+    with pytest.raises(AttributeError, match=".*object has no attribute.*"):
         _ = atom.invalid
 
 
 def test_setattr_to_branch():
     """Assert that branch properties can be set."""
     new_dataset = merge(X_bin, y_bin)
-    new_dataset.iloc[0, 3] = 4  # Change one value
+    new_dataset.iat[0, 3] = 4  # Change one value
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.dataset = new_dataset
-    assert atom.dataset.iloc[0, 3] == 4  # Check the value is changed
+    assert atom.dataset.iat[0, 3] == 4  # Check the value is changed
 
 
 def test_setattr_normal():
@@ -125,7 +125,7 @@ def test_delattr_normal():
 def test_delattr_invalid():
     """Assert that an error is raised when there is no such attribute."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(AttributeError, match=r".*object has no attribute.*"):
+    with pytest.raises(AttributeError, match=".*object has no attribute.*"):
         del atom.invalid
 
 
@@ -147,7 +147,7 @@ def test_len():
 def test_getitem_no_dataset():
     """Assert that an error is raised when getitem is used before run."""
     trainer = DirectClassifier(models="LR", random_state=1)
-    with pytest.raises(RuntimeError, match=r".*has no dataset.*"):
+    with pytest.raises(RuntimeError, match=".*has no dataset.*"):
         print(trainer[4])
 
 
@@ -179,7 +179,7 @@ def test_getitem_str_from_column():
 def test_getitem_invalid_str():
     """Assert that an error is raised when getitem is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*has no branch, model or column.*"):
+    with pytest.raises(ValueError, match=".*has no branch, model or column.*"):
         print(atom["invalid"])
 
 
@@ -192,7 +192,7 @@ def test_getitem_list():
 def test_getitem_invalid_type():
     """Assert that an error is raised when getitem is invalid type."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
+    with pytest.raises(TypeError, match=".*subscriptable with types.*"):
         print(atom[2.3])
 
 
@@ -311,7 +311,7 @@ def test_get_rows_is_slice():
 def test_get_rows_by_name():
     """Assert that rows can be retrieved by their index label."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+    with pytest.raises(ValueError, match=".*not found in the dataset.*"):
         atom._get_rows(index="index")
     assert atom._get_rows(index="index_34") == ["index_34"]
 
@@ -319,7 +319,7 @@ def test_get_rows_by_name():
 def test_get_rows_by_position():
     """Assert that rows can be retrieved by their index position."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=r".*out of range.*"):
+    with pytest.raises(ValueError, match=".*out of range.*"):
         atom._get_rows(index=1000)
     assert atom._get_rows(index=100) == [atom.X.index[100]]
 
@@ -327,7 +327,7 @@ def test_get_rows_by_position():
 def test_get_rows_none_selected():
     """Assert that an error is raised when no rows are selected."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=r".*has to be selected.*"):
+    with pytest.raises(ValueError, match=".*has to be selected.*"):
         atom._get_rows(index=slice(1000, 2000))
 
 
@@ -348,7 +348,7 @@ def test_get_columns_by_slice():
 def test_get_columns_by_index():
     """Assert that columns can be retrieved by index."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*out of range for a dataset.*"):
+    with pytest.raises(ValueError, match=".*out of range for a dataset.*"):
         atom._get_columns(columns=40)
     assert atom._get_columns(columns=0) == ["mean radius"]
 
@@ -356,7 +356,7 @@ def test_get_columns_by_index():
 def test_get_columns_by_regex():
     """Assert that columns can be retrieved by regex."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*not find any column.*"):
+    with pytest.raises(ValueError, match=".*not find any column.*"):
         atom._get_columns(columns="invalid")
     assert len(atom._get_columns(columns="mean.*")) > 1
 
@@ -371,7 +371,7 @@ def test_get_columns_by_type():
 def test_get_columns_exclude():
     """Assert that columns can be excluded using `!`."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*not find any column.*"):
+    with pytest.raises(ValueError, match=".*not find any column.*"):
         atom._get_columns(columns="!invalid")
     assert len(atom._get_columns(columns="!mean radius")) == 30
     assert len(atom._get_columns(columns=["!mean radius", "!mean texture"])) == 29
@@ -380,14 +380,14 @@ def test_get_columns_exclude():
 def test_get_columns_none_selected():
     """Assert that an error is raised when no columns are selected."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*At least one column.*"):
+    with pytest.raises(ValueError, match=".*At least one column.*"):
         atom._get_columns(columns="datetime")
 
 
 def test_get_columns_include_or_exclude():
     """Assert that an error is raised when cols are included and excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*either include or exclude columns.*"):
+    with pytest.raises(ValueError, match=".*either include or exclude columns.*"):
         atom._get_columns(columns=["mean radius", "!mean texture"])
 
 
@@ -414,7 +414,7 @@ def test_get_models_is_None():
 def test_get_models_by_int():
     """Assert that models can be selected by index."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*out of range for a pipeline.*"):
+    with pytest.raises(ValueError, match=".*out of range for a pipeline.*"):
         atom._get_models(models=0)
     atom.run(["LR1", "LR2"])
     assert atom._get_models(models=1) == ["LR2"]
@@ -437,7 +437,7 @@ def test_get_models_winner():
 def test_get_models_by_regex():
     """Assert that a single model is returned if the name matches exactly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*not find any model.*"):
+    with pytest.raises(ValueError, match=".*not find any model.*"):
         atom._get_models(models="invalid")
     atom.train_sizing(["LR", "Tree"])
     assert len(atom._get_models(models="lr.*")) == 5
@@ -446,7 +446,7 @@ def test_get_models_by_regex():
 def test_get_models_exclude():
     """Assert that models can be excluded using `!`."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*not find any model.*"):
+    with pytest.raises(ValueError, match=".*not find any model.*"):
         atom._get_models(models="!invalid")
     atom.run(["LR1", "LR2"])
     assert atom._get_models(models="!lr1") == ["LR2"]
@@ -457,7 +457,7 @@ def test_get_models_include_or_exclude():
     """Assert that an error is raised when models are included and excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR1", "LR2"])
-    with pytest.raises(ValueError, match=r".*either include or exclude models.*"):
+    with pytest.raises(ValueError, match=".*either include or exclude models.*"):
         atom._get_models(models=["LR1", "!LR2"])
 
 
@@ -562,7 +562,7 @@ def test_get_class_weights(dataset):
 def test_merge_invalid_class():
     """Assert that an error is raised when the class is not a trainer."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(TypeError, match=r".*Expecting a.*"):
+    with pytest.raises(TypeError, match=".*Expecting a.*"):
         atom.merge(LDA())
 
 
@@ -570,7 +570,7 @@ def test_merge_different_dataset():
     """Assert that an error is raised when the og dataset is different."""
     atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_2 = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=r".*different dataset.*"):
+    with pytest.raises(ValueError, match=".*different dataset.*"):
         atom_1.merge(atom_2)
 
 
@@ -589,7 +589,7 @@ def test_merge_different_metrics():
     atom_1.run("Tree", metric="f1")
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_2.run("Tree", metric="auc")
-    with pytest.raises(ValueError, match=r".*different metric.*"):
+    with pytest.raises(ValueError, match=".*different metric.*"):
         atom_1.merge(atom_2)
 
 
@@ -643,7 +643,7 @@ def test_stacking_invalid_models():
     """Assert that an error is raised when <2 models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    with pytest.raises(ValueError, match=r".*contain at least two.*"):
+    with pytest.raises(ValueError, match=".*contain at least two.*"):
         atom.stacking()
 
 
@@ -652,7 +652,7 @@ def test_stacking_invalid_name():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "Tree"])
     atom.stacking()
-    with pytest.raises(ValueError, match=r".*multiple Stacking.*"):
+    with pytest.raises(ValueError, match=".*multiple Stacking.*"):
         atom.stacking()
 
 
@@ -689,7 +689,7 @@ def test_stacking_unknown_predefined_final_estimator():
     """Assert that an error is raised when the final estimator is unknown."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"])
-    with pytest.raises(ValueError, match=r".*Unknown model.*"):
+    with pytest.raises(ValueError, match=".*Unknown model.*"):
         atom.stacking(final_estimator="invalid")
 
 
@@ -697,7 +697,7 @@ def test_stacking_invalid_predefined_final_estimator():
     """Assert that an error is raised when the final estimator is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"])
-    with pytest.raises(ValueError, match=r".*can not perform.*"):
+    with pytest.raises(ValueError, match=".*can not perform.*"):
         atom.stacking(final_estimator="OLS")
 
 
@@ -725,7 +725,7 @@ def test_voting_invalid_name():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "Tree"])
     atom.voting()
-    with pytest.raises(ValueError, match=r".*multiple Voting.*"):
+    with pytest.raises(ValueError, match=".*multiple Voting.*"):
         atom.voting()
 
 
@@ -733,5 +733,5 @@ def test_voting_invalid_models():
     """Assert that an error is raised when <2 models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    with pytest.raises(ValueError, match=r".*contain at least two.*"):
+    with pytest.raises(ValueError, match=".*contain at least two.*"):
         atom.voting()

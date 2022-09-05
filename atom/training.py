@@ -55,9 +55,10 @@ class Direct(BaseEstimator, BaseTrainer, ModelPlot):
         ----------
         *arrays: sequence of indexables
             Training set and test set. Allowed formats are:
-                - train, test
-                - X_train, X_test, y_train, y_test
-                - (X_train, y_train), (X_test, y_test)
+
+            - train, test
+            - X_train, X_test, y_train, y_test
+            - (X_train, y_train), (X_test, y_test)
 
         """
         self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
@@ -109,9 +110,10 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, ModelPlot):
         ----------
         *arrays: sequence of indexables
             Training set and test set. Allowed formats are:
-                - train, test
-                - X_train, X_test, y_train, y_test
-                - (X_train, y_train), (X_test, y_test)
+
+            - train, test
+            - X_train, X_test, y_train, y_test
+            - (X_train, y_train), (X_test, y_test)
 
         """
         self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
@@ -209,9 +211,10 @@ class TrainSizing(BaseEstimator, BaseTrainer, ModelPlot):
         ----------
         *arrays: sequence of indexables
             Training set and test set. Allowed formats are:
-                - train, test
-                - X_train, X_test, y_train, y_test
-                - (X_train, y_train), (X_test, y_test)
+
+            - train, test
+            - X_train, X_test, y_train, y_test
+            - (X_train, y_train), (X_test, y_test)
 
         """
         self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays)
@@ -270,9 +273,10 @@ class DirectClassifier(Direct):
         scorer object or a sequence of these. If multiple metrics are
         selected, only the first is used to optimize the BO. If None, a
         default scorer is selected:
-            - "f1" for binary classification
-            - "f1_weighted" for multiclass classification
-            - "r2" for regression
+
+        - "f1" for binary classification
+        - "f1_weighted" for multiclass classification
+        - "r2" for regression
 
     greater_is_better: bool or sequence, default=True
         Whether the metric is a score function or a loss function,
@@ -366,9 +370,10 @@ class DirectClassifier(Direct):
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
 
     warnings: bool or str, default=True
         - If True: Default warning action (equal to "default").

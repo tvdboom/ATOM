@@ -51,7 +51,7 @@ def test_getattr():
     assert isinstance(atom.tree.shape, tuple)
     assert isinstance(atom.tree.alcohol, pd.Series)
     assert isinstance(atom.tree.head(), pd.DataFrame)
-    with pytest.raises(AttributeError, match=r".*has no attribute.*"):
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
         print(atom.tree.data)
 
 
@@ -69,7 +69,7 @@ def test_getitem():
     pd.testing.assert_series_equal(atom.tree["alcohol"], atom["alcohol"])
     pd.testing.assert_series_equal(atom.tree[0], atom[0])
     assert isinstance(atom.tree[["alcohol", "ash"]], pd.DataFrame)
-    with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
+    with pytest.raises(TypeError, match=".*subscriptable with types.*"):
         print(atom.tree[(1, 2)])
 
 
@@ -123,7 +123,7 @@ def test_custom_dimensions_is_name_excluded():
 def test_custom_dimensions_name_is_invalid():
     """Assert that an error is raised when an invalid parameter is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*is not a predefined hyperparameter.*"):
+    with pytest.raises(ValueError, match=".*is not a predefined hyperparameter.*"):
         atom.run("LR", n_calls=5, bo_params={"dimensions": "invalid"})
 
 
@@ -143,7 +143,7 @@ def test_custom_dimensions_is_dim():
 def test_custom_dimensions_include_and_excluded():
     """Assert that an error is raised when parameters are included and excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*either include or exclude.*"):
+    with pytest.raises(ValueError, match=".*either include or exclude.*"):
         atom.run("LR", n_calls=5, bo_params={"dimensions": ["!max_iter", "penalty"]})
 
 
@@ -434,8 +434,9 @@ def test_y_holdout_property():
 def test_invalid_method():
     """Assert that an error is raised when the model doesn't have the method."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("SGD")
-    pytest.raises(AttributeError, atom.sgd.predict_proba, X_bin)
+    atom.run("perc")
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        atom.perc.predict_proba(X_bin)
 
 
 def test_predictions_from_index():
@@ -509,7 +510,8 @@ def test_calibrate_invalid_task():
     """Assert than an error is raised when task="regression"."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("OLS")
-    pytest.raises(PermissionError, atom.ols.calibrate)
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        atom.ols.calibrate()
 
 
 def test_calibrate():
@@ -576,7 +578,7 @@ def test_create_dashboard_dataset_no_holdout():
     """Assert that an error is raised when there's no holdout set."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
-    with pytest.raises(ValueError, match=r".*No holdout data set.*"):
+    with pytest.raises(ValueError, match=".*No holdout data set.*"):
         atom.tree.create_dashboard(dataset="holdout")
 
 
@@ -584,7 +586,7 @@ def test_create_dashboard_invalid_dataset():
     """Assert that an error is raised when dataset is invalid."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
-    with pytest.raises(ValueError, match=r".*dataset parameter.*"):
+    with pytest.raises(ValueError, match=".*dataset parameter.*"):
         atom.tree.create_dashboard(dataset="invalid")
 
 
@@ -628,7 +630,7 @@ def test_evaluate_invalid_threshold():
     """Assert that an error is raised when the threshold is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    with pytest.raises(ValueError, match=r".*Value should lie.*"):
+    with pytest.raises(ValueError, match=".*Value should lie.*"):
         atom.mnb.evaluate(threshold=0)
 
 
@@ -636,7 +638,7 @@ def test_evaluate_invalid_dataset():
     """Assert that an error is raised when the dataset is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    with pytest.raises(ValueError, match=r".*Unknown value for the dataset.*"):
+    with pytest.raises(ValueError, match=".*Unknown value for the dataset.*"):
         atom.mnb.evaluate(dataset="invalid")
 
 
@@ -644,7 +646,7 @@ def test_evaluate_no_holdout():
     """Assert that an error is raised when there's no holdout set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    with pytest.raises(ValueError, match=r".*No holdout data set.*"):
+    with pytest.raises(ValueError, match=".*No holdout data set.*"):
         atom.mnb.evaluate(dataset="holdout")
 
 
@@ -714,7 +716,7 @@ def test_full_train_no_holdout():
     """Assert that an error is raised when include_holdout=True with no set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB")
-    with pytest.raises(ValueError, match=r".*no holdout data set.*"):
+    with pytest.raises(ValueError, match=".*no holdout data set.*"):
         atom.lgb.full_train(include_holdout=True)
 
 

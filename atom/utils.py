@@ -3,7 +3,7 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing utility constants, functions and classes.
+Description: Module containing utility constants, classes and functions.
 
 """
 
@@ -21,6 +21,7 @@ from inspect import Parameter, signature
 from typing import Protocol, Union
 
 import matplotlib.pyplot as plt
+import nltk
 import numpy as np
 import pandas as pd
 from matplotlib.gridspec import GridSpec
@@ -182,7 +183,7 @@ class Table:
         self.spaces = spaces
 
     @staticmethod
-    def to_cell(text, position, space):
+    def to_cell(text: SCALAR, position: str, space: int) -> str:
         """Get the string format for one cell."""
         if isinstance(text, float):
             text = round(text, 4)
@@ -195,15 +196,15 @@ class Table:
         else:
             return text.ljust(space)
 
-    def print_header(self):
+    def print_header(self) -> str:
         """Print the header line."""
         return self.print({k: k for k in self.headers})
 
-    def print_line(self):
+    def print_line(self) -> str:
         """Print a line with dashes (usually used after header)."""
         return self.print({k: "-" * s for k, s in zip(self.headers, self.spaces)})
 
-    def print(self, sequence):
+    def print(self, sequence: dict) -> str:
         """Convert a sequence to a nice formatted table row."""
         out = []
         for header, pos, space in zip(self.headers, self.positions, self.spaces):
@@ -224,7 +225,7 @@ class PlotCallback:
 
     c = 0  # Counter to track which model is being plotted
 
-    def __init__(self, cls):
+    def __init__(self, cls: Runner):
         self.cls = cls
 
         # Plot attributes
@@ -418,7 +419,7 @@ class ShapExplanation:
 
             # Remember shap values in the _shap_values attribute
             for i, idx in enumerate(calculate.index):
-                self._shap_values.loc[idx] = self._explanation.values[i]
+                self._shap_values.at[idx] = self._explanation.values[i]
 
         # Don't use attribute to not save plot-specific changes
         explanation = copy(self._explanation)
@@ -481,13 +482,14 @@ class CustomDict(MutableMapping):
     """Custom ordered dictionary.
 
     The main differences with the Python dictionary are:
-        - It has ordered entries.
-        - Key requests are case-insensitive.
-        - Returns a subset of itself using getitem with a list of keys or slice.
-        - It allows getting an item from an index position.
-        - It can insert key value pairs at a specific position.
-        - Replace method to change a key or value if key exists.
-        - Min method to return all elements except one.
+
+    - It has ordered entries.
+    - Key requests are case-insensitive.
+    - Returns a subset of itself using getitem with a list of keys or slice.
+    - It allows getting an item from an index position.
+    - It can insert key value pairs at a specific position.
+    - Replace method to change a key or value if key exists.
+    - Min method to return all elements except one.
 
     """
 
@@ -714,22 +716,6 @@ def is_sparse(df):
     return any(pd.api.types.is_sparse(df[col]) for col in df)
 
 
-def check_goal(goal, method, task):
-    """Raise an error if the goal is invalid."""
-    if not task.startswith(goal):
-        raise PermissionError(
-            f"The {method} method is only available for {task} tasks!"
-        )
-
-
-def check_binary_task(task, method):
-    """Raise an error if the task is invalid."""
-    if not task.startswith("bin"):
-        raise PermissionError(
-            f"The {method} method is only available for binary classification tasks!"
-        )
-
-
 def check_predict_proba(models, method):
     """Raise an error if a model doesn't have a predict_proba method."""
     for m in [m for m in models if m.name != "Vote"]:
@@ -771,6 +757,14 @@ def get_corpus(X):
         raise ValueError("The provided dataset does not contain a text corpus!")
 
 
+def nltk_get(library):
+    """Download a library from nltk if not already on machine."""
+    try:
+        nltk.data.find(library)
+    except LookupError:
+        nltk.download(library.split("/")[-1])
+
+
 def get_pl_name(name, steps, counter=1):
     """Add a counter to a pipeline name if already in steps."""
     og_name = name
@@ -799,15 +793,15 @@ def get_best_score(item, metric=0):
         return lst(item.metric_test)[metric]
 
 
-def time_to_str(t_init):
-    """Convert time integer to string.
+def time_to_str(t):
+    """Convert time to nice string.
 
     Convert a time duration to a string of format 00h:00m:00s
     or 1.000s if under 1 min.
 
     Parameters
     ----------
-    t_init: datetime
+    t: int
         Time to convert (in seconds).
 
     Returns
@@ -816,16 +810,15 @@ def time_to_str(t_init):
         Time representation.
 
     """
-    t = datetime.now() - t_init
-    h = t.seconds // 3600
-    m = t.seconds % 3600 // 60
-    s = t.seconds % 3600 % 60 + t.microseconds / 1e6
+    h = t // 3600
+    m = t % 3600 // 60
+    s = t % 3600 % 60
     if not h and not m:  # Only seconds
         return f"{s:.3f}s"
     elif not h:  # Also minutes
-        return f"{m}m:{s:02.0f}s"
+        return f"{m:02.0f}m:{s:02.0f}s"
     else:  # Also hours
-        return f"{h}h:{m:02.0f}m:{s:02.0f}s"
+        return f"{h:02.0f}h:{m:02.0f}m:{s:02.0f}s"
 
 
 def to_df(data, index=None, columns=None, dtypes=None):
@@ -1634,6 +1627,40 @@ def score(f):
         return f(args[0][-1], *tuple(args[1:]), **kwargs)
 
     return wrapper
+
+
+def has_task(task):
+    """Check that the instance has a specific task."""
+
+    def check(self):
+        if hasattr(self, "task"):
+            return task in self.task
+        else:
+            return task in self.T.task
+
+    return check
+
+
+def has_attr(attr):
+    """Check that the instance has attribute `attr`."""
+
+    def check(self):
+        # Raise original `AttributeError` if `attr` does not exist
+        getattr(self, attr)
+        return True
+
+    return check
+
+
+def estimator_has_attr(attr):
+    """Check that the estimator has attribute `attr`."""
+
+    def check(self):
+        # Raise original `AttributeError` if `attr` does not exist
+        getattr(self.estimator, attr)
+        return True
+
+    return check
 
 
 # Decorators ======================================================= >>

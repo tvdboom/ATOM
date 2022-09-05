@@ -26,13 +26,13 @@ from .conftest import (
 
 def test_invalid_encoding_type():
     """Assert that an error is raised when encoding_type is invalid."""
-    with pytest.raises(ValueError, match=r".*the encoding_type parameter.*"):
+    with pytest.raises(ValueError, match=".*the encoding_type parameter.*"):
         FeatureExtractor(encoding_type="invalid").transform(X10_dt)
 
 
 def test_invalid_features():
     """Assert that an error is raised when features are invalid."""
-    with pytest.raises(ValueError, match=r".*an attribute of pd.Series.dt.*"):
+    with pytest.raises(ValueError, match=".*an attribute of pd.Series.dt.*"):
         FeatureExtractor(features="invalid").transform(X10_dt)
 
 
@@ -109,21 +109,21 @@ def test_features_are_not_dropped():
 def test_n_features_parameter_negative():
     """Assert that an error is raised when n_features is negative."""
     generator = FeatureGenerator(n_features=-2)
-    with pytest.raises(ValueError, match=r".*the n_features parameter.*"):
+    with pytest.raises(ValueError, match=".*the n_features parameter.*"):
         generator.fit(X_bin, y_bin)
 
 
 def test_strategy_parameter():
     """Assert that the strategy parameter is either dfs or gfg."""
     generator = FeatureGenerator(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*strategy parameter.*"):
+    with pytest.raises(ValueError, match=".*strategy parameter.*"):
         generator.fit(X_bin, y_bin)
 
 
 def test_operators_parameter():
     """Assert that all operators are valid."""
     generator = FeatureGenerator("gfg", n_features=None, operators=("div", "invalid"))
-    with pytest.raises(ValueError, match=r".*value in the operators.*"):
+    with pytest.raises(ValueError, match=".*value in the operators.*"):
         generator.fit(X_bin, y_bin)
 
 
@@ -198,35 +198,35 @@ def test_default_feature_names():
 def test_groups_invalid_int():
     """Assert that an error is raised when len(groups) != len(names)."""
     grouper = FeatureGrouper(group=[0, 99])
-    with pytest.raises(ValueError, match=r".*out of range.*"):
+    with pytest.raises(ValueError, match=".*out of range.*"):
         grouper.transform(X_bin)
 
 
 def test_groups_invalid_str():
     """Assert that an error is raised when len(groups) != len(names)."""
     grouper = FeatureGrouper(group=[0, "invalid"])
-    with pytest.raises(ValueError, match=r".*not find any column.*"):
+    with pytest.raises(ValueError, match=".*not find any column.*"):
         grouper.transform(X_bin)
 
 
 def test_unequal_groups_names():
     """Assert that an error is raised when len(groups) != len(names)."""
     grouper = FeatureGrouper(group=[0, 1, 2], name=["a", "b"])
-    with pytest.raises(ValueError, match=r".*does not match.*"):
+    with pytest.raises(ValueError, match=".*does not match.*"):
         grouper.transform(X_bin)
 
 
 def test_operator_not_in_libraries():
     """Assert that an error is raised when an operator is not in np or stats."""
     grouper = FeatureGrouper(group=[0, 1, 2], operators="invalid")
-    with pytest.raises(ValueError, match=r".*operators parameter.*"):
+    with pytest.raises(ValueError, match=".*operators parameter.*"):
         grouper.transform(X_bin)
 
 
 def test_invalid_operator():
     """Assert that an error is raised when the result is not one-dimensional."""
     grouper = FeatureGrouper(group=[0, 1, 2], operators="log")
-    with pytest.raises(ValueError, match=r".*one-dimensional.*"):
+    with pytest.raises(ValueError, match=".*one-dimensional.*"):
         grouper.transform(X_bin)
 
 
@@ -265,14 +265,14 @@ def test_attribute_is_created():
 def test_unknown_strategy_parameter():
     """Assert that an error is raised when strategy is unknown."""
     selector = FeatureSelector(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*the strategy parameter.*"):
+    with pytest.raises(ValueError, match=".*the strategy parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_solver_parameter_empty():
     """Assert that an error is raised when solver is None."""
     selector = FeatureSelector(strategy="sfm", solver=None)
-    with pytest.raises(ValueError, match=r".*can't be None.*"):
+    with pytest.raises(ValueError, match=".*can't be None.*"):
         selector.fit(X_reg, y_reg)
 
 
@@ -292,56 +292,56 @@ def test_goal_attribute():
 def test_solver_parameter_invalid_value():
     """Assert that an error is raised when solver is unknown."""
     selector = FeatureSelector(strategy="RFE", solver="invalid")
-    with pytest.raises(ValueError, match=r".*Unknown model.*"):
+    with pytest.raises(ValueError, match=".*Unknown model.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_kwargs_but_no_strategy():
     """Assert that an error is raised when kwargs are defined and strategy=None."""
     selector = FeatureSelector(strategy=None, cv=2)
-    with pytest.raises(ValueError, match=r".*Keyword arguments.*"):
+    with pytest.raises(ValueError, match=".*Keyword arguments.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_n_features_parameter():
     """Assert that an error is raised when n_features is invalid."""
     selector = FeatureSelector(strategy="sfm", solver="XGB_reg", n_features=0)
-    with pytest.raises(ValueError, match=r".*the n_features parameter.*"):
+    with pytest.raises(ValueError, match=".*the n_features parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_min_repeated_parameter():
     """Assert that an error is raised when min_repeated is invalid."""
     selector = FeatureSelector(strategy=None, min_repeated=-1)
-    with pytest.raises(ValueError, match=r".*the min_repeated parameter.*"):
+    with pytest.raises(ValueError, match=".*the min_repeated parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_max_repeated_parameter():
     """Assert that an error is raised when max_repeated is invalid."""
     selector = FeatureSelector(strategy=None, max_repeated=-1)
-    with pytest.raises(ValueError, match=r".*the max_repeated parameter.*"):
+    with pytest.raises(ValueError, match=".*the max_repeated parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_max_repeated_smaller_min_repeated():
     """Assert that an error is raised when min_repeated > max_repeated."""
     selector = FeatureSelector(strategy=None, min_repeated=100, max_repeated=2)
-    with pytest.raises(ValueError, match=r".*can't be higher.*"):
+    with pytest.raises(ValueError, match=".*can't be higher.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_max_correlation_parameter():
     """Assert that an error is raised when max_correlation is invalid."""
     selector = FeatureSelector(strategy=None, max_correlation=-0.2)
-    with pytest.raises(ValueError, match=r".*the max_correlation parameter.*"):
+    with pytest.raises(ValueError, match=".*the max_correlation parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_error_y_is_None():
     """Assert that an error is raised when y is None for some strategies."""
     selector = FeatureSelector(strategy="univariate", solver=f_regression, n_features=9)
-    with pytest.raises(ValueError, match=r".*the y parameter.*"):
+    with pytest.raises(ValueError, match=".*the y parameter.*"):
         selector.fit(X_reg)
 
 
@@ -387,14 +387,14 @@ def test_remove_collinear_with_y():
 def test_solver_parameter_empty_univariate():
     """Assert that an error is raised when solver is None for univariate."""
     selector = FeatureSelector(strategy="univariate")
-    with pytest.raises(ValueError, match=r".*can't be None.*"):
+    with pytest.raises(ValueError, match=".*can't be None.*"):
         selector.fit(X_reg, y_reg)
 
 
 def test_raise_unknown_solver_univariate():
     """Assert that an error is raised when the solver is unknown."""
     selector = FeatureSelector(strategy="univariate", solver="invalid")
-    with pytest.raises(ValueError, match=r".*the solver parameter.*"):
+    with pytest.raises(ValueError, match=".*the solver parameter.*"):
         selector.fit(X_reg, y_reg)
 
 
@@ -438,7 +438,7 @@ def test_sfm_prefit_invalid_estimator():
         n_features=8,
         random_state=1,
     )
-    with pytest.raises(ValueError, match=r".*different columns than X.*"):
+    with pytest.raises(ValueError, match=".*different columns than X.*"):
         selector.fit(X_bin, y_bin)
 
 
@@ -457,7 +457,7 @@ def test_sfm_strategy_not_threshold():
 def test_sfm_invalid_solver():
     """Assert that an error is raised when solver is invalid."""
     selector = FeatureSelector(strategy="sfm", solver="invalid", n_features=5)
-    with pytest.raises(ValueError, match=r".*Unknown model.*"):
+    with pytest.raises(ValueError, match=".*Unknown model.*"):
         selector.fit_transform(X_bin, y_bin)
 
 
@@ -592,7 +592,7 @@ def test_advanced_provided_validation_sets():
 def test_advanced_missing_y_valid():
     """Assert that an error is raised when y_valid is missing."""
     selector = FeatureSelector("pso", solver="tree_class", X_valid=X_bin)
-    with pytest.raises(ValueError, match=r".*y_valid parameter.*"):
+    with pytest.raises(ValueError, match=".*y_valid parameter.*"):
         selector.fit(X_bin, y_bin)
 
 

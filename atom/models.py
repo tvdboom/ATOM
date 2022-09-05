@@ -72,46 +72,48 @@ Description: Module containing all available models. All classes must
 
 
 List of available models:
-    - "Dummy" for Dummy Estimator
-    - "GNB" for Gaussian Naive Bayes (no hyperparameter tuning)
-    - "MNB" for Multinomial Naive Bayes
-    - "BNB" for Bernoulli Naive Bayes
-    - "CatNB" for Categorical Naive Bayes
-    - "CNB" for Complement Naive Bayes
-    - "GP" for Gaussian Process (no hyperparameter tuning)
-    - "OLS" for Ordinary Least Squares (no hyperparameter tuning)
-    - "Ridge" for Ridge Estimator
-    - "Lasso" for Lasso Linear Regression
-    - "EN" for ElasticNet Linear Regression
-    - "Lars" for Least Angle Regression
-    - "BR" for Bayesian Ridge
-    - "ARD" for Automated Relevance Determination
-    - "Huber" for Huber Regression
-    - "Perc" for Perceptron
-    - "LR" for Logistic Regression
-    - "LDA" for Linear Discriminant Analysis
-    - "QDA" for Quadratic Discriminant Analysis
-    - "KNN" for K-Nearest Neighbors
-    - "RNN" for Radius Nearest Neighbors
-    - "Tree" for a single Decision Tree
-    - "Bag" for Bagging
-    - "ET" for Extra-Trees
-    - "RF" for Random Forest
-    - "AdaB" for AdaBoost
-    - "GBM" for Gradient Boosting Machine
-    - "hGBM" for Hist Gradient Boosting Machine
-    - "XGB" for XGBoost (if package is available)
-    - "LGB" for LightGBM (if package is available)
-    - "CatB" for CatBoost (if package is available)
-    - "lSVM" for Linear Support Vector Machine
-    - "kSVM" for Kernel (non-linear) Support Vector Machine
-    - "PA" for Passive Aggressive
-    - "SGD" for Stochastic Gradient Descent
-    - "MLP" for Multi-layer Perceptron
+
+- "Dummy" for Dummy Estimator
+- "GNB" for Gaussian Naive Bayes (no hyperparameter tuning)
+- "MNB" for Multinomial Naive Bayes
+- "BNB" for Bernoulli Naive Bayes
+- "CatNB" for Categorical Naive Bayes
+- "CNB" for Complement Naive Bayes
+- "GP" for Gaussian Process (no hyperparameter tuning)
+- "OLS" for Ordinary Least Squares (no hyperparameter tuning)
+- "Ridge" for Ridge Estimator
+- "Lasso" for Lasso Linear Regression
+- "EN" for ElasticNet Linear Regression
+- "Lars" for Least Angle Regression
+- "BR" for Bayesian Ridge
+- "ARD" for Automated Relevance Determination
+- "Huber" for Huber Regression
+- "Perc" for Perceptron
+- "LR" for Logistic Regression
+- "LDA" for Linear Discriminant Analysis
+- "QDA" for Quadratic Discriminant Analysis
+- "KNN" for K-Nearest Neighbors
+- "RNN" for Radius Nearest Neighbors
+- "Tree" for a single Decision Tree
+- "Bag" for Bagging
+- "ET" for Extra-Trees
+- "RF" for Random Forest
+- "AdaB" for AdaBoost
+- "GBM" for Gradient Boosting Machine
+- "hGBM" for Hist Gradient Boosting Machine
+- "XGB" for XGBoost (if package is available)
+- "LGB" for LightGBM (if package is available)
+- "CatB" for CatBoost (if package is available)
+- "lSVM" for Linear Support Vector Machine
+- "kSVM" for Kernel (non-linear) Support Vector Machine
+- "PA" for Passive Aggressive
+- "SGD" for Stochastic Gradient Descent
+- "MLP" for Multi-layer Perceptron
 
 Additionally, ATOM implements two ensemble models:
-    - "Stack" for Stacking
-    - "Vote" for Voting
+
+- "Stack" for Stacking
+- "Vote" for Voting
 
 """
 
@@ -194,19 +196,57 @@ class CustomModel(BaseModel):
 class AdaBoost(BaseModel):
     """Adaptive Boosting (with decision tree as base estimator).
 
-    AdaBoost is a meta-estimator that begins by fitting a classifier/regressor on
-    the original dataset and then fits additional copies of the algorithm on the
-    same dataset but where the weights of instances are adjusted according to the
-    error of the current prediction.
+    AdaBoost is a meta-estimator that begins by fitting a
+    classifier/regressor on the original dataset and then fits
+    additional copies of the algorithm on the same dataset but where
+    the weights of instances are adjusted according to the error of
+    the current prediction.
 
     Corresponding estimators are:
 
-    - [AdaBoostClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)
-      for classification tasks.
-    - [AdaBoostRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html)
-      for regression tasks.
+    - [AdaBoostClassifier][] for classification tasks.
+    - [AdaBoostRegressor][] for regression tasks.
 
-    Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#adaboost).
+    Read more in sklearn's [documentation][adabdocs].
+
+    See Also
+    --------
+    atom.models:DecisionTree
+    atom.models:ExtraTrees
+    atom.models:RandomForest
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="AdaB", verbose=2)
+
+    Training ========================= >>
+    Models: AdaB
+    Metric: f1
+
+
+    Results for AdaBoost:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.9722
+    Time elapsed: 0.108s
+    -------------------------------------------------
+    Total time: 0.108s
+
+
+    Final results ==================== >>
+    Duration: 0.109s
+    -------------------------------------
+    AdaBoost --> f1: 0.9722
+
+    ```
 
     """
 

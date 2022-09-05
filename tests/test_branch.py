@@ -54,7 +54,7 @@ def test_branch_delete_current():
 def test_branch_delete_last_branch():
     """Assert that an error is raised when the last branch is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(PermissionError, match=r".*last branch.*"):
+    with pytest.raises(PermissionError, match=".*last branch.*"):
         atom.branch.delete()
 
 
@@ -93,7 +93,7 @@ def test_branch_delete_not_current():
 def test_rename_empty_name():
     """Assert that an error is raised when name is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*can't have an empty name!.*"):
+    with pytest.raises(ValueError, match=".*can't have an empty name!.*"):
         atom.branch.rename("")
 
 
@@ -101,14 +101,14 @@ def test_rename_existing_name():
     """Assert that an error is raised when name already exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
-    with pytest.raises(ValueError, match=r".*already exists!.*"):
+    with pytest.raises(ValueError, match=".*already exists!.*"):
         atom.branch.rename("master")
 
 
 def test_rename_model_name():
     """Assert that an error is raised when name is a model's acronym."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*model's acronym.*"):
+    with pytest.raises(ValueError, match=".*model's acronym.*"):
         atom.branch.rename("Lda")
 
 
@@ -241,18 +241,18 @@ def test_setter_with_models():
     """Assert that an error is raised when there are models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    with pytest.raises(PermissionError, match=r".*not allowed to change the data.*"):
+    with pytest.raises(PermissionError, match=".*not allowed to change the data.*"):
         atom.X = X_class
 
 
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""
     new_dataset = merge(X_bin, y_bin)
-    new_dataset.iloc[0, 3] = 4  # Change one value
+    new_dataset.iat[0, 3] = 4  # Change one value
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.dataset = new_dataset
-    assert atom.dataset.iloc[0, 3] == 4  # Check the value is changed
+    assert atom.dataset.iat[0, 3] == 4  # Check the value is changed
 
 
 def test_train_setter():
@@ -288,9 +288,9 @@ def test_X_train_setter():
     """Assert that the X_train setter changes the training feature set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X_train = atom.X_train
-    new_X_train.iloc[0, 0] = 999
+    new_X_train.iat[0, 0] = 999
     atom.X_train = new_X_train.to_numpy()  # To numpy to test dtypes are maintained
-    assert atom.X_train.iloc[0, 0] == 999
+    assert atom.X_train.iat[0, 0] == 999
     assert list(atom.X_train.dtypes) == list(atom.X_test.dtypes)
 
 
@@ -298,25 +298,25 @@ def test_X_test_setter():
     """Assert that the X_test setter changes the test feature set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X_test = atom.X_test
-    new_X_test.iloc[0, 0] = 999
+    new_X_test.iat[0, 0] = 999
     atom.X_test = new_X_test
-    assert atom.X_test.iloc[0, 0] == 999
+    assert atom.X_test.iat[0, 0] == 999
 
 
 def test_y_train_setter():
     """Assert that the y_train setter changes the training target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_train.iloc[0] == 0  # First value is 1 in original
+    assert atom.y_train.iat[0] == 0  # First value is 1 in original
     atom.y_train = [1] + list(atom.y_train.values[1:])
-    assert atom.y_train.iloc[0] == 1  # First value changed to 0
+    assert atom.y_train.iat[0] == 1  # First value changed to 0
 
 
 def test_y_test_setter():
     """Assert that the y_test setter changes the training target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_test.iloc[0] == 1  # First value is 0 in original
-    atom.y_test = [0] + list(atom.y_test.values[1:])
-    assert atom.y_test.iloc[0] == 0  # First value changed to 1
+    assert atom.y_test.iat[0] == 1  # First value is 0 in original
+    atom.y_test = [0] + list(atom.y_test[1:])
+    assert atom.y_test.iat[0] == 0  # First value changed to 1
 
 
 def test_data_properties_to_df():
@@ -336,14 +336,14 @@ def test_data_properties_to_series():
 def test_setter_error_unequal_rows():
     """Assert that an error is raised when the setter has unequal rows."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r"number of rows"):
+    with pytest.raises(ValueError, match="number of rows"):
         atom.X_train = X_bin
 
 
 def test_setter_error_unequal_index():
     """Assert that an error is raised when the setter has unequal indices."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r"the same indices"):
+    with pytest.raises(ValueError, match="the same indices"):
         atom.y = pd.Series(y_bin_array, index=range(10, len(y_bin_array) + 10))
 
 

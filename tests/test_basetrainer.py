@@ -34,7 +34,7 @@ def test_invalid_sequence_parameter():
         needs_proba=[True, False],
         random_state=1,
     )
-    with pytest.raises(ValueError, match=r".*length should be equal.*"):
+    with pytest.raises(ValueError, match=".*length should be equal.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -62,7 +62,7 @@ def test_metric_is_custom():
 def test_metric_is_invalid_scorer_name():
     """Assert that an error is raised when scorer name is invalid."""
     trainer = DirectClassifier("LR", metric="test", random_state=1)
-    with pytest.raises(ValueError, match=r".*metric parameter.*"):
+    with pytest.raises(ValueError, match=".*metric parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -107,7 +107,7 @@ def test_model_is_predefined():
 def test_package_not_installed():
     """Assert that an error is raised when the model's package is not installed."""
     trainer = DirectClassifier("LGB", random_state=1)
-    with pytest.raises(ModuleNotFoundError, match=r".*Unable to import.*"):
+    with pytest.raises(ModuleNotFoundError, match=".*Unable to import.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -128,7 +128,7 @@ def test_models_get_right_name():
 def test_invalid_model_name():
     """Assert that an error is raised when the model is unknown."""
     trainer = DirectClassifier(models="invalid", random_state=1)
-    with pytest.raises(ValueError, match=r".*Unknown model.*"):
+    with pytest.raises(ValueError, match=".*Unknown model.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -142,11 +142,11 @@ def test_multiple_same_models():
 def test_only_task_models():
     """Assert that an error is raised for models at invalid task."""
     trainer = DirectClassifier("OLS", random_state=1)  # Only regression
-    with pytest.raises(ValueError, match=r".*can't perform classification.*"):
+    with pytest.raises(ValueError, match=".*can't perform classification.*"):
         trainer.run(bin_train, bin_test)
 
     trainer = DirectRegressor("LDA", random_state=1)  # Only classification
-    with pytest.raises(ValueError, match=r".*can't perform regression.*"):
+    with pytest.raises(ValueError, match=".*can't perform regression.*"):
         trainer.run(reg_train, reg_test)
 
 
@@ -160,7 +160,7 @@ def test_reruns():
 def test_duplicate_models():
     """Assert that an error is raised with duplicate models."""
     trainer = DirectClassifier(["lr", "LR", "lgb"], random_state=1)
-    with pytest.raises(ValueError, match=r".*duplicate models.*"):
+    with pytest.raises(ValueError, match=".*duplicate models.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -182,7 +182,7 @@ def test_default_metric():
 def test_sequence_parameters_invalid_length():
     """Assert that an error is raised when the length is invalid."""
     trainer = DirectClassifier("LR", n_calls=(2, 2), random_state=1)
-    with pytest.raises(ValueError, match=r".*Length should be equal.*"):
+    with pytest.raises(ValueError, match=".*Length should be equal.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -190,21 +190,21 @@ def test_sequence_parameters_invalid_length():
 def test_n_calls_parameter_is_invalid(n_calls):
     """Assert that an error is raised when n_calls=1 or <0."""
     trainer = DirectClassifier("LR", n_calls=n_calls, random_state=1)
-    with pytest.raises(ValueError, match=r".*n_calls parameter.*"):
+    with pytest.raises(ValueError, match=".*n_calls parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_n_initial_points_parameter_is_zero():
     """Assert that an error is raised when n_initial_points=0."""
     trainer = DirectClassifier("LR", n_calls=2, n_initial_points=0, random_state=1)
-    with pytest.raises(ValueError, match=r".*n_initial_points parameter.*"):
+    with pytest.raises(ValueError, match=".*n_initial_points parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_n_bootstrap_parameter_is_below_zero():
     """Assert that an error is raised when n_bootstrap<0."""
     trainer = DirectClassifier("LR", n_bootstrap=-1, random_state=1)
-    with pytest.raises(ValueError, match=r".*n_bootstrap parameter.*"):
+    with pytest.raises(ValueError, match=".*n_bootstrap parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -287,7 +287,7 @@ def test_base_estimator_default():
 def test_base_estimator_invalid():
     """Assert that an error is raised when the base estimator is invalid."""
     trainer = DirectClassifier("LR", bo_params={"base_estimator": "u"}, random_state=1)
-    with pytest.raises(ValueError, match=r".*base_estimator parameter.*"):
+    with pytest.raises(ValueError, match=".*base_estimator parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -319,21 +319,21 @@ def test_all_callbacks():
 def test_invalid_max_time():
     """Assert than an error is raised when max_time<=0."""
     trainer = DirectClassifier("LR", bo_params={"max_time": 0}, random_state=1)
-    with pytest.raises(ValueError, match=r".*max_time parameter.*"):
+    with pytest.raises(ValueError, match=".*max_time parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_invalid_delta_x():
     """Assert than an error is raised when delta_x<0."""
     trainer = DirectClassifier("LR", bo_params={"delta_x": -2}, random_state=1)
-    with pytest.raises(ValueError, match=r".*delta_x parameter.*"):
+    with pytest.raises(ValueError, match=".*delta_x parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_invalid_delta_y():
     """Assert than an error is raised when delta_y<0."""
     trainer = DirectClassifier("LR", bo_params={"delta_y": -2}, random_state=1)
-    with pytest.raises(ValueError, match=r".*delta_y parameter.*"):
+    with pytest.raises(ValueError, match=".*delta_y parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -352,14 +352,14 @@ def test_plot():
 def test_invalid_cv():
     """Assert than an error is raised when cv<=0."""
     trainer = DirectClassifier("LR", bo_params={"cv": 0}, random_state=1)
-    with pytest.raises(ValueError, match=r".*cv parameter.*"):
+    with pytest.raises(ValueError, match=".*cv parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_invalid_early_stopping():
     """Assert than an error is raised when early_stopping<=0."""
     trainer = DirectClassifier("LR", bo_params={"early_stopping": -1}, random_state=1)
-    with pytest.raises(ValueError, match=r".*early_stopping parameter.*"):
+    with pytest.raises(ValueError, match=".*early_stopping parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -499,5 +499,5 @@ def test_one_model_failed():
 def test_all_models_failed():
     """Assert that an error is raised when all models failed."""
     trainer = DirectClassifier(["LR", "RF"], n_calls=4, random_state=1)
-    with pytest.raises(RuntimeError, match=r".*All models failed.*"):
+    with pytest.raises(RuntimeError, match=".*All models failed.*"):
         trainer.run(bin_train, bin_test)

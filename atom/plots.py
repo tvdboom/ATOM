@@ -40,14 +40,15 @@ from sklearn.metrics import (
     confusion_matrix, det_curve, precision_recall_curve, roc_curve,
 )
 from sklearn.utils import _safe_indexing
+from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 from wordcloud import WordCloud
 
 from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, Model, check_binary_task, check_goal,
-    check_is_fitted, check_predict_proba, composed, crash, get_best_score,
-    get_corpus, get_custom_scorer, get_feature_importance, lst,
-    partial_dependence, plot_from_model,
+    INT, SCALAR, SEQUENCE_TYPES, Model, check_is_fitted, check_predict_proba,
+    composed, crash, get_best_score, get_corpus, get_custom_scorer,
+    get_feature_importance, has_attr, has_task, lst, partial_dependence,
+    plot_from_model,
 )
 
 
@@ -315,9 +316,12 @@ class BasePlot:
 
         """
         if isinstance(metric, str):
-            name = get_custom_scorer(metric).name
-            if name in self.metric:
-                return self._metric.index(name)
+            if metric.lower() in ("time_bo", "time_fit", "time_bootstrap", "time"):
+                return metric.lower()
+            else:
+                name = get_custom_scorer(metric).name
+                if name in self.metric:
+                    return self._metric.index(name)
 
         elif 0 <= metric < len(self._metric):
             return metric
@@ -450,18 +454,21 @@ class BasePlot:
         **kwargs
             Keyword arguments containing the plot's parameters.
             Axes parameters:
-                - title: Axes' title.
-                - legend: Location of the legend and number of items.
-                - xlabel: Label for the x-axis.
-                - ylabel: Label for the y-axis.
-                - xlim: Limits for the x-axis.
-                - ylim: Limits for the y-axis.
+
+            - title: Axes' title.
+            - legend: Location of the legend and number of items.
+            - xlabel: Label for the x-axis.
+            - ylabel: Label for the y-axis.
+            - xlim: Limits for the x-axis.
+            - ylim: Limits for the y-axis.
+
             Figure parameters:
-                - figsize: Size of the figure.
-                - tight_layout: Whether to apply it (default=True).
-                - filename: Name of the saved file.
-                - plotname: Name of the plot.
-                - display: Whether to render the plot. If None, return the figure.
+
+            - figsize: Size of the figure.
+            - tight_layout: Whether to apply it (default=True).
+            - filename: Name of the saved file.
+            - plotname: Name of the plot.
+            - display: Whether to render the plot. If None, return the figure.
 
         Returns
         -------
@@ -584,6 +591,7 @@ class FeatureSelectorPlot(BasePlot):
 
     """
 
+    @available_if(has_attr("pca"))
     @composed(crash, typechecked)
     def plot_components(
         self,
@@ -622,12 +630,6 @@ class FeatureSelectorPlot(BasePlot):
             Plot object. Only returned if `display=None`.
 
         """
-        if not hasattr(self, "pca"):
-            raise PermissionError(
-                "The plot_components method is only available "
-                "if pca was applied on the data!"
-            )
-
         if show is None or show > self.pca.components_.shape[0]:
             # Limit max features shown to avoid maximum figsize error
             show = min(200, self.pca.components_.shape[0])
@@ -663,6 +665,7 @@ class FeatureSelectorPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_attr("pca"))
     @composed(crash, typechecked)
     def plot_pca(
         self,
@@ -702,11 +705,6 @@ class FeatureSelectorPlot(BasePlot):
             Plot object. Only returned if `display=None`.
 
         """
-        if not hasattr(self, "pca"):
-            raise PermissionError(
-                "The plot_pca method is only available if pca was applied on the data!"
-            )
-
         var = np.array(self.pca.explained_variance_ratio_[:self.pca._comps])
         var_all = np.array(self.pca.explained_variance_ratio_)
 
@@ -739,6 +737,7 @@ class FeatureSelectorPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_attr("rfecv"))
     @composed(crash, typechecked)
     def plot_rfecv(
         self,
@@ -775,12 +774,6 @@ class FeatureSelectorPlot(BasePlot):
             Plot object. Only returned if `display=None`.
 
         """
-        if not hasattr(self.branch, "rfecv") or not self.rfecv:
-            raise PermissionError(
-                "The plot_rfecv method is only available "
-                "if rfecv was applied on the data!"
-            )
-
         try:  # Define the y-label for the plot
             ylabel = self.rfecv.get_params()["scoring"].name
         except AttributeError:
@@ -1138,7 +1131,7 @@ class DataPlot(BasePlot):
 
         def get_text(column):
             """Get the complete corpus as sequence of tokens."""
-            if isinstance(column.iloc[0], str):
+            if isinstance(column.iat[0], str):
                 return column.apply(lambda row: row.split())
             else:
                 return column
@@ -1403,7 +1396,7 @@ class DataPlot(BasePlot):
 
         def get_text(column):
             """Get the complete corpus as one long string."""
-            if isinstance(column.iloc[0], str):
+            if isinstance(column.iat[0], str):
                 return " ".join(column)
             else:
                 return " ".join([" ".join(row) for row in column])
@@ -1448,6 +1441,7 @@ class ModelPlot(BasePlot):
 
     """
 
+    @available_if(has_task("binary"))
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
@@ -1473,8 +1467,7 @@ class ModelPlot(BasePlot):
         and the y-axis is the fraction of positives, i.e. the proportion
         of samples whose class is the positive class (in each bin); and
         a distribution of all predicted probabilities of the classifier.
-        Code snippets from https://scikit-learn.org/stable/auto_examples/
-        calibration/plot_calibration_curve.html
+        Only for binary classification tasks.
 
         Parameters
         ----------
@@ -1507,7 +1500,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_calibration")
         models = self._get_subclass(models)
 
         if n_bins < 5:
@@ -1555,6 +1547,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("class"))
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
         self,
@@ -1609,7 +1602,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self.goal, "plot_confusion_matrix", "classification")
         models = self._get_subclass(models)
 
         dataset = dataset.lower()
@@ -1717,6 +1709,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("binary"))
     @composed(crash, plot_from_model, typechecked)
     def plot_det(
         self,
@@ -1763,7 +1756,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_det")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -1795,6 +1787,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("reg"))
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
         self,
@@ -1845,7 +1838,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self.goal, "plot_errors", "regression")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -1904,10 +1896,10 @@ class ModelPlot(BasePlot):
     ):
         """Plot evaluation curves for the train and test set.
 
-         Only for models that allow in-training evaluation (XGB, LGB,
-        CastB). The metric is provided by the estimator's package and
-        is different for every model and every task. For this reason,
-        the method only allows plotting one model.
+        Only for models that allow in-training evaluation. The metric
+        is provided by the estimator's package and is different for
+        every model and every task. For this reason, the method only
+        allows plotting one model.
 
         Parameters
         ----------
@@ -2068,6 +2060,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("binary"))
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
@@ -2081,8 +2074,7 @@ class ModelPlot(BasePlot):
     ):
         """Plot the cumulative gains curve.
 
-        Only for binary classification tasks. Code snippet from
-        https://github.com/reiinakano/scikit-plot/
+        Only for binary classification tasks.
 
         Parameters
         ----------
@@ -2115,7 +2107,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_gains")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -2241,6 +2232,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("binary"))
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
@@ -2254,8 +2246,7 @@ class ModelPlot(BasePlot):
     ):
         """Plot the lift curve.
 
-        Only for binary classification tasks. Code snippet from
-        https://github.com/reiinakano/scikit-plot/
+        Only for binary classification tasks.
 
         Parameters
         ----------
@@ -2288,7 +2279,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_lift")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -3141,6 +3131,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("binary"))
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
@@ -3188,7 +3179,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_prc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -3224,6 +3214,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("class"))
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(
         self,
@@ -3275,7 +3266,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self.goal, "plot_probabilities", "classification")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
         target = self._get_target(target)
@@ -3315,6 +3305,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("reg"))
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(
         self,
@@ -3368,7 +3359,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_goal(self.goal, "plot_residuals", "regression")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -3437,7 +3427,9 @@ class ModelPlot(BasePlot):
             are selected.
 
         metric: int or str, default=0
-            Index or name of the metric. Only for multi-metric runs.
+            Index or name of the metric (only for multi-metric runs).
+            Other available metrics are "time_bo", "time_fit",
+            "time_bootstrap" and "time".
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
@@ -3461,6 +3453,19 @@ class ModelPlot(BasePlot):
 
         """
 
+        def get_metric(m, metric):
+            """Get the metric or the timing attribute."""
+            if isinstance(metric, str):
+                if getattr(m, metric):
+                    return getattr(m, metric)
+                else:
+                    raise ValueError(
+                        "Invalid value for the metric parameter. Model "
+                        f"{m.name} doesn't have metric {metric}."
+                    )
+            else:
+                return get_best_score(m, metric)
+
         def get_bootstrap(m):
             """Get the bootstrap results for a specific metric."""
             # Use getattr since ensembles don't have the attribute
@@ -3472,7 +3477,7 @@ class ModelPlot(BasePlot):
 
         def std(m):
             """Get the standard deviation of the bootstrap results."""
-            if getattr(m, "std_bootstrap", None):
+            if isinstance(metric, int) and getattr(m, "std_bootstrap", None):
                 return lst(m.std_bootstrap)[metric]
             else:
                 return 0
@@ -3485,13 +3490,15 @@ class ModelPlot(BasePlot):
         ax = fig.add_subplot(BasePlot._fig.grid)
 
         names = []
-        models = sorted(models, key=lambda m: get_best_score(m, metric))
+        models = sorted(models, key=lambda m: get_metric(m, metric))
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]  # First color
 
         all_bootstrap = all(isinstance(get_bootstrap(m), np.ndarray) for m in models)
         for i, m in enumerate(models):
             names.append(m.name)
-            if all_bootstrap:
+            if isinstance(metric, str):
+                ax.barh(y=i, width=getattr(m, metric), height=0.5, color=color)
+            elif all_bootstrap:
                 ax.boxplot(
                     x=get_bootstrap(m),
                     vert=False,
@@ -3508,8 +3515,8 @@ class ModelPlot(BasePlot):
                     color=color,
                 )
 
-        min_lim = 0.95 * (get_best_score(models[0], metric) - std(models[0]))
-        max_lim = 1.01 * (get_best_score(models[-1], metric) + std(models[-1]))
+        min_lim = 0.95 * (get_metric(models[0], metric) - std(models[0]))
+        max_lim = 1.01 * (get_metric(models[-1], metric) + std(models[-1]))
         ax.set_yticks(range(len(models)))
         ax.set_yticklabels(names)
 
@@ -3518,7 +3525,7 @@ class ModelPlot(BasePlot):
             fig=fig,
             ax=ax,
             title=title,
-            xlabel=self._metric[metric].name,
+            xlabel=self._metric[metric].name if isinstance(metric, int) else "time (s)",
             xlim=(min_lim, max_lim) if not all_bootstrap else None,
             figsize=figsize or (10, 4 + len(models) // 2),
             plotname="plot_results",
@@ -3526,6 +3533,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("binary"))
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
@@ -3573,7 +3581,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_roc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
@@ -3701,6 +3708,7 @@ class ModelPlot(BasePlot):
             display=display,
         )
 
+    @available_if(has_task("binary"))
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
@@ -3758,7 +3766,6 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        check_binary_task(self.task, "plot_threshold")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
         check_predict_proba(models, "plot_threshold")

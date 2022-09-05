@@ -94,9 +94,10 @@ class BaseTrainer(BaseTransformer, BaseRunner):
 
         **kwargs
             Additional metric descriptors:
-                - greater_is_better
-                - needs_proba
-                - needs_threshold
+
+            - greater_is_better
+            - needs_proba
+            - needs_threshold
 
         Returns
         -------
@@ -350,7 +351,7 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         results.
 
         """
-        t_init = datetime.now()  # Measure the time the whole pipeline takes
+        t = datetime.now()  # Measure the time the whole pipeline takes
 
         self.log("\nTraining " + "=" * 25 + " >>", 1)
         if not self.__class__.__name__.startswith("SuccessiveHalving"):
@@ -375,8 +376,8 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                     m.bootstrap()
 
                 # Get the total time spend on this model
-                setattr(m, "time", time_to_str(model_time))
-                self.log("-" * 49 + f"\nTotal time: {m.time}", 1)
+                m.time = (datetime.now() - model_time).total_seconds()
+                self.log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
 
             except Exception as ex:
                 self.log(
@@ -414,7 +415,8 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 )
 
         self.log(f"\n\nFinal results {'=' * 20} >>", 1)
-        self.log(f"Duration: {time_to_str(t_init)}\n{'-' * 37}", 1)
+        self.log(f"Total time: {time_to_str((datetime.now() - t).total_seconds())}", 1)
+        self.log("-" * 37, 1)
 
         # Get max length of the model names
         maxlen = max([len(m.fullname) for m in self._models.values()])

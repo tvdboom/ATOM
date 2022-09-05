@@ -1,5 +1,5 @@
-# Bagging (Bag)
----------------
+# Bagging
+---------
 
 <a href="../../../user_guide/data_management/#sparse-datasets" class="md-tag" draggable=False>accept sparse</a>
 

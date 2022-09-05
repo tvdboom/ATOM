@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from inspect import Parameter, getmembers, getsourcelines, signature, getdoc, isroutine
-from typing import Callable, List, Optional
+from inspect import (
+    Parameter, getdoc, getmembers, getsourcelines, isroutine, signature,
+)
+from typing import Callable, Optional
 
 import regex as re
 import yaml
@@ -39,7 +41,7 @@ CUSTOM_URLS = dict(
     # BaseModel
     interface="https://gradio.app/docs/#interface",
     launch="https://gradio.app/docs/#launch-header",
-    explainerdashboard_package="(https://github.com/oegedijk/explainerdashboard",
+    explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
     explainerdashboard="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation",
     # Data cleaning
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
@@ -85,6 +87,10 @@ CUSTOM_URLS = dict(
     mutual_info_classif="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_classif.html",
     mutual_info_regression="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_regression.html",
     chi2="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.chi2.html",
+    # Models
+    adaboostclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html",
+    adaboostregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html",
+    adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
     # NLP
     snowballstemmer="https://www.nltk.org/api/nltk.stem.snowball.html#nltk.stem.snowball.SnowballStemmer",
     bow="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html",
@@ -98,12 +104,17 @@ CUSTOM_URLS = dict(
 
 
 TYPES_CONVERSION = {
+    "atom.utils.CustomDict": "dict",
+    "atom.utils.Model": "[models][]",
+    "List[str]": "list",
+    "Optional[float]": "float or None",
+    "Optional[pandas.core.frame.DataFrame]": "pd.DataFrame or None",
+    "Optional[pandas.core.series.Series]": "pd.Series or None",
     "pandas.core.frame.DataFrame": "pd.DataFrame",
     "pandas.core.series.Series": "pd.Series",
     "Union[str, List[str]]": "str or list",
-    "atom.utils.CustomDict": "dict",
-    "List[str]": "list",
-    "atom.utils.Model": "[models][]",
+    "Union[pandas.core.series.Series, pandas.core.frame.DataFrame]": "pd.Series or pd.DataFrame",
+    "Optional[Union[pandas.core.series.Series, pandas.core.frame.DataFrame]]": "pd.Series, pd.DataFrame or None",
 }
 
 
@@ -114,16 +125,18 @@ class AutoDocs:
 
     The docstring should follow the numpydoc style[^1]. Blocks should
     start with `::`. The following blocks are accepted:
-        - summary (first line of docstring, required)
-        - description (detailed explanation, can contain admonitions)
-        - parameters
-        - attributes
-        - returns
-        - raises
-        - see also
-        - notes
-        - references
-        - examples
+
+    - tags
+    - summary (first line of docstring, required)
+    - description (detailed explanation, can contain admonitions)
+    - parameters
+    - attributes
+    - returns
+    - raises
+    - see also
+    - notes
+    - references
+    - examples
 
     Parameters
     ----------
@@ -215,6 +228,27 @@ class AutoDocs:
         text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(True)])
 
         return text + "\n"
+
+    def get_tags(self) -> str:
+        """Return the object's tags.
+
+        Tags are obtained from class attributes.
+
+        Returns
+        -------
+        str
+            Object's tags.
+
+        """
+        text = ""
+        if self.obj.needs_scaling:
+            text += "[needs scaling](../../../user_guide/training/#automated-feature-scaling){ .md-tag }"
+        if self.obj.accepts_sparse:
+            text += "[accept sparse](../../../user_guide/data_management/#sparse-datasets){ .md-tag }"
+        if len(self.obj.supports_engines) == 0 or len(self.obj.supports_engines) > 1:
+            text += "[supports acceleration](../../../user_guide/accelerating_pipelines/){ .md-tag }"
+
+        return text + "<br><br>"
 
     def get_signature(self) -> str:
         """Return the object's signature.
@@ -427,9 +461,10 @@ class AutoDocs:
         ----------
         config: dict
             Options to configure. Choose from:
-                - toc_only: Whether to display only the toc.
-                - include: Members to include.
-                - exclude: Members to exclude.
+
+            - toc_only: Whether to display only the toc.
+            - include: Members to include.
+            - exclude: Members to exclude.
 
         Returns
         -------
@@ -515,7 +550,9 @@ def render(markdown: str, **kwargs) -> str:
             else:
                 command = {command: None}  # Has no options specified
 
-        if "signature" in command:
+        if "tags" in command:
+            text = autodocs.get_tags()
+        elif "signature" in command:
             text = autodocs.get_signature()
         elif "description" in command:
             text = autodocs.get_summary() + "\n\n" + autodocs.get_description()
@@ -546,10 +583,11 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
     ATOM's documentation accepts some custom formatting for autorefs
     links in order to make the documentation cleaner and easier to
     write. The custom transformations are:
-        - Replace keywords with full url (registered in CUSTOM_URLS).
-        - Replace keyword `self` with the name of the class.
-        - Replace spaces with dashes.
-        - Convert all links to lower case.
+
+    - Replace keywords with full url (registered in CUSTOM_URLS).
+    - Replace keyword `self` with the name of the class.
+    - Replace spaces with dashes.
+    - Convert all links to lower case.
 
     Parameters
     ----------
@@ -566,7 +604,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
 
     """
     result, start = "", 0
-    for match in re.finditer("\[([`' \w_-]*?)\]\[([\w_-]*?)\]", markdown):
+    for match in re.finditer("\[([\.`' \w_-]*?)\]\[([\w_-]*?)\]", markdown):
         anchor = match.group(1)
         link = match.group(2)
 

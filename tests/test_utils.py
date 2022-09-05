@@ -21,9 +21,9 @@ from atom.utils import (
 
 def test_time_to_string():
     """Assert that the time strings are formatted properly."""
-    assert time_to_str(datetime.now() - timedelta(seconds=17)).startswith("17.00")
-    assert time_to_str(datetime.now() - timedelta(minutes=1, seconds=2)) == "1m:02s"
-    assert time_to_str(datetime.now() - timedelta(hours=3, minutes=8)) == "3h:08m:00s"
+    assert time_to_str(timedelta(seconds=17).total_seconds()).startswith("17.00")
+    assert time_to_str(timedelta(minutes=1, seconds=2).total_seconds()) == "01m:02s"
+    assert time_to_str(timedelta(hours=3, minutes=8).total_seconds()) == "03h:08m:00s"
 
 
 def test_check_is_fitted_with_pandas():

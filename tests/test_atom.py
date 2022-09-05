@@ -49,7 +49,7 @@ def test_task_assignment():
 
 def test_raise_one_target_value():
     """Assert that error raises when there is only 1 target value."""
-    with pytest.raises(ValueError, match=r".*1 target value.*"):
+    with pytest.raises(ValueError, match=".*1 target value.*"):
         ATOMClassifier(X_bin, [1 for _ in range(len(y_bin))], random_state=1)
 
 
@@ -93,7 +93,7 @@ def test_branch_change():
 def test_branch_empty():
     """Assert that an error is raised when name is empty."""
     atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=r".*have an empty name.*"):
+    with pytest.raises(ValueError, match=".*have an empty name.*"):
         atom.branch = ""
 
 
@@ -101,21 +101,21 @@ def test_branch_existing_name():
     """Assert that an error is raised when the name already exists."""
     atom = ATOMClassifier(X10, y10, random_state=1)
     atom.branch = "b2"
-    with pytest.raises(ValueError, match=r".*already exists.*"):
+    with pytest.raises(ValueError, match=".*already exists.*"):
         atom.branch = "b2_from_master"
 
 
 def test_branch_model_acronym():
     """Assert that an error is raised when the name is a models' acronym."""
     atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=r".*model's acronym.*"):
+    with pytest.raises(ValueError, match=".*model's acronym.*"):
         atom.branch = "Lda"
 
 
 def test_branch_unknown_parent():
     """Assert that an error is raised when the parent doesn't exist."""
     atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=r".*does not exist.*"):
+    with pytest.raises(ValueError, match=".*does not exist.*"):
         atom.branch = "b2_from_invalid"
 
 
@@ -232,7 +232,7 @@ def test_automl_invalid_objective():
     """Assert that an error is raised when the provided objective is invalid."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree", metric="mse")
-    with pytest.raises(ValueError, match=r".*objective parameter.*"):
+    with pytest.raises(ValueError, match=".*objective parameter.*"):
         atom.automl(objective="r2")
 
 
@@ -298,6 +298,7 @@ def test_inverse_transform():
     """ Assert that the inverse_transform method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.scale()
+    atom.impute()  # Does nothing, but doesn't crash either
     pd.testing.assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
 
 
@@ -439,14 +440,14 @@ def test_add_depending_models():
     """Assert that an error is raised when the branch has dependent models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    with pytest.raises(PermissionError, match=r".*allowed to add transformers.*"):
+    with pytest.raises(PermissionError, match=".*allowed to add transformers.*"):
         atom.clean()
 
 
 def test_add_no_transformer():
     """Assert that an error is raised if the estimator has no estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(AttributeError, match=r".*should have a transform method.*"):
+    with pytest.raises(AttributeError, match=".*should have a transform method.*"):
         atom.add(RandomForestClassifier())
 
 
@@ -499,7 +500,7 @@ def test_add_transformer_y_ignore_X():
 def test_add_invalid_columns_only_y():
     """Assert that an error is raised when ."""
     atom = ATOMClassifier(X10, y10_str, random_state=1)
-    with pytest.raises(ValueError, match=r".*trying to fit transformer.*"):
+    with pytest.raises(ValueError, match=".*trying to fit transformer.*"):
         atom.encode(columns=-1)  # Encoder.fit requires X
 
 
@@ -511,7 +512,7 @@ def test_returned_column_already_exists():
         return df
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*already exists in the original.*"):
+    with pytest.raises(ValueError, match=".*already exists in the original.*"):
         atom.apply(func_test, columns="!mean texture")
 
 
@@ -550,7 +551,7 @@ def test_add_keep_column_names():
 def test_raise_length_mismatch():
     """Assert that an error is raised when there's a mismatch in row length."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(IndexError, match=r".*does not match length.*"):
+    with pytest.raises(IndexError, match=".*does not match length.*"):
         atom.prune(columns=[2, 4])
 
 
@@ -601,7 +602,7 @@ def test_apply():
     """Assert that a function can be applied to the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.apply(np.exp, columns=0)
-    assert atom[0].iloc[0] == np.exp(X_bin.iloc[0, 0])
+    assert atom.iat[0, 0] == np.exp(X_bin.iat[0, 0])
 
 
 # Test data cleaning transformers =================================== >>
@@ -609,7 +610,8 @@ def test_apply():
 def test_balance_wrong_task():
     """Assert that an error is raised for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(PermissionError, atom.balance, oversample=0.7)
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        atom.balance()
 
 
 def test_balance():

@@ -73,7 +73,7 @@ class BaseRunner:
             return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(
-                f"{self.__class__.__name__} object has no attribute {item}."
+                f"'{self.__class__.__name__}' object has no attribute '{item}'."
             )
 
     def __setattr__(self, item: str, value: Any):
@@ -548,13 +548,14 @@ class BaseRunner:
         pd.DataFrame
             Information about the available [predefined models][]. Columns
             include:
-                - **acronym:** Model's acronym (used to call the model).
-                - **fullname:** Complete name of the model.
-                - **estimator:** The model's underlying estimator.
-                - **module:** The estimator's module.
-                - **needs_scaling:** Whether the model requires feature scaling.
-                - **accepts_sparse:** Whether the model accepts sparse matrices.
-                - **supports_engines:** List of engines supported by the model.
+
+            - **acronym:** Model's acronym (used to call the model).
+            - **fullname:** Complete name of the model.
+            - **estimator:** The model's underlying estimator.
+            - **module:** The estimator's module.
+            - **needs_scaling:** Whether the model requires feature scaling.
+            - **accepts_sparse:** Whether the model accepts sparse matrices.
+            - **supports_engines:** List of engines supported by the model.
 
         """
         rows = []
@@ -645,9 +646,10 @@ class BaseRunner:
         threshold: float, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
-                - The task is binary classification.
-                - The model has a `predict_proba` method.
-                - The metric evaluates predicted target values.
+
+            - The task is binary classification.
+            - The model has a `predict_proba` method.
+            - The metric evaluates predicted target values.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.
@@ -660,13 +662,12 @@ class BaseRunner:
         """
         check_is_fitted(self, attributes="_models")
 
-        scores = pd.DataFrame()
-        for m in self._models.values():
-            scores = scores.append(
+        return pd.DataFrame(
+            [
                 m.evaluate(metric, dataset, threshold, sample_weight)
-            )
-
-        return scores
+                for m in self._models.values()
+            ]
+        )
 
     @composed(crash, typechecked)
     def get_class_weight(self, dataset: str = "train") -> dict:

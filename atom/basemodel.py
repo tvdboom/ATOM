@@ -31,6 +31,7 @@ from sklearn.model_selection import (
 )
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.utils import resample
+from sklearn.utils.metaestimators import available_if
 from skopt.optimizer import (
     base_minimize, forest_minimize, gbrt_minimize, gp_minimize,
 )
@@ -45,9 +46,10 @@ from atom.plots import ModelPlot, ShapPlot
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
     CustomDict, Predictor, Scorer, ShapExplanation, Table, composed, crash,
-    custom_transform, fit, flt, get_best_score, get_custom_scorer,
-    get_feature_importance, get_pl_name, inverse_transform, it, lst, merge,
-    method_to_log, score, time_to_str, transform, variable_return,
+    custom_transform, estimator_has_attr, fit, flt, get_best_score,
+    get_custom_scorer, get_feature_importance, get_pl_name, has_task,
+    inverse_transform, it, lst, merge, method_to_log, score, time_to_str,
+    transform, variable_return,
 )
 
 
@@ -78,7 +80,7 @@ class BaseModel(ModelPlot, ShapPlot):
         self._early_stopping = None
         self._dimensions = []
         self.bo = pd.DataFrame(
-            columns=["call", "params", "estimator", "score", "time", "total_time"],
+            columns=["call", "params", "estimator", "score", "time_trial", "time_bo"],
         )
 
         # Parameter attributes
@@ -410,8 +412,8 @@ class BaseModel(ModelPlot, ShapPlot):
                     "params": params,
                     "estimator": est,
                     "score": flt(score),
-                    "time": time_to_str(t_iter),
-                    "total_time": time_to_str(init_bo),
+                    "time_trial": (datetime.now() - t_iter).total_seconds(),
+                    "time_bo": (datetime.now() - init_bo).total_seconds(),
                 }
             )
             self.bo.loc[self._iter - 1] = row
@@ -419,7 +421,7 @@ class BaseModel(ModelPlot, ShapPlot):
             # Save BO calls to experiment as nested runs
             if self._run and self.T.log_bo:
                 with mlflow.start_run(run_name=f"{self.name} - {call}", nested=True):
-                    mlflow.set_tag("time", row["time"])
+                    mlflow.set_tag("time_bo", row["time_bo"])
                     mlflow.log_params(params)
                     for i, m in enumerate(self.T._metric):
                         mlflow.log_metric(m, score[i])
@@ -441,7 +443,12 @@ class BaseModel(ModelPlot, ShapPlot):
                 sequence.update(
                     {"early_stopping": f"{self._stopped[0]}/{self._stopped[1]}"}
                 )
-            sequence.update({"time": row["time"], "total_time": row["total_time"]})
+            sequence.update(
+                {
+                    "time_trial": time_to_str(row["time_trial"]),
+                    "time_bo": time_to_str(row["time_bo"]),
+                }
+            )
             self.T.log(table.print(sequence), 2)
 
             return -score[0]  # Negative since skopt tries to minimize
@@ -523,7 +530,7 @@ class BaseModel(ModelPlot, ShapPlot):
             headers.extend([m.name, "best_" + m.name])
         if self._early_stopping and self.T._bo["cv"] == 1:
             headers.append("early_stopping")
-        headers.extend(["time", "total_time"])
+        headers.extend(["time_trial", "time_bo"])
 
         # Define the width op every column in the table
         spaces = [len(str(headers[0]))]
@@ -578,20 +585,16 @@ class BaseModel(ModelPlot, ShapPlot):
         # Get optimal row. If duplicate scores, select the shortest training
         best = self.bo.copy()
         best["score"] = self.bo["score"].apply(lambda x: lst(x)[0])
-        best_idx = best.sort_values(["score", "time"], ascending=False).index[0]
+        best_idx = best.sort_values(["score", "time_bo"], ascending=False).index[0]
 
-        # Optimal call, params and score to attrs
-        self.best_call = self.bo.loc[best_idx, "call"]
-        self.best_params = self.bo.loc[best_idx, "params"]
-        self.metric_bo = self.bo.loc[best_idx, "score"]
+        self.best_call = self.bo.at[best_idx, "call"]
+        self.best_params = self.bo.at[best_idx, "params"]
+        self.metric_bo = self.bo.at[best_idx, "score"]
+        self.time_bo = self.bo.iat[-1, -1]
 
         # Save best model (not yet fitted)
         self.estimator = self.get_estimator(**{**self._est_params, **self.best_params})
 
-        # Get the BO duration
-        self.time_bo = time_to_str(init_bo)
-
-        # Print results
         self.T.log(f"Bayesian Optimization {'-' * 27}", 1)
         self.T.log(f"Best call --> {self.best_call}", 1)
         self.T.log(f"Best parameters --> {self.best_params}", 1)
@@ -600,7 +603,7 @@ class BaseModel(ModelPlot, ShapPlot):
             for i, m in enumerate(self.T._metric.values())
         ]
         self.T.log(f"Best evaluation --> {'   '.join(out)}", 1)
-        self.T.log(f"Time elapsed: {self.time_bo}", 1)
+        self.T.log(f"Time elapsed: {time_to_str(self.time_bo)}", 1)
 
     def fit(self):
         """Fit and validate the model."""
@@ -642,8 +645,8 @@ class BaseModel(ModelPlot, ShapPlot):
             self.T.log(f"T{set_[1:]} evaluation --> {'   '.join(out)}", 1)
 
         # Get duration and print to log
-        self.time_fit = time_to_str(t_init)
-        self.T.log(f"Time elapsed: {self.time_fit}", 1)
+        self.time_fit = (datetime.now() - t_init).total_seconds()
+        self.T.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
 
         # Log parameters, metrics, model and data to mlflow
         if self._run:
@@ -719,8 +722,8 @@ class BaseModel(ModelPlot, ShapPlot):
         ]
         self.T.log(f"Evaluation --> {'   '.join(out)}", 1)
 
-        self.time_bootstrap = time_to_str(t_init)
-        self.T.log(f"Time elapsed: {self.time_bootstrap}", 1)
+        self.time_bootstrap = (datetime.now() - t_init).total_seconds()
+        self.T.log(f"Time elapsed: {time_to_str(self.time_bootstrap)}", 1)
 
     # Utility properties =========================================== >>
 
@@ -743,7 +746,19 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def results(self) -> pd.Series:
-        """Overview of the training results."""
+        """Overview of the training results. Values include:
+
+        - metric_bo: Best score obtained during hyperparameter tuning.
+        - time_bo: Duration of the hyperparameter tuning (in seconds).
+        - metric_train: Score on the training set.
+        - metric_test: Score on the test set.
+        - time_fit: Duration of the training (in seconds).
+        - mean_bootstrap: Mean score on the bootstrapped samples.
+        - std_bootstrap: Standard deviation of the bootstrap score.
+        - time_bootstrap: Duration of bootstrapping (in seconds).
+        - time: Total duration (in seconds).
+
+        """
         return pd.Series(
             {
                 "metric_bo": getattr(self, "metric_bo", None),
@@ -773,18 +788,22 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def dataset(self) -> pd.DataFrame:
+        """Complete data set."""
         return merge(self.X, self.y)
 
     @property
     def train(self) -> pd.DataFrame:
+        """Training set."""
         return merge(self.X_train, self.y_train)
 
     @property
     def test(self) -> pd.DataFrame:
+        """Test set."""
         return merge(self.X_test, self.y_test)
 
     @property
     def holdout(self) -> Optional[pd.DataFrame]:
+        """Holdout set."""
         if self.branch.holdout is not None:
             if self.scaler:
                 return merge(
@@ -796,21 +815,30 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def X(self) -> pd.DataFrame:
+        """Feature set."""
         return pd.concat([self.X_train, self.X_test])
 
     @property
     def y(self) -> pd.Series:
+        """Target column."""
         return pd.concat([self.y_train, self.y_test])
 
     @property
     def X_train(self) -> pd.DataFrame:
+        """Features of the training set."""
         if self.scaler:
             return self.scaler.transform(self.branch.X_train[:self._train_idx])
         else:
             return self.branch.X_train[:self._train_idx]
 
     @property
+    def y_train(self) -> pd.Series:
+        """Target column of the training set."""
+        return self.branch.y_train[:self._train_idx]
+
+    @property
     def X_test(self) -> pd.DataFrame:
+        """Features of the test set."""
         if self.scaler:
             return self.scaler.transform(self.branch.X_test)
         else:
@@ -818,121 +846,21 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def X_holdout(self) -> Optional[pd.DataFrame]:
+        """Features of the holdout set."""
         if self.branch.holdout is not None:
             return self.holdout.iloc[:, :-1]
 
     @property
-    def y_train(self) -> pd.Series:
-        return self.branch.y_train[:self._train_idx]
-
-    @property
     def y_holdout(self) -> Optional[pd.Series]:
+        """Target column of the holdout set."""
         if self.branch.holdout is not None:
             return self.holdout.iloc[:, -1]
 
     # Prediction properties ======================================== >>
 
     @property
-    def predict_train(self) -> pd.Series:
-        if self._pred[0] is None:
-            self._pred[0] = pd.Series(
-                data=self.estimator.predict(self.X_train),
-                index=self.X_train.index,
-                name="predict_train",
-            )
-
-        return self._pred[0]
-
-    @property
-    def predict_test(self) -> pd.Series:
-        if self._pred[1] is None:
-            self._pred[1] = pd.Series(
-                data=self.estimator.predict(self.X_test),
-                index=self.X_test.index,
-                name="predict_test",
-            )
-
-        return self._pred[1]
-
-    @property
-    def predict_holdout(self) -> Optional[pd.Series]:
-        if self.T.holdout is not None and self._pred[2] is None:
-            self._pred[2] = pd.Series(
-                data=self.estimator.predict(self.X_holdout),
-                index=self.X_holdout.index,
-                name="predict_holdout",
-            )
-
-        return self._pred[2]
-
-    @property
-    def predict_proba_train(self) -> pd.DataFrame:
-        if self._pred[3] is None:
-            self._pred[3] = pd.DataFrame(
-                data=self.estimator.predict_proba(self.X_train),
-                index=self.X_train.index,
-                columns=self.mapping.get(self.target),
-            )
-
-        return self._pred[3]
-
-    @property
-    def predict_proba_test(self) -> pd.DataFrame:
-        if self._pred[4] is None:
-            self._pred[4] = pd.DataFrame(
-                data=self.estimator.predict_proba(self.X_test),
-                index=self.X_test.index,
-                columns=self.mapping.get(self.target),
-            )
-
-        return self._pred[4]
-
-    @property
-    def predict_proba_holdout(self) -> Optional[pd.DataFrame]:
-        if self.T.holdout is not None and self._pred[5] is None:
-            self._pred[5] = pd.DataFrame(
-                data=self.estimator.predict_proba(self.X_holdout),
-                index=self.X_holdout.index,
-                columns=self.mapping.get(self.target),
-            )
-
-        return self._pred[5]
-
-    @property
-    def predict_log_proba_train(self) -> pd.DataFrame:
-        if self._pred[6] is None:
-            self._pred[6] = pd.DataFrame(
-                data=self.estimator.predict_log_proba(self.X_train),
-                index=self.X_train.index,
-                columns=self.mapping.get(self.target),
-            )
-
-        return self._pred[6]
-
-    @property
-    def predict_log_proba_test(self) -> pd.DataFrame:
-        if self._pred[7] is None:
-            self._pred[7] = pd.DataFrame(
-                data=self.estimator.predict_log_proba(self.X_test),
-                index=self.X_test.index,
-                columns=self.mapping.get(self.target),
-            )
-
-        return self._pred[7]
-
-    @property
-    def predict_log_proba_holdout(self) -> Optional[pd.DataFrame]:
-        if self.T.holdout is not None and self._pred[8] is None:
-            self._pred[8] = pd.DataFrame(
-                data=self.estimator.predict_log_proba(self.X_holdout),
-                index=self.X_holdout.index,
-                columns=self.mapping.get(self.target),
-            )
-
-        return self._pred[8]
-
-    @property
     def decision_function_train(self) -> PANDAS_TYPES:
+        """Confidence scores on the training set."""
         if self._pred[9] is None:
             data = self.estimator.decision_function(self.X_train)
             if data.ndim == 1:
@@ -952,6 +880,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def decision_function_test(self) -> PANDAS_TYPES:
+        """Confidence scores on the test set."""
         if self._pred[10] is None:
             data = self.estimator.decision_function(self.X_test)
             if data.ndim == 1:
@@ -971,6 +900,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def decision_function_holdout(self) -> Optional[PANDAS_TYPES]:
+        """Confidence scores on the holdout set."""
         if self.T.holdout is not None and self._pred[11] is None:
             data = self.estimator.decision_function(self.X_holdout)
             if data.ndim == 1:
@@ -989,7 +919,116 @@ class BaseModel(ModelPlot, ShapPlot):
         return self._pred[11]
 
     @property
+    def predict_train(self) -> pd.Series:
+        """Class predictions on the training set."""
+        if self._pred[0] is None:
+            self._pred[0] = pd.Series(
+                data=self.estimator.predict(self.X_train),
+                index=self.X_train.index,
+                name="predict_train",
+            )
+
+        return self._pred[0]
+
+    @property
+    def predict_test(self) -> pd.Series:
+        """Class predictions on the test set."""
+        if self._pred[1] is None:
+            self._pred[1] = pd.Series(
+                data=self.estimator.predict(self.X_test),
+                index=self.X_test.index,
+                name="predict_test",
+            )
+
+        return self._pred[1]
+
+    @property
+    def predict_holdout(self) -> Optional[pd.Series]:
+        """Class predictions on the holdout set."""
+        if self.T.holdout is not None and self._pred[2] is None:
+            self._pred[2] = pd.Series(
+                data=self.estimator.predict(self.X_holdout),
+                index=self.X_holdout.index,
+                name="predict_holdout",
+            )
+
+        return self._pred[2]
+
+    @property
+    def predict_log_proba_train(self) -> pd.DataFrame:
+        """Class log-probabilities predictions on the training set."""
+        if self._pred[6] is None:
+            self._pred[6] = pd.DataFrame(
+                data=self.estimator.predict_log_proba(self.X_train),
+                index=self.X_train.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[6]
+
+    @property
+    def predict_log_proba_test(self) -> pd.DataFrame:
+        """Class log-probabilities predictions on the test set."""
+        if self._pred[7] is None:
+            self._pred[7] = pd.DataFrame(
+                data=self.estimator.predict_log_proba(self.X_test),
+                index=self.X_test.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[7]
+
+    @property
+    def predict_log_proba_holdout(self) -> Optional[pd.DataFrame]:
+        """Class log-probabilities predictions on the holdout set."""
+        if self.T.holdout is not None and self._pred[8] is None:
+            self._pred[8] = pd.DataFrame(
+                data=self.estimator.predict_log_proba(self.X_holdout),
+                index=self.X_holdout.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[8]
+
+    @property
+    def predict_proba_train(self) -> pd.DataFrame:
+        """Class probabilities predictions on the training set."""
+        if self._pred[3] is None:
+            self._pred[3] = pd.DataFrame(
+                data=self.estimator.predict_proba(self.X_train),
+                index=self.X_train.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[3]
+
+    @property
+    def predict_proba_test(self) -> pd.DataFrame:
+        """Class probabilities predictions on the test set."""
+        if self._pred[4] is None:
+            self._pred[4] = pd.DataFrame(
+                data=self.estimator.predict_proba(self.X_test),
+                index=self.X_test.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[4]
+
+    @property
+    def predict_proba_holdout(self) -> Optional[pd.DataFrame]:
+        """Class probabilities predictions on the holdout set."""
+        if self.T.holdout is not None and self._pred[5] is None:
+            self._pred[5] = pd.DataFrame(
+                data=self.estimator.predict_proba(self.X_holdout),
+                index=self.X_holdout.index,
+                columns=self.mapping.get(self.target),
+            )
+
+        return self._pred[5]
+
+    @property
     def score_train(self) -> FLOAT:
+        """Metric score on the training set."""
         if self._pred[12] is None:
             self._pred[12] = self.estimator.score(self.X_train, self.y_train)
 
@@ -997,6 +1036,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def score_test(self) -> FLOAT:
+        """Metric score on the test set."""
         if self._pred[13] is None:
             self._pred[13] = self.estimator.score(self.X_test, self.y_test)
 
@@ -1004,6 +1044,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def score_holdout(self) -> Optional[FLOAT]:
+        """Metric score on the holdout set."""
         if self.T.holdout is not None and self._pred[14] is None:
             self._pred[14] = self.estimator.score(self.X_holdout, self.y_holdout)
 
@@ -1063,11 +1104,6 @@ class BaseModel(ModelPlot, ShapPlot):
             called.
 
         """
-        if method != "score" and not hasattr(self.estimator, method):
-            raise AttributeError(
-                f"{self.estimator.__class__.__name__} doesn't have a {method} method!"
-            )
-
         # Two options: select from existing predictions (X has to be able
         # to get rows from dataset) or calculate predictions from new data
         try:
@@ -1131,110 +1167,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
             return metric(self.estimator, X, y, sample_weight)
 
-    @composed(crash, method_to_log, typechecked)
-    def predict(
-        self,
-        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
-        /,
-        *,
-        verbose: Optional[INT] = None,
-    ) -> pd.Series:
-        """Get class predictions on new data or rows in the dataset.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The estimator must have a `predict` method.
-
-        Read more in the [user guide][predicting].
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new
-            feature set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        pd.Series
-            Predicted classes with shape=(n_samples,).
-
-        """
-        return self._prediction(X, verbose=verbose, method="predict")
-
-    @composed(crash, method_to_log, typechecked)
-    def predict_proba(
-        self,
-        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
-        /,
-        *,
-        verbose: Optional[INT] = None,
-    ) -> pd.DataFrame:
-        """Get class probabilities on new data or rows in the dataset.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The estimator must have a `predict_proba` method.
-
-        Read more in the [user guide][predicting].
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new
-            feature set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        pd.DataFrame
-            Predicted class probabilities with shape=(n_samples,
-            n_classes).
-
-        """
-        return self._prediction(X, verbose=verbose, method="predict_proba")
-
-    @composed(crash, method_to_log, typechecked)
-    def predict_log_proba(
-        self,
-        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
-        /,
-        *,
-        verbose: Optional[INT] = None,
-    ) -> pd.DataFrame:
-        """Get class log-probabilities on new data or rows in the dataset.
-
-        New data is first transformed through the model's pipeline.
-        Transformers that are only applied on the training set are
-        skipped. The estimator must have a `predict_log_proba` method.
-
-        Read more in the [user guide][predicting].
-
-        Parameters
-        ----------
-        X: int, str, slice, sequence or dataframe-like
-            Names or indices of rows in the dataset, or new feature
-            set with shape=(n_samples, n_features).
-
-        verbose: int or None, default=None
-            Verbosity level of the output. If None, it uses the
-            transformer's own verbosity.
-
-        Returns
-        -------
-        pd.DataFrame
-            Predicted class log-probabilities with shape=(n_samples,
-            n_classes).
-
-        """
-        return self._prediction(X, verbose=verbose, method="predict_log_proba")
-
+    @available_if(estimator_has_attr("decision_function"))
     @composed(crash, method_to_log, typechecked)
     def decision_function(
         self,
@@ -1271,6 +1204,113 @@ class BaseModel(ModelPlot, ShapPlot):
         """
         return self._prediction(X, verbose=verbose, method="decision_function")
 
+    @composed(crash, method_to_log, typechecked)
+    def predict(
+        self,
+        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
+        /,
+        *,
+        verbose: Optional[INT] = None,
+    ) -> pd.Series:
+        """Get class predictions on new data or rows in the dataset.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new
+            feature set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        pd.Series
+            Predicted classes with shape=(n_samples,).
+
+        """
+        return self._prediction(X, verbose=verbose, method="predict")
+
+    @available_if(estimator_has_attr("predict_log_proba"))
+    @composed(crash, method_to_log, typechecked)
+    def predict_log_proba(
+        self,
+        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
+        /,
+        *,
+        verbose: Optional[INT] = None,
+    ) -> pd.DataFrame:
+        """Get class log-probabilities on new data or rows in the dataset.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_log_proba` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new feature
+            set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        pd.DataFrame
+            Predicted class log-probabilities with shape=(n_samples,
+            n_classes).
+
+        """
+        return self._prediction(X, verbose=verbose, method="predict_log_proba")
+
+    @available_if(estimator_has_attr("predict_proba"))
+    @composed(crash, method_to_log, typechecked)
+    def predict_proba(
+        self,
+        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
+        /,
+        *,
+        verbose: Optional[INT] = None,
+    ) -> pd.DataFrame:
+        """Get class probabilities on new data or rows in the dataset.
+
+        New data is first transformed through the model's pipeline.
+        Transformers that are only applied on the training set are
+        skipped. The estimator must have a `predict_proba` method.
+
+        Read more in the [user guide][predicting].
+
+        Parameters
+        ----------
+        X: int, str, slice, sequence or dataframe-like
+            Names or indices of rows in the dataset, or new
+            feature set with shape=(n_samples, n_features).
+
+        verbose: int or None, default=None
+            Verbosity level of the output. If None, it uses the
+            transformer's own verbosity.
+
+        Returns
+        -------
+        pd.DataFrame
+            Predicted class probabilities with shape=(n_samples,
+            n_classes).
+
+        """
+        return self._prediction(X, verbose=verbose, method="predict_proba")
+
+    @available_if(estimator_has_attr("score"))
     @composed(crash, method_to_log, typechecked)
     def score(
         self,
@@ -1413,9 +1453,10 @@ class BaseModel(ModelPlot, ShapPlot):
         threshold: float, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
-                - The task is binary classification.
-                - The model has a `predict_proba` method.
-                - The metric evaluates predicted target values.
+
+            - The task is binary classification.
+            - The model has a `predict_proba` method.
+            - The metric evaluates predicted target values.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.
@@ -1470,6 +1511,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
         return self._scores[dataset][scorer.name]
 
+    @available_if(has_task("class"))
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
         """Calibrate the model.
@@ -1480,7 +1522,7 @@ class BaseModel(ModelPlot, ShapPlot):
         will replace the `estimator` attribute. If there is an active
         mlflow experiment, a new run is started using the name
         `[model_name]_calibrate`. Since the estimator changed, the
-        model is cleared. Only if classifier.
+        model is cleared. Only for classifiers.
 
         Parameters
         ----------
@@ -1491,11 +1533,6 @@ class BaseModel(ModelPlot, ShapPlot):
             another, independent set for testing.
 
         """
-        if self.T.goal != "class":
-            raise PermissionError(
-                "The calibrate method is only available for classification tasks!"
-            )
-
         calibrator = CalibratedClassifierCV(self.estimator, **kwargs)
         if kwargs.get("cv") != "prefit":
             self.estimator = calibrator.fit(self.X_train, self.y_train)
@@ -1524,8 +1561,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
         Reset the model attributes to their initial state, deleting
         potentially large data arrays. Use this method to free some
-        memory before [saving][self-save] the instance. The cleared
-        attributes are:
+        memory before saving the instance. The cleared attributes are:
 
         - [Prediction attributes][]
         - [Metric scores][metric]
@@ -1550,7 +1586,7 @@ class BaseModel(ModelPlot, ShapPlot):
         Demo your machine learning model with a friendly web interface.
         This app launches directly in the notebook or on an external
         browser page. The created [Interface][] instance can be accessed
-        through the `app` attribute. Read more in the [user guide][app].
+        through the `app` attribute.
 
         Parameters
         ----------
@@ -1773,9 +1809,10 @@ class BaseModel(ModelPlot, ShapPlot):
         threshold: float, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
-                - The task is binary classification.
-                - The model has a `predict_proba` method.
-                - The metric evaluates predicted target values.
+
+            - The task is binary classification.
+            - The model has a `predict_proba` method.
+            - The metric evaluates predicted target values.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.

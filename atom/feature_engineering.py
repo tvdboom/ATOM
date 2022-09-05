@@ -705,7 +705,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                     name = f"x{X.shape[1] + counter}"
                     if name not in X:
                         X[name] = array  # Add new feature to X
-                        df.iloc[i, 0] = name
+                        df.iat[i, 0] = name
                         break
                     else:
                         counter += 1
@@ -1831,9 +1831,16 @@ class FeatureSelector(
                 f" --> {self.strategy.lower()} selected "
                 f"{sum(mask)} features from the dataset.", 2
             )
+
             for n, column in enumerate(X):
                 if not mask[n]:
-                    self.log(f"   --> Dropping feature {column}.", 2)
+                    if hasattr(self._estimator, "ranking_"):
+                        self.log(
+                            f"   --> Dropping feature {column} "
+                            f"(rank {self._estimator.ranking_[n]}).", 2
+                        )
+                    else:
+                        self.log(f"   --> Dropping feature {column}.", 2)
                     X = X.drop(column, axis=1)
 
         else:  # Advanced strategies

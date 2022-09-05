@@ -38,16 +38,17 @@ class Pipeline(pipeline.Pipeline):
     """Custom Pipeline class.
 
     This class behaves as a sklearn pipeline, and additionally:
-        - Always outputs pandas objects.
-        - Is able to transform only X or y.
-        - Accepts transformers that change the target column.
-        - Accepts transformers that drop rows.
-        - Accepts transformers that only are fitted on a subset
-          of the provided dataset.
-        - Uses transformers that are only applied on the training set
-          to fit the pipeline, not to make predictions on new data.
-        - The instance is considered fitted at initialization if all
-          the underlying transformers/estimator in the pipeline are.
+
+    - Always outputs pandas objects.
+    - Is able to transform only X or y.
+    - Accepts transformers that change the target column.
+    - Accepts transformers that drop rows.
+    - Accepts transformers that only are fitted on a subset
+      of the provided dataset.
+    - Uses transformers that are only applied on the training set
+      to fit the pipeline, not to make predictions on new data.
+    - The instance is considered fitted at initialization if all
+      the underlying transformers/estimator in the pipeline are.
 
     Note: This Pipeline only works with estimators whose parameters
     for fit, transform, predict, etc... are named X and/or y.

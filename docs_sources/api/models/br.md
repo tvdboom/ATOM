@@ -1,5 +1,5 @@
-# Bayesian Ridge (BR)
----------------------
+# Bayesian Ridge
+----------------
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
 

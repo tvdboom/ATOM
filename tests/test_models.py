@@ -175,7 +175,7 @@ def test_stacking_multiple_branches():
     atom.run("LR")
     atom.branch = "2"
     atom.run("LDA")
-    with pytest.raises(ValueError, match=r".*on the current branch.*"):
+    with pytest.raises(ValueError, match=".*on the current branch.*"):
         atom.stacking(models=["LR", "LDA"])
 
 
@@ -193,5 +193,5 @@ def test_voting_multiple_branches():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA"])
     atom.branch = "2"
-    with pytest.raises(ValueError, match=r".*on the current branch.*"):
+    with pytest.raises(ValueError, match=".*on the current branch.*"):
         atom.voting(models=["LR", "LDA"])

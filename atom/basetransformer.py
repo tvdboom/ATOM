@@ -116,7 +116,8 @@ class BaseTransformer:
     @typechecked
     def engine(self, value: str):
         if value.lower() == "sklearnex":
-            sklearnex.set_config(target_offload=self.device)
+            target_offload = "auto" if "cpu" in self.device else self.device
+            sklearnex.set_config(target_offload=target_offload)
         elif value.lower() == "cuml":
             if "cpu" in self.device:
                 raise ValueError(

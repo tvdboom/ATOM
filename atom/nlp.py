@@ -30,7 +30,7 @@ from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
-    composed, crash, get_corpus, is_sparse, method_to_log, to_df,
+    composed, crash, get_corpus, is_sparse, method_to_log, nltk_get, to_df,
 )
 
 
@@ -340,14 +340,14 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Cleaning the corpus...", 1)
 
         if self.decode:
-            if isinstance(X[corpus].iloc[0], str):
+            if isinstance(X[corpus].iat[0], str):
                 X[corpus] = X[corpus].apply(lambda row: to_ascii(row))
             else:
                 X[corpus] = X[corpus].apply(lambda row: [to_ascii(str(w)) for w in row])
         self.log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
-            if isinstance(X[corpus].iloc[0], str):
+            if isinstance(X[corpus].iat[0], str):
                 X[corpus] = X[corpus].str.lower()
             else:
                 X[corpus] = X[corpus].apply(lambda row: [str(w).lower() for w in row])
@@ -390,7 +390,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.drop_punctuation:
             trans_table = str.maketrans("", "", punctuation)  # Translation table
-            if isinstance(X[corpus].iloc[0], str):
+            if isinstance(X[corpus].iat[0], str):
                 func = lambda row: row.translate(trans_table)
             else:
                 func = lambda row: [str(w).translate(trans_table) for w in row]
@@ -612,7 +612,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Normalizing the corpus...", 1)
 
         # If the corpus is not tokenized, separate by space
-        if isinstance(X[corpus].iloc[0], str):
+        if isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: row.split())
 
         stopwords = []
@@ -621,10 +621,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 self.stopwords = "english"
 
             # Get stopwords from the NLTK library
-            try:  # Download resource if not already on machine
-                nltk.data.find("corpora/stopwords")
-            except LookupError:
-                nltk.download("stopwords")
+            nltk_get("corpora/stopwords")
             stopwords = list(set(nltk.corpus.stopwords.words(self.stopwords.lower())))
 
         # Join predefined with customs stopwords
@@ -645,18 +642,9 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: [ss.stem(word) for word in row])
 
         if self.lemmatize:
-            try:  # Download resource if not already on machine
-                nltk.data.find("corpora/wordnet")
-            except LookupError:
-                nltk.download("wordnet")
-            try:
-                nltk.data.find("taggers/averaged_perceptron_tagger")
-            except LookupError:
-                nltk.download("averaged_perceptron_tagger")
-            try:
-                nltk.data.find("corpora/omw-1.4")
-            except LookupError:
-                nltk.download("omw-1.4")
+            nltk_get("corpora/wordnet")
+            nltk_get("taggers/averaged_perceptron_tagger")
+            nltk_get("corpora/omw-1.4")
 
             self.log(" --> Applying lemmatization.", 2)
             wnl = WordNetLemmatizer()
@@ -893,11 +881,8 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Tokenizing the corpus...", 1)
 
-        if isinstance(X[corpus].iloc[0], str):
-            try:  # Download tokenizer if not already on machine
-                nltk.data.find("tokenizers/punkt")
-            except LookupError:
-                nltk.download("punkt")
+        if isinstance(X[corpus].iat[0], str):
+            nltk_get("tokenizers/punkt")
             X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
 
         ngrams = {
@@ -1209,7 +1194,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Vectorizing the corpus...", 1)
 
         # Convert sequence of tokens to space separated string
-        if not isinstance(X[corpus].iloc[0], str):
+        if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         matrix = self._estimator.transform(X[corpus])
@@ -1221,7 +1206,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         X = X.drop(corpus, axis=1)  # Drop original corpus column
 
-        if "cuml" in self._estimator.__class__.__module__:
+        if "sklearn" not in self._estimator.__class__.__module__:
             matrix = matrix.get()  # Convert cupy sparse array back to scipy
 
             # cuML estimators have a slightly different method name

@@ -1858,7 +1858,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         >>> # Add some random missing values to the data
         >>> for i, j in zip(randint(0, X.shape[0], 600), randint(0, 4, 600])
-        >>> X.iloc[i, j] = np.nan
+        >>> X.iat[i, j] = np.nan
 
         >>> atom = ATOMClassifier(X, y)
         >>> print(atom.nans)

@@ -219,9 +219,10 @@ class VotingClassifier(BaseVoting, VC):
     """Soft Voting/Majority Rule classifier.
 
     Modified version of sklearn's VotingClassifier. Differences are:
-        - Doesn't fit estimators if they're already fitted.
-        - Is considered fitted when all estimators are.
-        - Doesn't implement a LabelEncoder to encode the target column.
+
+    - Doesn't fit estimators if they're already fitted.
+    - Is considered fitted when all estimators are.
+    - Doesn't implement a LabelEncoder to encode the target column.
 
     See sklearn's [VotingClassifier][] for a description of the
     parameters and attributes.
@@ -327,9 +328,9 @@ class VotingRegressor(BaseVoting, VR):
     """Soft Voting/Majority Rule regressor.
 
     Modified version of sklearn's VotingRegressor. Differences are:
-        - Doesn't fit estimators if they're already fitted.
-        - Is considered fitted when all estimators are.
 
+    - Doesn't fit estimators if they're already fitted.
+    - Is considered fitted when all estimators are.
 
     See sklearn's [VotingRegressor][] for a description of the
     parameters and attributes.
@@ -354,7 +355,8 @@ class StackingClassifier(BaseStacking, SC):
     """Stack of estimators with a final classifier.
 
     Modified version of sklearn's StackingClassifier. Difference is:
-        - Doesn't fit estimators if they're already fitted.
+
+    - Doesn't fit estimators if they're already fitted.
 
     See sklearn's [StackingClassifier][] for a description of the
     parameters and attributes.
@@ -398,7 +400,8 @@ class StackingRegressor(BaseStacking, SR):
     """Stack of estimators with a final regressor.
 
     Modified version of sklearn's StackingRegressor. Difference is:
-        - Doesn't fit estimators if they're already fitted.
+
+    - Doesn't fit estimators if they're already fitted.
 
     See sklearn's [StackingRegressor][] for a description of the
     parameters and attributes.

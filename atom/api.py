@@ -402,6 +402,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
 
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
     >>> # Initialize atom
     >>> atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
 
@@ -482,11 +484,16 @@ class ATOMClassifier(BaseTransformer, ATOM):
     XGBoost             --> precision: 0.9091
 
     >>> # Analyze the results
-    >>> atom.plot_results()
+    >>> atom.evaluate()
+
+         accuracy  average_precision  ...    recall   roc_auc
+    LR   0.970588           0.995739  ...  0.981308  0.993324
+    RF   0.958824           0.982602  ...  0.962617  0.983459
+    XGB  0.964706           0.996047  ...  0.971963  0.993473
+
+    [3 rows x 9 columns]
 
     ```
-
-    ![plot_results](../../img/plots/plot_results_1.png)
 
     """
 
@@ -677,44 +684,42 @@ class ATOMRegressor(BaseTransformer, ATOM):
     --------
 
     ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_diabetes
+
+    >>> X, y = load_diabetes(return_X_y=True, as_frame=True)
 
     >>> # Initialize atom
-    >>> atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+    >>> atom = ATOMRegressor(X, y, logger="auto", n_jobs=2, verbose=2)
 
     << ================== ATOM ================== >>
-    Algorithm task: binary classification.
+    Algorithm task: regression.
     Parallel processing with 2 cores.
+
     Dataset stats ==================== >>
-    Shape: (569, 31)
-    Memory: 138.96 kB
+    Shape: (442, 11)
+    Memory: 39.02 kB
     Scaled: False
-    Outlier values: 160 (1.1%)
+    Outlier values: 10 (0.3%)
     -------------------------------------
-    Train set size: 456
-    Test set size: 113
-    -------------------------------------
-    |   |     dataset |       train |        test |
-    | - | ----------- | ----------- | ----------- |
-    | 0 |   212 (1.0) |   170 (1.0) |    42 (1.0) |
-    | 1 |   357 (1.7) |   286 (1.7) |    71 (1.7) |
+    Train set size: 310
+    Test set size: 132
 
     >>> # Apply data cleaning and feature engineering methods
-    >>> atom.balance(strategy="smote")
+    >>> atom.scale()
 
-    Oversampling with SMOTE...
-     --> Adding 116 samples to class 0.
+    Fitting Scaler...
+    Scaling features...
 
-    >>> atom.feature_selection(strategy="rfecv", solver="xgb", n_features=22)
+    >>> atom.feature_selection(strategy="rfecv", solver="xgb", n_features=12)
 
     Fitting FeatureSelector...
     Performing feature selection ...
-     --> RFECV selected 26 features from the dataset.
-       --> Dropping feature mean perimeter (rank 4).
-       --> Dropping feature mean symmetry (rank 3).
-       --> Dropping feature perimeter error (rank 2).
-       --> Dropping feature worst compactness (rank 5).
+     --> rfecv selected 6 features from the dataset.
+       --> Dropping feature age (rank 5).
+       --> Dropping feature sex (rank 4).
+       --> Dropping feature s1 (rank 2).
+       --> Dropping feature s3 (rank 3).
 
     >>> # Train models
     >>> atom.run(
@@ -724,46 +729,52 @@ class ATOMRegressor(BaseTransformer, ATOM):
     ... )
 
     Training ========================= >>
-    Models: LR, RF, XGB
-    Metric: precision
+    Models: OLS, BR, RF
+    Metric: r2
 
-    Results for Logistic Regression:
+    Results for Ordinary Least Squares:
     Fit ---------------------------------------------
-    Train evaluation --> precision: 0.9895
-    Test evaluation --> precision: 0.9467
-    Time elapsed: 0.028s
+    Train evaluation --> r2: 0.5223
+    Test evaluation --> r2: 0.4012
+    Time elapsed: 0.010s
     -------------------------------------------------
-    Total time: 0.028s
+    Total time: 0.010s
+
+    Results for Bayesian Ridge:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.522
+    Test evaluation --> r2: 0.4037
+    Time elapsed: 0.010s
+    -------------------------------------------------
+    Total time: 0.010s
 
     Results for Random Forest:
     Fit ---------------------------------------------
-    Train evaluation --> precision: 1.0
-    Test evaluation --> precision: 0.9221
-    Time elapsed: 0.181s
+    Train evaluation --> r2: 0.9271
+    Test evaluation --> r2: 0.259
+    Time elapsed: 0.175s
     -------------------------------------------------
-    Total time: 0.181s
+    Total time: 0.175s
 
-    Results for XGBoost:
-    Fit ---------------------------------------------
-    Train evaluation --> precision: 1.0
-    Test evaluation --> precision: 0.9091
-    Time elapsed: 0.124s
-    -------------------------------------------------
-    Total time: 0.124s
 
     Final results ==================== >>
-    Duration: 0.333s
+    Duration: 0.195s
     -------------------------------------
-    Logistic Regression --> precision: 0.9467 !
-    Random Forest       --> precision: 0.9221
-    XGBoost             --> precision: 0.9091
+    Ordinary Least Squares --> r2: 0.4012 ~
+    Bayesian Ridge         --> r2: 0.4037 ~ !
+    Random Forest          --> r2: 0.259 ~
 
     >>> # Analyze the results
-    >>> atom.plot_results()
+    >>> atom.evaluate()
+
+         neg_mean_absolute_error  ...  neg_root_mean_squared_error
+    OLS               -43.756992  ...                   -54.984345
+    BR                -43.734975  ...                   -54.869543
+    RF                -48.327879  ...                   -61.167760
+
+    [3 rows x 7 columns]
 
     ```
-
-    ![plot_results](../../img/plots/plot_results_1.png)
 
     """
 

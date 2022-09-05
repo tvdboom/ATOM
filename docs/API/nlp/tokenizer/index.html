@@ -287,7 +287,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../examples/automl.ipynb" class="md-tabs__link">
+      <a href="../../../examples/accelerating_pipelines.ipynb" class="md-tabs__link">
         Examples
       </a>
     </li>
@@ -2479,6 +2479,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/accelerating_pipelines.ipynb" class="md-nav__link">
+        Accelerating pipelines
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/automl.ipynb" class="md-nav__link">
         AutoML
       </a>
@@ -2883,7 +2897,7 @@
 
 <h1 id="tokenizer">Tokenizer</h1>
 <hr />
-<p><a id='Tokenizer'></a><div class='sign'><em>class</em> atom.nlp.<strong style='color:#008AB8'>Tokenizer</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, verbose=0, logger=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L669>[source]</a></span></div>Tokenize the corpus.</p>
+<p><a id='Tokenizer'></a><div class='sign'><em>class</em> atom.nlp.<strong style='color:#008AB8'>Tokenizer</strong>(bigram_freq=None, trigram_freq=None, quadgram_freq=None, verbose=0, logger=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L657>[source]</a></span></div>Tokenize the corpus.</p>
 <p>Convert documents into sequences of words. Additionally,
 create n-grams (represented by words united with underscores,
 e.g. "New_York") based on their frequency in the corpus. The
@@ -3106,7 +3120,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='tokenizer-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L718>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='tokenizer-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L719>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3118,7 +3132,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='tokenizer-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L751>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='tokenizer-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L752>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
@@ -3139,7 +3153,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='tokenizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L843>[source]</a></span></div>Tokenize the text.</p>
+<p><a id='tokenizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L831>[source]</a></span></div>Tokenize the text.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If X is

@@ -1,5 +1,5 @@
-# Automatic Relevance Determination (ARD)
------------------------------------------
+# Automatic Relevance Determination
+-----------------------------------
 
 <a href="../../../user_guide/training/#automated-feature-scaling" class="md-tag" draggable=False>needs scaling</a>
 

@@ -47,14 +47,14 @@ def test_fit_transform_no_fit():
 def test_balancer_strategy_unknown_str():
     """Assert that an error is raised when strategy is unknown."""
     balancer = Balancer(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+    with pytest.raises(ValueError, match=".*value for the strategy.*"):
         balancer.transform(X_bin, y_bin)
 
 
 def test_balancer_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
     balancer = Balancer(strategy=StandardScaler())
-    with pytest.raises(TypeError, match=r".*type for the strategy.*"):
+    with pytest.raises(TypeError, match=".*type for the strategy.*"):
         balancer.transform(X_bin, y_bin)
 
 
@@ -206,35 +206,35 @@ def test_cleaner_target_mapping_multiclass():
 def test_strategy_parameter_discretizer():
     """Assert that the strategy parameter is set correctly."""
     discretizer = Discretizer(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy parameter.*"):
+    with pytest.raises(ValueError, match=".*value for the strategy parameter.*"):
         discretizer.fit(X_bin)
 
 
 def test_invalid_bins_missing_column():
     """Assert that an error is raised when a column is missing."""
     discretizer = Discretizer(strategy="uniform", bins={"invalid": 5})
-    with pytest.raises(ValueError, match=r".*not found in the dictionary.*"):
+    with pytest.raises(ValueError, match=".*not found in the dictionary.*"):
         discretizer.fit(X_bin)
 
 
 def test_invalid_bins_custom_strategy():
     """Assert that an error is raised when bins are not a sequence."""
     discretizer = Discretizer(strategy="custom", bins=5)
-    with pytest.raises(TypeError, match=r".*a sequence of bin edges.*"):
+    with pytest.raises(TypeError, match=".*a sequence of bin edges.*"):
         discretizer.fit(X_bin)
 
 
 def test_invalid_length_labels():
     """Assert that an error is raised when len(bins) != len(labels)."""
     discretizer = Discretizer(strategy="custom", bins=[5, 10, 15], labels=["label"])
-    with pytest.raises(ValueError, match=r".*length of the bins does not match.*"):
+    with pytest.raises(ValueError, match=".*length of the bins does not match.*"):
         discretizer.fit(X_bin)
 
 
 def test_invalid_bins_to_column_length():
     """Assert that an error is raised when len(bins) != len(columns)."""
     discretizer = Discretizer(strategy="uniform", bins=[5, 10])
-    with pytest.raises(ValueError, match=r".*length of the bins does not match.*"):
+    with pytest.raises(ValueError, match=".*length of the bins does not match.*"):
         discretizer.fit(X_bin)
 
 
@@ -297,7 +297,7 @@ def test_labels_custom_strategy():
 def test_strategy_parameter_encoder():
     """Assert that the strategy parameter is set correctly."""
     encoder = Encoder(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+    with pytest.raises(ValueError, match=".*value for the strategy.*"):
         encoder.fit(X10_str, y10)
 
 
@@ -311,14 +311,14 @@ def test_strategy_with_encoder_at_end():
 def test_max_onehot_parameter():
     """Assert that the max_onehot parameter is set correctly."""
     encoder = Encoder(max_onehot=-2)
-    with pytest.raises(ValueError, match=r".*value for the max_onehot.*"):
+    with pytest.raises(ValueError, match=".*value for the max_onehot.*"):
         encoder.fit(X10_str, y10)
 
 
 def test_rare_to_value_parameter():
     """Assert that the rare_to_value parameter is set correctly."""
     encoder = Encoder(rare_to_value=-2)
-    with pytest.raises(ValueError, match=r".*value for the rare_to_value.*"):
+    with pytest.raises(ValueError, match=".*value for the rare_to_value.*"):
         encoder.fit(X10_str, y10)
 
 
@@ -333,7 +333,7 @@ def test_rare_to_value(rare_to_value):
 def test_encoder_strategy_invalid_estimator():
     """Assert that an error is raised when strategy is invalid."""
     encoder = Encoder(strategy=RandomForestClassifier())
-    with pytest.raises(TypeError, match=r".*type for the strategy.*"):
+    with pytest.raises(TypeError, match=".*type for the strategy.*"):
         encoder.fit_transform(X10_str, y10)
 
 
@@ -341,11 +341,11 @@ def test_encoder_custom_estimator():
     """Assert that the strategy can be a custom estimator."""
     encoder = Encoder(strategy=LeaveOneOutEncoder, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert X.loc[0, "x2"] != "a"
+    assert X.at[0, "x2"] != "a"
 
     encoder = Encoder(strategy=LeaveOneOutEncoder(), max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
-    assert X.loc[0, "x2"] != "a"
+    assert X.at[0, "x2"] != "a"
 
 
 def test_encoder_check_is_fitted():
@@ -356,14 +356,14 @@ def test_encoder_check_is_fitted():
 def test_missing_values_are_propagated():
     """Assert that missing values are propagated."""
     encoder = Encoder(max_onehot=None)
-    assert np.isnan(encoder.fit_transform(X10_sn, y10).iloc[0, 2])
+    assert np.isnan(encoder.fit_transform(X10_sn, y10).iat[0, 2])
 
 
 def test_unknown_classes_are_imputed():
     """Assert that unknown classes are imputed."""
     encoder = Encoder()
     encoder.fit(["a", "b", "b", "a"])
-    assert encoder.transform(["c"]).iloc[0, 0] == -1.0
+    assert encoder.transform(["c"]).iat[0, 0] == -1.0
 
 
 def test_ordinal_encoder():
@@ -378,7 +378,7 @@ def test_ordinal_features():
     """Assert that ordinal features are encoded."""
     encoder = Encoder(max_onehot=None, ordinal={"x2": ["b", "a", "c"]})
     X = encoder.fit_transform(X10_str2, y10)
-    assert X.iloc[0, 2] == 1 and X.iloc[2, 2] == 0
+    assert X.iat[0, 2] == 1 and X.iat[2, 2] == 0
 
 
 def test_one_hot_encoder():
@@ -408,21 +408,21 @@ def test_kwargs_parameters():
 def test_strat_num_parameter():
     """Assert that the strat_num parameter is set correctly."""
     imputer = Imputer(strat_num="invalid")
-    with pytest.raises(ValueError, match=r".*Unknown strategy for the strat_num.*"):
+    with pytest.raises(ValueError, match=".*Unknown strategy for the strat_num.*"):
         imputer.fit(X_bin, y_bin)
 
 
 def test_invalid_max_nan_rows():
     """Assert that an error is raised for invalid max_nan_rows."""
     imputer = Imputer(max_nan_rows=-2)
-    with pytest.raises(ValueError, match=r".*value for the max_nan_rows.*"):
+    with pytest.raises(ValueError, match=".*value for the max_nan_rows.*"):
         imputer.fit(X_bin, y_bin)
 
 
 def test_invalid_max_nan_cols():
     """Assert that an error is raised for invalid max_nan_cols."""
     imputer = Imputer(max_nan_cols=-5)
-    with pytest.raises(ValueError, match=r".*value for the max_nan_cols.*"):
+    with pytest.raises(ValueError, match=".*value for the max_nan_cols.*"):
         imputer.fit(X_bin, y_bin)
 
 
@@ -497,7 +497,7 @@ def test_imputing_numeric_number():
     """Assert that imputing a number for numerical values works."""
     imputer = Imputer(strat_num=3.2)
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3.2
+    assert X.iat[0, 0] == 3.2
     assert X.isna().sum().sum() == 0
 
 
@@ -505,7 +505,7 @@ def test_imputing_numeric_knn():
     """Assert that imputing numerical values with KNNImputer works."""
     imputer = Imputer(strat_num="knn")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
+    assert X.iat[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
     assert X.isna().sum().sum() == 0
 
 
@@ -513,7 +513,7 @@ def test_imputing_numeric_mean():
     """Assert that imputing the mean for numerical values works."""
     imputer = Imputer(strat_num="mean")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
+    assert X.iat[0, 0] == pytest.approx(2.577778, rel=1e-6, abs=1e-12)
     assert X.isna().sum().sum() == 0
 
 
@@ -521,7 +521,7 @@ def test_imputing_numeric_median():
     """Assert that imputing the median for numerical values works."""
     imputer = Imputer(strat_num="median")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3
+    assert X.iat[0, 0] == 3
     assert X.isna().sum().sum() == 0
 
 
@@ -529,7 +529,7 @@ def test_imputing_numeric_most_frequent():
     """Assert that imputing the most_frequent for numerical values works."""
     imputer = Imputer(strat_num="most_frequent")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert X.iloc[0, 0] == 3
+    assert X.iat[0, 0] == 3
     assert X.isna().sum().sum() == 0
 
 
@@ -537,7 +537,7 @@ def test_imputing_non_numeric_string():
     """Assert that imputing a string for non-numerical values works."""
     imputer = Imputer(strat_cat="missing")
     X, y = imputer.fit_transform(X10_sn, y10)
-    assert X.iloc[0, 2] == "missing"
+    assert X.iat[0, 2] == "missing"
     assert X.isna().sum().sum() == 0
 
 
@@ -553,7 +553,7 @@ def test_imputing_non_numeric_most_frequent():
     """Assert that the most_frequent strategy for non-numerical works."""
     imputer = Imputer(strat_cat="most_frequent")
     X, y = imputer.fit_transform(X10_sn, y10)
-    assert X.iloc[0, 2] == "d"
+    assert X.iat[0, 2] == "d"
     assert X.isna().sum().sum() == 0
 
 
@@ -567,7 +567,7 @@ def test_normalizer_check_is_fitted():
 def test_normalizer_invalid_strategy():
     """Assert that an error is raised when strategy is invalid."""
     normalizer = Normalizer(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+    with pytest.raises(ValueError, match=".*value for the strategy.*"):
         normalizer.fit(X_bin)
 
 
@@ -630,28 +630,28 @@ def test_normalizer_attach_attribute():
 def test_invalid_strategy_parameter():
     """Assert that an error is raised for an invalid strategy parameter."""
     pruner = Pruner(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+    with pytest.raises(ValueError, match=".*value for the strategy.*"):
         pruner.transform(X_bin)
 
 
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
     pruner = Pruner(strategy="iforest", method="min_max")
-    with pytest.raises(ValueError, match=r".*accepts another method.*"):
+    with pytest.raises(ValueError, match=".*accepts another method.*"):
         pruner.transform(X_bin)
 
 
 def test_invalid_method_parameter():
     """Assert that an error is raised for an invalid method parameter."""
     pruner = Pruner(method="invalid")
-    with pytest.raises(ValueError, match=r".*value for the method parameter.*"):
+    with pytest.raises(ValueError, match=".*value for the method parameter.*"):
         pruner.transform(X_bin)
 
 
 def test_invalid_max_sigma_parameter():
     """Assert that an error is raised for an invalid max_sigma parameter."""
     pruner = Pruner(max_sigma=0)
-    with pytest.raises(ValueError, match=r".*value for the max_sigma.*"):
+    with pytest.raises(ValueError, match=".*value for the max_sigma.*"):
         pruner.transform(X_bin)
 
 
@@ -680,15 +680,15 @@ def test_drop_pruner():
 def test_min_max_pruner():
     """Assert that the method works as intended when strategy="min_max"."""
     X = Pruner(method="min_max", max_sigma=2).transform(X10)
-    assert X.iloc[3, 0] == 0.23  # Max of column
-    assert X.iloc[5, 1] == 2  # Min of column
+    assert X.iat[3, 0] == 0.23  # Max of column
+    assert X.iat[5, 1] == 2  # Min of column
 
 
 def test_value_pruner():
     """Assert that the method works as intended when strategy=value."""
     X = Pruner(method=-99, max_sigma=2).transform(X10)
-    assert X.iloc[3, 0] == -99
-    assert X.iloc[5, 1] == -99
+    assert X.iat[3, 0] == -99
+    assert X.iat[5, 1] == -99
 
 
 def test_categorical_cols_are_ignored():
@@ -752,7 +752,7 @@ def test_scaler_check_is_fitted():
 def test_scaler_invalid_strategy():
     """Assert that an error is raised when strategy is invalid."""
     scaler = Scaler(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+    with pytest.raises(ValueError, match=".*value for the strategy.*"):
         scaler.fit(X_bin)
 
 

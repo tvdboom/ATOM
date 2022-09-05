@@ -22,7 +22,7 @@ from .conftest import X_bin, X_text, y10
 
 def test_corpus_is_not_present():
     """Assert that an error is raised when there is no corpus."""
-    with pytest.raises(ValueError, match=r".*not contain a text corpus.*"):
+    with pytest.raises(ValueError, match=".*not contain a text corpus.*"):
         TextCleaner().transform(X_bin)
 
 
@@ -159,7 +159,7 @@ def test_vectorizer_space_separation():
 def test_invalid_strategy():
     """Assert that an error is raised when the strategy is invalid."""
     vectorizer = Vectorizer(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+    with pytest.raises(ValueError, match=".*value for the strategy.*"):
         vectorizer.fit(X_text)
 
 
@@ -178,10 +178,11 @@ def test_hashing():
     assert "hash1" in X
 
 
+@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
 @patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
 def test_gpu():
     """Assert that the gpu feature calls the get method of matrix."""
-    Vectorizer(device="gpu").fit_transform(X_text)
+    Vectorizer(device="gpu", engine="cuml").fit_transform(X_text)
 
 
 def test_return_sparse():
@@ -199,7 +200,7 @@ def test_error_sparse_with_dense():
 
     atom = ATOMClassifier(X_text, y10, random_state=1)
     atom.apply(test_func)
-    with pytest.raises(ValueError, match=r".*value for the return_sparse.*"):
+    with pytest.raises(ValueError, match=".*value for the return_sparse.*"):
         atom.vectorize(strategy="BOW", return_sparse=True)
 
 

@@ -18,6 +18,7 @@ import pandas as pd
 from joblib.memory import Memory
 from scipy import stats
 from sklearn.preprocessing import FunctionTransformer
+from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 
 from atom.baserunner import BaseRunner
@@ -43,8 +44,8 @@ from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
     Runner, Scorer, Table, Transformer, __version__, check_is_fitted,
     check_scaling, composed, crash, create_acronym, custom_transform, divide,
-    fit_one, flt, get_pl_name, infer_task, is_sparse, lst, method_to_log,
-    variable_return,
+    fit_one, flt, get_pl_name, has_task, infer_task, is_sparse, lst,
+    method_to_log, variable_return,
 )
 
 
@@ -102,7 +103,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
         if "gpu" in self.device.lower():
             self.log("GPU training enabled.", 1)
-        if self.engine != "default":
+        if self.engine != "sklearn":
             self.log(f"Backend engine: {self.engine}.", 1)
 
         # System settings only to logger
@@ -390,10 +391,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         -------
         pd.DataFrame
             Statistic results with multiindex levels:
-                - **dist:** Name of the distribution.
-                - **stat:** Statistic results:
-                    - **score:** KS-test score.
-                    - **p_value:** Corresponding p-value.
+
+            - **dist:** Name of the distribution.
+            - **stat:** Statistic results:
+                - **score:** KS-test score.
+                - **p_value:** Corresponding p-value.
 
         """
         if distributions is None:
@@ -433,8 +435,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                 stat = stats.kstest(X, dist, args=param)
 
                 # Add as column to the dataframe
-                df.loc[(dist, "score"), col] = round(stat[0], 4)
-                df.loc[(dist, "p_value"), col] = round(stat[1], 4)
+                df.at[(dist, "score"), col] = round(stat[0], 4)
+                df.at[(dist, "p_value"), col] = round(stat[1], 4)
 
         return df
 
@@ -1150,6 +1152,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
     # Data cleaning transformers =================================== >>
 
+    @available_if(has_task("class"))
     @composed(crash, method_to_log, typechecked)
     def balance(self, strategy: str = "adasyn", **kwargs):
         """Balance the number of rows per class in the target column.
@@ -1171,11 +1174,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             of the target class distribution per data set.
 
         """
-        if self.goal != "class":
-            raise PermissionError(
-                "The balance method is only available for classification tasks!"
-            )
-
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, signature(Balancer).parameters)
         balancer = Balancer(strategy=strategy, **kwargs)

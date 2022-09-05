@@ -235,6 +235,7 @@ nav:
             - plot_trials: API/plots/plot_trials.md
             - plot_wordcloud: API/plots/plot_wordcloud.md
     - Examples:
+        - Accelerating pipelines: examples/accelerating_pipelines.ipynb
         - AutoML: examples/automl.ipynb
         - Binary classification: examples/binary_classification.ipynb
         - Calibration: examples/calibration.ipynb
