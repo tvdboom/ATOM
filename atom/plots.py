@@ -1857,7 +1857,7 @@ class ModelPlot(BasePlot):
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
 
-                model = OrdinaryLeastSquares(self, fast_init=True).get_estimator()
+                model = OrdinaryLeastSquares(self, fast_init=True)._get_estimator()
                 model.fit(
                     X=np.array(getattr(self, f"y_{set_}")).reshape(-1, 1),
                     y=getattr(m, f"predict_{set_}"),
@@ -1896,7 +1896,7 @@ class ModelPlot(BasePlot):
     ):
         """Plot evaluation curves for the train and test set.
 
-        Only for models that allow in-training evaluation. The metric
+        Only for models that allow in-training validation. The metric
         is provided by the estimator's package and is different for
         every model and every task. For this reason, the method only
         allows plotting one model.
@@ -1938,11 +1938,11 @@ class ModelPlot(BasePlot):
         m = self._get_subclass(models, max_one=True)
         dataset = self._get_set(dataset, allow_holdout=False)
 
-        # Check that the model had in-training evaluation
+        # Check that the model had in-training validation
         if not hasattr(m, "evals"):
             raise AttributeError(
                 "The plot_evals method is only available for models "
-                f"that allow in-training evaluation, got {m.name}."
+                f"that allow in-training validation, got {m.name}."
             )
 
         fig = self._get_figure()
@@ -1956,7 +1956,7 @@ class ModelPlot(BasePlot):
             ax=ax,
             title=title,
             legend=("best", len(dataset)),
-            xlabel=m.get_dimensions()[0].name,  # First param is always the iter
+            xlabel=m.has_validation,
             ylabel=m.evals["metric"],
             figsize=figsize,
             plotname="plot_evals",
@@ -2040,7 +2040,7 @@ class ModelPlot(BasePlot):
         df.plot.barh(
             ax=ax,
             width=0.75 if len(models) > 1 else 0.6,
-            legend=True if len(models) > 1 else False,
+            legend=len(models) > 1,
         )
         if len(models) == 1:
             for i, v in enumerate(df[df.columns[0]]):
@@ -2200,13 +2200,13 @@ class ModelPlot(BasePlot):
         # Not using sns hue parameter because of legend formatting
         lines = defaultdict(pd.DataFrame)
         for m in models:
-            if m.metric_bootstrap is None:
+            if m.score_bootstrap is None:
                 values = {"x": [m._train_idx], "y": [get_best_score(m, metric)]}
             else:
                 if len(self._metric) == 1:
-                    bootstrap = m.metric_bootstrap
+                    bootstrap = m.score_bootstrap
                 else:
-                    bootstrap = m.metric_bootstrap[metric]
+                    bootstrap = m.score_bootstrap[metric]
                 values = {"x": [m._train_idx] * len(bootstrap), "y": bootstrap}
 
             # Add the scores to the group's dataframe
@@ -3013,7 +3013,7 @@ class ModelPlot(BasePlot):
 
         # Add positions for hyperparameter tuning and models
         x_pos.append(x_pos[-1])
-        if draw_hyperparameter_tuning and any(not m.bo.empty for m in models):
+        if draw_hyperparameter_tuning and any(not m.trials.empty for m in models):
             x_pos[-1] = x_pos[-2] + length + 11
 
         positions = {0: d.here}  # Contains the position of every element
@@ -3417,7 +3417,7 @@ class ModelPlot(BasePlot):
         If all models applied bootstrap, the plot is a boxplot. If
         not, the plot is a barplot. Models are ordered based on
         their score from the top down. The score is either the
-        `mean_bootstrap` or `metric_test` attribute of the model,
+        `score_bootstrap` or `score_test` attribute of the model,
         selected in that order.
 
         Parameters
@@ -3469,11 +3469,11 @@ class ModelPlot(BasePlot):
         def get_bootstrap(m):
             """Get the bootstrap results for a specific metric."""
             # Use getattr since ensembles don't have the attribute
-            if isinstance(getattr(m, "metric_bootstrap", None), np.ndarray):
+            if isinstance(getattr(m, "score_bootstrap", None), np.ndarray):
                 if len(self._metric) == 1:
-                    return m.metric_bootstrap
+                    return m.score_bootstrap
                 else:
-                    return m.metric_bootstrap[metric]
+                    return m.score_bootstrap[metric]
 
         def std(m):
             """Get the standard deviation of the bootstrap results."""
@@ -3673,13 +3673,13 @@ class ModelPlot(BasePlot):
         lines = defaultdict(pd.DataFrame)
         for m in models:
             n_models = len(m.branch._idx[0]) // m._train_idx  # Number of models in iter
-            if m.metric_bootstrap is None:
+            if m.score_bootstrap is None:
                 values = {"x": [n_models], "y": [get_best_score(m, metric)]}
             else:
                 if len(self._metric) == 1:
-                    bootstrap = m.metric_bootstrap
+                    bootstrap = m.score_bootstrap
                 else:
-                    bootstrap = m.metric_bootstrap[metric]
+                    bootstrap = m.score_bootstrap[metric]
                 values = {"x": [n_models] * len(bootstrap), "y": bootstrap}
 
             # Add the scores to the group's dataframe
@@ -3823,8 +3823,8 @@ class ModelPlot(BasePlot):
         """Plot the hyperparameter tuning trials.
 
         Only for models that ran hyperparameter tuning. This is the
-        same plot as produced by `bo_params={"plot": True}` while
-        running the BO. Creates a canvas with two plots: the first
+        same plot as produced by `ht_params={"plot": True}` while
+        running the BO. Creates a figure with two plots: the first
         plot shows the score of every trial and the second shows
         the distance between the last consecutive steps.
 
@@ -3862,7 +3862,7 @@ class ModelPlot(BasePlot):
         metric = self._get_metric(metric)
 
         # Check there is at least one model that run the BO
-        if all(m.bo.empty for m in models):
+        if all(m.trials.empty for m in models):
             raise PermissionError(
                 "The plot_bo method is only available for models that "
                 "ran the bayesian optimization hyperparameter tuning!"
@@ -3874,14 +3874,14 @@ class ModelPlot(BasePlot):
         ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
         for m in models:
             if m.metric_bo:  # Only models that did run the BO
-                y = m.bo["score"].apply(lambda value: lst(value)[metric])
+                y = m.trials["score"].apply(lambda value: lst(value)[metric])
                 if len(models) == 1:
                     label = f"Score={round(lst(m.metric_bo)[metric], 3)}"
                 else:
                     label = f"{m.name} (Score={round(lst(m.metric_bo)[metric], 3)})"
 
                 # Draw bullets on all markers except the maximum
-                markers = [i for i in range(len(m.bo))]
+                markers = [i for i in range(len(m.trials))]
                 markers.remove(int(np.argmax(y)))
 
                 ax1.plot(range(1, len(y) + 1), y, "-o", markevery=markers, label=label)

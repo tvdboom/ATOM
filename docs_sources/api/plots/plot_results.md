@@ -12,7 +12,7 @@ metric=0, title=None, figsize=None, filename=None, display=True)
 Plot of the model results after the evaluation. If all models applied
 bootstrap, the plot is a boxplot. If not, the plot is a barplot. Models
 are ordered based on their score from the top down. The score is either
-the `mean_bootstrap` or `metric_test` attribute of the model, selected in
+the `mean_bootstrap` or `score_test` attribute of the model, selected in
 that order.
 
 <table style="font-size:16px">

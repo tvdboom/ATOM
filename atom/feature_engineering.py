@@ -1416,7 +1416,7 @@ class FeatureSelector(
                         )
                     else:
                         model = MODELS[solver](self, fast_init=True)
-                        solver = model.get_estimator()
+                        solver = model._get_estimator()
                 else:
                     solver = self.solver
 
@@ -1712,7 +1712,7 @@ class FeatureSelector(
                 y_train=y,
                 X_valid=X_valid,
                 y_valid=y_valid,
-                verbose=True if self.verbose >= 2 else False,
+                verbose=self.verbose >= 2,
             )
 
         # Add the strategy estimator as attribute to the class

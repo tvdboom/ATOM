@@ -33,8 +33,8 @@ Documents are expected to be strings or sequences of words. Click
 Text data is rarely clean. Whether it's scraped from a website or inferred
 from paper documents, it's always populated with irrelevant information for
 the model, such as email addresses, HTML tags, numbers or punctuation marks.
-Use the [TextCleaner](../../API/nlp/textcleaner) class to clean the corpus
-from such noise. It can be accessed from atom through the [textclean](../../API/ATOM/atomclassifier/#textclean)
+Use the [TextCleaner][] class to clean the corpus from such noise. It can be
+accessed from atom through the [textclean][atomclassifier-textclean] method.
 Use the class' parameters to choose which transformations to perform. The
 available steps are:
 
@@ -63,10 +63,9 @@ meaning when the word `york` is directly after it than when it's not. These
 combinations of two words are called bigrams. When there are three words,
 they are called trigrams, and with four words quadgrams.
 
-The [Tokenizer](../../API/nlp/tokenizer) class converts a document into a
-sequence of words, and can create the most frequent bigrams, trigrams and
-quadgrams. It can be accessed from atom through the [tokenize](../../API/ATOM/atomclassifier/#tokenize)
-method.
+The [Tokenizer][] class converts a document into a sequence of words, and
+can create the most frequent bigrams, trigrams and quadgrams. It can be
+accessed from atom through the [tokenize][atomclassifier-tokenize] method.
 
 
 <br>
@@ -80,8 +79,8 @@ efficiency. The goal of normalization techniques like stemming and
 lemmatization is to reduce inflectional and related forms of a word
 to a common base form.
 
-Normalize the words in the corpus using the [TextNormalizer](../../API/nlp/textnormalizer)
-class. It can be accessed from atom through the [textnormalize](../../API/ATOM/atomclassifier/#textnormalize)
+Normalize the words in the corpus using the [TextNormalizer][] class.
+It can be accessed from atom through the [textnormalize][atomclassifier-textnormalize]
 method.
 
 
@@ -93,13 +92,13 @@ Text data cannot be fed directly to the algorithms themselves, as most
 of them expect numerical feature vectors with a fixed size, rather than
 words in the text documents with variable length. Vectorization is the
 general process of turning a collection of text documents into numerical
-feature vectors. You can apply it to the corpus using the [Vectorizer](../../API/nlp/vectorizer)
-class. It can be accessed from atom through the [vectorize](../../API/ATOM/atomclassifier/#vectorize)
+feature vectors. You can apply it to the corpus using the [Vectorizer][]
+class. It can be accessed from atom through the [vectorize][atomclassifier-vectorize]
 method.
 
 !!! info
-    All strategies can utilize GPU speed-up. Click [here](../gpu)
-    for further information about GPU implementation.
+    All strategies can utilize GPU speed-up. Click [here][gpu-acceleration]
+    for further information about GPU acceleration.
 
 <br style="display: block; margin-top: 2em; content: ' '">
 

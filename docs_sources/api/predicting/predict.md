@@ -3,7 +3,7 @@
 
 :: atom.basemodel:BaseModel.predict
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - returns

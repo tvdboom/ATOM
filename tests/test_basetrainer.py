@@ -181,22 +181,22 @@ def test_default_metric():
 
 def test_sequence_parameters_invalid_length():
     """Assert that an error is raised when the length is invalid."""
-    trainer = DirectClassifier("LR", n_calls=(2, 2), random_state=1)
+    trainer = DirectClassifier("LR", n_trials=(2, 2), random_state=1)
     with pytest.raises(ValueError, match=".*Length should be equal.*"):
         trainer.run(bin_train, bin_test)
 
 
-@pytest.mark.parametrize("n_calls", [-2, 1])
-def test_n_calls_parameter_is_invalid(n_calls):
-    """Assert that an error is raised when n_calls=1 or <0."""
-    trainer = DirectClassifier("LR", n_calls=n_calls, random_state=1)
-    with pytest.raises(ValueError, match=".*n_calls parameter.*"):
+@pytest.mark.parametrize("n_trials", [-2, 1])
+def test_n_trials_parameter_is_invalid(n_trials):
+    """Assert that an error is raised when n_trials=1 or <0."""
+    trainer = DirectClassifier("LR", n_trials=n_trials, random_state=1)
+    with pytest.raises(ValueError, match=".*n_trials parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_n_initial_points_parameter_is_zero():
     """Assert that an error is raised when n_initial_points=0."""
-    trainer = DirectClassifier("LR", n_calls=2, n_initial_points=0, random_state=1)
+    trainer = DirectClassifier("LR", n_trials=2, n_initial_points=0, random_state=1)
     with pytest.raises(ValueError, match=".*n_initial_points parameter.*"):
         trainer.run(bin_train, bin_test)
 
@@ -212,7 +212,7 @@ def test_est_params_all_models():
     """Assert that est_params passes the parameters to all models."""
     trainer = DirectClassifier(
         models=["RF", "ET"],
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
         est_params={"n_estimators": 20, "all": {"bootstrap": False}},
         random_state=1,
@@ -258,7 +258,7 @@ def test_est_params_unknown_param():
     """Assert that unknown parameters in est_params are caught."""
     trainer = DirectClassifier(
         models=["LR", "LGB"],
-        n_calls=5,
+        n_trials=5,
         est_params={"test": 220},
         random_state=1,
     )
@@ -279,14 +279,14 @@ def test_est_params_unknown_param_fit():
 
 def test_base_estimator_default():
     """Assert that GP is the default base estimator."""
-    trainer = DirectClassifier("LR", n_calls=5, random_state=1)
+    trainer = DirectClassifier("LR", n_trials=5, random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer._bo["base_estimator"] == "GP"
 
 
 def test_base_estimator_invalid():
     """Assert that an error is raised when the base estimator is invalid."""
-    trainer = DirectClassifier("LR", bo_params={"base_estimator": "u"}, random_state=1)
+    trainer = DirectClassifier("LR", ht_params={"base_estimator": "u"}, random_state=1)
     with pytest.raises(ValueError, match=".*base_estimator parameter.*"):
         trainer.run(bin_train, bin_test)
 
@@ -296,9 +296,9 @@ def test_callback(callback):
     """Assert that custom callbacks are accepted."""
     trainer = DirectClassifier(
         models="LR",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={"callback": callback},
+        ht_params={"callback": callback},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
@@ -308,9 +308,9 @@ def test_all_callbacks():
     """Assert that all predefined callbacks work as intended."""
     trainer = DirectClassifier(
         models="LR",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={"max_time": 50, "delta_x": 5, "delta_y": 5},
+        ht_params={"max_time": 50, "delta_x": 5, "delta_y": 5},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
@@ -318,21 +318,21 @@ def test_all_callbacks():
 
 def test_invalid_max_time():
     """Assert than an error is raised when max_time<=0."""
-    trainer = DirectClassifier("LR", bo_params={"max_time": 0}, random_state=1)
+    trainer = DirectClassifier("LR", ht_params={"max_time": 0}, random_state=1)
     with pytest.raises(ValueError, match=".*max_time parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_invalid_delta_x():
     """Assert than an error is raised when delta_x<0."""
-    trainer = DirectClassifier("LR", bo_params={"delta_x": -2}, random_state=1)
+    trainer = DirectClassifier("LR", ht_params={"delta_x": -2}, random_state=1)
     with pytest.raises(ValueError, match=".*delta_x parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_invalid_delta_y():
     """Assert than an error is raised when delta_y<0."""
-    trainer = DirectClassifier("LR", bo_params={"delta_y": -2}, random_state=1)
+    trainer = DirectClassifier("LR", ht_params={"delta_y": -2}, random_state=1)
     with pytest.raises(ValueError, match=".*delta_y parameter.*"):
         trainer.run(bin_train, bin_test)
 
@@ -341,9 +341,9 @@ def test_plot():
     """Assert that plotting the BO runs without errors."""
     trainer = DirectClassifier(
         models=["lSVM", "kSVM", "MLP"],
-        n_calls=(17, 17, 40),
+        n_trials=(17, 17, 40),
         n_initial_points=8,
-        bo_params={"plot": True},
+        ht_params={"plot": True},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
@@ -351,14 +351,14 @@ def test_plot():
 
 def test_invalid_cv():
     """Assert than an error is raised when cv<=0."""
-    trainer = DirectClassifier("LR", bo_params={"cv": 0}, random_state=1)
+    trainer = DirectClassifier("LR", ht_params={"cv": 0}, random_state=1)
     with pytest.raises(ValueError, match=".*cv parameter.*"):
         trainer.run(bin_train, bin_test)
 
 
 def test_invalid_early_stopping():
     """Assert than an error is raised when early_stopping<=0."""
-    trainer = DirectClassifier("LR", bo_params={"early_stopping": -1}, random_state=1)
+    trainer = DirectClassifier("LR", ht_params={"early_stopping": -1}, random_state=1)
     with pytest.raises(ValueError, match=".*early_stopping parameter.*"):
         trainer.run(bin_train, bin_test)
 
@@ -367,9 +367,9 @@ def test_custom_dimensions_is_list():
     """Assert that the custom dimensions are for all models if list."""
     trainer = DirectClassifier(
         models="LR",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={"dimensions": [Integer(10, 20, name="max_iter")]},
+        ht_params={"dimensions": [Integer(10, 20, name="max_iter")]},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
@@ -380,9 +380,9 @@ def test_custom_dimensions_is_all():
     """Assert that the custom dimensions can be set for all models."""
     trainer = DirectClassifier(
         models=["LR1", "LR2"],
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={
+        ht_params={
             "dimensions": {
                 "all": [Integer(10, 20, name="max_iter")],
                 "LR2": Categorical(["l1", "l2"], name="penalty"),
@@ -399,9 +399,9 @@ def test_custom_dimensions_per_model():
     """Assert that the custom dimensions are distributed over the models."""
     trainer = DirectClassifier(
         models=["LR1", "LR2"],
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={
+        ht_params={
             "dimensions": {
                 "lr1": [Integer(100, 200, name="max_iter")],
                 "lr2": [Integer(300, 400, name="max_iter")],
@@ -418,9 +418,9 @@ def test_optimizer_kwargs():
     """Assert that the kwargs provided are passed to the optimizer."""
     trainer = DirectClassifier(
         models="LR",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={"acq_func": "EI"},
+        ht_params={"acq_func": "EI"},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
@@ -433,7 +433,7 @@ def test_sequence_parameters():
     """Assert that every model get his corresponding parameters."""
     trainer = DirectClassifier(
         models=["LR", "Tree", "LGB"],
-        n_calls=(2, 3, 4),
+        n_trials=(2, 3, 4),
         n_initial_points=(1, 2, 3),
         n_bootstrap=[2, 5, 7],
         random_state=1,
@@ -441,15 +441,15 @@ def test_sequence_parameters():
     trainer.run(bin_train, bin_test)
     assert len(trainer.LR.bo) == 2
     assert sum(trainer.tree.bo["call"].str.startswith("Initial")) == 2
-    assert len(trainer.lgb.metric_bootstrap) == 7
+    assert len(trainer.lgb.score_bootstrap) == 7
 
 
 def test_custom_dimensions_for_bo():
     """Assert that the BO runs when custom dimensions are provided."""
     trainer = DirectRegressor(
         models="OLS",
-        n_calls=5,
-        bo_params={"dimensions": [Categorical([True, False], name="fit_intercept")]},
+        n_trials=5,
+        ht_params={"dimensions": [Categorical([True, False], name="fit_intercept")]},
         random_state=1,
     )
     trainer.run(reg_train, reg_test)
@@ -467,7 +467,7 @@ def test_error_handling():
     """Assert that models with errors are removed from the pipeline."""
     trainer = DirectClassifier(
         models=["LR", "LDA"],
-        n_calls=4,
+        n_trials=4,
         n_initial_points=[2, 5],
         random_state=1,
     )
@@ -481,9 +481,9 @@ def test_close_plot_after_error():
     """Assert that the BO plot is closed after an error."""
     trainer = DirectClassifier(
         models=["LR", "LDA"],
-        n_calls=4,
+        n_trials=4,
         n_initial_points=[2, 5],
-        bo_params={"plot": True},
+        ht_params={"plot": True},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
@@ -492,12 +492,12 @@ def test_close_plot_after_error():
 
 def test_one_model_failed():
     """Assert that the model error is raised when it fails."""
-    trainer = DirectClassifier("LR", n_calls=4, random_state=1)
+    trainer = DirectClassifier("LR", n_trials=4, random_state=1)
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
 def test_all_models_failed():
     """Assert that an error is raised when all models failed."""
-    trainer = DirectClassifier(["LR", "RF"], n_calls=4, random_state=1)
+    trainer = DirectClassifier(["LR", "RF"], n_trials=4, random_state=1)
     with pytest.raises(RuntimeError, match=".*All models failed.*"):
         trainer.run(bin_train, bin_test)

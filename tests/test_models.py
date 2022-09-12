@@ -35,7 +35,7 @@ for m in MODELS.values():
 def test_custom_models(model):
     """Assert that ATOM works with custom models."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(models=model, n_calls=2, n_initial_points=1)
+    atom.run(models=model, n_trials=2, n_initial_points=1)
     assert atom.rfr.fullname == "RandomForestRegressor"
     assert atom.rfr.estimator.get_params()["random_state"] == 1
 
@@ -47,9 +47,9 @@ def test_models_binary(model):
     atom.run(
         models=model,
         metric="auc",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
-        bo_params={"base_estimator": "rf", "cv": 1},
+        ht_params={"base_estimator": "rf", "cv": 1},
     )
     assert not atom.errors
     assert hasattr(atom, model)
@@ -62,9 +62,9 @@ def test_models_multiclass(model):
     atom.run(
         models=model,
         metric="f1_micro",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
-        bo_params={"base_estimator": "rf", "cv": 1},
+        ht_params={"base_estimator": "rf", "cv": 1},
     )
     assert not atom.errors
     assert hasattr(atom, model)
@@ -77,9 +77,9 @@ def test_models_regression(model):
     atom.run(
         models=model,
         metric="neg_mean_absolute_error",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
-        bo_params={"base_estimator": "gbrt", "cv": 1},
+        ht_params={"base_estimator": "gbrt", "cv": 1},
     )
     assert not atom.errors
     assert hasattr(atom, model)
@@ -90,7 +90,7 @@ def test_Dummy():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(
         models="dummy",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
         est_params={"strategy": "quantile"},
     )
@@ -102,7 +102,7 @@ def test_CatNB():
     y = np.random.randint(2, size=100)
 
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.run(models="CatNB", n_calls=2, n_initial_points=1)
+    atom.run(models="CatNB", n_trials=2, n_initial_points=1)
     assert not atom.errors
     assert hasattr(atom, "CatNB")
 
@@ -112,7 +112,7 @@ def test_LR():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="LR",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
         est_params={"penalty": "elasticnet", "solver": "saga"},
     )
@@ -132,7 +132,7 @@ def test_MLP_custom_hidden_layer_sizes():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="MLP",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
         est_params={"hidden_layer_sizes": (31, 2)},
     )
@@ -144,9 +144,9 @@ def test_MLP_custom_n_layers():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="MLP",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
-        bo_params={
+        ht_params={
             "dimensions": [
                 Integer(0, 100, name="hidden_layer_1"),
                 Integer(0, 20, name="hidden_layer_2"),

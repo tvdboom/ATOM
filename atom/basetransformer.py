@@ -20,6 +20,7 @@ from typing import List, Optional, Tuple, Union
 import dill as pickle
 import mlflow
 import numpy as np
+import optuna
 import pandas as pd
 import sklearnex
 from sklearn.model_selection import train_test_split
@@ -170,6 +171,11 @@ class BaseTransformer:
                     f"{value}. Choose from: {', '.join(opts)}."
                 )
             self._warnings = value.lower()
+
+        if self._warnings in ("ignore", "module"):
+            optuna.logging.set_verbosity(optuna.logging.CRITICAL)
+        else:
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
 
         warnings.simplefilter(self._warnings)  # Change the filter in this process
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses

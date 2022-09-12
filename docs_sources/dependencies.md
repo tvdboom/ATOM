@@ -38,7 +38,7 @@ packages are necessary for its correct functioning.
 * **[mlflow](https://mlflow.org/)** (>=1.26)
 * **[nltk](https://www.nltk.org/)** (>=3.7)
 * **[numpy](https://numpy.org/)** (~=1.22)
-* **[optuna](https://optuna.org/)** (>=2.10.1)
+* **[optuna](https://optuna.org/)** (>=3.0.0)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.2.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.11.0)
@@ -56,8 +56,7 @@ packages are necessary for its correct functioning.
 
 You can install some optional packages to be able to use some well-known
 machine learning estimators that are not provided by sklearn but are
-among ATOM's [predefined models](../user_guide/models/#predefined-models).
-Install them using `pip install atom-ml[models]`.
+among ATOM's [predefined models][]. Install them using `pip install atom-ml[models]`.
 
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.0.4)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
@@ -68,7 +67,7 @@ Install them using `pip install atom-ml[models]`.
 
 The development dependencies are not installed with the package, and are
 not required for any of its functionalities. These libraries are only
-necessary to [contribute](../contributing) to the project. Install them
+necessary to [contribute][contributing] to the project. Install them
 using `pip install atom-ml[dev]`.
 
 **Linting**

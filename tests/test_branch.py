@@ -16,15 +16,15 @@ from atom.utils import merge
 from .conftest import X_bin, X_bin_array, X_class, y_bin, y_bin_array
 
 
-# Test __init__ ==================================================== >>
+# Test magic methods =============================================== >>
 
-def test_pipeline_to_empty_series():
+def test_init_pipeline_to_empty_series():
     """Assert that when starting atom, the estimators are empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.branch.pipeline.empty
 
 
-def test_attrs_are_passed():
+def test_init_attrs_are_passed():
     """Assert that the attributes from the parent are passed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
@@ -33,41 +33,31 @@ def test_attrs_are_passed():
     assert atom.b2.adasyn is atom.master.adasyn
 
 
-# Test __repr__ ==================================================== >>
-
-def test_repr():
-    """Assert that the __repr__  method returns the list of available branches."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert str(atom.branch).startswith("Branch: master\n --> Pipeline")
-
-
-# Test delete ====================================================== >>
-
-def test_branch_delete_current():
+def test_delete_current():
     """Assert that we can delete the current branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
-    atom.branch.delete()
+    del atom.branch
     assert "b2" not in atom._branches
 
 
-def test_branch_delete_last_branch():
+def test_delete_last_branch():
     """Assert that an error is raised when the last branch is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(PermissionError, match=".*last branch.*"):
-        atom.branch.delete()
+        del atom.branch
 
 
-def test_branch_delete_depending_models():
+def test_delete_depending_models():
     """Assert that dependent models are deleted with the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
     atom.run("LR")
-    atom.delete()
+    del atom.branch
     assert not atom.models
 
 
-def test_last_og_branch():
+def test_delete_last_og_branch():
     """Assert that an og branch is created if the last one is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
@@ -75,47 +65,53 @@ def test_last_og_branch():
     assert "og" not in atom._branches
     assert len(atom._get_og_branches()) == 1  # master is the last og branch
     atom.branch = "master"
-    atom.branch.delete()
+    del atom.branch
     assert "og" in atom._branches
 
 
-def test_branch_delete_not_current():
+def test_delete_not_current():
     """Assert that we can delete any branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
     assert "b2" in atom._branches
-    atom.branch.delete()
+    del atom.branch
     assert "b2" not in atom._branches
 
 
-# Test rename ====================================================== >>
+def test_repr():
+    """Assert that the __repr__  method returns the list of available branches."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert str(atom.branch).startswith("Branch: master\n --> Pipeline")
 
-def test_rename_empty_name():
+
+# Test name property =============================================== >>
+
+def test_name_empty_name():
     """Assert that an error is raised when name is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*can't have an empty name!.*"):
-        atom.branch.rename("")
+        atom.branch.name = ""
 
 
-def test_rename_existing_name():
+def test_name_existing_name():
     """Assert that an error is raised when name already exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
     with pytest.raises(ValueError, match=".*already exists!.*"):
-        atom.branch.rename("master")
+        atom.branch.name = "master"
 
 
-def test_rename_model_name():
+def test_name_model_name():
     """Assert that an error is raised when name is a model's acronym."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*model's acronym.*"):
-        atom.branch.rename("Lda")
+        atom.branch.name = "Lda"
 
 
-def test_rename_method():
+def test_name_method():
     """Assert that the branch name changes correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch.rename("b1")
+    atom.branch.name = "b1"
     assert atom.branch.name == "b1"
     assert atom.branch.pipeline.name == "b1"
 

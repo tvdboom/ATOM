@@ -10,7 +10,7 @@ dataset="both", title=None, figsize=(10, 6), filename=None, display=True)
 </div>
 
 Plot evaluation curves for the train and test set. Only for models that
-allow in-training evaluation ([XGB](../../models/xgb), [LGB](../../models/lgb),
+allow in-training validation ([XGB](../../models/xgb), [LGB](../../models/lgb),
 [CatB](../../models/catb)). The metric is provided by the estimator's
 package and is different for every model and every task. For this reason,
 the method only allows plotting one model.

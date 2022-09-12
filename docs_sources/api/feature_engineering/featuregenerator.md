@@ -3,7 +3,7 @@
 
 :: atom.feature_engineering:FeatureGenerator
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

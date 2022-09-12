@@ -28,11 +28,10 @@ classification is imbalanced classes. Data imbalance usually reflects
 an unequal distribution of classes within a dataset. For example, in
 a credit card fraud detection dataset, most of the transactions are
 non-fraud, and a very few cases are fraud. This leaves us with a very
-unbalanced ratio of fraud vs non-fraud cases. The [Balancer](../../API/data_cleaning/balancer)
-class can oversample the minority class or undersample the majority
-class using any of the transformers implemented in the
-[imblearn](https://imbalanced-learn.org/stable/index.html) package. It
-can be  accessed from atom through the [balance](../../API/ATOM/atomclassifier/#balance)
+unbalanced ratio of fraud vs non-fraud cases. The [Balancer][] class
+can oversample the minority class or undersample the majority class
+using any of the transformers implemented in the [imblearn](https://imbalanced-learn.org/stable/index.html)
+package. It can be  accessed from atom through the [balance][atomclassifier-balance]
 method.
 
 <br>
@@ -41,11 +40,10 @@ method.
 
 There are many data cleaning steps that are useful to perform on any
 dataset before modelling. These are general rules that apply almost
-on every use-case and every task. The [Cleaner](../../API/data_cleaning/cleaner)
-class is a convenient tool to apply such steps. It can be accessed
-from atom through the [clean](../../API/ATOM/atomclassifier/#clean)
-method. Use the class' parameters to choose which transformations to
-perform. The available steps are:
+on every use-case and every task. The [Cleaner][] class is a convenient
+tool to apply such steps. It can be accessed from atom through the
+[clean][atomclassifier-clean] method. Use the class' parameters to
+choose which transformations to perform. The available steps are:
 
 * Drop columns with specific data types.
 * Strip categorical features from white spaces.
@@ -65,9 +63,8 @@ attributes to one with only nominal attributes. Discretization is
 similar to constructing histograms for continuous data. However,
 histograms focus on counting features which fall into particular bins,
 whereas discretization focuses on assigning feature values to these
-bins. The [Discretizer](../../API/data_cleaning/discretizer) class can
-be used to bin continuous data into intervals. It can be accessed from
-atom through the [discretize](../../API/ATOM/atomclassifier/#discretize)
+bins. The [Discretizer][] class can be used to bin continuous data into
+intervals. It can be accessed from atom through the [discretize][atomclassifier-discretize]
 method.
 
 <br>
@@ -81,9 +78,9 @@ Some examples include color (“Red”, “Yellow”, “Blue”), size (“Smal
 Regardless of what the value is used for, the challenge is determining
 how to use this data in the analysis. The majority of sklearn's models
 don't support direct manipulation of this kind of data. Use the
-[Encoder](../../API/data_cleaning/encoder) class to encode categorical
-features to numerical values. It can be  accessed from atom through the
-[encode](../../API/ATOM/atomclassifier/#encode) method.
+[Encoder][] class to encode categorical features to numerical values.
+It can be  accessed from atom through the [encode][atomclassifier-encode]
+method.
 
 There are many strategies to encode categorical columns. The Encoder
 class applies one strategy or another depending on the number of
@@ -107,23 +104,20 @@ For various reasons, many real world datasets contain missing values,
 often encoded as blanks, NaNs or other placeholders. Such datasets
 however are incompatible with ATOM's models which assume that all
 values in an array are numerical, and that all have and hold meaning.
-The [Imputer](../../API/data_cleaning/imputer) class handles missing
-values in the dataset by either dropping or imputing the value. It can 
-be accessed from atom through the [impute](../../API/ATOM/atomclassifier/#impute)
-method.
+The [Imputer][] class handles missing values in the dataset by either
+dropping or imputing the value. It can be accessed from atom through
+the [impute][atomclassifier-impute] method.
 
 <br>
 
 ## Normalizing the feature set
 
-Use the [Normalizer](../../API/data_cleaning/normalizer) class to
-transform the feature set to follow a Normal (Gaussian)-like
-distribution. In general, data must be transformed when using models
-that assume normality in the residuals. Examples of such models are
-[Logistic Regression](../../API/models/lr), [Linear Discriminant Analysis](../../API/models/lda)
-and [Gaussian Naive Bayes](../../API/models/gnb). The class can be
-accessed from atom through the [normalize](../../API/ATOM/atomclassifier/#normalize)
-method.
+Use the [Normalizer][] class to transform the feature set to follow
+a Normal (Gaussian)-like distribution. In general, data must be
+transformed when using models that assume normality in the residuals.
+Examples of such models are [Logistic Regression][], [Linear Discriminant Analysis][]
+and [Gaussian Naive Bayes][]. The class can be accessed from atom
+through the [normalize][atomclassifier-normalize] method.
 
 <br>
 
@@ -134,9 +128,9 @@ the observations best represent the problem. Sometimes a dataset can
 contain extreme values that are outside the range of what is expected
 and unlike the other data. These are called outliers. Often, machine
 learning modelling and model skill in general can be improved by 
-understanding and even removing these outlier samples. The [Pruner](../../API/data_cleaning/pruner) 
+understanding and even removing these outlier samples. The [Pruner][]
 class offers 7 different strategies to detect outliers (described
-hereunder). It can be accessed from atom through the [prune](../../API/ATOM/atomclassifier/#prune)
+hereunder). It can be accessed from atom through the [prune][atomclassifier-prune]
 method.
 
 **z-score**<br>
@@ -211,11 +205,10 @@ membership. Read more in sklearn's [documentation](https://scikit-learn.org/stab
 Standardization of a dataset is a common requirement for many machine
 learning estimators; they might behave badly if the individual features
 do not more or less look like standard normally distributed data (e.g.
-Gaussian with zero mean and unit variance). The [Scaler](../../API/data_cleaning/scaler)
-class let you quickly scale atom's dataset using one of sklearn's scalers.
-It can be accessed from atom through the [scale](../../API/ATOM/atomclassifier/#scale)
-method. 
+Gaussian with zero mean and unit variance). The [Scaler][] class let you
+quickly scale atom's dataset using one of sklearn's scalers. It can be
+accessed from atom through the [scale][atomclassifier-scale] method. 
 
 !!! info
-    All strategies can utilize GPU speed-up. Click [here](../gpu)
+    All strategies can utilize GPU speed-up. Click [here][gpu-acceleration]
     for further information about GPU implementation.

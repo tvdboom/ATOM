@@ -23,7 +23,7 @@ example.
     e.g. `atom.feature_selection("pca", n_features=10, random_state=2)`.
 
 !!! note
-    Like the [add](../../API/ATOM/atomclassifier/#add) method, the feature engineering
+    Like the [add][atomclassifier-add] method, the feature engineering
     methods accept the `columns` parameter to only transform a subset of the
     dataset's features, e.g. `atom.feature_selection("pca", n_features=10, columns=slice(5, 15))`.
 
@@ -35,10 +35,9 @@ Features that contain dates or timestamps can not be directly ingested
 by models since they are not strictly numerical. Encoding them as
 categorical features is not an option since the encoding does not
 capture the relationship between the different moments in time. The
-[FeatureExtractor](../../API/feature_engineering/feature_extractor)
-class creates new features extracting datetime elements (e.g. day,
-month, year, hour...) from the columns. It can be accessed from atom
-through the [feature_extraction](../../API/ATOM/atomclassifier/#feature-extraction)
+[FeatureExtractor][] class creates new features extracting datetime
+elements (e.g. day, month, year, hour...) from the columns. It can be
+accessed from atom through the [feature_extraction][atomclassifier-feature_extraction]
 method. The new features are named equally to the column from which
 they are extracted, followed by an underscore and the datetime element
 they create, e.g. `x0_day` for the day element of `x0`.
@@ -76,11 +75,11 @@ for an overview of the available formats.
 
 ## Generating new features
 
-The [FeatureGenerator](../../API/feature_engineering/feature_generator)
-class creates new non-linear features based on the original feature
-set. It can be accessed from atom through the [feature_generation](../../API/ATOM/atomclassifier/#feature-generation)
-method. You can choose between two strategies: Deep Feature Synthesis
-and Genetic Feature Generation.
+The [FeatureGenerator][] class creates new non-linear features based
+on the original feature set. It can be accessed from atom through the
+[feature_generation][atomclassifier-feature_generation] method. You
+can choose between two strategies: Deep Feature Synthesis and Genetic
+Feature Generation.
 
 
 **Deep Feature Synthesis**<br>
@@ -118,10 +117,9 @@ name `feature_n`, where n stands for the n-th feature in the dataset.
 You can access the genetic feature's fitness and description (how they
 are calculated) through the `genetic_features` attribute.
 
-ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer)
- class from the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html)
- package for the genetic algorithm. Read more about this implementation
- [here](https://gplearn.readthedocs.io/en/stable/intro.html#transformer).
+ATOM uses the [SymbolicTransformer][] class from the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html)
+package for the genetic algorithm. Read more about this implementation
+[here](https://gplearn.readthedocs.io/en/stable/intro.html#transformer).
 
 <br>
 
@@ -172,9 +170,9 @@ the variance of each dimension. The new features are called `pca0`,
 * If the data is [sparse][sparse datasets] (often the case for term-document
   matrices, see [Vectorizer][]), the estimator used is [TruncatedSVD][].
   Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis).
-* If [engine="cuml"][featureselector-engine] is enabled, the estimator
-  used is cuml's [PCA](https://docs.rapids.ai/api/cuml/stable/api.html#cuml.PCA).
-  There's no cuml implementation available for sparse data.
+* If [`engine`][featureselector-engine] is "sklearnex" or "cuml", the estimator
+  used is the package's PCA implementation. Sparse data is not supported for
+  neither engine.
 
 
 <br style="display: block; margin-top: 2em; content: ' '">
@@ -184,7 +182,7 @@ the variance of each dimension. The new features are called `pca0`,
 SFM uses an estimator with `feature_importances_` or `coef_` attributes
 to select the best features in a dataset based on importance weights.
 The estimator is provided through the `solver` parameter and can be
-already fitted. ATOM allows you to use one its predefined [models](#models),
+already fitted. ATOM allows you to use one its predefined [models][],
 e.g. `solver="RF"`. If you didn't call the FeatureSelector through atom,
 don't forget to indicate the estimator's task adding `_class` or `_reg`
 after the name, e.g. `RF_class` to use a random forest classifier. Read
@@ -308,10 +306,8 @@ either different or exactly the same.
 
 **Removing features with multi-collinearity**<br>
 Two features that are highly correlated are redundant, i.e. two will
-not contribute more to the model than only one of them.
-[FeatureSelector](../../API/feature_engineering/feature_selector) will
-drop a feature that has a [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient)
-larger than `max_correlation` with another feature. A correlation of 
-1 means the two columns are equal. A dataframe of the removed features
-and their correlation values can be accessed through the `collinear`
-attribute.
+not contribute more to the model than only one of them. [FeatureSelector][]
+will drop a feature that has a [Pearson correlation coefficient][pearson]
+larger than `max_correlation` with another feature. A correlation of 1
+means the two columns are equal. A dataframe of the removed features and
+their correlation values can be accessed through the `collinear` attribute.

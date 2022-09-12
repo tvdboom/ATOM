@@ -26,6 +26,12 @@ Description: Module containing all available models. All classes must
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
+        has_validation: str or None
+            Whether the model allows in-training validation. If str,
+            name of the estimator's parameter that states the number
+            of iterations. If None, no support for in-training
+            evaluation.
+
         supports_engines: list
             Engines that can be used to run this model.
 
@@ -47,13 +53,9 @@ Description: Module containing all available models. All classes must
             but can be different if the same model is called multiple
             times. The name is assigned in the basemodel.py module.
 
-        evals: dict
-            Evaluation metric and scores. Only for models that allow
-            in-training evaluation.
-
         Methods
         -------
-        get_parameters(self, x):
+        _get_parameters(self, x):
             Return the parameters with rounded decimals and (optional)
             custom changes to the params. Don't implement if the method
             in BaseModel (default behaviour) is sufficient.
@@ -67,48 +69,48 @@ Description: Module containing all available models. All classes must
             This method is called instead of directly running the
             estimator's fit method. Implement only to customize the fit.
 
-        get_dimensions(self):
+        _get_distributions(self):
             Return a list of the hyperparameter space for optimization.
 
 
 List of available models:
 
-- "Dummy" for Dummy Estimator
-- "GNB" for Gaussian Naive Bayes (no hyperparameter tuning)
-- "MNB" for Multinomial Naive Bayes
-- "BNB" for Bernoulli Naive Bayes
-- "CatNB" for Categorical Naive Bayes
-- "CNB" for Complement Naive Bayes
-- "GP" for Gaussian Process (no hyperparameter tuning)
-- "OLS" for Ordinary Least Squares (no hyperparameter tuning)
-- "Ridge" for Ridge Estimator
-- "Lasso" for Lasso Linear Regression
-- "EN" for ElasticNet Linear Regression
-- "Lars" for Least Angle Regression
-- "BR" for Bayesian Ridge
-- "ARD" for Automated Relevance Determination
-- "Huber" for Huber Regression
-- "Perc" for Perceptron
-- "LR" for Logistic Regression
-- "LDA" for Linear Discriminant Analysis
-- "QDA" for Quadratic Discriminant Analysis
-- "KNN" for K-Nearest Neighbors
-- "RNN" for Radius Nearest Neighbors
-- "Tree" for a single Decision Tree
-- "Bag" for Bagging
-- "ET" for Extra-Trees
-- "RF" for Random Forest
 - "AdaB" for AdaBoost
-- "GBM" for Gradient Boosting Machine
-- "hGBM" for Hist Gradient Boosting Machine
-- "XGB" for XGBoost (if package is available)
-- "LGB" for LightGBM (if package is available)
+- "ARD" for AutomatedRelevanceDetermination
+- "Bag" for Bagging
+- "BR" for BayesianRidge
+- "BNB" for BernoulliNB
 - "CatB" for CatBoost (if package is available)
-- "lSVM" for Linear Support Vector Machine
-- "kSVM" for Kernel (non-linear) Support Vector Machine
-- "PA" for Passive Aggressive
-- "SGD" for Stochastic Gradient Descent
-- "MLP" for Multi-layer Perceptron
+- "CatNB" for CategoricalNB
+- "CNB" for ComplementNB
+- "Tree" for DecisionTree
+- "Dummy" for Dummy
+- "EN" for ElasticNet
+- "ET" for ExtraTrees
+- "GNB" for GaussianNB (no hyperparameter tuning)
+- "GP" for GaussianProcess (no hyperparameter tuning)
+- "GBM" for GradientBoosting
+- "Huber" for HuberRegression
+- "hGBM" for HistGradientBoosting
+- "KNN" for KNearestNeighbors
+- "Lasso" for Lasso
+- "Lars" for LeastAngleRegression
+- "LGB" for LightGBM (if package is available)
+- "LDA" for LinearDiscriminantAnalysis
+- "lSVM" for LinearSVM
+- "LR" for LogisticRegression
+- "MLP" for MultiLayerPerceptron
+- "MNB" for MultinomialNB
+- "OLS" for OrdinaryLeastSquares (no hyperparameter tuning)
+- "PA" for PassiveAggressive
+- "Perc" for Perceptron
+- "QDA" for QuadraticDiscriminantAnalysis
+- "RNN" for RadiusNearestNeighbors
+- "RF" for RandomForest
+- "Ridge" for Ridge
+- "SGD" for StochasticGradientDescent
+- "SVM" for SupportVectorMachine
+- "XGB" for XGBoost (if package is available)
 
 Additionally, ATOM implements two ensemble models:
 
@@ -121,8 +123,12 @@ import random
 from typing import Union
 
 import numpy as np
+from optuna.distributions import CategoricalDistribution as Categorical
+from optuna.distributions import FloatDistribution as Float
+from optuna.distributions import IntDistribution as Int
+from optuna.trial import Trial
 from scipy.spatial.distance import cdist
-from skopt.space.space import Categorical, Integer, Real
+from skopt.space.space import Integer, Real
 
 from atom.basemodel import BaseModel
 from atom.pipeline import Pipeline
@@ -141,6 +147,11 @@ half_to_one_inc = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 class CustomModel(BaseModel):
     """Custom model. Estimator provided by user."""
+
+    needs_scaling = None
+    accepts_sparse = None
+    has_validation = None
+    supports_engines = []
 
     def __init__(self, *args, **kwargs):
         self.est = kwargs["estimator"]  # Estimator provided by the user
@@ -163,14 +174,14 @@ class CustomModel(BaseModel):
         super().__init__(*args)
 
     @property
-    def est_class(self):
+    def _est_class(self):
         """Return the estimator's class."""
         if callable(self.est):
             return self.est
         else:
             return self.est.__class__
 
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         if callable(self.est):
             # Add n_jobs and random_state to the estimator (if available)
@@ -180,17 +191,13 @@ class CustomModel(BaseModel):
 
             return self.est(**params)
         else:
-            # Update the parameters if it's a child class of BaseEstimator
             # If the class has the param and it's the default value, change it
-            if all(hasattr(self.est, attr) for attr in ("get_params", "set_params")):
-                for p in ("n_jobs", "random_state"):
-                    if p in self._sign():
-                        if self.est.get_params()[p] == self._sign()[p]._default:
-                            params[p] = params.pop(p, getattr(self.T, p))
+            for p in ("n_jobs", "random_state"):
+                if p in self._sign(self.est):
+                    if self.est.get_params()[p] == self._sign()[p]._default:
+                        params[p] = params.pop(p, getattr(self.T, p))
 
-                self.est.set_params(**params)
-
-            return self.est
+            return self.est.set_params(**params)
 
 
 class AdaBoost(BaseModel):
@@ -211,9 +218,9 @@ class AdaBoost(BaseModel):
 
     See Also
     --------
-    atom.models:DecisionTree
-    atom.models:ExtraTrees
+    atom.models:GradientBoosting
     atom.models:RandomForest
+    atom.models:XGBoost
 
     Examples
     --------
@@ -225,7 +232,7 @@ class AdaBoost(BaseModel):
     >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
     >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="AdaB", verbose=2)
+    >>> atom.run(models="AdaB", metric="f1", verbose=2)
 
     Training ========================= >>
     Models: AdaB
@@ -242,7 +249,7 @@ class AdaBoost(BaseModel):
 
 
     Final results ==================== >>
-    Duration: 0.109s
+    Total time: 0.109s
     -------------------------------------
     AdaBoost --> f1: 0.9722
 
@@ -254,27 +261,25 @@ class AdaBoost(BaseModel):
     fullname = "AdaBoost"
     needs_scaling = False
     accepts_sparse = True
+    has_validation = None
     supports_engines = ["sklearn"]
 
     _module = "ensemble"
-    _estimators = CustomDict(
-        {"class": "AdaBoostClassifier", "reg": "AdaBoostRegressor"}
-    )
+    _estimators = CustomDict({"class": "AdaBoostClassifier", "reg": "AdaBoostRegressor"})
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
-        dimensions = [
-            Integer(50, 500, name="n_estimators"),
-            Real(0.01, 10, "log-uniform", name="learning_rate"),
-        ]
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
+        dist = CustomDict(
+            n_estimators=Int(50, 500, step=10),
+            learning_rate=Float(0.01, 10, log=True),
+        )
 
         if self.T.goal == "class":
-            dimensions.append(Categorical(["SAMME.R", "SAMME"], name="algorithm"))
+            dist["algorithm"] = Categorical(["SAMME.R", "SAMME"])
         else:
-            loss = ["linear", "square", "exponential"]
-            dimensions.append(Categorical(loss, name="loss"))
+            dist["loss"] = Categorical(["linear", "square", "exponential"])
 
-        return dimensions
+        return dist
 
 
 class AutomaticRelevanceDetermination(BaseModel):
@@ -290,8 +295,8 @@ class AutomaticRelevanceDetermination(BaseModel):
     _estimators = CustomDict({"reg": "ARDRegression"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Integer(100, 1000, name="n_iter"),
             Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1"),
@@ -314,8 +319,8 @@ class Bagging(BaseModel):
     _estimators = CustomDict({"class": "BaggingClassifier", "reg": "BaggingRegressor"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Integer(10, 500, name="n_estimators"),
             Categorical(half_to_one_inc, name="max_samples"),
@@ -338,8 +343,8 @@ class BayesianRidge(BaseModel):
     _estimators = CustomDict({"reg": "BayesianRidge"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Integer(100, 1000, name="n_iter"),
             Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1"),
@@ -349,11 +354,11 @@ class BayesianRidge(BaseModel):
         ]
 
 
-class BernoulliNaiveBayes(BaseModel):
+class BernoulliNB(BaseModel):
     """Bernoulli Naive Bayes."""
 
     acronym = "BNB"
-    fullname = "Bernoulli Naive Bayes"
+    fullname = "BernoulliNB"
     needs_scaling = False
     accepts_sparse = True
     supports_engines = ["sklearn", "cuml"]
@@ -362,8 +367,8 @@ class BernoulliNaiveBayes(BaseModel):
     _estimators = CustomDict({"class": "BernoulliNB"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Real(0.01, 10, "log-uniform", name="alpha"),
             Categorical([True, False], name="fit_prior"),
@@ -377,16 +382,14 @@ class CatBoost(BaseModel):
     fullname = "CatBoost"
     needs_scaling = True
     accepts_sparse = True
-    supports_engines = []
+    supports_engines = ["catboost"]
 
     _module = "catboost"
-    _estimators = CustomDict(
-        {"class": "CatBoostClassifier", "reg": "CatBoostRegressor"}
-    )
+    _estimators = CustomDict({"class": "CatBoostClassifier", "reg": "CatBoostRegressor"})
 
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
+        return self._est_class(
             bootstrap_type=params.pop("bootstrap_type", "Bernoulli"),  # For subsample
             train_dir=params.pop("train_dir", ""),
             allow_writing_files=params.pop("allow_writing_files", False),
@@ -422,8 +425,8 @@ class CatBoost(BaseModel):
             self._stopped = (len(self.evals["train"]), n_estimators)
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
@@ -434,11 +437,11 @@ class CatBoost(BaseModel):
         ]
 
 
-class CategoricalNaiveBayes(BaseModel):
+class CategoricalNB(BaseModel):
     """Categorical Naive Bayes."""
 
     acronym = "CatNB"
-    fullname = "Categorical Naive Bayes"
+    fullname = "CategoricalNB"
     needs_scaling = False
     accepts_sparse = True
     supports_engines = ["sklearn", "cuml"]
@@ -447,19 +450,19 @@ class CategoricalNaiveBayes(BaseModel):
     _estimators = CustomDict({"class": "CategoricalNB"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Real(0.01, 10, "log-uniform", name="alpha"),
             Categorical([True, False], name="fit_prior"),
         ]
 
 
-class ComplementNaiveBayes(BaseModel):
+class ComplementNB(BaseModel):
     """Complement Naive Bayes."""
 
     acronym = "CNB"
-    fullname = "Complement Naive Bayes"
+    fullname = "ComplementNB"
     needs_scaling = False
     accepts_sparse = True
     supports_engines = ["sklearn", "cuml"]
@@ -468,8 +471,8 @@ class ComplementNaiveBayes(BaseModel):
     _estimators = CustomDict({"class": "ComplementNB"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Real(0.01, 10, "log-uniform", name="alpha"),
             Categorical([True, False], name="fit_prior"),
@@ -491,8 +494,8 @@ class DecisionTree(BaseModel):
         {"class": "DecisionTreeClassifier", "reg": "DecisionTreeRegressor"}
     )
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
         if self.T.goal == "class":
             criterion = ["gini", "entropy"]
         else:
@@ -516,7 +519,7 @@ class Dummy(BaseModel):
     """Dummy classifier/regressor."""
 
     acronym = "Dummy"
-    fullname = "Dummy Estimator"
+    fullname = "Dummy"
     needs_scaling = False
     accepts_sparse = False
     supports_engines = ["sklearn"]
@@ -524,9 +527,9 @@ class Dummy(BaseModel):
     _module = "dummy"
     _estimators = CustomDict({"class": "DummyClassifier", "reg": "DummyRegressor"})
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         if self._get_param(params, "strategy") != "quantile":
             params.pop("quantile", None)
@@ -536,18 +539,18 @@ class Dummy(BaseModel):
 
         return params
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
         if self.T.goal == "class":
             categories = ["most_frequent", "prior", "stratified", "uniform"]
-            dimensions = [Categorical(categories, name="strategy")]
+            dist = [Categorical(categories, name="strategy")]
         else:
-            dimensions = [
+            dist = [
                 Categorical(["mean", "median", "quantile"], name="strategy"),
                 Categorical([None, *zero_to_one_inc], name="quantile"),
             ]
 
-        return dimensions
+        return dist
 
 
 class ElasticNet(BaseModel):
@@ -563,8 +566,8 @@ class ElasticNet(BaseModel):
     _estimators = CustomDict({"reg": "ElasticNet"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Real(1e-3, 10, "log-uniform", name="alpha"),
             Categorical(half_to_one_exc, name="l1_ratio"),
@@ -586,17 +589,17 @@ class ExtraTrees(BaseModel):
         {"class": "ExtraTreesClassifier", "reg": "ExtraTreesRegressor"}
     )
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         if not self._get_param(params, "bootstrap"):
             params.pop("max_samples", None)
 
         return params
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
         if self.T.goal == "class":
             criterion = ["gini", "entropy"]
         else:
@@ -618,11 +621,11 @@ class ExtraTrees(BaseModel):
         ]
 
 
-class GaussianNaiveBayes(BaseModel):
+class GaussianNB(BaseModel):
     """Gaussian Naive Bayes."""
 
     acronym = "GNB"
-    fullname = "Gaussian Naive Bayes"
+    fullname = "GaussianNB"
     needs_scaling = False
     accepts_sparse = False
     supports_engines = ["sklearn", "cuml"]
@@ -646,11 +649,11 @@ class GaussianProcess(BaseModel):
     )
 
 
-class GradientBoostingMachine(BaseModel):
+class GradientBoosting(BaseModel):
     """Gradient Boosting Machine."""
 
     acronym = "GBM"
-    fullname = "Gradient Boosting Machine"
+    fullname = "GradientBoosting"
     needs_scaling = False
     accepts_sparse = True
     supports_engines = ["sklearn"]
@@ -660,25 +663,25 @@ class GradientBoostingMachine(BaseModel):
         {"class": "GradientBoostingClassifier", "reg": "GradientBoostingRegressor"}
     )
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         if self._get_param(params, "loss") not in ("huber", "quantile"):
             params.pop("alpha", None)
 
         return params
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
-        dimensions = []  # Multiclass classification only works with deviance loss
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
+        dist = []  # Multiclass classification only works with deviance loss
         if self.T.task.startswith("bin"):
-            dimensions.append(Categorical(["deviance", "exponential"], name="loss"))
+            dist.append(Categorical(["deviance", "exponential"], name="loss"))
         elif self.T.task.startswith("reg"):
             loss = ["squared_error", "absolute_error", "huber", "quantile"]
-            dimensions.append(Categorical(loss, name="loss"))
+            dist.append(Categorical(loss, name="loss"))
 
-        dimensions.extend(
+        dist.extend(
             [
                 Real(0.01, 1.0, "log-uniform", name="learning_rate"),
                 Integer(10, 500, name="n_estimators"),
@@ -696,9 +699,9 @@ class GradientBoostingMachine(BaseModel):
         )
 
         if self.T.goal == "reg":
-            dimensions.append(Categorical(half_to_one_exc, name="alpha"))
+            dist.append(Categorical(half_to_one_exc, name="alpha"))
 
-        return dimensions
+        return dist
 
 
 class HuberRegression(BaseModel):
@@ -714,8 +717,8 @@ class HuberRegression(BaseModel):
     _estimators = CustomDict({"reg": "HuberRegressor"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Real(1, 10, "log-uniform", name="epsilon"),
             Integer(50, 500, name="max_iter"),
@@ -723,11 +726,11 @@ class HuberRegression(BaseModel):
         ]
 
 
-class HistGBM(BaseModel):
+class HistGradientBoosting(BaseModel):
     """Histogram-based Gradient Boosting Machine."""
 
     acronym = "hGBM"
-    fullname = "HistGBM"
+    fullname = "HistGradientBoosting"
     needs_scaling = False
     accepts_sparse = False
     supports_engines = ["sklearn"]
@@ -740,14 +743,14 @@ class HistGBM(BaseModel):
         }
     )
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
-        dimensions = []
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
+        dist = []
         if self.T.goal == "reg":
             loss = ["squared_error", "absolute_error", "poisson"]
-            dimensions.append(Categorical(loss, name="loss"))
+            dist.append(Categorical(loss, name="loss"))
 
-        dimensions.extend(
+        dist.extend(
             [
                 Real(0.01, 1.0, "log-uniform", name="learning_rate"),
                 Integer(10, 500, name="max_iter"),
@@ -758,7 +761,7 @@ class HistGBM(BaseModel):
             ]
         )
 
-        return dimensions
+        return dist
 
 
 class KNearestNeighbors(BaseModel):
@@ -775,12 +778,12 @@ class KNearestNeighbors(BaseModel):
         {"class": "KNeighborsClassifier", "reg": "KNeighborsRegressor"}
     )
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
-        dimensions = [Integer(1, 100, name="n_neighbors")]
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
+        dist = [Integer(1, 100, name="n_neighbors")]
 
         if not self._gpu:
-            dimensions.extend(
+            dist.extend(
                 [
                     Categorical(["uniform", "distance"], name="weights"),
                     Categorical(
@@ -792,14 +795,14 @@ class KNearestNeighbors(BaseModel):
                 ]
             )
 
-        return dimensions
+        return dist
 
 
-class KernelSVM(BaseModel):
-    """Kernel (non-linear) Support Vector Machine."""
+class SupportVectorMachine(BaseModel):
+    """Support Vector Machine."""
 
-    acronym = "kSVM"
-    fullname = "Kernel SVM"
+    acronym = "SVM"
+    fullname = "SupportVectorMachine"
     needs_scaling = True
     accepts_sparse = True
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -807,9 +810,9 @@ class KernelSVM(BaseModel):
     _module = "svm"
     _estimators = CustomDict({"class": "SVC", "reg": "SVR"})
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         if self.T.goal == "class":
             params.pop("epsilon", None)
@@ -828,19 +831,19 @@ class KernelSVM(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         if self._gpu and self.T.goal == "class":
-            return self.est_class(
+            return self._est_class(
                 probability=True,
                 random_state=params.pop("random_state", self.T.random_state),
                 **params)
         else:
-            return super().get_estimator(**params)
+            return super()._get_estimator(**params)
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
-        dimensions = [
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
+        dist = [
             Real(1e-3, 100, "log-uniform", name="C"),
             Categorical(["linear", "poly", "rbf", "sigmoid"], name="kernel"),
             Integer(2, 5, name="degree"),
@@ -849,14 +852,14 @@ class KernelSVM(BaseModel):
         ]
 
         if not self._gpu:
-            dimensions.extend(
+            dist.extend(
                 [
                     Real(1e-3, 100, "log-uniform", name="epsilon"),
                     Categorical([True, False], name="shrinking"),
                 ]
             )
 
-        return dimensions
+        return dist
 
 
 class Lasso(BaseModel):
@@ -872,8 +875,8 @@ class Lasso(BaseModel):
     _estimators = CustomDict({"reg": "Lasso"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Real(1e-3, 10, "log-uniform", name="alpha"),
             Categorical(["cyclic", "random"], name="selection"),
@@ -884,7 +887,7 @@ class LeastAngleRegression(BaseModel):
     """Least Angle Regression."""
 
     acronym = "Lars"
-    fullname = "Least Angle Regression"
+    fullname = "LeastAngleRegression"
     needs_scaling = True
     accepts_sparse = False
     supports_engines = ["sklearn"]
@@ -894,20 +897,26 @@ class LeastAngleRegression(BaseModel):
 
 
 class LightGBM(BaseModel):
-    """Light Gradient Boosting Machine."""
+    """Light Gradient Boosting Machine.
+
+    !!! info
+        Using LightGBM's [GPU acceleration][] requires
+        [additional software dependencies][lgb_gpu].
+
+    """
 
     acronym = "LGB"
     fullname = "LightGBM"
     needs_scaling = True
     accepts_sparse = True
-    supports_engines = []
+    supports_engines = ["lightgbm"]
 
     _module = "lightgbm.sklearn"
     _estimators = CustomDict({"class": "LGBMClassifier", "reg": "LGBMRegressor"})
 
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
-        return self.est_class(
+        return self._est_class(
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             device=params.pop("device", "gpu" if self._gpu else "cpu"),
             gpu_device_id=params.pop("gpu_device_id", self.T._device_id or -1),
@@ -945,8 +954,8 @@ class LightGBM(BaseModel):
             self._stopped = (len(self.evals["train"]), n_estimators)
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
@@ -973,9 +982,9 @@ class LinearDiscriminantAnalysis(BaseModel):
     _module = "discriminant_analysis"
     _estimators = CustomDict({"class": "LinearDiscriminantAnalysis"})
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         if self._get_param(params, "solver") == "svd":
             params.pop("shrinkage", None)
@@ -983,8 +992,8 @@ class LinearDiscriminantAnalysis(BaseModel):
         return params
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Categorical(["svd", "lsqr", "eigen"], name="solver"),
             Categorical([None, "auto", *half_to_one_inc], name="shrinkage"),
@@ -995,7 +1004,7 @@ class LinearSVM(BaseModel):
     """Linear Support Vector Machine."""
 
     acronym = "lSVM"
-    fullname = "Linear SVM"
+    fullname = "LinearSVM"
     needs_scaling = True
     accepts_sparse = True
     supports_engines = ["sklearn", "cuml"]
@@ -1003,9 +1012,9 @@ class LinearSVM(BaseModel):
     _module = "svm"
     _estimators = CustomDict({"class": "LinearSVC", "reg": "LinearSVR"})
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         if self.T.goal == "class":
             if self._get_param(params, "loss") == "hinge":
@@ -1022,23 +1031,23 @@ class LinearSVM(BaseModel):
 
         return params
 
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         if self._gpu and self.T.goal == "class":
-            return self.est_class(probability=True, **params)
+            return self._est_class(probability=True, **params)
         else:
-            return super().get_estimator(**params)
+            return super()._get_estimator(**params)
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
-        dimensions = []
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
+        dist = []
         if self.T.goal == "class":
             loss = ["hinge", "squared_hinge"]
-            dimensions.append(Categorical(["l1", "l2"], name="penalty"))
+            dist.append(Categorical(["l1", "l2"], name="penalty"))
         else:
             loss = ["epsilon_insensitive", "squared_epsilon_insensitive"]
 
-        dimensions.extend(
+        dist.extend(
             [
                 Categorical(loss, name="loss"),
                 Real(1e-3, 100, "log-uniform", name="C"),
@@ -1046,30 +1055,85 @@ class LinearSVM(BaseModel):
         )
 
         if not self._gpu:
-            dimensions.append(Categorical([True, False], name="dual"))
+            dist.append(Categorical([True, False], name="dual"))
 
-        return dimensions
+        return dist
 
 
 class LogisticRegression(BaseModel):
-    """Logistic Regression."""
+    """Logistic Regression.
+
+    Logistic regression, despite its name, is a linear model for
+    classification rather than regression. Logistic regression is also
+    known in the literature as logit regression, maximum-entropy
+    classification (MaxEnt) or the log-linear classifier. In this model,
+    the probabilities describing the possible outcomes of a single trial
+    are modeled using a logistic function.
+
+    Corresponding estimators are:
+
+    - [LogisticRegression][] for classification tasks.
+
+    Read more in sklearn's [documentation][lrdocs].
+
+    See Also
+    --------
+    atom.models:GaussianProcess
+    atom.models:LinearDiscriminantAnalysis
+    atom.models:PassiveAggressive
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="RF", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: LR
+    Metric: f1
+
+
+    Results for LogisticRegression:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.9895
+    Test evaluation --> f1: 0.993
+    Time elapsed: 0.028s
+    -------------------------------------------------
+    Total time: 0.028s
+
+
+    Final results ==================== >>
+    Total time: 0.028s
+    -------------------------------------
+    LogisticRegression --> f1: 0.993
+
+    ```
+
+    """
 
     acronym = "LR"
-    fullname = "Logistic Regression"
+    fullname = "LogisticRegression"
     needs_scaling = True
     accepts_sparse = True
+    has_validation = False
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "linear_model"
     _estimators = CustomDict({"class": "LogisticRegression"})
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         # Limitations on penalty + solver combinations
-        penalty = self._get_param(params, "penalty")
-        solver = self._get_param(params, "solver")
+        penalty = self._get_param("penalty", params)
+        solver = self._get_param("solver", params)
         cond_1 = penalty == "none" and solver == "liblinear"
         cond_2 = penalty == "l1" and solver not in ("liblinear", "saga")
         cond_3 = penalty == "elasticnet" and solver != "saga"
@@ -1077,40 +1141,39 @@ class LogisticRegression(BaseModel):
         if cond_1 or cond_2 or cond_3:
             params.replace_value("penalty", "l2")  # Change to default value
 
-        if self._get_param(params, "penalty") != "elasticnet":
+        if self._get_param("penalty", params) != "elasticnet":
             params.pop("l1_ratio", None)
-        elif self._get_param(params, "l1_ratio") is None:
-            # l1_ratio can't be None with elasticnet (select value randomly)
-            params.replace_value("l1_ratio", random.choice(zero_to_one_exc))
 
-        if self._get_param(params, "penalty") == "none":
+        if self._get_param("penalty", params) == "none":
             params.pop("C", None)
 
         return params
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
-        solvers = ["lbfgs", "newton-cg", "liblinear", "sag", "saga"]
-
-        dimensions = [
-            Categorical(["l1", "l2", "elasticnet", "none"], name="penalty"),
-            Real(1e-3, 100, "log-uniform", name="C"),
-            Categorical(solvers, name="solver"),
-            Integer(100, 1000, name="max_iter"),
-            Categorical([None, *zero_to_one_exc], name="l1_ratio"),
-        ]
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
+        dist = CustomDict(
+            penalty=Categorical(["l1", "l2", "elasticnet", "none"]),
+            C=Float(1e-3, 100, log=True),
+            solver=Categorical(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
+            max_iter=Int(100, 1000, step=10),
+            l1_ratio=Categorical(zero_to_one_exc),
+        )
 
         if self._gpu:
-            del dimensions[2]
+            dist.pop("solver")
+            if self.T.engine == "sklearnex":
+                dist.pop("penalty")  # Only 'l2' is supported
+        elif self.T.engine == "sklearnex":
+            dist["solver"] = Categorical(["lbfgs", "newton-cg"])
 
-        return dimensions
+        return dist
 
 
-class MultilayerPerceptron(BaseModel):
+class MultiLayerPerceptron(BaseModel):
     """Multi-layer Perceptron."""
 
     acronym = "MLP"
-    fullname = "Multi-layer Perceptron"
+    fullname = "MultiLayerPerceptron"
     needs_scaling = True
     accepts_sparse = True
     supports_engines = ["sklearn"]
@@ -1127,9 +1190,9 @@ class MultilayerPerceptron(BaseModel):
 
         return params
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         hidden_layer_sizes = []
         for param in [p for p in sorted(params) if p.startswith("hidden_layer")]:
@@ -1152,9 +1215,9 @@ class MultilayerPerceptron(BaseModel):
 
         return params
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
-        dimensions = [
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
+        dist = [
             Integer(10, 100, name="hidden_layer_1"),
             Integer(0, 100, name="hidden_layer_2"),
             Integer(0, 100, name="hidden_layer_3"),
@@ -1170,30 +1233,84 @@ class MultilayerPerceptron(BaseModel):
 
         # Drop layers if sizes are specified by user
         if "hidden_layer_sizes" in self._est_params:
-            return [d for d in dimensions if not d.name.startswith("hidden_layer")]
+            return [d for d in dist if not d.name.startswith("hidden_layer")]
         else:
-            return dimensions
+            return dist
 
 
-class MultinomialNaiveBayes(BaseModel):
-    """Multinomial Naive Bayes."""
+class MultinomialNB(BaseModel):
+    """Multinomial Naive Bayes.
+
+    MultinomialNB implements the Naive Bayes algorithm for multinomially
+    distributed data, and is one of the two classic Naive Bayes variants
+    used in text classification (where the data are typically
+    represented as word vector counts, although tf-idf vectors are also
+    known to work well in practice).
+
+    Corresponding estimators are:
+
+    - [MultinomialNB][] for classification tasks.
+
+    Read more in sklearn's [documentation][mnbdocs].
+
+    See Also
+    --------
+    atom.models:BernoulliNB
+    atom.models:ComplementNB
+    atom.models:GaussianNB
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="MNB", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: MNB
+    Metric: f1
+
+
+    Results for MultinomialNB:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.916
+    Test evaluation --> f1: 0.9371
+    Time elapsed: 0.011s
+    -------------------------------------------------
+    Total time: 0.011s
+
+
+    Final results ==================== >>
+    Total time: 0.011s
+    -------------------------------------
+    MultinomialNB --> f1: 0.9371
+
+    ```
+
+    """
 
     acronym = "MNB"
-    fullname = "Multinomial Naive Bayes"
+    fullname = "MultinomialNB"
     needs_scaling = False
     accepts_sparse = True
+    has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
     _module = "naive_bayes"
     _estimators = CustomDict({"class": "MultinomialNB"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
-        return [
-            Real(0.01, 10, "log-uniform", name="alpha"),
-            Categorical([True, False], name="fit_prior"),
-        ]
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
+        return CustomDict(
+            alpha=Float(0.01, 10, log=True),
+            fit_prior=Categorical([True, False]),
+        )
 
 
 class OrdinaryLeastSquares(BaseModel):
@@ -1223,8 +1340,8 @@ class PassiveAggressive(BaseModel):
         {"class": "PassiveAggressiveClassifier", "reg": "PassiveAggressiveRegressor"}
     )
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
         if self.T.goal == "class":
             loss = ["hinge", "squared_hinge"]
         else:
@@ -1249,9 +1366,9 @@ class Perceptron(BaseModel):
     _module = "linear_model"
     _estimators = CustomDict({"class": "Perceptron"})
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
         if self._get_param(params, "penalty") != "elasticnet":
             params.pop("l1_ratio", None)
@@ -1259,8 +1376,8 @@ class Perceptron(BaseModel):
         return params
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Categorical([None, "l2", "l1", "elasticnet"], name="penalty"),
             Categorical([1e-4, 1e-3, 1e-2, 0.1, 1, 10], name="alpha"),
@@ -1283,8 +1400,8 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     _estimators = CustomDict({"class": "QuadraticDiscriminantAnalysis"})
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [Categorical(zero_to_one_inc, name="reg_param")]
 
 
@@ -1329,33 +1446,24 @@ class RadiusNearestNeighbors(BaseModel):
 
         return self._distances
 
-    def _get_default_params(self):
-        """Custom method to return a valid radius."""
-        x0 = super()._get_default_params()
-
-        # Replace sklearn's default value for the mean of the distances
-        x0.replace_value("radius", np.mean(self.distances))
-
-        return x0
-
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         if self.T.goal == "class":
-            return self.est_class(
+            return self._est_class(
                 outlier_label=params.pop("outlier_label", "most_frequent"),
                 radius=params.pop("radius", np.mean(self.distances)),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
         else:
-            return self.est_class(
+            return self._est_class(
                 radius=params.pop("radius", np.mean(self.distances)),
                 n_jobs=params.pop("n_jobs", self.T.n_jobs),
                 **params,
             )
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
         return [
             Real(min(self.distances), max(self.distances), name="radius"),
             Categorical(["uniform", "distance"], name="weights"),
@@ -1366,12 +1474,74 @@ class RadiusNearestNeighbors(BaseModel):
 
 
 class RandomForest(BaseModel):
-    """Random Forest."""
+    """Random Forest.
+
+    Random forests are an ensemble learning method that operate by
+    constructing a multitude of decision trees at training time and
+    outputting the class that is the mode of the classes
+    (classification) or mean prediction (regression) of the individual
+    trees. Random forests correct for decision trees' habit of
+    overfitting to their training set.
+
+    Corresponding estimators are:
+
+    - [RandomForestClassifier][] for classification tasks.
+    - [RandomForestRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][adabdocs].
+
+    !!! warning
+        cuML's implementation of [RandomForestClassifier][cumlrf] only
+        supports predictions on dtype `float32`. Convert all dtypes
+        before calling atom's [run][atomclassifier-run] method to avoid
+        exceptions.
+
+    See Also
+    --------
+    atom.models:DecisionTree
+    atom.models:ExtraTrees
+    atom.models:HistGradientBoosting
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="RF", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: RF
+    Metric: f1
+
+
+    Results for Random Forest:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.9722
+    Time elapsed: 2.815s
+    -------------------------------------------------
+    Total time: 2.815s
+
+
+    Final results ==================== >>
+    Total time: 2.968s
+    -------------------------------------
+    Random Forest --> f1: 0.9722
+
+    ```
+
+    """
 
     acronym = "RF"
-    fullname = "Random Forest"
+    fullname = "RandomForest"
     needs_scaling = False
     accepts_sparse = True
+    has_validation = False
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "ensemble"
@@ -1379,47 +1549,48 @@ class RandomForest(BaseModel):
         {"class": "RandomForestClassifier", "reg": "RandomForestRegressor"}
     )
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
-        if not self._get_param(params, "bootstrap"):
+        if not self._get_param("bootstrap", params):
             params.pop("max_samples", None)
 
         return params
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
         if self.T.goal == "class":
             criterion = ["gini", "entropy"]
-        elif self._gpu:
-            criterion = ["mse", "poisson", "gamma", "inverse_gaussian"]
         else:
-            criterion = ["squared_error", "absolute_error", "poisson"]
+            if self.T.engine == "cuml":
+                criterion = ["mse", "poisson", "gamma", "inverse_gaussian"]
+            else:
+                criterion = ["squared_error", "absolute_error", "poisson"]
 
-        dimensions = [
-            Integer(10, 500, name="n_estimators"),
-            Categorical(criterion, name="criterion"),
-            Categorical([None, *range(1, 17)], name="max_depth"),
-            Integer(2, 20, name="min_samples_split"),
-            Integer(1, 20, name="min_samples_leaf"),
-            Categorical(
-                categories=["sqrt", "log2", *half_to_one_exc, None],
-                name="max_features",
-            ),
-            Categorical([True, False], name="bootstrap"),
-            Categorical([None, *half_to_one_exc], name="max_samples"),
-        ]
+        dist = CustomDict(
+            n_estimators=Int(10, 500, step=10),
+            criterion=Categorical(criterion),
+            max_depth=Categorical([None, *range(1, 17)]),
+            min_samples_split=Int(2, 20),
+            min_samples_leaf=Int(1, 20),
+            max_features=Categorical([None, "sqrt", "log2", *half_to_one_exc]),
+            bootstrap=Categorical([True, False]),
+            max_samples=Categorical([None, *half_to_one_exc]),
+            ccp_alpha=Float(0, 0.035, step=0.005),
+        )
 
-        if self._gpu:
-            dimensions[1].name = "split_criterion"
-            dimensions[2].categories = list(range(1, 17))
-            dimensions[5].categories = ["auto", "sqrt", "log2", *half_to_one_exc]
-            dimensions[7].categories = half_to_one_exc
-        else:
-            dimensions.append(Real(0, 0.035, name="ccp_alpha"))
+        if self.T.engine == "sklearnex":
+            dist.pop("criterion")
+            dist.pop("ccp_alpha")
+        elif self.T.engine == "cuml":
+            dist.replace_key("criterion", "split_criterion")
+            dist["max_depth"].choices = tuple(range(1, 17))
+            dist["max_features"].choices = tuple(["sqrt", "log2", *half_to_one_exc])
+            dist["max_samples"].choices = tuple(half_to_one_exc)
+            dist.pop("ccp_alpha")
 
-        return dimensions
+        return dist
 
 
 class Ridge(BaseModel):
@@ -1434,8 +1605,8 @@ class Ridge(BaseModel):
     _module = "linear_model"
     _estimators = CustomDict({"class": "RidgeClassifier", "reg": "Ridge"})
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
         if self._gpu:
             solvers = ["eig", "svd", "cd"]
         else:
@@ -1448,33 +1619,89 @@ class Ridge(BaseModel):
 
 
 class StochasticGradientDescent(BaseModel):
-    """Stochastic Gradient Descent."""
+    """Stochastic Gradient Descent.
+
+    Stochastic Gradient Descent is a simple yet very efficient approach
+    to fitting linear classifiers and regressors under convex loss
+    functions. Even though SGD has been around in the machine learning
+    community for a long time, it has received a considerable amount of
+    attention just recently in the context of large-scale learning.
+
+    Corresponding estimators are:
+
+    - [SGDClassifier][] for classification tasks.
+    - [SGDRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][sgddocs].
+
+    See Also
+    --------
+    atom.models:MultiLayerPerceptron
+    atom.models:PassiveAggressive
+    atom.models:SupportVectorMachine
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="SGD", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: SGD
+    Metric: f1
+
+
+    Results for StochasticGradientDescent:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.993
+    Test evaluation --> f1: 0.9929
+    Time elapsed: 4.561s
+    -------------------------------------------------
+    Total time: 4.561s
+
+
+    Final results ==================== >>
+    Total time: 4.562s
+    -------------------------------------
+    StochasticGradientDescent --> f1: 0.9929
+
+    ```
+
+    """
 
     acronym = "SGD"
-    fullname = "Stochastic Gradient Descent"
+    fullname = "StochasticGradientDescent"
     needs_scaling = True
     accepts_sparse = True
+    has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
     _estimators = CustomDict({"class": "SGDClassifier", "reg": "SGDRegressor"})
 
-    def get_parameters(self, x):
-        """Return a dictionary of the model's hyperparameters."""
-        params = super().get_parameters(x)
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters."""
+        params = super()._get_parameters(trial)
 
-        if self._get_param(params, "penalty") != "elasticnet":
+        if self._get_param("penalty", params) != "elasticnet":
             params.pop("l1_ratio", None)
 
-        if self._get_param(params, "learning_rate") == "optimal":
+        if self._get_param("learning_rate", params) == "optimal":
             params.pop("eta0", None)
 
         return params
 
-    def get_dimensions(self):
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions."""
         loss = [
             "hinge",
+            "log_loss",
             "log",
             "modified_huber",
             "squared_hinge",
@@ -1484,20 +1711,19 @@ class StochasticGradientDescent(BaseModel):
             "epsilon_insensitive",
             "squared_epsilon_insensitive",
         ]
-        learning_rate = ["constant", "invscaling", "optimal", "adaptive"]
 
-        return [
-            Categorical(loss if self.T.goal == "class" else loss[-4:], name="loss"),
-            Categorical(["none", "l1", "l2", "elasticnet"], name="penalty"),
-            Real(1e-5, 1.0, "log-uniform", name="alpha"),
-            Categorical([0.05, 0.15, 0.30, 0.45, 0.60, 0.75, 0.90], name="l1_ratio"),
-            Integer(500, 1500, name="max_iter"),
-            Real(1e-4, 1.0, "log-uniform", name="epsilon"),
-            Categorical(learning_rate, name="learning_rate"),
-            Real(1e-2, 10, "log-uniform", name="eta0"),
-            Categorical(zero_to_one_exc, name="power_t"),
-            Categorical([True, False], name="average"),
-        ]
+        return CustomDict(
+            loss=Categorical(loss if self.T.goal == "class" else loss[-4:]),
+            penalty=Categorical(["none", "l1", "l2", "elasticnet"]),
+            alpha=Float(1e-5, 1.0, log=True),
+            l1_ratio=Float(0.05, 0.9, step=0.05),
+            max_iter=Int(500, 1500, step=50),
+            epsilon=Float(1e-4, 1.0, log=True),
+            learning_rate=Categorical(["constant", "invscaling", "optimal", "adaptive"]),
+            eta0=Float(1e-2, 10, log=True),
+            power_t=Float(0.1, 0.9, step=0.1),
+            average=Categorical([True, False]),
+        )
 
 
 class XGBoost(BaseModel):
@@ -1507,18 +1733,18 @@ class XGBoost(BaseModel):
     fullname = "XGBoost"
     needs_scaling = True
     accepts_sparse = True
-    supports_engines = []
+    supports_engines = ["xgboost"]
 
     _module = "xgboost"
     _estimators = CustomDict({"class": "XGBClassifier", "reg": "XGBRegressor"})
 
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         if self.T.random_state is None:  # XGBoost can't handle random_state to be None
             random_state = params.pop("random_state", random.randint(0, 1e5))
         else:
             random_state = params.pop("random_state", self.T.random_state)
-        return self.est_class(
+        return self._est_class(
             use_label_encoder=params.pop("use_label_encoder", False),
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             tree_method=params.pop("tree_method", "gpu_hist" if self._gpu else None),
@@ -1559,8 +1785,8 @@ class XGBoost(BaseModel):
             self._stopped = (len(self.evals["train"]), n_estimators)
 
     @staticmethod
-    def get_dimensions():
-        """Return a list of the bounds for the hyperparameters."""
+    def _get_distributions():
+        """Get the predefined hyperparameter distributions."""
         return [
             Integer(20, 500, name="n_estimators"),
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
@@ -1584,9 +1810,7 @@ class Stacking(BaseModel):
     needs_scaling = False
 
     _module = "atom.ensembles"
-    _estimators = CustomDict(
-        {"class": "StackingClassifier", "reg": "StackingRegressor"}
-    )
+    _estimators = CustomDict({"class": "StackingClassifier", "reg": "StackingRegressor"})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
@@ -1599,7 +1823,7 @@ class Stacking(BaseModel):
                 "models must have been fitted on the current branch."
             )
 
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         estimators = []
         for m in self._models.values():
@@ -1612,7 +1836,7 @@ class Stacking(BaseModel):
 
             estimators.append((name, est))
 
-        return self.est_class(
+        return self._est_class(
             estimators=estimators,
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             **params,
@@ -1640,7 +1864,7 @@ class Voting(BaseModel):
                 "models must have been fitted on the current branch."
             )
 
-    def get_estimator(self, **params):
+    def _get_estimator(self, **params):
         """Return the model's estimator with unpacked parameters."""
         estimators = []
         for m in self._models.values():
@@ -1653,7 +1877,7 @@ class Voting(BaseModel):
 
             estimators.append((name, est))
 
-        return self.est_class(
+        return self._est_class(
             estimators=estimators,
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             **params,
@@ -1668,29 +1892,28 @@ MODELS = CustomDict(
     ARD=AutomaticRelevanceDetermination,
     Bag=Bagging,
     BR=BayesianRidge,
-    BNB=BernoulliNaiveBayes,
+    BNB=BernoulliNB,
     CatB=CatBoost,
-    CatNB=CategoricalNaiveBayes,
-    CNB=ComplementNaiveBayes,
+    CatNB=CategoricalNB,
+    CNB=ComplementNB,
     Tree=DecisionTree,
     Dummy=Dummy,
     EN=ElasticNet,
     ET=ExtraTrees,
-    GNB=GaussianNaiveBayes,
+    GNB=GaussianNB,
     GP=GaussianProcess,
-    GBM=GradientBoostingMachine,
+    GBM=GradientBoosting,
     Huber=HuberRegression,
-    hGBM=HistGBM,
+    hGBM=HistGradientBoosting,
     KNN=KNearestNeighbors,
-    kSVM=KernelSVM,
     Lasso=Lasso,
     Lars=LeastAngleRegression,
     LGB=LightGBM,
     LDA=LinearDiscriminantAnalysis,
     lSVM=LinearSVM,
     LR=LogisticRegression,
-    MLP=MultilayerPerceptron,
-    MNB=MultinomialNaiveBayes,
+    MLP=MultiLayerPerceptron,
+    MNB=MultinomialNB,
     OLS=OrdinaryLeastSquares,
     PA=PassiveAggressive,
     Perc=Perceptron,
@@ -1699,6 +1922,7 @@ MODELS = CustomDict(
     RF=RandomForest,
     Ridge=Ridge,
     SGD=StochasticGradientDescent,
+    SVM=SupportVectorMachine,
     XGB=XGBoost,
 )
 

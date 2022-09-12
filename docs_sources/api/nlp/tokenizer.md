@@ -3,7 +3,7 @@
 
 :: atom.nlp:Tokenizer
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

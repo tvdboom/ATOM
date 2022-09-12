@@ -3,7 +3,7 @@
 
 :: atom.api:ATOMLoader
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - returns

@@ -3,7 +3,7 @@
 
 :: atom.data_cleaning:Cleaner
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

@@ -11,7 +11,7 @@ metric=0, title=None, figsize=(10, 8), filename=None, display=True)
 
 Plot the bayesian optimization scores. Only for models that ran
 hyperparameter tuning. This is the same plot as the one produced
-by `bo_params={"plot": True}` while running the BO. Creates a
+by `ht_params={"plot": True}` while running the BO. Creates a
 canvas with two plots: the first plot shows the score of every trial
 and the second shows the distance between the last consecutive steps.
 
@@ -65,7 +65,7 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(["LDA", "LGB"], metric="f1", n_calls=24, n_initial_points=10)
+atom.run(["LDA", "LGB"], metric="f1", n_trials=24, n_initial_points=10)
 atom.plot_bo()
 ```
 

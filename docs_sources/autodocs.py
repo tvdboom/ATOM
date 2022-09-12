@@ -10,11 +10,11 @@ Description: Module containing the documentation rendering.
 from __future__ import annotations
 
 import importlib
-import inspect
 from inspect import (
-    Parameter, getdoc, getmembers, getsourcelines, isroutine, signature,
+    Parameter, getattr_static, getdoc, getmembers, getsourcelines, isclass,
+    isfunction, isroutine, signature,
 )
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import regex as re
 import yaml
@@ -39,6 +39,9 @@ CUSTOM_URLS = dict(
     profiling="https://github.com/ydataai/pandas-profiling",
     profilereport="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html",
     # BaseModel
+    study="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html",
+    optimize="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize",
+    trial="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html",
     interface="https://gradio.app/docs/#interface",
     launch="https://gradio.app/docs/#launch-header",
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
@@ -91,6 +94,18 @@ CUSTOM_URLS = dict(
     adaboostclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html",
     adaboostregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html",
     adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
+    multinomialnb="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html",
+    mnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#multinomial-naive-bayes",
+    lgb_gpu="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html",
+    logisticregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html",
+    lrdocs="https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression",
+    randomforestclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html",
+    randomforestregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html",
+    cumlrf="https://docs.rapids.ai/api/cuml/stable/api.html#cuml.ensemble.RandomForestClassifier",
+    rfdocs="https://scikit-learn.org/stable/modules/ensemble.html#random-forests",
+    sgdclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html",
+    sgdregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html",
+    sgddocs="https://scikit-learn.org/stable/modules/sgd.html",
     # NLP
     snowballstemmer="https://www.nltk.org/api/nltk.stem.snowball.html#nltk.stem.snowball.SnowballStemmer",
     bow="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html",
@@ -99,13 +114,13 @@ CUSTOM_URLS = dict(
     # Plots
     style="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles",
     palette="https://seaborn.pydata.org/tutorial/color_palettes.html",
-
 )
 
 
 TYPES_CONVERSION = {
     "atom.utils.CustomDict": "dict",
     "atom.utils.Model": "[models][]",
+    "atom.utils.Predictor": "Predictor",
     "List[str]": "list",
     "Optional[float]": "float or None",
     "Optional[pandas.core.frame.DataFrame]": "pd.DataFrame or None",
@@ -113,12 +128,26 @@ TYPES_CONVERSION = {
     "pandas.core.frame.DataFrame": "pd.DataFrame",
     "pandas.core.series.Series": "pd.Series",
     "Union[str, List[str]]": "str or list",
+    "Union[float, List[float]]": "float or list",
+    "Union[float, List[float], NoneType]": "float, list or None",
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame]": "pd.Series or pd.DataFrame",
     "Optional[Union[pandas.core.series.Series, pandas.core.frame.DataFrame]]": "pd.Series, pd.DataFrame or None",
+    "Union[pandas.core.series.Series, pandas.core.frame.DataFrame, NoneType]": "pd.Series, pd.DataFrame or None",
+    "optuna.study.study.Study": "[Study][]",
+    "optuna.trial._trial.Trial": "[Trial][]",
 }
 
 
 # Classes ========================================================== >>
+
+class DummyTrainer:
+    """Dummy trainer class to call model instances."""
+
+    def __init__(self, goal: str, device: str = "cpu", engine: str = "sklearn"):
+        self.goal = goal
+        self.device = device
+        self.engine = engine
+
 
 class AutoDocs:
     """Parses an object to documentation in markdown/html.
@@ -127,6 +156,7 @@ class AutoDocs:
     start with `::`. The following blocks are accepted:
 
     - tags
+    - head (summary + description)
     - summary (first line of docstring, required)
     - description (detailed explanation, can contain admonitions)
     - parameters
@@ -137,6 +167,8 @@ class AutoDocs:
     - notes
     - references
     - examples
+    - hyperparameters
+    - methods
 
     Parameters
     ----------
@@ -152,6 +184,7 @@ class AutoDocs:
 
     """
 
+    # Blocks that can be encountered in the object's docstring
     blocks = (
         "Parameters",
         "Attributes",
@@ -245,8 +278,10 @@ class AutoDocs:
             text += "[needs scaling](../../../user_guide/training/#automated-feature-scaling){ .md-tag }"
         if self.obj.accepts_sparse:
             text += "[accept sparse](../../../user_guide/data_management/#sparse-datasets){ .md-tag }"
-        if len(self.obj.supports_engines) == 0 or len(self.obj.supports_engines) > 1:
-            text += "[supports acceleration](../../../user_guide/accelerating_pipelines/){ .md-tag }"
+        if self.obj.has_validation:
+            text += "[allows validation](../../../user_guide/training/#in-training-validation){ .md-tag }"
+        if any(engine != "sklearn" for engine in self.obj.supports_engines):
+            text += "[supports acceleration](../../../user_guide/accelerating/){ .md-tag }"
 
         return text + "<br><br>"
 
@@ -261,7 +296,7 @@ class AutoDocs:
         """
         # Assign object type
         params = signature(self.obj).parameters
-        if inspect.isclass(self.obj):
+        if isclass(self.obj):
             obj = "class"
         elif any(p in params for p in ("cls", "self")):
             obj = "method"
@@ -454,6 +489,82 @@ class AutoDocs:
 
         return table
 
+    def get_hyperparameters(self) -> str:
+        """Return the object's hyperparameters.
+
+        Hyperparameters are obtained through the _get_distributions
+        method.
+
+        Returns
+        -------
+        str
+            Object's hyperparameters.
+
+        """
+
+        def create_table(trainer: Any) -> str:
+            """Create a table of hyperparameter distributions.
+
+            This table is for only one combination of device and
+            engine. It renders inside a tab.
+
+            Parameters
+            ----------
+            trainer: Trainer
+                Parent trainer from which the model is created.
+
+            Returns
+            -------
+            str
+                Table in html format.
+
+            """
+            # Create the model instance from the trainer
+            instance = self.obj(trainer, fast_init=True)
+
+            text = ""
+            for name, dist in instance._get_distributions().items():
+                anchor = f"<a id='{self.obj.__name__.lower()}-{name}'></a>"
+                text += f"{anchor}<strong>{name}</strong><br>"
+                text += f"<div markdown class='param'>{dist}</div>"
+
+            table = f"<tr><td class='td_title'><strong>Parameters</strong></td>"
+            table += f"<td class='td_params'>{text}</td></tr>"
+
+            return f"<table markdown class='table_params'>{table}</table>"
+
+        indent = content = ""
+        for goal in self.obj._estimators:
+            if len(self.obj._estimators) > 1:
+                indent = " " * 4
+                if goal == "class":
+                    content += f'\n=== "classification"\n'
+                elif goal == "reg":
+                    content += f'\n=== "regression"\n'
+
+            for engine in self.obj.supports_engines:
+                sub_indent = indent
+                if len(self.obj.supports_engines) > 1:
+                    content += f'\n{indent}=== "{engine}"\n'
+                    sub_indent += " " * 4
+
+                # sklearnex can run on cpu or gpu
+                if engine == "sklearnex":
+                    for device in ("cpu", "gpu"):
+                        content += f'\n{sub_indent}=== "{device}"\n'
+
+                        trainer = DummyTrainer(goal, device, engine)
+                        content += f"{sub_indent + ' ' * 4}{create_table(trainer)}\n\n"
+                else:
+                    trainer = DummyTrainer(
+                        goal=goal,
+                        device="cpu" if engine == "sklearn" else "gpu",
+                        engine=engine,
+                    )
+                    content += f"{sub_indent}{create_table(trainer)}\n\n"
+
+        return content + "<br><br>"
+
     def get_methods(self, config: dict) -> str:
         """Return an overview of the methods and their blocks.
 
@@ -463,8 +574,8 @@ class AutoDocs:
             Options to configure. Choose from:
 
             - toc_only: Whether to display only the toc.
-            - include: Members to include.
-            - exclude: Members to exclude.
+            - include: Methods to include.
+            - exclude: Methods to exclude.
 
         Returns
         -------
@@ -478,7 +589,7 @@ class AutoDocs:
             methods = config["include"]
         else:
             methods = [
-                m for m, _ in getmembers(self.obj, predicate=inspect.isfunction)
+                m for m, _ in getmembers(self.obj, predicate=isfunction)
                 if not m.startswith("_") and m not in config.get("exclude", [])
             ]
 
@@ -554,8 +665,12 @@ def render(markdown: str, **kwargs) -> str:
             text = autodocs.get_tags()
         elif "signature" in command:
             text = autodocs.get_signature()
-        elif "description" in command:
+        elif "head" in command:
             text = autodocs.get_summary() + "\n\n" + autodocs.get_description()
+        elif "summary" in command:
+            text = autodocs.get_summary()
+        elif "description" in command:
+            text = autodocs.get_description()
         elif "table" in command:
             text = autodocs.get_table(command["table"])
         elif "see also" in command:
@@ -566,6 +681,8 @@ def render(markdown: str, **kwargs) -> str:
             text = autodocs.get_block("References")
         elif "examples" in command:
             text = autodocs.get_block("Examples")
+        elif "hyperparameters" in command:
+            text = autodocs.get_hyperparameters()
         elif "methods" in command:
             text = autodocs.get_methods(command["methods"] or {})
         else:

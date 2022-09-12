@@ -3,7 +3,7 @@
 
 :: atom.data_cleaning:Imputer
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

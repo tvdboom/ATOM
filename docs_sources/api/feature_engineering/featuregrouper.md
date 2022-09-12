@@ -3,7 +3,7 @@
 
 :: atom.feature_engineering:FeatureGrouper
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

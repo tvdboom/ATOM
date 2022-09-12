@@ -3,7 +3,7 @@
 
 :: atom.nlp:TextNormalizer
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

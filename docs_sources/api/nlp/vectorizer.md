@@ -3,7 +3,7 @@
 
 :: atom.nlp:Vectorizer
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

@@ -61,20 +61,21 @@ from the canvas for the final figure. If a variable is assigned to the
 canvas (e.g. `with atom.canvas() as fig`), it contains the resulting
 matplotlib figure.
 
-For example, we can use a canvas to compare the results of a [XGBoost](../../API/models/xgb)
-and [LightGBM](../../API/models/lgb) model on the train and test set.
-We could also draw the lines for both models in the same axes, but
-then the plot would become too cluttered.
+For example, we can use a canvas to compare the results of a [XGBoost][]
+and [LightGBM][] model on the train and test set. We could also draw the
+lines for both models in the same axes, but then the plot would become
+too cluttered.
 
-```python
-atom = ATOMClassifier(X, y)
-atom.run(["xgb", "lgb"], n_calls=0)
+```pycon
+>>> atom = ATOMClassifier(X, y)
+>>> atom.run(["xgb", "lgb"], n_trials=0)
 
-with atom.canvas(2, 2, title="XGBoost vs LightGBM", filename="canvas"):
-    atom.xgb.plot_roc(dataset="both", title="ROC - XGBoost")
-    atom.lgb.plot_roc(dataset="both", title="ROC - LightGBM")
-    atom.xgb.plot_prc(dataset="both", title="PRC - XGBoost")
-    atom.lgb.plot_prc(dataset="both", title="PRC - LightGBM")
+>>> with atom.canvas(2, 2, title="XGBoost vs LightGBM", filename="canvas"):
+...     atom.xgb.plot_roc(dataset="both", title="ROC - XGBoost")
+...     atom.lgb.plot_roc(dataset="both", title="ROC - LightGBM")
+...     atom.xgb.plot_prc(dataset="both", title="PRC - XGBoost")
+...     atom.lgb.plot_prc(dataset="both", title="PRC - LightGBM")
+
 ```
 
 ![canvas](../img/plots/canvas.png)
@@ -89,7 +90,7 @@ any machine learning model. It connects optimal credit allocation with
 local explanations using the classic [Shapley values](https://en.wikipedia.org/wiki/Shapley_value)
 from game theory and their related extensions. ATOM implements methods
 to plot 7 of SHAP's plotting functions directly from its API. Check the
-available shap plots [here](#shap-plots).
+available shap plots [here][shap-plots].
 
 Calculating the Shapley values is computationally expensive, especially
 for model agnostic explainers like [Permutation](https://shap.readthedocs.io/en/latest/generated/shap.explainers.Permutation.html).

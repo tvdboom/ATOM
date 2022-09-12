@@ -69,7 +69,7 @@ Example steps taken by ATOM's pipeline:
 
 <br/><br/>
 
-<div align="center">
-    <img src="../../img/diagram_pipeline.png" alt="diagram_pipeline"/>
+<div align="center" markdown>
+	![diagram_pipeline](../img/diagram_pipeline.png)
     <figcaption>Figure 1. Diagram of a possible pipeline created by ATOM.</figcaption>
 </div>

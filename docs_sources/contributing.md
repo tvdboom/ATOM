@@ -12,8 +12,8 @@ Do you have a question? Before you do, please read the following guidelines.
 ### Question or problem?
 
 For quick questions there's no need to open an issue. Check first if the
-question isn't already answered on the [FAQ](../faq) section. If not, reach
-us through the [discussions](https://github.com/tvdboom/ATOM/discussions)
+question isn't already answered on the [FAQ][frequently-asked-questions]
+section. If not, reach us through the [discussions](https://github.com/tvdboom/ATOM/discussions)
 page or on the [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)
 channel.
 
@@ -23,7 +23,7 @@ channel.
 If you found a bug in the source code, you can help by submitting an issue
 to the [issue tracker](https://github.com/tvdboom/ATOM/issues) in the GitHub
 repository. Even better, you can submit a Pull Request with a fix. However,
-before doing so, please read the [submission guidelines](#submission-guidelines).
+before doing so, please read the [submission guidelines][].
 
 
 ### Missing a feature?
@@ -93,7 +93,7 @@ review and accept your changes.
 * Update the documentation so all of your changes are reflected there.
 * Adhere to [PEP 8](https://peps.python.org/pep-0008/) standards.
 * Use a maximum of 89 characters per line. Try to keep docstrings below
-  73 characters.
+  74 characters.
 * Update the project unit tests to test your code changes as thoroughly
   as possible.
 * Make sure that your code is properly commented with docstrings and

@@ -163,15 +163,15 @@ Time it took to train the model on the complete training set and
 calculate the metric(s) on the test set.
 </p>
 <p>
-<strong>metric_train: float or list</strong><br>
+<strong>score_train: float or list</strong><br>
 Metric score(s) on the training set.
 </p>
 <p>
-<strong>metric_test: float or list</strong><br>
+<strong>score_test: float or list</strong><br>
 Metric score(s) on the test set.
 </p>
 <p>
-<strong>metric_bootstrap: np.array</strong><br>
+<strong>score_bootstrap: np.array</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
 </p>
@@ -188,8 +188,8 @@ Training results. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
-<li><b>metric_train:</b> Metric score on the training set.</li>
-<li><b>metric_test:</b> Metric score on the test set.</li>
+<li><b>score_train:</b> Metric score on the training set.</li>
+<li><b>score_test:</b> Metric score on the test set.</li>
 <li><b>time_fit:</b> Time spent fitting and evaluating.</li>
 <li><b>mean_bootstrap:</b> Mean score of the bootstrap results.</li>
 <li><b>std_bootstrap:</b> Standard deviation score of the bootstrap results.</li>

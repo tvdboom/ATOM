@@ -34,7 +34,7 @@ class BaseRunner:
 
     # Tracking parameters for mlflow
     _tracking_params = dict(
-        log_bo=True,
+        log_ht=True,
         log_model=True,
         log_plots=True,
         log_data=False,
@@ -136,14 +136,14 @@ class BaseRunner:
     # Tracking properties ========================================== >>
 
     @property
-    def log_bo(self) -> bool:
+    def log_ht(self) -> bool:
         """Whether to track every trial of the hyperparameter tuning."""
-        return self._tracking_params["log_bo"]
+        return self._tracking_params["log_ht"]
 
-    @log_bo.setter
+    @log_ht.setter
     @typechecked
-    def log_bo(self, value: bool):
-        self._tracking_params["log_bo"] = value
+    def log_ht(self, value: bool):
+        self._tracking_params["log_ht"] = value
 
     @property
     def log_model(self) -> bool:
@@ -189,12 +189,12 @@ class BaseRunner:
 
     @property
     def branch(self) -> Branch:
-        """Return the current branch."""
+        """Current active branch."""
         return self._branches[self._current]
 
     @property
     def models(self) -> Union[str, List[str]]:
-        """Return the names of all models."""
+        """Name of the model(s)."""
         if isinstance(self._models, CustomDict):
             return flt([model.name for model in self._models.values()])
         else:
@@ -202,7 +202,7 @@ class BaseRunner:
 
     @property
     def metric(self) -> Union[str, List[str]]:
-        """Return the name of the metric."""
+        """Name of the metric(s)."""
         if isinstance(self._metric, CustomDict):
             return flt([metric.name for metric in self._metric.values()])
         else:
@@ -210,25 +210,54 @@ class BaseRunner:
 
     @property
     def errors(self) -> CustomDict:
-        """Return the errors encountered during model training."""
+        """Errors encountered during model training."""
         return self._errors
 
     @property
     def winners(self) -> List[str]:
-        """Return the model names ordered by performance."""
+        """Model names ordered by performance.
+
+        Performance is measured as the highest score on the model's
+        [`score_bootstrap`][adaboost-score_bootstrap] or
+        [`score_test`][adaboost-score_test] attributes, checked in
+        that order. For [multi-metric runs][], only the first metric
+        is compared.
+
+        """
         if self._models:  # Returns None if not fitted
             models = sorted(self._models.values(), key=lambda x: get_best_score(x))
             return [m.name for m in models[::-1]]
 
     @property
     def winner(self) -> Model:
-        """Return the best performing model."""
+        """Best performing model.
+
+        Performance is measured as the highest score on the model's
+        [`score_bootstrap`][adaboost-score_bootstrap] or
+        [`score_test`][adaboost-score_test] attributes, checked in
+        that order. For [multi-metric runs][], only the first metric
+        is compared.
+
+        """
         if self._models:  # Returns None if not fitted
             return self._models[self.winners[0]]
 
     @property
     def results(self) -> pd.DataFrame:
-        """Return the results as a pd.DataFrame."""
+        """Overview of the training results.
+
+        All durations are in seconds. Columns include:
+
+        - **score_ht:** Score obtained by the hyperparameter tuning.
+        - **time_ht:** Duration of the hyperparameter tuning.
+        - **score_train:** Metric score on the train set.
+        - **score_test:** Metric score on the test set.
+        - **time_fit:** Duration of the model fitting on the train set.
+        - **score_bootstrap:** Mean score on the bootstrapped samples.
+        - **time_bootstrap:** Duration of the bootstrapping.
+        - **time:** Total duration of the model run.
+
+        """
 
         def frac(m: Model) -> float:
             """Return the fraction of the train set used for the model."""
@@ -555,6 +584,7 @@ class BaseRunner:
             - **module:** The estimator's module.
             - **needs_scaling:** Whether the model requires feature scaling.
             - **accepts_sparse:** Whether the model accepts sparse matrices.
+            - **has_validation:** Whether the model has [in-training-validation][].
             - **supports_engines:** List of engines supported by the model.
 
         """
@@ -566,10 +596,11 @@ class BaseRunner:
                     {
                         "acronym": m.acronym,
                         "fullname": m.fullname,
-                        "estimator": m.est_class.__name__,
-                        "module": m.est_class.__module__.split(".")[0] + m._module,
-                        "needs_scaling": str(m.needs_scaling),
-                        "accepts_sparse": str(m.accepts_sparse),
+                        "estimator": m._est_class.__name__,
+                        "module": m._est_class.__module__.split(".")[0] + m._module,
+                        "needs_scaling": m.needs_scaling,
+                        "accepts_sparse": m.accepts_sparse,
+                        "has_validation": bool(m.has_validation),
                         "supports_engines": ", ". join(m.supports_engines),
                     }
                 )
@@ -832,7 +863,7 @@ class BaseRunner:
                         f"{model.fullname} can not perform {self.task} tasks."
                     )
 
-                kwargs["final_estimator"] = model.get_estimator()
+                kwargs["final_estimator"] = model._get_estimator()
 
         self._models[name] = Stacking(self, name, models=self._models[models], **kwargs)
 

@@ -3,7 +3,7 @@
 
 :: atom.api:ATOMModel
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - returns

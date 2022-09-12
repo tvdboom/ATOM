@@ -104,7 +104,7 @@ def ATOMLoader(
 
     >>> print(atom_2.results)
 
-         metric_train  metric_test time_fit    time
+          score_train   score_test time_fit    time
     LR       0.998179     0.998570   0.016s  0.016s
     RF       1.000000     0.995568   0.141s  0.141s
     SGD      0.998773     0.994313   0.016s  0.016s
@@ -226,7 +226,7 @@ def ATOMModel(
     Total time: 0.072s
 
     Final results ==================== >>
-    Duration: 0.072s
+    Total time: 0.072s
     -------------------------------------
     Random Sample Consensus --> r2: -9.4592 ~
 
@@ -477,7 +477,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
     Total time: 0.124s
 
     Final results ==================== >>
-    Duration: 0.333s
+    Total time: 0.333s
     -------------------------------------
     Logistic Regression --> precision: 0.9467 !
     Random Forest       --> precision: 0.9221
@@ -758,7 +758,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
 
     Final results ==================== >>
-    Duration: 0.195s
+    Total time: 0.195s
     -------------------------------------
     Ordinary Least Squares --> r2: 0.4012 ~
     Bayesian Ridge         --> r2: 0.4037 ~ !

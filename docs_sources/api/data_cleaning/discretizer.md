@@ -3,7 +3,7 @@
 
 :: atom.data_cleaning:Discretizer
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

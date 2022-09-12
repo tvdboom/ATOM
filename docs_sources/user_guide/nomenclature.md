@@ -55,10 +55,15 @@ method. Often used interchangeably with [predictor][] because of user
 preference.
 </div>
 
+<div id="ht"><strong>ht</strong></div>
+<div markdown style="margin: -1em 0 0 1.2em">
+Acronym for [hyperparameter tuning][]. 
+</div>
+
 <div id="missing values"><strong>missing values</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-All values in the class' `missing` attribute, as well as `None`, `NaN`,
-`+inf` and `-inf`.
+All values in the [`missing`][atomclassifier-missing] attribute, as
+well as `None`, `NaN`, `+inf` and `-inf`.
 </div>
 
 <div id="model"><strong>model</strong></div>

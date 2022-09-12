@@ -161,7 +161,7 @@ and [AdaBoost](https://tvdboom.github.io/ATOM/latest/API/models/adab) model,
 and apply [hyperparameter tuning](https://tvdboom.github.io/ATOM/latest/user_guide/training/#hyperparameter-tuning).
 
 ```python
-atom.run(models=["RF", "AdaB"], metric="auc", n_calls=10, n_initial_points=4)
+atom.run(models=["RF", "AdaB"], metric="auc", n_trials=10, n_initial_points=4)
 ```
 
 Lastly, visualize the result using the integrated [plots](https://tvdboom.github.io/ATOM/latest/user_guide/plots).

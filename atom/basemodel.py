@@ -11,10 +11,10 @@ import os
 import tempfile
 from collections import OrderedDict
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime as dt
 from importlib import import_module
-from inspect import Parameter, signature
-from typing import Any, List, Optional, Tuple, Union
+from inspect import signature
+from typing import Any, Callable, List, Optional, Tuple, Union
 from unittest.mock import patch
 
 import dill as pickle
@@ -24,7 +24,11 @@ import pandas as pd
 from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.tracking import MlflowClient
-from sklearn.base import clone
+from optuna import TrialPruned, create_study
+from optuna.pruners import HyperbandPruner
+from optuna.samplers import NSGAIISampler, TPESampler
+from optuna.study import Study
+from optuna.trial import Trial
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import (
     KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
@@ -32,24 +36,18 @@ from sklearn.model_selection import (
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.utils import resample
 from sklearn.utils.metaestimators import available_if
-from skopt.optimizer import (
-    base_minimize, forest_minimize, gbrt_minimize, gp_minimize,
-)
-from skopt.space.space import Categorical, check_dimension
-from skopt.space.transformers import LabelEncoder
-from tqdm import tqdm
 from typeguard import typechecked
 
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import ModelPlot, ShapPlot
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
-    CustomDict, Predictor, Scorer, ShapExplanation, Table, composed, crash,
-    custom_transform, estimator_has_attr, fit, flt, get_best_score,
-    get_custom_scorer, get_feature_importance, get_pl_name, has_task,
-    inverse_transform, it, lst, merge, method_to_log, score, time_to_str,
-    transform, variable_return,
+    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE, SEQUENCE_TYPES, X_TYPES,
+    Y_TYPES, CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
+    TrialsCallback, composed, crash, custom_transform, estimator_has_attr, flt,
+    get_best_score, get_custom_scorer, get_feature_importance, get_pl_name,
+    has_task, it, lst, merge, method_to_log, rnd, score, time_to_str,
+    variable_return,
 )
 
 
@@ -58,15 +56,17 @@ class BaseModel(ModelPlot, ShapPlot):
 
     def __init__(self, *args, **kwargs):
         self.T = args[0]  # Parent class
-        self.name = self.acronym if len(args) == 1 else args[1]
+
         self.scaler = None
-        self.estimator = None
         self.app = None
         self.dashboard = None
 
         self._run = None  # mlflow run (if experiment is active)
+        self._name = self.acronym if len(args) == 1 else args[1]
         self._group = self.name  # sh and ts models belong to the same group
-        self._pred = [None] * 15
+
+        self._evals = CustomDict()
+        self._pred = [None] * 12
         self._scores = CustomDict(
             train=CustomDict(),
             test=CustomDict(),
@@ -74,33 +74,24 @@ class BaseModel(ModelPlot, ShapPlot):
         )
         self._shap = ShapExplanation(self)
 
-        # BO attributes
-        self._iter = 0
-        self._stopped = ("---", "---")
-        self._early_stopping = None
-        self._dimensions = []
-        self.bo = pd.DataFrame(
-            columns=["call", "params", "estimator", "score", "time_trial", "time_bo"],
-        )
-
         # Parameter attributes
-        self._n_calls = 0
-        self._n_initial_points = 5
         self._est_params = {}
         self._est_params_fit = {}
-        self._n_bootstrap = 0
 
-        # Results attributes
-        self.best_call = None
-        self.best_params = None
-        self.metric_bo = None
-        self.time_bo = None
-        self.time_fit = None
-        self.metric_bootstrap = None
-        self.mean_bootstrap = None
-        self.std_bootstrap = None
-        self.time_bootstrap = None
-        self.time = None
+        # Hyperparameter tuning attributes
+        self._ht = {}
+        self._study = None
+        self._trials = pd.DataFrame(
+            columns=["params", "estimator", "score", "time_trial", "time_ht"]
+        )
+        self._trials.index.name = "trial"
+        self._best_trial = None
+
+        self._estimator = None
+        self._time_fit = 0
+
+        self._bootstrap = None
+        self._time_bootstrap = 0
 
         # Skip this (slower) part if not called for the estimator
         if not kwargs.get("fast_init"):
@@ -112,7 +103,7 @@ class BaseModel(ModelPlot, ShapPlot):
     def __repr__(self) -> str:
         out_1 = f"{self.fullname}\n --> Estimator: {self.estimator.__class__.__name__}"
         out_2 = [
-            f"{m.name}: {round(get_best_score(self, i), 4)}"
+            f"{m.name}: {rnd(get_best_score(self, i))}"
             for i, m in enumerate(self.T._metric.values())
         ]
         return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
@@ -144,8 +135,8 @@ class BaseModel(ModelPlot, ShapPlot):
             )
 
     @property
-    def est_class(self) -> Predictor:
-        """Return the estimator's class (not instance)."""
+    def _est_class(self) -> Predictor:
+        """Return the estimator's class (not the instance)."""
         try:
             module = import_module(f"{self.T.engine}.{self._module}")
         except (ModuleNotFoundError, AttributeError):
@@ -156,126 +147,343 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def _gpu(self) -> bool:
-        """Return whether the model uses the GPU implementation."""
+        """Return whether the model uses a GPU implementation."""
         return "gpu" in self.T.device.lower()
 
-    @property
-    def _dims(self) -> List[str]:
-        """Get the names of the hyperparameter dimension space."""
-        return [d.name for d in self._dimensions]
+    @staticmethod
+    def _sign(obj: Callable) -> OrderedDict:
+        """Get the parameters of a class or method."""
+        return signature(obj).parameters
 
-    def _sign(self, method: str = "__init__") -> OrderedDict:
-        """Get the estimator's parameters."""
-        return signature(getattr(self.est_class, method)).parameters
+    @staticmethod
+    def _get_distributions() -> dict:
+        """Get the predefined hyperparameter distributions."""
+        return {}
 
     def _check_est_params(self):
-        """Make sure the parameters are valid keyword argument for the estimator."""
+        """Check that the parameters are valid for the estimator."""
         # The parameter is always accepted if the estimator accepts kwargs
         for param in self._est_params:
-            if param not in self._sign() and "kwargs" not in self._sign():
+            init_sign = self._sign(self._est_class)
+            if param not in init_sign and "kwargs" not in init_sign:
                 raise ValueError(
-                    f"Invalid value for the est_params parameter. "
-                    f"Got unknown parameter {param} for estimator "
-                    f"{self.get_estimator().__class__.__name__}."
+                    "Invalid value for the est_params parameter. Got unknown "
+                    f"parameter {param} for estimator {self._est_class.__name__}."
                 )
 
         for param in self._est_params_fit:
-            if param not in self._sign("fit") and "kwargs" not in self._sign("fit"):
+            fit_sign = self._sign(self._est_class.fit)
+            if param not in fit_sign and "kwargs" not in fit_sign:
                 raise ValueError(
                     f"Invalid value for the est_params parameter. Got "
                     f"unknown parameter {param} for the fit method of "
-                    f"estimator {self.get_estimator().__class__.__name__}."
+                    f"estimator {self._est_class.__name__}."
                 )
 
-    def _get_default_params(self) -> CustomDict:
-        """Get the estimator's default parameters for the BO dimensions."""
-        x0 = CustomDict()
-        for dim in self._dimensions:
-            # Special case for MLP, layers are different from default
-            if dim.name == "hidden_layer_1":
-                x0[dim.name] = 100
-            elif dim.name.startswith("hidden_layer"):
-                x0[dim.name] = 0
-            elif dim.name in self._sign():
-                if self._sign()[dim.name].default is not Parameter.empty:
-                    x0[dim.name] = self._sign()[dim.name].default
-            else:
-                # Return random value in dimension if it's not possible to
-                # extract a default value. This can happen when the value
-                # is not present in the parameter list (with kwargs) or when
-                # the parameter has no default value
-                x0[dim.name] = dim.rvs(1, random_state=self.T.random_state)[0]
-                self.T.log(
-                    " --> Couldn't find a default value for parameter "
-                    f"{dim.name}. Using a random initialization.", 2
-                )
+    def _get_param(self, name: str, params: CustomDict) -> Any:
+        """Get a parameter from est_params or the objective func.
 
-        # If default value isn't in dimension space, get a random value
-        for (name, value), dimension in zip(x0.items(), self._dimensions):
-            try:
-                is_valid = value in dimension
-            except TypeError:  # Can fail when e.g. checking None in Integer
-                is_valid = False
-            finally:
-                if not is_valid:
-                    x0[name] = dimension.rvs(1, random_state=self.T.random_state)[0]
-                    self.T.log(
-                        f" --> The default value of parameter {name} doesn't lie "
-                        "within the dimension space. Using a random initialization", 2
-                    )
+        Parameters
+        ----------
+        name: str
+            Name of the parameter.
 
-        return x0
+        params: CustomDict
+            Parameters in the current trial.
 
-    def _get_param(self, params: CustomDict, parameter: str) -> Any:
-        """Get the estimator's parameter from est_params or BO."""
-        return params.get(parameter) or self._est_params.get(parameter)
+        Returns
+        -------
+        Any
+            Parameter value.
 
-    def _get_early_stopping_rounds(
-        self,
-        params: CustomDict,
-        max_iter: int,
-    ) -> Optional[int]:
-        """Get the number of rounds for early stopping."""
-        if "early_stopping_rounds" in params:
-            return params.pop("early_stopping_rounds")
-        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
-            return self._early_stopping
-        elif self._early_stopping < 1:
-            return int(max_iter * self._early_stopping)
+        """
+        return self._est_params.get(name) or params.get(name)
 
-    def get_parameters(self, x: list) -> CustomDict:
-        """Get a dictionary of the model's hyperparameters."""
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters.
+
+        This method fetches the suggestions from the trial and rounds
+        floats to the 4th digit.
+
+        Parameters
+        ----------
+        trial: [Trial][]
+            Current trial.
+
+        Returns
+        -------
+        CustomDict
+            Trial's hyperparameters.
+
+        """
         return CustomDict(
-            {
-                p: round(v, 4) if np.issubdtype(type(v), np.floating) else v
-                for p, v in zip([d.name for d in self._dimensions], x)
-            }
+            {k: rnd(trial._suggest(k, v)) for k, v in self._ht["distributions"].items()}
         )
 
-    def get_estimator(self, **params) -> Predictor:
-        """Return the model's estimator with unpacked parameters."""
+    def _get_est(self, **params) -> Predictor:
+        """Get the estimator instance.
+
+        Add the parent's `n_jobs` and `random_state` parameters to
+        the instance if available in the constructor.
+
+        Parameters
+        ----------
+        **params
+            Unpacked hyperparameters for the estimator.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
         for param in ("n_jobs", "random_state"):
-            if param in self._sign():
+            if param in self._sign(self._est_class):
                 params[param] = params.pop(param, getattr(self.T, param))
 
-        return self.est_class(**params)
+        return self._est_class(**params)
 
-    def bayesian_optimization(self):
-        """Run the bayesian optimization algorithm.
+    def _fit_estimator(
+        self,
+        estimator: Predictor,
+        data: Tuple[pd.DataFrame, pd.Series],
+        est_params_fit: dict = None,
+        validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
+        trial: Optional[Trial] = None,
+    ):
+        """Fit the estimator and perform in-training validation.
 
-        Search for the best combination of hyperparameters. The
-        function to optimize is evaluated either with a K-fold
-        cross-validation on the training set or using a different
-        split for train and validation set every iteration.
+        In-training evaluation is performed on models with the
+        `partial_fit` method. After every partial fit, the estimator
+        is evaluated (using only the main metric) on the validation
+        data and, optionally, pruning is performed.
+
+        Parameters
+        ----------
+        estimator: Predictor
+            Instance to fit.
+
+        data: tuple
+            Training data of the form (X, y).
+
+        validation: tuple or None
+            Validation data of the form (X, y). If None, no validation
+            is performed.
+
+        est_params_fit: dict
+            Additional parameters for the estimator's fit method.
+
+        trial: [Trial][] or None
+            Active trial (during hyperparameter tuning).
+
+        Returns
+        -------
+        Predictor
+            Fitted instance.
+
+        """
+        if self.has_validation:
+            self._evals = CustomDict(metric=self.T._metric[0].name, train=[], test=[])
+
+            # Loop over first parameter in estimator
+            for step in range(steps := estimator.get_params()[self.has_validation]):
+                estimator.partial_fit(*data, classes=self.y.unique(), **est_params_fit)
+
+                self._evals["train"].append(self.T._metric[0](estimator, *data))
+                self._evals["test"].append(self.T._metric[0](estimator, *validation))
+
+                # Multi-objective optimization doesn't support pruning
+                if trial and len(self.T._metric) == 1:
+                    trial.report(self.evals["test"][-1], step)
+
+                    if trial.should_prune():
+                        # Hacky solution to add the pruned step to the output
+                        p = trial.storage.get_trial_user_attrs(trial.number)["params"]
+                        p[self.has_validation] = f"{step}/{steps}"
+
+                        trial.set_user_attr("estimator", estimator)
+                        raise TrialPruned()
+
+        else:
+            estimator.fit(*data, **est_params_fit)
+
+        return estimator
+
+    def _final_output(self) -> str:
+        """Returns the model's final output as a string."""
+        # If bootstrap was used, use a different format
+        if self.bootstrap is None:
+            out = "   ".join(
+                [
+                    f"{m.name}: {rnd(lst(self.score_test)[i])}"
+                    for i, m in enumerate(self.T._metric.values())
+                ]
+            )
+        else:
+            out = "   ".join(
+                [
+                    f"{m.name}: {rnd(self.bootstrap.mean()[i])} "
+                    f"\u00B1 {rnd(self.bootstrap.std()[i])}"
+                    for i, m in enumerate(self.T._metric.values())
+                ]
+            )
+
+        # Annotate if model overfitted when train 20% > test
+        score_train = self._get_score(self.T._metric[0], "train")
+        score_test = self._get_score(self.T._metric[0], "test")
+        if score_train - 0.2 * score_train > score_test:
+            out += " ~"
+
+        return out
+
+    def _get_score(
+        self,
+        scorer: Scorer,
+        dataset: str,
+        threshold: FLOAT = 0.5,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> FLOAT:
+        """Calculate a metric score using the prediction attributes.
+
+        Instead of using the scorer to make new predictions and
+        recalculate the same metrics, use the model's prediction
+        attributes and store calculated metrics in the `_scores`
+        attribute. Return directly if already calculated.
+
+        Parameters
+        ----------
+        scorer: Scorer
+            Metrics to calculate. If None, a selection of the most
+            common metrics per task are used.
+
+        dataset: str
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
+
+        threshold: float, default=0.5
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only used when:
+
+            - The task is binary classification.
+            - The model has a `predict_proba` method.
+            - The metric evaluates predicted target values.
+
+        sample_weight: sequence or None, default=None
+            Sample weights corresponding to y in `dataset`.
+
+        Returns
+        -------
+        float
+            Metric score on the selected data set.
+
+        """
+        if dataset == "holdout" and self.T.holdout is None:
+            raise ValueError("No holdout data set available.")
+
+        # Only re-calculate if not default parameters
+        if (
+            scorer.name not in self._scores[dataset]
+            or threshold != 0.5
+            or sample_weight is not None
+        ):
+            has_pred_proba = hasattr(self.estimator, "predict_proba")
+            has_dec_func = hasattr(self.estimator, "decision_function")
+
+            # Select method to use for predictions
+            if scorer.__class__.__name__ == "_ThresholdScorer":
+                attr = "decision_function" if has_dec_func else "predict_proba"
+            elif scorer.__class__.__name__ == "_ProbaScorer":
+                attr = "predict_proba" if has_pred_proba else "decision_function"
+            elif self.T.task.startswith("bin") and has_pred_proba:
+                attr = "predict_proba"  # Needed to use threshold parameter
+            else:
+                attr = "predict"
+
+            y_pred = getattr(self, f"{attr}_{dataset}")
+            if self.T.task.startswith("bin") and attr == "predict_proba":
+                y_pred = y_pred.iloc[:, 1]
+
+                # Exclude metrics that use probability estimates (e.g. ap, auc)
+                if scorer.__class__.__name__ == "_PredictScorer":
+                    y_pred = (y_pred > threshold).astype("int")
+
+            if "sample_weight" in self._sign(scorer._score_func):
+                score = scorer._score_func(
+                    getattr(self, f"y_{dataset}"),
+                    y_pred,
+                    sample_weight=sample_weight,
+                    **scorer._kwargs,
+                )
+            else:
+                score = scorer._score_func(
+                    getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs
+                )
+
+            score = rnd(scorer._sign * float(score))
+
+            if threshold == 0.5 and sample_weight is None:
+                self._scores[dataset][scorer.name] = score
+
+            if self._run:  # Log metric to mlflow run
+                MlflowClient().log_metric(
+                    run_id=self._run.info.run_id,
+                    key=f"{scorer.name}_{dataset}",
+                    value=it(score),
+                )
+
+            return score
+
+        else:
+            return self._scores[dataset][scorer.name]
+
+    @composed(crash, method_to_log, typechecked)
+    def hyperparameter_tuning(
+        self,
+        n_trials: int,
+        ht_params: Optional[dict] = None,
+        reset: bool = False,
+    ):
+        """Run the hyperparameter tuning algorithm.
+
+        Search for the best combination of hyperparameters. The function
+        to optimize is evaluated either with a K-fold cross-validation
+        on the training set or using a random train and validation split
+        every trial. Use this method to continue the optimization.
+
+        Parameters
+        ----------
+        n_trials: int
+            Number of trials for the hyperparameter tuning.
+
+        ht_params: dict or None
+            Additional parameters for the hyperparameter tuning. If
+            None, it uses the same parameters as the first run. Can
+            include:
+
+            - **cv: int, default=1**<br>
+              Number of folds for the cross-validation. If 1, the
+              training set is randomly split in a subtrain and
+              validation set.
+            - **plot: bool, default=False**<br>
+              Whether to plot the BO's progress as it runs. Creates a
+              canvas with two plots: the first plot shows the score of
+              every trial and the second shows the distance between the
+              last consecutive steps. See the [plot_trials][] method.
+            - **\*\*kwargs**<br>
+              Additional Keyword arguments for the constructor of the
+              [study][] class or the [optimize][] method.
+
+        reset: bool, default=False
+            Whether to start a new study or continue the existing one.
 
         """
 
-        def optimize(**params):
-            """Optimization function for the BO.
+        def objective(trial: Trial) -> FLOAT:
+            """Objective function for hyperparameter tuning.
 
             Parameters
             ----------
-            params: dict
+            trial: optuna.trial.Trial
                Model's hyperparameters used in this call of the BO.
 
             Returns
@@ -309,6 +517,8 @@ class BaseModel(ModelPlot, ShapPlot):
                     Score of the fitted model on the validation set.
 
                 """
+                nonlocal estimator
+
                 X_subtrain = og.dataset.iloc[train_idx, :-1]
                 y_subtrain = og.dataset.iloc[train_idx, -1]
                 X_val = og.dataset.iloc[val_idx, :-1]
@@ -328,47 +538,32 @@ class BaseModel(ModelPlot, ShapPlot):
                         self._est_params_fit["sample_weight"][i] for i in train_idx
                     ]
 
-                if hasattr(self, "custom_fit"):
-                    self.custom_fit(
-                        est=est,
-                        train=(X_subtrain, y_subtrain),
-                        validation=(X_val, y_val),
-                        **est_copy,
-                    )
-                else:
-                    est.fit(X_subtrain, y_subtrain, **est_copy)
+                estimator = self._fit_estimator(
+                    estimator=estimator,
+                    data=(X_subtrain, y_subtrain),
+                    est_params_fit=est_copy,
+                    validation=(X_val, y_val),
+                    trial=trial,
+                )
 
                 # Calculate metrics on the validation set
-                return [m(est, X_val, y_val) for m in self.T._metric.values()]
+                return [m(estimator, X_val, y_val) for m in self.T._metric.values()]
 
-            # Start iteration ====================================== >>
+            # Start trial ========================================== >>
 
-            t_iter = datetime.now()  # Get current time for start of the iteration
+            # Get parameter suggestions and store rounded values in user_attrs
+            params = self._get_parameters(trial)
+            trial.set_user_attr("params", params)
 
-            # Start printing the information table
-            self._iter += 1
-            if self._iter > self._n_initial_points:
-                call = f"Iteration {self._iter}"
-            else:
-                call = f"Initial point {self._iter}"
-
-            if pbar:
-                pbar.set_description(call)
-
-            # Get estimator instance with call specific hyperparameters
-            est = self.get_estimator(**{**self._est_params, **params})
+            # Create estimator instance with trial specific hyperparameters
+            estimator = self._get_est(**{**self._est_params, **params})
 
             # Get original branch to define subsets
             og = self.T._get_og_branches()[0]
 
             # Skip if the eval function has already been evaluated at this point
-            if params not in self.bo["params"].values:
-                # Same splits per model, but different per call
-                rs = self._iter
-                if self.T.random_state is not None:
-                    rs += self.T.random_state
-
-                if self.T._bo["cv"] == 1:
+            if params not in self.trials["params"].values:
+                if ht_params.get("cv", 1) == 1:
                     if self.T.goal == "class":
                         split = StratifiedShuffleSplit  # Keep % of samples per class
                     else:
@@ -378,7 +573,7 @@ class BaseModel(ModelPlot, ShapPlot):
                     fold = split(
                         n_splits=1,
                         test_size=len(og.test) / og.shape[0],
-                        random_state=rs,
+                        random_state=trial.number + (self.T.random_state or 0),
                     )
 
                     # Fit model just on the one fold
@@ -386,346 +581,447 @@ class BaseModel(ModelPlot, ShapPlot):
 
                 else:  # Use cross validation to get the score
                     if self.T.goal == "class":
-                        fold = StratifiedKFold  # Keep % of samples per class
+                        k_fold = StratifiedKFold  # Keep % of samples per class
                     else:
-                        fold = KFold
+                        k_fold = KFold
 
                     # Get the K-fold cross-validator object
-                    k_fold = fold(self.T._bo["cv"], shuffle=True, random_state=rs)
+                    fold = k_fold(
+                        n_splits=ht_params.get("cv", 1),
+                        shuffle=True,
+                        random_state=trial.number + (self.T.random_state or 0),
+                    )
 
                     # Parallel loop over fit_model (threading fixes PickleError)
                     parallel = Parallel(n_jobs=self.T.n_jobs, backend="threading")
                     scores = parallel(
                         delayed(fit_model)(i, j)
-                        for i, j in k_fold.split(og.X_train, og.y_train)
+                        for i, j in fold.split(og.X_train, og.y_train)
                     )
                     score = list(np.mean(scores, axis=0))
             else:
                 # Get same score as previous evaluation
-                score = lst(self.bo.loc[self.bo["params"] == params, "score"].values[0])
-                self._stopped = ("---", "---")
+                mask = self.trials["params"] == params
+                score = lst(self.trials.loc[mask, "score"][0])
 
-            # Add row to the bo attribute
-            row = pd.Series(
-                {
-                    "call": call,
-                    "params": params,
-                    "estimator": est,
-                    "score": flt(score),
-                    "time_trial": (datetime.now() - t_iter).total_seconds(),
-                    "time_bo": (datetime.now() - init_bo).total_seconds(),
-                }
-            )
-            self.bo.loc[self._iter - 1] = row
+            trial.set_user_attr("estimator", estimator)
 
-            # Save BO calls to experiment as nested runs
-            if self._run and self.T.log_bo:
-                with mlflow.start_run(run_name=f"{self.name} - {call}", nested=True):
-                    mlflow.set_tag("time_bo", row["time_bo"])
-                    mlflow.log_params(params)
-                    for i, m in enumerate(self.T._metric):
-                        mlflow.log_metric(m, score[i])
+            return score
 
-            # Update the progress bar with one step
-            if pbar:
-                pbar.update(1)
+        # Running hyperparameter tuning ============================ >>
 
-            # Print output of the BO
-            sequence = {"call": call, **{k: v for k, v in params.items()}}
-            for i, m in enumerate(self.T._metric.values()):
-                sequence.update(
-                    {
-                        m.name: score[i],
-                        f"best_{m.name}": max([lst(s)[i] for s in self.bo.score]),
-                    }
-                )
-            if self._early_stopping and self.T._bo["cv"] == 1:
-                sequence.update(
-                    {"early_stopping": f"{self._stopped[0]}/{self._stopped[1]}"}
-                )
-            sequence.update(
-                {
-                    "time_trial": time_to_str(row["time_trial"]),
-                    "time_bo": time_to_str(row["time_bo"]),
-                }
-            )
-            self.T.log(table.print(sequence), 2)
+        # Use provided parameters or those from the first run
+        ht_params = self._ht = ht_params or self._ht
 
-            return -score[0]  # Negative since skopt tries to minimize
+        self.T.log(f"\n\nRunning hyperparameter tuning for {self.fullname}...", 1)
 
-        # Running optimization ===================================== >>
-
-        if self._n_calls < self._n_initial_points:
-            raise ValueError(
-                "Invalid value for the n_calls parameter. Value "
-                f"should be >n_initial_points, got {self._n_calls}."
-            )
-
-        # Check validity of parameters (not in baserunner to skip if error)
-        self._check_est_params()
-
-        init_bo = datetime.now()  # Track the BO's duration
-
-        self.T.log(f"\n\nRunning BO for {self.fullname}...", 1)
-
-        # Assign proper dimensions format or use predefined
-        if self._dimensions:
-            # Some models (e.g. OLS) don't have predefined dimensions (and
-            # thus no get_dimensions method), but can accept user defined ones
-            dims = self.get_dimensions() if hasattr(self, "get_dimensions") else []
-
-            inc, exc = [], []
-            for dim in self._dimensions:
-                if isinstance(dim, str):
+        # Assign custom distributions or use predefined
+        dist = self._get_distributions()
+        if ht_params.get("distributions"):
+            # If dict, use the user provided values
+            if isinstance(ht_params["distributions"], SEQUENCE):
+                inc, exc = [], []
+                for name in ht_params["distributions"]:
                     # If it's a name, use the predefined dimension
-                    try:
-                        if dim.startswith("!"):
-                            exc.append(next(d.name for d in dims if d.name == dim[1:]))
-                        else:
-                            inc.append(next(d for d in dims if d.name == dim))
-                    except StopIteration:
-                        raise ValueError(
-                            "Invalid value for the dimensions parameter. Dimension "
-                            f"{dim} is not a predefined hyperparameter of the "
-                            f"{self.fullname} model. See the model's documentation "
-                            "for an overview of the available hyperparameters and "
-                            "their dimensions."
-                        )
-                else:
-                    inc.append(check_dimension(dim))
+                    if name.startswith("!"):
+                        exc.append(n := name[1:])
+                    else:
+                        inc.append(n := name)
 
-            if inc and exc:
-                raise ValueError(
-                    "Invalid value for the dimensions parameter. You can either "
-                    "include or exclude parameters, not combinations of these."
-                )
-            elif exc:
-                # If dimensions were excluded with `!`, select all but those
-                self._dimensions = [d for d in dims if d.name not in exc]
-            elif inc:
-                self._dimensions = inc
+                    if n not in dist:
+                        raise ValueError(
+                            "Invalid value for the distributions parameter. "
+                            f"Parameter {n} is not a predefined hyperparameter "
+                            f"of the {self.fullname} model. See the model's "
+                            "documentation for an overview of the available "
+                            "hyperparameters and their distributions."
+                        )
+
+                if inc and exc:
+                    raise ValueError(
+                        "Invalid value for the distributions parameter. You can either "
+                        "include or exclude hyperparameters, not combinations of these."
+                    )
+                elif exc:
+                    # If distributions were excluded with `!`, select all but those
+                    self._ht["distributions"] = {
+                        k: v for k, v in dist.items() if k not in exc
+                    }
+                elif inc:
+                    self._ht["distributions"] = {
+                        k: v for k, v in dist.items() if k in inc
+                    }
         else:
-            self._dimensions = self.get_dimensions()
+            self._ht["distributions"] = dist
 
         # Drop hyperparameter if already defined in est_params
-        self._dimensions = [
-            d for d in self._dimensions if d.name not in self._est_params
-        ]
+        self._ht["distributions"] = {
+            k: v for k, v in self._ht["distributions"].items()
+            if k not in self._est_params
+        }
 
         # If no hyperparameters to optimize, skip BO
-        if not self._dimensions:
+        if not self._ht["distributions"]:
             self.T.log(" --> Skipping BO. No hyperparameters to optimize.", 2)
-            return None
+            return
 
-        pbar = None
-        if self.T.verbose == 1:
-            pbar = tqdm(total=self._n_calls, desc="Initial point 1")
+        if not self._study or reset:
+            kwargs = {
+                k: v for k, v in ht_params.items() if k in self._sign(create_study)
+            }
 
-        # If only 1 initial point, use the model's default parameters
-        x0 = self._get_default_params() if self._n_initial_points == 1 else {}
-
-        # Initialize the BO table
-        headers = [("call", "left")] + self._dims
-        for m in self.T._metric.values():
-            headers.extend([m.name, "best_" + m.name])
-        if self._early_stopping and self.T._bo["cv"] == 1:
-            headers.append("early_stopping")
-        headers.extend(["time_trial", "time_bo"])
-
-        # Define the width op every column in the table
-        spaces = [len(str(headers[0]))]
-        for dim in self._dimensions:
-            # If the dimension has categories, take the mean of the widths
-            # Else take the max of 7 (a minimum) and the width of the name
-            if hasattr(dim, "categories"):
-                options = np.mean([len(str(cat)) for cat in dim.categories], dtype=int)
+            if len(self.T._metric) == 1:
+                kwargs["direction"] = "maximize"
+                kwargs["sampler"] = kwargs.pop(
+                    "sampler", TPESampler(seed=self.T.random_state)
+                )
             else:
-                options = 0
-            spaces.append(max(7, len(dim.name), options))
-        spaces.extend([max(7, len(t)) for t in headers[1 + len(self._dimensions):]])
+                kwargs["directions"] = ["maximize"] * len(self.T._metric)
+                kwargs["sampler"] = kwargs.pop(
+                    "sampler", NSGAIISampler(seed=self.T.random_state)
+                )
 
-        table = Table(headers, spaces)
-        self.T.log(table.print_header(), 2)
-        self.T.log(table.print_line(), 2)
+            self._study = create_study(**kwargs)
 
-        # Prepare keyword arguments for the optimizer
-        bo_kwargs = self.T._bo.copy()  # Don't pop params from parent
-        kwargs = dict(
-            func=lambda x: optimize(**self.get_parameters(x)),
-            dimensions=self._dimensions,
-            n_calls=self._n_calls,
-            n_initial_points=self._n_initial_points,
-            x0=bo_kwargs.pop("x0", list(x0.values()) or None),
-            callback=self.T._bo["callback"],
-            n_jobs=bo_kwargs.pop("n_jobs", self.T.n_jobs),
-            random_state=bo_kwargs.pop("random_state", self.T.random_state),
-            **bo_kwargs["kwargs"],
+        kwargs = {k: v for k, v in ht_params.items() if k in self._sign(Study.optimize)}
+        if ht_params.get("plot", False):
+            plot_callback = PlotCallback(self.T, len(self._study.trials) + n_trials)
+            kwargs["callbacks"] = kw.get("callbacks", []) + plot_callback
+        kwargs["callbacks"] = kwargs.get("callbacks", []) + [TrialsCallback(self)]
+
+        self._study.optimize(
+            func=objective,
+            n_trials=n_trials,
+            n_jobs=kwargs.pop("n_jobs", self.T.n_jobs),
+            show_progress_bar=kwargs.pop("show_progress_bar", self.T.verbose == 1),
+            **kwargs,
         )
 
-        # Monkey patch skopt objects to fix bug with str and num in Categorical
-        with patch.object(Categorical, "inverse_transform", inverse_transform):
-            with patch.object(LabelEncoder, "fit", fit):
-                with patch.object(LabelEncoder, "transform", transform):
-                    base_estimator = self.T._bo["base_estimator"]
-                    if isinstance(base_estimator, str):
-                        if base_estimator.lower() == "gp":
-                            gp_minimize(**kwargs)
-                        elif base_estimator.lower() == "et":
-                            forest_minimize(base_estimator="ET", **kwargs)
-                        elif base_estimator.lower() == "rf":
-                            forest_minimize(base_estimator="RF", **kwargs)
-                        elif base_estimator.lower() == "gbrt":
-                            gbrt_minimize(**kwargs)
-                    else:
-                        base_minimize(base_estimator=base_estimator, **kwargs)
+        if len(self.T._metric) == 1:
+            self._best_trial = self.study.best_trial
+        else:
+            # Sort trials by best score on main metric
+            self._best_trial = sorted(
+                self.study.best_trials, key=lambda x: x.values[0]
+            )[0]
 
-        if pbar:
-            pbar.close()
-
-        # Get optimal row. If duplicate scores, select the shortest training
-        best = self.bo.copy()
-        best["score"] = self.bo["score"].apply(lambda x: lst(x)[0])
-        best_idx = best.sort_values(["score", "time_bo"], ascending=False).index[0]
-
-        self.best_call = self.bo.at[best_idx, "call"]
-        self.best_params = self.bo.at[best_idx, "params"]
-        self.metric_bo = self.bo.at[best_idx, "score"]
-        self.time_bo = self.bo.iat[-1, -1]
-
-        # Save best model (not yet fitted)
-        self.estimator = self.get_estimator(**{**self._est_params, **self.best_params})
-
-        self.T.log(f"Bayesian Optimization {'-' * 27}", 1)
-        self.T.log(f"Best call --> {self.best_call}", 1)
-        self.T.log(f"Best parameters --> {self.best_params}", 1)
+        self.T.log(f"Hyperparameter tuning {'-' * 27}", 1)
+        self.T.log(f"Best trial --> {self.best_trial.number}", 1)
+        self.T.log("Best parameters:", 1)
+        self.T.log("\n".join([f" --> {k}: {v}" for k, v in self.best_params.items()]), 1)
         out = [
-            f"{m.name}: {round(lst(self.metric_bo)[i], 4)}"
+            f"{m.name}: {rnd(lst(self.score_ht)[i])}"
             for i, m in enumerate(self.T._metric.values())
         ]
         self.T.log(f"Best evaluation --> {'   '.join(out)}", 1)
-        self.T.log(f"Time elapsed: {time_to_str(self.time_bo)}", 1)
+        self.T.log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
 
-    def fit(self):
-        """Fit and validate the model."""
-        t_init = datetime.now()
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: Optional[pd.DataFrame] = None, y: Optional[pd.Series] = None):
+        """Fit and validate the model.
 
-        if self.bo.empty:
+        The estimator is fitted using the best hyperparameters found
+        during hyperparameter tuning. Afterwards, the estimator is
+        evaluated on the test set. Only use this method to re-fit the
+        model after having continued the study.
+
+        Parameters
+        ----------
+        X: pd.DataFrame or None
+            Feature set with shape=(n_samples, n_features). If None,
+            `self.X_train` is used.
+
+        y: pd.Series or None
+            Target column corresponding to X. If None, `self.y_train`
+            is used.
+
+        """
+        t_init = dt.now()
+
+        if X is None:
+            X = self.X_train
+        if y is None:
+            y = self.y_train
+
+        self.clear()
+
+        if self.trials.empty:
             self.T.log(f"\n\nResults for {self.fullname}:", 1)
         self.T.log(f"Fit {'-' * 45}", 1)
 
-        # In case the bayesian_optimization method wasn't called
-        if self.estimator is None:
-            self._check_est_params()
-            self.estimator = self.get_estimator(**self._est_params)
+        # Assign estimator if not done already
+        if not self._estimator:
+            self._estimator = self._get_est(**{**self._est_params, **self.best_params})
 
-        # Fit the selected model on the complete training set
-        if hasattr(self, "custom_fit"):
-            self.custom_fit(
-                est=self.estimator,
-                train=(self.X_train, self.y_train),
-                validation=(self.X_test, self.y_test),
-                **self._est_params_fit,
-            )
-        else:
-            self.estimator.fit(self.X_train, self.y_train, **self._est_params_fit)
+        self._estimator = self._fit_estimator(
+            estimator=self.estimator,
+            data=(X, y),
+            est_params_fit=self._est_params_fit,
+            validation=(self.X_test, self.y_test),
+        )
 
-        # Save metric scores on complete training and test set
-        for metric in self.T._metric.values():
-            self._calculate_score(metric, "train")
-            self._calculate_score(metric, "test")
-
-        # Print and log results ==================================== >>
-
-        if self._stopped[0] < self._stopped[1] and self.T._bo["cv"] == 1:
-            self.T.log(
-                f"Early stop at iteration {self._stopped[0]} of {self._stopped[1]}.", 1
-            )
-        for set_ in ("train", "test"):
-            out = [f"{m}: {round(self._scores[set_][m], 4)}" for m in self.T._metric]
-            self.T.log(f"T{set_[1:]} evaluation --> {'   '.join(out)}", 1)
-
-        # Get duration and print to log
-        self.time_fit = (datetime.now() - t_init).total_seconds()
-        self.T.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
+        # Track results to mlflow ================================== >>
 
         # Log parameters, metrics, model and data to mlflow
         if self._run:
-            mlflow.set_tags({"fullname": self.fullname, "time": self.time_fit})
+            mlflow.set_tags(
+                {
+                    "name": self.name,
+                    "fullname": self.fullname,
+                    "branch": self.branch.name,
+                }
+            )
 
-            # Save evals for models with in-training evaluation
-            if hasattr(self, "evals"):
+            # Mlflow only accepts params with char length <250
+            mlflow.log_params(
+                {
+                    k: v for k, v in self.estimator.get_params().items()
+                    if len(str(v)) <= 250}
+            )
+
+            # Save evals for models with in-training validation
+            if self.evals:
+                name = self.evals["metric"]
                 zipper = zip(self.evals["train"], self.evals["test"])
                 for step, (train, test) in enumerate(zipper):
-                    mlflow.log_metric(f"{self.evals['metric']}_train", train, step=step)
-                    mlflow.log_metric(f"{self.evals['metric']}_test", test, step=step)
+                    mlflow.log_metric(f"evals_{name}_train", train, step=step)
+                    mlflow.log_metric(f"evals_{name}_test", test, step=step)
 
-            self._log_to_mlflow()  # Track rest of information
+            # Rest of metrics are tracked when calling _get_score
+            mlflow.log_metric("time_fit", self.time_fit)
 
-    def bootstrap(self):
+            if self.T.log_model:
+                mlflow.sklearn.log_model(self.estimator, self._est_class.__name__)
+
+            if self.T.log_data:
+                for set_ in ("train", "test"):
+                    getattr(self, set_).to_csv(f"{set_}.csv")
+                    mlflow.log_artifact(f"{set_}.csv")
+                    os.remove(f"{set_}.csv")
+
+            if self.T.log_pipeline:
+                mlflow.sklearn.log_model(self.export_pipeline(), f"pl_{self.name}")
+
+            mlflow.end_run()
+
+        # Print and log results ==================================== >>
+
+        for set_ in ("train", "test"):
+            out = [
+                f"{metric.name}: {self._get_score(metric, set_)}"
+                for metric in self.T._metric.values()
+            ]
+            self.T.log(f"T{set_[1:]} evaluation --> {'   '.join(out)}", 1)
+
+        # Get duration and print to log
+        self._time_fit += (dt.now() - t_init).total_seconds()
+        self.T.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
+
+    @composed(crash, method_to_log, typechecked)
+    def bootstrapping(self, n_bootstrap: int, reset: bool = False):
         """Apply a bootstrap algorithm.
 
         Take bootstrapped samples from the training set and test them
         on the test set to get a distribution of the model's results.
 
+        Parameters
+        ----------
+        n_bootstrap: int
+           Number of bootstrapped samples to fit on.
+
+        reset: bool, default=False
+            Whether to start a new run or continue the existing one.
+
         """
-        t_init = datetime.now()
+        t_init = dt.now()
 
-        self.metric_bootstrap = []
-        for i in range(self._n_bootstrap):
-            # Same splits per model, but different for every iteration
-            rs = i
-            if self.T.random_state is not None:
-                rs += self.T.random_state
+        if self._bootstrap is None or reset:
+            self._bootstrap = pd.DataFrame(columns=self.T._metric)
+            self._bootstrap.index.name = "sample"
 
+        for i in range(n_bootstrap):
             # Create stratified samples with replacement
             sample_x, sample_y = resample(
                 self.X_train,
                 self.y_train,
                 replace=True,
-                random_state=rs,
+                random_state=i + (self.T.random_state or 0),
                 stratify=self.y_train,
             )
 
-            # Clone to not overwrite when fitting
-            estimator = clone(self.estimator)
-
-            # Fit on bootstrapped set and predict on the independent test set
-            if hasattr(self, "custom_fit"):
-                self.custom_fit(estimator, (sample_x, sample_y), **self._est_params_fit)
-            else:
-                estimator.fit(sample_x, sample_y, **self._est_params_fit)
-
-            self.metric_bootstrap.append(
-                flt(
-                    [
-                        metric(estimator, self.X_test, self.y_test)
-                        for metric in self.T._metric.values()
-                    ]
-                )
+            # Fit on bootstrapped set
+            estimator = self._fit_estimator(
+                estimator=self.estimator,
+                data=(sample_x, sample_y),
+                est_params_fit=self._est_params_fit,
             )
 
-        # Separate for multi-metric, transform numpy types to python types
-        if len(self.T._metric) == 1:
-            self.metric_bootstrap = np.array(self.metric_bootstrap)
-            self.mean_bootstrap = np.mean(self.metric_bootstrap, axis=0).item()
-            self.std_bootstrap = np.std(self.metric_bootstrap, axis=0).item()
-        else:
-            self.metric_bootstrap = np.array(self.metric_bootstrap).T
-            self.mean_bootstrap = np.mean(self.metric_bootstrap, axis=1).tolist()
-            self.std_bootstrap = np.std(self.metric_bootstrap, axis=1).tolist()
+            # Get scores on the test set
+            scores = pd.DataFrame(
+                {
+                    metric.name: [metric(estimator, self.X_test, self.y_test)]
+                    for metric in self.T._metric.values()
+                }
+            )
+
+            self._bootstrap = pd.concat([self._bootstrap, scores], ignore_index=True)
 
         self.T.log(f"Bootstrap {'-' * 39}", 1)
         out = [
-            f"{m.name}: {round(lst(self.mean_bootstrap)[i], 4)}"
-            f" \u00B1 {round(lst(self.std_bootstrap)[i], 4)}"
+            f"{m.name}: {rnd(self.bootstrap.mean()[i])}"
+            f" \u00B1 {rnd(self.bootstrap.std()[i])}"
             for i, m in enumerate(self.T._metric.values())
         ]
         self.T.log(f"Evaluation --> {'   '.join(out)}", 1)
 
-        self.time_bootstrap = (datetime.now() - t_init).total_seconds()
+        self._time_bootstrap += (dt.now() - t_init).total_seconds()
         self.T.log(f"Time elapsed: {time_to_str(self.time_bootstrap)}", 1)
 
     # Utility properties =========================================== >>
+
+    @property
+    def name(self) -> str:
+        """Name of the model."""
+        return self._name
+
+    @name.setter
+    def name(self, value: str):
+        """Change the model's tag.
+
+        The acronym always stays at the beginning of the model's name.
+        If the model is being tracked by mlflow, the name of the
+        corresponding run is also changed.
+
+        """
+        if not value:
+            value = self.acronym  # Back to default acronym
+        else:
+            # Drop the acronym if not provided by the user
+            if value.lower().startswith(self.acronym.lower()):
+                value = value[len(self.acronym):]
+
+            # Add the acronym (with right capitalization)
+            value = self.acronym + value
+
+        # Check if the name is available
+        if value.lower() in map(str.lower, self.T._models):
+            raise PermissionError(f"There already exists a model named {value}!")
+
+        # Replace the model in the _models attribute
+        self.T._models.replace_key(self.name, value)
+        self.T.log(f"Model {self.name} successfully renamed to {value}.", 1)
+        self.name = value
+
+        if self._run:  # Change name in mlflow's run
+            MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
+
+    @property
+    def study(self) -> Study:
+        """Optuna study used for hyperparameter tuning."""
+        return self._study
+
+    @property
+    def trials(self) -> pd.DataFrame:
+        """Overview of the trials. Columns include:
+
+        - **params:** Parameters used for this trial.
+        - **estimator:** Estimator used for this trial.
+        - **score:** Objective score(s) of the trial.
+        - **time_trial:** Duration of the trial.
+        - **time_ht:** Duration of the hyperparameter tuning.
+
+        """
+        return self._trials
+
+    @property
+    def best_trial(self) -> Trial:
+        """Best trial found during hyperparameter tuning.
+
+        For [multi-metric runs][], the best trial is the trial that
+        preformed best on the main metric.
+
+        """
+        return self._best_trial
+
+    @best_trial.setter
+    @typechecked
+    def best_trial(self, value: int):
+        if value not in self.trials.index:
+            raise ValueError(
+                "Invalid value for the best_trial. The "
+                f"value should be a trial number, got {value}."
+            )
+        self._best_trial = value
+
+    @property
+    def best_params(self) -> dict:
+        """Best hyperparameters found during hyperparameter tuning."""
+        if not self.trials.empty:
+            return self.trials.at[self.best_trial.number, "params"]
+        else:
+            return {}
+
+    @property
+    def score_ht(self) -> Optional[Union[FLOAT, List[FLOAT]]]:
+        """Metric score obtained during hyperparameter tuning."""
+        if not self.trials.empty:
+            return self.trials.at[self.best_trial.number, "score"]
+
+    @property
+    def time_ht(self) -> int:
+        """Duration of the hyperparameter tuning."""
+        return 0 if self.trials.empty else self.trials.iat[-1, -1]
+
+    @property
+    def estimator(self) -> Predictor:
+        """Estimator fitted on the training set."""
+        return self._estimator
+
+    @property
+    def evals(self) -> CustomDict:
+        """Main metric score per step during [in-training validation][]."""
+        return self._evals
+
+    @property
+    def score_train(self) -> Union[FLOAT, List[FLOAT]]:
+        """Metric score on the training set."""
+        return flt([self._get_score(m, "train") for m in self.T._metric.values()])
+
+    @property
+    def score_test(self) -> Union[FLOAT, List[FLOAT]]:
+        """Metric score on the test set."""
+        return flt([self._get_score(m, "test") for m in self.T._metric.values()])
+
+    @property
+    def score_holdout(self) -> Union[FLOAT, List[FLOAT]]:
+        """Metric score on the holdout set."""
+        return flt([self._get_score(m, "holdout") for m in self.T._metric.values()])
+
+    @property
+    def time_fit(self) -> int:
+        """Duration of the model fitting on the train set."""
+        return self._time_fit
+
+    @property
+    def bootstrap(self) -> Optional[pd.DataFrame]:
+        """Overview of the bootstrapping scores."""
+        return self._bootstrap
+
+    @property
+    def score_bootstrap(self) -> Union[FLOAT, List[FLOAT]]:
+        """Mean metric score on the bootstrapped samples."""
+        if self.bootstrap is not None:
+            return flt(self.bootstrap.mean().tolist())
+
+    @property
+    def time_bootstrap(self) -> int:
+        """Duration of the bootstrapping."""
+        return self._time_bootstrap
+
+    @property
+    def time(self) -> int:
+        """Total duration of the model run."""
+        return self.time_ht + self.time_fit + self.time_bootstrap
 
     @property
     def feature_importance(self) -> Optional[pd.Series]:
@@ -733,9 +1029,9 @@ class BaseModel(ModelPlot, ShapPlot):
 
         The scores are extracted from the estimator's `coef_` or
         `feature_importances_` attribute, checked in that order.
+        Returns None for estimators without those attributes.
 
         """
-        # Returns None for estimators without coef_ or feature_importances_
         if data := get_feature_importance(self.estimator):
             return pd.Series(
                 data=data / max(data),
@@ -746,43 +1042,33 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def results(self) -> pd.Series:
-        """Overview of the training results. Values include:
+        """Overview of the training results.
 
-        - metric_bo: Best score obtained during hyperparameter tuning.
-        - time_bo: Duration of the hyperparameter tuning (in seconds).
-        - metric_train: Score on the training set.
-        - metric_test: Score on the test set.
-        - time_fit: Duration of the training (in seconds).
-        - mean_bootstrap: Mean score on the bootstrapped samples.
-        - std_bootstrap: Standard deviation of the bootstrap score.
-        - time_bootstrap: Duration of bootstrapping (in seconds).
-        - time: Total duration (in seconds).
+        All durations are in seconds. Values include:
+
+        - **score_ht:** Score obtained by the hyperparameter tuning.
+        - **time_ht:** Duration of the hyperparameter tuning.
+        - **score_train:** Metric score on the train set.
+        - **score_test:** Metric score on the test set.
+        - **time_fit:** Duration of the model fitting on the train set.
+        - **score_bootstrap:** Mean score on the bootstrapped samples.
+        - **time_bootstrap:** Duration of the bootstrapping.
+        - **time:** Total duration of the model run.
 
         """
         return pd.Series(
             {
-                "metric_bo": getattr(self, "metric_bo", None),
-                "time_bo": getattr(self, "time_bo", None),
-                "metric_train": getattr(self, "metric_train", None),
-                "metric_test": getattr(self, "metric_test", None),
+                "score_ht": getattr(self, "score_ht", None),
+                "time_ht": getattr(self, "time_ht", None),
+                "score_train": getattr(self, "score_train", None),
+                "score_test": getattr(self, "score_test", None),
                 "time_fit": getattr(self, "time_fit", None),
-                "mean_bootstrap": getattr(self, "mean_bootstrap", None),
-                "std_bootstrap": getattr(self, "std_bootstrap", None),
+                "score_bootstrap": getattr(self, "score_bootstrap", None),
                 "time_bootstrap": getattr(self, "time_bootstrap", None),
                 "time": getattr(self, "time", None),
             },
             name=self.name,
         )
-
-    @property
-    def metric_train(self) -> Union[FLOAT, List[FLOAT]]:
-        """Metric scores on the training set."""
-        return flt([self._scores["train"][name] for name in self.T._metric])
-
-    @property
-    def metric_test(self) -> Union[FLOAT, List[FLOAT]]:
-        """Metric scores on the test set."""
-        return flt([self._scores["test"][name] for name in self.T._metric])
 
     # Data Properties ============================================== >>
 
@@ -861,98 +1147,98 @@ class BaseModel(ModelPlot, ShapPlot):
     @property
     def decision_function_train(self) -> PANDAS_TYPES:
         """Confidence scores on the training set."""
-        if self._pred[9] is None:
+        if self._pred[0] is None:
             data = self.estimator.decision_function(self.X_train)
             if data.ndim == 1:
-                self._pred[9] = pd.Series(
+                self._pred[0] = pd.Series(
                     data=data,
                     index=self.X_train.index,
                     name="decision_function_train",
                 )
             else:
-                self._pred[9] = pd.DataFrame(
+                self._pred[0] = pd.DataFrame(
                     data=data,
                     index=self.X_train.index,
                     columns=self.mapping.get(self.target),
                 )
 
-        return self._pred[9]
+        return self._pred[0]
 
     @property
     def decision_function_test(self) -> PANDAS_TYPES:
         """Confidence scores on the test set."""
-        if self._pred[10] is None:
+        if self._pred[1] is None:
             data = self.estimator.decision_function(self.X_test)
             if data.ndim == 1:
-                self._pred[10] = pd.Series(
+                self._pred[1] = pd.Series(
                     data=data,
                     index=self.X_test.index,
                     name="decision_function_test",
                 )
             else:
-                self._pred[10] = pd.DataFrame(
+                self._pred[1] = pd.DataFrame(
                     data=data,
                     index=self.X_test.index,
                     columns=self.mapping.get(self.target),
                 )
 
-        return self._pred[10]
+        return self._pred[1]
 
     @property
     def decision_function_holdout(self) -> Optional[PANDAS_TYPES]:
         """Confidence scores on the holdout set."""
-        if self.T.holdout is not None and self._pred[11] is None:
+        if self.T.holdout is not None and self._pred[2] is None:
             data = self.estimator.decision_function(self.X_holdout)
             if data.ndim == 1:
-                self._pred[11] = pd.Series(
+                self._pred[2] = pd.Series(
                     data=data,
                     index=self.X_holdout.index,
                     name="decision_function_holdout",
                 )
             else:
-                self._pred[11] = pd.DataFrame(
+                self._pred[2] = pd.DataFrame(
                     data=data,
                     index=self.X_holdout.index,
                     columns=self.mapping.get(self.target),
                 )
 
-        return self._pred[11]
+        return self._pred[2]
 
     @property
     def predict_train(self) -> pd.Series:
         """Class predictions on the training set."""
-        if self._pred[0] is None:
-            self._pred[0] = pd.Series(
+        if self._pred[3] is None:
+            self._pred[3] = pd.Series(
                 data=self.estimator.predict(self.X_train),
                 index=self.X_train.index,
                 name="predict_train",
             )
 
-        return self._pred[0]
+        return self._pred[3]
 
     @property
     def predict_test(self) -> pd.Series:
         """Class predictions on the test set."""
-        if self._pred[1] is None:
-            self._pred[1] = pd.Series(
+        if self._pred[4] is None:
+            self._pred[4] = pd.Series(
                 data=self.estimator.predict(self.X_test),
                 index=self.X_test.index,
                 name="predict_test",
             )
 
-        return self._pred[1]
+        return self._pred[4]
 
     @property
     def predict_holdout(self) -> Optional[pd.Series]:
         """Class predictions on the holdout set."""
-        if self.T.holdout is not None and self._pred[2] is None:
-            self._pred[2] = pd.Series(
+        if self.T.holdout is not None and self._pred[5] is None:
+            self._pred[5] = pd.Series(
                 data=self.estimator.predict(self.X_holdout),
                 index=self.X_holdout.index,
                 name="predict_holdout",
             )
 
-        return self._pred[2]
+        return self._pred[5]
 
     @property
     def predict_log_proba_train(self) -> pd.DataFrame:
@@ -993,62 +1279,38 @@ class BaseModel(ModelPlot, ShapPlot):
     @property
     def predict_proba_train(self) -> pd.DataFrame:
         """Class probabilities predictions on the training set."""
-        if self._pred[3] is None:
-            self._pred[3] = pd.DataFrame(
+        if self._pred[9] is None:
+            self._pred[9] = pd.DataFrame(
                 data=self.estimator.predict_proba(self.X_train),
                 index=self.X_train.index,
                 columns=self.mapping.get(self.target),
             )
 
-        return self._pred[3]
+        return self._pred[9]
 
     @property
     def predict_proba_test(self) -> pd.DataFrame:
         """Class probabilities predictions on the test set."""
-        if self._pred[4] is None:
-            self._pred[4] = pd.DataFrame(
+        if self._pred[10] is None:
+            self._pred[10] = pd.DataFrame(
                 data=self.estimator.predict_proba(self.X_test),
                 index=self.X_test.index,
                 columns=self.mapping.get(self.target),
             )
 
-        return self._pred[4]
+        return self._pred[10]
 
     @property
     def predict_proba_holdout(self) -> Optional[pd.DataFrame]:
         """Class probabilities predictions on the holdout set."""
-        if self.T.holdout is not None and self._pred[5] is None:
-            self._pred[5] = pd.DataFrame(
+        if self.T.holdout is not None and self._pred[11] is None:
+            self._pred[11] = pd.DataFrame(
                 data=self.estimator.predict_proba(self.X_holdout),
                 index=self.X_holdout.index,
                 columns=self.mapping.get(self.target),
             )
 
-        return self._pred[5]
-
-    @property
-    def score_train(self) -> FLOAT:
-        """Metric score on the training set."""
-        if self._pred[12] is None:
-            self._pred[12] = self.estimator.score(self.X_train, self.y_train)
-
-        return self._pred[12]
-
-    @property
-    def score_test(self) -> FLOAT:
-        """Metric score on the test set."""
-        if self._pred[13] is None:
-            self._pred[13] = self.estimator.score(self.X_test, self.y_test)
-
-        return self._pred[13]
-
-    @property
-    def score_holdout(self) -> Optional[FLOAT]:
-        """Metric score on the holdout set."""
-        if self.T.holdout is not None and self._pred[14] is None:
-            self._pred[14] = self.estimator.score(self.X_holdout, self.y_holdout)
-
-        return self._pred[14]
+        return self._pred[11]
 
     # Prediction methods =========================================== >>
 
@@ -1149,10 +1411,7 @@ class BaseModel(ModelPlot, ShapPlot):
                     )
         else:
             if metric is None:
-                if self.T.goal == "class":
-                    metric = get_custom_scorer("accuracy")
-                else:
-                    metric = get_custom_scorer("r2")
+                metric = self.T._metric[0]
             else:
                 metric = get_custom_scorer(metric)
 
@@ -1333,7 +1592,8 @@ class BaseModel(ModelPlot, ShapPlot):
 
         !!! info
             If the `metric` parameter is left to its default value, the
-            method uses the same metric as sklearn's `score` method.
+            method returns atom's metric score, not the metric returned
+            by sklearn's score method for estimators.
 
         Parameters
         ----------
@@ -1350,8 +1610,8 @@ class BaseModel(ModelPlot, ShapPlot):
         metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's scorers,
             a function with signature `metric(y_true, y_pred) -> score`
-            or a scorer object. If None, it returns mean accuracy for
-            classification tasks and r2 for regression tasks.
+            or a scorer object. If None, it uses atom's metric (the main
+            metric for [multi-metric runs][]).
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y.
@@ -1377,140 +1637,6 @@ class BaseModel(ModelPlot, ShapPlot):
 
     # Utility methods ============================================== >>
 
-    def _final_output(self) -> str:
-        """Returns the model's final output as a string."""
-        # If bootstrap was used, we use a different format
-        if self.mean_bootstrap is None:
-            out = "   ".join(
-                [
-                    f"{m.name}: {round(lst(self.metric_test)[i], 4)}"
-                    for i, m in enumerate(self.T._metric.values())
-                ]
-            )
-        else:
-            out = "   ".join(
-                [
-                    f"{m.name}: {round(lst(self.mean_bootstrap)[i], 4)} "
-                    f"\u00B1 {round(lst(self.std_bootstrap)[i], 4)}"
-                    for i, m in enumerate(self.T._metric.values())
-                ]
-            )
-
-        # Annotate if model overfitted when train 20% > test
-        score_train = self._scores["train"][list(self.T._metric.keys())[0]]
-        score_test = self._scores["test"][list(self.T._metric.keys())[0]]
-        if score_train - 0.2 * score_train > score_test:
-            out += " ~"
-
-        return out
-
-    def _log_to_mlflow(self):
-        """Log the model's information to the current mlflow run."""
-        mlflow.set_tag("branch", self.branch.name)
-
-        # Only save params for children of BaseEstimator
-        if hasattr(self.estimator, "get_params"):
-            # Mlflow only accepts params with char length <250
-            pars = self.estimator.get_params()
-            mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
-
-        if self.T.log_model:
-            mlflow.sklearn.log_model(self.estimator, self.estimator.__class__.__name__)
-
-        if self.T.log_data:
-            for set_ in ("train", "test"):
-                getattr(self, set_).to_csv(f"{set_}.csv")
-                mlflow.log_artifact(f"{set_}.csv")
-                os.remove(f"{set_}.csv")
-
-        if self.T.log_pipeline:
-            pl = self.export_pipeline()
-            mlflow.sklearn.log_model(pl, f"pipeline_{self.name}")
-
-    def _calculate_score(
-        self,
-        scorer: Scorer,
-        dataset: str,
-        threshold: FLOAT = 0.5,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
-    ) -> FLOAT:
-        """Calculate a metric score using the prediction attributes.
-
-        Instead of using the scorer to make new predictions and
-        recalculate the same metrics, use the model's prediction
-        attributes and store calculated metrics in self._scores.
-
-        Parameters
-        ----------
-        scorer: Scorer
-            Metrics to calculate. If None, a selection of the most
-            common metrics per task are used.
-
-        dataset: str
-            Data set on which to calculate the metric. Choose from:
-            "train", "test" or "holdout".
-
-        threshold: float, default=0.5
-            Threshold between 0 and 1 to convert predicted probabilities
-            to class labels. Only used when:
-
-            - The task is binary classification.
-            - The model has a `predict_proba` method.
-            - The metric evaluates predicted target values.
-
-        sample_weight: sequence or None, default=None
-            Sample weights corresponding to y in `dataset`.
-
-        Returns
-        -------
-        float
-            Metric score on the selected data set.
-
-        """
-        has_pred_proba = hasattr(self.estimator, "predict_proba")
-        has_dec_func = hasattr(self.estimator, "decision_function")
-
-        # Select method to use for predictions
-        if scorer.__class__.__name__ == "_ThresholdScorer":
-            attr = "decision_function" if has_dec_func else "predict_proba"
-        elif scorer.__class__.__name__ == "_ProbaScorer":
-            attr = "predict_proba" if has_pred_proba else "decision_function"
-        elif self.T.task.startswith("bin") and has_pred_proba:
-            attr = "predict_proba"  # Needed to use threshold parameter
-        else:
-            attr = "predict"
-
-        y_pred = getattr(self, f"{attr}_{dataset}")
-        if self.T.task.startswith("bin") and attr == "predict_proba":
-            y_pred = y_pred.iloc[:, 1]
-
-            # Exclude metrics that use probability estimates (e.g. ap, auc)
-            if scorer.__class__.__name__ == "_PredictScorer":
-                y_pred = (y_pred > threshold).astype("int")
-
-        if "sample_weight" in signature(scorer._score_func).parameters:
-            score = scorer._score_func(
-                getattr(self, f"y_{dataset}"),
-                y_pred,
-                sample_weight=sample_weight,
-                **scorer._kwargs,
-            )
-        else:
-            score = scorer._score_func(
-                getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs
-            )
-
-        self._scores[dataset][scorer.name] = scorer._sign * float(score)
-
-        if self._run:  # Log metric to mlflow run
-            MlflowClient().log_metric(
-                run_id=self._run.info.run_id,
-                key=f"{scorer.name}_{dataset}",
-                value=it(self._scores[dataset][scorer.name]),
-            )
-
-        return self._scores[dataset][scorer.name]
-
     @available_if(has_task("class"))
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
@@ -1535,25 +1661,13 @@ class BaseModel(ModelPlot, ShapPlot):
         """
         calibrator = CalibratedClassifierCV(self.estimator, **kwargs)
         if kwargs.get("cv") != "prefit":
-            self.estimator = calibrator.fit(self.X_train, self.y_train)
+            self._estimator = calibrator.fit(self.X_train, self.y_train)
         else:
-            self.estimator = calibrator.fit(self.X_test, self.y_test)
-
-        self.clear()  # Clear model since we have a new estimator
+            self._estimator = calibrator.fit(self.X_test, self.y_test)
 
         # Start a new mlflow run for the new estimator
         if self._run:
             self._run = mlflow.start_run(run_name=f"{self.name}_calibrate")
-            self._log_to_mlflow()
-            mlflow.end_run()
-
-        # Save new metric scores on train and test set
-        # Also automatically stores scores to the mlflow run
-        for metric in self.T._metric.values():
-            self._calculate_score(metric, "train")
-            self._calculate_score(metric, "test")
-
-        self.T.log(f"Model {self.name} successfully calibrated.", 1)
 
     @composed(crash, method_to_log)
     def clear(self):
@@ -1563,21 +1677,24 @@ class BaseModel(ModelPlot, ShapPlot):
         potentially large data arrays. Use this method to free some
         memory before saving the instance. The cleared attributes are:
 
-        - [Prediction attributes][]
+        - [In-training validation][] scores.
         - [Metric scores][metric]
+        - [Prediction attributes][]
         - [Shap values][shap]
         - [App instance][self-create_app]
         - [Dashboard instance][self-create_dashboard]
 
         """
-        self._pred = [None] * 15
+        self._evals = CustomDict()
         self._scores = CustomDict(
             train=CustomDict(),
             test=CustomDict(),
             holdout=CustomDict(),
         )
+        self._pred = [None] * 12
         self._shap = ShapExplanation(self)
-        self.explainer_dashboard = None
+        self.app = None
+        self.dashboard = None
 
     @composed(crash, method_to_log)
     def create_app(self, **kwargs):
@@ -1608,9 +1725,6 @@ class BaseModel(ModelPlot, ShapPlot):
             else:
                 inputs.append(Dropdown(list(column.unique()), label=name))
 
-        interface_sign = signature(Interface).parameters
-        launch_sign = signature(Interface.launch).parameters
-
         self.app = Interface(
             fn=lambda *x: self.inverse_transform(
                 y=self.predict(pd.DataFrame([x], columns=self.features))
@@ -1618,10 +1732,12 @@ class BaseModel(ModelPlot, ShapPlot):
             inputs=inputs,
             outputs="label",
             allow_flagging=kwargs.pop("allow_flagging", "never"),
-            **{k: v for k, v in kwargs.items() if k in interface_sign},
+            **{k: v for k, v in kwargs.items() if k in self._sign(Interface)},
         )
 
-        self.app.launch(**{k: v for k, v in kwargs.items() if k in launch_sign})
+        self.app.launch(
+            **{k: v for k, v in kwargs.items() if k in self._sign(Interface.launch)}
+        )
 
     @composed(crash, typechecked, method_to_log)
     def create_dashboard(
@@ -1829,16 +1945,10 @@ class BaseModel(ModelPlot, ShapPlot):
                 f"should lie between 0 and 1, got {threshold}."
             )
 
-        dataset = dataset.lower()
-        if dataset not in ("train", "test", "holdout"):
+        if dataset.lower() not in ("train", "test", "holdout"):
             raise ValueError(
                 "Unknown value for the dataset parameter. "
                 "Choose from: train, test or holdout."
-            )
-        if dataset == "holdout" and self.T.holdout is None:
-            raise ValueError(
-                "Invalid value for the dataset parameter. No holdout "
-                "data set was specified when initializing the instance."
             )
 
         # Predefined metrics to show
@@ -1870,21 +1980,12 @@ class BaseModel(ModelPlot, ShapPlot):
         scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):
             scorer = get_custom_scorer(met)
-
-            # Skip if the scorer has already been calculated
-            if (
-                scorer.name in self._scores[dataset]
-                and threshold == 0.5
-                and sample_weight is None
-            ):
-                scores[scorer.name] = self._scores[dataset][scorer.name]
-            else:
-                scores[scorer.name] = self._calculate_score(
-                    scorer=scorer,
-                    dataset=dataset,
-                    threshold=threshold,
-                    sample_weight=sample_weight,
-                )
+            scores[scorer.name] = self._get_score(
+                scorer=scorer,
+                dataset=dataset.lower(),
+                threshold=threshold,
+                sample_weight=sample_weight,
+            )
 
         return scores
 
@@ -1955,9 +2056,10 @@ class BaseModel(ModelPlot, ShapPlot):
         with the name `[model_name]_full_train`. Since the estimator
         changed, the model is cleared.
 
-        Note that although the model is trained on the complete dataset,
-        the pipeline is not. To also get the fully trained pipeline, use:
-        `pipeline = atom.export_pipeline().fit(atom.X, atom.y)`.
+        !!! warning
+            Although the model is trained on the complete dataset, the
+            pipeline is not. To get a fully trained pipeline, use:
+            `pipeline = atom.export_pipeline().fit(atom.X, atom.y)`.
 
         Parameters
         ----------
@@ -1969,10 +2071,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
         """
         if include_holdout and self.T.holdout is None:
-            raise ValueError(
-                "The parameter include_holdout is True but no holdout data set is "
-                "available. See the documentation to learn how to initialize one."
-            )
+            raise ValueError("No holdout data set available.")
 
         if include_holdout and self.T.holdout is not None:
             X = pd.concat([self.X, self.X_holdout])
@@ -1980,26 +2079,11 @@ class BaseModel(ModelPlot, ShapPlot):
         else:
             X, y = self.X, self.y
 
-        if hasattr(self, "custom_fit"):
-            self.custom_fit(self.estimator, (X, y), **self._est_params_fit)
-        else:
-            self.estimator.fit(X, y, **self._est_params_fit)
-
-        self.clear()  # Clear model since we have a new estimator
-
         # Start a new mlflow run for the new estimator
         if self._run:
             self._run = mlflow.start_run(run_name=f"{self.name}_full_train")
-            self._log_to_mlflow()
-            mlflow.end_run()
 
-        # Save new metric scores on train and test set
-        # Also automatically stores scores to the mlflow run
-        for metric in self.T._metric.values():
-            self._calculate_score(metric, "train")
-            self._calculate_score(metric, "test")
-
-        self.T.log(f"Model {self.name} successfully retrained.", 1)
+        self.fit(X, y)
 
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(
@@ -2062,42 +2146,6 @@ class BaseModel(ModelPlot, ShapPlot):
                 )
 
         return variable_return(X, y)
-
-    @composed(crash, method_to_log, typechecked)
-    def rename(self, name: Optional[str] = None):
-        """Change the model's tag.
-
-        The acronym always stays at the beginning of the model's name.
-        If the model is being tracked by mlflow, the name of the
-        corresponding run is also changed.
-
-        Parameters
-        ----------
-        name: str or None, default=None
-            New tag for the model. If None, the tag is removed.
-
-        """
-        if not name:
-            name = self.acronym  # Back to default acronym
-        else:
-            # Drop the acronym if not provided by the user
-            if name.lower().startswith(self.acronym.lower()):
-                name = name[len(self.acronym):]
-
-            # Add the acronym (with right capitalization)
-            name = self.acronym + name
-
-        # Check if the name is available
-        if name.lower() in map(str.lower, self.T._models):
-            raise PermissionError(f"There already exists a model named {name}!")
-
-        # Replace the model in the _models attribute
-        self.T._models.replace_key(self.name, name)
-        self.T.log(f"Model {self.name} successfully renamed to {name}.", 1)
-        self.name = name
-
-        if self._run:  # Change name in mlflow's run
-            MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
 
     @composed(crash, method_to_log, typechecked)
     def save_estimator(self, filename: str = "auto"):

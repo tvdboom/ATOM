@@ -3,7 +3,7 @@
 
 :: atom.nlp:TextCleaner
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - attributes

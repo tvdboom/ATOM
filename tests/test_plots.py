@@ -433,7 +433,7 @@ def test_plot_pipeline():
     atom.scale()
     atom.plot_pipeline(display=False)  # No model
 
-    atom.run("Tree", n_calls=2, n_initial_points=1)
+    atom.run("Tree", n_trials=2, n_initial_points=1)
     atom.tree.plot_pipeline(display=False)  # Only one branch
 
     atom.branch = "b2"
@@ -494,7 +494,7 @@ def test_plot_results_metric(metric):
 def test_plot_results_time(metric):
     """Assert that the plot_results method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["Tree", "LGB"], metric="r2", n_calls=2, n_initial_points=1)
+    atom.run(["Tree", "LGB"], metric="r2", n_trials=2, n_initial_points=1)
     pytest.raises(ValueError, atom.plot_results, metric="time_bootstrap")
     atom.plot_results(metric=metric, display=False)
     atom.tree.plot_results(metric=metric, display=False)
@@ -542,7 +542,7 @@ def test_plot_trials():
     """Assert that the plot_bo method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_trials)
-    atom.run("lasso", metric="max_error", n_calls=0)
+    atom.run("lasso", metric="max_error", n_trials=0)
     pytest.raises(ValueError, atom.plot_trials, models="unknown")
     pytest.raises(ValueError, atom.plot_trials, models="BR")
     pytest.raises(ValueError, atom.plot_trials, metric="unknown")
@@ -550,7 +550,7 @@ def test_plot_trials():
     pytest.raises(ValueError, atom.plot_trials, metric=1)
     pytest.raises(ValueError, atom.plot_trials, metric="roc_auc")
     pytest.raises(PermissionError, atom.plot_trials)  # No BO in pipeline
-    atom.run(["lasso", "ridge"], metric="max_error", n_calls=10)
+    atom.run(["lasso", "ridge"], metric="max_error", n_trials=10)
     atom.plot_trials(display=False)
     atom.lasso.plot_trials(display=False)
 

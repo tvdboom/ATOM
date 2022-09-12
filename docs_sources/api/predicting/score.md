@@ -3,7 +3,7 @@
 
 :: atom.basemodel:BaseModel.score
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - returns
@@ -21,7 +21,7 @@
 >>> X, y = X.iloc[:-5], y.iloc[:-5]
 
 >>> atom = ATOMClassifier(data)
->>> atom.run("LR")
+>>> atom.run("LR", metric="f1")
 
 >>> # Using new data
 >>> atom.score(X_new, y_new)
@@ -34,8 +34,8 @@
 0.975609756097561
 
 >>> # Using a custom metric
->>> atom.score(slice(10, 92), metric="f1")
+>>> atom.score(slice(10, 92))
 
-0.9824561403508771
+0.9824561403508771  # f1 score
 
 ```

@@ -14,17 +14,20 @@ import sys
 from collections import deque
 from collections.abc import MutableMapping
 from copy import copy
-from datetime import datetime
+from datetime import datetime as dt
 from functools import wraps
 from importlib import import_module
 from inspect import Parameter, signature
 from typing import Protocol, Union
 
 import matplotlib.pyplot as plt
+import mlflow
 import nltk
 import numpy as np
 import pandas as pd
 from matplotlib.gridspec import GridSpec
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 from scipy import sparse
 from shap import Explainer
 from sklearn.inspection._partial_dependence import (
@@ -167,7 +170,12 @@ class Table:
 
     """
 
-    def __init__(self, headers, spaces, default_pos="right"):
+    def __init__(
+        self,
+        headers: SEQUENCE_TYPES,
+        spaces: SEQUENCE_TYPES,
+        default_pos: str = "right",
+    ):
         assert len(headers) == len(spaces)
 
         self.headers = []
@@ -183,10 +191,26 @@ class Table:
         self.spaces = spaces
 
     @staticmethod
-    def to_cell(text: SCALAR, position: str, space: int) -> str:
-        """Get the string format for one cell."""
-        if isinstance(text, float):
-            text = round(text, 4)
+    def to_cell(text: Union[SCALAR, str], position: str, space: int) -> str:
+        """Get the string format for one cell.
+
+        Parameters
+        ----------
+        text: int, float or str
+            Value to add to the cell.
+
+        position: str
+            Position of text in cell. Choose from: right, left.
+
+        space: int
+            Maximum char length in the cell.
+
+        Returns
+        -------
+        str
+            Value to add to cell.
+
+        """
         text = str(text)
         if len(text) > space:
             text = text[:space - 2] + ".."
@@ -197,15 +221,44 @@ class Table:
             return text.ljust(space)
 
     def print_header(self) -> str:
-        """Print the header line."""
+        """Print the header.
+
+        Returns
+        -------
+        str
+            New row with column names.
+
+        """
         return self.print({k: k for k in self.headers})
 
     def print_line(self) -> str:
-        """Print a line with dashes (usually used after header)."""
+        """Print a line with dashes.
+
+        Use this method after printing the header for a nice table
+        structure.
+
+        Returns
+        -------
+        str
+            New row with dashes.
+
+        """
         return self.print({k: "-" * s for k, s in zip(self.headers, self.spaces)})
 
     def print(self, sequence: dict) -> str:
-        """Convert a sequence to a nice formatted table row."""
+        """Convert a sequence to a nice formatted table row.
+
+        Parameters
+        ----------
+        sequence: dict
+            Column names and value to add to row.
+
+        Returns
+        -------
+        str
+            New row with values.
+
+        """
         out = []
         for header, pos, space in zip(self.headers, self.positions, self.spaces):
             out.append(self.to_cell(sequence.get(header, "---"), pos, space))
@@ -213,35 +266,162 @@ class Table:
         return "| " + " | ".join(out) + " |"
 
 
-class PlotCallback:
-    """Callback to plot the BO's progress as it runs.
+class TrialsCallback:
+    """Display the trials' overview as the study runs.
+
+    Callback for the hyperparameter tuning study where a table with the
+    trial's information is displayed. Additionally, the model's `trials`
+    attribute is filled.
 
     Parameters
     ----------
-    cls: Runner
-        Instance from which the callback is called.
+    model: Model
+        Model from which the study is created.
+
+    """
+
+    def __init__(self, model: Model):
+        self.model = model
+        self.T = self.model.T  # Parent runner
+
+        self._table = None
+        self.create_table()
+
+    def __call__(self, study: Study, trial: FrozenTrial):
+        if len(self.T._metric) == 1:
+            score = [trial.value]
+        else:
+            score = trial.values
+
+        if not score:  # Trial failed or got pruned
+            score = [np.NaN] * len(self.T._metric)
+
+        params = trial.user_attrs["params"]
+        estimator = trial.user_attrs.get("estimator", None)
+
+        # Add row to the trials attribute
+        time_trial = (dt.now() - trial.datetime_start).total_seconds()
+        time_ht = self.model._trials["time_trial"].sum() + time_trial
+        self.model._trials.loc[trial.number] = pd.Series(
+            {
+                "params": dict(params),
+                "estimator": estimator,
+                "score": flt(score),
+                "time_trial": time_trial,
+                "time_ht": time_ht,
+                "state": trial.state.name,
+            }
+        )
+
+        # Save trials to experiment as nested runs
+        if self.model._run and self.T.log_ht:
+            run_name = f"{self.model.name} - {trial.number}"
+            with mlflow.start_run(run_name=run_name, nested=True):
+                mlflow.set_tags(
+                    {
+                        "name": self.model.name,
+                        "fullname": self.model.fullname,
+                        "state": trial.state.name,
+                    }
+                )
+
+                # Mlflow only accepts params with char length <250
+                pars = estimator.get_params() if estimator else params
+                mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
+
+                # Save evals for models with in-training validation
+                if self.model.evals:
+                    name = self.model.evals["metric"]
+                    zipper = zip(self.model.evals["train"], self.model.evals["test"])
+                    for step, (train, test) in enumerate(zipper):
+                        mlflow.log_metric(f"evals_{name}_train", train, step=step)
+                        mlflow.log_metric(f"evals_{name}_test", test, step=step)
+
+                mlflow.log_metric("time_trial", time_trial)
+                for i, name in enumerate(self.T._metric):
+                    mlflow.log_metric(f"{name}_validation", score[i])
+
+                if estimator and self.T.log_model:
+                    mlflow.sklearn.log_model(estimator, estimator.__class__.__name__)
+
+        sequence = {"trial": trial.number, **trial.user_attrs["params"]}
+        for i, m in enumerate(self.T._metric.values()):
+            best_score = rnd(max([lst(s)[i] for s in self.model.trials["score"]]))
+            sequence.update({m.name: rnd(score[i]), f"best_{m.name}": best_score})
+        sequence["time_trial"] = time_to_str(time_trial)
+        sequence["time_ht"] = time_to_str(time_ht)
+        sequence["state"] = trial.state.name
+
+        self.T.log(self._table.print(sequence), 2)
+
+    def create_table(self):
+        """Create and display the table header."""
+        headers = [("trial", "left")] + list(self.model._ht["distributions"])
+        for m in self.T._metric.values():
+            headers.extend([m.name, "best_" + m.name])
+        headers.extend(["time_trial", "time_ht", "state"])
+
+        # Define the width op every column in the table
+        spaces = [len(str(headers[0][0]))]
+        for name, dist in self.model._ht["distributions"].items():
+            # If the distribution is categorical, take the mean of the widths
+            # Else take the max of 7 (minimum width) and the width of the name
+            if hasattr(dist, "choices"):
+                options = np.mean([len(str(x)) for x in dist.choices], dtype=int)
+            else:
+                options = 0
+
+            spaces.append(max(7, len(name), options))
+
+        spaces.extend(
+            [
+                max(7, len(column))
+                for column in headers[1 + len(self.model._ht["distributions"]):-1]
+            ]
+        )
+
+        self._table = Table(headers, spaces + [8])
+        self.T.log(self._table.print_header(), 2)
+        self.T.log(self._table.print_line(), 2)
+
+
+class PlotCallback:
+    """Plot the hyperparameter tuning's progress as it runs.
+
+    Creates a figure with two plots: the first plot shows the score
+    of every trial and the second shows the distance between the last
+    consecutive steps.
+
+    Parameters
+    ----------
+    parent: Runner
+        Runner from which the model is called.
+
+    n_trials: int
+        Number of trials.
 
     """
 
     c = 0  # Counter to track which model is being plotted
 
-    def __init__(self, cls: Runner):
-        self.cls = cls
+    def __init__(self, parent, n_trials):
+        self.T = parent
+        self.n_trials = n_trials
 
         # Plot attributes
         max_len = 15  # Maximum steps to show at once in the plot
         self.x, self.y1, self.y2 = {}, {}, {}
-        for i in range(len(self.cls._models)):
+        for i in range(len(self._models)):
             self.x[i] = deque(list(range(1, max_len + 1)), maxlen=max_len)
             self.y1[i] = deque([np.NaN for _ in self.x[i]], maxlen=max_len)
             self.y2[i] = deque([np.NaN for _ in self.x[i]], maxlen=max_len)
 
-    def __call__(self, result):
+    def __call__(self, study: Study, trial: FrozenTrial):
         # Start to fill NaNs with encountered metric values
         if np.isnan(self.y1[self.c]).any():
             for i, value in enumerate(self.y1[self.c]):
                 if math.isnan(value):
-                    self.y1[self.c][i] = -result.func_vals[-1]
+                    self.y1[self.c][i] = trial.value
                     if i > 0:  # The first value must remain empty
                         self.y2[self.c][i] = abs(
                             self.y1[self.c][i] - self.y1[self.c][i - 1]
@@ -249,14 +429,14 @@ class PlotCallback:
                     break
         else:  # If no NaNs anymore, continue deque
             self.x[self.c].append(max(self.x[self.c]) + 1)
-            self.y1[self.c].append(-result.func_vals[-1])
+            self.y1[self.c].append(trial.value)
             self.y2[self.c].append(abs(self.y1[self.c][-1] - self.y1[self.c][-2]))
 
-        if len(result.func_vals) == 1:  # After the 1st iteration, create plot
+        if len(study.trials) == 1:  # After the 1st iteration, create plot
             self.line1, self.line2, self.ax1, self.ax2 = self.create_figure()
         else:
             self.animate_plot()
-            if len(result.func_vals) == self.cls.n_calls:
+            if trial.number == self.n_trials:
                 self.c += 1  # After the last iteration, go to the next model
                 plt.close()
 
@@ -278,28 +458,28 @@ class PlotCallback:
         # First subplot
         (line1,) = ax1.plot(self.x[self.c], self.y1[self.c], "-o", alpha=0.8)
         ax1.set_title(
-            label=f"Bayesian Optimization for {self.cls._models[self.c].fullname}",
-            fontsize=self.cls.title_fontsize,
+            label=f"Hyperparameter tuning for {self.models[self.c].fullname}",
+            fontsize=self.T.title_fontsize,
             pad=20,
         )
         ax1.set_ylabel(
-            ylabel=self.cls._metric[0].name,
-            fontsize=self.cls.label_fontsize,
+            ylabel=self.T._metric[0].name,
+            fontsize=self.T.label_fontsize,
             labelpad=12,
         )
         ax1.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
 
         # Second subplot
         (line2,) = ax2.plot(self.x[self.c], self.y2[self.c], "-o", alpha=0.8)
-        ax2.set_xlabel(xlabel="Call", fontsize=self.cls.label_fontsize, labelpad=12)
-        ax2.set_ylabel(ylabel="d", fontsize=self.cls.label_fontsize, labelpad=12)
+        ax2.set_xlabel(xlabel="Call", fontsize=self.T.label_fontsize, labelpad=12)
+        ax2.set_ylabel(ylabel="d", fontsize=self.T.label_fontsize, labelpad=12)
         ax2.set_xticks(self.x[self.c])
         ax2.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
         ax2.set_ylim([-0.05, 0.1])
 
         plt.setp(ax1.get_xticklabels(), visible=False)
-        plt.xticks(fontsize=self.cls.tick_fontsize)
-        plt.yticks(fontsize=self.cls.tick_fontsize)
+        plt.xticks(fontsize=self.T.tick_fontsize)
+        plt.yticks(fontsize=self.T.tick_fontsize)
 
         return line1, line2, ax1, ax2
 
@@ -671,13 +851,21 @@ def lst(item):
 
 
 def it(item):
-    """Utility to convert rounded floats to int."""
+    """Convert rounded floats to int."""
     try:
         is_equal = int(item) == float(item)
     except ValueError:  # Item may not be numerical
         return item
 
     return int(item) if is_equal else float(item)
+
+
+def rnd(value, decimals: int = 4):
+    """Round a float. Ignore otherwise."""
+    if np.issubdtype(type(value), np.floating):
+        return round(value, decimals)
+    else:
+        return value
 
 
 def divide(a, b):
@@ -730,7 +918,7 @@ def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
     mean = X.mean(numeric_only=True).mean()
     std = X.std(numeric_only=True).mean()
-    return True if mean < 0.05 and 0.9 < std < 1.1 else False
+    return mean < 0.05 and 0.9 < std < 1.1
 
 
 def get_versions(models: CustomDict) -> dict:
@@ -787,10 +975,10 @@ def get_best_score(item, metric=0):
         Index of the metric to use.
 
     """
-    if getattr(item, "mean_bootstrap", None):
-        return lst(item.mean_bootstrap)[metric]
+    if getattr(item, "score_bootstrap", None):
+        return lst(item.score_bootstrap)[metric]
     else:
-        return lst(item.metric_test)[metric]
+        return lst(item.score_test)[metric]
 
 
 def time_to_str(t):
@@ -896,6 +1084,40 @@ def to_series(data, index=None, name="target", dtype=None):
     return data
 
 
+def has_task(task):
+    """Check that the instance has a specific task."""
+
+    def check(self):
+        if hasattr(self, "task"):
+            return task in self.task
+        else:
+            return task in self.T.task
+
+    return check
+
+
+def has_attr(attr):
+    """Check that the instance has attribute `attr`."""
+
+    def check(self):
+        # Raise original `AttributeError` if `attr` does not exist
+        getattr(self, attr)
+        return True
+
+    return check
+
+
+def estimator_has_attr(attr):
+    """Check that the estimator has attribute `attr`."""
+
+    def check(self):
+        # Raise original `AttributeError` if `attr` does not exist
+        getattr(self.estimator, attr)
+        return True
+
+    return check
+
+
 def prepare_logger(logger, class_name):
     """Prepare logging file.
 
@@ -923,7 +1145,7 @@ def prepare_logger(logger, class_name):
         if not logger.endswith(".log"):
             logger += ".log"
         if logger == "auto.log" or logger.endswith("/auto.log"):
-            current = datetime.now().strftime("%d%b%y_%Hh%Mm%Ss")
+            current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
             logger = logger.replace("auto", class_name + "_" + current)
 
         # Define file handler and set formatter
@@ -1544,72 +1766,6 @@ def custom_transform(transformer, branch, data=None, verbose=None, method="trans
 
 # Patches ========================================================== >>
 
-def inverse_transform(self, Xt):
-    """Patch function for inverse_transform method.
-
-    Monkey patch for skopt.space.space.Categorical.inverse_transform
-    method to fix bug with string and numerical categories combined.
-
-    Parameters
-    ----------
-    self: Categorical
-        Instance from the patched class.
-
-    Xt: array-like, shape=(n_samples,)
-        List of categories.
-
-    Returns
-    -------
-    array-like, shape=(n_samples, n_categories)
-        The integer categories.
-
-    """
-    return self.transformer.inverse_transform(Xt)
-
-
-def fit(self, X):
-    """Patch function for fit method.
-
-    Monkey patch for skopt.space.transformers.LabelEncoder.fit
-    method to fix bug with string and numerical categories combined.
-
-    Parameters
-    ----------
-    self: LabelEncoder
-        Instance from the patched class.
-
-    X: array-like, shape=(n_categories,)
-        List of categories.
-
-    """
-    self.mapping_ = {v: i for i, v in enumerate(X)}
-    self.inverse_mapping_ = {i: v for v, i in self.mapping_.items()}
-    return self
-
-
-def transform(self, X):
-    """Patch function for skopt.LabelEncoder transform method.
-
-    Monkey patch for skopt.space.transformers.LabelEncoder.transform
-    method to fix bug with string and numerical categories combined.
-
-    Parameters
-    ----------
-    self: LabelEncoder
-        Instance from the patched class.
-
-    X: array-like, shape=(n_samples,)
-        List of categories.
-
-    Returns
-    -------
-    array-like, shape=(n_samples, n_categories)
-        The integer categories.
-
-    """
-    return [self.mapping_[v] for v in X]
-
-
 def score(f):
     """Patch decorator for sklearn's _score function.
 
@@ -1627,40 +1783,6 @@ def score(f):
         return f(args[0][-1], *tuple(args[1:]), **kwargs)
 
     return wrapper
-
-
-def has_task(task):
-    """Check that the instance has a specific task."""
-
-    def check(self):
-        if hasattr(self, "task"):
-            return task in self.task
-        else:
-            return task in self.T.task
-
-    return check
-
-
-def has_attr(attr):
-    """Check that the instance has attribute `attr`."""
-
-    def check(self):
-        # Raise original `AttributeError` if `attr` does not exist
-        getattr(self, attr)
-        return True
-
-    return check
-
-
-def estimator_has_attr(attr):
-    """Check that the estimator has attribute `attr`."""
-
-    def check(self):
-        # Raise original `AttributeError` if `attr` does not exist
-        getattr(self.estimator, attr)
-        return True
-
-    return check
 
 
 # Decorators ======================================================= >>

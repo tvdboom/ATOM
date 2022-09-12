@@ -67,7 +67,7 @@ Additional things to take into account:
   and a `~` indicates that the model is possibly overfitting (training
   set has a score at least 20% higher than the test set).
 * The winning model (the one with the highest `mean_bootstrap` or
-  `metric_test`) can be accessed through the `winner` attribute. In case
+  `score_test`) can be accessed through the `winner` attribute. In case
   of a tie, the model that trained fastest is selected as winner.
 
 <br>
@@ -225,8 +225,11 @@ atom.run(models="XGB", est_params={"verbose_fit": True})
 !!! note
     If a parameter is specified through `est_params`, it is
     ignored by the bayesian optimization, even if it's added
-    manually to `bo_params["dimensions"]`!
+    manually to `ht_params["dimensions"]`!
 
+!!! info
+    The estimator's `n_jobs` and `random_state` parameters adopt atom's
+    values (when available), unless specified through `est_params`.
 
 <br>
 
@@ -253,17 +256,17 @@ in the best score (in case of a tie, the call with the shortest training
 time is selected) are used to train the model on the complete training set.
 
 There are many possibilities to tune the BO to your liking. Use
-`n_calls` and `n_initial_points` to determine the number of iterations
+`n_trials` and `n_initial_points` to determine the number of iterations
 that are performed randomly at the start (exploration) and the number
-of iterations spent optimizing (exploitation). If `n_calls` is equal to
+of iterations spent optimizing (exploitation). If `n_trials` is equal to
 `n_initial_points`, every iteration of the BO will select its
 hyperparameters randomly. This means the algorithm is technically
 performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf).
 
 Extra things to take into account:
 
-* The `n_calls` parameter includes the iterations in `n_initial_points`,
-  i.e. calling `atom.run(models="LR", n_calls=20, n_intial_points=10)`
+* The `n_trials` parameter includes the iterations in `n_initial_points`,
+  i.e. calling `atom.run(models="LR", n_trials=20, n_intial_points=10)`
   will run 20 iterations of which the first 10 are random.
 * If `n_initial_points=1`, the first call is equal to the
   estimator's default parameters.
@@ -280,7 +283,7 @@ Extra things to take into account:
     display(HTML("<style>.container { width:100% !important; }</style>"))
     ```
 
-Other settings can be changed through the `bo_params` parameter, a
+Other settings can be changed through the `ht_params` parameter, a
 dictionary where every key-value combination can be used to further
 customize the BO.
 
@@ -297,8 +300,8 @@ Forest.
 ```python
 atom.run(
     models=["ET", "RF"],
-    n_calls=30,
-    bo_params={"dimensions": {"all": "n_estimators", "RF": "max_depth"}},
+    n_trials=30,
+    ht_params={"dimensions": {"all": "n_estimators", "RF": "max_depth"}},
 )
 ```
 
@@ -309,7 +312,7 @@ For example, to optimize a Random Forest using all its predefined parameters
 except `n_estimators`, run:
 
 ```python
-atom.run(models="ET", n_calls=15, bo_params={"dimensions": "!n_estimators"})
+atom.run(models="ET", n_trials=15, ht_params={"dimensions": "!n_estimators"})
 ```
 
 If just the parameter name is provided, the predefined dimension space
@@ -323,8 +326,8 @@ from skopt.space.space import Categorical, Integer
 
 atom.run(
     models=["ET", "RF"],
-    n_calls=30,
-    bo_params={
+    n_trials=30,
+    ht_params={
         "dimensions": {
             "all": Integer(10, 100, name="n_estimators"),
             "RF": [
@@ -343,19 +346,19 @@ atom.run(
 
 !!! warning
     Keras' models can only use hyperparameter tuning when `n_jobs=1` or
-    `bo_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises a PicklingError
+    `ht_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises a PicklingError
     due to incompatibilities of the APIs. Read [here](../models/#deep-learning)
     more about deep learning models.
 
 The majority of skopt's callbacks to stop the optimizer early can be
-accessed through `bo_params`. Other callbacks can be included through
+accessed through `ht_params`. Other callbacks can be included through
 the `callbacks` key.
 
 ```python
 atom.run(
     models="LR",
-    n_calls=30,
-    bo_params={"callbacks": custom_callback()},
+    n_trials=30,
+    ht_params={"callbacks": custom_callback()},
 )
 ```
 
@@ -363,7 +366,7 @@ It's also possible to include additional parameters for skopt's optimizer
 as key-value pairs.
 
 ```python
-atom.run("LR", n_calls=10, bo_params={"acq_func": "EI"})
+atom.run("LR", n_trials=10, ht_params={"acq_func": "EI"})
 ```
 
 
@@ -386,10 +389,10 @@ chosen through the `n_bootstrap` parameter.
 
 <br>
 
-## Early stopping
+## In-training validation
 
 [XGBoost](../../API/models/xgb), [LightGBM](../../API/models/lgb) and [CatBoost](../../API/models/catb)
-allow in-training evaluation. This means that the estimator is evaluated
+allow in-training validation. This means that the estimator is evaluated
 after every round of the training, and that the training is stopped
 early if it didn't improve in the last `early_stopping` rounds. This
 can save the pipeline much time that would otherwise be wasted on an
@@ -399,7 +402,7 @@ training set.
 
 There are two ways to apply early stopping on these models:
 
-* Through the `early_stopping` key in `bo_params`. This approach applies
+* Through the `early_stopping` key in `ht_params`. This approach applies
   early stopping to all models in the trainer and allows the input of a
   fraction of the total number of rounds.
 * Filling the `early_stopping_rounds` parameter directly in `est_params`.
@@ -412,7 +415,7 @@ early stopping.
 
 !!! tip
     Use the [plot_evals](../../API/plots/plot_evals) method to plot the
-    in-training evaluation on the train and test set.
+    in-training validation on the train and test set.
 
 
 <br>

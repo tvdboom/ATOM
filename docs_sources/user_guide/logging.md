@@ -50,13 +50,13 @@ module. This option can be switched off using atom's [`log_model`]
 **Hyperparameter tuning**<br>
 If hyperparameter tuning is performed, every call of the BO is tracked
 as a nested run in the model's main run. This option can be switched
-off using atom's [`log_bo`][atomclassifier-log_bo] attribute, e.g.
-`atom.log_bo = False`.
+off using atom's [`log_ht`][atomclassifier-log_ht] attribute, e.g.
+`atom.log_ht = False`.
 
 **Metrics**<br>
 All metric results are tracked, not only during training, but also when
 the [evaluate][atomclassifier-evaluate] method is called at a later point.
-Metrics calculated during in-training evaluation are also logged.
+Metrics calculated during in-training validation are also logged.
 
 **Dataset**<br>
 The train and test sets used to fit and evaluate the model can be stored

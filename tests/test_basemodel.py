@@ -75,24 +75,24 @@ def test_getitem():
 
 # Test training ==================================================== >>
 
-def test_n_calls_lower_n_initial_points():
-    """Assert than an error is raised when n_calls<n_initial_points."""
+def test_n_trials_lower_n_initial_points():
+    """Assert than an error is raised when n_trials<n_initial_points."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LDA"], n_calls=(5, 2), n_initial_points=(2, 3))
+    atom.run(["LR", "LDA"], n_trials=(5, 2), n_initial_points=(2, 3))
     assert atom.errors.get("LDA")
 
 
 def test_est_params_removed_from_bo():
     """Assert that all params in est_params are dropped from the BO."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB", n_calls=2, n_initial_points=1, est_params={"n_estimators": 220})
+    atom.run("LGB", n_trials=2, n_initial_points=1, est_params={"n_estimators": 220})
     assert "n_estimators" not in atom.lgb.bo.params[0]
 
 
 def test_bo_with_no_hyperparameters():
     """Assert that the BO is skipped when there are no hyperparameters."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models="BNB", n_calls=10, est_params={"alpha": 1.0, "fit_prior": True})
+    atom.run(models="BNB", n_trials=10, est_params={"alpha": 1.0, "fit_prior": True})
     assert atom.bnb.bo.empty
 
 
@@ -101,9 +101,9 @@ def test_custom_dimensions_is_name():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="LR",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={"dimensions": "max_iter"},
+        ht_params={"dimensions": "max_iter"},
     )
     assert list(atom.lr.best_params) == ["max_iter"]
 
@@ -113,9 +113,9 @@ def test_custom_dimensions_is_name_excluded():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="CNB",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={"dimensions": "!fit_prior"},
+        ht_params={"dimensions": "!fit_prior"},
     )
     assert list(atom.cnb.best_params) == ["alpha", "norm"]
 
@@ -124,7 +124,7 @@ def test_custom_dimensions_name_is_invalid():
     """Assert that an error is raised when an invalid parameter is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*is not a predefined hyperparameter.*"):
-        atom.run("LR", n_calls=5, bo_params={"dimensions": "invalid"})
+        atom.run("LR", n_trials=5, ht_params={"dimensions": "invalid"})
 
 
 def test_custom_dimensions_is_dim():
@@ -132,9 +132,9 @@ def test_custom_dimensions_is_dim():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="LR",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=2,
-        bo_params={"dimensions": Integer(10, 20, name="max_iter")},
+        ht_params={"dimensions": Integer(10, 20, name="max_iter")},
         random_state=1,
     )
     assert list(atom.lr.best_params) == ["max_iter"]
@@ -144,13 +144,13 @@ def test_custom_dimensions_include_and_excluded():
     """Assert that an error is raised when parameters are included and excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*either include or exclude.*"):
-        atom.run("LR", n_calls=5, bo_params={"dimensions": ["!max_iter", "penalty"]})
+        atom.run("LR", n_trials=5, ht_params={"dimensions": ["!max_iter", "penalty"]})
 
 
 def test_default_parameters():
     """Assert that default parameters are used when n_initial_points=1."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models="MLP", n_calls=2, n_initial_points=1)
+    atom.run(models="MLP", n_trials=2, n_initial_points=1)
     assert atom.mlp.bo.params[0]["hidden_layer_sizes"] == (100,)
     assert atom.mlp.bo.params[0]["solver"] == "adam"
 
@@ -160,7 +160,7 @@ def test_default_parameter_not_in_dimension():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="SGD",
-        n_calls=2,
+        n_trials=2,
         n_initial_points=1,
         est_params={"learning_rate": "constant"},
     )
@@ -171,7 +171,7 @@ def test_default_parameter_not_in_dimension():
 def test_all_base_estimators(est):
     """Assert that the pipeline works for all base estimators."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR", n_calls=5, bo_params={"base_estimator": est})
+    atom.run("LR", n_trials=5, ht_params={"base_estimator": est})
 
 
 def test_sample_weight_fit():
@@ -179,7 +179,7 @@ def test_sample_weight_fit():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models="LGB",
-        n_calls=5,
+        n_trials=5,
         est_params={"sample_weight_fit": list(range(len(atom.y_train)))},
     )
 
@@ -188,7 +188,7 @@ def test_bo_with_pipeline():
     """Assert that the BO works with a transformer pipeline."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode()
-    atom.run("SGD", n_calls=5, n_initial_points=2)
+    atom.run("SGD", n_trials=5, n_initial_points=2)
     assert not atom.sgd.bo.empty
 
 
@@ -198,9 +198,9 @@ def test_early_stopping(model):
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
         models=model,
-        n_calls=5,
+        n_trials=5,
         est_params={"n_estimators": 10},
-        bo_params={"early_stopping": 0.1},
+        ht_params={"early_stopping": 0.1},
     )
     assert getattr(atom, model)._stopped != ("---", "---")
 
@@ -208,7 +208,7 @@ def test_early_stopping(model):
 def test_skip_duplicate_calls():
     """Assert that calls with the same parameters skip the calculation."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("dummy", n_calls=5)
+    atom.run("dummy", n_trials=5)
     assert atom.dummy.bo["score"].nunique() < len(atom.dummy.bo["score"])
 
 
@@ -216,17 +216,9 @@ def test_skip_duplicate_calls():
 def test_nested_runs_to_mlflow(mlflow):
     """Assert that the BO is logged to mlflow as nested runs."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
-    atom.log_bo = True
-    atom.run("Tree", n_calls=5)
+    atom.log_ht = True
+    atom.run("Tree", n_trials=5)
     assert mlflow.call_count == 6  # BO iterations + fit
-
-
-@pytest.mark.parametrize("cv", [1, 3])
-def test_verbose_is_1(cv):
-    """Assert that the pipeline works for verbose=1."""
-    atom = ATOMRegressor(X_reg, y_reg, verbose=1, random_state=1)
-    atom.run("Tree", n_calls=5, bo_params={"cv": cv})
-    assert not atom.errors
 
 
 @patch("mlflow.set_tags")
@@ -284,14 +276,14 @@ def test_bootstrap_attribute_types():
     """Assert that the bootstrap attributes have python types (not numpy)."""
     # For single-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB", n_calls=5, n_bootstrap=5)
-    assert isinstance(atom.lgb.metric_bootstrap, np.ndarray)
+    atom.run("LGB", n_trials=5, n_bootstrap=5)
+    assert isinstance(atom.lgb.score_bootstrap, np.ndarray)
     assert isinstance(atom.lgb.mean_bootstrap, float)
 
     # For multi-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB", metric=("f1", "auc", "recall"), n_bootstrap=5)
-    assert isinstance(atom.lgb.metric_bootstrap, np.ndarray)
+    assert isinstance(atom.lgb.score_bootstrap, np.ndarray)
     assert isinstance(atom.lgb.mean_bootstrap, list)
 
 
@@ -308,16 +300,16 @@ def test_metrics_property_single_metric():
     """Assert that the metric properties return a value for single metric."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="f1")
-    assert isinstance(atom.tree.metric_train, float)
-    assert isinstance(atom.tree.metric_test, float)
+    assert isinstance(atom.tree.score_train, float)
+    assert isinstance(atom.tree.score_test, float)
 
 
 def test_metrics_property_multi_metric():
     """Assert that the metric properties return a list for multi-metric."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric=["f1", "recall"])
-    assert isinstance(atom.tree.metric_train, list)
-    assert isinstance(atom.tree.metric_test, list)
+    assert isinstance(atom.tree.score_train, list)
+    assert isinstance(atom.tree.score_test, list)
 
 
 # Test prediction properties ======================================= >>
@@ -558,7 +550,7 @@ def test_clear():
     assert atom.lr._scores["train"]
     assert not atom.lr._shap._shap_values.empty
     atom.clear()
-    assert atom.lr._pred == [None] * 15
+    assert atom.lr._pred == [None] * 12
     assert not atom.lr._scores["train"]
     assert atom.lr._shap._shap_values.empty
 

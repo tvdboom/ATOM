@@ -3,7 +3,7 @@
 
 :: atom.basemodel:BaseModel.decision_function
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - returns

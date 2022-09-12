@@ -4,7 +4,7 @@
 <div style="font-size:20px">
 <em>class</em> atom.training.<strong style="color:#008AB8">TrainSizingRegressor</strong>(models=None,
 metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
-train_sizes=5, n_calls=0, n_initial_points=5, est_params=None, bo_params=None,
+train_sizes=5, n_trials=0, n_initial_points=5, est_params=None, ht_params=None,
 n_bootstrap=0, n_jobs=1, gpu=False, verbose=0, warnings=True, logger=None,
 experiment=None, random_state=None)
 <span style="float:right">
@@ -107,7 +107,7 @@ value N it's equal to np.linspace(1.0/N, 1.0, N).</li>
 total number of samples.</li>
 </ul>
 <p>
-<strong>n_calls: int or sequence, default=0</strong><br>
+<strong>n_trials: int or sequence, default=0</strong><br>
 Maximum number of iterations of the BO. It includes the random
 points of <code>n_initial_points</code>. If 0, skip the BO and
 fit the model on its default parameters. If sequence, the n-th
@@ -116,7 +116,7 @@ value applies to the n-th model.
 <p>
 <strong>n_initial_points: int or sequence, default=5</strong><br>
 Initial number of random tests of the BO before fitting the
-surrogate function. If equal to <code>n_calls</code>, the optimizer will
+surrogate function. If equal to <code>n_trials</code>, the optimizer will
 technically be performing a random search. If sequence, the n-th
 value applies to the n-th model.
 </p>
@@ -128,7 +128,7 @@ use the acronyms as key (or 'all' for all models) and a dict
 of the parameters as value. Add _fit to the parameter's name
 to pass it to the fit method instead of the initializer.
 </p>
-<strong>bo_params: dict, default=None</strong><br>
+<strong>ht_params: dict, default=None</strong><br>
 Additional parameters to for the BO. These can include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>base_estimator: str, default="GP"</b><br>
@@ -148,7 +148,7 @@ in a subtrain and validation set.</li>
 <li><b>early stopping: int, float or None, default=None</b><br>Training
 will stop if the model didn't improve in last <code>early_stopping</code> rounds. If <1,
 fraction of rounds from the total. If None, no early stopping is performed. Only
-available for models that allow in-training evaluation.</li>
+available for models that allow in-training validation.</li>
 <li><b>callback: callable or list of callables, default=None</b><br>Callbacks for the BO.</li>
 <li><b>dimensions: dict, list or None, default=None</b><br>Custom hyperparameter
 space for the bayesian optimization. Can be a list to share dimensions across
@@ -338,20 +338,20 @@ Dictionary of the encountered exceptions (if any).
 <p>
 <strong>winners: list of str</strong><br>
 Model names ordered by performance on the test set (either through the
-<code>metric_test</code> or <code>mean_bootstrap</code> attribute).
+<code>score_test</code> or <code>mean_bootstrap</code> attribute).
 </p>
 <p>
 <strong>winner: <a href="../../../user_guide/models">model</a></strong><br>
 Model subclass that performed best on the test set (either through the
-<code>metric_test</code> or <code>mean_bootstrap</code> attribute).
+<code>score_test</code> or <code>mean_bootstrap</code> attribute).
 </p>
 <strong>results: pd.DataFrame</strong><br>
 Dataframe of the training results. Columns can include:
 <ul style="line-height:1.2em;margin-top:5px">
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
-<li><b>metric_train:</b> Metric score on the training set.</li>
-<li><b>metric_test:</b> Metric score on the test set.</li>
+<li><b>score_train:</b> Metric score on the training set.</li>
+<li><b>score_test:</b> Metric score on the test set.</li>
 <li><b>time_fit:</b> Time spent fitting and evaluating.</li>
 <li><b>mean_bootstrap:</b> Mean score of the bootstrap results.</li>
 <li><b>std_bootstrap:</b> Standard deviation score of the bootstrap results.</li>
@@ -915,7 +915,7 @@ instance.
 from atom.training import TrainSizingRegressor
 
 # Run the pipeline
-trainer = TrainSizingRegressor("RF", n_calls=5, n_initial_points=3)
+trainer = TrainSizingRegressor("RF", n_trials=5, n_initial_points=3)
 trainer.run(train, test)
 
 # Analyze the results

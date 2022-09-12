@@ -3,7 +3,7 @@
 
 :: atom.api:ATOMClassifier
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
     :: see also
@@ -61,6 +61,7 @@ attributes accordingly.
             - atom.branch:Branch.target
             - scaled
             - duplicates
+            - missing
             - nans
             - n_nans
             - numerical
@@ -100,7 +101,7 @@ experiment are tracked. Read more in the [user guide][tracking].
     - attributes:
         from_docstring: False
         include:
-            - log_bo
+            - log_ht
             - log_model
             - log_plots
             - log_data

@@ -3,7 +3,7 @@
 
 :: atom.basemodel:BaseModel.predict_log_proba
     :: signature
-    :: description
+    :: head
     :: table:
         - parameters
         - returns

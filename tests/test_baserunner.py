@@ -233,21 +233,21 @@ def test_metric_property_no_run():
 def test_errors_property():
     """Assert that the errors property returns the model's errors."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LGB"], n_calls=5, n_initial_points=(2, 6))
+    atom.run(["Tree", "LGB"], n_trials=5, n_initial_points=(2, 6))
     assert "LGB" in atom.errors
 
 
 def test_winners_property():
     """Assert that the winners property returns the best models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"], n_calls=0)
+    atom.run(["LR", "Tree", "LGB"], n_trials=0)
     assert atom.winners == ["LR", "LGB", "Tree"]
 
 
 def test_winner_property():
     """Assert that the winner property returns the best model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"], n_calls=0)
+    atom.run(["LR", "Tree", "LGB"], n_trials=0)
     assert atom.winner is atom.lr
 
 
@@ -494,7 +494,7 @@ def test_clear():
     assert atom.lr._scores["train"]
     assert not atom.lgb._shap._shap_values.empty
     atom.clear()
-    assert atom.lr._pred == [None] * 15
+    assert atom.lr._pred == [None] * 12
     assert not atom.lr._scores["train"]
     assert atom.lgb._shap._shap_values.empty
 
@@ -610,9 +610,9 @@ def test_merge():
 def test_merge_with_suffix():
     """Assert that the merger handles branches, models and attributes."""
     atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom_1.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
+    atom_1.run(["Tree", "LGB"], n_trials=3, n_initial_points=(1, 5))
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom_2.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
+    atom_2.run(["Tree", "LGB"], n_trials=3, n_initial_points=(1, 5))
     atom_1.merge(atom_2)
     assert list(atom_1._branches) == ["master", "master2"]
     assert atom_1.models == ["Tree", "Tree2"]

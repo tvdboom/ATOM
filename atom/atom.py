@@ -82,7 +82,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         self.n_rows = n_rows
         self.test_size = test_size
         self.holdout_size = holdout_size
-        self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
+
+        self._missing = [
+            None, np.nan, np.inf, -np.inf, "", "?", "NA", "nan", "NaN", "None", "inf"
+        ]
 
         self._current = "master"  # Keeps track of the branch the user is in
         self._branches = CustomDict({self._current: Branch(self, self._current)})
@@ -105,6 +108,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             self.log("GPU training enabled.", 1)
         if self.engine != "sklearn":
             self.log(f"Backend engine: {self.engine}.", 1)
+        if self.experiment:
+            self.log(f"Mlflow experiment: {self.experiment}.", 1)
 
         # System settings only to logger
         self.log("\nSystem info ====================== >>", 3)
@@ -179,6 +184,24 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             self.log(f"New branch {self._current} successfully created.", 1)
 
     @property
+    def missing(self) -> list:
+        """Values that are considered "missing".
+
+        These values are used by the [clean][self-clean] and
+        [impute][self-impute] methods. Default values are: None, NaN,
+        +inf, -inf, "", "?", "None", "NA", "nan", "NaN" and "inf".
+        Note that None, NaN, +inf and -inf are always considered
+        missing since they are incompatible with sklearn estimators.
+
+        """
+        return self._missing
+
+    @missing.setter
+    @typechecked
+    def missing(self, value: SEQUENCE_TYPES):
+        self._missing = list(set(list(value) + [None, np.nan, np.inf, -np.inf]))
+
+    @property
     def scaled(self) -> bool:
         """Whether the feature set is scaled.
 
@@ -200,7 +223,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
     def nans(self) -> pd.Series:
         """Columns with the number of missing values in them."""
         if not is_sparse(self.X):
-            nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
+            nans = self.dataset.replace(self.missing, np.NaN)
             nans = nans.isna().sum()
             return nans[nans > 0]
 
@@ -208,7 +231,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
     def n_nans(self) -> int:
         """Number of samples containing missing values."""
         if not is_sparse(self.X):
-            nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
+            nans = self.dataset.replace(self.missing, np.NaN)
             nans = nans.isna().sum(axis=1)
             return len(nans[nans > 0])
 
@@ -320,7 +343,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             objective=kwargs.pop("objective", "auto"),
             automl_algorithm=kwargs.pop("automl_algorithm", "iterative"),
             n_jobs=kwargs.pop("n_jobs", self.n_jobs),
-            verbose=kwargs.pop("verbose", True if self.verbose > 1 else False),
+            verbose=kwargs.pop("verbose", self.verbose > 1),
             random_seed=kwargs.pop("random_seed", self.random_state),
             **kwargs,
         )
@@ -336,7 +359,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             else:
                 for key, value in MODELS.items():
                     m = value(self, fast_init=True)
-                    if m.est_class.__name__ == est._component_obj.__class__.__name__:
+                    if m._est_class.__name__ == est._component_obj.__class__.__name__:
                         est.acronym, est.fullname = key, m.fullname
 
                 # If it's not any of the predefined models, create a new acronym
@@ -349,8 +372,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
                 # Save metric scores on train and test set
                 for metric in self._metric.values():
-                    model._calculate_score(metric, "train")
-                    model._calculate_score(metric, "test")
+                    model._get_score(metric, "train")
+                    model._get_score(metric, "test")
 
                 self._models.update({model.name: model})
                 self.log(
@@ -427,7 +450,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         for col in columns:
             # Drop missing values from the column before fitting
-            X = self[col].replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
+            X = self[col].replace(self.missing, np.NaN).dropna()
 
             for dist in distributions:
                 # Get KS-statistic with fitted distribution parameters
@@ -934,7 +957,20 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
     # Base transformers ============================================ >>
 
     def _prepare_kwargs(self, kwargs: dict, params: Optional[List[str]] = None) -> dict:
-        """Return kwargs with atom's values if not specified."""
+        """Return kwargs with atom's values if not specified.
+
+        This method is used for all transformers and runners to pass
+        atom's BaseTransformer's properties to the classes.
+
+        Parameters
+        ----------
+        kwargs: dict
+            Keyword arguments specified in the function call.
+
+        params: list or None
+            Parameters in the class' signature.
+
+        """
         for attr in BaseTransformer.attrs:
             if (not params or attr in params) and attr not in kwargs:
                 kwargs[attr] = getattr(self, attr)
@@ -987,11 +1023,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             raise AttributeError("Added transformers should have a transform method!")
 
         # Add BaseTransformer params to the estimator if left to default
-        if all(hasattr(transformer, attr) for attr in ("get_params", "set_params")):
-            sign = signature(transformer.__init__).parameters
-            for p in ("n_jobs", "random_state"):
-                if p in sign and transformer.get_params()[p] == sign[p]._default:
-                    transformer.set_params(**{p: getattr(self, p)})
+        sign = signature(transformer.__init__).parameters
+        for p in ("n_jobs", "random_state"):
+            if p in sign and transformer.get_params()[p] == sign[p]._default:
+                transformer.set_params(**{p: getattr(self, p)})
 
         # Transformers remember the train_only and cols parameters
         transformer._train_only = train_only
@@ -1175,8 +1210,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Balancer).parameters)
-        balancer = Balancer(strategy=strategy, **kwargs)
+        balancer = Balancer(
+            strategy=strategy,
+            **self._prepare_kwargs(kwargs, signature(Balancer).parameters),
+        )
 
         # Add target column mapping for cleaner printing
         balancer.mapping = self.mapping.get(self.target, {})
@@ -1212,15 +1249,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Cleaner).parameters)
         cleaner = Cleaner(
             drop_types=drop_types,
             strip_categorical=strip_categorical,
             drop_duplicates=drop_duplicates,
             drop_missing_target=drop_missing_target,
             encode_target=encode_target if self.goal == "class" else False,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(Cleaner).parameters),
         )
+
         # Pass atom's missing values to the cleaner before transforming
         cleaner.missing = self.missing
 
@@ -1252,8 +1289,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Discretizer).parameters)
-        discretizer = Discretizer(strategy=strategy, bins=bins, labels=labels, **kwargs)
+        discretizer = Discretizer(
+            strategy=strategy,
+            bins=bins,
+            labels=labels,
+            **self._prepare_kwargs(kwargs, signature(Discretizer).parameters),
+        )
 
         self._add_transformer(discretizer, columns=columns)
 
@@ -1295,14 +1336,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Encoder).parameters)
         encoder = Encoder(
             strategy=strategy,
             max_onehot=max_onehot,
             ordinal=ordinal,
             rare_to_value=rare_to_value,
             value=value,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(Encoder).parameters),
         )
 
         self._add_transformer(encoder, columns=columns)
@@ -1336,14 +1376,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Imputer).parameters)
         imputer = Imputer(
             strat_num=strat_num,
             strat_cat=strat_cat,
             max_nan_rows=max_nan_rows,
             max_nan_cols=max_nan_cols,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(Imputer).parameters),
         )
+
         # Pass atom's missing values to the imputer before transforming
         imputer.missing = self.missing
 
@@ -1367,8 +1407,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Normalizer).parameters)
-        normalizer = Normalizer(strategy=strategy, **kwargs)
+        normalizer = Normalizer(
+            strategy=strategy,
+            **self._prepare_kwargs(kwargs, signature(Normalizer).parameters),
+        )
 
         self._add_transformer(normalizer, columns=columns)
 
@@ -1406,13 +1448,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Pruner).parameters)
         pruner = Pruner(
             strategy=strategy,
             method=method,
             max_sigma=max_sigma,
             include_target=include_target,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(Pruner).parameters),
         )
 
         self._add_transformer(pruner, columns=columns, train_only=True)
@@ -1436,8 +1477,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Scaler).parameters)
-        scaler = Scaler(strategy=strategy, **kwargs)
+        scaler = Scaler(
+            strategy=strategy,
+            **self._prepare_kwargs(kwargs, signature(Scaler).parameters),
+        )
 
         self._add_transformer(scaler, columns=columns)
 
@@ -1478,7 +1521,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(TextCleaner).parameters)
         textcleaner = TextCleaner(
             decode=decode,
             lower_case=lower_case,
@@ -1493,7 +1535,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             drop_number=drop_number,
             regex_number=regex_number,
             drop_punctuation=drop_punctuation,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(TextCleaner).parameters),
         )
 
         self._add_transformer(textcleaner, columns=columns)
@@ -1523,13 +1565,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(TextNormalizer).parameters)
         normalizer = TextNormalizer(
             stopwords=stopwords,
             custom_stopwords=custom_stopwords,
             stem=stem,
             lemmatize=lemmatize,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(TextNormalizer).parameters),
         )
 
         self._add_transformer(normalizer, columns=columns)
@@ -1554,12 +1595,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Tokenizer).parameters)
         tokenizer = Tokenizer(
             bigram_freq=bigram_freq,
             trigram_freq=trigram_freq,
             quadgram_freq=quadgram_freq,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(Tokenizer).parameters),
         )
 
         self._add_transformer(tokenizer, columns=columns)
@@ -1586,11 +1626,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(Vectorizer).parameters)
         vectorizer = Vectorizer(
             strategy=strategy,
             return_sparse=return_sparse,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(Vectorizer).parameters),
         )
 
         self._add_transformer(vectorizer, columns=columns)
@@ -1625,13 +1664,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(FeatureExtractor).parameters)
         feature_extractor = FeatureExtractor(
             features=features,
             fmt=fmt,
             encoding_type=encoding_type,
             drop_columns=drop_columns,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(FeatureExtractor).parameters),
         )
 
         self._add_transformer(feature_extractor, columns=columns)
@@ -1655,12 +1693,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(FeatureGenerator).parameters)
         feature_generator = FeatureGenerator(
             strategy=strategy,
             n_features=n_features,
             operators=operators,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(FeatureGenerator).parameters),
         )
 
         self._add_transformer(feature_generator, columns=columns)
@@ -1693,13 +1730,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
         """
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(FeatureGrouper).parameters)
         feature_grouper = FeatureGrouper(
             group=group,
             name=name,
             operators=operators,
             drop_columns=drop_columns,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(FeatureGrouper).parameters),
         )
 
         self._add_transformer(feature_grouper, columns=columns)
@@ -1751,7 +1787,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                     kwargs["scoring"] = self._metric[0]
 
         columns = kwargs.pop("columns", None)
-        kwargs = self._prepare_kwargs(kwargs, signature(FeatureSelector).parameters)
         feature_selector = FeatureSelector(
             strategy=strategy,
             solver=solver,
@@ -1759,7 +1794,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             min_repeated=min_repeated,
             max_repeated=max_repeated,
             max_correlation=max_correlation,
-            **kwargs,
+            **self._prepare_kwargs(kwargs, signature(FeatureSelector).parameters),
         )
 
         self._add_transformer(feature_selector, columns=columns)
@@ -1874,10 +1909,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
-        bo_params: Optional[dict] = None,
+        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        ht_params: Optional[dict] = None,
         n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
@@ -1902,33 +1936,40 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         """
         metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)
 
-        params = (
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-        )
-
-        kwargs = self._prepare_kwargs(kwargs)
         if self.goal == "class":
-            trainer = DirectClassifier(*params, **kwargs)
+            trainer = DirectClassifier
         else:
-            trainer = DirectRegressor(*params, **kwargs)
+            trainer = DirectRegressor
 
-        self._run(trainer)
+        self._run(
+            trainer(
+                models=models,
+                metric=metric,
+                greater_is_better=greater_is_better,
+                needs_proba=needs_proba,
+                needs_threshold=needs_threshold,
+                est_params=est_params,
+                n_trials=n_trials,
+                ht_params=ht_params,
+                n_bootstrap=n_bootstrap,
+                **self._prepare_kwargs(kwargs),
+            )
+        )
 
     @composed(crash, method_to_log, typechecked)
     def successive_halving(
         self,
         models: Union[str, Predictor, SEQUENCE_TYPES],
         metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        *,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         skip_runs: INT = 0,
-        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
-        est_params: Optional[dict] = None,
-        bo_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
+        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
+        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        ht_params: Optional[dict] = None,
+        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a successive halving fashion.
@@ -1958,33 +1999,41 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         """
         metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)
 
-        params = (
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            skip_runs, n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-        )
-
-        kwargs = self._prepare_kwargs(kwargs)
         if self.goal == "class":
-            trainer = SuccessiveHalvingClassifier(*params, **kwargs)
+            trainer = SuccessiveHalvingClassifier
         else:
-            trainer = SuccessiveHalvingRegressor(*params, **kwargs)
+            trainer = SuccessiveHalvingRegressor
 
-        self._run(trainer)
+        self._run(
+            trainer(
+                models=models,
+                metric=metric,
+                greater_is_better=greater_is_better,
+                needs_proba=needs_proba,
+                needs_threshold=needs_threshold,
+                skip_runs=skip_runs,
+                est_params=est_params,
+                n_trials=n_trials,
+                ht_params=ht_params,
+                n_bootstrap=n_bootstrap,
+                **self._prepare_kwargs(kwargs),
+            )
+        )
 
     @composed(crash, method_to_log, typechecked)
     def train_sizing(
         self,
         models: Union[str, Predictor, SEQUENCE_TYPES],
         metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        *,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
-        n_calls: Union[INT, SEQUENCE_TYPES] = 0,
-        n_initial_points: Union[INT, SEQUENCE_TYPES] = 5,
-        est_params: Optional[dict] = None,
-        bo_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
+        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
+        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        ht_params: Optional[dict] = None,
+        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Train and evaluate the models in a train sizing fashion.
@@ -2012,15 +2061,23 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         """
         metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)
 
-        params = (
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            train_sizes, n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
-        )
-
-        kwargs = self._prepare_kwargs(kwargs)
         if self.goal == "class":
-            trainer = TrainSizingClassifier(*params, **kwargs)
+            trainer = TrainSizingClassifier
         else:
-            trainer = TrainSizingRegressor(*params, **kwargs)
+            trainer = TrainSizingRegressor
 
-        self._run(trainer)
+        self._run(
+            trainer(
+                models=models,
+                metric=metric,
+                greater_is_better=greater_is_better,
+                needs_proba=needs_proba,
+                needs_threshold=needs_threshold,
+                train_sizes=train_sizes,
+                est_params=est_params,
+                n_trials=n_trials,
+                ht_params=ht_params,
+                n_bootstrap=n_bootstrap,
+                **self._prepare_kwargs(kwargs),
+            )
+        )

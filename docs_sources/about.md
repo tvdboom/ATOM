@@ -1,4 +1,4 @@
-# About
+**# About
 -------
 
 ## What is it?
@@ -9,7 +9,7 @@ exploration phase of their machine learning projects. ATOM is a
 low-code, easy-to-use library, capable of running experiments
 quickly and efficiently, enabling the user to go from raw data
 to generating insights in just a few lines of code. Click
-[here](../getting_started) to get started.
+[here][getting-started] to get started.
 
 <br>
 
@@ -127,6 +127,7 @@ BibTeX entry:
     url = {https://tvdboom.github.io/ATOM/},
 }
 ```
+
 <br>
 
 ## Support
@@ -134,7 +135,8 @@ BibTeX entry:
 ATOM recognizes the support from [JetBrains](http://www.jetbrains.com) by providing
 core project contributors with a set of developer tools free of charge.
 
-<div align="center">
-    <a href="https://www.jetbrains.com" draggable="false"><img src="../img/jetbrains.png" alt="JetBrains" height="200" width="200" style="margin-right:120px" draggable="false"/></a>
-    <a href="https://www.jetbrains.com/pycharm/" draggable="false"><img src="../img/pycharm.png" alt="pyCharm" height="200" width="200" draggable="false"/></a>
+<div align="center" markdown>
+  [![JetBrains](img/jetbrains.png){ width="200" height="200" }](https://www.jetbrains.com)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  [![PyCharm](img/pycharm.png){ width="200" height="200" }](https://www.jetbrains.com/pycharm/)
 </div>

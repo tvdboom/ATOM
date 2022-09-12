@@ -8,13 +8,12 @@ Description: Module containing the BaseTrainer class.
 """
 
 import traceback
-from datetime import datetime
+from datetime import datetime as dt
 from importlib.util import find_spec
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import matplotlib.pyplot as plt
 import mlflow
-from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
 
 from atom.baserunner import BaseRunner
 from atom.branch import Branch
@@ -39,8 +38,8 @@ class BaseTrainer(BaseTransformer, BaseRunner):
 
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
-        device, engine, verbose, warnings, logger, experiment, random_state,
+        est_params, n_trials, ht_params, n_bootstrap, n_jobs, device, engine,
+        verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -59,10 +58,9 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         self.greater_is_better = greater_is_better
         self.needs_proba = needs_proba
         self.needs_threshold = needs_threshold
-        self.n_calls = n_calls
-        self.n_initial_points = n_initial_points
         self.est_params = est_params
-        self.bo_params = bo_params
+        self.n_trials = n_trials
+        self.ht_params = ht_params
         self.n_bootstrap = n_bootstrap
 
         # Branching attributes
@@ -74,7 +72,9 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         # Training attributes
         self.task = None
         self.scaled = None
-        self._bo = {"base_estimator": "GP", "cv": 1, "callback": [], "kwargs": {}}
+        self._n_trials = {}
+        self._n_bootstrap = {}
+        self._ht_params = {"cv": 1, "plot": False}
         self._errors = CustomDict()
 
     @staticmethod
@@ -124,11 +124,44 @@ class BaseTrainer(BaseTransformer, BaseRunner):
 
         return metric_dict
 
+    def _check_param(self, param: str, value: Any) -> dict:
+        """Check the validity of one parameter.
+
+        Parameters accept three formats:
+
+        - dict: Each key is the name of a model, and the value applies
+          only to that model.
+        - sequence: The N-th element applies to the N-th model. Has to
+          have the same length as the models.
+        - value: Same value applies to all models.
+
+        Parameters
+        ----------
+        param: str
+            Name of the parameter to check.
+
+        value: Any
+            Value of the parameter.
+
+        """
+        if isinstance(value, SEQUENCE):
+            if len(value) != len(self._models):
+                raise ValueError(
+                    f"Invalid value for the {param} parameter. Length "
+                    "should be equal to the number of models, got len"
+                    f"(models)={len(self._models)} and len({param})={len(value)}."
+                )
+            return {k: v for k, v in zip(self._models, value)}
+        elif not isinstance(value, dict):
+            return {k: value for k in self._models}
+
+        return value
+
     def _prepare_parameters(self):
         """Check the validity of the input parameters.
 
-        Creates the models, assigns a metric, prepares est_params
-        and the hyperparameter tuning parameters.
+        Creates the models, assigns a metric, prepares the estimator's
+        parameters and the parameters for hyperparameter tuning.
 
         """
         if self.scaled is None and not is_sparse(self.X):
@@ -208,43 +241,13 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 needs_threshold=self.needs_threshold,
             )
 
-        # Check validity sequential parameters ===================== >>
-
-        for param in ("n_calls", "n_initial_points", "n_bootstrap"):
-            p = lst(getattr(self, param))
-            if len(p) != 1 and len(p) != len(self._models):
-                raise ValueError(
-                    f"Invalid value for the {param} parameter. Length "
-                    "should be equal to the number of models, got len"
-                    f"(models)={len(self._models)} and len({param})={len(p)}."
-                )
-
-            for i, model in enumerate(self._models.values()):
-                value = p[i % len(p)]
-                if param == "n_calls" and (value == 1 or value < 0):
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=2, got {value}."
-                    )
-                elif param == "n_initial_points" and value <= 0:
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=1, got {value}."
-                    )
-                elif param == "n_bootstrap" and value < 0:
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=0, got {value}."
-                    )
-
-                setattr(model, "_" + param, value)
-
         # Prepare est_params ======================================= >>
 
-        if self.est_params:
+        if self.est_params is not None:
+            est_params = self._check_param("est_params", accepts_kwargs=True)
             for name, model in self._models.items():
                 params = {}
-                for key, value in self.est_params.items():
+                for key, value in est_params.items():
                     # Parameters for this model only
                     if key.lower() == name.lower() or key.lower() == "all":
                         params.update(value)
@@ -258,90 +261,15 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                     else:
                         model._est_params[key] = value
 
-        # Prepare bo params ======================================== >>
+                model._check_est_params()
 
-        base_estimators = ["GP", "RF", "ET", "GBRT"]
-        exc = ["max_time", "delta_x", "delta_y", "plot", "early_stopping", "dimensions"]
+        # Prepare ht parameters ==================================== >>
 
-        if self.bo_params:
-            if self.bo_params.get("base_estimator"):
-                self._bo["base_estimator"] = self.bo_params["base_estimator"]
-                if isinstance(self._bo["base_estimator"], str):
-                    if self._bo["base_estimator"].upper() not in base_estimators:
-                        raise ValueError(
-                            "Invalid value for the base_estimator parameter, "
-                            f"got {self.bo_params['base_estimator']}. Choose "
-                            f"from: {', '.join(base_estimators)}."
-                        )
-
-            if self.bo_params.get("callback"):
-                self._bo["callback"].extend(lst(self.bo_params["callback"]))
-
-            if "max_time" in self.bo_params:
-                if self.bo_params["max_time"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the max_time parameter. Value "
-                        f"should be >0, got {self.bo_params['max_time']}."
-                    )
-                max_time_callback = DeadlineStopper(self.bo_params["max_time"])
-                self._bo["callback"].append(max_time_callback)
-
-            if "delta_x" in self.bo_params:
-                if self.bo_params["delta_x"] < 0:
-                    raise ValueError(
-                        "Invalid value for the delta_x parameter. "
-                        f"Value should be >=0, got {self.bo_params['delta_x']}."
-                    )
-                delta_x_callback = DeltaXStopper(self.bo_params["delta_x"])
-                self._bo["callback"].append(delta_x_callback)
-
-            if "delta_y" in self.bo_params:
-                if self.bo_params["delta_y"] < 0:
-                    raise ValueError(
-                        "Invalid value for the delta_y parameter. Value "
-                        f"should be >=0, got {self.bo_params['delta_y']}."
-                    )
-                delta_y_callback = DeltaYStopper(self.bo_params["delta_y"], n_best=5)
-                self._bo["callback"].append(delta_y_callback)
-
-            if self.bo_params.get("plot"):
-                self._bo["callback"].append(PlotCallback(self))
-
-            if "cv" in self.bo_params:
-                if self.bo_params["cv"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the cv parameter. Value "
-                        f"should be >=0, got {self.bo_params['cv']}."
-                    )
-                self._bo["cv"] = self.bo_params["cv"]
-
-            if "early_stopping" in self.bo_params:
-                if self.bo_params["early_stopping"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the early_stopping parameter. Value "
-                        f"should be >=0, got {self.bo_params['early_stopping']}."
-                    )
-                for model in self._models.values():
-                    if hasattr(model, "custom_fit"):
-                        model._early_stopping = self.bo_params["early_stopping"]
-
-            # Add hyperparameter dimensions to every model subclass
-            if self.bo_params.get("dimensions"):
-                for name, model in self._models.items():
-                    # If not dict, the dimensions are for all models
-                    if not isinstance(self.bo_params["dimensions"], dict):
-                        model._dimensions = lst(self.bo_params["dimensions"])
-                    else:
-                        # Dimensions for every specific model
-                        for key, value in self.bo_params["dimensions"].items():
-                            if key.lower() == name.lower() or key.lower() == "all":
-                                model._dimensions.extend(list(lst(value)))
-
-            # The remaining bo_params are added as kwargs to the optimizer
-            self._bo["kwargs"] = {
-                k: v for k, v in self.bo_params.items()
-                if k not in list(self._bo) + exc
-            }
+        self._n_trials = self._check_param("n_trials", self.n_trials)
+        self._n_bootstrap = self._check_param("n_bootstrap", self.n_bootstrap)
+        self._ht_params.update(self.ht_params or {})
+        for key, value in self._ht_params.items():
+            self._ht_params[key] = self._check_param(key, value)
 
     def _core_iteration(self):
         """Fit and evaluate the models.
@@ -351,7 +279,7 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         results.
 
         """
-        t = datetime.now()  # Measure the time the whole pipeline takes
+        t = dt.now()  # Measure the time the whole pipeline takes
 
         self.log("\nTraining " + "=" * 25 + " >>", 1)
         if not self.__class__.__name__.startswith("SuccessiveHalving"):
@@ -360,23 +288,21 @@ class BaseTrainer(BaseTransformer, BaseRunner):
 
         to_remove = []
         for i, m in enumerate(self._models.values()):
-            model_time = datetime.now()
-
             try:  # If an error occurs, skip the model
                 if self.experiment:  # Start mlflow run
                     m._run = mlflow.start_run(run_name=m.name)
 
-                # If it has predefined or custom dimensions, run the BO
-                if (m._dimensions or hasattr(m, "get_dimensions")) and m._n_calls > 0:
-                    m.bayesian_optimization()
+                # If it has predefined or custom dimensions, run the ht
+                ht_params = {k: v[m.name] for k, v in self._ht_params.items()}
+                if self._n_trials[m.name] > 0:
+                    if ht_params.get("distributions", {}) or m._get_distributions():
+                        m.hyperparameter_tuning(self._n_trials[m.name], ht_params)
 
                 m.fit()
 
-                if m._n_bootstrap:
-                    m.bootstrap()
+                if self._n_bootstrap[m.name]:
+                    m.bootstrapping(self._n_bootstrap[m.name])
 
-                # Get the total time spend on this model
-                m.time = (datetime.now() - model_time).total_seconds()
                 self.log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
 
             except Exception as ex:
@@ -394,10 +320,10 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 # Cannot remove immediately to maintain the iteration order
                 to_remove.append(m.name)
 
-                if self.bo_params and self.bo_params.get("plot"):
+                if self._ht_params.get("plot"):
                     PlotCallback.c += 1  # Next model
                     plt.close()  # Close the crashed plot
-            finally:
+
                 if self.experiment:
                     mlflow.end_run()
 
@@ -415,7 +341,7 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 )
 
         self.log(f"\n\nFinal results {'=' * 20} >>", 1)
-        self.log(f"Total time: {time_to_str((datetime.now() - t).total_seconds())}", 1)
+        self.log(f"Total time: {time_to_str((dt.now() - t).total_seconds())}", 1)
         self.log("-" * 37, 1)
 
         # Get max length of the model names

@@ -16,9 +16,8 @@ The available prediction methods are the most common methods for estimators
 in sklearn's API:
 
 :: atom.basemodel:BaseModel
-    :: members:
+    :: methods:
         toc_only: True
-        url: ../../API/predicting/
         include:
             - decision_function
             - predict
@@ -37,10 +36,17 @@ are not calculated until the attribute is called for the first time.
 This mechanism avoids having to make (perhaps) expensive calculations
 that are never used, saving time and memory.
 
+!!! warning
+    The prediction attributes for the [score][] method return atom's
+    metric score on that set, not the metric returned by sklearn's score
+    method for estimators. Use the method's [`metric`][score-metric]
+    parameter to calculate a different metric.
+
 !!! note
-    Many of the [plots][] use the prediction attributes. This can considerably
-    increase the size of the instance for large datasets. Use the [clear](../../API/ATOM/atomclassifier/#clear)
-    method if you need to free some memory.
+    Many of the [plots][] use the prediction attributes. This can
+    considerably increase the size of the instance for large datasets.
+    Use the [clear][atomclassifier-clear] method if you need to free
+    some memory.
 
 
 ## Predictions on rows in the dataset

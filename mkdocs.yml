@@ -155,40 +155,40 @@ nav:
             - TrainSizingRegressor: API/training/trainsizingregressor.md
         - Models:
             - AdaBoost: API/models/adab.md
-            - Automated Relevance Determination: API/models/ard.md
+            - AutomatedRelevanceDetermination: API/models/ard.md
             - Bagging: API/models/bag.md
-            - Bayesian Ridge: API/models/br.md
-            - Bernoulli Naive Bayes: API/models/bnb.md
+            - BayesianRidge: API/models/br.md
+            - BernoulliNB: API/models/bnb.md
             - CatBoost: API/models/catb.md
-            - Categorical Naive Bayes: API/models/catnb.md
-            - Complement Naive Bayes: API/models/cnb.md
-            - Decision Tree: API/models/tree.md
-            - Dummy Estimator: API/models/dummy.md
-            - ElasticNet Regression: API/models/en.md
-            - Extra-Trees: API/models/et.md
-            - Gaussian Naive Bayes: API/models/gnb.md
-            - Gaussian Process: API/models/gp.md
-            - Gradient Boosting Machine: API/models/gbm.md
-            - Huber Regression: API/models/huber.md
-            - HistGBM: API/models/hgbm.md
-            - K-Nearest Neighbors: API/models/knn.md
-            - Kernel SVM: API/models/ksvm.md
-            - Lasso Regression: API/models/lasso.md
-            - Least Angle Regression: API/models/lars.md
+            - CategoricalNB: API/models/catnb.md
+            - ComplementNB: API/models/cnb.md
+            - DecisionTree: API/models/tree.md
+            - Dummy: API/models/dummy.md
+            - ElasticNet: API/models/en.md
+            - ExtraTrees: API/models/et.md
+            - GaussianNB: API/models/gnb.md
+            - GaussianProcess: API/models/gp.md
+            - GradientBoostingMachine: API/models/gbm.md
+            - HuberRegression: API/models/huber.md
+            - HistGradientBoosting: API/models/hgbm.md
+            - KNearestNeighbors: API/models/knn.md
+            - Lasso: API/models/lasso.md
+            - LeastAngleRegression: API/models/lars.md
             - LightGBM: API/models/lgb.md
-            - Linear Discriminant Analysis: API/models/lda.md
-            - Linear SVM: API/models/lsvm.md
-            - Logistic Regression: API/models/lr.md
-            - Multi-layer Perceptron: API/models/mlp.md
-            - Multinomial Naive Bayes: API/models/mnb.md
-            - Ordinary Least Squares: API/models/ols.md
-            - Passive Aggressive: API/models/pa.md
+            - LinearDiscriminantAnalysis: API/models/lda.md
+            - LinearSVM: API/models/lsvm.md
+            - LogisticRegression: API/models/lr.md
+            - MultiLayerPerceptron: API/models/mlp.md
+            - MultinomialNB: API/models/mnb.md
+            - OrdinaryLeastSquares: API/models/ols.md
+            - PassiveAggressive: API/models/pa.md
             - Perceptron: API/models/perc.md
-            - Quadratic Discriminant Analysis: API/models/qda.md
-            - Radius Nearest Neighbors: API/models/rnn.md
-            - Random Forest: API/models/rf.md
-            - Ridge Estimator: API/models/ridge.md
-            - Stochastic Gradient Descent: API/models/sgd.md
+            - QuadraticDiscriminantAnalysis: API/models/qda.md
+            - RadiusNearestNeighbors: API/models/rnn.md
+            - RandomForest: API/models/rf.md
+            - Ridge: API/models/ridge.md
+            - StochasticGradientDescent: API/models/sgd.md
+            - SupportVectorMachine: API/models/svm.md
             - XGBoost: API/models/xgb.md
         - Predicting:
             - decision_function: API/predicting/decision_function.md

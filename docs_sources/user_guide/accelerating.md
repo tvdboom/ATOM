@@ -36,13 +36,13 @@ variety of transformers and models.
 **Models**
 
 * [ElasticNet][]
-* [K-Nearest Neighbors][]
-* [Kernel SVM][]
+* [KNearestNeighbors][]
 * [Lasso][]
-* [Logistic Regression][]
-* [Ordinary Least Squares][]
-* [Random Forest][]
+* [LogisticRegression][]
+* [OrdinaryLeastSquares][]
+* [RandomForest][]
 * [Ridge][] (only for regression tasks)
+* [SupportVectorMachine][]
 
 
 <br><br>
@@ -123,19 +123,19 @@ engine parameter.
 
 **Models**
 
-* [Bernoulli Naive Bayes][] (only for cuML)
+* [BernoulliNB][] (only for cuML)
 * [CatBoost][]
-* [Categorical Naive Bayes][] (only for cuML)
+* [CategoricalNB][] (only for cuML)
 * [ElasticNet][] (only for cuML)
-* [Gaussian Naive Bayes][] (only for cuML)
-* [K-Nearest Neighbors][]
-* [Kernel SVM][]
+* [GaussianNB][] (only for cuML)
+* [KNearestNeighbors][]
 * [Lasso][] (only for cuML)
 * [LightGBM][] (requires [extra installations](https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html))
-* [Linear SVM][] (only for cuML)
-* [Logistic Regression][]
-* [Multinomial Naive Bayes][] (only for cuML)
-* [Ordinary Least Squares][]
-* [Random Forest][]
+* [LinearSVM][] (only for cuML)
+* [LogisticRegression][]
+* [MultinomialNB][] (only for cuML)
+* [OrdinaryLeastSquares][]
+* [RandomForest][]
 * [Ridge][] (only for regression tasks)
+* [SupportVectorMachine][]
 * [XGBoost][]

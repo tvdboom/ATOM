@@ -816,12 +816,12 @@ def test_errors_are_updated():
     """Assert that the found exceptions are updated in the errors attribute."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
 
-    # Produce an error on one model (when n_initial_points > n_calls)
-    atom.run(["Tree", "LGB"], n_calls=(3, 2), n_initial_points=(2, 5))
+    # Produce an error on one model (when n_initial_points > n_trials)
+    atom.run(["Tree", "LGB"], n_trials=(3, 2), n_initial_points=(2, 5))
     assert list(atom.errors) == ["LGB"]
 
     # Subsequent runs should remove the original model
-    atom.run(["Tree", "LGB"], n_calls=(5, 3), n_initial_points=(7, 1))
+    atom.run(["Tree", "LGB"], n_trials=(5, 3), n_initial_points=(7, 1))
     assert atom.models == "LGB"
 
 
