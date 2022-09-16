@@ -164,7 +164,6 @@ def ATOMModel(
     estimator: Predictor,
     *,
     acronym: Optional[str] = None,
-    fullname: Optional[str] = None,
     needs_scaling: bool = False,
 ) -> Predictor:
     """Convert an estimator to a model that can be ingested by atom.
@@ -185,9 +184,6 @@ def ATOMModel(
         capital letters in the estimator's \__name__ are used (only if
         two or more, else it uses the entire \__name__).
 
-    fullname: str or None, default=None
-        Full model's name. If None, the estimator's name is used.
-
     needs_scaling: bool, default=False
         Whether the model needs scaled features.
 
@@ -206,7 +202,6 @@ def ATOMModel(
     >>> ransac =  ATOMModel(
     ...      estimator=RANSACRegressor(),
     ...      acronym="RANSAC",
-    ...      fullname="Random Sample Consensus",
     ...      needs_scaling=False,
     ...  )
 
@@ -217,7 +212,7 @@ def ATOMModel(
     Models: RANSAC
     Metric: r2
 
-    Results for Random Sample Consensus:
+    Results for RANSACRegressor:
     Fit ---------------------------------------------
     Train evaluation --> r2: -2.1784
     Test evaluation --> r2: -9.4592
@@ -228,7 +223,7 @@ def ATOMModel(
     Final results ==================== >>
     Total time: 0.072s
     -------------------------------------
-    Random Sample Consensus --> r2: -9.4592 ~
+    RANSACRegressor --> r2: -9.4592 ~
 
     ```
 
@@ -237,8 +232,6 @@ def ATOMModel(
 
     if acronym:
         estimator.acronym = acronym
-    if fullname:
-        estimator.fullname = fullname
     estimator.needs_scaling = needs_scaling
 
     return estimator

@@ -80,13 +80,14 @@ some parameters that define the scorer's properties , such as if
 a higher or lower score is better (score or loss function) or if
 the function needs probability estimates or rounded predictions
 (see the [make_scorer](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html)
-function). ATOM lets you define the scorer for the pipeline in three ways:
+function). The [`metric`][directclassifier-metric] parameter accepts
+three ways of defining the scorer:
 
-* The `metric` parameter is the name of a [predefined scorer](#predefined-scorers).
-* The `metric` parameter is a function with signature metric(y, y_pred).
-  In this case, use the `greater_is_better`, `needs_proba` and `needs_threshold`
-  parameters to specify the scorer's properties.
-* The `metric` parameter is a scorer object.
+* Using the name of a [predefined scorer][].
+* Using a function with signature `function(y_true, y_pred) -> score`.
+  In this case, ATOM uses [make_scorer](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html)
+  with default parameters.
+* Using a scorer object.
 
 Note that all scorers follow the convention that higher return values
 are better than lower return values. Thus, metrics which measure the
@@ -103,9 +104,9 @@ as well as some custom acronyms and custom scorers. Since some of
 sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms
 for some of the most commonly used ones. These acronyms are
-case-insensitive and can be used in the `metric` parameter instead
-of the scorer's full name, e.g. `atom.run("LR", metric="BA")` will
-use `balanced_accuracy`. The available acronyms are:
+case-insensitive and can be used in the [`metric`][directclassifier-metric]
+parameter instead of the scorer's full name, e.g. `atom.run("LR", metric="BA")`
+uses `balanced_accuracy`. The available acronyms are:
 
 * "AP" for "average_precision"
 * "BA" for "balanced_accuracy"
@@ -142,22 +143,18 @@ tasks.
 Sometimes it is useful to measure the performance of the models in more
 than one way. ATOM lets you run the pipeline with multiple metrics at
 the same time. To do so, provide the `metric` parameter with a list of
-desired metrics, e.g. `atom.run("LDA", metric=["r2", "mse"])`. If you
-provide metric functions, don't forget to also provide a sequence of
-values to the `greater_is_better`, `needs_proba` and `needs_threshold`
-parameters, where the n-th value in corresponds to the n-th function.
-If you leave them as a single value, that value will apply to every
-provided metric.
+desired metrics, e.g. `atom.run("LDA", metric=["r2", "mse"])`.
 
 When fitting multi-metric runs, the resulting scores will return a list
 of metrics. For example, if you provided three metrics to the pipeline,
-`atom.knn.metric_bo` could return [0.8734, 0.6672, 0.9001]. Only the
-first metric of a multi-metric run is used to evaluate every step of
-the bayesian optimization and to select the winning model.
+`atom.knn.score_train` could return [0.8734, 0.6672, 0.9001]. Only the
+first metric of a multi-metric run (we call this metric the **main** metric
+in other parts of the documentation) is evaluated to select the [winning][atomclassifier-winner]
+model.
 
 !!! info
-    Some plots let you choose which of the metrics to show using the
-    `metric` parameter.
+    Some plots let you choose which of the metrics in a multi-metric run to
+    show using the `metric` parameter, e.g. [plot_results][].
 
 <br>
 
@@ -172,20 +169,18 @@ The data is considered scaled if it has one of the following prerequisites:
 * There is a transformer in the pipeline whose \__name__ contains the
   word `scaler`.
 
-The scaling is applied using a [Scaler](../../API/data_cleaning/scaler)
-with default parameters. It can be accessed from the model through the
-`scaler` attribute. The scaled dataset can be examined through the
-model's [data attributes](../../API/models/gnb/#data-attributes). Use
-the [available_models](../../API/ATOM/atomclassifier/#available-models)
-method to see which models require feature scaling. 
+The scaling is applied using a [Scaler][] with default parameters. It can
+be accessed from the model through the `scaler` attribute. The scaled
+dataset can be examined through the model's [data attributes][]. Use
+the [available_models][] method to see which models require feature scaling.
 
 <br>
 
 ## Parameter customization
 
-By default, the parameters every estimator uses are the same default
-parameters they get from their respective packages. To select different
-ones, use `est_params`. There are two ways to add custom parameters to
+By default, every estimator uses the default parameters they get from
+their respective packages. To select different ones, use [`est_params`][directclassifier-est_params].
+There are two ways to add custom parameters to
 the models: adding them directly to the dictionary as key-value pairs
 or through dictionaries.
 
@@ -195,8 +190,8 @@ this example, both the XGBoost and the LightGBM model use
 `n_estimators=200`. Make sure all the models do have the specified
 parameters or an exception will be raised!
 
-```python
-atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
+```pycon
+>>> atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
 ```
 
 To specify parameters per model, use the model name as key and a dict

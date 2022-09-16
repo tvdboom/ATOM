@@ -58,15 +58,21 @@ class Pipeline(pipeline.Pipeline):
     def __init__(self, steps, *, memory=None, verbose=False):
         super().__init__(steps, memory=memory, verbose=verbose)
 
-        # Set up cache memory objects
-        memory = check_memory(self.memory)
-        self._memory_fit = memory.cache(fit_transform_one)
-        self._memory_transform = memory.cache(transform_one)
-
         # If all estimators are fitted, Pipeline is fitted
         self._is_fitted = False
         if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
             self._is_fitted = True
+
+    @property
+    def memory(self):
+        return self._memory
+
+    @memory.setter
+    def memory(self, value):
+        """Set up cache memory objects."""
+        self._memory = check_memory(value)
+        self._memory_fit = self._memory.cache(fit_transform_one)
+        self._memory_transform = self._memory.cache(transform_one)
 
     def _can_transform(self):
         return (

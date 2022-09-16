@@ -128,7 +128,7 @@ class Branch:
                     raise ValueError(
                         "Invalid name for the branch. The name of a branch may "
                         f"not begin with a model's acronym, and {model.acronym} "
-                        f"is the acronym of the {model.fullname} model."
+                        f"is the acronym of the {model._fullname} model."
                     )
 
         self._name = value

@@ -45,7 +45,7 @@ from atom.utils import (
     Runner, Scorer, Table, Transformer, __version__, check_is_fitted,
     check_scaling, composed, crash, create_acronym, custom_transform, divide,
     fit_one, flt, get_pl_name, has_task, infer_task, is_sparse, lst,
-    method_to_log, variable_return,
+    method_to_log, variable_return, get_custom_scorer
 )
 
 
@@ -169,7 +169,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                         raise ValueError(
                             "Invalid name for the branch. The name of a branch may "
                             f"not begin with a model's acronym, and {model.acronym} "
-                            f"is the acronym of the {model.fullname} model."
+                            f"is the acronym of the {model._fullname} model."
                         )
 
             # Check if the parent branch exists
@@ -360,12 +360,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                 for key, value in MODELS.items():
                     m = value(self, fast_init=True)
                     if m._est_class.__name__ == est._component_obj.__class__.__name__:
-                        est.acronym, est.fullname = key, m.fullname
+                        est.acronym = key
 
                 # If it's not any of the predefined models, create a new acronym
                 if not hasattr(est, "acronym"):
                     est.acronym = create_acronym(est.__class__.__name__)
-                    est.fullname = est.__class__.__name__
 
                 model = CustomModel(self, estimator=est)
                 model.estimator = model.est
@@ -377,7 +376,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
                 self._models.update({model.name: model})
                 self.log(
-                    f" --> Adding model {model.fullname} "
+                    f" --> Adding model {model._fullname} "
                     f"({model.name}) to the pipeline...", 2
                 )
                 break  # Avoid non-linear pipelines
@@ -1806,34 +1805,17 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
 
     # Training methods ============================================= >>
 
-    def _check(
-        self,
-        metric: Union[str, SEQUENCE_TYPES, callable],
-        gib: Union[bool, SEQUENCE_TYPES],
-        needs_proba: Union[bool, SEQUENCE_TYPES],
-        needs_threshold: Union[bool, SEQUENCE_TYPES],
-    ) -> Union[str, callable, Scorer, SEQUENCE_TYPES]:
+    def _check(self, metric: Union[str, callable, Scorer, SEQUENCE_TYPES]) -> CustomDict:
         """Check whether the provided metric is valid.
 
         Parameters
         ----------
-        metric: str, sequence or callable
+        metric: str, func, callable or sequence
             Metric provided for the run.
-
-        gib: bool or sequence
-            Whether the metric is a score or a loss function.
-
-        needs_proba: bool or sequence
-            Whether the metric function requires probability estimates
-            out of a classifier.
-
-        needs_threshold: bool or sequence
-            Whether the metric function takes a continuous decision
-            certainty.
 
         Returns
         -------
-        str, function, scorer or sequence
+        CustomDict
             Metric for the run. Should be the same as previous run.
 
         """
@@ -1843,11 +1825,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                 metric = self._metric
             else:
                 # If there's a metric, it should be the same as previous run
-                new_metric = BaseTrainer._prepare_metric(
-                    metric=lst(metric),
-                    greater_is_better=gib,
-                    needs_proba=needs_proba,
-                    needs_threshold=needs_threshold,
+                new_metric = CustomDict(
+                    {(s := get_custom_scorer(m)).name: s for m in lst(metric)}
                 )
 
                 if list(new_metric) != list(self._metric):
@@ -1906,9 +1885,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         models: Optional[Union[str, callable, Predictor, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         est_params: Optional[dict] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
         ht_params: Optional[dict] = None,
@@ -1934,8 +1910,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         description of the parameters.
 
         """
-        metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)
-
         if self.goal == "class":
             trainer = DirectClassifier
         else:
@@ -1944,10 +1918,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         self._run(
             trainer(
                 models=models,
-                metric=metric,
-                greater_is_better=greater_is_better,
-                needs_proba=needs_proba,
-                needs_threshold=needs_threshold,
+                metric=self._check(metric),
                 est_params=est_params,
                 n_trials=n_trials,
                 ht_params=ht_params,
@@ -1962,9 +1933,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         models: Union[str, Predictor, SEQUENCE_TYPES],
         metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         skip_runs: INT = 0,
         est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
@@ -1997,8 +1965,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         class for a description of the parameters.
 
         """
-        metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)
-
         if self.goal == "class":
             trainer = SuccessiveHalvingClassifier
         else:
@@ -2007,10 +1973,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         self._run(
             trainer(
                 models=models,
-                metric=metric,
-                greater_is_better=greater_is_better,
-                needs_proba=needs_proba,
-                needs_threshold=needs_threshold,
+                metric=self._check(metric),
                 skip_runs=skip_runs,
                 est_params=est_params,
                 n_trials=n_trials,
@@ -2026,9 +1989,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         models: Union[str, Predictor, SEQUENCE_TYPES],
         metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
@@ -2059,8 +2019,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         class for a description of the parameters.
 
         """
-        metric = self._check(metric, greater_is_better, needs_proba, needs_threshold)
-
         if self.goal == "class":
             trainer = TrainSizingClassifier
         else:
@@ -2069,10 +2027,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         self._run(
             trainer(
                 models=models,
-                metric=metric,
-                greater_is_better=greater_is_better,
-                needs_proba=needs_proba,
-                needs_threshold=needs_threshold,
+                metric=self._check(metric),
                 train_sizes=train_sizes,
                 est_params=est_params,
                 n_trials=n_trials,

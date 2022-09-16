@@ -28,12 +28,6 @@ def test_name():
     assert model.acronym == "huber"
 
 
-def test_fullname():
-    """Assert that the fullname is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="huber", fullname="Hubber Regression")
-    assert model.fullname == "Hubber Regression"
-
-
 def test_needs_scaling():
     """Assert that the needs_scaling is attached to the estimator."""
     model = ATOMModel(HuberRegressor(), acronym="huber", needs_scaling=True)

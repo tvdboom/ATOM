@@ -14,11 +14,7 @@ Description: Module containing all available models. All classes must
         Class attributes
         ----------------
         acronym: str
-            Acronym of the model's fullname.
-
-        fullname: str
-            Complete name of the model. If None, the estimator's
-            __name__ is used.
+            Acronym of the model's name.
 
         needs_scaling: bool
             Whether the model needs scaled features.
@@ -156,22 +152,19 @@ class CustomModel(BaseModel):
     def __init__(self, *args, **kwargs):
         self.est = kwargs["estimator"]  # Estimator provided by the user
 
-        # If no fullname is provided, use the class' name
-        if hasattr(self.est, "fullname"):
-            self.fullname = self.est.fullname
-        elif callable(self.est):
-            self.fullname = self.est.__name__
-        else:
-            self.fullname = self.est.__class__.__name__
-
         # If no acronym is provided, use capital letters in the class' name
         if hasattr(self.est, "acronym"):
             self.acronym = self.est.acronym
         else:
-            self.acronym = create_acronym(self.fullname)
+            self.acronym = create_acronym(self._fullname)
 
         self.needs_scaling = getattr(self.est, "needs_scaling", False)
         super().__init__(*args)
+
+    @property
+    def _fullname(self) -> str:
+        """Return the estimator's class name."""
+        return self._est_class.__name__
 
     @property
     def _est_class(self):
@@ -258,7 +251,6 @@ class AdaBoost(BaseModel):
     """
 
     acronym = "AdaB"
-    fullname = "AdaBoost"
     needs_scaling = False
     accepts_sparse = True
     has_validation = None
@@ -286,7 +278,6 @@ class AutomaticRelevanceDetermination(BaseModel):
     """Automatic Relevance Determination."""
 
     acronym = "ARD"
-    fullname = "Automatic Relevant Determination"
     needs_scaling = True
     accepts_sparse = False
     supports_engines = ["sklearn"]
@@ -297,13 +288,13 @@ class AutomaticRelevanceDetermination(BaseModel):
     @staticmethod
     def _get_distributions():
         """Get the predefined hyperparameter distributions."""
-        return [
-            Integer(100, 1000, name="n_iter"),
-            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_1"),
-            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="alpha_2"),
-            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_1"),
-            Categorical([1e-6, 1e-4, 1e-2, 1e-1, 1], name="lambda_2"),
-        ]
+        return {
+            "n_iter": Int(100, 1000, step=10),
+            "alpha_1": Float(1e-4, 1, log=True),
+            "alpha_2": Float(1e-4, 1, log=True),
+            "lambda_1": Float(1e-4, 1, log=True),
+            "lambda_2": Float(1e-4, 1, log=True),
+        }
 
 
 class Bagging(BaseModel):
@@ -1317,7 +1308,7 @@ class OrdinaryLeastSquares(BaseModel):
     """Linear Regression (without regularization)."""
 
     acronym = "OLS"
-    fullname = "Ordinary Least Squares"
+    fullname = "OrdinaryLeastSquares"
     needs_scaling = True
     accepts_sparse = True
     supports_engines = ["sklearn", "sklearnex", "cuml"]
@@ -1330,7 +1321,7 @@ class PassiveAggressive(BaseModel):
     """Passive Aggressive."""
 
     acronym = "PA"
-    fullname = "Passive Aggressive"
+    fullname = "PassiveAggressive"
     needs_scaling = True
     accepts_sparse = True
     supports_engines = ["sklearn"]

@@ -18,6 +18,7 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 from unittest.mock import patch
 
 import dill as pickle
+import matplotlib.pyplot as plt
 import mlflow
 import numpy as np
 import pandas as pd
@@ -25,7 +26,6 @@ from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.tracking import MlflowClient
 from optuna import TrialPruned, create_study
-from optuna.pruners import HyperbandPruner
 from optuna.samplers import NSGAIISampler, TPESampler
 from optuna.study import Study
 from optuna.trial import Trial
@@ -101,12 +101,13 @@ class BaseModel(ModelPlot, ShapPlot):
                 self.scaler = Scaler().fit(self.X_train)
 
     def __repr__(self) -> str:
-        out_1 = f"{self.fullname}\n --> Estimator: {self.estimator.__class__.__name__}"
-        out_2 = [
+        out_1 = f"{self._fullname}"
+        out_2 = f" --> Estimator: {self.estimator.__class__.__name__}"
+        out_3 = [
             f"{m.name}: {rnd(get_best_score(self, i))}"
             for i, m in enumerate(self.T._metric.values())
         ]
-        return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
+        return f"{out_1}\n{out_2}\n --> Evaluation: {'   '.join(out_3)}"
 
     def __getattr__(self, item: str) -> Any:
         if item in self.__dict__.get("branch")._get_attrs():
@@ -133,6 +134,11 @@ class BaseModel(ModelPlot, ShapPlot):
                 f"'{self.__class__.__name__}' object is only "
                 "subscriptable with types int, str or list."
             )
+
+    @property
+    def _fullname(self) -> str:
+        """Return the model's class name."""
+        return self.__class__.__name__
 
     @property
     def _est_class(self) -> Predictor:
@@ -460,16 +466,22 @@ class BaseModel(ModelPlot, ShapPlot):
             None, it uses the same parameters as the first run. Can
             include:
 
-            - **cv: int, default=1**<br>
+            - **distributions: dict, sequence or None, default=None**
+              Custom hyperparameter distributions for the models. If
+              None, it uses ATOM's predefined distributions.
+            - **cv: int, dict or sequence, default=1**
               Number of folds for the cross-validation. If 1, the
               training set is randomly split in a subtrain and
               validation set.
-            - **plot: bool, default=False**<br>
-              Whether to plot the BO's progress as it runs. Creates a
-              canvas with two plots: the first plot shows the score of
-              every trial and the second shows the distance between the
-              last consecutive steps. See the [plot_trials][] method.
-            - **\*\*kwargs**<br>
+            - **plot: bool, dict or sequence, default=False**
+              Whether to plot the optimization's progress as it runs.
+              Creates a canvas with two plots: the first plot shows the
+              score of every trial and the second shows the distance
+              between the last consecutive steps. See the [plot_trials][]
+              method.
+            - **tags: dict, sequence or None, default=None**
+              Custom tags for the model's [mlflow run][tracking].
+            - **\*\*kwargs**
               Additional Keyword arguments for the constructor of the
               [study][] class or the [optimize][] method.
 
@@ -563,7 +575,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
             # Skip if the eval function has already been evaluated at this point
             if params not in self.trials["params"].values:
-                if ht_params.get("cv", 1) == 1:
+                if self._ht.get("cv", 1) == 1:
                     if self.T.goal == "class":
                         split = StratifiedShuffleSplit  # Keep % of samples per class
                     else:
@@ -587,7 +599,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
                     # Get the K-fold cross-validator object
                     fold = k_fold(
-                        n_splits=ht_params.get("cv", 1),
+                        n_splits=self._ht.get("cv", 1),
                         shuffle=True,
                         random_state=trial.number + (self.T.random_state or 0),
                     )
@@ -611,17 +623,17 @@ class BaseModel(ModelPlot, ShapPlot):
         # Running hyperparameter tuning ============================ >>
 
         # Use provided parameters or those from the first run
-        ht_params = self._ht = ht_params or self._ht
+        self._ht = ht_params or self._ht
 
-        self.T.log(f"\n\nRunning hyperparameter tuning for {self.fullname}...", 1)
+        self.T.log(f"Running hyperparameter tuning for {self._fullname}...", 1)
 
         # Assign custom distributions or use predefined
         dist = self._get_distributions()
-        if ht_params.get("distributions"):
+        if self._ht.get("distributions"):
             # If dict, use the user provided values
-            if isinstance(ht_params["distributions"], SEQUENCE):
+            if isinstance(self._ht["distributions"], SEQUENCE):
                 inc, exc = [], []
-                for name in ht_params["distributions"]:
+                for name in self._ht["distributions"]:
                     # If it's a name, use the predefined dimension
                     if name.startswith("!"):
                         exc.append(n := name[1:])
@@ -632,7 +644,7 @@ class BaseModel(ModelPlot, ShapPlot):
                         raise ValueError(
                             "Invalid value for the distributions parameter. "
                             f"Parameter {n} is not a predefined hyperparameter "
-                            f"of the {self.fullname} model. See the model's "
+                            f"of the {self._fullname} model. See the model's "
                             "documentation for an overview of the available "
                             "hyperparameters and their distributions."
                         )
@@ -662,13 +674,11 @@ class BaseModel(ModelPlot, ShapPlot):
 
         # If no hyperparameters to optimize, skip BO
         if not self._ht["distributions"]:
-            self.T.log(" --> Skipping BO. No hyperparameters to optimize.", 2)
+            self.T.log(" --> Skipping study. No hyperparameters to optimize.", 2)
             return
 
         if not self._study or reset:
-            kwargs = {
-                k: v for k, v in ht_params.items() if k in self._sign(create_study)
-            }
+            kwargs = {k: v for k, v in self._ht.items() if k in self._sign(create_study)}
 
             if len(self.T._metric) == 1:
                 kwargs["direction"] = "maximize"
@@ -683,11 +693,10 @@ class BaseModel(ModelPlot, ShapPlot):
 
             self._study = create_study(**kwargs)
 
-        kwargs = {k: v for k, v in ht_params.items() if k in self._sign(Study.optimize)}
-        if ht_params.get("plot", False):
-            plot_callback = PlotCallback(self.T, len(self._study.trials) + n_trials)
-            kwargs["callbacks"] = kw.get("callbacks", []) + plot_callback
+        kwargs = {k: v for k, v in self._ht.items() if k in self._sign(Study.optimize)}
         kwargs["callbacks"] = kwargs.get("callbacks", []) + [TrialsCallback(self)]
+        if self._ht.get("plot", False):
+            kwargs["callbacks"].append(PlotCallback(self))
 
         self._study.optimize(
             func=objective,
@@ -696,6 +705,9 @@ class BaseModel(ModelPlot, ShapPlot):
             show_progress_bar=kwargs.pop("show_progress_bar", self.T.verbose == 1),
             **kwargs,
         )
+
+        if self._ht.get("plot", False):
+            plt.close()
 
         if len(self.T._metric) == 1:
             self._best_trial = self.study.best_trial
@@ -746,7 +758,7 @@ class BaseModel(ModelPlot, ShapPlot):
         self.clear()
 
         if self.trials.empty:
-            self.T.log(f"\n\nResults for {self.fullname}:", 1)
+            self.T.log(f"Results for {self._fullname}:", 1)
         self.T.log(f"Fit {'-' * 45}", 1)
 
         # Assign estimator if not done already
@@ -764,13 +776,10 @@ class BaseModel(ModelPlot, ShapPlot):
 
         # Log parameters, metrics, model and data to mlflow
         if self._run:
-            mlflow.set_tags(
-                {
-                    "name": self.name,
-                    "fullname": self.fullname,
-                    "branch": self.branch.name,
-                }
-            )
+            mlflow.set_tag("name", self.name)
+            mlflow.set_tag("model", self._fullname)
+            mlflow.set_tag("branch", self.branch.name)
+            mlflow.set_tags(self.T._ht_params["tags"][self.name])
 
             # Mlflow only accepts params with char length <250
             mlflow.log_params(
@@ -2163,7 +2172,7 @@ class BaseModel(ModelPlot, ShapPlot):
         with open(filename, "wb") as f:
             pickle.dump(self.estimator, f)
 
-        self.T.log(f"{self.fullname} estimator successfully saved.", 1)
+        self.T.log(f"{self._fullname} estimator successfully saved.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def transform(

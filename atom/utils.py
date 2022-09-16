@@ -8,7 +8,6 @@ Description: Module containing utility constants, classes and functions.
 """
 
 import logging
-import math
 import pprint
 import sys
 from collections import deque
@@ -317,13 +316,11 @@ class TrialsCallback:
         if self.model._run and self.T.log_ht:
             run_name = f"{self.model.name} - {trial.number}"
             with mlflow.start_run(run_name=run_name, nested=True):
-                mlflow.set_tags(
-                    {
-                        "name": self.model.name,
-                        "fullname": self.model.fullname,
-                        "state": trial.state.name,
-                    }
-                )
+                mlflow.set_tag("name", self.model.name)
+                mlflow.set_tag("model", self.model._fullname)
+                mlflow.set_tag("branch", self.model.branch.name)
+                mlflow.set_tag("trial_state", trial.state.name)
+                mlflow.set_tags(self.T._ht_params["tags"][self.model.name])
 
                 # Mlflow only accepts params with char length <250
                 pars = estimator.get_params() if estimator else params
@@ -389,125 +386,119 @@ class PlotCallback:
     """Plot the hyperparameter tuning's progress as it runs.
 
     Creates a figure with two plots: the first plot shows the score
-    of every trial and the second shows the distance between the last
-    consecutive steps.
+    of every trial and the second shows the distance between the scores
+    of the last consecutive steps.
 
     Parameters
     ----------
-    parent: Runner
-        Runner from which the model is called.
-
-    n_trials: int
-        Number of trials.
+    *args
+        Model from which the callback is called.
 
     """
 
-    c = 0  # Counter to track which model is being plotted
+    max_len = 15  # Maximum trials to show at once in the plot
 
-    def __init__(self, parent, n_trials):
-        self.T = parent
-        self.n_trials = n_trials
+    def __init__(self, *args):
+        self.M = args[0]
+        self.T = self.M.T
 
-        # Plot attributes
-        max_len = 15  # Maximum steps to show at once in the plot
-        self.x, self.y1, self.y2 = {}, {}, {}
-        for i in range(len(self._models)):
-            self.x[i] = deque(list(range(1, max_len + 1)), maxlen=max_len)
-            self.y1[i] = deque([np.NaN for _ in self.x[i]], maxlen=max_len)
-            self.y2[i] = deque([np.NaN for _ in self.x[i]], maxlen=max_len)
+        self.y1 = {m: deque(maxlen=self.max_len) for m in self.T._metric}
+        self.y2 = {m: deque(maxlen=self.max_len) for m in self.T._metric}
+
+        self.line1 = {m: None for m in self.T._metric}
+        self.line2 = {m: None for m in self.T._metric}
+        self.ax1, self.ax2 = None, None
+
+        self.create_figure()
 
     def __call__(self, study: Study, trial: FrozenTrial):
-        # Start to fill NaNs with encountered metric values
-        if np.isnan(self.y1[self.c]).any():
-            for i, value in enumerate(self.y1[self.c]):
-                if math.isnan(value):
-                    self.y1[self.c][i] = trial.value
-                    if i > 0:  # The first value must remain empty
-                        self.y2[self.c][i] = abs(
-                            self.y1[self.c][i] - self.y1[self.c][i - 1]
-                        )
-                    break
-        else:  # If no NaNs anymore, continue deque
-            self.x[self.c].append(max(self.x[self.c]) + 1)
-            self.y1[self.c].append(trial.value)
-            self.y2[self.c].append(abs(self.y1[self.c][-1] - self.y1[self.c][-2]))
+        """Calculates new values for lines and plots them.
 
-        if len(study.trials) == 1:  # After the 1st iteration, create plot
-            self.line1, self.line2, self.ax1, self.ax2 = self.create_figure()
-        else:
-            self.animate_plot()
-            if trial.number == self.n_trials:
-                self.c += 1  # After the last iteration, go to the next model
-                plt.close()
+        Parameters
+        ----------
+        study: Study
+            Current study.
 
-    def create_figure(self):
-        """Create the plot.
-
-        Creates a figure with two subplots. The first plot shows the
-        score of every trial and the second shows the distance between
-        the last consecutive steps.
+        trial: FrozenTrial
+            Finished trial.
 
         """
+        if len(self.T._metric) == 1:
+            scores = [trial.value]
+        else:
+            scores = trial.values
+
+        for m, score in zip(self.T._metric, scores):
+            self.y1[m].append(score)
+            if self.y2[m]:
+                self.y2[m].append(abs(self.y1[m][-1] - self.y1[m][-2]))
+            else:
+                self.y2[m].append(np.NaN)
+
+        self.animate_plot(trial.number)
+
+    def create_figure(self):
+        """Creates the figure."""
         plt.ion()  # Call to matplotlib that allows dynamic plotting
 
         plt.gcf().set_size_inches(10, 8)
         gs = GridSpec(4, 1, hspace=0.05)
-        ax1 = plt.subplot(gs[0:3, 0])
-        ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
 
         # First subplot
-        (line1,) = ax1.plot(self.x[self.c], self.y1[self.c], "-o", alpha=0.8)
-        ax1.set_title(
-            label=f"Hyperparameter tuning for {self.models[self.c].fullname}",
+        self.ax1 = plt.subplot(gs[0:3, 0])
+        self.ax1.set_title(
+            label=f"Hyperparameter tuning for {self.M._fullname}",
             fontsize=self.T.title_fontsize,
             pad=20,
         )
-        ax1.set_ylabel(
-            ylabel=self.T._metric[0].name,
-            fontsize=self.T.label_fontsize,
-            labelpad=12,
-        )
-        ax1.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
+        self.ax1.set_ylabel(ylabel="score", fontsize=self.T.label_fontsize, labelpad=12)
 
         # Second subplot
-        (line2,) = ax2.plot(self.x[self.c], self.y2[self.c], "-o", alpha=0.8)
-        ax2.set_xlabel(xlabel="Call", fontsize=self.T.label_fontsize, labelpad=12)
-        ax2.set_ylabel(ylabel="d", fontsize=self.T.label_fontsize, labelpad=12)
-        ax2.set_xticks(self.x[self.c])
-        ax2.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
-        ax2.set_ylim([-0.05, 0.1])
+        self.ax2 = plt.subplot(gs[3:4, 0], sharex=self.ax1)
+        self.ax2.set_xlabel(xlabel="Trial", fontsize=self.T.label_fontsize, labelpad=12)
+        self.ax2.set_ylabel(ylabel="d", fontsize=self.T.label_fontsize, labelpad=12)
 
-        plt.setp(ax1.get_xticklabels(), visible=False)
+        for m in self.T._metric:
+            self.line1[m], = self.ax1.plot([], "o-", alpha=0.8, label=m)
+            self.line2[m], = self.ax2.plot([], "o-", alpha=0.8)
+
+        self.ax1.legend(
+            handles=[self.line1[m] for m in self.T._metric],
+            loc="lower left",
+            fontsize=self.T.label_fontsize,
+        )
+
+        plt.setp(self.ax1.get_xticklabels(), visible=False)
         plt.xticks(fontsize=self.T.tick_fontsize)
         plt.yticks(fontsize=self.T.tick_fontsize)
 
-        return line1, line2, ax1, ax2
+    def animate_plot(self, x: int):
+        """Plot the study's progress as it runs.
 
-    def animate_plot(self):
-        """Plot the BO's progress as it runs."""
-        self.line1.set_xdata(self.x[self.c])
-        self.line1.set_ydata(self.y1[self.c])
-        self.line2.set_xdata(self.x[self.c])
-        self.line2.set_ydata(self.y2[self.c])
-        self.ax1.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
-        self.ax2.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
-        self.ax1.set_xticks(self.x[self.c])
-        self.ax2.set_xticks(self.x[self.c])
+        Parameters
+        ----------
+        x: int
+            Latest trial's number.
+
+        """
+        x_min = max(0, x - self.max_len)
+        x_max = x_min + self.max_len
+        x = range(x_min, x_max)
+
+        for m in self.T._metric:
+            self.line1[m].set_data(x[:len(self.y1[m])], self.y1[m])
+            self.line2[m].set_data(x[:len(self.y2[m])], self.y2[m])
 
         # Adjust y limits if new data goes beyond bounds
-        lim = self.line1.axes.get_ylim()
-        if np.nanmin(self.y1[self.c]) <= lim[0] or np.nanmax(self.y1[self.c]) >= lim[1]:
-            self.ax1.set_ylim(
-                [
-                    np.nanmin(self.y1[self.c]) - np.nanstd(self.y1[self.c]),
-                    np.nanmax(self.y1[self.c]) + np.nanstd(self.y1[self.c]),
-                ]
-            )
-        lim = self.line2.axes.get_ylim()
-        if np.nanmax(self.y2[self.c]) >= lim[1]:
-            self.ax2.set_ylim(
-                [-0.05, np.nanmax(self.y2[self.c]) + np.nanstd(self.y2[self.c])]
-            )
+        self.ax1.relim()
+        self.ax1.autoscale_view(tight=True)
+        self.ax2.relim()
+        self.ax2.autoscale_view(tight=True)
+
+        self.ax1.set_xlim(x_min - 0.5, x_max - 0.5)
+        self.ax2.set_xlim(x_min - 0.5, x_max - 0.5)
+        self.ax1.set_xticks(x)
+        self.ax2.set_xticks(x)
 
         # Pause the data so the figure/axis can catch up
         plt.pause(0.05)
@@ -1251,12 +1242,7 @@ def create_acronym(fullname):
         return acronym
 
 
-def get_custom_scorer(
-    metric,
-    greater_is_better=True,
-    needs_proba=False,
-    needs_threshold=False,
-):
+def get_custom_scorer(metric):
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.
@@ -1264,20 +1250,9 @@ def get_custom_scorer(
     Parameters
     ----------
     metric: str, func or scorer
-        Name, metric or scorer to get ATOM's scorer from.
-
-    greater_is_better: bool, default=True
-        whether the metric is a score function or a loss function,
-        i.e. if True, a higher score is better and if False, lower is
-        better. Is ignored if the metric is a string or a scorer.
-
-    needs_proba: bool, default=False
-        Whether the metric function requires probability estimates of
-        a classifier. Is ignored if the metric is a string or a scorer.
-
-    needs_threshold: bool, default=False
-        Whether the metric function takes a continuous decision
-        certainty. Is ignored if the metric is a string or a scorer.
+        Name, function or scorer to get the scorer from. If it's a
+        function, the scorer is created using the default parameters
+        of sklearn's `make_scorer`.
 
     Returns
     -------
@@ -1330,12 +1305,7 @@ def get_custom_scorer(
                 break
 
     else:  # Scoring is a function with signature metric(y, y_pred)
-        scorer = make_scorer(
-            score_func=metric,
-            greater_is_better=greater_is_better,
-            needs_proba=needs_proba,
-            needs_threshold=needs_threshold,
-        )
+        scorer = make_scorer(score_func=metric)
         scorer.name = scorer._score_func.__name__
 
     return scorer

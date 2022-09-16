@@ -2022,7 +2022,7 @@ class ModelPlot(BasePlot):
             fi = get_feature_importance(m.estimator)
             if fi is None:
                 raise ValueError(
-                    f"Invalid value for the models parameter. The {m.fullname}'s "
+                    f"Invalid value for the models parameter. The {m._fullname}'s "
                     f"estimator {m.estimator.__class__.__name__} has no "
                     f"feature_importances_ nor coef_ attribute."
                 )
@@ -3094,8 +3094,8 @@ class ModelPlot(BasePlot):
                 d.here = (max_pos + length, y)
 
                 d.add(
-                    Data(w=max(len(model.fullname) * 0.5, 7))
-                    .label(model.fullname, color="k")
+                    Data(w=max(len(model._fullname) * 0.5, 7))
+                    .label(model._fullname, color="k")
                     .color(branch["color"])
                     .anchor("W")
                     .drop("E")

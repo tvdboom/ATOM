@@ -579,7 +579,7 @@ class BaseRunner:
             include:
 
             - **acronym:** Model's acronym (used to call the model).
-            - **fullname:** Complete name of the model.
+            - **model:** Name of the model's class.
             - **estimator:** The model's underlying estimator.
             - **module:** The estimator's module.
             - **needs_scaling:** Whether the model requires feature scaling.
@@ -595,7 +595,7 @@ class BaseRunner:
                 rows.append(
                     {
                         "acronym": m.acronym,
-                        "fullname": m.fullname,
+                        "model": m._fullname,
                         "estimator": m._est_class.__name__,
                         "module": m._est_class.__module__.split(".")[0] + m._module,
                         "needs_scaling": m.needs_scaling,
@@ -860,7 +860,7 @@ class BaseRunner:
                 if self.goal not in model._estimators:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
-                        f"{model.fullname} can not perform {self.task} tasks."
+                        f"{model._fullname} can not perform {self.task} tasks."
                     )
 
                 kwargs["final_estimator"] = model._get_estimator()

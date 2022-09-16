@@ -10,7 +10,7 @@ Description: Module containing the BaseTrainer class.
 import traceback
 from datetime import datetime as dt
 from importlib.util import find_spec
-from typing import Any, Optional, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import mlflow
@@ -20,8 +20,8 @@ from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.utils import (
-    SEQUENCE, SEQUENCE_TYPES, CustomDict, PlotCallback, check_scaling,
-    get_best_score, get_custom_scorer, is_sparse, lst, time_to_str,
+    SEQUENCE, CustomDict, check_scaling, get_best_score,
+    get_custom_scorer, is_sparse, lst, time_to_str,
 )
 
 
@@ -37,9 +37,8 @@ class BaseTrainer(BaseTransformer, BaseRunner):
     """
 
     def __init__(
-        self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        est_params, n_trials, ht_params, n_bootstrap, n_jobs, device, engine,
-        verbose, warnings, logger, experiment, random_state,
+        self, models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
+        device, engine, verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -55,9 +54,6 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         # Parameter attributes
         self._models = models
         self._metric = metric
-        self.greater_is_better = greater_is_better
-        self.needs_proba = needs_proba
-        self.needs_threshold = needs_threshold
         self.est_params = est_params
         self.n_trials = n_trials
         self.ht_params = ht_params
@@ -74,55 +70,8 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         self.scaled = None
         self._n_trials = {}
         self._n_bootstrap = {}
-        self._ht_params = {"cv": 1, "plot": False}
+        self._ht_params = {"distributions": {}, "cv": 1, "plot": False, "tags": {}}
         self._errors = CustomDict()
-
-    @staticmethod
-    def _prepare_metric(
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]],
-        **kwargs,
-    ) -> CustomDict:
-        """Check the validity of the metric.
-
-        Makes sure the lengths of the metric parameters are equal
-        for multi-metric, and converts all input types to a scorer.
-
-        Parameters
-        ----------
-        metric: str, func, scorer or sequence
-            Metric argument provided by the user.
-
-        **kwargs
-            Additional metric descriptors:
-
-            - greater_is_better
-            - needs_proba
-            - needs_threshold
-
-        Returns
-        -------
-        CustomDict
-            Metric names and corresponding scorers.
-
-        """
-        metric_params = {}
-        for key, value in kwargs.items():
-            if isinstance(value, SEQUENCE):
-                if len(value) != len(metric):
-                    raise ValueError(
-                        f"Invalid value for the {key} parameter. Its length "
-                        "should be equal to the number of metrics, got "
-                        f"len(metric)={len(metric)} and len({key})={len(value)}."
-                    )
-            else:
-                metric_params[key] = [value for _ in metric]
-
-        metric_dict = CustomDict()
-        for args in zip(metric, *metric_params.values()):
-            scorer = get_custom_scorer(*args)
-            metric_dict[scorer.name] = scorer
-
-        return metric_dict
 
     def _check_param(self, param: str, value: Any) -> dict:
         """Check the validity of one parameter.
@@ -147,7 +96,7 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         if isinstance(value, SEQUENCE):
             if len(value) != len(self._models):
                 raise ValueError(
-                    f"Invalid value for the {param} parameter. Length "
+                    f"Invalid value for the {param} parameter. The length "
                     "should be equal to the number of models, got len"
                     f"(models)={len(self._models)} and len({param})={len(value)}."
                 )
@@ -234,20 +183,16 @@ class BaseTrainer(BaseTransformer, BaseRunner):
 
         # Ignore if it's the same scorer as previous call
         elif not isinstance(self._metric, CustomDict):
-            self._metric = self._prepare_metric(
-                metric=lst(self._metric),
-                greater_is_better=self.greater_is_better,
-                needs_proba=self.needs_proba,
-                needs_threshold=self.needs_threshold,
+            self._metric = CustomDict(
+                {(s := get_custom_scorer(m)).name: s for m in lst(self._metric)}
             )
 
         # Prepare est_params ======================================= >>
 
         if self.est_params is not None:
-            est_params = self._check_param("est_params", accepts_kwargs=True)
             for name, model in self._models.items():
                 params = {}
-                for key, value in est_params.items():
+                for key, value in self.est_params.items():
                     # Parameters for this model only
                     if key.lower() == name.lower() or key.lower() == "all":
                         params.update(value)
@@ -269,7 +214,24 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         self._n_bootstrap = self._check_param("n_bootstrap", self.n_bootstrap)
         self._ht_params.update(self.ht_params or {})
         for key, value in self._ht_params.items():
-            self._ht_params[key] = self._check_param(key, value)
+            if key in ("cv", "plot"):
+                self._ht_params[key] = self._check_param(key, value)
+            elif key in ("distributions", "tags"):
+                self._ht_params[key] = {k: {} for k in self._models}
+                for name, model in self._models.items():
+                    if isinstance(value, SEQUENCE):
+                        # If sequence, it applies to all models
+                        self._ht_params[key][name] = value
+                    else:
+                        # Either one distribution or per model
+                        for k, v in value.items():
+                            if k not in self._models:
+                                self._ht_params[key][name][k] = v
+                            elif k.lower() == name.lower():
+                                self._ht_params[key][name].update(v)
+            else:
+                # Kwargs for create_study and optimize
+                self._ht_params[key] = {k: value for k in self._models}
 
     def _core_iteration(self):
         """Fit and evaluate the models.
@@ -292,10 +254,12 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 if self.experiment:  # Start mlflow run
                     m._run = mlflow.start_run(run_name=m.name)
 
+                self.log("\n\n", 1)  # Separate output from header
+
                 # If it has predefined or custom dimensions, run the ht
                 ht_params = {k: v[m.name] for k, v in self._ht_params.items()}
                 if self._n_trials[m.name] > 0:
-                    if ht_params.get("distributions", {}) or m._get_distributions():
+                    if ht_params["distributions"] or m._get_distributions():
                         m.hyperparameter_tuning(self._n_trials[m.name], ht_params)
 
                 m.fit()
@@ -320,8 +284,7 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 # Cannot remove immediately to maintain the iteration order
                 to_remove.append(m.name)
 
-                if self._ht_params.get("plot"):
-                    PlotCallback.c += 1  # Next model
+                if self._ht_params["plot"][m.name]:
                     plt.close()  # Close the crashed plot
 
                 if self.experiment:
@@ -345,13 +308,13 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         self.log("-" * 37, 1)
 
         # Get max length of the model names
-        maxlen = max([len(m.fullname) for m in self._models.values()])
+        maxlen = max([len(m._fullname) for m in self._models.values()])
 
         # Get best score of all the models
         best_score = max([get_best_score(m) for m in self._models.values()])
 
         for m in self._models.values():
-            out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"
+            out = f"{m._fullname:{maxlen}s} --> {m._final_output()}"
             if get_best_score(m) == best_score and len(self._models) > 1:
                 out += " !"
 

@@ -36,14 +36,12 @@ class Direct(BaseEstimator, BaseTrainer, ModelPlot):
     """
 
     def __init__(
-        self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        est_params, n_trials, ht_params, n_bootstrap, n_jobs, device, engine,
-        verbose, warnings, logger, experiment, random_state,
+        self, models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
+        device, engine, verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            est_params, n_trials, ht_params, n_bootstrap, n_jobs, device,
-            engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
+            device, engine, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -89,15 +87,13 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, ModelPlot):
     """
 
     def __init__(
-        self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        skip_runs, est_params, n_trials, ht_params, n_bootstrap, n_jobs, device,
-        engine, verbose, warnings, logger, experiment, random_state,
+        self, models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
+        n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
     ):
         self.skip_runs = skip_runs
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            est_params, n_trials, ht_params, n_bootstrap, n_jobs, device,
-            engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
+            device, engine, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -189,15 +185,13 @@ class TrainSizing(BaseEstimator, BaseTrainer, ModelPlot):
     """
 
     def __init__(
-        self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        train_sizes, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-        device, engine, verbose, warnings, logger, experiment, random_state
+        self, models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
+        n_jobs, device, engine, verbose, warnings, logger, experiment, random_state
     ):
         self.train_sizes = train_sizes
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            est_params, n_trials, ht_params, n_bootstrap, n_jobs, device,
-            engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
+            device, engine, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -266,47 +260,19 @@ class DirectClassifier(Direct):
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
-        scorers, a function with signature `metric(y_true, y_pred)`, a
-        scorer object or a sequence of these. If multiple metrics are
-        selected, only the first is used to optimize the BO. If None, a
-        default scorer is selected:
+        scorers, a function with signature `function(y_true, y_pred) ->
+        score`, a scorer object or a sequence of these. If None, a
+        default metric is selected:
 
         - "f1" for binary classification
         - "f1_weighted" for multiclass classification
         - "r2" for regression
-
-    greater_is_better: bool or sequence, default=True
-        Whether the metric is a score function or a loss function,
-        i.e. if True, a higher score is better and if False, lower
-        is better. This parameter is ignored if the metric is a
-        string or a scorer. If sequence, the n-th value applies to
-        the n-th metric.
-
-    needs_proba: bool or sequence, default=False
-        Whether the metric function requires probability estimates out
-        of a classifier. If True, make sure that every selected model
-        has a `predict_proba` method. This parameter is ignored if the
-        metric is a string or a scorer. If sequence, the n-th value
-        applies to the n-th metric.
-
-    needs_threshold: bool or sequence, default=False
-        Whether the metric function takes a continuous decision
-        certainty. This only works for estimators that have either a
-        `decision_function` or `predict_proba` method. This parameter
-        is ignored if the metric is a string or a scorer. If sequence,
-        the n-th value applies to the n-th metric.
 
     n_trials: int or sequence, default=15
         Maximum number of iterations of the BO. It includes the random
         points of `n_initial_points`. If 0, skip the BO and fit the
         model on its default Parameters. If sequence, the n-th value
         applies to the n-th model.
-
-    n_initial_points: int or sequence, default=5
-        Initial number of random tests of the BO before fitting the
-        surrogate function. If equal to `n_trials`, the optimizer will
-        technically be performing a random search. If sequence, the
-        n-th value applies to the n-th model.
 
     est_params: dict or None, default=None
         Additional parameters for the estimators. See the corresponding
@@ -315,44 +281,26 @@ class DirectClassifier(Direct):
         of the parameters as value. Add _fit to the parameter's name
         to pass it to the fit method instead of the initializer.
 
-    ht_params: dict or None, default=None
-        Additional parameters to for the BO. These can include:
-            - base_estimator: str, default="GP"
-                Surrogate model to use. Choose from:
-                    - "GP" for Gaussian Process
-                    - "RF" for Random Forest
-                    - "ET" for Extra-Trees
-                    - "GBRT" for Gradient Boosted Regression Trees
-            - max_time: int, default=np.inf
-                Stop the optimization after `max_time` seconds.
-            - delta_x: int or float, default=0
-                Stop the optimization when `|x1 - x2| < delta_x`.
-            - delta_y: int or float, default=0
-                Stop the optimization if the 5 minima are within
-                `delta_y` (skopt always minimizes the function).
-            - early_stopping: int, float or None, default=None
-                Training will stop if the model didn't improve in
-                last `early_stopping` rounds. If <1, fraction of
-                rounds from the total. If None, no early stopping
-                is performed. Only available for models that allow
-                in-training validation.
-            - cv: int, default=5
-                Number of folds for the cross-validation. If 1, the
-                training set is randomly split in a (sub)train and
-                validation set.
-            - callback: callable or list of callables, default=None
-                Callbacks for the BO.
-            - dimensions: dict, list or None, default=None
-                Custom hyperparameter space for the BO. Can be a list
-                to share the same dimensions across models or a dict
-                with the model names as key (or `all` for all models).
-                If None, ATOM's predefined dimensions are used.
-            - plot: bool, default=False
-                Whether to plot the BO's progress as it runs.
-                Creates a canvas with two plots: the first plot
-                shows the score of every trial and the second shows
-                the distance between the last consecutive steps.
-            - Additional keyword arguments for skopt's optimizer.
+    ht_params: dict or None
+        Additional parameters for the hyperparameter tuning. If None,
+        it uses the same parameters as the first run. Can include:
+
+        - **distributions: dict, sequence or None, default=None**
+          Custom hyperparameter distributions for the models. If None,
+          it uses ATOM's predefined distributions.
+        - **cv: int, dict or sequence, default=1**
+          Number of folds for the cross-validation. If 1, the training
+          set is randomly split in a subtrain and validation set.
+        - **plot: bool, dict or sequence, default=False**
+          Whether to plot the optimization's progress as it runs.
+          Creates a canvas with two plots: the first plot shows the
+          score of every trial and the second shows the distance between
+          the last consecutive steps. See the [plot_trials][] method.
+        - **tags: dict, sequence or None, default=None**
+          Custom tags for the model's [mlflow run][tracking].
+        - **\*\*kwargs**
+          Additional Keyword arguments for the constructor of the
+          [study][] class or the [optimize][] method.
 
     n_bootstrap: int or sequence, default=0
         Number of data sets (bootstrapped from the training set) to
@@ -364,6 +312,21 @@ class DirectClassifier(Direct):
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -394,13 +357,6 @@ class DirectClassifier(Direct):
         Name of the mlflow experiment to use for tracking. If None,
         no mlflow tracking is performed.
 
-    gpu: bool or str, default=False
-        Train estimators on GPU. Refer to the
-        documentation to check which estimators are supported.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
-
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
@@ -413,9 +369,6 @@ class DirectClassifier(Direct):
         models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
         ht_params: Optional[dict] = None,
@@ -431,9 +384,8 @@ class DirectClassifier(Direct):
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            est_params, n_trials, ht_params, n_bootstrap, n_jobs, device,
-            engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
+            device, engine, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -446,9 +398,6 @@ class DirectRegressor(Direct):
         models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
         ht_params: Optional[dict] = None,
@@ -464,9 +413,8 @@ class DirectRegressor(Direct):
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            est_params, n_trials, ht_params, n_bootstrap, n_jobs, device,
-            engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
+            device, engine, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -479,9 +427,6 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         skip_runs: INT = 0,
         est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
@@ -498,10 +443,8 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            skip_runs, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, device, engine, verbose, warnings, logger, experiment,
-            random_state,
+            models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
+            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -514,9 +457,6 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         skip_runs: INT = 0,
         est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
@@ -533,10 +473,8 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            skip_runs, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, device, engine, verbose, warnings, logger, experiment,
-            random_state,
+            models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
+            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -549,9 +487,6 @@ class TrainSizingClassifier(TrainSizing):
         models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
@@ -568,9 +503,8 @@ class TrainSizingClassifier(TrainSizing):
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            train_sizes, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
+            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -583,9 +517,6 @@ class TrainSizingRegressor(TrainSizing):
         models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         *,
-        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
-        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
-        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
         est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
         n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
@@ -602,7 +533,6 @@ class TrainSizingRegressor(TrainSizing):
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, greater_is_better, needs_proba, needs_threshold,
-            train_sizes, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
+            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
         )
