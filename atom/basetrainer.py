@@ -20,8 +20,8 @@ from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.utils import (
-    SEQUENCE, CustomDict, check_scaling, get_best_score,
-    get_custom_scorer, is_sparse, lst, time_to_str,
+    SEQUENCE, CustomDict, check_scaling, get_best_score, get_custom_scorer,
+    is_sparse, lst, time_to_str,
 )
 
 
@@ -225,10 +225,10 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                     else:
                         # Either one distribution or per model
                         for k, v in value.items():
-                            if k not in self._models:
-                                self._ht_params[key][name][k] = v
-                            elif k.lower() == name.lower():
+                            if k.lower() == name.lower() or k.lower() == "all":
                                 self._ht_params[key][name].update(v)
+                            elif k not in self._models:
+                                self._ht_params[key][name][k] = v
             else:
                 # Kwargs for create_study and optimize
                 self._ht_params[key] = {k: value for k in self._models}
@@ -254,12 +254,12 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 if self.experiment:  # Start mlflow run
                     m._run = mlflow.start_run(run_name=m.name)
 
-                self.log("\n\n", 1)  # Separate output from header
+                self.log("\n", 1)  # Separate output from header
 
                 # If it has predefined or custom dimensions, run the ht
                 ht_params = {k: v[m.name] for k, v in self._ht_params.items()}
                 if self._n_trials[m.name] > 0:
-                    if ht_params["distributions"] or m._get_distributions():
+                    if ht_params["distributions"] or hasattr(m, "_get_distributions"):
                         m.hyperparameter_tuning(self._n_trials[m.name], ht_params)
 
                 m.fit()

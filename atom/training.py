@@ -285,20 +285,20 @@ class DirectClassifier(Direct):
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **distributions: dict, sequence or None, default=None**
+        - **distributions: dict, sequence or None, default=None**<br>
           Custom hyperparameter distributions for the models. If None,
           it uses ATOM's predefined distributions.
-        - **cv: int, dict or sequence, default=1**
+        - **cv: int, dict or sequence, default=1**<br>
           Number of folds for the cross-validation. If 1, the training
           set is randomly split in a subtrain and validation set.
-        - **plot: bool, dict or sequence, default=False**
+        - **plot: bool, dict or sequence, default=False**<br>
           Whether to plot the optimization's progress as it runs.
           Creates a canvas with two plots: the first plot shows the
           score of every trial and the second shows the distance between
           the last consecutive steps. See the [plot_trials][] method.
-        - **tags: dict, sequence or None, default=None**
+        - **tags: dict, sequence or None, default=None**<br>
           Custom tags for the model's [mlflow run][tracking].
-        - **\*\*kwargs**
+        - **\*\*kwargs**<br>
           Additional Keyword arguments for the constructor of the
           [study][] class or the [optimize][] method.
 

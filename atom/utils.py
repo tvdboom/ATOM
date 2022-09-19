@@ -17,7 +17,7 @@ from datetime import datetime as dt
 from functools import wraps
 from importlib import import_module
 from inspect import Parameter, signature
-from typing import Protocol, Union
+from typing import Optional, Protocol, Union, Tuple
 
 import matplotlib.pyplot as plt
 import mlflow
@@ -149,6 +149,196 @@ class Transformer(Protocol):
     """Protocol for all predictors."""
     def fit(self, **params): ...
     def transform(self, **params): ...
+
+
+class CatBMetric:
+    """Custom evaluation metric for the CatBoost model.
+
+    Parameters
+    ----------
+    scorer: Scorer
+        Scorer to evaluate. It's always the runner's main metric.
+
+    task: str
+        Model's task.
+
+    """
+    def __init__(self, scorer: Scorer, task: str):
+        self.scorer = scorer
+        self.task = task
+
+    @staticmethod
+    def get_final_error(error: FLOAT, weight: FLOAT) -> FLOAT:
+        """Returns final value of metric based on error and weight.
+
+        Parameters
+        ----------
+        error: float
+            Sum of errors in all instances.
+
+        weight: float
+            Sum of weights of all instances.
+
+        Returns
+        -------
+        float
+            Metric value.
+
+        """
+        return error / (weight + 1e-38)
+
+    @staticmethod
+    def is_max_optimal() -> bool:
+        """Returns whether great values of metric are better."""
+        return True
+
+    def evaluate(self, approxes: list, targets: list, weight: list) -> FLOAT:
+        """Evaluates metric value.
+
+        Parameters
+        ----------
+        approxes: list
+            Vectors of approx labels.
+
+        targets: list
+            Vectors of true labels.
+
+        weight: list
+            Vectors of weights.
+
+        Returns
+        -------
+        float
+            Weighted errors.
+
+        float
+            Total weight.
+
+        """
+        if self.task.startswith("bin"):
+            # Convert CatBoost predictions to probabilities
+            e = np.exp(approxes[0])
+            y_pred = e / (1 + e)
+            if self.scorer.__class__.__name__ == "_PredictScorer":
+                y_pred = (y_pred > 0.5).astype(int)
+
+        elif self.task.startswith("multi"):
+            y_pred = np.array(approxes).T
+            if self.scorer.__class__.__name__ == "_PredictScorer":
+                y_pred = np.argmax(y_pred, axis=1)
+
+        else:
+            y_pred = approxes[0]
+
+        if "sample_weight" in signature(self.scorer._score_func).parameters:
+            score = self.scorer._score_func(
+                targets,
+                y_pred,
+                sample_weight=weight,
+                **self.scorer._kwargs,
+            )
+        else:
+            score = self.scorer._score_func(targets, y_pred, **self.scorer._kwargs)
+
+        return self.scorer._sign * score, 1.0
+
+
+class LGBMetric:
+    """Custom evaluation metric for the LightGBM model.
+
+    Parameters
+    ----------
+    scorer: Scorer
+        Scorer to evaluate. It's always the runner's main metric.
+
+    task: str
+        Model's task.
+
+    """
+    def __init__(self, scorer: Scorer, task: str):
+        self.scorer = scorer
+        self.task = task
+
+    def __call__(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        weight: np.ndarray,
+    ) -> Tuple[str, FLOAT, bool]:
+        """Evaluates metric value.
+
+        Parameters
+        ----------
+        y_true: np.array
+            Vectors of approx labels.
+
+        y_pred: np.array
+            Vectors of true labels.
+
+        weight: np.array
+            Vectors of weights.
+
+        Returns
+        -------
+        str
+            Metric name.
+
+        float
+            Metric score.
+
+        bool
+            Whether higher is better.
+
+        """
+        if self.scorer.__class__.__name__ == "_PredictScorer":
+            if self.task.startswith("bin"):
+                y_pred = (y_pred > 0.5).astype(int)
+            elif self.task.startswith("multi"):
+                y_pred = y_pred.reshape(len(y_true), len(np.unique(y_true)))
+                y_pred = np.argmax(y_pred, axis=1)
+
+        if "sample_weight" in signature(self.scorer._score_func).parameters:
+            score = self.scorer._score_func(
+                y_true,
+                y_pred,
+                sample_weight=weight,
+                **self.scorer._kwargs,
+            )
+        else:
+            score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs)
+
+        return self.scorer.name, self.scorer._sign * score, True
+
+
+class XGBMetric:
+    """Custom evaluation metric for the XGBoost model.
+
+    Parameters
+    ----------
+    scorer: Scorer
+        Scorer to evaluate. It's always the runner's main metric.
+
+    task: str
+        Model's task.
+
+    """
+    def __init__(self, scorer: Scorer, task: str):
+        self.scorer = scorer
+        self.task = task
+
+    @property
+    def __name__(self):
+        return self.scorer.name
+
+    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> FLOAT:
+        if self.scorer.__class__.__name__ == "_PredictScorer":
+            if self.task.startswith("bin"):
+                y_pred = (y_pred > 0.5).astype(int)
+            elif self.task.startswith("multi"):
+                y_pred = np.argmax(y_pred, axis=1)
+
+        score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs)
+        return -self.scorer._sign * score  # Negative because XGBoost minimizes
 
 
 class Table:
@@ -292,8 +482,11 @@ class TrialsCallback:
         else:
             score = trial.values
 
-        if not score:  # Trial failed or got pruned
+        if not score:  # Trial failed
             score = [np.NaN] * len(self.T._metric)
+        elif trial.state.name == "PRUNED" and self.model.acronym == "XGB":
+            # XGBoost's eval_metric minimizes the function
+            score = np.negative(score)
 
         params = trial.user_attrs["params"]
         estimator = trial.user_attrs.get("estimator", None)

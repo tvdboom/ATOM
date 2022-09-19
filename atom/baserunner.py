@@ -220,7 +220,7 @@ class BaseRunner:
         Performance is measured as the highest score on the model's
         [`score_bootstrap`][adaboost-score_bootstrap] or
         [`score_test`][adaboost-score_test] attributes, checked in
-        that order. For [multi-metric runs][], only the first metric
+        that order. For [multi-metric runs][], only the main metric
         is compared.
 
         """
@@ -235,7 +235,7 @@ class BaseRunner:
         Performance is measured as the highest score on the model's
         [`score_bootstrap`][adaboost-score_bootstrap] or
         [`score_test`][adaboost-score_test] attributes, checked in
-        that order. For [multi-metric runs][], only the first metric
+        that order. For [multi-metric runs][], only the main metric
         is compared.
 
         """

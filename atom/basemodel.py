@@ -52,9 +52,19 @@ from atom.utils import (
 
 
 class BaseModel(ModelPlot, ShapPlot):
-    """Base class for all models."""
+    """Base class for all models.
 
-    def __init__(self, *args, **kwargs):
+    Parameters
+    ----------
+    *args
+        Parent class and (optionally) model's name.
+
+    fast_init: bool, default=False
+        Whether to initialize the model just for the estimator.
+
+    """
+
+    def __init__(self, *args, fast_init=False):
         self.T = args[0]  # Parent class
 
         self.scaler = None
@@ -67,11 +77,9 @@ class BaseModel(ModelPlot, ShapPlot):
 
         self._evals = CustomDict()
         self._pred = [None] * 12
-        self._scores = CustomDict(
-            train=CustomDict(),
-            test=CustomDict(),
-            holdout=CustomDict(),
-        )
+        self._scores = CustomDict(train=CustomDict(), test=CustomDict())
+        if self.T.holdout:
+            self._scores["holdout"] = CustomDict()
         self._shap = ShapExplanation(self)
 
         # Parameter attributes
@@ -94,7 +102,7 @@ class BaseModel(ModelPlot, ShapPlot):
         self._time_bootstrap = 0
 
         # Skip this (slower) part if not called for the estimator
-        if not kwargs.get("fast_init"):
+        if not fast_init:
             self.branch = self.T.branch
             self._train_idx = len(self.branch._idx[0])  # Can change for sh and ts
             if getattr(self, "needs_scaling", None) and self.T.scaled is False:
@@ -160,11 +168,6 @@ class BaseModel(ModelPlot, ShapPlot):
     def _sign(obj: Callable) -> OrderedDict:
         """Get the parameters of a class or method."""
         return signature(obj).parameters
-
-    @staticmethod
-    def _get_distributions() -> dict:
-        """Get the predefined hyperparameter distributions."""
-        return {}
 
     def _check_est_params(self):
         """Check that the parameters are valid for the estimator."""
@@ -253,7 +256,7 @@ class BaseModel(ModelPlot, ShapPlot):
         self,
         estimator: Predictor,
         data: Tuple[pd.DataFrame, pd.Series],
-        est_params_fit: dict = None,
+        est_params_fit: dict,
         validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
         trial: Optional[Trial] = None,
     ):
@@ -466,22 +469,22 @@ class BaseModel(ModelPlot, ShapPlot):
             None, it uses the same parameters as the first run. Can
             include:
 
-            - **distributions: dict, sequence or None, default=None**
+            - **distributions: dict, sequence or None, default=None**<br>
               Custom hyperparameter distributions for the models. If
               None, it uses ATOM's predefined distributions.
-            - **cv: int, dict or sequence, default=1**
+            - **cv: int, dict or sequence, default=1**<br>
               Number of folds for the cross-validation. If 1, the
               training set is randomly split in a subtrain and
               validation set.
-            - **plot: bool, dict or sequence, default=False**
+            - **plot: bool, dict or sequence, default=False**<br>
               Whether to plot the optimization's progress as it runs.
               Creates a canvas with two plots: the first plot shows the
               score of every trial and the second shows the distance
               between the last consecutive steps. See the [plot_trials][]
               method.
-            - **tags: dict, sequence or None, default=None**
+            - **tags: dict, sequence or None, default=None**<br>
               Custom tags for the model's [mlflow run][tracking].
-            - **\*\*kwargs**
+            - **\*\*kwargs**<br>
               Additional Keyword arguments for the constructor of the
               [study][] class or the [optimize][] method.
 
@@ -628,7 +631,7 @@ class BaseModel(ModelPlot, ShapPlot):
         self.T.log(f"Running hyperparameter tuning for {self._fullname}...", 1)
 
         # Assign custom distributions or use predefined
-        dist = self._get_distributions()
+        dist = self._get_distributions() if hasattr(self, "_get_distributions") else {}
         if self._ht.get("distributions"):
             # If dict, use the user provided values
             if isinstance(self._ht["distributions"], SEQUENCE):
@@ -946,8 +949,8 @@ class BaseModel(ModelPlot, ShapPlot):
     def best_trial(self) -> Trial:
         """Best trial found during hyperparameter tuning.
 
-        For [multi-metric runs][], the best trial is the trial that
-        preformed best on the main metric.
+        For [multi-metric runs][], the best trial is the first trial
+        in the Pareto front.
 
         """
         return self._best_trial
@@ -1218,7 +1221,7 @@ class BaseModel(ModelPlot, ShapPlot):
         """Class predictions on the training set."""
         if self._pred[3] is None:
             self._pred[3] = pd.Series(
-                data=self.estimator.predict(self.X_train),
+                data=self.estimator.predict(self.X_train).flatten(),
                 index=self.X_train.index,
                 name="predict_train",
             )
@@ -1230,7 +1233,7 @@ class BaseModel(ModelPlot, ShapPlot):
         """Class predictions on the test set."""
         if self._pred[4] is None:
             self._pred[4] = pd.Series(
-                data=self.estimator.predict(self.X_test),
+                data=self.estimator.predict(self.X_test).flatten(),
                 index=self.X_test.index,
                 name="predict_test",
             )
@@ -1242,7 +1245,7 @@ class BaseModel(ModelPlot, ShapPlot):
         """Class predictions on the holdout set."""
         if self.T.holdout is not None and self._pred[5] is None:
             self._pred[5] = pd.Series(
-                data=self.estimator.predict(self.X_holdout),
+                data=self.estimator.predict(self.X_holdout).flatten(),
                 index=self.X_holdout.index,
                 name="predict_holdout",
             )

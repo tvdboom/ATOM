@@ -240,11 +240,11 @@ nav:
         - Binary classification: examples/binary_classification.ipynb
         - Calibration: examples/calibration.ipynb
         - Deep learning: examples/deep_learning.ipynb
-        - Early stopping: examples/early_stopping.ipynb
         - Ensembles: examples/ensembles.ipynb
         - Feature engineering: examples/feature_engineering.ipynb
         - Holdout set: examples/holdout_set.ipynb
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
+        - In-training validation: examples/in_training_validation.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multi-metric runs: examples/multi_metric.ipynb
         - Natural Language Processing: examples/nlp.ipynb

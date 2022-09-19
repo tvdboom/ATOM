@@ -1887,7 +1887,7 @@ class ModelPlot(BasePlot):
     def plot_evals(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        dataset: str = "both",
+        dataset: str = "test",
         *,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1896,21 +1896,15 @@ class ModelPlot(BasePlot):
     ):
         """Plot evaluation curves for the train and test set.
 
-        Only for models that allow in-training validation. The metric
-        is provided by the estimator's package and is different for
-        every model and every task. For this reason, the method only
-        allows plotting one model.
+        Only for models that allow [in-training validation][].
 
         Parameters
         ----------
         models: int, str, slice, sequence or None, default=None
             Name of the model to plot. If None, all models in the
-            pipeline are selected. Note that leaving the default
-            option could raise an exception if there are multiple
-            models. To avoid this, call the plot from a model, e.g.
-            `atom.lgb.plot_evals()`.
+            pipeline are selected.
 
-        dataset: str, default="both"
+        dataset: str, default="test"
             Data set on which to calculate the evaluation curves.
             Choose from: "train", "test" or "both".
 
@@ -1935,20 +1929,16 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset, allow_holdout=False)
-
-        # Check that the model had in-training validation
-        if not hasattr(m, "evals"):
-            raise AttributeError(
-                "The plot_evals method is only available for models "
-                f"that allow in-training validation, got {m.name}."
-            )
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlot._fig.grid)
-        for set_ in dataset:
-            ax.plot(range(len(m.evals[set_])), m.evals[set_], lw=2, label=set_)
+        for m in models:
+            for set_ in dataset:
+                y = m.evals[f"{self._metric[0].name}_{set_}"]
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                ax.plot(range(len(y)), y, lw=2, label=label)
 
         BasePlot._fig._used_models.append(m)
         return self._plot(
@@ -1957,7 +1947,7 @@ class ModelPlot(BasePlot):
             title=title,
             legend=("best", len(dataset)),
             xlabel=m.has_validation,
-            ylabel=m.evals["metric"],
+            ylabel=self._metric[0].name,
             figsize=figsize,
             plotname="plot_evals",
             filename=filename,

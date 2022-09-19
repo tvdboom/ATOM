@@ -60,7 +60,7 @@ among ATOM's [predefined models][]. Install them using `pip install atom-ml[mode
 
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.0.4)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
-* **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=0.90)
+* **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=1.6.0)
 
 
 ### Development

@@ -1,13 +1,13 @@
 # Training
 ----------
 
-The training phase is where the models are fitted and evaluated. After
-this, the models are attached to the trainer, and you can use the
-[plotting](../plots) and [predicting](../predicting) methods.  The
-pipeline applies the following steps iteratively for all models:
+The training phase is where the models are fitted on the training data.
+After this, you can use the [plots][] and [prediction methods][] to
+evaluate the results. The training applies the following steps for all
+models:
 
-1. The optimal hyperparameters for the model are selected using a [bayesian
-   optimization](#hyperparameter-tuning) algorithm (optional).
+1. Use [hyperparameter tuning][] to select the optimal hyperparameters for 
+   the model (optional).
 2. The model is fitted on the training set using the best combination
    of hyperparameters found. After that, the model is evaluated on the tes set.
 3. Calculate various scores on the test set using a [bootstrap](#bootstrapping)
@@ -16,46 +16,41 @@ pipeline applies the following steps iteratively for all models:
 There are three approaches to run the training.
 
 * Direct training:
-    - [DirectClassifier](../../API/training/directclassifier)
-    - [DirectRegressor](../../API/training/directregressor)
-* Training via [successive halving](#successive-halving):
-    - [SuccessiveHalvingClassifier](../../API/training/successivehalvingclassifier)
-    - [SuccessiveHavingRegressor](../../API/training/successivehalvingregressor)
-* Training via [train sizing](#train-sizing):
-    - [TrainSizingClassifier](../../API/training/trainsizingclassifier)
-    - [TrainSizingRegressor](../../API/training/trainsizingregressor)
+    - [DirectClassifier][]
+    - [DirectRegressor][]
+* Training via [successive halving][]:
+    - [SuccessiveHalvingClassifier][]
+    - [SuccessiveHalvingRegressor][]
+* Training via [train sizing][]:
+    - [TrainSizingClassifier][]
+    - [TrainSizingRegressor][]
 
 The direct fashion repeats the aforementioned steps only once, while the
-other two approaches repeats them more than once. Just like the [data cleaning](../data_cleaning)
-and [feature engineering](../feature_engineering) classes, it's discouraged
-to use these classes directly. Instead, every approach can be called directly
-from atom through the [run](../../API/ATOM/atomclassifier/#run),
-[successive_halving](../../API/ATOM/atomclassifier/#successive-halving)
-and [train_sizing](../../API/ATOM/atomclassifier/#train-sizing) methods
-respectively.
+other two approaches repeats them more than once. Just like the [data cleaning][]
+and [feature engineering][] classes, it's discouraged to use these classes
+directly. Instead, every approach can be called directly from atom through
+the [run][atomclassifier-run], [successive_halving][atomclassifier-successive_halving]
+and [train_sizing][atomclassifier-train_sizing] methods respectively.
 
-Models are called through their [acronyms](../models), e.g. `atom.run(models="RF")`
-will train a [Random Forest](../../API/models/rf). If you want to run
-the same model multiple times, add a tag after the acronym to
-differentiate them.
+Models are called through their [acronyms][models], e.g. `atom.run(models="RF")`
+will train a [RandomForest][]. If you want to run the same model multiple
+times, add a tag after the acronym to differentiate them.
 
-```python
-atom.run(
-    models=["RF1", "RF2"],
-    est_params={
-        "RF1": {"n_estimators": 100},
-        "RF2": {"n_estimators": 200},
-    }
-) 
+```pycon
+>>> atom.run(
+...     models=["RF1", "RF2"],
+...     est_params={
+...         "RF1": {"n_estimators": 100},
+...         "RF2": {"n_estimators": 200},
+...     }
+... )
 ```
 
-For example, this pipeline will fit two Random Forest models, one
-with 100 and the other with 200 decision trees. The models can be
-accessed through `atom.rf1` and `atom.rf2`. Use tagged models to
-test how the same model performs when fitted with different
-parameters or on different data sets. See the
-[Imbalanced datasets](../../examples/imbalanced_datasets) example.
-
+For example, this pipeline fits two Random Forest models, one with 100
+and the other with 200 decision trees. The models can be accessed through
+`atom.rf1` and `atom.rf2`. Use tagged models to test how the same model
+performs when fitted with different parameters or on different data sets.
+See the [Imbalanced datasets](../../examples/imbalanced_datasets) example.
 
 Additional things to take into account:
 
@@ -66,9 +61,6 @@ Additional things to take into account:
 * When showing the final results, a `!` indicates the highest score
   and a `~` indicates that the model is possibly overfitting (training
   set has a score at least 20% higher than the test set).
-* The winning model (the one with the highest `mean_bootstrap` or
-  `score_test`) can be accessed through the `winner` attribute. In case
-  of a tie, the model that trained fastest is selected as winner.
 
 <br>
 
@@ -152,9 +144,12 @@ first metric of a multi-metric run (we call this metric the **main** metric
 in other parts of the documentation) is evaluated to select the [winning][atomclassifier-winner]
 model.
 
+
 !!! info
-    Some plots let you choose which of the metrics in a multi-metric run to
-    show using the `metric` parameter, e.g. [plot_results][].
+    * The [`winning`][atomclassifier-winner] model is retrieved comparing only
+    the main metric.
+    * Some plots let you choose which of the metrics in a multi-metric run
+      to show using the `metric` parameter, e.g. [plot_results][].
 
 <br>
 
@@ -169,25 +164,26 @@ The data is considered scaled if it has one of the following prerequisites:
 * There is a transformer in the pipeline whose \__name__ contains the
   word `scaler`.
 
-The scaling is applied using a [Scaler][] with default parameters. It can
-be accessed from the model through the `scaler` attribute. The scaled
-dataset can be examined through the model's [data attributes][]. Use
-the [available_models][] method to see which models require feature scaling.
+The scaling is applied using a [Scaler][] with default parameters. It
+can be accessed from the model through the `scaler` attribute. The
+scaled dataset can be examined through the model's [data attributes][].
+Use the [available_models][atomclassifier-available_models] method to
+see which models require feature scaling.
 
 <br>
 
 ## Parameter customization
 
 By default, every estimator uses the default parameters they get from
-their respective packages. To select different ones, use [`est_params`][directclassifier-est_params].
-There are two ways to add custom parameters to
-the models: adding them directly to the dictionary as key-value pairs
-or through dictionaries.
+their respective packages. To select different ones, use the [`est_params`][directclassifier-est_params].
+parameter of the [run][atomclassifier-run] method. There are two ways
+to add custom parameters to the models: adding them directly to the
+dictionary as key-value pairs or through dictionaries.
 
 Adding the parameters directly to `est_params` (or using a dict with
 the key 'all') shares them across all models in the trainer. In
-this example, both the XGBoost and the LightGBM model use
-`n_estimators=200`. Make sure all the models do have the specified
+this example, both the [XGBoost][] and the [LightGBM][] model use
+200 boosted trees. Make sure all the models do have the specified
 parameters or an exception will be raised!
 
 ```pycon
@@ -195,32 +191,32 @@ parameters or an exception will be raised!
 ```
 
 To specify parameters per model, use the model name as key and a dict
-of the parameters as value. In this example, the XGBoost model uses
-`n_estimators=200` and the Multi-layer Perceptron uses one hidden
+of the parameters as value. In this example, the [XGBoost][] model uses
+`n_estimators=200` and the [MultiLayerPerceptron][] uses one hidden
 layer with 75 neurons.
 
-```python
-atom.run(
-    models=["XGB", "MLP"],
-    est_params={
-        "XGB": {"n_estimators": 200},
-        "MLP": {"hidden_layer_sizes": (75,)},
-    }
-)
+```pycon
+>>> atom.run(
+...     models=["XGB", "MLP"],
+...     est_params={
+...         "XGB": {"n_estimators": 200},
+...         "MLP": {"hidden_layer_sizes": (75,)},
+...     }
+... )
 ```
 
 Some estimators allow you to pass extra parameters to the fit method
 (besides X and y). This can be done adding `_fit` at the end of the
-parameter. For example, to change XGBoost's verbosity, we can run:
+parameter. For example, to change [XGBoost's][] verbosity, we can run:
 
-```python
-atom.run(models="XGB", est_params={"verbose_fit": True})
+```pycon
+>>> atom.run(models="XGB", est_params={"verbose_fit": True})
 ```
 
 !!! note
-    If a parameter is specified through `est_params`, it is
-    ignored by the bayesian optimization, even if it's added
-    manually to `ht_params["dimensions"]`!
+    If a parameter is specified through `est_params`, it is ignored
+    during hyperparameter tuning, even if it's added manually to
+    `ht_params["distributions"]`!
 
 !!! info
     The estimator's `n_jobs` and `random_state` parameters adopt atom's
@@ -233,136 +229,191 @@ atom.run(models="XGB", est_params={"verbose_fit": True})
 In order to achieve maximum performance, it's important to tune an
 estimator's hyperparameters before training it. ATOM provides
 [hyperparameter tuning](https://en.wikipedia.org/wiki/Hyperparameter_optimization)
-using a [bayesian optimization](https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.)
-(BO) approach implemented with [scikit-optimize](https://scikit-optimize.github.io/stable/).
-The BO is optimized on the first metric provided with the `metric`
-parameter. Each step is either computed by cross-validation on the
-complete training set or by randomly splitting the training set every
-iteration into a (sub) training and validation set. This process can
-create some minimum data leakage towards specific parameters (since
-the estimator is evaluated on data that is used to train the next
-estimator), but it ensures maximal use of the provided data. However,
-the leakage is not present in the independent test set, thus the final
-score of every model is unbiased. Note that, if the dataset is relatively
-small, the BO's best score can consistently be lower than the final score
-on the test set due to the considerable lower fraction of instances on
-which it is trained. After running the BO, the parameters that resulted
-in the best score (in case of a tie, the call with the shortest training
-time is selected) are used to train the model on the complete training set.
+through the [optuna](https://optuna.org/) package. Just like optuna,
+we use the terms `study` and `trial` as follows:
 
-There are many possibilities to tune the BO to your liking. Use
-`n_trials` and `n_initial_points` to determine the number of iterations
-that are performed randomly at the start (exploration) and the number
-of iterations spent optimizing (exploitation). If `n_trials` is equal to
-`n_initial_points`, every iteration of the BO will select its
-hyperparameters randomly. This means the algorithm is technically
-performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf).
+* Study: optimization based on an objective function.
+* Trial: a single execution of the objective function.
+
+Each trial is either computed by cross-validation on the complete training
+set or by randomly splitting the training set every iteration into a
+(sub)training and validation set. This process can create some minimum
+data leakage towards specific parameters (since the estimator is evaluated
+on data that is used to train the next estimator), but it ensures maximal
+use of the provided data. However, the leakage is not present in the
+independent test set, thus the final score of every model is unbiased.
+Note that, if the dataset is relatively small, the tuning's best score can
+consistently be lower than the final score on the test set due to the
+considerable lower fraction of instances on which it is trained. After
+finishing the study, the parameters that resulted in the best score are
+used to fit the final model on the complete training set.
+
+!!! info
+    * Unless specified differently by the user, the used [samplers](https://optuna.readthedocs.io/en/stable/reference/samplers/index.html)
+      are [TPESampler](https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.TPESampler.html)
+      for single-metric runs and [NSGAIISampler](https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.NSGAIISampler.html)
+      for [multi-metric runs][].
+    * For [multi-metric runs][], the selected [best trial][adaboost-best_trial]
+      is the first trial in the Pareto front. Use the property's `@setter` to
+      change it to any other trial. See the [hyperparameter tuning](../examples/hyperparameter_tuning)
+      example.
+
+There are many possibilities to tune the study to your liking. The main
+parameter is [`n_trials`][directclassifier-n_trials], which determine the
+number of trials that are performed.
+
+!!! note
+    If you use the default sampler, it’s recommended to consider setting
+    larger `n_trials` to make full use of the characteristics of TPESampler
+    because TPESampler uses some (by default, 10) trials for its startup.
 
 Extra things to take into account:
 
-* The `n_trials` parameter includes the iterations in `n_initial_points`,
-  i.e. calling `atom.run(models="LR", n_trials=20, n_intial_points=10)`
-  will run 20 iterations of which the first 10 are random.
-* If `n_initial_points=1`, the first call is equal to the
-  estimator's default parameters.
-* The train/validation splits are different per call but equal for all models.
-* Re-evaluating the objective function at the same point automatically
-  skips the calculation and returns the same score as the equivalent call.
+* The train/validation splits are different per trial but equal for all models.
+* Re-evaluating the objective function at the same point (with the same
+  hyperparameters) automatically skips the calculation and returns the same score as the equivalent trial.
 
 !!! tip
     The hyperparameter tuning output can become quite wide for models
     with many hyperparameters. If you are working in a Jupyter Notebook,
     you can change the output's width running the following code in a cell:
-    ```python
-    from IPython.core.display import display, HTML
-    display(HTML("<style>.container { width:100% !important; }</style>"))
+    ```pycon
+    >>> from IPython.core.display import display, HTML
+    >>> display(HTML("<style>.container { width:100% !important; }</style>"))
     ```
 
-Other settings can be changed through the `ht_params` parameter, a
-dictionary where every key-value combination can be used to further
-customize the BO.
+Other settings can be changed through the [`ht_params`][directclassifier-ht_params]
+parameter, a dictionary where every key-value combination can be used
+to further customize the optimization.
 
 By default, which hyperparameters are tuned and their corresponding
-dimensions are predefined by ATOM. Use the 'dimensions' key to customize
-these. Just like with `est_params`, you can share the same parameters
-across models or use a dictionary with the model name as key to specify
-the parameters for every individual model. Use the key 'all' to tune some
-hyperparameters for all models when you also want to tune other parameters
-only for specific ones. The following example tunes the `n_estimators`
-parameter for both models but the `max_depth` parameter only for the Random
-Forest.
+distributions are predefined by ATOM. Use the 'distributions' key to
+customize these. Just like with `est_params`, it's possible to share the
+same parameters across models or use a dictionary with the model name as
+key to specify the parameters for every individual model. Use the key
+'all' to tune some hyperparameters for all models when you also want to
+tune other parameters only for specific ones. The following example tunes
+the `n_estimators` parameter for both models but the `max_depth` parameter
+only for the [RandomForest][].
 
-```python
-atom.run(
-    models=["ET", "RF"],
-    n_trials=30,
-    ht_params={"dimensions": {"all": "n_estimators", "RF": "max_depth"}},
-)
+```pycon
+>>> atom.run(
+...    models=["ET", "RF"],
+...    n_trials=30,
+...    ht_params={"distributions": {"all": "n_estimators", "RF": "max_depth"}},
+... )
 ```
 
-Like the `columns` parameter in atom's methods, you can exclude parameters
-from the BO adding `!` before its name. It's possible to exclude multiple
-parameters, but not to combine inclusion and exclusion for the same model.
-For example, to optimize a Random Forest using all its predefined parameters
-except `n_estimators`, run:
+Like the [`columns`][atomclassifier-add] parameter in atom's methods, you
+can exclude parameters from the optimization adding `!` before its name.
+It's possible to exclude multiple parameters, but not to combine inclusion
+and exclusion for the same model. For example, to optimize a [RandomForest][]
+using all its predefined parameters except `n_estimators`, run:
 
-```python
-atom.run(models="ET", n_trials=15, ht_params={"dimensions": "!n_estimators"})
+```pycon
+>>> atom.run(
+... models="ET",
+... n_trials=15,
+... ht_params={"distributions": "!n_estimators"},
+... )
 ```
 
-If just the parameter name is provided, the predefined dimension space
-is used. It's also possible to provide custom dimension spaces, but make
-sure the dimensions are compliant with [skopt's API](https://scikit-optimize.github.io/stable/modules/classes.html).
-See every model's individual documentation in the API section for an
-overview of their hyperparameters and dimensions.
+If just the parameter name is provided, the predefined distribution is
+used. It's also possible to provide custom distributions spaces, but make
+sure they are compliant with [optuna's API](https://optuna.readthedocs.io/en/stable/reference/distributions.html).
+See every model's individual documentation in ATOM's API section for an
+overview of their hyperparameters and distributions.
 
-```python
-from skopt.space.space import Categorical, Integer
+```pycon
+>>> from optuna.distributions import (
+...    IntDistribution, FloatDistribution, CategoricalDistribution
+... )
 
-atom.run(
-    models=["ET", "RF"],
-    n_trials=30,
-    ht_params={
-        "dimensions": {
-            "all": Integer(10, 100, name="n_estimators"),
-            "RF": [
-                Integer(1, 10, name="max_depth"),
-                Categorical([None, "sqrt", "log2", 0.7], name="max_features"),
-            ],
-        },
-    },
-)
+>>> atom.run(
+...     models=["ET", "RF"],
+...     n_trials=30,
+...     ht_params={
+...         "dimensions": {
+...             "all": {"n_estimators": IntDistribution(10, 100, step=10),
+...             "RF": {
+...                 "max_depth": IntDistribution(1, 10),
+...                 "max_features": CategoricalDistribution(["sqrt", "log2"]),
+...            },
+...         },
+...     },
+... )
 ```
 
 !!! note
-    When specifying dimension spaces manually, make sure to import the
-    dimension types from scikit-optimize: `from skopt.space.space import
-    Real, Categorical, Integer`.
+    When specifying distributions manually, make sure to import the
+    distribution types from optuna: `#!python from optuna.distributions import ...`.
 
 !!! warning
-    Keras' models can only use hyperparameter tuning when `n_jobs=1` or
-    `ht_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises a PicklingError
-    due to incompatibilities of the APIs. Read [here](../models/#deep-learning)
+    Keras' models can only use hyperparameter tuning when `#!python n_jobs=1`
+    or `#!python ht_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises
+    a PicklingError due to incompatibilities of the APIs. Read [here][deep-learning]
     more about deep learning models.
 
-The majority of skopt's callbacks to stop the optimizer early can be
-accessed through `ht_params`. Other callbacks can be included through
-the `callbacks` key.
 
-```python
-atom.run(
-    models="LR",
-    n_trials=30,
-    ht_params={"callbacks": custom_callback()},
-)
+Parameters for optuna's [study][] and the study's [optimize][] method can
+be added as kwargs to `ht_params`. For example, to use a different sampler
+or add a custom callback.
+
+```pycon
+>>> from optuna.samplers import RandomSampler
+
+>>> atom.run(
+...     models="LR",
+...     n_trials=30,
+...     ht_params={
+...         "sampler": RandomSampler(seed=atom.random_state),
+...         "callbacks": custom_callback(),
+...     },
+... )
 ```
 
-It's also possible to include additional parameters for skopt's optimizer
-as key-value pairs.
+<br>
 
-```python
-atom.run("LR", n_trials=10, ht_params={"acq_func": "EI"})
+## In-training validation
+
+Some [predefined models][] allow in-training validation. This means
+that the estimator is evaluated using the **main metric** on the train
+and test set after every round of the training (a round can be an
+iteration for linear models or adding a tree for boosted tree models).
+The validation scores are stored in the `evals` attribute, a dictionary
+of the train and test performances per round (also when pruning isn't
+applied). Click [here](../../examples/in_training_validation) for an example
+using in-training validation.
+
+The study uses [MedianPruner](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.MedianPruner.html)
+to stop unpromising trials early. This can save the pipeline much time
+that would otherwise be wasted on an estimator that is unlikely to
+yield the best results. You can use any other of optuna's [pruners](https://optuna.readthedocs.io/en/stable/reference/pruners.html)
+through the [`ht_params`][directclassifier-ht_params] parameter.
+
+```pycon
+>>> from optuna.pruners import HyperbandPruner
+
+>>> atom.run("SGD", n_trials=30, ht_params={"pruner": HyperbandPruner()})
 ```
+
+The models that support in-training validation and pruning are:
+
+* [CatBoost][]
+* [LightGBM][]
+* [MultiLayerPerceptron][]
+* [PassiveAggressive][]
+* [Perceptron][]
+* [StochasticGradientDescent][]
+* [XGBoost][]
+
+!!! warning
+    Pruning is only supported for models with in-training validation
+    and single-metric runs.
+
+!!! tip
+    Use the [plot_evals][] method to visualize the in-training validation
+    on the train and test set.
 
 
 <br>
@@ -373,44 +424,12 @@ After fitting the estimator, you can assess the robustness of the model
 using the [bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics))
 technique. This technique creates several new data sets selecting random 
 samples from the training set (with replacement) and evaluates them on 
-the test set. This way we get a distribution of the performance of the
-model. The sets are the same for every model. The number of sets can be
-chosen through the `n_bootstrap` parameter.
+the test set. This way you can get a distribution of the performance of
+the model. The sets are the same for every model. The number of sets can
+be chosen through the [`n_bootstrap`][directclassifier-n_bootstrap] parameter.
 
 !!! tip
-    Use the [plot_results](../../API/plots/plot_results) method to plot
-    the boostrap scores in a boxplot.
-
-
-<br>
-
-## In-training validation
-
-[XGBoost](../../API/models/xgb), [LightGBM](../../API/models/lgb) and [CatBoost](../../API/models/catb)
-allow in-training validation. This means that the estimator is evaluated
-after every round of the training, and that the training is stopped
-early if it didn't improve in the last `early_stopping` rounds. This
-can save the pipeline much time that would otherwise be wasted on an
-estimator that is unlikely to improve further. Note that this technique
-is applied both during the BO and at the final fit on the complete
-training set.
-
-There are two ways to apply early stopping on these models:
-
-* Through the `early_stopping` key in `ht_params`. This approach applies
-  early stopping to all models in the trainer and allows the input of a
-  fraction of the total number of rounds.
-* Filling the `early_stopping_rounds` parameter directly in `est_params`.
-  Don't forget to add `_fit` to the parameter to call it from the fit method.
-
-After fitting, the model gets the `evals` attribute, a dictionary of the
-train and test performances per round (also if early stopping wasn't
-applied). Click [here](../../examples/early_stopping) for an example using
-early stopping.
-
-!!! tip
-    Use the [plot_evals](../../API/plots/plot_evals) method to plot the
-    in-training validation on the train and test set.
+    Use the [plot_results][] method to plot the boostrap scores in a boxplot.
 
 
 <br>
@@ -425,19 +444,16 @@ performance can depend greatly on the amount of data on which it is
 trained. For this reason, we recommend only to use this technique with
 similar models, e.g. only using tree-based models.
 
-Use successive halving through the [SuccessiveHalvingClassifier](../../API/training/successivehalvingclassifier)/[SuccessiveHalvingRegressor](../../API/training/successivehalvingregressor)
-classes or from atom via the [successive_halving](../../API/ATOM/atomclassifier/#successive-halving)
-method. Consecutive runs of the same model are saved with the model's acronym
-followed by the number of models in the run. For example, a
-[Random Forest](../../API/models/rf) in a run with 4 models would become model
-`RF4`.
+Run successive halving from atom via the [successive_halving][atomclassifier-successive_halving]
+method. Consecutive runs of the same model are saved with the model's
+acronym followed by the number of models in the run. For example, a
+[RandomForest][] in a run with 4 models would become model `RF4`.
 
-Click [here](../../examples/successive_halving) for a successive halving example.
+See [here](../../examples/successive_halving) a successive halving example.
 
 !!! tip
-    Use the [plot_successive_halving](../../API/plots/plot_successive_halving)
-    method to see every model's performance per iteration of the
-    successive halving.
+    Use the [plot_successive_halving][] method to see every model's
+    performance per iteration of the successive halving.
 
 <br>
 
@@ -450,17 +466,16 @@ insights in this trade-off, and help determine the optimal size of
 the training set. The models are fitted multiple times, ever-increasing
 the number of samples in the training set.
 
-Use train sizing through the [TrainSizingClassifier](../../API/training/trainsizingclassifier)/[TrainSizingRegressor](../../API/training/trainsizingregressor)
-classes or from atom via the [train_sizing](../../API/ATOM/atomclassifier/#train-sizing)
+Run train sizing from atom via the [train_sizing][atomclassifier-train_sizing]
 method. The number of iterations and the number of samples per training
-can be specified with the `train_sizes` parameter. Consecutive runs of the
-same model are saved with the model's acronym followed by the fraction of
-rows in the training set (the `.` is removed from the fraction!). For example,
-a [Random Forest](../../API/models/rf) in a run with 80% of the training samples
-would become model `RF08`.
+can be specified with the [`train_sizes`][trainsizingclassifier-train_sizes]
+parameter. Consecutive runs of the same model are saved with the model's
+acronym followed by the fraction of rows in the training set (the `.` is
+removed from the fraction!). For example, a [RandomForest][] in a run with
+80% of the training samples would become model `RF08`.
 
-Click [here](../../examples/train_sizing) for a train sizing example.
+See [here](../../examples/train_sizing) a train sizing example.
 
 !!! tip
-    Use the [plot_learning_curve](../../API/plots/plot_learning_curve)
-    method to see the model's performance per size of the training set.
+    Use the [plot_learning_curve][] method to see the model's performance
+    per size of the training set.

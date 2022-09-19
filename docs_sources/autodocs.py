@@ -94,8 +94,18 @@ CUSTOM_URLS = dict(
     adaboostclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html",
     adaboostregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html",
     adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
-    multinomialnb="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html",
+    baggingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html",
+    baggingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html",
+    bagdocs="https://scikit-learn.org/stable/modules/ensemble.html#bootstrapping",
+    bernoullinbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html",
+    bnbdocs="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html",
+    catboostclassifier="https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html",
+    catboostregressor="https://catboost.ai/docs/concepts/python-reference_catboostregressor.html",
+    catbdocs="https://catboost.ai/",
+    multinomialnbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html",
     mnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#multinomial-naive-bayes",
+    lgbmclassifier="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html",
+    lgbmregressor="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html",
     lgb_gpu="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html",
     logisticregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html",
     lrdocs="https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression",
@@ -106,6 +116,9 @@ CUSTOM_URLS = dict(
     sgdclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html",
     sgdregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html",
     sgddocs="https://scikit-learn.org/stable/modules/sgd.html",
+    xgbclassifier="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier",
+    xgbregressor="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor",
+    xgbdocs="https://xgboost.readthedocs.io/en/latest/index.html",
     # NLP
     snowballstemmer="https://www.nltk.org/api/nltk.stem.snowball.html#nltk.stem.snowball.SnowballStemmer",
     bow="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html",
@@ -122,6 +135,7 @@ TYPES_CONVERSION = {
     "atom.utils.Model": "[models][]",
     "atom.utils.Predictor": "Predictor",
     "List[str]": "list",
+    "Tuple[int, int]": "tuple",
     "Optional[float]": "float or None",
     "Optional[pandas.core.frame.DataFrame]": "pd.DataFrame or None",
     "Optional[pandas.core.series.Series]": "pd.Series or None",
@@ -274,6 +288,7 @@ class AutoDocs:
 
         """
         text = ""
+        text += f"[{self.obj.acronym}](../../../user_guide/models/#predefined-models){{ .md-tag }}"
         if self.obj.needs_scaling:
             text += "[needs scaling](../../../user_guide/training/#automated-feature-scaling){ .md-tag }"
         if self.obj.accepts_sparse:

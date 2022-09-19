@@ -44,8 +44,8 @@ from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
     Runner, Scorer, Table, Transformer, __version__, check_is_fitted,
     check_scaling, composed, crash, create_acronym, custom_transform, divide,
-    fit_one, flt, get_pl_name, has_task, infer_task, is_sparse, lst,
-    method_to_log, variable_return, get_custom_scorer
+    fit_one, flt, get_custom_scorer, get_pl_name, has_task, infer_task,
+    is_sparse, lst, method_to_log, variable_return,
 )
 
 

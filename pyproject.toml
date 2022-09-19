@@ -57,7 +57,7 @@ dependencies = [
 models = [
     "catboost>=1.0.4",
     "lightgbm>=3.3.2",
-    "xgboost>=0.90",
+    "xgboost>=1.6.0",
 ]
 
 [tool.pdm.dev-dependencies]
