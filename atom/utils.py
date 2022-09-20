@@ -17,7 +17,7 @@ from datetime import datetime as dt
 from functools import wraps
 from importlib import import_module
 from inspect import Parameter, signature
-from typing import Optional, Protocol, Union, Tuple
+from typing import Protocol, Tuple, Union
 
 import matplotlib.pyplot as plt
 import mlflow
@@ -294,7 +294,7 @@ class LGBMetric:
             if self.task.startswith("bin"):
                 y_pred = (y_pred > 0.5).astype(int)
             elif self.task.startswith("multi"):
-                y_pred = y_pred.reshape(len(y_true), len(np.unique(y_true)))
+                y_pred = y_pred.reshape(len(np.unique(y_true)), len(y_true)).T
                 y_pred = np.argmax(y_pred, axis=1)
 
         if "sample_weight" in signature(self.scorer._score_func).parameters:
@@ -488,7 +488,7 @@ class TrialsCallback:
             # XGBoost's eval_metric minimizes the function
             score = np.negative(score)
 
-        params = trial.user_attrs["params"]
+        params = self.model._trial_to_est(trial.user_attrs["params"])
         estimator = trial.user_attrs.get("estimator", None)
 
         # Add row to the trials attribute
@@ -997,6 +997,9 @@ class CustomDict(MutableMapping):
         else:
             self[key] = default
             return default
+
+    def copy(self):
+        return copy(self)
 
     def index(self, key):
         return self.__keys.index(self._get_key(key))

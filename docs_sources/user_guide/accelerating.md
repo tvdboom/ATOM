@@ -67,15 +67,14 @@ initializing the instance with parameter `device="gpu"`. The [`device`]
 * device="gpu:1" (use second GPU)
 
 Use the [`engine`][atomclassifier-engine] parameter to choose between the
-cuML and sklearnex execution engines. The [XGB][xgboost], [LGB][lightgbm]
-and [CatB][catboost] models come with their own GPU engine. Setting
-device="gpu" is sufficient to accelerate them with GPU, regardless of the
-engine parameter.
+cuML and sklearnex execution engines. The [XGBoost][], [LightGBM][] and
+[CatBoost][] models come with their own GPU engine. Setting device="gpu"
+is sufficient to accelerate them with GPU, regardless of the engine parameter.
 
 !!! warning
     * GPU accelerated estimators almost never support [sparse datasets][].
       Refer to their respective documentation to check which ones do.
-    * GPU accelerated estimators use slightly different hyperparameters
+    * GPU accelerated estimators often use slightly different hyperparameters
       than their CPU counterparts.
     * ATOM does not support multi-GPU training. If there is more than one
       GPU on the machine and the `device` parameter does not specify which

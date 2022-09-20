@@ -229,6 +229,31 @@ class BaseModel(ModelPlot, ShapPlot):
             {k: rnd(trial._suggest(k, v)) for k, v in self._ht["distributions"].items()}
         )
 
+    @staticmethod
+    def _trial_to_est(params: CustomDict) -> CustomDict:
+        """Convert trial's parameters to parameters for the estimator.
+
+        Some models such as MLP, use different hyperparameters for the
+        study as for the estimator (this is the case when the estimator's
+        parameter can not be modelled according to an integer, float or
+        categorical distribution). This method converts the parameters
+        from the trial to those that can be ingested by the estimator.
+        This method is overriden by implementations in the child classes.
+        The base method just returns the parameters as is.
+
+        Parameters
+        ----------
+        params: CustomDict
+            Trial's hyperparameters.
+
+        Returns
+        -------
+        CustomDict
+            Estimator's hyperparameters.
+
+        """
+        return deepcopy(params)
+
     def _get_est(self, **params) -> Predictor:
         """Get the estimator instance.
 
@@ -291,7 +316,7 @@ class BaseModel(ModelPlot, ShapPlot):
             Fitted instance.
 
         """
-        if self.has_validation:
+        if self.has_validation and hasattr(estimator, "partial_fit"):
             self._evals = CustomDict(metric=self.T._metric[0].name, train=[], test=[])
 
             # Loop over first parameter in estimator
@@ -540,8 +565,7 @@ class BaseModel(ModelPlot, ShapPlot):
                 y_val = og.dataset.iloc[val_idx, -1]
 
                 # Transform subsets if there is a pipeline
-                if not self.T.pipeline.empty:
-                    pl = self.export_pipeline(verbose=0)[:-1]  # Drop the estimator
+                if len(pl := self.export_pipeline(verbose=0)[:-1]) > 0:
                     X_subtrain, y_subtrain = pl.fit_transform(X_subtrain, y_subtrain)
                     X_val, y_val = pl.transform(X_val, y_val)
 
@@ -571,7 +595,9 @@ class BaseModel(ModelPlot, ShapPlot):
             trial.set_user_attr("params", params)
 
             # Create estimator instance with trial specific hyperparameters
-            estimator = self._get_est(**{**self._est_params, **params})
+            estimator = self._get_est(
+                **{**self._est_params, **self._trial_to_est(params)}
+            )
 
             # Get original branch to define subsets
             og = self.T._get_og_branches()[0]

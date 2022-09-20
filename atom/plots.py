@@ -1946,7 +1946,7 @@ class ModelPlot(BasePlot):
             ax=ax,
             title=title,
             legend=("best", len(dataset)),
-            xlabel=m.has_validation,
+            xlabel="iterations",
             ylabel=self._metric[0].name,
             figsize=figsize,
             plotname="plot_evals",
