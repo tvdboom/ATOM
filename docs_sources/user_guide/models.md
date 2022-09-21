@@ -14,7 +14,7 @@ LightGBM model. The available models and their corresponding
 acronyms are:
 
 * "AdaB" for [AdaBoost][]
-* "ARD" for [AutomatedRelevanceDetermination][]
+* "ARD" for [AutomaticRelevanceDetermination][]
 * "Bag" for [Bagging][]
 * "BR" for [BayesianRidge][]
 * "BNB" for [BernoulliNB][]
@@ -24,6 +24,7 @@ acronyms are:
 * "Tree" for [DecisionTree][]
 * "Dummy" for [Dummy][]
 * "EN" for [ElasticNet][]
+* "ETree" for [ExtraTree][]
 * "ET" for [ExtraTrees][]
 * "GNB" for [GaussianNB][]
 * "GP" for [GaussianProcess][]
@@ -110,9 +111,6 @@ Additional things to take into account:
   i.e. it's a child class of [BaseEstimator](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html).
 * [Hyperparameter tuning][] for custom models is ignored unless appropriate
   dimensions are provided through `ht_params`.
-* If the estimator has a `n_jobs` and/or `random_state` parameter that is
-  left to its default value, it will automatically adopt the values from
-  the trainer it's called from.
 
 <br>
 

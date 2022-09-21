@@ -22,6 +22,9 @@ Description: Module containing all available models. All classes must
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
+        accepts_multioutput: bool
+            Whether the model has native support for multi-output tasks.
+
         has_validation: str or None
             Whether the model allows in-training validation. If str,
             name of the estimator's parameter that states the number
@@ -56,7 +59,12 @@ Description: Module containing all available models. All classes must
             (optionally) custom changes to the params. Don't implement
             if the parent's implementation is sufficient.
 
-        _fit_estimator(estimator, data, est_params_fit, validation, trial):
+        _trial_to_est(self, params) -> CustomDict:
+            Convert trial's hyperparameters to parameters for the
+            estimator. Only implement for models whose study params are
+            different than those for the estimator.
+
+        _fit_estimator(self, estimator, data, est_params_fit, validation, trial):
             This method is called to fit the estimator. Implement only
             to customize the fit.
 
@@ -68,7 +76,7 @@ Description: Module containing all available models. All classes must
 List of available models:
 
 - "AdaB" for AdaBoost
-- "ARD" for AutomatedRelevanceDetermination
+- "ARD" for AutomaticRelevanceDetermination
 - "Bag" for Bagging
 - "BR" for BayesianRidge
 - "BNB" for BernoulliNB
@@ -78,6 +86,7 @@ List of available models:
 - "Tree" for DecisionTree
 - "Dummy" for Dummy
 - "EN" for ElasticNet
+- "ETree" for ExtraTree
 - "ET" for ExtraTrees
 - "GNB" for GaussianNB (no hyperparameter tuning)
 - "GP" for GaussianProcess (no hyperparameter tuning)
@@ -86,7 +95,7 @@ List of available models:
 - "hGBM" for HistGradientBoosting
 - "KNN" for KNearestNeighbors
 - "Lasso" for Lasso
-- "Lars" for LeastAngleRegression
+- "Lars" for LeastAngleRegression (no hyperparameter tuning)
 - "LGB" for LightGBM (if package is available)
 - "LDA" for LinearDiscriminantAnalysis
 - "lSVM" for LinearSVM
@@ -132,23 +141,8 @@ from atom.utils import (
 )
 
 
-# Variables ======================================================== >>
-
-zero_to_one_exc = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-zero_to_one_inc = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-half_to_one_exc = [0.5, 0.6, 0.7, 0.8, 0.9]
-half_to_one_inc = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-
-# Classes ========================================================== >>
-
 class CustomModel(BaseModel):
     """Custom model. Estimator provided by user."""
-
-    needs_scaling = None
-    accepts_sparse = None
-    has_validation = None
-    supports_engines = []
 
     def __init__(self, *args, **kwargs):
         self.est = kwargs["estimator"]  # Estimator provided by the user
@@ -160,6 +154,7 @@ class CustomModel(BaseModel):
             self.acronym = create_acronym(self._fullname)
 
         self.needs_scaling = getattr(self.est, "needs_scaling", False)
+        self.has_validation = getattr(self.est, "has_validation", None)
         super().__init__(*args)
 
     @property
@@ -185,19 +180,8 @@ class CustomModel(BaseModel):
 
         """
         if callable(self.est):
-            # Add n_jobs and random_state to the estimator (if available)
-            for p in ("n_jobs", "random_state"):
-                if p in self._sign():
-                    params[p] = params.pop(p, getattr(self.T, p))
-
-            return self.est(**params)
+            return super().self._get_est(params)
         else:
-            # If the class has the param and it's the default value, change it
-            for p in ("n_jobs", "random_state"):
-                if p in self._sign(self.est):
-                    if self.est.get_params()[p] == self._sign()[p]._default:
-                        params[p] = params.pop(p, getattr(self.T, p))
-
             return self.est.set_params(**params)
 
 
@@ -290,11 +274,64 @@ class AdaBoost(BaseModel):
 
 
 class AutomaticRelevanceDetermination(BaseModel):
-    """Automatic Relevance Determination."""
+    """Automatic Relevance Determination.
+
+    Automatic Relevance Determination is very similar to
+    [BayesianRidge][], but can lead to sparser coefficients. Fit the
+    weights of a regression model, using an ARD prior. The weights of
+    the regression model are assumed to be in Gaussian distributions.
+
+    Corresponding estimators are:
+
+    - [ARDRegression][] for regression tasks.
+
+    Read more in sklearn's [documentation][arddocs].
+
+    See Also
+    --------
+    atom.models:BayesianRidge
+    atom.models:GaussianProcess
+    atom.models:LeastAngleRegression
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_boston
+
+    >>> X, y = load_boston(return_X_y=True)
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="ARD", metric="r2", verbose=2)
+
+    Training ========================= >>
+    Models: ARD
+    Metric: r2
+
+
+    Results for AutomaticRelevanceDetermination:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7275
+    Test evaluation --> r2: 0.7792
+    Time elapsed: 0.059s
+    -------------------------------------------------
+    Total time: 0.059s
+
+
+    Final results ==================== >>
+    Total time: 0.061s
+    -------------------------------------
+    AutomaticRelevanceDetermination --> r2: 0.7792
+
+    ```
+
+    """
 
     acronym = "ARD"
     needs_scaling = True
     accepts_sparse = False
+    has_validation = None
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
@@ -399,15 +436,66 @@ class Bagging(BaseModel):
         """
         return CustomDict(
             n_estimators=Int(10, 500, step=10),
-            max_samples=Categorical(half_to_one_inc),
-            max_features=Categorical(half_to_one_inc),
+            max_samples=Float(0.5, 1.0, step=0.1),
+            max_features=Float(0.5, 1.0, step=0.1),
             bootstrap=Categorical([True, False]),
             bootstrap_features=Categorical([True, False]),
         )
 
 
 class BayesianRidge(BaseModel):
-    """Bayesian ridge regression."""
+    """Bayesian ridge regression.
+
+    Bayesian regression techniques can be used to include regularization
+    parameters in the estimation procedure: the regularization parameter
+    is not set in a hard sense but tuned to the data at hand.
+
+    Corresponding estimators are:
+
+    - [BayesianRidge][bayesianridgeclass] for regression tasks.
+
+    Read more in sklearn's [documentation][brdocs].
+
+    See Also
+    --------
+    atom.models:AutomaticRelevanceDetermination
+    atom.models:GaussianProcess
+    atom.models:LeastAngleRegression
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_boston
+
+    >>> X, y = load_boston(return_X_y=True)
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="BR", metric="r2", verbose=2)
+
+    Training ========================= >>
+    Models: BR
+    Metric: r2
+
+
+    Results for BayesianRidge:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7499
+    Test evaluation --> r2: 0.6873
+    Time elapsed: 0.040s
+    -------------------------------------------------
+    Total time: 0.040s
+
+
+    Final results ==================== >>
+    Total time: 0.041s
+    -------------------------------------
+    BayesianRidge --> r2: 0.6873
+
+    ```
+
+    """
 
     acronym = "BR"
     needs_scaling = True
@@ -530,7 +618,7 @@ class CatBoost(BaseModel):
     - [CatBoostClassifier][] for classification tasks.
     - [CatBoostRegressor][] for regression tasks.
 
-    Read more in sklearn's [documentation][catbdocs].
+    Read more in CatBoost's [documentation][catbdocs].
 
     !!! note
         ATOM uses CatBoost's `n_estimators` parameter instead of
@@ -590,9 +678,6 @@ class CatBoost(BaseModel):
 
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
-
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
 
         Parameters
         ----------
@@ -720,13 +805,64 @@ class CatBoost(BaseModel):
             min_child_samples=Int(1, 30),
             bootstrap_type=Categorical(["Bayesian", "Bernoulli"]),
             bagging_temperature=Float(0, 10),
-            subsample=Categorical(half_to_one_inc),
+            subsample=Float(0.5, 1.0, step=0.1),
             reg_lambda=Float(0.001, 100, log=True),
         )
 
 
 class CategoricalNB(BaseModel):
-    """Categorical Naive Bayes."""
+    """Categorical Naive Bayes.
+
+    Categorical Naive Bayes implements the Naive Bayes algorithm for
+    categorical features.
+
+    Corresponding estimators are:
+
+    - [CategoricalNB][categoricalnbclass] for classification tasks.
+
+    Read more in sklearn's [documentation][catnbdocs].
+
+    See Also
+    --------
+    atom.models:BernoulliNB
+    atom.models:ComplementNB
+    atom.models:GaussianNB
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> import numpy as np
+
+    >>> X = np.random.randint(5, size=(100, 100))
+    >>> y = np.random.randint(2, size=100)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="CatNB", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: CatNB
+    Metric: f1
+
+
+    Results for CategoricalNB:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.5714
+    Time elapsed: 0.020s
+    -------------------------------------------------
+    Total time: 0.020s
+
+
+    Final results ==================== >>
+    Total time: 0.020s
+    -------------------------------------
+    CategoricalNB --> f1: 0.5714 ~
+
+    ```
+
+    """
 
     acronym = "CatNB"
     needs_scaling = False
@@ -747,14 +883,65 @@ class CategoricalNB(BaseModel):
             Hyperparameter distributions.
 
         """
-        return [
-            Float(0.01, 10, "log-uniform", name="alpha"),
-            Categorical([True, False], name="fit_prior"),
-        ]
+        return CustomDict(
+            alpha=Float(0.01, 10, log=True),
+            fit_prior=Categorical([True, False]),
+        )
 
 
 class ComplementNB(BaseModel):
-    """Complement Naive Bayes."""
+    """Complement Naive Bayes.
+
+    The Complement Naive Bayes classifier was designed to correct the
+    "severe assumptions" made by the standard [MultinomialNB][]
+    classifier. It is particularly suited for imbalanced datasets.
+
+    Corresponding estimators are:
+
+    - [ComplementNB][complementnbclass] for classification tasks.
+
+    Read more in sklearn's [documentation][cnbdocs].
+
+    See Also
+    --------
+    atom.models:BernoulliNB
+    atom.models:CategoricalNB
+    atom.models:MultinomialNB
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="CNB", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: CNB
+    Metric: f1
+
+
+    Results for ComplementNB:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.9223
+    Test evaluation --> f1: 0.9189
+    Time elapsed: 0.011s
+    -------------------------------------------------
+    Total time: 0.011s
+
+
+    Final results ==================== >>
+    Total time: 0.012s
+    -------------------------------------
+    ComplementNB --> f1: 0.9189
+
+    ```
+
+    """
 
     acronym = "CNB"
     needs_scaling = False
@@ -775,15 +962,65 @@ class ComplementNB(BaseModel):
             Hyperparameter distributions.
 
         """
-        return [
-            Float(0.01, 10, "log-uniform", name="alpha"),
-            Categorical([True, False], name="fit_prior"),
-            Categorical([True, False], name="norm"),
-        ]
+        return CustomDict(
+            alpha=Float(0.01, 10, log=True),
+            fit_prior=Categorical([True, False]),
+            norm=Categorical([True, False]),
+        )
 
 
 class DecisionTree(BaseModel):
-    """Single Decision Tree."""
+    """Single Decision Tree.
+
+    A single decision tree classifier/regressor.
+
+    Corresponding estimators are:
+
+    - [DecisionTreeClassifier][] for classification tasks.
+    - [DecisionTreeRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][treedocs].
+
+    See Also
+    --------
+    atom.models:ExtraTree
+    atom.models:ExtraTrees
+    atom.models:RandomForest
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="Tree", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: Tree
+    Metric: f1
+
+
+    Results for DecisionTree:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.9275
+    Time elapsed: 0.014s
+    -------------------------------------------------
+    Total time: 0.014s
+
+
+    Final results ==================== >>
+    Total time: 0.014s
+    -------------------------------------
+    DecisionTree --> f1: 0.9275
+
+    ```
+
+    """
 
     acronym = "Tree"
     needs_scaling = False
@@ -810,22 +1047,73 @@ class DecisionTree(BaseModel):
         else:
             criterion = ["squared_error", "absolute_error", "friedman_mse", "poisson"]
 
-        return [
-            Categorical(criterion, name="criterion"),
-            Categorical(["best", "random"], name="splitter"),
-            Categorical([None, *range(1, 17)], name="max_depth"),
-            Int(2, 20, name="min_samples_split"),
-            Int(1, 20, name="min_samples_leaf"),
-            Categorical(
-                categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
-                name="max_features",
-            ),
-            Float(0, 0.035, name="ccp_alpha"),
-        ]
+        return CustomDict(
+            criterion=Categorical(criterion),
+            splitter=Categorical(["best", "random"]),
+            max_depth=Categorical([None, *range(1, 17)]),
+            min_samples_split=Int(2, 20),
+            min_samples_leaf=Int(1, 20),
+            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            ccp_alpha=Float(0, 0.035, step=0.005),
+        )
 
 
 class Dummy(BaseModel):
-    """Dummy classifier/regressor."""
+    """Dummy classifier/regressor.
+
+    When doing supervised learning, a simple sanity check consists of
+    comparing one's estimator against simple rules of thumb. The
+    prediction methods completely ignore the input data. Do not use
+    this model for real problems. Use it only as a simple baseline
+    to compare with other models.
+
+    Corresponding estimators are:
+
+    - [DummyClassifier][] for classification tasks.
+    - [DummyRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][dummydocs].
+
+    See Also
+    --------
+    atom.models:DecisionTree
+    atom.models:ExtraTree
+    atom.models:RandomForest
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="Dummy", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: Dummy
+    Metric: f1
+
+
+    Results for Dummy:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.7709
+    Test evaluation --> f1: 0.7717
+    Time elapsed: 0.006s
+    -------------------------------------------------
+    Total time: 0.006s
+
+
+    Final results ==================== >>
+    Total time: 0.007s
+    -------------------------------------
+    Dummy --> f1: 0.7717
+
+    ```
+
+    """
 
     acronym = "Dummy"
     needs_scaling = False
@@ -838,9 +1126,6 @@ class Dummy(BaseModel):
 
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
-
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
 
         Parameters
         ----------
@@ -855,11 +1140,8 @@ class Dummy(BaseModel):
         """
         params = super()._get_parameters(trial)
 
-        if self._get_param(params, "strategy") != "quantile":
+        if self._get_param("strategy", params) != "quantile":
             params.pop("quantile", None)
-        elif params.get("quantile") is None:
-            # quantile can't be None with strategy="quantile" (select value randomly)
-            params.replace_value("quantile", choice(zero_to_one_inc))
 
         return params
 
@@ -872,26 +1154,75 @@ class Dummy(BaseModel):
             Hyperparameter distributions.
 
         """
+        dist = CustomDict()
         if self.T.goal == "class":
-            categories = ["most_frequent", "prior", "stratified", "uniform"]
-            dist = [Categorical(categories, name="strategy")]
+            dist["strategy"] = Categorical(
+                ["most_frequent", "prior", "stratified", "uniform"]
+            )
         else:
-            dist = [
-                Categorical(["mean", "median", "quantile"], name="strategy"),
-                Categorical([None, *zero_to_one_inc], name="quantile"),
-            ]
+            dist["strategy"] = Categorical(["mean", "median", "quantile"]),
+            dist["quantile"] = Float(0, 1.0, step=0.1)
 
         return dist
 
 
 class ElasticNet(BaseModel):
-    """Linear Regression with elasticnet regularization."""
+    """Linear Regression with elasticnet regularization.
+
+    Linear least squares with l1 and l2 regularization.
+
+    Corresponding estimators are:
+
+    - [ElasticNet][elasticnetreg] for regression tasks.
+
+    Read more in sklearn's [documentation][endocs].
+
+    See Also
+    --------
+    atom.models:Lasso
+    atom.models:OrdinaryLeastSquares
+    atom.models:Ridge
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_boston
+
+    >>> X, y = load_boston(return_X_y=True)
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="EN", metric="r2", verbose=2)
+
+    Training ========================= >>
+    Models: EN
+    Metric: r2
+
+
+    Results for ElasticNet:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.6551
+    Test evaluation --> r2: 0.5929
+    Time elapsed: 0.021s
+    -------------------------------------------------
+    Total time: 0.021s
+
+
+    Final results ==================== >>
+    Total time: 0.022s
+    -------------------------------------
+    ElasticNet --> r2: 0.5929
+
+    ```
+
+    """
 
     acronym = "EN"
     needs_scaling = True
     accepts_sparse = True
     has_validation = None
-    supports_engines = ["sklearn", "cuml"]
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "linear_model"
     _estimators = CustomDict({"reg": "ElasticNet"})
@@ -906,32 +1237,84 @@ class ElasticNet(BaseModel):
             Hyperparameter distributions.
 
         """
-        return [
-            Float(1e-3, 10, "log-uniform", name="alpha"),
-            Categorical(half_to_one_exc, name="l1_ratio"),
-            Categorical(["cyclic", "random"], name="selection"),
-        ]
+        return CustomDict(
+            alpha=Float(1e-3, 10, log=True),
+            l1_ratio=Float(0.1, 0.9, step=0.1),
+            selection=Categorical(["cyclic", "random"]),
+        )
 
 
-class ExtraTrees(BaseModel):
-    """Extremely Randomized Trees."""
+class ExtraTree(BaseModel):
+    """Extremely Randomized Tree.
 
-    acronym = "ET"
+    Extra-trees differ from classic decision trees in the way they are
+    built. When looking for the best split to separate the samples of a
+    node into two groups, random splits are drawn for each of the
+    max_features randomly selected features and the best split among
+    those is chosen. When max_features is set 1, this amounts to
+    building a totally random decision tree.
+
+    Corresponding estimators are:
+
+    - [ExtraTreeClassifier][] for classification tasks.
+    - [ExtraTreeRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][treedocs].
+
+    See Also
+    --------
+    atom.models:DecisionTree
+    atom.models:ExtraTrees
+    atom.models:RandomForest
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="ETree", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: ETree
+    Metric: f1
+
+
+    Results for ExtraTree:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.942
+    Time elapsed: 0.016s
+    -------------------------------------------------
+    Total time: 0.016s
+
+
+    Final results ==================== >>
+    Total time: 0.016s
+    -------------------------------------
+    ExtraTree --> f1: 0.942
+
+    ```
+
+    """
+
+    acronym = "ETree"
     needs_scaling = False
     accepts_sparse = True
     has_validation = None
     supports_engines = ["sklearn"]
 
-    _module = "ensemble"
+    _module = "tree"
     _estimators = CustomDict(
-        {"class": "ExtraTreesClassifier", "reg": "ExtraTreesRegressor"}
+        {"class": "ExtraTreeClassifier", "reg": "ExtraTreeRegressor"}
     )
 
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
-
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
 
         Parameters
         ----------
@@ -965,24 +1348,185 @@ class ExtraTrees(BaseModel):
         else:
             criterion = ["squared_error", "absolute_error"]
 
-        return [
-            Int(10, 500, name="n_estimators"),
-            Categorical(criterion, name="criterion"),
-            Categorical([None, *range(1, 17)], name="max_depth"),
-            Int(2, 20, name="min_samples_split"),
-            Int(1, 20, name="min_samples_leaf"),
-            Categorical(
-                categories=["sqrt", "log2", *half_to_one_exc, None],
-                name="max_features",
-            ),
-            Categorical([True, False], name="bootstrap"),
-            Categorical([None, *half_to_one_exc], name="max_samples"),
-            Float(0, 0.035, name="ccp_alpha"),
-        ]
+        return CustomDict(
+            criterion=Categorical(criterion),
+            splitter=Categorical(["random", "best"]),
+            max_depth=Categorical([None, *range(1, 17)]),
+            min_samples_split=Int(2, 20),
+            min_samples_leaf=Int(1, 20),
+            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            ccp_alpha=Float(0, 0.035, step=0.005),
+        )
+
+
+class ExtraTrees(BaseModel):
+    """Extremely Randomized Trees.
+
+    Extra-Trees use a meta estimator that fits a number of randomized
+    decision trees (a.k.a. [extra-trees][extratree]) on various
+    sub-samples of the dataset and uses averaging to improve the
+    predictive accuracy and control over-fitting.
+
+    Corresponding estimators are:
+
+    - [ExtraTreesClassifier][] for classification tasks.
+    - [ExtraTreesRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][etdocs].
+
+    See Also
+    --------
+    atom.models:DecisionTree
+    atom.models:ExtraTree
+    atom.models:RandomForest
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="ET", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: ET
+    Metric: f1
+
+
+    Results for ExtraTrees:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.993
+    Time elapsed: 0.095s
+    -------------------------------------------------
+    Total time: 0.095s
+
+
+    Final results ==================== >>
+    Total time: 0.095s
+    -------------------------------------
+    ExtraTrees --> f1: 0.993
+
+    ```
+
+    """
+
+    acronym = "ET"
+    needs_scaling = False
+    accepts_sparse = True
+    has_validation = None
+    supports_engines = ["sklearn"]
+
+    _module = "ensemble"
+    _estimators = CustomDict(
+        {"class": "ExtraTreesClassifier", "reg": "ExtraTreesRegressor"}
+    )
+
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters.
+
+        Parameters
+        ----------
+        trial: [Trial][]
+            Current trial.
+
+        Returns
+        -------
+        CustomDict
+            Trial's hyperparameters.
+
+        """
+        params = super()._get_parameters(trial)
+
+        if not self._get_param(params, "bootstrap"):
+            params.pop("max_samples", None)
+
+        return params
+
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        CustomDict
+            Hyperparameter distributions.
+
+        """
+        if self.T.goal == "class":
+            criterion = ["gini", "entropy"]
+        else:
+            criterion = ["squared_error", "absolute_error"]
+
+        return CustomDict(
+            n_estimators=Int(10, 500, step=10),
+            criterion=Categorical(criterion),
+            max_depth=Categorical([None, *range(1, 17)]),
+            min_samples_split=Int(2, 20),
+            min_samples_leaf=Int(1, 20),
+            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            bootstrap=Categorical([True, False]),
+            max_samples=Categorical([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
+            ccp_alpha=Float(0, 0.035, step=0.005),
+        )
 
 
 class GaussianNB(BaseModel):
-    """Gaussian Naive Bayes."""
+    """Gaussian Naive Bayes.
+
+    Gaussian Naive Bayes implements the Naive Bayes algorithm for
+    classification. The likelihood of the features is assumed to
+    be Gaussian.
+
+    Corresponding estimators are:
+
+    - [GaussianNB][gaussiannbclass] for classification tasks.
+
+    Read more in sklearn's [documentation][gnbdocs].
+
+    See Also
+    --------
+    atom.models:BernoulliNB
+    atom.models:CategoricalNB
+    atom.models:ComplementNB
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="GNB", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: GNB
+    Metric: f1
+
+
+    Results for GaussianNB:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.9555
+    Test evaluation --> f1: 0.965
+    Time elapsed: 0.009s
+    -------------------------------------------------
+    Total time: 0.009s
+
+
+    Final results ==================== >>
+    Total time: 0.010s
+    -------------------------------------
+    GaussianNB --> f1: 0.965
+
+    ```
+
+    """
 
     acronym = "GNB"
     needs_scaling = False
@@ -995,7 +1539,72 @@ class GaussianNB(BaseModel):
 
 
 class GaussianProcess(BaseModel):
-    """Gaussian process."""
+    """Gaussian process.
+
+    Gaussian Processes are a generic supervised learning method
+    designed to solve regression and probabilistic classification
+    problems. The advantages of Gaussian processes are:
+
+    * The prediction interpolates the observations.
+    * The prediction is probabilistic (Gaussian) so that one can compute
+      empirical confidence intervals and decide based on those if one
+      should refit (online fitting, adaptive fitting) the prediction in
+      some region of interest.
+
+    The disadvantages of Gaussian processes include:
+
+    * They are not sparse, i.e. they use the whole samples/features
+      information to perform the prediction.
+    * They lose efficiency in high dimensional spaces, namely when the
+      number of features exceeds a few dozens.
+
+    Corresponding estimators are:
+
+    - [GaussianProcessClassifier][] for classification tasks.
+    - [GaussianProcessRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][gpdocs].
+
+    See Also
+    --------
+    atom.models:GaussianNB
+    atom.models:LinearDiscriminantAnalysis
+    atom.models:PassiveAggressive
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="GP", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: GP
+    Metric: f1
+
+
+    Results for GaussianProcess:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.0548
+    Time elapsed: 1.016s
+    -------------------------------------------------
+    Total time: 1.016s
+
+
+    Final results ==================== >>
+    Total time: 1.017s
+    -------------------------------------
+    GaussianProcess --> f1: 0.0548 ~
+
+    ```
+
+    """
 
     acronym = "GP"
     needs_scaling = False
@@ -1010,7 +1619,66 @@ class GaussianProcess(BaseModel):
 
 
 class GradientBoosting(BaseModel):
-    """Gradient Boosting Machine."""
+    """Gradient Boosting Machine.
+
+    A Gradient Boosting Machine builds an additive model in a forward
+    stage-wise fashion; it allows for the optimization of arbitrary
+    differentiable loss functions. In each stage `n_classes_` regression
+    trees are fit on the negative gradient of the loss function, e.g.
+    binary or multiclass log loss. Binary classification is a special
+    case where only a single regression tree is induced.
+
+    Corresponding estimators are:
+
+    - [GradientBoostingClassifier][] for classification tasks.
+    - [GradientBoostingRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][gbmdocs].
+
+    !!! tip
+        [HistGradientBoosting][] is a much faster variant of this
+        algorithm for intermediate datasets (n_samples >= 10k).
+
+    See Also
+    --------
+    atom.models:CatBoost
+    atom.models:HistGradientBoosting
+    atom.models:LightGBM
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="GBM", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: GBM
+    Metric: f1
+
+
+    Results for GradientBoosting:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.9726
+    Time elapsed: 0.275s
+    -------------------------------------------------
+    Total time: 0.275s
+
+
+    Final results ==================== >>
+    Total time: 0.275s
+    -------------------------------------
+    GradientBoosting --> f1: 0.9726
+
+    ```
+
+    """
 
     acronym = "GBM"
     needs_scaling = False
@@ -1026,9 +1694,6 @@ class GradientBoosting(BaseModel):
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
 
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
-
         Parameters
         ----------
         trial: [Trial][]
@@ -1042,7 +1707,7 @@ class GradientBoosting(BaseModel):
         """
         params = super()._get_parameters(trial)
 
-        if self._get_param(params, "loss") not in ("huber", "quantile"):
+        if self._get_param("loss", params) not in ("huber", "quantile"):
             params.pop("alpha", None)
 
         return params
@@ -1056,38 +1721,81 @@ class GradientBoosting(BaseModel):
             Hyperparameter distributions.
 
         """
-        dist = []  # Multiclass classification only works with deviance loss
-        if self.T.task.startswith("bin"):
-            dist.append(Categorical(["deviance", "exponential"], name="loss"))
-        elif self.T.task.startswith("reg"):
-            loss = ["squared_error", "absolute_error", "huber", "quantile"]
-            dist.append(Categorical(loss, name="loss"))
-
-        dist.extend(
-            [
-                Float(0.01, 1.0, "log-uniform", name="learning_rate"),
-                Int(10, 500, name="n_estimators"),
-                Categorical(half_to_one_inc, name="subsample"),
-                Categorical(["friedman_mse", "squared_error"], name="criterion"),
-                Int(2, 20, name="min_samples_split"),
-                Int(1, 20, name="min_samples_leaf"),
-                Int(1, 21, name="max_depth"),
-                Categorical(
-                    categories=["auto", "sqrt", "log2", *half_to_one_exc, None],
-                    name="max_features",
-                ),
-                Float(0, 0.035, name="ccp_alpha"),
-            ]
+        dist = CustomDict(
+            loss=Categorical(["log_loss", "exponential"]),
+            learning_rate=Float(0.01, 1.0, log=True),
+            n_estimators=Int(10, 500, step=10),
+            subsample=Float(0.5, 1.0, step=0.1),
+            criterion=Categorical(["friedman_mse", "squared_error"]),
+            min_samples_split=Int(2, 20),
+            min_samples_leaf=Int(1, 20),
+            max_depth=Int(1, 21),
+            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
+            ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.T.goal == "reg":
-            dist.append(Categorical(half_to_one_exc, name="alpha"))
+        if self.T.goal.startswith("reg"):
+            dist["loss"] = Categorical(
+                ["squared_error", "absolute_error", "huber", "quantile"]
+            )
+            dist["alpha"] = Float(0.1, 0.9, step=0.1)
 
         return dist
 
 
 class HuberRegression(BaseModel):
-    """Huber regression."""
+    """Huber regressor.
+
+    Huber is a linear regression model that is robust to outliers. It
+    makes sure that the loss function is not heavily influenced by the
+    outliers while not completely ignoring their effect.
+
+    Corresponding estimators are:
+
+    - [HuberRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][huberdocs].
+
+    See Also
+    --------
+    atom.models:AutomaticRelevanceDetermination
+    atom.models:LeastAngleRegression
+    atom.models:OrdinaryLeastSquares
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_boston
+
+    >>> X, y = load_boston(return_X_y=True)
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="Huber", metric="r2", verbose=2)
+
+    Training ========================= >>
+    Models: Huber
+    Metric: r2
+
+
+    Results for HuberRegression:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7262
+    Test evaluation --> r2: 0.7213
+    Time elapsed: 0.044s
+    -------------------------------------------------
+    Total time: 0.044s
+
+
+    Final results ==================== >>
+    Total time: 0.046s
+    -------------------------------------
+    HuberRegression --> r2: 0.7213
+
+    ```
+
+    """
 
     acronym = "Huber"
     needs_scaling = True
@@ -1108,15 +1816,71 @@ class HuberRegression(BaseModel):
             Hyperparameter distributions.
 
         """
-        return [
-            Float(1, 10, "log-uniform", name="epsilon"),
-            Int(50, 500, name="max_iter"),
-            Categorical([1e-4, 1e-3, 1e-2, 1e-1, 1], name="alpha"),
-        ]
+        return CustomDict(
+            epsilon=Float(1, 10, log=True),
+            max_iter=Int(50, 500, step=10),
+            alpha=Float(1e-4, 1, log=True),
+        )
 
 
 class HistGradientBoosting(BaseModel):
-    """Histogram-based Gradient Boosting Machine."""
+    """Histogram-based Gradient Boosting Machine.
+
+    This Histogram-based Gradient Boosting Machine is much faster than
+    the standard [GradientBoosting][] for big datasets (n_samples>=10k).
+    This variation first bins the input samples into integer-valued
+    bins which tremendously reduces the number of splitting points to
+    consider, and allows the algorithm to leverage integer-based data
+    structures (histograms) instead of relying on sorted continuous
+    values when building the trees.
+
+    Corresponding estimators are:
+
+    - [HistGradientBoostingClassifier][] for classification tasks.
+    - [HistGradientBoostingRegressor][] for regression tasks.
+
+    Read more in sklearn's [documentation][hgbmdocs].
+
+    See Also
+    --------
+    atom.models:CatBoost
+    atom.models:GradientBoosting
+    atom.models:XGBoost
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="hGBM", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: hGBM
+    Metric: f1
+
+
+    Results for HistGradientBoosting:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 1.0
+    Test evaluation --> f1: 0.9655
+    Time elapsed: 1.044s
+    -------------------------------------------------
+    Total time: 1.044s
+
+
+    Final results ==================== >>
+    Total time: 1.044s
+    -------------------------------------
+    HistGradientBoosting --> f1: 0.9655
+
+    ```
+
+    """
 
     acronym = "hGBM"
     needs_scaling = False
@@ -1141,21 +1905,18 @@ class HistGradientBoosting(BaseModel):
             Hyperparameter distributions.
 
         """
-        dist = []
-        if self.T.goal == "reg":
-            loss = ["squared_error", "absolute_error", "poisson"]
-            dist.append(Categorical(loss, name="loss"))
-
-        dist.extend(
-            [
-                Float(0.01, 1.0, "log-uniform", name="learning_rate"),
-                Int(10, 500, name="max_iter"),
-                Int(10, 50, name="max_leaf_nodes"),
-                Categorical([None, *range(1, 17)], name="max_depth"),
-                Int(10, 30, name="min_samples_leaf"),
-                Categorical(zero_to_one_inc, name="l2_regularization"),
-            ]
+        dist = CustomDict(
+            loss=Categorical(["squared_error", "absolute_error", "poisson"]),
+            learning_rate=Float(0.01, 1.0, log=True),
+            max_iter=Int(10, 500, step=10),
+            max_leaf_nodes=Int(10, 50),
+            max_depth=Categorical([None, *range(1, 17)]),
+            min_samples_leaf=Int(10, 30),
+            l2_regularization=Float(0, 1.0, step=0.1),
         )
+
+        if self.T.goal == "class":
+            dist.pop("loss")
 
         return dist
 
@@ -1254,159 +2015,63 @@ class KNearestNeighbors(BaseModel):
         return dist
 
 
-class SupportVectorMachine(BaseModel):
-    """Support Vector Machine.
+class Lasso(BaseModel):
+    """Linear Regression with lasso regularization.
 
-    The implementation of the Support Vector Machine is based on libsvm.
-    The fit time scales at least quadratically with the number of
-    samples and may be impractical beyond tens of thousands of samples.
-    For large datasets consider using a [LinearSVM][] or a
-    [StochasticGradientDescent][] model instead.
+    Linear least squares with l1 regularization.
 
     Corresponding estimators are:
 
-    - [SVC][] for classification tasks.
-    - [SVR][] for classification tasks.
+    - [Lasso][lassoreg] for regression tasks.
 
-    Read more in sklearn's [documentation][svmdocs].
+    Read more in sklearn's [documentation][lassodocs].
 
     See Also
     --------
-    atom.models:LinearSVM
-    atom.models:MultiLayerPerceptron
-    atom.models:StochasticGradientDescent
+    atom.models:ElasticNet
+    atom.models:OrdinaryLeastSquares
+    atom.models:Ridge
 
     Examples
     --------
 
     ```pycon
-    >>> from atom import ATOMClassifier
-    >>> from sklearn.datasets import load_breast_cancer
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_boston
 
-    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    >>> X, y = load_boston(return_X_y=True)
 
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.run(models="SVM", metric="f1", verbose=2)
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="Lasso", metric="r2", verbose=2)
 
     Training ========================= >>
-    Models: SVM
-    Metric: f1
+    Models: Lasso
+    Metric: r2
 
 
-    Results for SupportVectorMachine:
+    Results for Lasso:
     Fit ---------------------------------------------
-    Train evaluation --> f1: 0.9896
-    Test evaluation --> f1: 0.9645
-    Time elapsed: 0.027s
+    Train evaluation --> r2: 0.6681
+    Test evaluation --> r2: 0.6466
+    Time elapsed: 0.020s
     -------------------------------------------------
-    Total time: 0.027s
+    Total time: 0.020s
 
 
     Final results ==================== >>
-    Total time: 0.027s
+    Total time: 0.021s
     -------------------------------------
-    SupportVectorMachine --> f1: 0.9645
+    Lasso --> r2: 0.6466
 
     ```
 
     """
 
-    acronym = "SVM"
-    needs_scaling = True
-    accepts_sparse = True
-    has_validation = None
-    supports_engines = ["sklearn", "sklearnex", "cuml"]
-
-    _module = "svm"
-    _estimators = CustomDict({"class": "SVC", "reg": "SVR"})
-
-    def _get_parameters(self, trial: Trial) -> CustomDict:
-        """Get the trial's hyperparameters.
-
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
-
-        Parameters
-        ----------
-        trial: [Trial][]
-            Current trial.
-
-        Returns
-        -------
-        CustomDict
-            Trial's hyperparameters.
-
-        """
-        params = super()._get_parameters(trial)
-
-        if self.T.goal == "class":
-            params.pop("epsilon", None)
-
-        kernel = self._get_param("kernel", params)
-        if kernel == "poly":
-            params.replace_value("gamma", "scale")  # Crashes in combination with "auto"
-        else:
-            params.pop("degree", None)
-
-        if kernel not in ("rbf", "poly", "sigmoid"):
-            params.pop("gamma", None)
-
-        if kernel not in ("poly", "sigmoid"):
-            params.pop("coef0", None)
-
-        return params
-
-    def _get_est(self, **params) -> Predictor:
-        """Get the model's estimator with unpacked parameters.
-
-        Returns
-        -------
-        Predictor
-            Estimator instance.
-
-        """
-        if self.T.engine == "cuml" and self.T.goal == "class":
-            return self._est_class(
-                probability=params.pop("probability", True),
-                random_state=params.pop("random_state", self.T.random_state),
-                **params)
-        else:
-            return super()._get_est(**params)
-
-    def _get_distributions(self) -> CustomDict:
-        """Get the predefined hyperparameter distributions.
-
-        Returns
-        -------
-        CustomDict
-            Hyperparameter distributions.
-
-        """
-        dist = CustomDict(
-            C=Float(1e-3, 100, log=True),
-            kernel=Categorical(["linear", "poly", "rbf", "sigmoid"]),
-            degree=Int(2, 5),
-            gamma=Categorical(["scale", "auto"]),
-            coef0=Float(-1.0, 1.0),
-            epsilon=Float(1e-3, 100, log=True),
-            shrinking=Categorical([True, False]),
-        )
-
-        if self.T.engine == "cuml":
-            dist.pop("epsilon")
-            dist.pop("shrinking")
-
-        return dist
-
-
-class Lasso(BaseModel):
-    """Linear Regression with lasso regularization."""
-
     acronym = "Lasso"
     needs_scaling = True
     accepts_sparse = True
     has_validation = None
-    supports_engines = ["sklearn", "sklearnex"]
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
 
     _module = "linear_model"
     _estimators = CustomDict({"reg": "Lasso"})
@@ -1421,18 +2086,73 @@ class Lasso(BaseModel):
             Hyperparameter distributions.
 
         """
-        return [
-            Float(1e-3, 10, "log-uniform", name="alpha"),
-            Categorical(["cyclic", "random"], name="selection"),
-        ]
+        return CustomDict(
+            alpha=Float(1e-3, 10, log=True),
+            selection=Categorical(["cyclic", "random"]),
+        )
 
 
 class LeastAngleRegression(BaseModel):
-    """Least Angle Regression."""
+    """Least Angle Regression.
+
+    Least-Angle Regression is a regression algorithm for
+    high-dimensional data. Lars is similar to forward stepwise
+    regression. At each step, it finds the feature most correlated
+    with the target. When there are multiple features having equal
+    correlation, instead of continuing along the same feature, it
+    proceeds in a direction equiangular between the features.
+
+    Corresponding estimators are:
+
+    - [Lars][] for regression tasks.
+
+    Read more in sklearn's [documentation][larsdocs].
+
+    See Also
+    --------
+    atom.models:BayesianRidge
+    atom.models:HuberRegression
+    atom.models:OrdinaryLeastSquares
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_boston
+
+    >>> X, y = load_boston(return_X_y=True)
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="Lars", metric="r2", verbose=2)
+
+    Training ========================= >>
+    Models: Lars
+    Metric: r2
+
+
+    Results for LeastAngleRegression:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7337
+    Test evaluation --> r2: 0.7468
+    Time elapsed: 0.018s
+    -------------------------------------------------
+    Total time: 0.018s
+
+
+    Final results ==================== >>
+    Total time: 0.019s
+    -------------------------------------
+    LeastAngleRegression --> r2: 0.7468
+
+    ```
+
+    """
 
     acronym = "Lars"
     needs_scaling = True
     accepts_sparse = False
+    has_validation = None
     supports_engines = ["sklearn"]
 
     _module = "linear_model"
@@ -1456,7 +2176,7 @@ class LightGBM(BaseModel):
     - [LGBMClassifier][] for classification tasks.
     - [LGBMRegressor][] for regression tasks.
 
-    Read more in sklearn's [documentation][lgbdocs].
+    Read more in LightGBM's [documentation][lgbdocs].
 
     !!! info
         Using LightGBM's [GPU acceleration][] requires
@@ -1687,9 +2407,6 @@ class LinearDiscriminantAnalysis(BaseModel):
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
 
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
-
         Parameters
         ----------
         trial: [Trial][]
@@ -1791,9 +2508,6 @@ class LinearSVM(BaseModel):
 
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
-
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
 
         Parameters
         ----------
@@ -1938,9 +2652,6 @@ class LogisticRegression(BaseModel):
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
 
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
-
         Parameters
         ----------
         trial: [Trial][]
@@ -1986,7 +2697,7 @@ class LogisticRegression(BaseModel):
             C=Float(1e-3, 100, log=True),
             solver=Categorical(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
             max_iter=Int(100, 1000, step=10),
-            l1_ratio=Categorical(zero_to_one_exc),
+            l1_ratio=Float(0, 1.0, step=0.1),
         )
 
         if self._gpu:
@@ -2227,7 +2938,60 @@ class MultinomialNB(BaseModel):
 
 
 class OrdinaryLeastSquares(BaseModel):
-    """Linear Regression (without regularization)."""
+    """Linear Regression.
+
+    Ordinary Least Squares is just linear regression without any
+    regularization. It fits a linear model with coefficients `w=(w1,
+     ..., wp)` to minimize the residual sum of squares between the
+    observed targets in the dataset, and the targets predicted by the
+    linear approximation.
+
+    Corresponding estimators are:
+
+    - [LinearRegression][] for regression tasks.
+
+    Read more in sklearn's [documentation][olsdocs].
+
+    See Also
+    --------
+    atom.models:ElasticNet
+    atom.models:Lasso
+    atom.models:Ridge
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_boston
+
+    >>> X, y = load_boston(return_X_y=True)
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="OLS", metric="r2", verbose=2)
+
+    Training ========================= >>
+    Models: OLS
+    Metric: r2
+
+
+    Results for OrdinaryLeastSquares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7489
+    Test evaluation --> r2: 0.706
+    Time elapsed: 0.023s
+    -------------------------------------------------
+    Total time: 0.023s
+
+
+    Final results ==================== >>
+    Total time: 0.024s
+    -------------------------------------
+    OrdinaryLeastSquares --> r2: 0.706
+
+    ```
+
+    """
 
     acronym = "OLS"
     needs_scaling = True
@@ -2400,9 +3164,6 @@ class Perceptron(BaseModel):
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
 
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
-
         Parameters
         ----------
         trial: [Trial][]
@@ -2434,7 +3195,7 @@ class Perceptron(BaseModel):
         return CustomDict(
             penalty=Categorical([None, "l2", "l1", "elasticnet"]),
             alpha=Float(1e-4, 10, log=True),
-            l1_ratio=Float(0.05, 0.95, step=0.05),
+            l1_ratio=Float(0.1, 0.9, step=0.1),
             max_iter=Int(500, 1500, step=50),
             eta0=Float(1e-2, 10, log=True),
         )
@@ -2693,9 +3454,6 @@ class RandomForest(BaseModel):
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
 
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
-
         Parameters
         ----------
         trial: [Trial][]
@@ -2737,9 +3495,9 @@ class RandomForest(BaseModel):
             max_depth=Categorical([None, *range(1, 17)]),
             min_samples_split=Int(2, 20),
             min_samples_leaf=Int(1, 20),
-            max_features=Categorical([None, "sqrt", "log2", *half_to_one_exc]),
+            max_features=Categorical([None, "sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9]),
             bootstrap=Categorical([True, False]),
-            max_samples=Categorical([None, *half_to_one_exc]),
+            max_samples=Categorical([None, 0.5, 0.6, 0.7, 0.8, 0.9]),
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
@@ -2748,16 +3506,71 @@ class RandomForest(BaseModel):
             dist.pop("ccp_alpha")
         elif self.T.engine == "cuml":
             dist.replace_key("criterion", "split_criterion")
-            dist["max_depth"].choices = tuple(range(1, 17))
-            dist["max_features"].choices = tuple(["sqrt", "log2", *half_to_one_exc])
-            dist["max_samples"].choices = tuple(half_to_one_exc)
+            dist["max_depth"] = Int(1, 17)
+            dist["max_features"] = Categorical(["sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9])
+            dist["max_samples"] = Float(0.5, 0.9, step=0.1)
             dist.pop("ccp_alpha")
 
         return dist
 
 
 class Ridge(BaseModel):
-    """Linear least squares with l2 regularization."""
+    """Linear least squares with l2 regularization.
+
+    If classifier, it first converts the target values into {-1, 1}
+    and then treats the problem as a regression task.
+
+    Corresponding estimators are:
+
+    - [RidgeClassifier][] for classification tasks.
+    - [Ridge][ridgeregressor] for regression tasks.
+
+    Read more in sklearn's [documentation][ridgedocs].
+
+    !!! warning
+        Engines `sklearnex` and `cuml` are only available for regression
+        tasks.
+
+    See Also
+    --------
+    atom.models:BayesianRidge
+    atom.models:ElasticNet
+    atom.models:Lasso
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_boston
+
+    >>> X, y = load_boston(return_X_y=True)
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="Ridge", metric="r2", verbose=2)
+
+    Training ========================= >>
+    Models: Ridge
+    Metric: r2
+
+
+    Results for Ridge:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.7331
+    Test evaluation --> r2: 0.7512
+    Time elapsed: 0.021s
+    -------------------------------------------------
+    Total time: 0.021s
+
+
+    Final results ==================== >>
+    Total time: 0.021s
+    -------------------------------------
+    Ridge --> r2: 0.7512
+
+    ```
+
+    """
 
     acronym = "Ridge"
     needs_scaling = True
@@ -2777,15 +3590,19 @@ class Ridge(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self._gpu:
-            solvers = ["eig", "svd", "cd"]
-        else:
-            solvers = ["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
+        dist = CustomDict(
+            alpha=Float(1e-3, 10, log=True),
+            solver=Categorical(
+                ["auto", "svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
+            ),
+        )
 
-        return [
-            Float(1e-3, 10, "log-uniform", name="alpha"),
-            Categorical(solvers, name="solver"),
-        ]
+        if self.T.engine == "sklearnex":
+            dist.pop("solver")  # Only supports 'auto'
+        elif self.T.engine == "cuml":
+            dist["solver"] = Categorical(["eig", "svd", "cd"])
+
+        return dist
 
 
 class StochasticGradientDescent(BaseModel):
@@ -2857,9 +3674,6 @@ class StochasticGradientDescent(BaseModel):
     def _get_parameters(self, trial: Trial) -> CustomDict:
         """Get the trial's hyperparameters.
 
-        This method fetches the suggestions from the trial and rounds
-        floats to the 4th digit.
-
         Parameters
         ----------
         trial: [Trial][]
@@ -2907,7 +3721,7 @@ class StochasticGradientDescent(BaseModel):
             loss=Categorical(loss if self.T.goal == "class" else loss[-4:]),
             penalty=Categorical(["none", "l1", "l2", "elasticnet"]),
             alpha=Float(1e-5, 1.0, log=True),
-            l1_ratio=Float(0.05, 0.9, step=0.05),
+            l1_ratio=Float(0.1, 0.9, step=0.1),
             max_iter=Int(500, 1500, step=50),
             epsilon=Float(1e-4, 1.0, log=True),
             learning_rate=Categorical(["constant", "invscaling", "optimal", "adaptive"]),
@@ -2915,6 +3729,148 @@ class StochasticGradientDescent(BaseModel):
             power_t=Float(0.1, 0.9, step=0.1),
             average=Categorical([True, False]),
         )
+
+
+class SupportVectorMachine(BaseModel):
+    """Support Vector Machine.
+
+    The implementation of the Support Vector Machine is based on libsvm.
+    The fit time scales at least quadratically with the number of
+    samples and may be impractical beyond tens of thousands of samples.
+    For large datasets consider using a [LinearSVM][] or a
+    [StochasticGradientDescent][] model instead.
+
+    Corresponding estimators are:
+
+    - [SVC][] for classification tasks.
+    - [SVR][] for classification tasks.
+
+    Read more in sklearn's [documentation][svmdocs].
+
+    See Also
+    --------
+    atom.models:LinearSVM
+    atom.models:MultiLayerPerceptron
+    atom.models:StochasticGradientDescent
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.run(models="SVM", metric="f1", verbose=2)
+
+    Training ========================= >>
+    Models: SVM
+    Metric: f1
+
+
+    Results for SupportVectorMachine:
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.9896
+    Test evaluation --> f1: 0.9645
+    Time elapsed: 0.027s
+    -------------------------------------------------
+    Total time: 0.027s
+
+
+    Final results ==================== >>
+    Total time: 0.027s
+    -------------------------------------
+    SupportVectorMachine --> f1: 0.9645
+
+    ```
+
+    """
+
+    acronym = "SVM"
+    needs_scaling = True
+    accepts_sparse = True
+    has_validation = None
+    supports_engines = ["sklearn", "sklearnex", "cuml"]
+
+    _module = "svm"
+    _estimators = CustomDict({"class": "SVC", "reg": "SVR"})
+
+    def _get_parameters(self, trial: Trial) -> CustomDict:
+        """Get the trial's hyperparameters.
+
+        Parameters
+        ----------
+        trial: [Trial][]
+            Current trial.
+
+        Returns
+        -------
+        CustomDict
+            Trial's hyperparameters.
+
+        """
+        params = super()._get_parameters(trial)
+
+        if self.T.goal == "class":
+            params.pop("epsilon", None)
+
+        kernel = self._get_param("kernel", params)
+        if kernel == "poly":
+            params.replace_value("gamma", "scale")  # Crashes in combination with "auto"
+        else:
+            params.pop("degree", None)
+
+        if kernel not in ("rbf", "poly", "sigmoid"):
+            params.pop("gamma", None)
+
+        if kernel not in ("poly", "sigmoid"):
+            params.pop("coef0", None)
+
+        return params
+
+    def _get_est(self, **params) -> Predictor:
+        """Get the model's estimator with unpacked parameters.
+
+        Returns
+        -------
+        Predictor
+            Estimator instance.
+
+        """
+        if self.T.engine == "cuml" and self.T.goal == "class":
+            return self._est_class(
+                probability=params.pop("probability", True),
+                random_state=params.pop("random_state", self.T.random_state),
+                **params)
+        else:
+            return super()._get_est(**params)
+
+    def _get_distributions(self) -> CustomDict:
+        """Get the predefined hyperparameter distributions.
+
+        Returns
+        -------
+        CustomDict
+            Hyperparameter distributions.
+
+        """
+        dist = CustomDict(
+            C=Float(1e-3, 100, log=True),
+            kernel=Categorical(["linear", "poly", "rbf", "sigmoid"]),
+            degree=Int(2, 5),
+            gamma=Categorical(["scale", "auto"]),
+            coef0=Float(-1.0, 1.0),
+            epsilon=Float(1e-3, 100, log=True),
+            shrinking=Categorical([True, False]),
+        )
+
+        if self.T.engine == "cuml":
+            dist.pop("epsilon")
+            dist.pop("shrinking")
+
+        return dist
 
 
 class XGBoost(BaseModel):
@@ -2930,7 +3886,7 @@ class XGBoost(BaseModel):
     - [XGBClassifier][] for classification tasks.
     - [XGBRegressor][] for regression tasks.
 
-    Read more in sklearn's [documentation][xgbdocs].
+    Read more in XGBoost's [documentation][xgbdocs].
 
     See Also
     --------
@@ -3205,6 +4161,7 @@ MODELS = CustomDict(
     Tree=DecisionTree,
     Dummy=Dummy,
     EN=ElasticNet,
+    ETree=ExtraTree,
     ET=ExtraTrees,
     GNB=GaussianNB,
     GP=GaussianProcess,

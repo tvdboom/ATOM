@@ -115,8 +115,8 @@ the [impute][atomclassifier-impute] method.
 Use the [Normalizer][] class to transform the feature set to follow
 a Normal (Gaussian)-like distribution. In general, data must be
 transformed when using models that assume normality in the residuals.
-Examples of such models are [Logistic Regression][], [Linear Discriminant Analysis][]
-and [Gaussian Naive Bayes][]. The class can be accessed from atom
+Examples of such models are [LogisticRegression][], [LinearDiscriminantAnalysis][]
+and [GaussianNB][]. The class can be accessed from atom
 through the [normalize][atomclassifier-normalize] method.
 
 <br>

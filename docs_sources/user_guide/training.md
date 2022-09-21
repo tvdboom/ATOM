@@ -75,7 +75,7 @@ the function needs probability estimates or rounded predictions
 function). The [`metric`][directclassifier-metric] parameter accepts
 three ways of defining the scorer:
 
-* Using the name of a [predefined scorer][].
+* Using the name of one of the [predefined scorers][].
 * Using a function with signature `function(y_true, y_pred) -> score`.
   In this case, ATOM uses [make_scorer](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html)
   with default parameters.
@@ -207,7 +207,7 @@ layer with 75 neurons.
 
 Some estimators allow you to pass extra parameters to the fit method
 (besides X and y). This can be done adding `_fit` at the end of the
-parameter. For example, to change [XGBoost's][] verbosity, we can run:
+parameter. For example, to change [XGBoost][]'s verbosity, we can run:
 
 ```pycon
 >>> atom.run(models="XGB", est_params={"verbose_fit": True})

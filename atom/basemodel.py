@@ -16,7 +16,7 @@ from importlib import import_module
 from inspect import signature
 from typing import Any, Callable, List, Optional, Tuple, Union
 from unittest.mock import patch
-
+from optuna.trial import TrialState
 import dill as pickle
 import matplotlib.pyplot as plt
 import mlflow
@@ -317,18 +317,27 @@ class BaseModel(ModelPlot, ShapPlot):
 
         """
         if self.has_validation and hasattr(estimator, "partial_fit"):
-            self._evals = CustomDict(metric=self.T._metric[0].name, train=[], test=[])
+            self._evals = CustomDict(
+                {
+                    f"{self.T._metric[0].name}_train": [],
+                    f"{self.T._metric[0].name}_test": [],
+                }
+            )
 
             # Loop over first parameter in estimator
             for step in range(steps := estimator.get_params()[self.has_validation]):
-                estimator.partial_fit(*data, classes=self.y.unique(), **est_params_fit)
+                estimator.partial_fit(
+                    *data,
+                    classes=sorted(self.y.unique()),
+                    **est_params_fit,
+                )
 
-                self._evals["train"].append(self.T._metric[0](estimator, *data))
-                self._evals["test"].append(self.T._metric[0](estimator, *validation))
+                self._evals[0].append(self.T._metric[0](estimator, *data))
+                self._evals[1].append(self.T._metric[0](estimator, *validation))
 
                 # Multi-objective optimization doesn't support pruning
                 if trial and len(self.T._metric) == 1:
-                    trial.report(self.evals["test"][-1], step)
+                    trial.report(self._evals[1][-1], step)
 
                     if trial.should_prune():
                         # Hacky solution to add the pruned step to the output
@@ -641,8 +650,9 @@ class BaseModel(ModelPlot, ShapPlot):
                     )
                     score = list(np.mean(scores, axis=0))
             else:
-                # Get same score as previous evaluation
+                # Get same estimator and score as previous evaluation
                 mask = self.trials["params"] == params
+                estimator = self.trials.loc[mask, "estimator"]
                 score = lst(self.trials.loc[mask, "score"][0])
 
             trial.set_user_attr("estimator", estimator)
@@ -737,6 +747,13 @@ class BaseModel(ModelPlot, ShapPlot):
 
         if self._ht.get("plot", False):
             plt.close()
+
+        if len(self.study.get_trials(states=[TrialState.COMPLETE])) == 0:
+            self.T.log(
+                "The study didn't complete any trial. "
+                "Skipping hyperparameter tuning.", 1, severity="warning"
+            )
+            return
 
         if len(self.T._metric) == 1:
             self._best_trial = self.study.best_trial
@@ -972,7 +989,7 @@ class BaseModel(ModelPlot, ShapPlot):
         return self._trials
 
     @property
-    def best_trial(self) -> Trial:
+    def best_trial(self) -> Optional[Trial]:
         """Best trial found during hyperparameter tuning.
 
         For [multi-metric runs][], the best trial is the first trial
@@ -994,7 +1011,7 @@ class BaseModel(ModelPlot, ShapPlot):
     @property
     def best_params(self) -> dict:
         """Best hyperparameters found during hyperparameter tuning."""
-        if not self.trials.empty:
+        if self.best_trial:
             return self.trials.at[self.best_trial.number, "params"]
         else:
             return {}
@@ -1002,7 +1019,7 @@ class BaseModel(ModelPlot, ShapPlot):
     @property
     def score_ht(self) -> Optional[Union[FLOAT, List[FLOAT]]]:
         """Metric score obtained during hyperparameter tuning."""
-        if not self.trials.empty:
+        if self.best_trial:
             return self.trials.at[self.best_trial.number, "score"]
 
     @property

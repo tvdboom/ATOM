@@ -155,7 +155,7 @@ nav:
             - TrainSizingRegressor: API/training/trainsizingregressor.md
         - Models:
             - AdaBoost: API/models/adab.md
-            - AutomatedRelevanceDetermination: API/models/ard.md
+            - AutomaticRelevanceDetermination: API/models/ard.md
             - Bagging: API/models/bag.md
             - BayesianRidge: API/models/br.md
             - BernoulliNB: API/models/bnb.md
@@ -165,6 +165,7 @@ nav:
             - DecisionTree: API/models/tree.md
             - Dummy: API/models/dummy.md
             - ElasticNet: API/models/en.md
+            - ExtraTree: API/models/etree.md
             - ExtraTrees: API/models/et.md
             - GaussianNB: API/models/gnb.md
             - GaussianProcess: API/models/gp.md

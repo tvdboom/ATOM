@@ -1,7 +1,7 @@
-# LeastAngleRegression
-----------------------
+# ExtraTree
+-----------
 
-:: atom.models:LeastAngleRegression
+:: atom.models:ExtraTree
     :: tags
     :: description
     :: see also
@@ -11,6 +11,12 @@
 ## Example
 
 :: examples
+
+<br><br>
+
+## Hyperparameters
+
+:: hyperparameters
 
 <br><br>
 
@@ -82,6 +88,12 @@ attributes that are never used, saving time and memory.
             - atom.basemodel:BaseModel.predict_train
             - atom.basemodel:BaseModel.predict_test
             - atom.basemodel:BaseModel.predict_holdout
+            - atom.basemodel:BaseModel.predict_log_proba_train
+            - atom.basemodel:BaseModel.predict_log_proba_test
+            - atom.basemodel:BaseModel.predict_log_proba_holdout
+            - atom.basemodel:BaseModel.predict_proba_train
+            - atom.basemodel:BaseModel.predict_proba_test
+            - atom.basemodel:BaseModel.predict_proba_holdout
 
 
 <br><br>

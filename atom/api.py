@@ -165,6 +165,7 @@ def ATOMModel(
     *,
     acronym: Optional[str] = None,
     needs_scaling: bool = False,
+    has_validation: Optional[str] = None,
 ) -> Predictor:
     """Convert an estimator to a model that can be ingested by atom.
 
@@ -186,6 +187,11 @@ def ATOMModel(
 
     needs_scaling: bool, default=False
         Whether the model needs scaled features.
+
+    has_validation: str or None, default=None
+        Whether the model allows in-training validation. If str, name
+        of the estimator's parameter that states the number of
+        iterations. If None, no support for in-training validation.
 
     Returns
     -------
@@ -233,6 +239,7 @@ def ATOMModel(
     if acronym:
         estimator.acronym = acronym
     estimator.needs_scaling = needs_scaling
+    estimator.has_validation = has_validation
 
     return estimator
 

@@ -478,13 +478,16 @@ class TrialsCallback:
 
     def __call__(self, study: Study, trial: FrozenTrial):
         if len(self.T._metric) == 1:
-            score = [trial.value]
+            score = trial.value
         else:
             score = trial.values
 
-        if not score:  # Trial failed
+        if score is None:  # Trial failed
             score = [np.NaN] * len(self.T._metric)
-        elif trial.state.name == "PRUNED" and self.model.acronym == "XGB":
+        else:
+            score = lst(score)
+
+        if trial.state.name == "PRUNED" and self.model.acronym == "XGB":
             # XGBoost's eval_metric minimizes the function
             score = np.negative(score)
 
