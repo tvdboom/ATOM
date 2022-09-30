@@ -7,7 +7,6 @@ Description: Module containing the training classes.
 
 """
 
-from copy import copy
 from logging import Logger
 from typing import Optional, Union
 
@@ -128,12 +127,11 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, ModelPlot):
 
         run = 0
         models = CustomDict()
-        og_models = {k: copy(v) for k, v in self._models.items()}
+        og_models = {k: v._new_copy() for k, v in self._models.items()}
         while len(self._models) > 2 ** self.skip_runs - 1:
             # Create the new set of models for the run
             for m in self._models.values():
-                m.name += str(len(self._models))
-                m._pred = [None] * 12  # Avoid shallow copy
+                m._name += str(len(self._models))
                 m._train_idx = len(self.train) // len(self._models)
 
             # Print stats for this subset of the data
@@ -146,14 +144,15 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, ModelPlot):
             self._core_iteration()
             models.update({m.name: m for m in self._models.values()})
 
-            # Select next models for halving
+            # Select best models for halving
             best = pd.Series(
                 data=[get_best_score(m) for m in self._models.values()],
-                index=[m.name for m in self._models.values()],
+                index=[m._group for m in self._models.values()],
+                dtype="float",
             ).nlargest(n=len(self._models) // 2, keep="first")
-            names = [m.acronym for m in self._models.values() if m.name in best.index]
+
             self._models = CustomDict(
-                {k: copy(v) for k, v in og_models.items() if v.acronym in names}
+                {k: v._new_copy() for k, v in og_models.items() if k in best.index}
             )
 
             run += 1
@@ -217,7 +216,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, ModelPlot):
             self.train_sizes = np.linspace(1 / self.train_sizes, 1.0, self.train_sizes)
 
         models = CustomDict()
-        og_models = {k: copy(v) for k, v in self._models.items()}
+        og_models = {k: v._new_copy() for k, v in self._models.items()}
         for run, size in enumerate(self.train_sizes):
             # Select fraction of data to use in this run
             if size <= 1:
@@ -228,8 +227,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, ModelPlot):
                 train_idx = size
 
             for m in self._models.values():
-                m.name += str(frac).replace(".", "")  # Add frac to the name
-                m._pred = [None] * 12  # Avoid shallow copy
+                m._name += str(frac).replace(".", "")  # Add frac to the name
                 m._train_idx = train_idx
 
             # Print stats for this subset of the data
@@ -242,52 +240,59 @@ class TrainSizing(BaseEstimator, BaseTrainer, ModelPlot):
             models.update({m.name.lower(): m for m in self._models.values()})
 
             # Create next models for sizing
-            self._models = CustomDict({k: copy(v) for k, v in og_models.items()})
+            self._models = CustomDict({k: v._new_copy() for k, v in og_models.items()})
 
         self._models = models  # Restore original models
 
 
 class DirectClassifier(Direct):
-    """Direct trainer for classification tasks.
+    """Train and evaluate the models in a direct fashion.
+
+    The following steps are applied to every model:
+
+    1. Apply [hyperparameter tuning][] (optional).
+    2. Fit the model on the training set using the best combination
+       of hyperparameters found.
+    3. Evaluate the model on the test set.
+    4. Train the model on various bootstrapped samples of the
+       training set and evaluate again on the test set (optional).
 
     Parameters
     ----------
     models: str, estimator or sequence, default=None
         Models to fit to the data. Allowed inputs are: an acronym from
-        any of ATOM's predefined models, an ATOMModel or a custom
-        estimator as class or instance. If None, all the predefined
+        any of the [predefined models][], an [ATOMModel][] or a custom
+        predictor as class or instance. If None, all the predefined
         models are used.
 
     metric: str, func, scorer, sequence or None, default=None
         Metric on which to fit the models. Choose from any of sklearn's
         scorers, a function with signature `function(y_true, y_pred) ->
         score`, a scorer object or a sequence of these. If None, a
-        default metric is selected:
+        default metric is selected for every task:
 
         - "f1" for binary classification
         - "f1_weighted" for multiclass classification
         - "r2" for regression
 
-    n_trials: int or sequence, default=15
-        Maximum number of iterations of the BO. It includes the random
-        points of `n_initial_points`. If 0, skip the BO and fit the
-        model on its default Parameters. If sequence, the n-th value
-        applies to the n-th model.
+    n_trials: int or sequence, default=0
+        Maximum number of iterations for the [hyperparameter tuning][].
+        If 0, skip the tuning and fit the model on its default
+        parameters. If sequence, the n-th value applies to the n-th
+        model.
 
     est_params: dict or None, default=None
-        Additional parameters for the estimators. See the corresponding
+        Additional parameters for the models. See their corresponding
         documentation for the available options. For multiple models,
         use the acronyms as key (or 'all' for all models) and a dict
-        of the parameters as value. Add _fit to the parameter's name
-        to pass it to the fit method instead of the initializer.
+        of the parameters as value. Add `_fit` to the parameter's name
+        to pass it to the estimator's fit method instead of the
+        constructor.
 
-    ht_params: dict or None
+    ht_params: dict or None, default=None
         Additional parameters for the hyperparameter tuning. If None,
         it uses the same parameters as the first run. Can include:
 
-        - **distributions: dict, sequence or None, default=None**<br>
-          Custom hyperparameter distributions for the models. If None,
-          it uses ATOM's predefined distributions.
         - **cv: int, dict or sequence, default=1**<br>
           Number of folds for the cross-validation. If 1, the training
           set is randomly split in a subtrain and validation set.
@@ -296,6 +301,9 @@ class DirectClassifier(Direct):
           Creates a canvas with two plots: the first plot shows the
           score of every trial and the second shows the distance between
           the last consecutive steps. See the [plot_trials][] method.
+        - **distributions: dict, sequence or None, default=None**<br>
+          Custom hyperparameter distributions for the models. If None,
+          it uses ATOM's predefined distributions.
         - **tags: dict, sequence or None, default=None**<br>
           Custom tags for the model's [mlflow run][tracking].
         - **\*\*kwargs**<br>
@@ -303,15 +311,16 @@ class DirectClassifier(Direct):
           [study][] class or the [optimize][] method.
 
     n_bootstrap: int or sequence, default=0
-        Number of data sets (bootstrapped from the training set) to
-        use in the bootstrap algorithm. If 0, no bootstrap is performed.
-        If sequence, the n-th value will apply to the n-th model.
+        Number of data sets to use for [bootstrapping][]. If 0, no
+        bootstrapping is performed. If sequence, the n-th value applies
+        to the n-th model.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
 
     device: str, default="cpu"
         Device on which to train the estimators. Use any string
@@ -335,31 +344,79 @@ class DirectClassifier(Direct):
         - 1 to print basic information.
         - 2 to print detailed information.
 
-    warnings: bool or str, default=True
+    warnings: bool or str, default=False
         - If True: Default warning action (equal to "default").
         - If False: Suppress all warnings (equal to "ignore").
-        - If str: One of the actions in python's warnings environment.
+        - If str: One of python's [warnings filters][warnings].
 
-        Note that changing this parameter will affect the
-        `PYTHONWARNINGS` environment.
-
-        Note that ATOM can't manage warnings that go directly
-        from C/C++ code to the stdout/stderr.
+        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        Note that warnings will not be saved to the logger.
-
     experiment: str or None, default=None
-        Name of the mlflow experiment to use for tracking. If None,
-        no mlflow tracking is performed.
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
 
     random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
+
+    See Also
+    --------
+    atom.api:ATOMClassifier
+    atom.training.SuccessiveHalvingClassifier
+    atom.training.TrainSizingClassifier
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom.training import DirectClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    >>> bin_train, bin_test = train_test_split(
+    ...     X_bin.merge(y_bin.to_frame(), left_index=True, right_index=True),
+    ...     test_size=0.3,
+    ...     random_state=1,
+    ... )
+
+    >>> runner = DirectClassifier(models=["LR", "RF"], metric="auc", verbose=2)
+    >>> runner.run(bin_train, bin_test)
+
+    Training ========================= >>
+    Models: Tree
+    Metric: roc_auc
+
+
+    Fit ---------------------------------------------
+    Train evaluation --> roc_auc: 1.0
+    Test evaluation --> roc_auc: 0.9603
+    Time elapsed: 0.015s
+    -------------------------------------------------
+    Total time: 0.015s
+
+
+    Final results ==================== >>
+    Total time: 0.015s
+    -------------------------------------
+    DecisionTree --> roc_auc: 0.9603
+
+    >>> # Analyze the results
+    >>> atom.evaluate()
+
+         accuracy  average_precision  ...    recall   roc_auc
+    LR   0.970588           0.995739  ...  0.981308  0.993324
+    RF   0.958824           0.982602  ...  0.962617  0.983459
+    XGB  0.964706           0.996047  ...  0.971963  0.993473
+
+    [3 rows x 9 columns]
+
+    ```
 
     """
 

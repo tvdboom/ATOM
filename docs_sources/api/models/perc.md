@@ -28,7 +28,7 @@
     - attributes:
         from_docstring: False
         include:
-            - atom.branch:Branch.pipeline
+            - pipeline
             - atom.branch:Branch.mapping
             - atom.branch:Branch.dataset
             - atom.branch:Branch.train
@@ -62,6 +62,7 @@
             - score_ht
             - time_ht
             - estimator
+            - evals
             - score_train
             - score_test
             - score_holdout

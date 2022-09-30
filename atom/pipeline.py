@@ -7,6 +7,13 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 """
 
+from __future__ import annotations
+
+from typing import Callable, Generator, List, Optional, Tuple, Union
+
+import numpy as np
+import pandas as pd
+from joblib import Memory
 from sklearn import pipeline
 from sklearn.base import clone
 from sklearn.utils import _print_elapsed_time
@@ -14,15 +21,25 @@ from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
 from atom.utils import (
-    check_is_fitted, fit_one, fit_transform_one, transform_one,
-    variable_return,
+    FLOAT, SEQUENCE_TYPES, X_TYPES, Y_TYPES, Estimator, check_is_fitted,
+    fit_one, fit_transform_one, transform_one, variable_return,
 )
 
 
-def _final_estimator_has(attr):
+def _final_estimator_has(attr: str) -> Callable:
     """Check that final_estimator has attribute `attr`.
 
     Used together with `available_if` in Pipeline.
+
+    Parameters
+    ----------
+    attr: str
+        Name of the attribute the final-estimator should have.
+
+    Returns
+    -------
+    callable
+        Function that makes the check.
 
     """
 
@@ -53,9 +70,18 @@ class Pipeline(pipeline.Pipeline):
     Note: This Pipeline only works with estimators whose parameters
     for fit, transform, predict, etc... are named X and/or y.
 
+    See sklearn's [Pipeline][] for a description of the parameters
+    and attributes.
+
     """
 
-    def __init__(self, steps, *, memory=None, verbose=False):
+    def __init__(
+        self,
+        steps: List[Tuple[str, Estimator]],
+        *,
+        memory: Optional[Union[str, Memory]] = None,
+        verbose: bool = False,
+    ):
         super().__init__(steps, memory=memory, verbose=verbose)
 
         # If all estimators are fitted, Pipeline is fitted
@@ -64,30 +90,64 @@ class Pipeline(pipeline.Pipeline):
             self._is_fitted = True
 
     @property
-    def memory(self):
+    def memory(self) -> Memory:
+        """Get the internal memory object."""
         return self._memory
 
     @memory.setter
-    def memory(self, value):
-        """Set up cache memory objects."""
+    def memory(self, value: Optional[Union[str, Memory]]):
+        """Create new internal memory object."""
         self._memory = check_memory(value)
         self._memory_fit = self._memory.cache(fit_transform_one)
         self._memory_transform = self._memory.cache(transform_one)
 
-    def _can_transform(self):
+    def _can_transform(self) -> bool:
+        """Check if the pipeline can use the transform method."""
         return (
-            self._final_estimator == "passthrough"
+            self._final_estimator is None or self._final_estimator == "passthrough"
             or hasattr(self._final_estimator, "transform")
         )
 
-    def _can_inverse_transform(self):
-        return all(hasattr(t, "inverse_transform") for _, _, t in self._iter())
+    def _can_inverse_transform(self) -> bool:
+        """Check if the pipeline can use the transform method."""
+        return all(
+            est is None or est == "passthrough" or hasattr(est, "inverse_transform")
+            for _, _, est in self._iter()
+        )
 
-    def _iter(self, with_final=True, filter_passthrough=True, filter_train_only=True):
-        """Generate (idx, (name, trans)) tuples from self.steps.
+    def _iter(
+        self,
+        with_final: bool = True,
+        filter_passthrough: bool = True,
+        filter_train_only: bool = True,
+    ) -> Generator[int, str, Estimator]:
+        """Generate (idx, name, estimator) tuples from self.steps.
 
         By default, estimators that are only applied on the training
         set are filtered out for predictions.
+
+        Parameters
+        ----------
+        with_final: bool, default=True
+            Whether to include the final estimator.
+
+        filter_passthrough: bool, default=True
+            Whether to exclude `passthrough` elements.
+
+        filter_passthrough: bool, default=True
+            Whether to exclude estimators that should only be used for
+            training (have the `_train_only` attribute).
+
+        Yields
+        ------
+        int
+            Index position in the pipeline.
+
+        str
+            Name of the estimator.
+
+        Estimator
+            Transformer or predictor instance.
 
         """
         it = super()._iter(with_final, filter_passthrough)
@@ -96,7 +156,40 @@ class Pipeline(pipeline.Pipeline):
         else:
             return it
 
-    def _fit(self, X=None, y=None, **fit_params_steps):
+    def _fit(
+        self,
+        X: Optional[X_TYPES] = None,
+        y: Optional[Y_TYPES] = None,
+        **fit_params_steps,
+    ):
+        """Get data transformed through the pipeline.
+
+        Parameters
+        ----------
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored. None if the pipeline only uses y.
+
+        y: int, str, dict, sequence or None, default=None
+            Target column corresponding to X.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Array with shape=(n_samples,) to use as target.
+
+        **fit_params
+            Additional keyword arguments for the fit method.
+
+        Returns
+        -------
+        pd.DataFrame or None
+            Transformed feature set.
+
+        pd.Series or None
+            Transformed target column.
+
+        """
         self.steps = list(self.steps)
         self._validate_steps()
 
@@ -128,12 +221,17 @@ class Pipeline(pipeline.Pipeline):
                 )
 
             # Replace the estimator of the step with the fitted
-            # estimator (necessary when loading from the cache)
+            # estimator (necessary when loading from cache)
             self.steps[step_idx] = (name, fitted_transformer)
 
         return X, y
 
-    def fit(self, X=None, y=None, **fit_params):
+    def fit(
+        self,
+        X: Optional[X_TYPES] = None,
+        y: Optional[Y_TYPES] = None,
+        **fit_params,
+    ) -> Pipeline:
         """Fit the pipeline.
 
         Parameters
@@ -156,7 +254,7 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        Pipeline
+        self
             Estimator instance.
 
         """
@@ -171,10 +269,14 @@ class Pipeline(pipeline.Pipeline):
         return self
 
     @available_if(_can_transform)
-    def transform(self, X=None, y=None):
+    def transform(
+        self,
+        X: Optional[X_TYPES] = None,
+        y: Optional[Y_TYPES] = None,
+    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
         """Transform the data.
 
-        Call `transform` of each transformer in the pipeline. The
+        Call `transform` on each transformer in the pipeline. The
         transformed data are finally passed to the final estimator
         that calls the `transform` method. Only valid if the final
         estimator implements `transform`. This also works where final
@@ -210,7 +312,12 @@ class Pipeline(pipeline.Pipeline):
 
         return variable_return(X, y)
 
-    def fit_transform(self, X=None, y=None, **fit_params):
+    def fit_transform(
+        self,
+        X: Optional[X_TYPES] = None,
+        y: Optional[Y_TYPES] = None,
+        **fit_params,
+    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
         """Fit the pipeline and transform the data.
 
         Parameters
@@ -233,8 +340,11 @@ class Pipeline(pipeline.Pipeline):
 
         Returns
         -------
-        np.array
-            Transformed dataset.
+        pd.DataFrame
+            Transformed feature set. Only returned if provided.
+
+        pd.Series
+            Transformed target column. Only returned if provided.
 
         """
         fit_params_steps = self._check_fit_params(**fit_params)
@@ -251,7 +361,11 @@ class Pipeline(pipeline.Pipeline):
         return variable_return(X, y)
 
     @available_if(_can_inverse_transform)
-    def inverse_transform(self, X=None, y=None):
+    def inverse_transform(
+        self,
+        X: Optional[X_TYPES] = None,
+        y: Optional[Y_TYPES] = None,
+    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
         """Inverse transform for each step in a reverse order.
 
         All estimators in the pipeline must implement the
@@ -287,7 +401,7 @@ class Pipeline(pipeline.Pipeline):
         return variable_return(X, y)
 
     @available_if(_final_estimator_has("predict"))
-    def predict(self, X, **predict_params):
+    def predict(self, X: X_TYPES, **predict_params) -> np.ndarray:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -305,7 +419,7 @@ class Pipeline(pipeline.Pipeline):
         Returns
         -------
         np.array
-            Predicted target with shape=(n_samples,).
+            Predicted classes with shape=(n_samples,).
 
         """
         for _, name, transformer in self._iter(with_final=False):
@@ -314,7 +428,7 @@ class Pipeline(pipeline.Pipeline):
         return self.steps[-1][-1].predict(X, **predict_params)
 
     @available_if(_final_estimator_has("predict_proba"))
-    def predict_proba(self, X):
+    def predict_proba(self, X: X_TYPES) -> np.ndarray:
         """Transform, then predict_proba of the final estimator.
 
         Parameters
@@ -334,7 +448,7 @@ class Pipeline(pipeline.Pipeline):
         return self.steps[-1][-1].predict_proba(X)
 
     @available_if(_final_estimator_has("predict_log_proba"))
-    def predict_log_proba(self, X):
+    def predict_log_proba(self, X: X_TYPES) -> np.ndarray:
         """Transform, then predict_log_proba of the final estimator.
 
         Parameters
@@ -354,7 +468,7 @@ class Pipeline(pipeline.Pipeline):
         return self.steps[-1][-1].predict_log_proba(X)
 
     @available_if(_final_estimator_has("decision_function"))
-    def decision_function(self, X):
+    def decision_function(self, X: X_TYPES) -> np.ndarray:
         """Transform, then decision_function of the final estimator.
 
         Parameters
@@ -374,7 +488,12 @@ class Pipeline(pipeline.Pipeline):
         return self.steps[-1][-1].decision_function(X)
 
     @available_if(_final_estimator_has("score"))
-    def score(self, X, y, sample_weight=None):
+    def score(
+        self,
+        X: X_TYPES,
+        y: Y_TYPES,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> FLOAT:
         """Transform, then score of the final estimator.
 
         Parameters

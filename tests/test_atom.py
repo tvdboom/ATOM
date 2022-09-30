@@ -23,7 +23,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.data_cleaning import Pruner, Scaler
+from atom.data_cleaning import Pruner
 from atom.utils import check_scaling
 
 from .conftest import (
@@ -225,7 +225,7 @@ def test_automl_binary_classification(cls):
     atom.automl()
     cls.assert_called_once()
     assert len(atom.pipeline) == 1
-    assert atom.models == ["Tree", "kSVM"]
+    assert atom.models == ["Tree", "SVM"]
 
 
 def test_automl_invalid_objective():
@@ -243,55 +243,6 @@ def test_distribution(distributions, columns):
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     df = atom.distribution(distributions=distributions, columns=columns)
     assert isinstance(df, pd.DataFrame)
-
-
-def test_export_pipeline_empty():
-    """Assert that an error is raised when the pipeline is empty."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.export_pipeline)
-
-
-def test_export_pipeline_verbose():
-    """Assert that the verbosity is passed to the transformers."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.run("LGB")
-    assert atom.export_pipeline("LGB", verbose=2)[0].verbose == 2
-
-
-def test_export_pipeline_same_transformer():
-    """Assert that two same transformers get different names."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.clean()
-    atom.clean()
-    pl = atom.export_pipeline()
-    assert list(pl.named_steps) == ["cleaner", "cleaner2", "cleaner3"]
-
-
-def test_export_pipeline_invalid_model():
-    """Assert that an error is raised when model is from other branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("GNB")
-    atom.branch = "b2"
-    pytest.raises(ValueError, atom.export_pipeline, model="gnb")
-
-
-def test_export_pipeline_scaler():
-    """Assert that a scaler is included in the pipeline."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["GNB", "LGB"])
-    assert not isinstance(atom.export_pipeline("GNB")[0], Scaler)
-    assert isinstance(atom.export_pipeline("LGB")[0], Scaler)
-
-
-@patch("tempfile.gettempdir")
-def test_export_pipeline_memory(func):
-    """Assert that memory is True triggers a temp dir."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.scale()
-    atom.export_pipeline(memory=True)
-    func.assert_called_once()
 
 
 def test_inverse_transform():
@@ -518,7 +469,7 @@ def test_returned_column_already_exists():
 
 def test_add_sparse_matrices():
     """Assert that transformers that return sp.matrix are accepted."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, shuffle=False, random_state=1)
     atom.add(OneHotEncoder(handle_unknown="ignore"), columns=2)
     assert atom.shape == (10, 8)  # Creates 4 extra columns
 
@@ -559,15 +510,16 @@ def test_add_derivative_columns_keep_position():
     """Assert that derivative columns go after the original."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(columns="x2")
-    assert list(atom.columns[2:5]) == ["x2_a", "x2_b", "x2_c"]
+    assert list(atom.columns[2:5]) == ["x2_a", "x2_b", "x2_d"]
 
 
 def test_add_sets_are_kept_equal():
     """Assert that the train and test sets always keep the same rows."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    len_train, len_test = len(atom.train), len(atom.test)
+    atom = ATOMClassifier(X_bin, y_bin, index=True, random_state=1)
+    train_idx, test_idx = atom.train.index, atom.test.index
     atom.add(Pruner())
-    assert len(atom.train) < len_train and len(atom.test) < len_test
+    assert all(idx in train_idx for idx in atom.train.index)
+    pd.testing.assert_index_equal(test_idx, atom.test.index)
 
 
 def test_add_reset_index():
@@ -816,13 +768,14 @@ def test_errors_are_updated():
     """Assert that the found exceptions are updated in the errors attribute."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
 
-    # Produce an error on one model (when n_initial_points > n_trials)
-    atom.run(["Tree", "LGB"], n_trials=(3, 2), n_initial_points=(2, 5))
-    assert list(atom.errors) == ["LGB"]
+    # Produce an error on a model
+    atom.run(["Tree", "SVM"], n_trials=1, ht_params={"distributions": {"svm": ["test"]}})
+    assert list(atom.errors) == ["SVM"]
 
     # Subsequent runs should remove the original model
-    atom.run(["Tree", "LGB"], n_trials=(5, 3), n_initial_points=(7, 1))
-    assert atom.models == "LGB"
+    atom.run("SVM", n_trials=1)
+    assert atom.models == ["Tree", "SVM"]
+    assert not atom.errors
 
 
 def test_models_are_replaced():
@@ -844,8 +797,11 @@ def test_models_and_metric_are_updated():
 def test_errors_are_removed():
     """Assert that the errors are removed if subsequent runs are successful."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["BNB", "Tree"], n_initial_points=(2, 7))  # Invalid value for Tree
-    atom.run("Tree")  # Runs correctly
+    atom.run(
+        models=["BNB", "Tree"],
+        ht_params={"distributions": ["max_depth"]},  # Fails for BNB
+    )
+    atom.run("BNB")  # Runs correctly
     assert not atom.errors  # Errors should be empty
 
 

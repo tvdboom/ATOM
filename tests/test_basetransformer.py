@@ -16,7 +16,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import sklearnex
-from pandas.testing import assert_frame_equal
 from sklearn.naive_bayes import GaussianNB
 from sklearnex.svm import SVC
 
@@ -127,7 +126,7 @@ def test_logger_creator(cls):
 def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
     atom = ATOMClassifier(X_bin, y_bin, logger="log")
-    pytest.raises(ValueError, atom.run, ["LR", "LDA"], n_trials=-1)
+    pytest.raises(ValueError, atom.run, "LR", est_params={"test": 2})
     cls.return_value.exception.assert_called()
 
 
@@ -347,7 +346,7 @@ def test_index_is_sequence_no_data_sets():
     """Assert that a sequence is set as index when provided."""
     index = [f"index_{i}" for i in range(len(X_bin))]
     atom = ATOMClassifier(X_bin, y_bin, index=index, random_state=1)
-    assert atom.dataset.index[0] == "index_190"
+    assert atom.dataset.index[0] == "index_39"
 
 
 def test_index_is_sequence_has_data_sets_invalid_length():
@@ -360,19 +359,27 @@ def test_index_is_sequence_has_data_sets():
     """Assert that a sequence is set as index when provided."""
     index = [f"index_{i}" for i in range(len(bin_train) + 2 * len(bin_test))]
     atom = ATOMClassifier(bin_train, bin_test, bin_test, index=index, random_state=1)
-    assert atom.dataset.index[0] == "index_174"
-    assert atom.holdout.index[0] == "index_661"
+    assert atom.dataset.index[0] == "index_68"
+    assert atom.holdout.index[0] == "index_667"
 
 
 # Test _get_stratify_columns======================================== >>
 
-@pytest.mark.parametrize("stratify", [False, True, -1, "target", [-1]])
+@pytest.mark.parametrize("stratify", [True, -1, "target", [-1]])
 def test_stratify_options(stratify):
     """Assert that the data can be stratified among data sets."""
     atom = ATOMClassifier(X_bin, y_bin, stratify=stratify, random_state=1)
     train_balance = atom.classes["train"][0] / atom.classes["train"][1]
     test_balance = atom.classes["test"][0] / atom.classes["test"][1]
     np.testing.assert_almost_equal(train_balance, test_balance, decimal=2)
+
+
+def test_stratify_is_False():
+    """Assert that the data is not stratified when stratify=False."""
+    atom = ATOMClassifier(X_bin, y_bin, stratify=False, random_state=1)
+    train_balance = atom.classes["train"][0] / atom.classes["train"][1]
+    test_balance = atom.classes["test"][0] / atom.classes["test"][1]
+    assert abs(train_balance - test_balance) > 0.05
 
 
 def test_stratify_invalid_column_int():
@@ -437,7 +444,7 @@ def test_input_is_train_test_with_holdout(shuffle):
     assert isinstance(atom.holdout, pd.DataFrame)
 
 
-@pytest.mark.parametrize("n_rows", [0.7, 0.8, 1])
+@pytest.mark.parametrize("n_rows", [0.7, 1])
 def test_n_rows_X_y_frac(n_rows):
     """Assert that n_rows<=1 work for input X and X, y."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=n_rows, random_state=1)
@@ -458,8 +465,8 @@ def test_n_rows_too_large():
 
 def test_no_shuffle_X_y():
     """Assert that the order is kept when shuffle=False."""
-    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, n_rows=30)
-    assert_frame_equal(atom.X, X_bin.iloc[:30, :])
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False)
+    pd.testing.assert_frame_equal(atom.X, X_bin)
 
 
 def test_length_dataset():
@@ -587,12 +594,16 @@ def test_n_rows_train_test_frac():
 def test_no_shuffle_train_test():
     """Assert that the order is kept when shuffle=False."""
     atom = ATOMClassifier(bin_train, bin_test, shuffle=False)
-    assert_frame_equal(atom.train, bin_train.reset_index(drop=True), check_dtype=False)
+    pd.testing.assert_frame_equal(
+        left=atom.train,
+        right=bin_train.reset_index(drop=True),
+        check_dtype=False,
+    )
 
 
 def test_n_rows_train_test_int():
     """Assert that an error is raised when n_rows>1 for input with train and test."""
-    with pytest.raises(ValueError, match=".*has to be <1 when a train and test.*"):
+    with pytest.raises(ValueError, match=".*must be <1 when the train and test.*"):
         ATOMClassifier(bin_train, bin_test, n_rows=100, random_state=1)
 
 
@@ -635,7 +646,7 @@ def test_merger_to_dataset():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     df2 = atom.dataset.sort_values(by=atom.dataset.columns.tolist())
-    assert_frame_equal(
+    pd.testing.assert_frame_equal(
         left=df1.reset_index(drop=True),
         right=df2.reset_index(drop=True),
         check_dtype=False,

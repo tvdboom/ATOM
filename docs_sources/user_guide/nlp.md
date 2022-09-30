@@ -15,7 +15,7 @@ features. If an array is provided as input, it should consist of only one
 feature containing the text (one document per row). ATOM will then
 automatically convert the array to a dataframe with the desired column name.
 Documents are expected to be strings or sequences of words. Click
-[here](../../../examples/nlp) for an example using text data.
+[here][example-nlp] for an example using text data.
 
 !!! note
     All of atom's NLP methods automatically adopt the relevant transformer

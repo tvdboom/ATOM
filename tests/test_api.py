@@ -8,8 +8,8 @@ Description: Unit tests for api.py
 """
 
 import numpy as np
+import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
 from sklearn.linear_model import HuberRegressor
 
 from atom import ATOMClassifier, ATOMLoader, ATOMModel, ATOMRegressor
@@ -45,17 +45,19 @@ def test_load():
     assert trainer2.__class__.__name__ == "DirectClassifier"
 
 
-def test_load_data_with_no_atom():
+def test_load_data_when_no_atom():
     """Assert that an error is raised when data is provided without atom."""
     Imputer().save("imputer")
-    pytest.raises(TypeError, ATOMLoader, "imputer", data=(X_bin,))
+    with pytest.raises(TypeError, match=".*Data is provided but.*"):
+        ATOMLoader("imputer", data=(X_bin,))
 
 
 def test_load_already_contains_data():
     """Assert that an error is raised when data is provided without needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save("atom", save_data=True)
-    pytest.raises(ValueError, ATOMLoader, "atom", data=(X_bin,))
+    with pytest.raises(ValueError, match=".*already contains data.*"):
+        ATOMLoader("atom", data=(X_bin,))
 
 
 def test_data():
@@ -64,7 +66,7 @@ def test_data():
     atom.save("atom", save_data=False)
 
     atom2 = ATOMLoader("atom", data=(X_bin, y_bin))
-    assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
+    pd.testing.assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
 
 
 def test_load_ignores_n_rows_parameter():
@@ -105,7 +107,7 @@ def test_transform_data_multiple_branches():
 
     atom2 = ATOMLoader("atom_2", data=(X_bin, y_bin), transform_data=True)
     for branch in atom._branches:
-        assert_frame_equal(
+        pd.testing.assert_frame_equal(
             left=atom2._branches[branch]._data,
             right=atom._branches[branch]._data,
             check_dtype=False,

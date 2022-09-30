@@ -472,6 +472,33 @@ class BaseTransformer:
 
         """
 
+        def _subsample(df: pd.DataFrame) -> pd.DataFrame:
+            """Select a random subset of a dataframe.
+
+            If shuffle=True, the subset is shuffled, else row order
+            is maintained.
+
+            Parameters
+            ----------
+            df: pd.DataFrame
+                Dataset.
+
+            Returns
+            -------
+            pd.DataFrame
+                Subset of df.
+
+            """
+            if self.n_rows <= 1:
+                n_rows = int(len(df) * self.n_rows)
+            else:
+                n_rows = int(self.n_rows)
+
+            if self.shuffle:
+                return df.iloc[random.sample(range(len(df)), k=n_rows)]
+            else:
+                return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
+
         def _no_data_sets(data: pd.DataFrame) -> tuple:
             """Generate data sets from one dataframe.
 
@@ -506,12 +533,7 @@ class BaseTransformer:
                         "Invalid value for the n_rows parameter. Value "
                         f"should lie between 0 and len(X), got {self.n_rows}."
                     )
-
-                # Select subset of the data
-                if self.n_rows > 1:
-                    data = data.iloc[:int(self.n_rows), :]
-                else:
-                    data = data.iloc[:int(len(data) * self.n_rows), :]
+                data = _subsample(data)
 
             if len(data) < 5:
                 raise ValueError(
@@ -613,31 +635,15 @@ class BaseTransformer:
 
             # Skip the n_rows step if not called from atom
             if hasattr(self, "n_rows") and use_n_rows:
-                # Select same subsample of train and test set
                 if self.n_rows <= 1:
-                    n_train = int(len(train) * self.n_rows)
-                    n_test = int(len(test) * self.n_rows)
-                    if self.shuffle:
-                        train = train.sample(n=n_train, random_state=self.random_state)
-                        test = test.sample(n=n_test, random_state=self.random_state)
-                    else:
-                        train = train.iloc[:n_train, :]
-                        test = test.iloc[:n_test, :]
-
+                    train = _subsample(train)
+                    test = _subsample(test)
                     if holdout is not None:
-                        n_holdout = int(len(holdout) * self.n_rows)
-                        if self.shuffle:
-                            holdout = holdout.sample(
-                                n=n_holdout,
-                                random_state=self.random_state,
-                            )
-                        else:
-                            holdout = holdout.iloc[:n_holdout, :]
-
+                        holdout = _subsample(holdout)
                 else:
                     raise ValueError(
-                        "Invalid value for the n_rows parameter. Value has "
-                        "to be <1 when a train and test set are provided."
+                        "Invalid value for the n_rows parameter. Value must "
+                        "be <1 when the train and test sets are provided."
                     )
 
             if not train.columns.equals(test.columns):
@@ -745,11 +751,10 @@ class BaseTransformer:
                 "from: debug, info, warning, error, critical."
             )
 
-        if self.verbose >= level:
-            print(msg)
-
         if severity == "warning":
             warnings.warn(msg)
+        if self.verbose >= level and (severity == "info" or self.warnings == "ignore"):
+            print(msg)
 
         if self.logger is not None:
             for text in str(msg).split("\n"):

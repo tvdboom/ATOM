@@ -10,9 +10,7 @@ Description: Global fixtures and variables for the tests.
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.datasets import (
-    load_breast_cancer, load_diabetes, load_digits, load_wine,
-)
+from sklearn.datasets import load_breast_cancer, load_diabetes, load_wine
 from sklearn.model_selection import train_test_split
 
 from atom.utils import merge
@@ -23,15 +21,12 @@ def change_current_dir(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
 
-# Sklearn datasets for all three tasks as np.array
+# Sklearn datasets as np.array
 X_bin_array, y_bin_array = load_breast_cancer(return_X_y=True)
-X_class_array, y_class_array = load_digits(return_X_y=True)
-X_reg_array, y_reg_array = load_diabetes(return_X_y=True)
 
 # Sklearn datasets for all three tasks as pd.DataFrame
 X_bin, y_bin = load_breast_cancer(return_X_y=True, as_frame=True)
 X_class, y_class = load_wine(return_X_y=True, as_frame=True)
-X_class2, y_class2 = load_digits(return_X_y=True, as_frame=True)
 X_reg, y_reg = load_diabetes(return_X_y=True, as_frame=True)
 
 # Train and test sets for all three tasks

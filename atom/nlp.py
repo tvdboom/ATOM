@@ -241,6 +241,8 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     """
 
+    _train_only = False
+
     @typechecked
     def __init__(
         self,
@@ -557,6 +559,8 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     """
 
+    _train_only = False
+
     @typechecked
     def __init__(
         self,
@@ -808,6 +812,8 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     """
+
+    _train_only = False
 
     @typechecked
     def __init__(
@@ -1090,6 +1096,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     """
+
+    _train_only = False
 
     @typechecked
     def __init__(

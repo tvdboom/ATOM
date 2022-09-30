@@ -8,6 +8,7 @@ Description: Unit tests for baserunner.py
 """
 
 import sys
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -98,21 +99,16 @@ def test_delattr_branch():
     """Assert that branches can be deleted through del."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
-    atom.branch = "b3"
-    del atom.branch
-    assert list(atom._branches) == ["master", "b2"]
-    del atom.b2
-    assert list(atom._branches) == ["master"]
+    del atom.master
+    assert list(atom._branches) == ["b2"]
 
 
 def test_delattr_models():
     """Assert that models can be deleted through del."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["MNB", "LR"])
-    del atom.winner
+    del atom.lr
     assert atom.models == "MNB"
-    del atom.winner
-    assert not atom.models
 
 
 def test_delattr_normal():
@@ -120,13 +116,6 @@ def test_delattr_normal():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     del atom._models
     assert not hasattr(atom, "_models")
-
-
-def test_delattr_invalid():
-    """Assert that an error is raised when there is no such attribute."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(AttributeError, match=".*object has no attribute.*"):
-        del atom.invalid
 
 
 def test_contains():
@@ -204,6 +193,14 @@ def test_branch_property():
     assert isinstance(atom.branch, Branch)
 
 
+def test_branch_deleter():
+    """Assert that the current branch can be deleted through del."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    del atom.branch
+    assert list(atom._branches) == ["master"]
+
+
 def test_models_property():
     """Assert that the models property returns the model names."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -233,22 +230,34 @@ def test_metric_property_no_run():
 def test_errors_property():
     """Assert that the errors property returns the model's errors."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LGB"], n_trials=5, n_initial_points=(2, 6))
+    atom.run(
+        models=["Tree", "LGB"],
+        n_trials=1,
+        ht_params={"distributions": {"LGB": ["invalid"]}},
+    )
     assert "LGB" in atom.errors
 
 
 def test_winners_property():
     """Assert that the winners property returns the best models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"], n_trials=0)
-    assert atom.winners == ["LR", "LGB", "Tree"]
+    atom.run(["LR", "Tree", "LGB"])
+    assert atom.winners == ["LR", "Tree", "LGB"]
 
 
 def test_winner_property():
     """Assert that the winner property returns the best model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"], n_trials=0)
+    atom.run(["LR", "Tree", "LGB"])
     assert atom.winner is atom.lr
+
+
+def test_winner_deleter():
+    """Assert that the winning model can be deleted through del."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree", "LGB"])
+    del atom.winner
+    assert atom.models == ["Tree", "LGB"]
 
 
 def test_results_property():
@@ -490,12 +499,12 @@ def test_clear():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"])
     atom.lgb.plot_shap_beeswarm(display=False)
-    assert atom.lr._pred[3] is not None
-    assert atom.lr._scores["train"]
+    assert atom.lr._pred[9] is not None
+    assert atom.lr._scores
     assert not atom.lgb._shap._shap_values.empty
     atom.clear()
     assert atom.lr._pred == [None] * 12
-    assert not atom.lr._scores["train"]
+    assert not atom.lr._scores
     assert atom.lgb._shap._shap_values.empty
 
 
@@ -537,6 +546,49 @@ def test_evaluate(metric):
     pytest.raises(NotFittedError, atom.evaluate)
     atom.run(["Tree", "PA"])
     assert isinstance(atom.evaluate(metric), pd.DataFrame)
+
+
+def test_export_pipeline_empty():
+    """Assert that an error is raised when the pipeline is empty."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(RuntimeError, match=".*no pipeline to export.*"):
+        atom.export_pipeline()
+
+
+def test_export_pipeline_verbose():
+    """Assert that the verbosity is passed to the transformers."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
+    assert atom.export_pipeline(verbose=2)[0].verbose == 2
+
+
+def test_export_pipeline_same_transformer():
+    """Assert that two same transformers get different names."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
+    atom.clean()
+    atom.clean()
+    pl = atom.export_pipeline()
+    assert list(pl.named_steps) == ["cleaner", "cleaner2", "cleaner3"]
+
+
+def test_export_pipeline_with_model():
+    """Assert that the model's branch is used."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.scale()
+    atom.run("GNB")
+    atom.branch = "b2"
+    atom.normalize()
+    assert len(atom.export_pipeline(model="GNB")) == 2
+
+
+@patch("tempfile.gettempdir")
+def test_export_pipeline_memory(func):
+    """Assert that memory is True triggers a temp dir."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.scale()
+    atom.export_pipeline(memory=True)
+    func.assert_called_once()
 
 
 def test_class_weights_invalid_dataset():
@@ -598,7 +650,7 @@ def test_merge():
     atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom_1.run("Tree")
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom_2.branch.rename("b2")
+    atom_2.branch.name = "b2"
     atom_2.missing = ["missing"]
     atom_2.run("LR")
     atom_1.merge(atom_2)
@@ -610,13 +662,13 @@ def test_merge():
 def test_merge_with_suffix():
     """Assert that the merger handles branches, models and attributes."""
     atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom_1.run(["Tree", "LGB"], n_trials=3, n_initial_points=(1, 5))
+    atom_1.run(["Tree", "LDA"], n_trials=1, ht_params={"distributions": {"LDA": "test"}})
     atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom_2.run(["Tree", "LGB"], n_trials=3, n_initial_points=(1, 5))
+    atom_2.run(["Tree", "LDA"], n_trials=1, ht_params={"distributions": {"LDA": "test"}})
     atom_1.merge(atom_2)
     assert list(atom_1._branches) == ["master", "master2"]
     assert atom_1.models == ["Tree", "Tree2"]
-    assert list(atom_1._errors) == ["LGB", "LGB2"]
+    assert list(atom_1._errors) == ["LDA", "LDA2"]
 
 
 def test_stacking():

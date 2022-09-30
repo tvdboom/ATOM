@@ -193,6 +193,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     """
 
+    _train_only = False
+
     def __init__(
         self,
         features: Union[str, SEQUENCE_TYPES] = ["day", "month", "year"],
@@ -500,6 +502,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     """
+
+    _train_only = False
 
     def __init__(
         self,
@@ -859,6 +863,8 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     """
+
+    _train_only = False
 
     def __init__(
         self,
@@ -1278,6 +1284,8 @@ class FeatureSelector(
 
     """
 
+    _train_only = False
+
     def __init__(
         self,
         strategy: Optional[str] = None,
@@ -1416,7 +1424,7 @@ class FeatureSelector(
                         )
                     else:
                         model = MODELS[solver](self, fast_init=True)
-                        solver = model._get_estimator()
+                        solver = model._get_est()
                 else:
                     solver = self.solver
 

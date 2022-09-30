@@ -27,7 +27,7 @@ different data sets:
   returns the train and test sets). The holdout set is left untouched
   until predictions are made on it, i.e. it does not undergo any pipeline
   transformations. The holdout set is stored in atom's `holdout` attribute.
-  It's features and target can not be accessed separately. See [here](../../examples/holdout_set)
+  It's features and target can not be accessed separately. See [here][example-holdout-set]
   an example that shows how to use the holdout data set.
 
 The data can be provided in different formats. If the data sets are not
@@ -93,8 +93,7 @@ to convert dense features to sparse and the [available_models]
 [atomclassifier-available_models] method to check which models have
 native support for sparse matrices.
 
-Click [here](../../examples/nlp) to see an example that uses sparse
-data.
+Click [here][example-nlp] to see an example that uses sparse data.
 
 
 <br>
@@ -130,8 +129,8 @@ of the desired branch, e.g. `atom.branch = "master"` brings you back to the
 master branch. Note that every branch contains a unique copy of the whole
 dataset! Creating many branches can cause memory issues for large datasets.
 
-See the [Imbalanced datasets](../../examples/imbalanced_datasets) or
-[Feature engineering](../../examples/feature_engineering) examples for
+See the [Imbalanced datasets][example-imbalanced-datasets] or
+[Feature engineering][example-feature-engineering] examples for
 branching use cases.
 
 !!! warning

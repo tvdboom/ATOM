@@ -351,6 +351,8 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     """
 
+    _train_only = True
+
     @typechecked
     def __init__(
         self,
@@ -713,6 +715,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     """
+
+    _train_only = False
 
     @typechecked
     def __init__(
@@ -1118,6 +1122,8 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     """
 
+    _train_only = False
+
     @typechecked
     def __init__(
         self,
@@ -1497,6 +1503,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     """
+
+    _train_only = False
 
     @typechecked
     def __init__(
@@ -1944,6 +1952,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     """
 
+    _train_only = False
+
     @typechecked
     def __init__(
         self,
@@ -2390,6 +2400,8 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     """
 
+    _train_only = False
+
     @typechecked
     def __init__(
         self,
@@ -2728,6 +2740,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     """
+
+    _train_only = True
 
     @typechecked
     def __init__(
@@ -3082,6 +3096,8 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
     """
+
+    _train_only = False
 
     @typechecked
     def __init__(

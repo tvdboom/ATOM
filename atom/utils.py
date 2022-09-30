@@ -467,14 +467,21 @@ class TrialsCallback:
     model: Model
         Model from which the study is created.
 
+    n_jobs: int
+        Number of parallel jobs for the study. If >1, no output is
+        showed.
+
     """
 
-    def __init__(self, model: Model):
+    def __init__(self, model: Model, n_jobs: int):
         self.model = model
+        self.n_jobs = n_jobs
         self.T = self.model.T  # Parent runner
 
-        self._table = None
-        self.create_table()
+        if self.n_jobs == 1:
+            self._table = self.create_table()
+            self.T.log(self._table.print_header(), 2)
+            self.T.log(self._table.print_line(), 2)
 
     def __call__(self, study: Study, trial: FrozenTrial):
         if len(self.T._metric) == 1:
@@ -499,7 +506,7 @@ class TrialsCallback:
         time_ht = self.model._trials["time_trial"].sum() + time_trial
         self.model._trials.loc[trial.number] = pd.Series(
             {
-                "params": dict(params),
+                "params": dict(params),  # To dict because of how pandas prints it
                 "estimator": estimator,
                 "score": flt(score),
                 "time_trial": time_trial,
@@ -516,19 +523,11 @@ class TrialsCallback:
                 mlflow.set_tag("model", self.model._fullname)
                 mlflow.set_tag("branch", self.model.branch.name)
                 mlflow.set_tag("trial_state", trial.state.name)
-                mlflow.set_tags(self.T._ht_params["tags"][self.model.name])
+                mlflow.set_tags(self.model._ht.get("tags", {}))
 
                 # Mlflow only accepts params with char length <250
                 pars = estimator.get_params() if estimator else params
                 mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
-
-                # Save evals for models with in-training validation
-                if self.model.evals:
-                    name = self.model.evals["metric"]
-                    zipper = zip(self.model.evals["train"], self.model.evals["test"])
-                    for step, (train, test) in enumerate(zipper):
-                        mlflow.log_metric(f"evals_{name}_train", train, step=step)
-                        mlflow.log_metric(f"evals_{name}_test", test, step=step)
 
                 mlflow.log_metric("time_trial", time_trial)
                 for i, name in enumerate(self.T._metric):
@@ -537,18 +536,26 @@ class TrialsCallback:
                 if estimator and self.T.log_model:
                     mlflow.sklearn.log_model(estimator, estimator.__class__.__name__)
 
-        sequence = {"trial": trial.number, **trial.user_attrs["params"]}
-        for i, m in enumerate(self.T._metric.values()):
-            best_score = rnd(max([lst(s)[i] for s in self.model.trials["score"]]))
-            sequence.update({m.name: rnd(score[i]), f"best_{m.name}": best_score})
-        sequence["time_trial"] = time_to_str(time_trial)
-        sequence["time_ht"] = time_to_str(time_ht)
-        sequence["state"] = trial.state.name
+        if self.n_jobs == 1:
+            sequence = {"trial": trial.number, **trial.user_attrs["params"]}
+            for i, m in enumerate(self.T._metric.values()):
+                best_score = rnd(max([lst(s)[i] for s in self.model.trials["score"]]))
+                sequence.update({m.name: rnd(score[i]), f"best_{m.name}": best_score})
+            sequence["time_trial"] = time_to_str(time_trial)
+            sequence["time_ht"] = time_to_str(time_ht)
+            sequence["state"] = trial.state.name
 
-        self.T.log(self._table.print(sequence), 2)
+            self.T.log(self._table.print(sequence), 2)
 
-    def create_table(self):
-        """Create and display the table header."""
+    def create_table(self) -> Table:
+        """Create the trial table.
+
+        Returns
+        -------
+        Table
+            Object to display the trial overview.
+
+        """
         headers = [("trial", "left")] + list(self.model._ht["distributions"])
         for m in self.T._metric.values():
             headers.extend([m.name, "best_" + m.name])
@@ -573,9 +580,7 @@ class TrialsCallback:
             ]
         )
 
-        self._table = Table(headers, spaces + [8])
-        self.T.log(self._table.print_header(), 2)
-        self.T.log(self._table.print_line(), 2)
+        return Table(headers, spaces + [8])
 
 
 class PlotCallback:
@@ -603,6 +608,7 @@ class PlotCallback:
 
         self.line1 = {m: None for m in self.T._metric}
         self.line2 = {m: None for m in self.T._metric}
+        self.scat = {m: None for m in self.T._metric}
         self.ax1, self.ax2 = None, None
 
         self.create_figure()
@@ -619,12 +625,7 @@ class PlotCallback:
             Finished trial.
 
         """
-        if len(self.T._metric) == 1:
-            scores = [trial.value]
-        else:
-            scores = trial.values
-
-        for m, score in zip(self.T._metric, scores):
+        for m, score in zip(self.T._metric, lst(self.M.trials["score"][trial.number])):
             self.y1[m].append(score)
             if self.y2[m]:
                 self.y2[m].append(abs(self.y1[m][-1] - self.y1[m][-2]))
@@ -647,7 +648,7 @@ class PlotCallback:
             fontsize=self.T.title_fontsize,
             pad=20,
         )
-        self.ax1.set_ylabel(ylabel="score", fontsize=self.T.label_fontsize, labelpad=12)
+        self.ax1.set_ylabel(ylabel="Score", fontsize=self.T.label_fontsize, labelpad=12)
 
         # Second subplot
         self.ax2 = plt.subplot(gs[3:4, 0], sharex=self.ax1)
@@ -655,46 +656,43 @@ class PlotCallback:
         self.ax2.set_ylabel(ylabel="d", fontsize=self.T.label_fontsize, labelpad=12)
 
         for m in self.T._metric:
-            self.line1[m], = self.ax1.plot([], "o-", alpha=0.8, label=m)
+            self.line1[m], = self.ax1.plot([], "o-", alpha=0.8)
             self.line2[m], = self.ax2.plot([], "o-", alpha=0.8)
-
-        self.ax1.legend(
-            handles=[self.line1[m] for m in self.T._metric],
-            loc="lower left",
-            fontsize=self.T.label_fontsize,
-        )
+            self.scat[m] = self.ax1.scatter([], [], zorder=10, s=100, marker="*")
 
         plt.setp(self.ax1.get_xticklabels(), visible=False)
         plt.xticks(fontsize=self.T.tick_fontsize)
         plt.yticks(fontsize=self.T.tick_fontsize)
 
-    def animate_plot(self, x: int):
+    def animate_plot(self, trial_number: int):
         """Plot the study's progress as it runs.
 
         Parameters
         ----------
-        x: int
-            Latest trial's number.
+        trial_number: int
+            The current trial id.
 
         """
-        x_min = max(0, x - self.max_len)
+        x_min = max(0, trial_number - self.max_len)
         x_max = x_min + self.max_len
         x = range(x_min, x_max)
 
         for m in self.T._metric:
+            self.line1[m].set_label(f"{m}={rnd(max(self.y1[m]))}")
             self.line1[m].set_data(x[:len(self.y1[m])], self.y1[m])
             self.line2[m].set_data(x[:len(self.y2[m])], self.y2[m])
+            self.scat[m].set_offsets((np.argmax(self.y1[m]), max(self.y1[m])))
 
-        # Adjust y limits if new data goes beyond bounds
-        self.ax1.relim()
-        self.ax1.autoscale_view(tight=True)
-        self.ax2.relim()
-        self.ax2.autoscale_view(tight=True)
+        for ax in (self.ax1, self.ax2):
+            ax.relim()  # Adjust y limits if new data goes beyond bounds
+            ax.autoscale_view(tight=True)
+            ax.set_xlim(x_min - 0.5, x_max - 0.5)
+            ax.set_xticks(x)
 
-        self.ax1.set_xlim(x_min - 0.5, x_max - 0.5)
-        self.ax2.set_xlim(x_min - 0.5, x_max - 0.5)
-        self.ax1.set_xticks(x)
-        self.ax2.set_xticks(x)
+        self.ax1.legend(
+            handles=[self.line1[m] for m in self.T._metric],
+            fontsize=self.T.label_fontsize,
+        )
 
         # Pause the data so the figure/axis can catch up
         plt.pause(0.05)
@@ -932,9 +930,7 @@ class CustomDict(MutableMapping):
         return self._conv(key) in self.__data
 
     def __repr__(self):
-        # The sort_dicts parameter is introduced in Python 3.8
-        kwargs = {} if sys.version_info[1] < 8 else {"sort_dicts": False}
-        return pprint.pformat(dict(self), **kwargs)
+        return pprint.pformat(dict(self), sort_dicts=False)
 
     def __reversed__(self):
         yield from reversed(list(self.keys()))
@@ -1108,7 +1104,7 @@ def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
     mean = X.mean(numeric_only=True).mean()
     std = X.std(numeric_only=True).mean()
-    return mean < 0.05 and 0.9 < std < 1.1
+    return -0.05 < mean < 0.05 and 0.85 < std < 1.15
 
 
 def get_versions(models: CustomDict) -> dict:
@@ -1485,7 +1481,7 @@ def get_custom_scorer(metric):
             scorer.name = scorer._score_func.__name__
         else:
             raise ValueError(
-                f"Unknown value for the metric parameter, got {metric}."
+                f"Unknown value for the metric parameter, got {metric}. "
                 f"Choose from: {', '.join(get_scorer_names())}."
             )
 
@@ -1915,7 +1911,7 @@ def custom_transform(transformer, branch, data=None, verbose=None, method="trans
         else:
             branch._data = merge(X, branch.y if y is None else y)
 
-            # Since rows can be removed from train and test, reset indices
+            # Since rows can be removed from train and test, reassign indices
             branch._idx[0] = [idx for idx in branch._idx[0] if idx in X.index]
             branch._idx[1] = [idx for idx in branch._idx[1] if idx in X.index]
 

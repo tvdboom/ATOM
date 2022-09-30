@@ -50,7 +50,7 @@ For example, this pipeline fits two Random Forest models, one with 100
 and the other with 200 decision trees. The models can be accessed through
 `atom.rf1` and `atom.rf2`. Use tagged models to test how the same model
 performs when fitted with different parameters or on different data sets.
-See the [Imbalanced datasets](../../examples/imbalanced_datasets) example.
+See the [Imbalanced datasets][example-imbalanced-datasets] example.
 
 Additional things to take into account:
 
@@ -140,14 +140,12 @@ desired metrics, e.g. `atom.run("LDA", metric=["r2", "mse"])`.
 When fitting multi-metric runs, the resulting scores will return a list
 of metrics. For example, if you provided three metrics to the pipeline,
 `atom.knn.score_train` could return [0.8734, 0.6672, 0.9001]. Only the
-first metric of a multi-metric run (we call this metric the **main** metric
-in other parts of the documentation) is evaluated to select the [winning][atomclassifier-winner]
-model.
-
+first metric of a multi-metric run (this metric is called the **main**
+metric) is used to select the [winning][atomclassifier-winner] model.
 
 !!! info
     * The [`winning`][atomclassifier-winner] model is retrieved comparing only
-    the main metric.
+      the main metric.
     * Some plots let you choose which of the metrics in a multi-metric run
       to show using the `metric` parameter, e.g. [plot_results][].
 
@@ -159,8 +157,9 @@ Models that require feature scaling will automatically do so before
 training, unless the data is [sparse][sparse-datasets] or already scaled.
 The data is considered scaled if it has one of the following prerequisites:
 
-* The mean value over the mean of all columns is <0.05 and the mean of
-  the standard deviation over all columns lies between 0.9 and 1.1.
+* The mean value over the mean of all columns lies between -0.05 and 0.05
+  and the mean of the standard deviation over all columns lies between 0.85
+  and 1.15.
 * There is a transformer in the pipeline whose \__name__ contains the
   word `scaler`.
 
@@ -168,7 +167,42 @@ The scaling is applied using a [Scaler][] with default parameters. It
 can be accessed from the model through the `scaler` attribute. The
 scaled dataset can be examined through the model's [data attributes][].
 Use the [available_models][atomclassifier-available_models] method to
-see which models require feature scaling.
+see which models require feature scaling. See [here][example-automated-feature_scaling]
+an example.
+
+<br>
+
+## In-training validation
+
+Some [predefined models][] allow in-training validation. This means
+that the estimator is evaluated (using only the **main metric**) on the
+train and test set after every round of the training (a round can be an
+iteration for linear models or an added tree for boosted tree models).
+The validation scores are stored in the `evals` attribute, a dictionary
+of the train and test performances per round (also when pruning isn't
+applied). Click [here][example-in-training-validation] for an example
+using in-training validation.
+
+The predefined models that support in-training validation are:
+
+* [CatBoost][]
+* [LightGBM][]
+* [MultiLayerPerceptron][]
+* [PassiveAggressive][]
+* [Perceptron][]
+* [StochasticGradientDescent][]
+* [XGBoost][]
+
+To apply in-training validation to a [custom model][custom-models], use the
+[`has_validation`][atommodel-has_validation] parameter when creating the
+custom model.
+
+!!! warning
+    In-training validation is **not** calculated during [hyperparameter tuning][].
+
+!!! tip
+    Use the [plot_evals][] method to visualize the in-training validation
+    on the train and test sets.
 
 <br>
 
@@ -214,9 +248,8 @@ parameter. For example, to change [XGBoost][]'s verbosity, we can run:
 ```
 
 !!! note
-    If a parameter is specified through `est_params`, it is ignored
-    during hyperparameter tuning, even if it's added manually to
-    `ht_params["distributions"]`!
+    If a parameter is specified through `est_params`, it's ignored
+    by the study, even if it's added manually to `ht_params["distributions"]`.
 
 !!! info
     The estimator's `n_jobs` and `random_state` parameters adopt atom's
@@ -254,18 +287,13 @@ used to fit the final model on the complete training set.
       for single-metric runs and [NSGAIISampler](https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.NSGAIISampler.html)
       for [multi-metric runs][].
     * For [multi-metric runs][], the selected [best trial][adaboost-best_trial]
-      is the first trial in the Pareto front. Use the property's `@setter` to
-      change it to any other trial. See the [hyperparameter tuning](../examples/hyperparameter_tuning)
+      is the trial that performed best on the main metric. Use the property's
+      `@setter` to change it to any other trial. See the [hyperparameter tuning][example:-hyperparameter-tuning]
       example.
 
 There are many possibilities to tune the study to your liking. The main
 parameter is [`n_trials`][directclassifier-n_trials], which determine the
 number of trials that are performed.
-
-!!! note
-    If you use the default sampler, it’s recommended to consider setting
-    larger `n_trials` to make full use of the characteristics of TPESampler
-    because TPESampler uses some (by default, 10) trials for its startup.
 
 Extra things to take into account:
 
@@ -344,17 +372,6 @@ overview of their hyperparameters and distributions.
 ... )
 ```
 
-!!! note
-    When specifying distributions manually, make sure to import the
-    distribution types from optuna: `#!python from optuna.distributions import ...`.
-
-!!! warning
-    Keras' models can only use hyperparameter tuning when `#!python n_jobs=1`
-    or `#!python ht_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises
-    a PicklingError due to incompatibilities of the APIs. Read [here][deep-learning]
-    more about deep learning models.
-
-
 Parameters for optuna's [study][] and the study's [optimize][] method can
 be added as kwargs to `ht_params`. For example, to use a different sampler
 or add a custom callback.
@@ -372,23 +389,32 @@ or add a custom callback.
 ... )
 ```
 
+!!! note
+    * If you use the default sampler, it’s recommended to consider setting
+      larger `n_trials` to make full use of the characteristics of TPESampler
+      because TPESampler uses some (by default, 10) trials for its startup.
+    * When specifying distributions manually, make sure to import the
+      distribution types from optuna: `#!python from optuna.distributions import ...`.
+
+!!! warning
+    Keras' models can only use hyperparameter tuning when `#!python n_jobs=1`
+    or `#!python ht_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises
+    a PicklingError due to incompatibilities of the APIs. Read [here][deep-learning]
+    more about deep learning models.
+
 <br>
 
-## In-training validation
+## Pruning
 
-Some [predefined models][] allow in-training validation. This means
-that the estimator is evaluated using the **main metric** on the train
-and test set after every round of the training (a round can be an
-iteration for linear models or adding a tree for boosted tree models).
-The validation scores are stored in the `evals` attribute, a dictionary
-of the train and test performances per round (also when pruning isn't
-applied). Click [here](../../examples/in_training_validation) for an example
-using in-training validation.
+During hyperparameter tuning, pruning stops unpromising trials at the
+early stages of the training (a.k.a., automated early-stopping). This
+can save the pipeline much time that would otherwise be wasted on an
+estimator that is unlikely to yield the best results. A pruned trial
+can't be selected as [`best_trial`][directclassifier-best_trial]. Click
+[here][example-pruning] for an example using pruning.
 
 The study uses [MedianPruner](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.MedianPruner.html)
-to stop unpromising trials early. This can save the pipeline much time
-that would otherwise be wasted on an estimator that is unlikely to
-yield the best results. You can use any other of optuna's [pruners](https://optuna.readthedocs.io/en/stable/reference/pruners.html)
+as default pruner. You can use any other of optuna's [pruners](https://optuna.readthedocs.io/en/stable/reference/pruners.html)
 through the [`ht_params`][directclassifier-ht_params] parameter.
 
 ```pycon
@@ -397,24 +423,9 @@ through the [`ht_params`][directclassifier-ht_params] parameter.
 >>> atom.run("SGD", n_trials=30, ht_params={"pruner": HyperbandPruner()})
 ```
 
-The models that support in-training validation and pruning are:
-
-* [CatBoost][]
-* [LightGBM][]
-* [MultiLayerPerceptron][]
-* [PassiveAggressive][]
-* [Perceptron][]
-* [StochasticGradientDescent][]
-* [XGBoost][]
-
 !!! warning
-    Pruning is only supported for models with in-training validation
-    and single-metric runs.
-
-!!! tip
-    Use the [plot_evals][] method to visualize the in-training validation
-    on the train and test set.
-
+    * Pruning is disabled for [multi-metric runs][].
+    * Pruning is only available for models that support [in-training validation][].
 
 <br>
 
@@ -449,7 +460,7 @@ method. Consecutive runs of the same model are saved with the model's
 acronym followed by the number of models in the run. For example, a
 [RandomForest][] in a run with 4 models would become model `RF4`.
 
-See [here](../../examples/successive_halving) a successive halving example.
+See [here][example-successive-halving] a successive halving example.
 
 !!! tip
     Use the [plot_successive_halving][] method to see every model's
@@ -474,7 +485,7 @@ acronym followed by the fraction of rows in the training set (the `.` is
 removed from the fraction!). For example, a [RandomForest][] in a run with
 80% of the training samples would become model `RF08`.
 
-See [here](../../examples/train_sizing) a train sizing example.
+See [here][example-train-sizing] a train sizing example.
 
 !!! tip
     Use the [plot_learning_curve][] method to see the model's performance

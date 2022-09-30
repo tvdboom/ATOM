@@ -55,11 +55,6 @@ method. Often used interchangeably with [predictor][] because of user
 preference.
 </div>
 
-<div id="ht"><strong>ht</strong></div>
-<div markdown style="margin: -1em 0 0 1.2em">
-Acronym for [hyperparameter tuning][]. 
-</div>
-
 <div id="missing values"><strong>missing values</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 All values in the [`missing`][atomclassifier-missing] attribute, as
@@ -72,7 +67,6 @@ Instance of a [model][models] in the pipeline. Not to confuse with
 [estimator][].
 </div>
 
-
 <div id="outliers"><strong>outliers</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 Sample that contains one or more outlier values. Note that the
@@ -80,25 +74,21 @@ Sample that contains one or more outlier values. Note that the
 depending on the chosen strategy.
 </div>
 
-
 <div id="outlier-value"><strong>outlier value</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 Value that lies further than 3 times the standard deviation away
 from the mean of its column, i.e. |z-score| > 3.
 </div>
 
-
 <div id="pipeline"><strong>pipeline</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 Sequence of transformers in a specific (usually the current) [branch][].
 </div>
 
-
 <div id="predictor"><strong>predictor</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 An estimator implementing a `predict` method.
 </div>
-
 
 <div id="scorer"><strong>scorer</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
@@ -107,7 +97,6 @@ test data, returning a number. Unlike evaluation metrics, a greater
 returned number must correspond with a better score. See sklearn's
 [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter).
 </div>
-
 
 <div id="sequence"><strong>sequence</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
@@ -118,13 +107,11 @@ or [pd.Series](https://pandas.pydata.org/docs/reference/api/pandas.Series.html).
 This is the standard input format for a dataset's target column.
 </div>
 
-
 <div id="target"><strong>target</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 The dependent variable in a supervised learning task. Passed as `y` to
 an estimator's fit method.
 </div>
-
 
 <div id="task"><strong>task</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
@@ -135,7 +122,6 @@ One of the three supervised machine learning approaches that ATOM supports:
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
 </ul>
 </div>
-
 
 <div id="transformer"><strong>transformer</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">

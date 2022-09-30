@@ -28,7 +28,7 @@
     - attributes:
         from_docstring: False
         include:
-            - atom.branch:Branch.pipeline
+            - pipeline
             - atom.branch:Branch.mapping
             - atom.branch:Branch.dataset
             - atom.branch:Branch.train

@@ -7,22 +7,18 @@ Description: Module containing the ATOM class.
 
 """
 
-import tempfile
-from copy import deepcopy
 from inspect import signature
 from platform import machine, platform, python_build, python_version
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from joblib.memory import Memory
 from scipy import stats
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 
 from atom.baserunner import BaseRunner
-from atom.basetrainer import BaseTrainer
 from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
 from atom.data_cleaning import (
@@ -34,7 +30,6 @@ from atom.feature_engineering import (
 )
 from atom.models import MODELS, MODELS_ENSEMBLES, CustomModel
 from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
-from atom.pipeline import Pipeline
 from atom.plots import DataPlot, FeatureSelectorPlot, ModelPlot, ShapPlot
 from atom.training import (
     DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
@@ -44,8 +39,8 @@ from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
     Runner, Scorer, Table, Transformer, __version__, check_is_fitted,
     check_scaling, composed, crash, create_acronym, custom_transform, divide,
-    fit_one, flt, get_custom_scorer, get_pl_name, has_task, infer_task,
-    is_sparse, lst, method_to_log, variable_return,
+    fit_one, flt, get_custom_scorer, has_task, infer_task, is_sparse, lst,
+    method_to_log, variable_return,
 )
 
 
@@ -145,6 +140,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
     @BaseRunner.branch.setter
     @typechecked
     def branch(self, name: str):
+        """Change branch or create a new one."""
         if name in self._branches and name.lower() != "og":
             if self.branch is self._branches[name]:
                 self.log(f"Already on branch {self.branch.name}.", 1)
@@ -324,7 +320,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         if self._metric and not kwargs.get("objective"):
             kwargs["objective"] = self._metric[0]
         elif kwargs.get("objective"):
-            kwargs["objective"] = BaseTrainer._prepare_metric([kwargs["objective"]])
+            kwargs["objective"] = CustomDict(
+                {(s := get_custom_scorer(m)).name: s for m in [kwargs["objective"]]}
+            )
             if not self._metric:
                 self._metric = kwargs["objective"]  # Update the pipeline's metric
             elif kwargs["objective"][0].name != self.metric[0]:
@@ -367,7 +365,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                     est.acronym = create_acronym(est.__class__.__name__)
 
                 model = CustomModel(self, estimator=est)
-                model.estimator = model.est
+                model._estimator = model.est
 
                 # Save metric scores on train and test set
                 for metric in self._metric.values():
@@ -461,94 +459,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                 df.at[(dist, "p_value"), col] = round(stat[1], 4)
 
         return df
-
-    @composed(crash, typechecked)
-    def export_pipeline(
-        self,
-        model: Optional[str] = None,
-        *,
-        memory: Optional[Union[bool, str, Memory]] = None,
-        verbose: Optional[INT] = None,
-    ) -> Pipeline:
-        """Export atom's pipeline.
-
-        Optionally, you can add a model as final estimator. The
-        returned pipeline is already fitted on the training set.
-
-        !!! info
-            The returned pipeline behaves similarly to sklearn's
-            [Pipeline][], and additionally:
-
-            - Accepts transformers that change the target column.
-            - Accepts transformers that drop rows.
-            - Accepts transformers that only are fitted on a subset of
-              the provided dataset.
-            - Always returns pandas objects.
-            - Uses transformers that are only applied on the training
-              set to fit the pipeline, not to make predictions.
-
-        Parameters
-        ----------
-        model: str or None, default=None
-            Name of the model to add as a final estimator to the
-            pipeline. If the model used [automated feature scaling][],
-            the scaler is added before the model. If None, only the
-            transformers are added.
-
-        memory: bool, str, Memory or None, default=None
-            Used to cache the fitted transformers of the pipeline.
-                - If None or False: No caching is performed.
-                - If True: A default temp directory is used.
-                - If str: Path to the caching directory.
-                - If Memory: Object with the joblib.Memory interface.
-
-        verbose: int or None, default=None
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity. Note
-            that this is not the pipeline's own verbose parameter.
-            To change that, use the `set_params` method.
-
-        Returns
-        -------
-        Pipeline
-            Sklearn-like Pipeline object with all transformers in the
-            current branch.
-
-        """
-        if len(self.pipeline) == 0 and not model:
-            raise ValueError("There is no pipeline to export!")
-
-        steps = []
-        for transformer in self.pipeline:
-            est = deepcopy(transformer)  # Not clone to keep fitted
-
-            # Set the new verbosity (if possible)
-            if verbose is not None and hasattr(est, "verbose"):
-                est.verbose = verbose
-
-            steps.append((get_pl_name(est.__class__.__name__, steps), est))
-
-        if model:
-            model = getattr(self, self._get_models(model)[0])
-
-            if self.branch is not model.branch:
-                raise ValueError(
-                    "The model to export is not fitted on the current "
-                    f"branch. Change to the {model.branch.name} branch "
-                    "or use the model's export_pipeline method."
-                )
-
-            if model.scaler:
-                steps.append(("scaler", deepcopy(model.scaler)))
-
-            steps.append((model.name, deepcopy(model.estimator)))
-
-        if not memory:  # None or False
-            memory = None
-        elif memory is True:
-            memory = tempfile.gettempdir()
-
-        return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
 
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(
@@ -1028,7 +938,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                 transformer.set_params(**{p: getattr(self, p)})
 
         # Transformers remember the train_only and cols parameters
-        transformer._train_only = train_only
+        if not hasattr(transformer, "_train_only"):
+            transformer._train_only = train_only
         if columns is not None:
             inc, exc = self._get_columns(columns, return_inc_exc=True)
             transformer._cols = [[c for c in inc if c != self.target], exc]
@@ -1217,7 +1128,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         # Add target column mapping for cleaner printing
         balancer.mapping = self.mapping.get(self.target, {})
 
-        self._add_transformer(balancer, columns=columns, train_only=True)
+        self._add_transformer(balancer, columns=columns)
 
         # Attach the estimator attribute to atom's branch
         setattr(self.branch, strategy.lower(), getattr(balancer, strategy.lower()))
@@ -1455,7 +1366,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             **self._prepare_kwargs(kwargs, signature(Pruner).parameters),
         )
 
-        self._add_transformer(pruner, columns=columns, train_only=True)
+        self._add_transformer(pruner, columns=columns)
 
         # Attach the estimator attribute to atom's branch
         for strat in lst(strategy):
@@ -1869,7 +1780,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                 self._models.pop(model)
                 self.log(
                     f"Consecutive runs of model {model}. The former "
-                    " model has been overwritten.", 1, severity="warning"
+                    "model has been overwritten.", 1, severity="warning"
                 )
 
         self._models.update(trainer._models)

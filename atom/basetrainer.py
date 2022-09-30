@@ -92,6 +92,11 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         value: Any
             Value of the parameter.
 
+        Returns
+        -------
+        dict
+            Parameter with model names as key.
+
         """
         if isinstance(value, SEQUENCE):
             if len(value) != len(self._models):
@@ -206,8 +211,6 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                     else:
                         model._est_params[key] = value
 
-                model._check_est_params()
-
         # Prepare ht parameters ==================================== >>
 
         self._n_trials = self._check_param("n_trials", self.n_trials)
@@ -216,17 +219,30 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         for key, value in self._ht_params.items():
             if key in ("cv", "plot"):
                 self._ht_params[key] = self._check_param(key, value)
-            elif key in ("distributions", "tags"):
-                self._ht_params[key] = {k: {} for k in self._models}
-                for name, model in self._models.items():
-                    if isinstance(value, SEQUENCE):
+            elif key == "tags":
+                self._ht_params[key] = {name: {} for name in self._models}
+                for name in self._models:
+                    for k, v in self._check_param(key, value).items():
+                        if k.lower() == name.lower() or k.lower() == "all":
+                            self._ht_params[key][name].update(v)
+                        elif k not in self._models:
+                            self._ht_params[key][name][k] = v
+            elif key == "distributions":
+                self._ht_params[key] = {name: {} for name in self._models}
+                for name in self._models:
+                    if not isinstance(value, dict):
                         # If sequence, it applies to all models
-                        self._ht_params[key][name] = value
+                        self._ht_params[key][name] = {k: None for k in lst(value)}
                     else:
-                        # Either one distribution or per model
+                        # Either one distribution for all or per model
                         for k, v in value.items():
                             if k.lower() == name.lower() or k.lower() == "all":
-                                self._ht_params[key][name].update(v)
+                                if isinstance(v, dict):
+                                    self._ht_params[key][name].update(v)
+                                else:
+                                    self._ht_params[key][name].update(
+                                        {param: None for param in lst(v)}
+                                    )
                             elif k not in self._models:
                                 self._ht_params[key][name][k] = v
             else:
@@ -257,15 +273,15 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 self.log("\n", 1)  # Separate output from header
 
                 # If it has predefined or custom dimensions, run the ht
-                ht_params = {k: v[m.name] for k, v in self._ht_params.items()}
-                if self._n_trials[m.name] > 0:
-                    if ht_params["distributions"] or hasattr(m, "_get_distributions"):
-                        m.hyperparameter_tuning(self._n_trials[m.name], ht_params)
+                m._ht = {k: v[m._group] for k, v in self._ht_params.items()}
+                if self._n_trials[m._group] > 0:
+                    if m._ht["distributions"] or hasattr(m, "_get_distributions"):
+                        m.hyperparameter_tuning(self._n_trials[m._group])
 
                 m.fit()
 
-                if self._n_bootstrap[m.name]:
-                    m.bootstrapping(self._n_bootstrap[m.name])
+                if self._n_bootstrap[m._group]:
+                    m.bootstrapping(self._n_bootstrap[m._group])
 
                 self.log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
 
@@ -284,7 +300,7 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                 # Cannot remove immediately to maintain the iteration order
                 to_remove.append(m.name)
 
-                if self._ht_params["plot"][m.name]:
+                if self._ht_params["plot"][m._group]:
                     plt.close()  # Close the crashed plot
 
                 if self.experiment:
@@ -307,15 +323,21 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         self.log(f"Total time: {time_to_str((dt.now() - t).total_seconds())}", 1)
         self.log("-" * 37, 1)
 
-        # Get max length of the model names
-        maxlen = max([len(m._fullname) for m in self._models.values()])
+        maxlen = 0
+        names, scores = [], []
+        for model in self._models.values():
+            # Add the model name for repeated model classes
+            select = filter(lambda x: x.acronym == model.acronym, self._models.values())
+            if len(list(select)) > 1:
+                names.append(f"{model._fullname} ({model.name})")
+            else:
+                names.append(model._fullname)
+            scores.append(get_best_score(model))
+            maxlen = max(maxlen, len(names[-1]))
 
-        # Get best score of all the models
-        best_score = max([get_best_score(m) for m in self._models.values()])
-
-        for m in self._models.values():
-            out = f"{m._fullname:{maxlen}s} --> {m._final_output()}"
-            if get_best_score(m) == best_score and len(self._models) > 1:
+        for i, m in enumerate(self._models.values()):
+            out = f"{names[i]:{maxlen}s} --> {m._final_output()}"
+            if scores[i] == max(scores) and len(self._models) > 1:
                 out += " !"
 
             self.log(out, 1)

@@ -94,41 +94,85 @@ CUSTOM_URLS = dict(
     adaboostclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html",
     adaboostregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html",
     adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
+    ardregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ARDRegression.html",
+    arddocs="https://scikit-learn.org/stable/modules/linear_model.html#automatic-relevance-determination-ard",
     baggingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html",
     baggingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html",
     bagdocs="https://scikit-learn.org/stable/modules/ensemble.html#bootstrapping",
+    bayesianridgeclass="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html",
+    brdocs="https://scikit-learn.org/stable/modules/linear_model.html#bayesian-regression",
     bernoullinbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html",
     bnbdocs="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html",
     catboostclassifier="https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html",
     catboostregressor="https://catboost.ai/docs/concepts/python-reference_catboostregressor.html",
     catbdocs="https://catboost.ai/",
-    kneighborsclassifeir="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html",
-    kneighborsregessor="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html",
+    categoricalnbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.CategoricalNB.html",
+    catnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#categorical-naive-bayes",
+    complementnbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.CategoricalNB.html",
+    cnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#complement-naive-bayes",
+    decisiontreeclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html",
+    decisiontreeregressor="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html",
+    treedocs="https://scikit-learn.org/stable/modules/tree.html",
+    dummyclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyClassifier.html",
+    dummyregressor="https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyRegressor.html",
+    dummydocs="https://scikit-learn.org/stable/modules/model_evaluation.html#dummy-estimators",
+    elasticnetreg="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html",
+    endocs="https://scikit-learn.org/stable/modules/linear_model.html#elastic-net",
+    extratreeclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.tree.ExtraTreeClassifier.html",
+    extratreeregressor="https://scikit-learn.org/stable/modules/generated/sklearn.tree.ExtraTreeRegressor.html",
+    extratreesclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html",
+    extratreesregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html",
+    etdocs="https://scikit-learn.org/stable/modules/ensemble.html#extremely-randomized-trees",
+    gaussiannbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html",
+    gnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#gaussian-naive-bayes",
+    gaussianprocessclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html",
+    gaussianprocessregressor="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html",
+    gpdocs="https://scikit-learn.org/stable/modules/gaussian_process.html",
+    gradientboostingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html",
+    gradientboostingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html",
+    gbmdocs="https://scikit-learn.org/stable/modules/ensemble.html#gradient-boosting",
+    histgradientboostingclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html",
+    histgradientboostingregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html",
+    hgbmdocs="https://scikit-learn.org/stable/modules/ensemble.html#histogram-based-gradient-boosting",
+    huberregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.HuberRegressor.html",
+    huberdocs="https://scikit-learn.org/stable/modules/linear_model.html#huber-regression",
+    kneighborsclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html",
+    kneighborsregressor="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html",
     knndocs="https://scikit-learn.org/stable/modules/neighbors.html",
     multinomialnbclass="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html",
     mnbdocs="https://scikit-learn.org/stable/modules/naive_bayes.html#multinomial-naive-bayes",
+    lars="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lars.html",
+    larsdocs="https://scikit-learn.org/stable/modules/linear_model.html#least-angle-regression",
+    lassoreg="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html",
+    lassodocs="https://scikit-learn.org/stable/modules/linear_model.html#lasso",
     ldaclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html",
     ldadocs="https://scikit-learn.org/stable/modules/lda_qda.html#lda-qda",
     linearsvc="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html",
     linearsvr="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html",
     lgbmclassifier="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html",
     lgbmregressor="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html",
+    lgbdocs="https://lightgbm.readthedocs.io/en/latest/index.html",
     lgb_gpu="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html",
     logisticregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html",
     lrdocs="https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression",
     mlpclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html",
     mlpregressor="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html",
     mlpdocs="https://scikit-learn.org/stable/modules/neural_networks_supervised.html#neural-networks-supervised",
+    linearregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html",
+    olsdocs="https://scikit-learn.org/stable/modules/linear_model.html#ordinary-least-squares",
     passiveaggressiveclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html",
     passiveaggressiveregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html",
     padocs="https://scikit-learn.org/stable/modules/linear_model.html#passive-aggressive",
     percclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Perceptron.html",
     percdocs="https://scikit-learn.org/stable/modules/linear_model.html#perceptron",
     qdaclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html",
-    radiusneighbotsclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsClassifier.html",
+    radiusneighborsclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsClassifier.html",
     radiusneighborsregressor="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsRegressor.html",
     randomforestclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html",
     randomforestregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html",
+    ridgeclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html",
+    ridgeregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html",
+    ridgedocs="https://scikit-learn.org/stable/modules/linear_model.html#ridge-regression",
     cumlrf="https://docs.rapids.ai/api/cuml/stable/api.html#cuml.ensemble.RandomForestClassifier",
     rfdocs="https://scikit-learn.org/stable/modules/ensemble.html#random-forests",
     sgdclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html",
@@ -152,11 +196,13 @@ CUSTOM_URLS = dict(
 
 
 TYPES_CONVERSION = {
+    "atom.branch.Branch": "[Branch][branches]",
     "atom.utils.CustomDict": "dict",
-    "atom.utils.Model": "[models][]",
+    "atom.utils.Model": "[model][models]",
     "atom.utils.Predictor": "Predictor",
     "List[str]": "list",
     "Tuple[int, int]": "tuple",
+    "Optional[int]": "int or None",
     "Optional[float]": "float or None",
     "Optional[pandas.core.frame.DataFrame]": "pd.DataFrame or None",
     "Optional[pandas.core.series.Series]": "pd.Series or None",
@@ -168,8 +214,8 @@ TYPES_CONVERSION = {
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame]": "pd.Series or pd.DataFrame",
     "Optional[Union[pandas.core.series.Series, pandas.core.frame.DataFrame]]": "pd.Series, pd.DataFrame or None",
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame, NoneType]": "pd.Series, pd.DataFrame or None",
-    "optuna.study.study.Study": "[Study][]",
-    "optuna.trial._trial.Trial": "[Trial][]",
+    "Optional[optuna.study.study.Study]": "[Study][] or None",
+    "Optional[optuna.trial._trial.Trial]": "[Trial][] or None",
 }
 
 
@@ -180,9 +226,9 @@ class DummyTrainer:
 
     def __init__(self, goal: str, device: str = "cpu", engine: str = "sklearn"):
         self.goal = goal
+        self.task = "binary" if goal == "class" else "reg"
         self.device = device
         self.engine = engine
-        self.holdout = None
 
 
 class AutoDocs:
@@ -758,7 +804,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
 
     """
     result, start = "", 0
-    for match in re.finditer("\[([\.`' \w_-]*?)\]\[([\w_-]*?)\]", markdown):
+    for match in re.finditer("\[([\.`': \w_-]*?)\]\[([\w_:-]*?)\]", markdown):
         anchor = match.group(1)
         link = match.group(2)
 

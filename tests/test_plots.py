@@ -250,7 +250,7 @@ def test_plot_calibration():
     """Assert that the plot_calibration method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_calibration)
-    atom.run(["Tree", "kSVM"], metric="f1")
+    atom.run(["Tree", "SVM"], metric="f1")
     pytest.raises(ValueError, atom.plot_calibration, n_bins=4)
     atom.plot_calibration(display=False)
     atom.tree.plot_calibration(display=False)
@@ -278,7 +278,7 @@ def test_plot_det():
     """Assert that the plot_det method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_det)
-    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.run(["LGB", "SVM"], metric="f1")
     atom.plot_det(display=False)
     atom.lgb.plot_det(display=False)
 
@@ -287,10 +287,13 @@ def test_plot_evals():
     """Assert that the plot_evals method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"], metric="f1")
-    pytest.raises(ValueError, atom.plot_evals)  # More than 1 model
-    pytest.raises(AttributeError, atom.lr.plot_evals)  # LR has no in-training eval
-    pytest.raises(ValueError, atom.lgb.plot_evals, "holdout")  # No holdout allowed
-    atom.plot_evals(models="LGB", display=False)
+
+    with pytest.raises(ValueError, match=".*Choose from: train, test or both.*"):
+        atom.lgb.plot_evals(dataset="holdout")
+
+    with pytest.raises(ValueError, match=".*no in-training validation.*"):
+        atom.lr.plot_evals()
+
     atom.lgb.plot_evals(display=False)
 
 
@@ -322,7 +325,7 @@ def test_plot_gains():
     """Assert that the plot_gains method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_gains)
-    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.run(["LGB", "SVM"], metric="f1")
     atom.plot_gains(display=False)
     atom.lgb.plot_gains(display=False)
 
@@ -342,7 +345,7 @@ def test_plot_lift():
     """Assert that the plot_lift method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_lift)
-    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.run(["LGB", "SVM"], metric="f1")
     atom.plot_lift(display=False)
     atom.lgb.plot_lift(display=False)
 
@@ -360,7 +363,7 @@ def test_plot_partial_dependence_binary():
     """Assert that the plot_partial_dependence method work for binary tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_partial_dependence)
-    atom.run(["RNN", "LGB"], metric="f1")
+    atom.run(["KNN", "LGB"], metric="f1")
 
     # Invalid kind parameter
     with pytest.raises(ValueError, match=".*for the kind parameter.*"):
@@ -389,10 +392,10 @@ def test_plot_partial_dependence_binary():
     with pytest.raises(ValueError, match=".*models use the same features.*"):
         atom.plot_partial_dependence(columns=(0, 1), display=False)
 
-    atom.branch.delete()
+    del atom.branch
     atom.plot_partial_dependence(columns=[0, 1, 2], kind="both", display=False)
     atom.lgb.plot_feature_importance(show=5, display=False)
-    atom.rnn.plot_partial_dependence(display=False)
+    atom.knn.plot_partial_dependence(display=False)
 
 
 @pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
@@ -433,7 +436,7 @@ def test_plot_pipeline():
     atom.scale()
     atom.plot_pipeline(display=False)  # No model
 
-    atom.run("Tree", n_trials=2, n_initial_points=1)
+    atom.run("Tree", n_trials=2)
     atom.tree.plot_pipeline(display=False)  # Only one branch
 
     atom.branch = "b2"
@@ -447,7 +450,7 @@ def test_plot_prc():
     """Assert that the plot_prc method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_prc)
-    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.run(["LGB", "SVM"], metric="f1")
     atom.plot_prc(display=False)
     atom.lgb.plot_prc(display=False)
 
@@ -457,8 +460,8 @@ def test_plot_probabilities():
     atom = ATOMClassifier(X10, y10_str, random_state=1)
     atom.clean()  # Encode the target column
     pytest.raises(NotFittedError, atom.plot_probabilities)
-    atom.run(["Tree", "LGB", "PA"], metric="f1")
-    pytest.raises(AttributeError, atom.pa.plot_probabilities)  # No predict_proba
+    atom.run(["Tree", "LGB", "SVM"], metric="f1")
+    pytest.raises(AttributeError, atom.svm.plot_probabilities)  # No predict_proba
     atom.plot_probabilities(models=["Tree", "LGB"], target="y", display=False)
     atom.lgb.plot_probabilities(target="n", display=False)
 
@@ -490,12 +493,13 @@ def test_plot_results_metric(metric):
     atom.tree.plot_results(display=False)
 
 
-@pytest.mark.parametrize("metric", ["time_bo", "time_fit", "time"])
+@pytest.mark.parametrize("metric", ["time_ht", "time_fit", "time"])
 def test_plot_results_time(metric):
     """Assert that the plot_results method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["Tree", "LGB"], metric="r2", n_trials=2, n_initial_points=1)
-    pytest.raises(ValueError, atom.plot_results, metric="time_bootstrap")
+    atom.run(["Tree", "LGB"], metric="r2", n_trials=1)
+    with pytest.raises(ValueError, match=".*doesn't have metric.*"):
+        atom.plot_results(metric="time_bootstrap")
     atom.plot_results(metric=metric, display=False)
     atom.tree.plot_results(metric=metric, display=False)
 
@@ -510,7 +514,7 @@ def test_plot_roc(dataset):
     pytest.raises(ValueError, atom.lgb.plot_roc, dataset="invalid")  # Invalid dataset
 
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.run(["LGB", "SVM"], metric="f1")
     atom.plot_roc(dataset=dataset, display=False)
     atom.lgb.plot_roc(dataset=dataset, display=False)
 
@@ -531,8 +535,8 @@ def test_plot_threshold(metric):
     """Assert that the plot_threshold method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_threshold)
-    atom.run(["Tree", "LGB", "PA"], metric="f1")
-    pytest.raises(AttributeError, atom.pa.plot_threshold)  # No predict_proba
+    atom.run(["Tree", "LGB", "SVM"], metric="f1")
+    pytest.raises(AttributeError, atom.svm.plot_threshold)  # No predict_proba
     pytest.raises(ValueError, atom.tree.plot_threshold, metric="unknown")
     atom.plot_threshold(models=["Tree", "LGB"], display=False)
     atom.lgb.plot_threshold(metric=metric, display=False)

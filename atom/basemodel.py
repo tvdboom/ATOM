@@ -8,7 +8,6 @@ Description: Module containing the BaseModel class.
 """
 
 import os
-import tempfile
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime as dt
@@ -16,7 +15,7 @@ from importlib import import_module
 from inspect import signature
 from typing import Any, Callable, List, Optional, Tuple, Union
 from unittest.mock import patch
-from optuna.trial import TrialState
+
 import dill as pickle
 import matplotlib.pyplot as plt
 import mlflow
@@ -28,7 +27,7 @@ from mlflow.tracking import MlflowClient
 from optuna import TrialPruned, create_study
 from optuna.samplers import NSGAIISampler, TPESampler
 from optuna.study import Study
-from optuna.trial import Trial
+from optuna.trial import Trial, TrialState
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import (
     KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
@@ -42,12 +41,11 @@ from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import ModelPlot, ShapPlot
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE, SEQUENCE_TYPES, X_TYPES,
-    Y_TYPES, CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
+    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
+    CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
     TrialsCallback, composed, crash, custom_transform, estimator_has_attr, flt,
-    get_best_score, get_custom_scorer, get_feature_importance, get_pl_name,
-    has_task, it, lst, merge, method_to_log, rnd, score, time_to_str,
-    variable_return,
+    get_best_score, get_custom_scorer, get_feature_importance, has_task, it,
+    lst, merge, method_to_log, rnd, score, time_to_str, variable_return,
 )
 
 
@@ -77,9 +75,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
         self._evals = CustomDict()
         self._pred = [None] * 12
-        self._scores = CustomDict(train=CustomDict(), test=CustomDict())
-        if self.T.holdout:
-            self._scores["holdout"] = CustomDict()
+        self._scores = CustomDict()
         self._shap = ShapExplanation(self)
 
         # Parameter attributes
@@ -87,12 +83,9 @@ class BaseModel(ModelPlot, ShapPlot):
         self._est_params_fit = {}
 
         # Hyperparameter tuning attributes
-        self._ht = {}
+        self._ht = {"distributions": {}, "cv": 1, "plot": False, "tags": {}}
         self._study = None
-        self._trials = pd.DataFrame(
-            columns=["params", "estimator", "score", "time_trial", "time_ht"]
-        )
-        self._trials.index.name = "trial"
+        self._trials = None
         self._best_trial = None
 
         self._estimator = None
@@ -170,19 +163,20 @@ class BaseModel(ModelPlot, ShapPlot):
         return signature(obj).parameters
 
     def _check_est_params(self):
-        """Check that the parameters are valid for the estimator."""
-        # The parameter is always accepted if the estimator accepts kwargs
+        """Check that the parameters are valid for the estimator.
+
+        A parameter is always accepted if the method accepts kwargs.
+
+        """
         for param in self._est_params:
-            init_sign = self._sign(self._est_class)
-            if param not in init_sign and "kwargs" not in init_sign:
+            if all(p not in self._sign(self._est_class) for p in (param, "kwargs")):
                 raise ValueError(
                     "Invalid value for the est_params parameter. Got unknown "
                     f"parameter {param} for estimator {self._est_class.__name__}."
                 )
 
         for param in self._est_params_fit:
-            fit_sign = self._sign(self._est_class.fit)
-            if param not in fit_sign and "kwargs" not in fit_sign:
+            if all(p not in self._sign(self._est_class.fit) for p in (param, "kwargs")):
                 raise ValueError(
                     f"Invalid value for the est_params parameter. Got "
                     f"unknown parameter {param} for the fit method of "
@@ -317,32 +311,32 @@ class BaseModel(ModelPlot, ShapPlot):
 
         """
         if self.has_validation and hasattr(estimator, "partial_fit"):
-            self._evals = CustomDict(
-                {
-                    f"{self.T._metric[0].name}_train": [],
-                    f"{self.T._metric[0].name}_test": [],
-                }
-            )
+            if not trial:
+                # In-training validation is skipped during hyperparameter tuning
+                m = self.T._metric[0].name
+                self._evals = CustomDict({f"={m}_train": [], f"{m}_test": []})
 
             # Loop over first parameter in estimator
             for step in range(steps := estimator.get_params()[self.has_validation]):
-                estimator.partial_fit(
-                    *data,
-                    classes=sorted(self.y.unique()),
-                    **est_params_fit,
-                )
+                if self.T.goal.startswith("class"):
+                    est_params_fit["classes"] = sorted(self.y.unique())
 
-                self._evals[0].append(self.T._metric[0](estimator, *data))
-                self._evals[1].append(self.T._metric[0](estimator, *validation))
+                estimator.partial_fit(*data, **est_params_fit)
+
+                val_score = self.T._metric[0](estimator, *validation)
+                if not trial:
+                    self._evals[0].append(self.T._metric[0](estimator, *data))
+                    self._evals[1].append(val_score)
 
                 # Multi-objective optimization doesn't support pruning
                 if trial and len(self.T._metric) == 1:
-                    trial.report(self._evals[1][-1], step)
+                    trial.report(val_score, step)
 
                     if trial.should_prune():
                         # Hacky solution to add the pruned step to the output
                         p = trial.storage.get_trial_user_attrs(trial.number)["params"]
-                        p[self.has_validation] = f"{step}/{steps}"
+                        if self.has_validation in p:
+                            p[self.has_validation] = f"{step}/{steps}"
 
                         trial.set_user_attr("estimator", estimator)
                         raise TrialPruned()
@@ -353,7 +347,14 @@ class BaseModel(ModelPlot, ShapPlot):
         return estimator
 
     def _final_output(self) -> str:
-        """Returns the model's final output as a string."""
+        """Returns the model's final output as a string.
+
+        Returns
+        -------
+        str
+            Final score representation.
+
+        """
         # If bootstrap was used, use a different format
         if self.bootstrap is None:
             out = "   ".join(
@@ -423,12 +424,13 @@ class BaseModel(ModelPlot, ShapPlot):
         if dataset == "holdout" and self.T.holdout is None:
             raise ValueError("No holdout data set available.")
 
-        # Only re-calculate if not default parameters
-        if (
-            scorer.name not in self._scores[dataset]
-            or threshold != 0.5
-            or sample_weight is not None
-        ):
+        # Convert to tuple for hashing
+        if sample_weight is not None:
+            sample_weight = tuple(sample_weight)
+
+        # The _scores attr contains the result per combination of parameters
+        key = hash((scorer.name, dataset, threshold, sample_weight))
+        if key not in self._scores:
             has_pred_proba = hasattr(self.estimator, "predict_proba")
             has_dec_func = hasattr(self.estimator, "decision_function")
 
@@ -462,30 +464,19 @@ class BaseModel(ModelPlot, ShapPlot):
                     getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs
                 )
 
-            score = rnd(scorer._sign * float(score))
-
-            if threshold == 0.5 and sample_weight is None:
-                self._scores[dataset][scorer.name] = score
+            self._scores[key] = rnd(scorer._sign * float(score))
 
             if self._run:  # Log metric to mlflow run
                 MlflowClient().log_metric(
                     run_id=self._run.info.run_id,
                     key=f"{scorer.name}_{dataset}",
-                    value=it(score),
+                    value=it(self._scores[key]),
                 )
 
-            return score
-
-        else:
-            return self._scores[dataset][scorer.name]
+        return self._scores[key]
 
     @composed(crash, method_to_log, typechecked)
-    def hyperparameter_tuning(
-        self,
-        n_trials: int,
-        ht_params: Optional[dict] = None,
-        reset: bool = False,
-    ):
+    def hyperparameter_tuning(self, n_trials: int, reset: bool = False):
         """Run the hyperparameter tuning algorithm.
 
         Search for the best combination of hyperparameters. The function
@@ -497,30 +488,6 @@ class BaseModel(ModelPlot, ShapPlot):
         ----------
         n_trials: int
             Number of trials for the hyperparameter tuning.
-
-        ht_params: dict or None
-            Additional parameters for the hyperparameter tuning. If
-            None, it uses the same parameters as the first run. Can
-            include:
-
-            - **distributions: dict, sequence or None, default=None**<br>
-              Custom hyperparameter distributions for the models. If
-              None, it uses ATOM's predefined distributions.
-            - **cv: int, dict or sequence, default=1**<br>
-              Number of folds for the cross-validation. If 1, the
-              training set is randomly split in a subtrain and
-              validation set.
-            - **plot: bool, dict or sequence, default=False**<br>
-              Whether to plot the optimization's progress as it runs.
-              Creates a canvas with two plots: the first plot shows the
-              score of every trial and the second shows the distance
-              between the last consecutive steps. See the [plot_trials][]
-              method.
-            - **tags: dict, sequence or None, default=None**<br>
-              Custom tags for the model's [mlflow run][tracking].
-            - **\*\*kwargs**<br>
-              Additional Keyword arguments for the constructor of the
-              [study][] class or the [optimize][] method.
 
         reset: bool, default=False
             Whether to start a new study or continue the existing one.
@@ -538,7 +505,7 @@ class BaseModel(ModelPlot, ShapPlot):
             Returns
             -------
             float
-                Score achieved by the model.
+                Score of the model in this trial.
 
             """
 
@@ -612,7 +579,7 @@ class BaseModel(ModelPlot, ShapPlot):
             og = self.T._get_og_branches()[0]
 
             # Skip if the eval function has already been evaluated at this point
-            if params not in self.trials["params"].values:
+            if dict(params) not in self.trials["params"].tolist():
                 if self._ht.get("cv", 1) == 1:
                     if self.T.goal == "class":
                         split = StratifiedShuffleSplit  # Keep % of samples per class
@@ -637,7 +604,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
                     # Get the K-fold cross-validator object
                     fold = k_fold(
-                        n_splits=self._ht.get("cv", 1),
+                        n_splits=self._ht["cv"],
                         shuffle=True,
                         random_state=trial.number + (self.T.random_state or 0),
                     )
@@ -651,9 +618,9 @@ class BaseModel(ModelPlot, ShapPlot):
                     score = list(np.mean(scores, axis=0))
             else:
                 # Get same estimator and score as previous evaluation
-                mask = self.trials["params"] == params
-                estimator = self.trials.loc[mask, "estimator"]
-                score = lst(self.trials.loc[mask, "score"][0])
+                idx = self.trials.index[self.trials["params"] == params][0]
+                estimator = self.trials.at[idx, "estimator"]
+                score = lst(self.trials.at[idx, "score"])[0]
 
             trial.set_user_attr("estimator", estimator)
 
@@ -661,47 +628,46 @@ class BaseModel(ModelPlot, ShapPlot):
 
         # Running hyperparameter tuning ============================ >>
 
-        # Use provided parameters or those from the first run
-        self._ht = ht_params or self._ht
-
         self.T.log(f"Running hyperparameter tuning for {self._fullname}...", 1)
+
+        # Check validity of provided parameters
+        self._check_est_params()
 
         # Assign custom distributions or use predefined
         dist = self._get_distributions() if hasattr(self, "_get_distributions") else {}
         if self._ht.get("distributions"):
-            # If dict, use the user provided values
-            if isinstance(self._ht["distributions"], SEQUENCE):
-                inc, exc = [], []
-                for name in self._ht["distributions"]:
-                    # If it's a name, use the predefined dimension
-                    if name.startswith("!"):
-                        exc.append(n := name[1:])
-                    else:
-                        inc.append(n := name)
+            # Select default distributions
+            inc, exc = [], []
+            for name in [k for k, v in self._ht["distributions"].items() if v is None]:
+                # If it's a name, use the predefined dimension
+                if name.startswith("!"):
+                    exc.append(n := name[1:])
+                else:
+                    inc.append(n := name)
 
-                    if n not in dist:
-                        raise ValueError(
-                            "Invalid value for the distributions parameter. "
-                            f"Parameter {n} is not a predefined hyperparameter "
-                            f"of the {self._fullname} model. See the model's "
-                            "documentation for an overview of the available "
-                            "hyperparameters and their distributions."
-                        )
-
-                if inc and exc:
+                if n not in dist:
                     raise ValueError(
-                        "Invalid value for the distributions parameter. You can either "
-                        "include or exclude hyperparameters, not combinations of these."
+                        "Invalid value for the distributions parameter. "
+                        f"Parameter {n} is not a predefined hyperparameter "
+                        f"of the {self._fullname} model. See the model's "
+                        "documentation for an overview of the available "
+                        "hyperparameters and their distributions."
                     )
-                elif exc:
-                    # If distributions were excluded with `!`, select all but those
-                    self._ht["distributions"] = {
-                        k: v for k, v in dist.items() if k not in exc
-                    }
-                elif inc:
-                    self._ht["distributions"] = {
-                        k: v for k, v in dist.items() if k in inc
-                    }
+
+            if inc and exc:
+                raise ValueError(
+                    "Invalid value for the distributions parameter. You can either "
+                    "include or exclude hyperparameters, not combinations of these."
+                )
+            elif exc:
+                # If distributions were excluded with `!`, select all but those
+                self._ht["distributions"] = {
+                    k: v for k, v in dist.items() if k not in exc
+                }
+            elif inc:
+                self._ht["distributions"] = {
+                    k: v for k, v in dist.items() if k in inc
+                }
         else:
             self._ht["distributions"] = dist
 
@@ -718,7 +684,6 @@ class BaseModel(ModelPlot, ShapPlot):
 
         if not self._study or reset:
             kwargs = {k: v for k, v in self._ht.items() if k in self._sign(create_study)}
-
             if len(self.T._metric) == 1:
                 kwargs["direction"] = "maximize"
                 kwargs["sampler"] = kwargs.pop(
@@ -730,22 +695,35 @@ class BaseModel(ModelPlot, ShapPlot):
                     "sampler", NSGAIISampler(seed=self.T.random_state)
                 )
 
+            self._trials = pd.DataFrame(
+                columns=[
+                    "params",
+                    "estimator",
+                    "score",
+                    "time_trial",
+                    "time_ht",
+                    "state",
+                ]
+            )
+            self._trials.index.name = "trial"
             self._study = create_study(**kwargs)
 
         kwargs = {k: v for k, v in self._ht.items() if k in self._sign(Study.optimize)}
-        kwargs["callbacks"] = kwargs.get("callbacks", []) + [TrialsCallback(self)]
-        if self._ht.get("plot", False):
-            kwargs["callbacks"].append(PlotCallback(self))
+        n_jobs = kwargs.pop("n_jobs", 1)
+        callbacks = kwargs.pop("callbacks", []) + [TrialsCallback(self, n_jobs)]
+        if self._ht.get("plot", False) and n_jobs == 1:
+            callbacks.append(PlotCallback(self))
 
         self._study.optimize(
             func=objective,
             n_trials=n_trials,
-            n_jobs=kwargs.pop("n_jobs", self.T.n_jobs),
+            n_jobs=n_jobs,
+            callbacks=callbacks,
             show_progress_bar=kwargs.pop("show_progress_bar", self.T.verbose == 1),
             **kwargs,
         )
 
-        if self._ht.get("plot", False):
+        if self._ht.get("plot", False) and n_jobs == 1:
             plt.close()
 
         if len(self.study.get_trials(states=[TrialState.COMPLETE])) == 0:
@@ -803,12 +781,13 @@ class BaseModel(ModelPlot, ShapPlot):
 
         self.clear()
 
-        if self.trials.empty:
+        if self.trials is not None:
             self.T.log(f"Results for {self._fullname}:", 1)
         self.T.log(f"Fit {'-' * 45}", 1)
 
         # Assign estimator if not done already
         if not self._estimator:
+            self._check_est_params()
             self._estimator = self._get_est(**{**self._est_params, **self.best_params})
 
         self._estimator = self._fit_estimator(
@@ -825,7 +804,7 @@ class BaseModel(ModelPlot, ShapPlot):
             mlflow.set_tag("name", self.name)
             mlflow.set_tag("model", self._fullname)
             mlflow.set_tag("branch", self.branch.name)
-            mlflow.set_tags(self.T._ht_params["tags"][self.name])
+            mlflow.set_tags(self._ht.get("tags", {}))
 
             # Mlflow only accepts params with char length <250
             mlflow.log_params(
@@ -836,11 +815,9 @@ class BaseModel(ModelPlot, ShapPlot):
 
             # Save evals for models with in-training validation
             if self.evals:
-                name = self.evals["metric"]
-                zipper = zip(self.evals["train"], self.evals["test"])
-                for step, (train, test) in enumerate(zipper):
-                    mlflow.log_metric(f"evals_{name}_train", train, step=step)
-                    mlflow.log_metric(f"evals_{name}_test", test, step=step)
+                for key, value in self.evals.items():
+                    for step in range(len(value)):
+                        mlflow.log_metric(f"evals_{key}", value[step], step=step)
 
             # Rest of metrics are tracked when calling _get_score
             mlflow.log_metric("time_fit", self.time_fit)
@@ -936,64 +913,69 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def name(self) -> str:
-        """Name of the model."""
+        """Name of the model.
+
+        Use the property's `@setter` to change the model's name. The
+        acronym always stays at the beginning of the model's name. If
+        the model is being tracked by [mlflow][tracking], the name of
+        the corresponding run also changes.
+
+        """
         return self._name
 
     @name.setter
+    @typechecked
     def name(self, value: str):
-        """Change the model's tag.
+        """Change the model's name."""
+        # Drop the acronym if not provided by the user
+        if value.lower().startswith(self.acronym.lower()):
+            value = value[len(self.acronym):]
 
-        The acronym always stays at the beginning of the model's name.
-        If the model is being tracked by mlflow, the name of the
-        corresponding run is also changed.
-
-        """
-        if not value:
-            value = self.acronym  # Back to default acronym
-        else:
-            # Drop the acronym if not provided by the user
-            if value.lower().startswith(self.acronym.lower()):
-                value = value[len(self.acronym):]
-
-            # Add the acronym (with right capitalization)
-            value = self.acronym + value
+        # Add the acronym (with right capitalization)
+        value = self.acronym + value
 
         # Check if the name is available
-        if value.lower() in map(str.lower, self.T._models):
-            raise PermissionError(f"There already exists a model named {value}!")
+        if value in self.T._models:
+            raise ValueError(f"There already exists a model named {value}!")
 
         # Replace the model in the _models attribute
         self.T._models.replace_key(self.name, value)
         self.T.log(f"Model {self.name} successfully renamed to {value}.", 1)
-        self.name = value
+        self._name = value
 
         if self._run:  # Change name in mlflow's run
             MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
 
     @property
-    def study(self) -> Study:
-        """Optuna study used for hyperparameter tuning."""
+    def study(self) -> Optional[Study]:
+        """Optuna study used for [hyperparameter tuning][]."""
         return self._study
 
     @property
-    def trials(self) -> pd.DataFrame:
-        """Overview of the trials. Columns include:
+    def trials(self) -> Optional[pd.DataFrame]:
+        """Overview of the trials' results.
+
+        All durations are in seconds. Columns include:
 
         - **params:** Parameters used for this trial.
         - **estimator:** Estimator used for this trial.
         - **score:** Objective score(s) of the trial.
         - **time_trial:** Duration of the trial.
         - **time_ht:** Duration of the hyperparameter tuning.
+        - **state:** Trial's state (COMPLETE, PRUNED, FAIL).
 
         """
-        return self._trials
+        if self._trials is not None:
+            return self._trials.sort_index()  # Can be in disorder for n_jobs>1
 
     @property
     def best_trial(self) -> Optional[Trial]:
-        """Best trial found during hyperparameter tuning.
+        """Trial that returned the highest score.
 
-        For [multi-metric runs][], the best trial is the first trial
-        in the Pareto front.
+        For [multi-metric runs][], the best trial is the trial that
+        performed best on the main metric. Use the property's `@setter`
+        to change the best trial. See [here][example-hyperparameter-tuning]
+        an example.
 
         """
         return self._best_trial
@@ -1001,16 +983,17 @@ class BaseModel(ModelPlot, ShapPlot):
     @best_trial.setter
     @typechecked
     def best_trial(self, value: int):
+        """Change the selected best trial."""
         if value not in self.trials.index:
             raise ValueError(
                 "Invalid value for the best_trial. The "
                 f"value should be a trial number, got {value}."
             )
-        self._best_trial = value
+        self._best_trial = self.study.trials[value]
 
     @property
     def best_params(self) -> dict:
-        """Best hyperparameters found during hyperparameter tuning."""
+        """Hyperparameters used by the [best trial][self-best_trial]."""
         if self.best_trial:
             return self.trials.at[self.best_trial.number, "params"]
         else:
@@ -1018,14 +1001,15 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def score_ht(self) -> Optional[Union[FLOAT, List[FLOAT]]]:
-        """Metric score obtained during hyperparameter tuning."""
+        """Metric score obtained by the [best trial][self-best_trial]."""
         if self.best_trial:
             return self.trials.at[self.best_trial.number, "score"]
 
     @property
-    def time_ht(self) -> int:
-        """Duration of the hyperparameter tuning."""
-        return 0 if self.trials.empty else self.trials.iat[-1, -1]
+    def time_ht(self) -> Optional[int]:
+        """Duration of the hyperparameter tuning (in seconds)."""
+        if self.trials is not None:
+            return self.trials.iat[-1, -2]
 
     @property
     def estimator(self) -> Predictor:
@@ -1034,7 +1018,13 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def evals(self) -> CustomDict:
-        """Main metric score per step during [in-training validation][]."""
+        """Scores obtained per iteration of the training.
+
+        Only the scores of the [main metric][metric] are tracked.
+        Included keys are: train and test. Read more in the
+        [user guide][in-training-validation].
+
+        """
         return self._evals
 
     @property
@@ -1054,12 +1044,19 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def time_fit(self) -> int:
-        """Duration of the model fitting on the train set."""
+        """Duration of the model fitting on the train set (in seconds)."""
         return self._time_fit
 
     @property
     def bootstrap(self) -> Optional[pd.DataFrame]:
-        """Overview of the bootstrapping scores."""
+        """Overview of the bootstrapping scores.
+
+        The dataframe has shape=(n_bootstrap, metric) and shows the
+        score obtained by every bootstrapped sample for every metric.
+        Using `atom.bootstrap.mean()` yields the same values as
+        [score_bootstrap][self-score_bootstrap].
+
+        """
         return self._bootstrap
 
     @property
@@ -1069,22 +1066,24 @@ class BaseModel(ModelPlot, ShapPlot):
             return flt(self.bootstrap.mean().tolist())
 
     @property
-    def time_bootstrap(self) -> int:
-        """Duration of the bootstrapping."""
-        return self._time_bootstrap
+    def time_bootstrap(self) -> Optional[int]:
+        """Duration of the bootstrapping (in seconds)."""
+        if self._time_bootstrap:
+            return self._time_bootstrap
 
     @property
     def time(self) -> int:
-        """Total duration of the model run."""
-        return self.time_ht + self.time_fit + self.time_bootstrap
+        """Total duration of the run (in seconds)."""
+        return (self.time_ht or 0) + self._time_fit + self._time_bootstrap
 
     @property
     def feature_importance(self) -> Optional[pd.Series]:
         """Normalized feature importance scores.
 
-        The scores are extracted from the estimator's `coef_` or
-        `feature_importances_` attribute, checked in that order.
-        Returns None for estimators without those attributes.
+        The scores are extracted from the estimator's `scores_`,
+        `coef_` or `feature_importances_` attribute, checked in that
+        order. Returns None for estimators without any of those
+        attributes.
 
         """
         if data := get_feature_importance(self.estimator):
@@ -1108,24 +1107,42 @@ class BaseModel(ModelPlot, ShapPlot):
         - **time_fit:** Duration of the model fitting on the train set.
         - **score_bootstrap:** Mean score on the bootstrapped samples.
         - **time_bootstrap:** Duration of the bootstrapping.
-        - **time:** Total duration of the model run.
+        - **time:** Total duration of the run.
 
         """
         return pd.Series(
             {
-                "score_ht": getattr(self, "score_ht", None),
-                "time_ht": getattr(self, "time_ht", None),
-                "score_train": getattr(self, "score_train", None),
-                "score_test": getattr(self, "score_test", None),
-                "time_fit": getattr(self, "time_fit", None),
-                "score_bootstrap": getattr(self, "score_bootstrap", None),
-                "time_bootstrap": getattr(self, "time_bootstrap", None),
-                "time": getattr(self, "time", None),
+                "score_ht": self.score_ht,
+                "time_ht": self.time_ht,
+                "score_train": self.score_train,
+                "score_test": self.score_test,
+                "time_fit": self.time_fit,
+                "score_bootstrap": self.score_bootstrap,
+                "time_bootstrap": self.time_bootstrap,
+                "time": self.time,
             },
             name=self.name,
         )
 
     # Data Properties ============================================== >>
+
+    @property
+    def pipeline(self):
+        """Transformers fitted on the data.
+
+        Models that used [automated feature scaling][] have the scaler
+        added. Use this attribute only to access the individual
+        instances. To visualize the pipeline, use the [plot_pipeline][]
+        method.
+
+         """
+        if self.scaler:
+            return pd.concat(
+                [self.branch.pipeline, pd.Series(self.scaler, dtype="object")],
+                ignore_index=True,
+            )
+        else:
+            return self.branch.pipeline
 
     @property
     def dataset(self) -> pd.DataFrame:
@@ -1439,10 +1456,6 @@ class BaseModel(ModelPlot, ShapPlot):
                 if not transformer._train_only:
                     X, y = custom_transform(transformer, self.branch, (X, y), verbose)
 
-            # Scale the data if needed
-            if self.scaler:
-                X, y = custom_transform(self.scaler, self.branch, (X, y), verbose)
-
         if method != "score":
             if rows:
                 # Concatenate the predictions for all sets and retrieve indices
@@ -1472,9 +1485,8 @@ class BaseModel(ModelPlot, ShapPlot):
 
             if rows:
                 # Define X and y for the score method
-                if self.holdout is None:
-                    data = self.dataset
-                else:
+                data = self.dataset
+                if self.holdout is not None:
                     data = pd.concat([self.dataset, self.holdout], axis=0)
 
                 X, y = data.loc[rows, self.features], data.loc[rows, self.target]
@@ -1692,6 +1704,13 @@ class BaseModel(ModelPlot, ShapPlot):
 
     # Utility methods ============================================== >>
 
+    def _new_copy(self):
+        """Return a new model instance with the same estimator."""
+        obj = self.__class__(self.T, self.name)
+        obj._est_params = self._est_params
+        obj._est_params_fit = self._est_params_fit
+        return obj
+
     @available_if(has_task("class"))
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
@@ -1724,6 +1743,8 @@ class BaseModel(ModelPlot, ShapPlot):
         if self._run:
             self._run = mlflow.start_run(run_name=f"{self.name}_calibrate")
 
+        self.fit()
+
     @composed(crash, method_to_log)
     def clear(self):
         """Clear attributes from the model.
@@ -1741,11 +1762,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
         """
         self._evals = CustomDict()
-        self._scores = CustomDict(
-            train=CustomDict(),
-            test=CustomDict(),
-            holdout=CustomDict(),
-        )
+        self._scores = CustomDict()
         self._pred = [None] * 12
         self._shap = ShapExplanation(self)
         self.app = None
@@ -2052,9 +2069,21 @@ class BaseModel(ModelPlot, ShapPlot):
     ) -> Pipeline:
         """Export the model's pipeline to a sklearn-like object.
 
-        If the model used feature scaling, the Scaler is added
-        before the model. The returned pipeline is already fitted
-        on the training set.
+        The returned pipeline is already fitted on the training set.
+        Note that, if the model used [automated feature scaling][],
+        the [Scaler][] is added to the pipeline.
+
+        !!! info
+            The returned pipeline behaves similarly to sklearn's
+            [Pipeline][], and additionally:
+
+            - Accepts transformers that change the target column.
+            - Accepts transformers that drop rows.
+            - Accepts transformers that only are fitted on a subset of
+              the provided dataset.
+            - Always returns pandas objects.
+            - Uses transformers that are only applied on the training
+              set to fit the pipeline, not to make predictions.
 
         Parameters
         ----------
@@ -2077,27 +2106,7 @@ class BaseModel(ModelPlot, ShapPlot):
             Current branch as a sklearn-like Pipeline object.
 
         """
-        steps = []
-        for transformer in self.pipeline:
-            est = deepcopy(transformer)  # Not clone to keep fitted
-
-            # Set the new verbosity (if possible)
-            if verbose is not None and hasattr(est, "verbose"):
-                est.verbose = verbose
-
-            steps.append((get_pl_name(est.__class__.__name__, steps), est))
-
-        if self.scaler:
-            steps.append(("scaler", deepcopy(self.scaler)))
-
-        steps.append((self.name, deepcopy(self.estimator)))
-
-        if not memory:  # None or False
-            memory = None
-        elif memory is True:
-            memory = tempfile.gettempdir()
-
-        return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
+        return self.T.export_pipeline(self.name, memory=memory, verbose=verbose)
 
     @composed(crash, method_to_log, typechecked)
     def full_train(self, include_holdout: bool = False):
@@ -2186,10 +2195,6 @@ class BaseModel(ModelPlot, ShapPlot):
         """
         X, y = self.T._prepare_input(X, y)
 
-        # Inversely scale the data if needed
-        if self.scaler:
-            X, y = custom_transform(self.scaler, self.branch, (X, y), verbose)
-
         for transformer in reversed(self.pipeline):
             if not transformer._train_only:
                 X, y = custom_transform(
@@ -2269,9 +2274,5 @@ class BaseModel(ModelPlot, ShapPlot):
         for transformer in self.pipeline:
             if not transformer._train_only:
                 X, y = custom_transform(transformer, self.branch, (X, y), verbose)
-
-        # Scale the data if needed
-        if self.scaler:
-            X, y = custom_transform(self.scaler, self.branch, (X, y), verbose)
 
         return variable_return(X, y)

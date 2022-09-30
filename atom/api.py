@@ -115,6 +115,12 @@ def ATOMLoader(
     with open(filename, "rb") as f:
         cls = pickle.load(f)
 
+    # Reassign the transformer attributes (warnings random_state, etc...)
+    if issubclass(cls.__class__, BaseTransformer):
+        BaseTransformer.__init__(
+            cls, **{x: getattr(cls, x) for x in BaseTransformer.attrs if hasattr(cls, x)}
+        )
+
     if data is not None:
         if not hasattr(cls, "_branches"):
             raise TypeError(
@@ -189,8 +195,8 @@ def ATOMModel(
         Whether the model needs scaled features.
 
     has_validation: str or None, default=None
-        Whether the model allows in-training validation. If str, name
-        of the estimator's parameter that states the number of
+        Whether the model allows [in-training validation][]. If str,
+        name of the estimator's parameter that states the number of
         iterations. If None, no support for in-training validation.
 
     Returns
@@ -334,8 +340,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
         set is provided through `arrays`.
 
     n_rows: int or float, default=1
-        Subsample of the dataset to use. The default value selects all
-        the rows.
+        Random subsample of the dataset to use. The default value selects
+        all rows.
 
         - If <=1: Fraction of the dataset to select.
         - If >1: Exact number of rows to select. Only if `arrays` is X
@@ -619,8 +625,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
         an unequal distribution of target classes over the sets.
 
     n_rows: int or float, default=1
-        Subsample of the dataset to use. The default value selects all
-        the rows.
+        Random subsample of the dataset to use. The default value selects
+        all rows.
 
         - If <=1: Fraction of the dataset to select.
         - If >1: Exact number of rows to select. Only if `arrays` is X

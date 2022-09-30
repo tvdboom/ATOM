@@ -316,7 +316,7 @@ class BasePlot:
 
         """
         if isinstance(metric, str):
-            if metric.lower() in ("time_bo", "time_fit", "time_bootstrap", "time"):
+            if metric.lower() in ("time_ht", "time_fit", "time_bootstrap", "time"):
                 return metric.lower()
             else:
                 name = get_custom_scorer(metric).name
@@ -1857,7 +1857,7 @@ class ModelPlot(BasePlot):
                 # Fit the points using linear regression
                 from atom.models import OrdinaryLeastSquares
 
-                model = OrdinaryLeastSquares(self, fast_init=True)._get_estimator()
+                model = OrdinaryLeastSquares(self, fast_init=True)._get_est()
                 model.fit(
                     X=np.array(getattr(self, f"y_{set_}")).reshape(-1, 1),
                     y=getattr(m, f"predict_{set_}"),
@@ -1929,16 +1929,30 @@ class ModelPlot(BasePlot):
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models)
+        models = self._get_subclass(models, ensembles=False)
         dataset = self._get_set(dataset, allow_holdout=False)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlot._fig.grid)
         for m in models:
+            if not m.evals:
+                raise ValueError(
+                    "Invalid value for the models parameter. Model "
+                    f"{m.name} has no in-training validation."
+                )
+
             for set_ in dataset:
-                y = m.evals[f"{self._metric[0].name}_{set_}"]
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                ax.plot(range(len(y)), y, lw=2, label=label)
+                ax.plot(
+                    range(len(m.evals[f"{self._metric[0].name}_{set_}"])),
+                    m.evals[f"{self._metric[0].name}_{set_}"],
+                    lw=2,
+                    label=m.name + (f" - {set_}" if len(dataset) > 1 else ""),
+                )
+
+        if len(set(m.has_validation for m in models)) == 1:
+            xlabel = m.has_validation
+        else:
+            xlabel = "Iterations"
 
         BasePlot._fig._used_models.append(m)
         return self._plot(
@@ -1946,7 +1960,7 @@ class ModelPlot(BasePlot):
             ax=ax,
             title=title,
             legend=("best", len(dataset)),
-            xlabel="iterations",
+            xlabel=xlabel,
             ylabel=self._metric[0].name,
             figsize=figsize,
             plotname="plot_evals",
@@ -2190,14 +2204,13 @@ class ModelPlot(BasePlot):
         # Not using sns hue parameter because of legend formatting
         lines = defaultdict(pd.DataFrame)
         for m in models:
-            if m.score_bootstrap is None:
+            if m.bootstrap is None:
                 values = {"x": [m._train_idx], "y": [get_best_score(m, metric)]}
             else:
-                if len(self._metric) == 1:
-                    bootstrap = m.score_bootstrap
-                else:
-                    bootstrap = m.score_bootstrap[metric]
-                values = {"x": [m._train_idx] * len(bootstrap), "y": bootstrap}
+                values = {
+                    "x": [m._train_idx] * len(m.bootstrap),
+                    "y": m.bootstrap.iloc[:, metric],
+                }
 
             # Add the scores to the group's dataframe
             lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
@@ -2993,7 +3006,7 @@ class ModelPlot(BasePlot):
         d.add(Subroutine(w=8, s=0.7).label("Raw data"))
 
         height = 3  # Height of every block
-        length = 5  # Minimal arrow length
+        length = 5  # Minimum arrow length
 
         # Define the x-position for every block
         x_pos = [d.here[0] + length]
@@ -3001,9 +3014,11 @@ class ModelPlot(BasePlot):
             len_block = reduce(max, [get_length(b["pipeline"], i) for b in branches])
             x_pos.append(x_pos[-1] + length + len_block)
 
-        # Add positions for hyperparameter tuning and models
-        x_pos.append(x_pos[-1])
-        if draw_hyperparameter_tuning and any(not m.trials.empty for m in models):
+        # Add positions for scaling, hyperparameter tuning and models
+        x_pos.extend([x_pos[-1], x_pos[-1]])
+        if any(m.scaler for m in models):
+            x_pos[-1] = x_pos[-2] = x_pos[-3] + length + 7
+        if draw_hyperparameter_tuning and any(m.trials is not None for m in models):
             x_pos[-1] = x_pos[-2] + length + 11
 
         positions = {0: d.here}  # Contains the position of every element
@@ -3036,15 +3051,33 @@ class ModelPlot(BasePlot):
                 else:
                     d.here = positions[0]
 
+                # For a single branch, center models
+                if len(branches) == 1:
+                    offset = height * (len(branch["models"]) - 1) / 2
+                else:
+                    offset = 0
+
+                # Draw automated feature scaling
+                if model.scaler:
+                    add_wire(x_pos[-3], check_y((d.here[0], d.here[1] - offset)))
+                    d.add(
+                        RoundBox(w=7)
+                        .label("Scaler", color="k")
+                        .color(branch["color"])
+                        .drop("E")
+                    )
+                    offset = 0
+
                 # Draw hyperparameter tuning
-                if draw_hyperparameter_tuning and not model.bo.empty:
-                    add_wire(x_pos[-2], check_y(d.here))
+                if draw_hyperparameter_tuning and model.trials is not None:
+                    add_wire(x_pos[-2], check_y((d.here[0], d.here[1] - offset)))
                     d.add(
                         Data(w=11)
                         .label("Hyperparameter\nTuning", color="k")
                         .color(branch["color"])
                         .drop("E")
                     )
+                    offset = 0
 
                 # Remove classifier/regressor from model's name
                 name = model.estimator.__class__.__name__
@@ -3052,12 +3085,6 @@ class ModelPlot(BasePlot):
                     name = name[:-10]
                 elif name.lower().endswith("regressor"):
                     name = name[:-9]
-
-                # For a single branch, center models
-                if len(branches) == 1:
-                    offset = height * (len(branch["models"]) - 1) / 2
-                else:
-                    offset = 0
 
                 # Draw model
                 add_wire(x_pos[-1], check_y((d.here[0], d.here[1] - offset)))
@@ -3450,8 +3477,8 @@ class ModelPlot(BasePlot):
                     return getattr(m, metric)
                 else:
                     raise ValueError(
-                        "Invalid value for the metric parameter. Model "
-                        f"{m.name} doesn't have metric {metric}."
+                        "Invalid value for the metric parameter. "
+                        f"Model {m.name} doesn't have metric {metric}."
                     )
             else:
                 return get_best_score(m, metric)
@@ -3663,14 +3690,13 @@ class ModelPlot(BasePlot):
         lines = defaultdict(pd.DataFrame)
         for m in models:
             n_models = len(m.branch._idx[0]) // m._train_idx  # Number of models in iter
-            if m.score_bootstrap is None:
+            if m.bootstrap is None:
                 values = {"x": [n_models], "y": [get_best_score(m, metric)]}
             else:
-                if len(self._metric) == 1:
-                    bootstrap = m.score_bootstrap
-                else:
-                    bootstrap = m.score_bootstrap[metric]
-                values = {"x": [n_models] * len(bootstrap), "y": bootstrap}
+                values = {
+                    "x": [n_models] * len(m.bootstrap),
+                    "y": m.bootstrap.iloc[:, metric],
+                }
 
             # Add the scores to the group's dataframe
             lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
@@ -3812,11 +3838,11 @@ class ModelPlot(BasePlot):
     ):
         """Plot the hyperparameter tuning trials.
 
-        Only for models that ran hyperparameter tuning. This is the
-        same plot as produced by `ht_params={"plot": True}` while
-        running the BO. Creates a figure with two plots: the first
-        plot shows the score of every trial and the second shows
-        the distance between the last consecutive steps.
+        Only for models that ran [hyperparameter tuning][]. Creates a
+        figure with two plots: the first plot shows the score of every
+        trial and the second shows the distance between the last
+        consecutive steps. This is the same plot as produced by
+        `ht_params={"plot": True}`.
 
         Parameters
         ----------
@@ -3851,11 +3877,11 @@ class ModelPlot(BasePlot):
         models = self._get_subclass(models)
         metric = self._get_metric(metric)
 
-        # Check there is at least one model that run the BO
-        if all(m.trials.empty for m in models):
+        # Check there is at least one model that run hyperparameter tuning
+        if all(m.trials is None for m in models):
             raise PermissionError(
-                "The plot_bo method is only available for models that "
-                "ran the bayesian optimization hyperparameter tuning!"
+                "The plot_trials method is only available for "
+                "models that ran hyperparameter tuning!"
             )
 
         fig = self._get_figure()
@@ -3863,28 +3889,28 @@ class ModelPlot(BasePlot):
         ax1 = fig.add_subplot(gs[0:3, 0])
         ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
         for m in models:
-            if m.metric_bo:  # Only models that did run the BO
+            if m.score_ht:  # Only models that did run hyperparameter tuning
                 y = m.trials["score"].apply(lambda value: lst(value)[metric])
                 if len(models) == 1:
-                    label = f"Score={round(lst(m.metric_bo)[metric], 3)}"
+                    label = f"Score={round(lst(m.score_ht)[metric], 3)}"
                 else:
-                    label = f"{m.name} (Score={round(lst(m.metric_bo)[metric], 3)})"
+                    label = f"{m.name} (Score={round(lst(m.score_ht)[metric], 3)})"
 
                 # Draw bullets on all markers except the maximum
                 markers = [i for i in range(len(m.trials))]
                 markers.remove(int(np.argmax(y)))
 
-                ax1.plot(range(1, len(y) + 1), y, "-o", markevery=markers, label=label)
-                ax2.plot(range(2, len(y) + 1), np.abs(np.diff(y)), "-o")
-                ax1.scatter(np.argmax(y) + 1, max(y), zorder=10, s=100, marker="*")
+                ax1.plot(range(len(y)), y, "-o", markevery=markers, label=label)
+                ax2.plot(range(1, len(y)), np.abs(np.diff(y)), "-o")
+                ax1.scatter(np.argmax(y), max(y), zorder=10, s=100, marker="*")
 
         plt.setp(ax1.get_xticklabels(), visible=False)
-        ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax2.set_xticks(range(max(len(m.trials) for m in models)))
 
         self._plot(
             ax=ax1,
             title=title,
-            legend=("lower right", len(models)),
+            legend=("best", len(models)),
             ylabel=self._metric[metric].name,
         )
 
@@ -3892,10 +3918,10 @@ class ModelPlot(BasePlot):
         return self._plot(
             fig=fig,
             ax=ax2,
-            xlabel="Call",
+            xlabel="Trial",
             ylabel="d",
             figsize=figsize,
-            plotname="plot_bo",
+            plotname="plot_trials",
             filename=filename,
             display=display,
         )

@@ -168,75 +168,79 @@ Encoding categorical columns...
 ```
 
 Similarly, models are [trained and evaluated][training] using the
-[run][atomclassifier-run] method. Here, we fit both a [RandomForest][]
+[run][atomclassifier-run] method. Here, we fit both a [LinearDiscriminantAnalysis][]
 and [AdaBoost][] model, and apply [hyperparameter tuning][].
 
 ```pycon
->>> atom.run(models=["RF", "AdaB"], metric="auc", n_trials=10, n_initial_points=4)
+>>> atom.run(models=["LDA", "AdaB"], metric="auc", n_trials=10)
 
 Training ========================= >>
-Models: RF, AdaB
+Models: LDA, AdaB
 Metric: roc_auc
 
 
-Running BO for Random Forest...
-| call             | n_estimators | criterion | max_depth | min_samples_split | min_samples_leaf | max_features | bootstrap | max_samples | ccp_alpha | roc_auc | best_roc_auc | time_trial | time_bo |
-| ---------------- | ------------ | --------- | --------- | ----------------- | ---------------- | ------------ | --------- | ----------- | --------- | ------- | ------------ | ---------- | ------- |
-| Initial point 1  |          499 |   entropy |         2 |                20 |                5 |          0.6 |      True |         0.7 |    0.0327 |  0.8013 |       0.8013 |     0.885s |  0.902s |
-| Initial point 2  |          425 |      gini |         8 |                10 |                5 |          0.7 |     False |         --- |    0.0151 |  0.8405 |       0.8405 |     1.345s |  2.249s |
-| Initial point 3  |          470 |   entropy |        11 |                16 |                3 |          0.7 |     False |         --- |     0.029 |  0.7664 |       0.8405 |     1.784s |  4.036s |
-| Initial point 4  |          144 |      gini |        11 |                13 |               14 |          0.6 |      True |         0.5 |     0.005 |  0.9164 |       0.9164 |     0.329s |  4.368s |
-| Iteration 5      |           84 |      gini |        15 |                13 |               16 |          0.6 |      True |         0.5 |    0.0028 |  0.8085 |       0.9164 |     0.250s |  4.967s |
-| Iteration 6      |          454 |      gini |         1 |                 9 |               19 |         None |      True |         0.9 |     0.035 |  0.7037 |       0.9164 |     0.678s |  5.909s |
-| Iteration 7      |          461 |   entropy |         1 |                15 |               13 |          0.9 |     False |         --- |    0.0286 |  0.6998 |       0.9164 |     0.666s |  6.836s |
-| Iteration 8      |          111 |      gini |         2 |                 6 |               14 |         log2 |      True |         0.7 |    0.0106 |  0.8546 |       0.9164 |     0.245s |  7.370s |
-| Iteration 9      |           33 |   entropy |         9 |                12 |                5 |         sqrt |     False |         --- |       0.0 |  0.8466 |       0.9164 |     0.181s |  7.832s |
-| Iteration 10     |          301 |      gini |        15 |                11 |               14 |          0.7 |      True |        None |    0.0186 |  0.8342 |       0.9164 |     0.730s |  8.857s |
-Bayesian Optimization ---------------------------
-Best call --> Initial point 4
-Best parameters --> {'n_estimators': 144, 'criterion': 'gini', 'max_depth': 11, 'min_samples_split': 13, 'min_samples_leaf': 14, 'max_features': 0.6, 'bootstrap': True, 'max_samples': 0.5, 'ccp_alpha': 0.005}
-Best evaluation --> roc_auc: 0.9164
-Time elapsed: 8.857s
+Running hyperparameter tuning for LinearDiscriminantAnalysis...
+| trial |  solver | shrinkage | roc_auc | best_roc_auc | time_trial | time_ht |    state |
+| ----- | ------- | --------- | ------- | ------------ | ---------- | ------- | -------- |
+| 0     |   eigen |      auto |  0.7888 |       0.7888 |     0.156s |  0.156s | COMPLETE |
+| 1     |    lsqr |       0.9 |  0.7988 |       0.7988 |     0.141s |  0.297s | COMPLETE |
+| 2     |    lsqr |       1.0 |  0.8125 |       0.8125 |     0.141s |  0.438s | COMPLETE |
+| 3     |    lsqr |       0.6 |   0.858 |        0.858 |     0.125s |  0.563s | COMPLETE |
+| 4     |   eigen |       1.0 |   0.782 |        0.858 |     0.125s |  0.688s | COMPLETE |
+| 5     |    lsqr |       0.8 |  0.8396 |        0.858 |     0.141s |  0.828s | COMPLETE |
+| 6     |     svd |       --- |  0.7968 |        0.858 |     0.141s |  0.969s | COMPLETE |
+| 7     |    lsqr |       0.7 |  0.8208 |        0.858 |     0.125s |  1.094s | COMPLETE |
+| 8     |   eigen |       0.9 |  0.8548 |        0.858 |     0.141s |  1.234s | COMPLETE |
+| 9     |   eigen |       0.7 |  0.8401 |        0.858 |     0.125s |  1.359s | COMPLETE |
+Hyperparameter tuning ---------------------------
+Best trial --> 3
+Best parameters:
+ --> solver: lsqr
+ --> shrinkage: 0.6
+Best evaluation --> roc_auc: 0.858
+Time elapsed: 1.359s
 Fit ---------------------------------------------
-Train evaluation --> roc_auc: 0.904
-Test evaluation --> roc_auc: 0.8496
-Time elapsed: 0.255s
+Train evaluation --> roc_auc: 0.8321
+Test evaluation --> roc_auc: 0.8668
+Time elapsed: 0.016s
 -------------------------------------------------
-Total time: 9.463s
+Total time: 1.375s
 
 
-Running BO for AdaBoost...
-| call             | n_estimators | learning_rate | algorithm | roc_auc | best_roc_auc | time_trial | time_bo |
-| ---------------- | ------------ | ------------- | --------- | ------- | ------------ | ---------- | ------- |
-| Initial point 1  |          499 |        6.2758 |   SAMME.R |  0.6546 |       0.6546 |     0.831s |  0.838s |
-| Initial point 2  |          500 |        0.0511 |   SAMME.R |  0.8837 |       0.8837 |     0.846s |  1.686s |
-| Initial point 3  |          225 |        1.0215 |     SAMME |  0.8136 |       0.8837 |     0.466s |  2.155s |
-| Initial point 4  |          431 |        0.0871 |     SAMME |  0.8817 |       0.8837 |     0.700s |  2.857s |
-| Iteration 5      |          150 |        0.0536 |     SAMME |  0.7296 |       0.8837 |     0.325s |  3.371s |
-| Iteration 6      |          500 |        0.1425 |   SAMME.R |  0.7254 |       0.8837 |     0.824s |  4.366s |
-| Iteration 7      |          446 |        0.0724 |     SAMME |  0.8069 |       0.8837 |     0.741s |  5.328s |
-| Iteration 8      |          469 |        0.0959 |     SAMME |  0.7715 |       0.8837 |     0.739s |  6.271s |
-| Iteration 9      |          425 |        0.0913 |     SAMME |  0.8237 |       0.8837 |     0.673s |  7.189s |
-| Iteration 10     |          396 |        0.0844 |     SAMME |  0.7224 |       0.8837 |     0.636s |  8.166s |
-Bayesian Optimization ---------------------------
-Best call --> Initial point 2
-Best parameters --> {'n_estimators': 500, 'learning_rate': 0.0511, 'algorithm': 'SAMME.R'}
-Best evaluation --> roc_auc: 0.8837
-Time elapsed: 8.166s
+Running hyperparameter tuning for AdaBoost...
+| trial | n_estimators | learning_rate | algorithm | roc_auc | best_roc_auc | time_trial | time_ht |    state |
+| ----- | ------------ | ------------- | --------- | ------- | ------------ | ---------- | ------- | -------- |
+| 0     |          480 |        1.6346 |     SAMME |   0.744 |        0.744 |     0.734s |  0.734s | COMPLETE |
+| 1     |          410 |        6.7512 |     SAMME |  0.3454 |        0.744 |     0.125s |  0.859s | COMPLETE |
+| 2     |          480 |        7.4271 |   SAMME.R |  0.3513 |        0.744 |     0.788s |  1.648s | COMPLETE |
+| 3     |          460 |        0.0238 |   SAMME.R |  0.8365 |       0.8365 |     0.799s |  2.447s | COMPLETE |
+| 4     |          400 |        1.8333 |   SAMME.R |  0.6328 |       0.8365 |     0.672s |  3.118s | COMPLETE |
+| 5     |          420 |        6.7105 |   SAMME.R |  0.3772 |       0.8365 |     0.694s |  3.813s | COMPLETE |
+| 6     |          240 |         0.358 |   SAMME.R |  0.7413 |       0.8365 |     0.469s |  4.282s | COMPLETE |
+| 7     |          320 |        0.2011 |     SAMME |  0.8418 |       0.8418 |     0.531s |  4.813s | COMPLETE |
+| 8     |          260 |        0.1667 |     SAMME |   0.808 |       0.8418 |     0.454s |  5.267s | COMPLETE |
+| 9     |          450 |        0.0464 |     SAMME |  0.8001 |       0.8418 |     0.688s |  5.954s | COMPLETE |
+Hyperparameter tuning ---------------------------
+Best trial --> 7
+Best parameters:
+ --> n_estimators: 320
+ --> learning_rate: 0.2011
+ --> algorithm: SAMME
+Best evaluation --> roc_auc: 0.8418
+Time elapsed: 5.954s
 Fit ---------------------------------------------
-Train evaluation --> roc_auc: 0.9371
-Test evaluation --> roc_auc: 0.7811
-Time elapsed: 0.868s
+Train evaluation --> roc_auc: 0.9087
+Test evaluation --> roc_auc: 0.7987
+Time elapsed: 0.453s
 -------------------------------------------------
-Total time: 9.351s
+Total time: 6.407s
 
 
 Final results ==================== >>
-Total time: 18.813s
+Total time: 8.017s
 -------------------------------------
-Random Forest --> roc_auc: 0.8496 !
-AdaBoost      --> roc_auc: 0.7811
-
+LinearDiscriminantAnalysis --> roc_auc: 0.8668 !
+AdaBoost                   --> roc_auc: 0.7987
 ```
 
 And lastly, analyze the results.
@@ -244,9 +248,9 @@ And lastly, analyze the results.
 ```pycon
 >>> atom.evaluate()
 
-      accuracy  average_precision  ...    recall   roc_auc
-RF       0.840           0.681397  ...  0.355556  0.849606
-AdaB     0.835           0.590445  ...  0.466667  0.781075
+      accuracy  average_precision  ...  recall  roc_auc
+LDA      0.850             0.6893  ...  0.5333   0.8668
+AdaB     0.825             0.6344  ...  0.3556   0.7987
 
 [2 rows x 9 columns]
 

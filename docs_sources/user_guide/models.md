@@ -126,9 +126,9 @@ or [KerasRegressor](https://www.adriangb.com/scikeras/refs/heads/master/generate
 Many deep learning use cases, for example in computer vision, use datasets
 with more than 2 dimensions, e.g. image data can have shape (n_samples,
 length, width, rgb). Luckily, scikeras has a workaround to be able to work
-with such datasets. Learn with this [example](../../examples/deep_learning)
-how to use ATOM to train and validate a Convolutional Neural Network on an
-image dataset.
+with such datasets. Learn with this [example][example-deep-learning] how to
+use ATOM to train and validate a Convolutional Neural Network on an image
+dataset.
 
 !!! warning
     Models implemented with [keras](https://keras.io/) can only use
@@ -144,7 +144,7 @@ image dataset.
 Ensemble models use multiple estimators to obtain better predictive
 performance than could be obtained from any of the constituent learning
 algorithms alone. ATOM implements two ensemble techniques: voting and
-stacking. Click [here](../../examples/ensembles) to see an example that uses
+stacking. Click [here][example-ensembles] to see an example that uses
 ensemble models.
 
 If the ensemble's underlying estimator is a model that used [automated feature scaling][],

@@ -8,18 +8,22 @@ Description: Module containing the BaseRunner class.
 """
 
 import re
+import tempfile
+from copy import deepcopy
 from typing import Any, List, Optional, Tuple, Union
 
 import mlflow
 import pandas as pd
+from joblib.memory import Memory
 from typeguard import typechecked
 
 from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
+from atom.pipeline import Pipeline
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, CustomDict, Model, check_is_fitted,
-    composed, crash, divide, flt, get_best_score, get_versions, lst,
-    method_to_log,
+    composed, crash, divide, flt, get_best_score, get_pl_name, get_versions,
+    lst, method_to_log,
 )
 
 
@@ -83,18 +87,12 @@ class BaseRunner:
             super().__setattr__(item, value)
 
     def __delattr__(self, item: str):
-        if item == "branch":
-            self.branch.delete()
-        elif item in self._branches:
-            self._branches[item].delete()
-        elif item == "winner" or item in self._models:
+        if item in self._branches:
+            self.branch.__delete__(self._branches[item])
+        elif item in self._models:
             self.delete(item)
-        elif item in self.__dict__:
-            del self.__dict__[item]
         else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{item}'."
-            )
+            super().__delattr__(item)
 
     def __len__(self) -> int:
         return len(self.dataset)
@@ -189,8 +187,22 @@ class BaseRunner:
 
     @property
     def branch(self) -> Branch:
-        """Current active branch."""
+        """Current active branch.
+
+        Use the property's `@setter` to change from current branch or
+        to create a new one. If the value is the name of an existing
+        branch, switch to that one. Else, create a new branch using
+        that name. The new branch is split from the current branch. Use
+        `__from__` to split the new branch from any other existing
+        branch. Read more in the [user guide][branches].
+
+        """
         return self._branches[self._current]
+
+    @branch.deleter
+    def branch(self):
+        """Delete the current active branch."""
+        self.branch.__delete__(self.branch)
 
     @property
     def models(self) -> Union[str, List[str]]:
@@ -210,7 +222,13 @@ class BaseRunner:
 
     @property
     def errors(self) -> CustomDict:
-        """Errors encountered during model training."""
+        """Errors encountered during model training.
+
+        The key is the model's name and the value is the exception
+        object that was raised. Use the `__traceback__` attribute to
+        investigate the error.
+
+        """
         return self._errors
 
     @property
@@ -241,6 +259,12 @@ class BaseRunner:
         """
         if self._models:  # Returns None if not fitted
             return self._models[self.winners[0]]
+
+    @winner.deleter
+    def winner(self):
+        """[Delete][atomclassifier-delete] the best performing model."""
+        if self._models:  # Do nothing if not fitted
+            self.delete(self.winner.name)
 
     @property
     def results(self) -> pd.DataFrame:
@@ -701,6 +725,88 @@ class BaseRunner:
         )
 
     @composed(crash, typechecked)
+    def export_pipeline(
+        self,
+        model: Optional[str] = None,
+        *,
+        memory: Optional[Union[bool, str, Memory]] = None,
+        verbose: Optional[INT] = None,
+    ) -> Pipeline:
+        """Export the pipeline to a sklearn-like object.
+
+        Optionally, you can add a model as final estimator. The
+        returned pipeline is already fitted on the training set.
+
+        !!! info
+            The returned pipeline behaves similarly to sklearn's
+            [Pipeline][], and additionally:
+
+            - Accepts transformers that change the target column.
+            - Accepts transformers that drop rows.
+            - Accepts transformers that only are fitted on a subset of
+              the provided dataset.
+            - Always returns pandas objects.
+            - Uses transformers that are only applied on the training
+              set to fit the pipeline, not to make predictions.
+
+        Parameters
+        ----------
+        model: str or None, default=None
+            Name of the model for which to export the pipeline. If the
+            model used [automated feature scaling][], the [Scaler][] is
+            added to the pipeline. If None, the pipeline in the current
+            branch is exported.
+
+        memory: bool, str, Memory or None, default=None
+            Used to cache the fitted transformers of the pipeline.
+                - If None or False: No caching is performed.
+                - If True: A default temp directory is used.
+                - If str: Path to the caching directory.
+                - If Memory: Object with the joblib.Memory interface.
+
+        verbose: int or None, default=None
+            Verbosity level of the transformers in the pipeline. If
+            None, it leaves them to their original verbosity. Note
+            that this is not the pipeline's own verbose parameter.
+            To change that, use the `set_params` method.
+
+        Returns
+        -------
+        Pipeline
+            Sklearn-like Pipeline object with all transformers in the
+            current branch.
+
+        """
+        if model:
+            model = getattr(self, self._get_models(model)[0])
+            pipeline = model.pipeline
+        else:
+            pipeline = self.pipeline
+
+        if len(pipeline) == 0 and not model:
+            raise RuntimeError("There is no pipeline to export!")
+
+        steps = []
+        for transformer in pipeline:
+            est = deepcopy(transformer)  # Not clone to keep fitted
+
+            # Set the new verbosity (if possible)
+            if verbose is not None and hasattr(est, "verbose"):
+                est.verbose = verbose
+
+            steps.append((get_pl_name(est.__class__.__name__, steps), est))
+
+        if model:
+            steps.append((model.name, deepcopy(model.estimator)))
+
+        if not memory:  # None or False
+            memory = None
+        elif memory is True:
+            memory = tempfile.gettempdir()
+
+        return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
+
+    @composed(crash, typechecked)
     def get_class_weight(self, dataset: str = "train") -> dict:
         """Return class weights for a balanced dataset.
 
@@ -787,14 +893,14 @@ class BaseRunner:
             self.log(f" --> Merging branch {name}.", 1)
             if name in self._branches:
                 name = f"{name}{suffix}"
-            branch.name = name
+            branch._name = name
             self._branches[name] = branch
 
         for name, model in other._models.items():
             self.log(f" --> Merging model {name}.", 1)
             if name in self._models:
                 name = f"{name}{suffix}"
-            model.name = name
+            model._name = name
             self._models[name] = model
 
         self.log(" --> Merging attributes.", 1)
@@ -863,7 +969,7 @@ class BaseRunner:
                         f"{model._fullname} can not perform {self.task} tasks."
                     )
 
-                kwargs["final_estimator"] = model._get_estimator()
+                kwargs["final_estimator"] = model._get_est()
 
         self._models[name] = Stacking(self, name, models=self._models[models], **kwargs)
 

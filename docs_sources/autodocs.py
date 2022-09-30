@@ -196,11 +196,13 @@ CUSTOM_URLS = dict(
 
 
 TYPES_CONVERSION = {
+    "atom.branch.Branch": "[Branch][branches]",
     "atom.utils.CustomDict": "dict",
-    "atom.utils.Model": "[models][]",
+    "atom.utils.Model": "[model][models]",
     "atom.utils.Predictor": "Predictor",
     "List[str]": "list",
     "Tuple[int, int]": "tuple",
+    "Optional[int]": "int or None",
     "Optional[float]": "float or None",
     "Optional[pandas.core.frame.DataFrame]": "pd.DataFrame or None",
     "Optional[pandas.core.series.Series]": "pd.Series or None",
@@ -212,8 +214,8 @@ TYPES_CONVERSION = {
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame]": "pd.Series or pd.DataFrame",
     "Optional[Union[pandas.core.series.Series, pandas.core.frame.DataFrame]]": "pd.Series, pd.DataFrame or None",
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame, NoneType]": "pd.Series, pd.DataFrame or None",
-    "optuna.study.study.Study": "[Study][]",
-    "optuna.trial._trial.Trial": "[Trial][]",
+    "Optional[optuna.study.study.Study]": "[Study][] or None",
+    "Optional[optuna.trial._trial.Trial]": "[Trial][] or None",
 }
 
 
@@ -224,9 +226,9 @@ class DummyTrainer:
 
     def __init__(self, goal: str, device: str = "cpu", engine: str = "sklearn"):
         self.goal = goal
+        self.task = "binary" if goal == "class" else "reg"
         self.device = device
         self.engine = engine
-        self.holdout = None
 
 
 class AutoDocs:
@@ -802,7 +804,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
 
     """
     result, start = "", 0
-    for match in re.finditer("\[([\.`' \w_-]*?)\]\[([\w_-]*?)\]", markdown):
+    for match in re.finditer("\[([\.`': \w_-]*?)\]\[([\w_:-]*?)\]", markdown):
         anchor = match.group(1)
         link = match.group(2)
 

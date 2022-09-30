@@ -30,9 +30,11 @@ def classifiers():
     return [
         ("lda", LinearDiscriminantAnalysis().fit(X_bin, y_bin)),
         ("placeholder1", "drop"),
-        ("pl", Pipeline(
-            [("scaler", StandardScaler()), ("et", ExtraTreesClassifier())]
-        ).fit(X_bin, y_bin)),
+        (
+            "pl", Pipeline(
+                [("scaler", StandardScaler()), ("et", ExtraTreesClassifier())]
+            ).fit(X_bin, y_bin)
+        ),
     ]
 
 

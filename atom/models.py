@@ -120,7 +120,6 @@ Additionally, ATOM implements two ensemble models:
 
 """
 
-from random import choice
 from typing import Optional, Tuple, Union
 
 import numpy as np
@@ -133,7 +132,7 @@ from optuna.integration import (
     CatBoostPruningCallback, LightGBMPruningCallback, XGBoostPruningCallback,
 )
 from optuna.trial import Trial
-from copy import deepcopy
+
 from atom.basemodel import BaseModel
 from atom.pipeline import Pipeline
 from atom.utils import (
@@ -180,7 +179,7 @@ class CustomModel(BaseModel):
 
         """
         if callable(self.est):
-            return super().self._get_est(params)
+            return super()._get_est(**params)
         else:
             return self.est.set_params(**params)
 
@@ -713,8 +712,12 @@ class CatBoost(BaseModel):
             Estimator instance.
 
         """
+        eval_metric = None
+        if hasattr(self.T, "_metric"):
+            eval_metric = CatBMetric(self.T._metric[0], task=self.T.task)
+
         return self._est_class(
-            eval_metric=CatBMetric(self.T._metric[0], task=self.T.task),
+            eval_metric=params.pop("eval_metric", eval_metric),
             train_dir=params.pop("train_dir", ""),
             allow_writing_files=params.pop("allow_writing_files", False),
             thread_count=params.pop("n_jobs", self.T.n_jobs),
@@ -765,17 +768,14 @@ class CatBoost(BaseModel):
         if trial and len(self.T._metric) == 1:
             callbacks.append(cb := CatBoostPruningCallback(trial, "CatBMetric"))
 
-        estimator.fit(
-            *data,
-            eval_set=validation,
-            callbacks=callbacks,
-            **params,
-        )
+        estimator.fit(*data, eval_set=validation, callbacks=callbacks, **params)
 
-        # Create evals attribute with train and validation scores
-        m = self.T._metric[0].name
-        self._evals[f"{m}_train"] = estimator.evals_result_["learn"]["CatBMetric"]
-        self._evals[f"{m}_test"] = estimator.evals_result_["validation"]["CatBMetric"]
+        if validation:
+            # Create evals attribute with train and validation scores
+            m = self.T._metric[0].name
+            evals = estimator.evals_result_
+            self._evals[f"{m}_train"] = evals["learn"]["CatBMetric"]
+            self._evals[f"{m}_test"] = evals["validation"]["CatBMetric"]
 
         if trial and len(self.T._metric) == 1 and cb._pruned:
             # Hacky solution to add the pruned step to the output
@@ -1160,7 +1160,7 @@ class Dummy(BaseModel):
                 ["most_frequent", "prior", "stratified", "uniform"]
             )
         else:
-            dist["strategy"] = Categorical(["mean", "median", "quantile"]),
+            dist["strategy"] = Categorical(["mean", "median", "quantile"])
             dist["quantile"] = Float(0, 1.0, step=0.1)
 
         return dist
@@ -1329,7 +1329,7 @@ class ExtraTree(BaseModel):
         """
         params = super()._get_parameters(trial)
 
-        if not self._get_param(params, "bootstrap"):
+        if not self._get_param("bootstrap", params):
             params.pop("max_samples", None)
 
         return params
@@ -1442,7 +1442,7 @@ class ExtraTrees(BaseModel):
         """
         params = super()._get_parameters(trial)
 
-        if not self._get_param(params, "bootstrap"):
+        if not self._get_param("bootstrap", params):
             params.pop("max_samples", None)
 
         return params
@@ -1734,7 +1734,9 @@ class GradientBoosting(BaseModel):
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.T.goal.startswith("reg"):
+        if self.T.task.startswith("multi"):
+            dist.pop("loss")  # Multiclass only supports log_loss
+        elif self.T.task.startswith("reg"):
             dist["loss"] = Categorical(
                 ["squared_error", "absolute_error", "huber", "quantile"]
             )
@@ -2283,20 +2285,25 @@ class LightGBM(BaseModel):
             Fitted instance.
 
         """
+        from lightgbm.callback import log_evaluation
+
         m = self.T._metric[0].name
         params = est_params_fit.copy()
 
-        callbacks = params.pop("callbacks", [])
+        callbacks = params.pop("callbacks", []) + [log_evaluation(-1)]
         if trial and len(self.T._metric) == 1:
             callbacks.append(LightGBMPruningCallback(trial, m, "valid_1"))
+
+        eval_metric = None
+        if hasattr(self.T, "_metric"):
+            eval_metric = LGBMetric(self.T._metric[0], task=self.T.task)
 
         try:
             estimator.fit(
                 *data,
                 eval_set=[data, validation] if validation else None,
-                eval_metric=LGBMetric(self.T._metric[0], task=self.T.task),
+                eval_metric=params.pop("eval_metric", eval_metric),
                 callbacks=callbacks,
-                verbose=params.get("verbose", False),
                 **params,
             )
         except TrialPruned as ex:
@@ -2309,9 +2316,10 @@ class LightGBM(BaseModel):
             trial.set_user_attr("estimator", estimator)
             raise ex
 
-        # Create evals attribute with train and validation scores
-        self._evals[f"{m}_train"] = estimator.evals_result_["training"][m]
-        self._evals[f"{m}_test"] = estimator.evals_result_["valid_1"][m]
+        if validation:
+            # Create evals attribute with train and validation scores
+            self._evals[f"{m}_train"] = estimator.evals_result_["training"][m]
+            self._evals[f"{m}_test"] = estimator.evals_result_["valid_1"][m]
 
         return estimator
 
@@ -2841,7 +2849,7 @@ class MultiLayerPerceptron(BaseModel):
         dist = CustomDict(
             hidden_layer_1=Int(10, 100),
             hidden_layer_2=Int(0, 100),
-            hidden_layer_3=Int(0, 100),
+            hidden_layer_3=Int(0, 10),
             activation=Categorical(["identity", "logistic", "tanh", "relu"]),
             solver=Categorical(["lbfgs", "sgd", "adam"]),
             alpha=Float(1e-4, 0.1, log=True),
@@ -3707,7 +3715,6 @@ class StochasticGradientDescent(BaseModel):
         loss = [
             "hinge",
             "log_loss",
-            "log",
             "modified_huber",
             "squared_hinge",
             "perceptron",
@@ -3720,7 +3727,7 @@ class StochasticGradientDescent(BaseModel):
         return CustomDict(
             loss=Categorical(loss if self.T.goal == "class" else loss[-4:]),
             penalty=Categorical(["none", "l1", "l2", "elasticnet"]),
-            alpha=Float(1e-5, 1.0, log=True),
+            alpha=Float(1e-4, 1.0, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
             max_iter=Int(500, 1500, step=50),
             epsilon=Float(1e-4, 1.0, log=True),
@@ -3947,8 +3954,12 @@ class XGBoost(BaseModel):
             Estimator instance.
 
         """
+        eval_metric = None
+        if hasattr(self.T, "_metric"):
+            eval_metric = XGBMetric(self.T._metric[0], task=self.T.task)
+
         return self._est_class(
-            eval_metric=XGBMetric(self.T._metric[0], task=self.T.task),
+            eval_metric=params.pop("eval_metric", eval_metric),
             use_label_encoder=params.pop("use_label_encoder", False),
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             tree_method=params.pop("tree_method", "gpu_hist" if self._gpu else None),
@@ -4017,11 +4028,12 @@ class XGBoost(BaseModel):
             trial.set_user_attr("estimator", estimator)
             raise ex
 
-        # Create evals attribute with train and validation scores
-        # Negative because minimizes the function
-        results = estimator.evals_result()
-        self._evals[f"{m}_train"] = np.negative(results["validation_0"][m])
-        self._evals[f"{m}_test"] = np.negative(results["validation_1"][m])
+        if validation:
+            # Create evals attribute with train and validation scores
+            # Negative because minimizes the function
+            results = estimator.evals_result()
+            self._evals[f"{m}_train"] = np.negative(results["validation_0"][m])
+            self._evals[f"{m}_test"] = np.negative(results["validation_1"][m])
 
         return estimator
 

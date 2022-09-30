@@ -69,9 +69,10 @@ extra:
 plugins:
     - search
     - autorefs
-#    - mkdocs-jupyter:
-#          include: ["*.ipynb"]
-#          include_source: True
+    - mkdocs-jupyter:
+          include: ["*.ipynb"]
+          include_source: true
+          ignore_h1_titles: true
     - mkdocs-simple-hooks:
         hooks:
             on_page_markdown: "docs_sources.autodocs:render"
@@ -237,6 +238,7 @@ nav:
             - plot_wordcloud: API/plots/plot_wordcloud.md
     - Examples:
         - Accelerating pipelines: examples/accelerating_pipelines.ipynb
+        - Automated feature scaling: examples/automated_feature_scaling.ipynb
         - AutoML: examples/automl.ipynb
         - Binary classification: examples/binary_classification.ipynb
         - Calibration: examples/calibration.ipynb
@@ -244,11 +246,13 @@ nav:
         - Ensembles: examples/ensembles.ipynb
         - Feature engineering: examples/feature_engineering.ipynb
         - Holdout set: examples/holdout_set.ipynb
+        - Hyperparameter tuning: examples/hyperparameter_tuning.ipynb
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
         - In-training validation: examples/in_training_validation.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multi-metric runs: examples/multi_metric.ipynb
-        - Natural Language Processing: examples/nlp.ipynb
+        - NLP: examples/nlp.ipynb
+        - Pruning: examples/pruning.ipynb
         - Regression: examples/regression.ipynb
         - Successive halving: examples/successive_halving.ipynb
         - Train sizing: examples/train_sizing.ipynb

@@ -7,7 +7,6 @@ Description: Unit tests for utils.py
 
 """
 
-import sys
 from datetime import timedelta
 
 import pandas as pd

@@ -13,7 +13,7 @@ is that many of the newly created features can be useless, i.e. they do
 not help the algorithm to make better predictions. Even worse, having
 useless features can drop your performance. To avoid this, we perform
 feature selection, a process in which we select the relevant features 
-in the dataset. See the [Feature engineering](../../examples/feature_engineering)
+in the dataset. See the [Feature engineering][example-feature_engineering]
 example.
 
 !!! note
