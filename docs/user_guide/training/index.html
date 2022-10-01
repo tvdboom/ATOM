@@ -3162,7 +3162,7 @@ some parameters that define the scorer's properties , such as if
 a higher or lower score is better (score or loss function) or if
 the function needs probability estimates or rounded predictions
 (see the <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html">make_scorer</a>
-function). The [<code>metric</code>][directclassifier-metric] parameter accepts
+function). The <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-metric"><code>metric</code></a> parameter accepts
 three ways of defining the scorer:</p>
 <ul>
 <li>Using the name of one of the <a class="autorefs autorefs-internal" href="#predefined-scorers">predefined scorers</a>.</li>
@@ -3183,7 +3183,7 @@ as well as some custom acronyms and custom scorers. Since some of
 sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms
 for some of the most commonly used ones. These acronyms are
-case-insensitive and can be used in the [<code>metric</code>][directclassifier-metric]
+case-insensitive and can be used in the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-metric"><code>metric</code></a>
 parameter instead of the scorer's full name, e.g. <code>atom.run("LR", metric="BA")</code>
 uses <code>balanced_accuracy</code>. The available acronyms are:</p>
 <ul>
@@ -3288,7 +3288,7 @@ on the train and test sets.</p>
 <p><br></p>
 <h2 id="parameter-customization">Parameter customization</h2>
 <p>By default, every estimator uses the default parameters they get from
-their respective packages. To select different ones, use the [<code>est_params</code>][directclassifier-est_params].
+their respective packages. To select different ones, use the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-est_params"><code>est_params</code></a>.
 parameter of the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-run">run</a> method. There are two ways
 to add custom parameters to the models: adding them directly to the
 dictionary as key-value pairs or through dictionaries.</p>
@@ -3363,7 +3363,7 @@ used to fit the final model on the complete training set.</p>
 </ul>
 </div>
 <p>There are many possibilities to tune the study to your liking. The main
-parameter is [<code>n_trials</code>][directclassifier-n_trials], which determine the
+parameter is <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-n_trials"><code>n_trials</code></a>, which determine the
 number of trials that are performed.</p>
 <p>Extra things to take into account:</p>
 <ul>
@@ -3380,7 +3380,7 @@ you can change the output's width running the following code in a cell:
 <span class="gp">&gt;&gt;&gt; </span><span class="n">display</span><span class="p">(</span><span class="n">HTML</span><span class="p">(</span><span class="s2">&quot;&lt;style&gt;.container { width:100% !important; }&lt;/style&gt;&quot;</span><span class="p">))</span>
 </code></pre></div></p>
 </div>
-<p>Other settings can be changed through the [<code>ht_params</code>][directclassifier-ht_params]
+<p>Other settings can be changed through the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-ht_params"><code>ht_params</code></a>
 parameter, a dictionary where every key-value combination can be used
 to further customize the optimization.</p>
 <p>By default, which hyperparameters are tuned and their corresponding
@@ -3473,7 +3473,7 @@ can't be selected as [<code>best_trial</code>][directclassifier-best_trial]. Cli
 <a class="autorefs autorefs-internal" href="../../examples/pruning/#example-pruning">here</a> for an example using pruning.</p>
 <p>The study uses <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.MedianPruner.html">MedianPruner</a>
 as default pruner. You can use any other of optuna's <a href="https://optuna.readthedocs.io/en/stable/reference/pruners.html">pruners</a>
-through the [<code>ht_params</code>][directclassifier-ht_params] parameter.</p>
+through the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-ht_params"><code>ht_params</code></a> parameter.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">optuna.pruners</span> <span class="kn">import</span> <span class="n">HyperbandPruner</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;SGD&quot;</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;pruner&quot;</span><span class="p">:</span> <span class="n">HyperbandPruner</span><span class="p">()})</span>
@@ -3493,7 +3493,7 @@ technique. This technique creates several new data sets selecting random
 samples from the training set (with replacement) and evaluates them on 
 the test set. This way you can get a distribution of the performance of
 the model. The sets are the same for every model. The number of sets can
-be chosen through the [<code>n_bootstrap</code>][directclassifier-n_bootstrap] parameter.</p>
+be chosen through the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-n_bootstrap"><code>n_bootstrap</code></a> parameter.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a class="autorefs autorefs-internal" href="../../API/plots/plot_results/#plot_results">plot_results</a> method to plot the boostrap scores in a boxplot.</p>

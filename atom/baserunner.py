@@ -608,7 +608,7 @@ class BaseRunner:
             - **module:** The estimator's module.
             - **needs_scaling:** Whether the model requires feature scaling.
             - **accepts_sparse:** Whether the model accepts sparse matrices.
-            - **has_validation:** Whether the model has [in-training-validation][].
+            - **has_validation:** Whether the model has [in-training validation][].
             - **supports_engines:** List of engines supported by the model.
 
         """

@@ -1814,8 +1814,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         2. Fit the model on the training set using the best combination
            of hyperparameters found.
         3. Evaluate the model on the test set.
-        4. Train the model on various bootstrapped samples of the
-           training set and evaluate again on the test set (optional).
+        4. Train the estimator on various [bootstrapped][bootstrapping]
+           samples of the training set and evaluate again on the test
+           set (optional).
 
         See the [DirectClassifier][] or [DirectRegressor][] class for a
         description of the parameters.
@@ -1869,8 +1870,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         2. Fit the model on the training set using the best combination
            of hyperparameters found.
         3. Evaluate the model on the test set.
-        4. Train the model on various bootstrapped samples of the
-           training set and evaluate again on the test set (optional).
+        4. Train the estimator on various [bootstrapped][bootstrapping]
+           samples of the training set and evaluate again on the test
+           set (optional).
 
         See the [SuccessiveHalvingClassifier][] or [SuccessiveHalvingRegressor][]
         class for a description of the parameters.
@@ -1923,8 +1925,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         2. Fit the model on the training set using the best combination
            of hyperparameters found.
         3. Evaluate the model on the test set.
-        4. Train the model on various bootstrapped samples of the
-           training set and evaluate again on the test set (optional).
+        4. Train the estimator on various [bootstrapped][bootstrapping]
+           samples of the training set and evaluate again on the test
+           set (optional).
 
         See the [TrainSizingClassifier][] or [TrainSizingRegressor][]
         class for a description of the parameters.

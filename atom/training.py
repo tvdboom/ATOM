@@ -254,8 +254,9 @@ class DirectClassifier(Direct):
     2. Fit the model on the training set using the best combination
        of hyperparameters found.
     3. Evaluate the model on the test set.
-    4. Train the model on various bootstrapped samples of the
-       training set and evaluate again on the test set (optional).
+    4. Train the estimator on various [bootstrapped][bootstrapping]
+       samples of the training set and evaluate again on the test set
+       (optional).
 
     Parameters
     ----------
@@ -302,8 +303,9 @@ class DirectClassifier(Direct):
           score of every trial and the second shows the distance between
           the last consecutive steps. See the [plot_trials][] method.
         - **distributions: dict, sequence or None, default=None**<br>
-          Custom hyperparameter distributions for the models. If None,
-          it uses ATOM's predefined distributions.
+          Custom hyperparameter distributions. If None, it uses the
+          model's predefined distributions. Read more in the
+          [user guide][hyperparameter-tuning].
         - **tags: dict, sequence or None, default=None**<br>
           Custom tags for the model's [mlflow run][tracking].
         - **\*\*kwargs**<br>
@@ -368,8 +370,8 @@ class DirectClassifier(Direct):
     See Also
     --------
     atom.api:ATOMClassifier
-    atom.training.SuccessiveHalvingClassifier
-    atom.training.TrainSizingClassifier
+    atom.training:SuccessiveHalvingClassifier
+    atom.training:TrainSizingClassifier
 
     Examples
     --------
@@ -385,36 +387,42 @@ class DirectClassifier(Direct):
     ...     random_state=1,
     ... )
 
-    >>> runner = DirectClassifier(models=["LR", "RF"], metric="auc", verbose=2)
+    >>> runner = DirectClassifier(models=["LR", "RF"], metric="f1_micro", verbose=2)
     >>> runner.run(bin_train, bin_test)
 
     Training ========================= >>
-    Models: Tree
+    Models: LR, RF
     Metric: roc_auc
 
 
     Fit ---------------------------------------------
-    Train evaluation --> roc_auc: 1.0
-    Test evaluation --> roc_auc: 0.9603
-    Time elapsed: 0.015s
+    Train evaluation --> roc_auc: 0.9925
+    Test evaluation --> roc_auc: 0.9871
+    Time elapsed: 0.035s
     -------------------------------------------------
-    Total time: 0.015s
+    Total time: 0.035s
+    Fit ---------------------------------------------
+    Train evaluation --> roc_auc: 1.0
+    Test evaluation --> roc_auc: 0.9807
+    Time elapsed: 0.137s
+    -------------------------------------------------
+    Total time: 0.137s
 
 
     Final results ==================== >>
-    Total time: 0.015s
+    Total time: 0.173s
     -------------------------------------
-    DecisionTree --> roc_auc: 0.9603
+    LogisticRegression --> roc_auc: 0.9871 !
+    RandomForest       --> roc_auc: 0.9807
 
     >>> # Analyze the results
-    >>> atom.evaluate()
+    >>> runner.evaluate()
 
-         accuracy  average_precision  ...    recall   roc_auc
-    LR   0.970588           0.995739  ...  0.981308  0.993324
-    RF   0.958824           0.982602  ...  0.962617  0.983459
-    XGB  0.964706           0.996047  ...  0.971963  0.993473
+        accuracy  average_precision  balanced_accuracy  ...  precision  recall
+    LR    0.9357             0.9923             0.9325  ...     0.9533  0.9444
+    RF    0.9532             0.9810             0.9431  ...     0.9464  0.9815
 
-    [3 rows x 9 columns]
+    [2 rows x 9 columns]
 
     ```
 

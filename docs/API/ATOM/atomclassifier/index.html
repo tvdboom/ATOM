@@ -3114,8 +3114,8 @@ the package on a given dataset. Note that, contrary to sklearn's
 API, the instance contains the dataset on which to perform the
 analysis. Calling a method will automatically apply it on the
 dataset it contains.</p>
-<p>All <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#data-cleaning">data cleaning</a>, <a class="autorefs autorefs-internal" href="../../../user_guide/feature_engineering/#feature-engineering">feature engineering</a>, <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">model training</a>, <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">predicting</a>, and <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#plots">plotting</a> functionality
-can be accessed from an instacne of this class.</p>
+<p>All <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#data-cleaning">data cleaning</a>, <a class="autorefs autorefs-internal" href="../../../user_guide/feature_engineering/#feature-engineering">feature engineering</a>, <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">model training</a> and <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#plots">plotting</a> functionality can be accessed
+from an instance of this class.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='atomclassifier-\*arrays'></a><strong>*arrays: sequence of indexables</strong><br><div markdown class='param'>
 Dataset containing features and target. Allowed formats are:</p>
@@ -3402,7 +3402,18 @@ is compared.</div><a id='atomclassifier-winner'></a><strong>winner: <a class="au
 <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
 <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
 that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
-is compared.</div></td></tr></p>
+is compared.</div><a id='atomclassifier-results'></a><strong>results: pd.DataFrame</strong><br><div markdown class='param'>Overview of the training results.</p>
+<p>All durations are in seconds. Columns include:</p>
+<ul>
+<li><strong>score_ht:</strong> Score obtained by the hyperparameter tuning.</li>
+<li><strong>time_ht:</strong> Duration of the hyperparameter tuning.</li>
+<li><strong>score_train:</strong> Metric score on the train set.</li>
+<li><strong>score_test:</strong> Metric score on the test set.</li>
+<li><strong>time_fit:</strong> Duration of the model fitting on the train set.</li>
+<li><strong>score_bootstrap:</strong> Mean score on the bootstrapped samples.</li>
+<li><strong>time_bootstrap:</strong> Duration of the bootstrapping.</li>
+<li><strong>time:</strong> Total duration of the model run.</div></td></tr></li>
+</ul>
 </table>
 <p><br></p>
 <h3 id="tracking-attributes">Tracking attributes</h3>
@@ -3420,8 +3431,8 @@ more in the <a class="autorefs autorefs-internal" href="../../../user_guide/plot
 </table>
 <p><br></p>
 <h2 id="utility-methods">Utility methods</h2>
-<p>The class contains a variety of utility methods to handle the data and
-manage the pipeline.</p>
+<p>Next to the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#plots">plotting</a> methods, the class contains a variety
+of utility methods to handle the data and manage the pipeline.</p>
 <table style="font-size: 0.9em">
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-add">add</a></td><td>Add a transformer to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-apply">apply</a></td><td>Apply a function to the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-automl">automl</a></td><td>Search for an optimized pipeline in an automated fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-clear">clear</a></td><td>Clear attributes from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-distribution">distribution</a></td><td>Get statistics on column distributions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-export_pipeline">export_pipeline</a></td><td>Export the pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-report">report</a></td><td>Create an extensive profile analysis report of the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-reset">reset</a></td><td>Reset the instance to it's initial state.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-save_data">save_data</a></td><td>Save the data in the current branch to a <code>.csv</code> file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-shrink">shrink</a></td><td>Converts the columns to the smallest possible matching dtype.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-stats">stats</a></td><td>Print basic information about the dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-status">status</a></td><td>Get an overview of the branches and models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
 </table>
@@ -3549,7 +3560,7 @@ include:</p>
 <li><strong>module:</strong> The estimator's module.</li>
 <li><strong>needs_scaling:</strong> Whether the model requires feature scaling.</li>
 <li><strong>accepts_sparse:</strong> Whether the model accepts sparse matrices.</li>
-<li><strong>has_validation:</strong> Whether the model has <a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">in-training-validation</a>.</li>
+<li><strong>has_validation:</strong> Whether the model has <a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">in-training validation</a>.</li>
 <li><strong>supports_engines:</strong> List of engines supported by the model.
 </div></td></tr></li>
 </ul>
@@ -4142,12 +4153,9 @@ parameters.</p>
 <p><br></p>
 <h2 id="training">Training</h2>
 <p>The training methods are where the models are fitted to the data and
-their performance is evaluated against selected metric. There are three
-methods to call the three different training approaches. All relevant
-attributes and methods from the training classes are attached to atom
-for convenience. These include the errors, winner and results attributes,
-as well as the <a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">models</a>, and the <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#predicting">prediction</a> and
-<a class="autorefs autorefs-internal" href="../../../user_guide/plots/#plots">plotting</a> methods. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">user guide</a>.</p>
+their performance is evaluated against a selected metric. There are
+three methods to call the three different training approaches. Read
+more in the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">user guide</a>.</p>
 <table style="font-size: 0.9em">
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-run">run</a></td><td>Train and evaluate the models in a direct fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-successive_halving">successive_halving</a></td><td>Fit the models in a successive halving fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomclassifier-train_sizing">train_sizing</a></td><td>Train and evaluate the models in a train sizing fashion.</td></tr></p>
 </table>
@@ -4162,13 +4170,14 @@ iterates once over the models, using the full dataset.</p>
 <li>Fit the model on the training set using the best combination
    of hyperparameters found.</li>
 <li>Evaluate the model on the test set.</li>
-<li>Train the model on various bootstrapped samples of the
-   training set and evaluate again on the test set (optional).</li>
+<li>Train the estimator on various <a class="autorefs autorefs-internal" href="../../../user_guide/training/#bootstrapping">bootstrapped</a>
+   samples of the training set and evaluate again on the test
+   set (optional).</li>
 </ol>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/directclassifier/#directclassifier">DirectClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/directregressor/#directregressor">DirectRegressor</a> class for a
 description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1841>[source]</a></span></div>Fit the models in a successive halving fashion.</p>
+<p><a id='atomclassifier-successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1842>[source]</a></span></div>Fit the models in a successive halving fashion.</p>
 <p>The successive halving technique is a bandit-based algorithm
 that fits N models to 1/N of the data. The best half are
 selected to go to the next iteration where the process is
@@ -4184,13 +4193,14 @@ models.</p>
 <li>Fit the model on the training set using the best combination
    of hyperparameters found.</li>
 <li>Evaluate the model on the test set.</li>
-<li>Train the model on various bootstrapped samples of the
-   training set and evaluate again on the test set (optional).</li>
+<li>Train the estimator on various <a class="autorefs autorefs-internal" href="../../../user_guide/training/#bootstrapping">bootstrapped</a>
+   samples of the training set and evaluate again on the test
+   set (optional).</li>
 </ol>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/successivehalvingclassifier/#successivehalvingclassifier">SuccessiveHalvingClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/successivehalvingregressor/#successivehalvingregressor">SuccessiveHalvingRegressor</a>
 class for a description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomclassifier-train_sizing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1897>[source]</a></span></div>Train and evaluate the models in a train sizing fashion.</p>
+<p><a id='atomclassifier-train_sizing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1899>[source]</a></span></div>Train and evaluate the models in a train sizing fashion.</p>
 <p>When training models, there is usually a trade-off between
 model performance and computation time, that is regulated by
 the number of samples in the training set. This method can be
@@ -4204,8 +4214,9 @@ training set.</p>
 <li>Fit the model on the training set using the best combination
    of hyperparameters found.</li>
 <li>Evaluate the model on the test set.</li>
-<li>Train the model on various bootstrapped samples of the
-   training set and evaluate again on the test set (optional).</li>
+<li>Train the estimator on various <a class="autorefs autorefs-internal" href="../../../user_guide/training/#bootstrapping">bootstrapped</a>
+   samples of the training set and evaluate again on the test
+   set (optional).</li>
 </ol>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/trainsizingclassifier/#trainsizingclassifier">TrainSizingClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/trainsizingregressor/#trainsizingregressor">TrainSizingRegressor</a>
 class for a description of the parameters.</p>

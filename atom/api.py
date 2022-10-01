@@ -262,8 +262,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
     dataset it contains.
 
     All [data cleaning][], [feature engineering][], [model training]
-    [training], [predicting][], and [plotting][plots] functionality
-    can be accessed from an instacne of this class.
+    [training] and [plotting][plots] functionality can be accessed
+    from an instance of this class.
 
     Parameters
     ----------
@@ -558,8 +558,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
     dataset it contains.
 
     All [data cleaning][], [feature engineering][], [model training]
-    [training], [predicting][], and [plotting][plots] functionality
-    can be accessed from an instacne of this class.
+    [training] and [plotting][plots] functionality can be accessed
+    from an instance of this class.
 
     Parameters
     ----------
