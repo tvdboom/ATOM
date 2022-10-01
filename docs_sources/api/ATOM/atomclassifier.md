@@ -90,6 +90,7 @@ in the instance after [training][].
             - errors
             - winners
             - winner
+            - results
 
 <br>
 
@@ -129,8 +130,8 @@ more in the [user guide][aesthetics].
 
 ## Utility methods
 
-The class contains a variety of utility methods to handle the data and
-manage the pipeline.
+Next to the [plotting][plots] methods, the class contains a variety
+of utility methods to handle the data and manage the pipeline.
 
 :: methods:
     toc_only: False
@@ -225,12 +226,9 @@ large, remove features. Read more in the [user guide][feature-engineering].
 ## Training
 
 The training methods are where the models are fitted to the data and
-their performance is evaluated against selected metric. There are three
-methods to call the three different training approaches. All relevant
-attributes and methods from the training classes are attached to atom
-for convenience. These include the errors, winner and results attributes,
-as well as the [models][], and the [prediction][predicting] and
-[plotting][plots] methods. Read more in the [user guide][training].
+their performance is evaluated against a selected metric. There are
+three methods to call the three different training approaches. Read
+more in the [user guide][training].
 
 :: methods:
     toc_only: False
