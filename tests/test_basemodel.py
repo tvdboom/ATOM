@@ -173,8 +173,8 @@ def test_ht_with_pipeline():
     """Assert that the hyperparameter tuning works with a transformer pipeline."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode()
-    atom.run("SGD", n_trials=1)
-    assert atom.sgd.trials is not None
+    atom.run("lr", n_trials=1)
+    assert atom.lr.trials is not None
 
 
 def test_sample_weight_fit():
@@ -598,8 +598,8 @@ def test_transformations_first():
 def test_data_is_scaled():
     """Assert that the data is scaled for models that need it."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("SGD")
-    assert sum(atom.sgd.predict(X_bin)) > 0  # Always 0 if not scaled
+    atom.run("LR")
+    assert sum(atom.lr.predict(X_bin)) > 0  # Always 0 if not scaled
 
 
 def test_predictions_from_new_data():

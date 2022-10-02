@@ -619,6 +619,10 @@ class CatBoost(BaseModel):
 
     Read more in CatBoost's [documentation][catbdocs].
 
+    !!! warning
+        [In-training validation][] and [pruning][] are disabled when
+        `device="gpu"`.
+
     !!! note
         ATOM uses CatBoost's `n_estimators` parameter instead of
         `iterations` to indicate the number of trees to fit. This is
@@ -713,7 +717,7 @@ class CatBoost(BaseModel):
 
         """
         eval_metric = None
-        if hasattr(self.T, "_metric"):
+        if hasattr(self.T, "_metric") and not self._gpu:
             eval_metric = CatBMetric(self.T._metric[0], task=self.T.task)
 
         return self._est_class(
@@ -765,10 +769,11 @@ class CatBoost(BaseModel):
         params = est_params_fit.copy()
 
         callbacks = params.pop("callbacks", [])
-        if trial and len(self.T._metric) == 1:
+        if trial and len(self.T._metric) == 1 and not self._gpu:
             callbacks.append(cb := CatBoostPruningCallback(trial, "CatBMetric"))
 
-        estimator.fit(*data, eval_set=validation, callbacks=callbacks, **params)
+        # gpu implementation fails if callbacks!=None
+        estimator.fit(*data, eval_set=validation, callbacks=callbacks or None, **params)
 
         if validation:
             # Create evals attribute with train and validation scores

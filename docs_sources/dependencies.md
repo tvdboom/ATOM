@@ -33,7 +33,7 @@ packages are necessary for its correct functioning.
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.3.1)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.9.0)
 * **[featuretools](https://www.featuretools.com/)** (>=1.14.0)
-* **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.2.0)
+* **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.1.0, <1.2.0)
 * **[matplotlib](https://matplotlib.org/)** (>=3.5.0, <3.6.0)
 * **[mlflow](https://mlflow.org/)** (>=1.29)
 * **[nltk](https://www.nltk.org/)** (>=3.7)

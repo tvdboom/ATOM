@@ -536,7 +536,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ...     lemmatize=True,
         ...     verbose=2,
         ... )
-        >>> X = textcleaner.transform(X)
+        >>> X = textnormalizer.transform(X)
 
         Fitting TextNormalizer...
         Normalizing the corpus...
@@ -776,7 +776,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     === "stand-alone"
         ```pycon
-        >>> from atom.nlp import TextCleaner
+        >>> from atom.nlp import Tokenizer
 
         >>> X = [
         ...    ["I àm in ne'w york"],
@@ -1059,7 +1059,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     === "stand-alone"
         ```pycon
-        >>> from atom.nlp import TextCleaner
+        >>> from atom.nlp import Vectorizer
 
         >>> X = [
         ...    ["I àm in ne'w york"],

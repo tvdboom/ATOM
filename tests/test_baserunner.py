@@ -541,10 +541,10 @@ def test_delete_models_is_sequence():
 
 @pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
 def test_evaluate(metric):
-    """Assert that the evaluate method works when metric is None."""
+    """Assert that the evaluate method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.evaluate)
-    atom.run(["Tree", "PA"])
+    atom.run(["Tree", "SVM"])
     assert isinstance(atom.evaluate(metric), pd.DataFrame)
 
 

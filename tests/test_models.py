@@ -7,6 +7,8 @@ Description: Unit tests for models.py
 
 """
 
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pytest
 from optuna.distributions import IntDistribution
@@ -19,17 +21,6 @@ from atom.pipeline import Pipeline
 from .conftest import X_bin, X_class, X_reg, y_bin, y_class, y_reg
 
 
-binary, multiclass, regression = [], [], []
-for m in MODELS.values():
-    if "class" in m._estimators and m.acronym != "CatNB":
-        # CatNB needs a special dataset
-        binary.append(m.acronym)
-        if m.acronym != "RNN":  # RNN fails with sklearn's default parameters
-            multiclass.append(m.acronym)
-    if "reg" in m._estimators:
-        regression.append(m.acronym)
-
-
 @pytest.mark.parametrize("model", [RandomForestRegressor, RandomForestRegressor()])
 def test_custom_models(model):
     """Assert that ATOM works with custom models."""
@@ -38,31 +29,46 @@ def test_custom_models(model):
     assert atom.rfr._fullname == "RandomForestRegressor"
 
 
-@pytest.mark.parametrize("model", binary)
-def test_models_binary(model):
+def test_all_models_binary():
     """Assert that all models work with binary classification."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.2, n_jobs=-1, random_state=1)
-    atom.run(models=model, n_trials=1)
-    assert not atom.errors
-    assert hasattr(atom, model)
+    atom.run(models=None, n_trials=1)
+    assert len(atom.models) + len(atom.errors) == 30
 
 
-@pytest.mark.parametrize("model", multiclass)
-def test_models_multiclass(model):
+def test_all_models_multiclass():
     """Assert that all models work with multiclass classification."""
     atom = ATOMClassifier(X_class, y_class, n_rows=0.4, n_jobs=-1, random_state=1)
-    atom.run(models=model, n_trials=1)
-    assert not atom.errors
-    assert hasattr(atom, model)
+    atom.run(models=None, n_trials=1)
+    assert len(atom.models) + len(atom.errors) == 30
 
 
-@pytest.mark.parametrize("model", regression)
-def test_models_regression(model):
+def test_all_models_regression():
     """Assert that all models work with regression."""
     atom = ATOMRegressor(X_reg, y_reg, n_rows=0.2, n_jobs=-1, random_state=1)
-    atom.run(models=model, n_trials=1)
+    atom.run(models=None, n_trials=1)
+    assert len(atom.models) + len(atom.errors) == 28
+
+
+def test_models_sklearnex_classification():
+    """Assert the sklearnex engine works for classification tasks."""
+    atom = ATOMClassifier(X_bin, y_bin, device="cpu", engine="sklearnex", random_state=1)
+    atom.run(models=["knn", "lr", "rf", "svm"], n_trials=1)
     assert not atom.errors
-    assert hasattr(atom, model)
+
+
+def test_models_sklearnex_regression():
+    """Assert the sklearnex engine works for regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, device="cpu", engine="sklearnex", random_state=1)
+    atom.run(models=["en", "knn", "lasso", "ols", "rf", "ridge", "svm"], n_trials=1)
+    assert not atom.errors
+
+
+@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
+def test_models_cuml():
+    """Assert that all models work with cuml."""
+    atom = ATOMRegressor(X_reg, y_reg, device="gpu", engine="cuml", random_state=1)
+    atom.run(models=None, n_trials=1)
 
 
 def test_CatNB():
@@ -77,7 +83,7 @@ def test_CatNB():
 
 
 def test_RNN():
-    """Assert that the RNN model works. Fails with sklearn's parameters."""
+    """Assert that the RNN model works. Fails with default parameters."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("RNN", n_trials=1, est_params={"outlier_label": "most_frequent"})
     assert not atom.errors

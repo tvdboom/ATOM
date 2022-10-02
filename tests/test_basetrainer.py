@@ -27,20 +27,6 @@ from .conftest import (
 
 # Test _prepare_parameters =========================================== >>
 
-def test_all_classification_models():
-    """Assert that the default value selects all models."""
-    trainer = DirectClassifier(models=None, random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert len(trainer.models) + len(trainer.errors) == 30
-
-
-def test_all_regression_models():
-    """Assert that the default value selects all models."""
-    trainer = DirectRegressor(models=None, random_state=1)
-    trainer.run(reg_train, reg_test)
-    assert len(trainer.models) + len(trainer.errors) == 28
-
-
 def test_model_is_predefined():
     """Assert that predefined models are accepted."""
     trainer = DirectClassifier("LR", random_state=1)

@@ -318,10 +318,11 @@ class BaseModel(ModelPlot, ShapPlot):
 
             # Loop over first parameter in estimator
             for step in range(steps := estimator.get_params()[self.has_validation]):
+                kwargs = {}
                 if self.T.goal.startswith("class"):
-                    est_params_fit["classes"] = sorted(self.y.unique())
+                    kwargs["classes"] = sorted(self.y.unique())
 
-                estimator.partial_fit(*data, **est_params_fit)
+                estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
                 val_score = self.T._metric[0](estimator, *validation)
                 if not trial:
