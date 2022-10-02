@@ -98,10 +98,10 @@ more in the [user guide][aesthetics].
 
 <br>
 
-## Utility methods
+## Methods
 
 Next to the [plotting][plots] methods, the class contains a variety
-of utility methods to handle the data and manage the pipeline.
+of methods to handle the data, run the training, and manage the pipeline.
 
 :: methods:
     toc_only: False

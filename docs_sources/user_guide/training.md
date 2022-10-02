@@ -167,7 +167,7 @@ The scaling is applied using a [Scaler][] with default parameters. It
 can be accessed from the model through the `scaler` attribute. The
 scaled dataset can be examined through the model's [data attributes][].
 Use the [available_models][atomclassifier-available_models] method to
-see which models require feature scaling. See [here][example-automated-feature_scaling]
+see which models require feature scaling. See [here][example-automated-feature-scaling]
 an example.
 
 <br>
@@ -288,7 +288,7 @@ used to fit the final model on the complete training set.
       for [multi-metric runs][].
     * For [multi-metric runs][], the selected [best trial][adaboost-best_trial]
       is the trial that performed best on the main metric. Use the property's
-      `@setter` to change it to any other trial. See the [hyperparameter tuning][example:-hyperparameter-tuning]
+      `@setter` to change it to any other trial. See the [hyperparameter tuning][example-hyperparameter-tuning]
       example.
 
 There are many possibilities to tune the study to your liking. The main
@@ -410,8 +410,8 @@ During hyperparameter tuning, pruning stops unpromising trials at the
 early stages of the training (a.k.a., automated early-stopping). This
 can save the pipeline much time that would otherwise be wasted on an
 estimator that is unlikely to yield the best results. A pruned trial
-can't be selected as [`best_trial`][directclassifier-best_trial]. Click
-[here][example-pruning] for an example using pruning.
+can't be selected as [`best_trial`][adaboost-best_trial]. Click
+[here][example-pruning] to see an example that uses pruning.
 
 The study uses [MedianPruner](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.MedianPruner.html)
 as default pruner. You can use any other of optuna's [pruners](https://optuna.readthedocs.io/en/stable/reference/pruners.html)

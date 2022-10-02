@@ -259,11 +259,6 @@ class BaseTrainer(BaseTransformer, BaseRunner):
         """
         t = dt.now()  # Measure the time the whole pipeline takes
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        if not self.__class__.__name__.startswith("SuccessiveHalving"):
-            self.log(f"Models: {', '.join(lst(self.models))}", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
-
         to_remove = []
         for i, m in enumerate(self._models.values()):
             try:  # If an error occurs, skip the model

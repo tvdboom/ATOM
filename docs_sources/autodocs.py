@@ -192,6 +192,8 @@ CUSTOM_URLS = dict(
     # Plots
     style="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles",
     palette="https://seaborn.pydata.org/tutorial/color_palettes.html",
+    # Training
+    scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
 )
 
 

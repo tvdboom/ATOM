@@ -3251,7 +3251,7 @@ The data is considered scaled if it has one of the following prerequisites:</p>
 can be accessed from the model through the <code>scaler</code> attribute. The
 scaled dataset can be examined through the model's <a class="autorefs autorefs-internal" href="../../API/training/trainsizingregressor/#data-attributes">data attributes</a>.
 Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-available_models">available_models</a> method to
-see which models require feature scaling. See [here][example-automated-feature_scaling]
+see which models require feature scaling. See <a class="autorefs autorefs-internal" href="../../examples/automated_feature_scaling/#example-automated-feature-scaling">here</a>
 an example.</p>
 <p><br></p>
 <h2 id="in-training-validation">In-training validation</h2>
@@ -3358,7 +3358,7 @@ used to fit the final model on the complete training set.</p>
   for <a class="autorefs autorefs-internal" href="#multi-metric-runs">multi-metric runs</a>.</li>
 <li>For <a class="autorefs autorefs-internal" href="#multi-metric-runs">multi-metric runs</a>, the selected <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-best_trial">best trial</a>
   is the trial that performed best on the main metric. Use the property's
-  <code>@setter</code> to change it to any other trial. See the [hyperparameter tuning][example:-hyperparameter-tuning]
+  <code>@setter</code> to change it to any other trial. See the <a class="autorefs autorefs-internal" href="../../examples/hyperparameter_tuning/#example-hyperparameter-tuning">hyperparameter tuning</a>
   example.</li>
 </ul>
 </div>
@@ -3469,8 +3469,8 @@ more about deep learning models.</p>
 early stages of the training (a.k.a., automated early-stopping). This
 can save the pipeline much time that would otherwise be wasted on an
 estimator that is unlikely to yield the best results. A pruned trial
-can't be selected as [<code>best_trial</code>][directclassifier-best_trial]. Click
-<a class="autorefs autorefs-internal" href="../../examples/pruning/#example-pruning">here</a> for an example using pruning.</p>
+can't be selected as <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-best_trial"><code>best_trial</code></a>. Click
+<a class="autorefs autorefs-internal" href="../../examples/pruning/#example-pruning">here</a> to see an example that uses pruning.</p>
 <p>The study uses <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.MedianPruner.html">MedianPruner</a>
 as default pruner. You can use any other of optuna's <a href="https://optuna.readthedocs.io/en/stable/reference/pruners.html">pruners</a>
 through the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-ht_params"><code>ht_params</code></a> parameter.</p>
@@ -3527,7 +3527,7 @@ the training set. The models are fitted multiple times, ever-increasing
 the number of samples in the training set.</p>
 <p>Run train sizing from atom via the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-train_sizing">train_sizing</a>
 method. The number of iterations and the number of samples per training
-can be specified with the [<code>train_sizes</code>][trainsizingclassifier-train_sizes]
+can be specified with the <a class="autorefs autorefs-internal" href="../../API/training/trainsizingclassifier/#trainsizingclassifier-train_sizes"><code>train_sizes</code></a>
 parameter. Consecutive runs of the same model are saved with the model's
 acronym followed by the fraction of rows in the training set (the <code>.</code> is
 removed from the fraction!). For example, a <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a> in a run with

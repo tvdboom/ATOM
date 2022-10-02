@@ -1221,8 +1221,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#magic-methods" class="md-nav__link">
-    Magic methods
+  <a href="#example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -1250,6 +1250,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tracking-attributes" class="md-nav__link">
+    Tracking attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#plot-attributes" class="md-nav__link">
     Plot attributes
   </a>
@@ -1264,13 +1271,6 @@
         <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
   </a>
   
 </li>
@@ -2965,8 +2965,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#magic-methods" class="md-nav__link">
-    Magic methods
+  <a href="#example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -2994,6 +2994,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tracking-attributes" class="md-nav__link">
+    Tracking attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#plot-attributes" class="md-nav__link">
     Plot attributes
   </a>
@@ -3008,13 +3015,6 @@
         <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
   </a>
   
 </li>
@@ -3038,869 +3038,578 @@
 
 <h1 id="trainsizingregressor">TrainSizingRegressor</h1>
 <hr />
-<div style="font-size:20px">
-<em>class</em> atom.training.<strong style="color:#008AB8">TrainSizingRegressor</strong>(models=None,
-metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
-train_sizes=5, n_trials=0, n_initial_points=5, est_params=None, ht_params=None,
-n_bootstrap=0, n_jobs=1, gpu=False, verbose=0, warnings=True, logger=None,
-experiment=None, random_state=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L418">[source]</a>
-</span>
-</div>
-
-<p>Fit and evaluate the models in a <a href="../../../user_guide/training/#train-sizing">train sizing</a>
-fashion. The following steps are applied to every model (per iteration):</p>
+<p><a id='TrainSizingRegressor'></a><div class='sign'><em>class</em> atom.training.<strong style='color:#008AB8'>TrainSizingRegressor</strong>(models=None, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, n_jobs=1, device="cpu", engine="sklearn", verbose=0, warnings=True, logger=None, experiment=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L1448>[source]</a></span></div>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#train-sizing">train sizing</a> fashion.</p>
+<p>The following steps are applied to every model (per iteration):</p>
 <ol>
-<li>Hyperparameter tuning is performed using a Bayesian Optimization
-   approach (optional).</li>
-<li>The model is fitted on the training set using the best combination
+<li>Apply <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a> (optional).</li>
+<li>Fit the model on the training set using the best combination
    of hyperparameters found.</li>
-<li>The model is evaluated on the test set.</li>
-<li>The model is trained on various bootstrapped samples of the training
-   set and scored again on the test set (optional).</li>
+<li>Evaluate the model on the test set.</li>
+<li>Train the estimator on various <a class="autorefs autorefs-internal" href="../../../user_guide/training/#bootstrapping">bootstrapped</a>
+   samples of the training set and evaluate again on the test set
+   (optional).</li>
 </ol>
-<p>You can <a href="../../../user_guide/predicting">predict</a>, <a href="../../../user_guide/plots">plot</a>
-and call any <a href="../../../user_guide/models">model</a> from the instance.
-Read more in the <a href="../../../user_guide/training">user guide</a>.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>models: str, estimator or sequence, default=None</strong><br>
-Models to fit to the data. Allowed inputs are: an acronym from any of
-ATOM's predefined models, an <a href="../../ATOM/atommodel">ATOMModel</a>
-or a custom estimator as class or instance. If None, all the predefined
-models are used. Available predefined models are:
-<ul style="line-height:1.2em;margin-top:5px">
-<li>"GP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html">Gaussian Process</a></li>
-<li>"OLS" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html">Ordinary Least Squares</a></li>
-<li>"Ridge" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge Regression</a></li>
-<li>"Lasso" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html">Lasso Regression</a></li>
-<li>"EN" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html">ElasticNet</a></li>
-<li>"BR" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html">Bayesian Ridge</a></li>
-<li>"ARD" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ARDRegression.html">Automated Relevance Determination</a></li>
-<li>"KNN" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html">K-Nearest Neighbors</a></li>
-<li>"RNN" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsRegressor.html">Radius Nearest Neighbors</a></li>
-<li>"Tree" for a single <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html">Decision Tree</a></li>
-<li>"Bag" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html">Bagging</a></li>
-<li>"ET" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html">Extra-Trees</a></li>
-<li>"RF" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html">Random Forest</a></li>
-<li>"AdaB" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html">AdaBoost</a></li>
-<li>"GBM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html">Gradient Boosting Machine</a></li> 
-<li>"XGB" for <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor">XGBoost</a> (only available if package is installed)</li>
-<li>"LGB" for <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html">LightGBM</a> (only available if package is installed)</li>
-<li>"CatB" for <a href="https://catboost.ai/docs/concepts/python-reference_catboostregressor.html">CatBoost</a> (only available if package is installed)</li>
-<li>"lSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">Linear SVM</a></li> 
-<li>"kSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">Kernel SVM</a></li>
-<li>"PA" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html">Passive Aggressive</a></li>
-<li>"SGD" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html">Stochastic Gradient Descent</a></li>
-<li>"MLP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor">Multi-layer Perceptron</a></li> 
-</ul>
-<strong>metric: str, func, scorer, sequence or None, default=None</strong><br>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='trainsizingregressor-models'></a><strong>models: str, estimator or sequence, default=None</strong><br><div markdown class='param'>
+Models to fit to the data. Allowed inputs are: an acronym from
+any of the <a class="autorefs autorefs-internal" href="../../../user_guide/models/#predefined-models">predefined models</a>, an <a class="autorefs autorefs-internal" href="../../ATOM/atommodel/#atommodel">ATOMModel</a> or a custom
+predictor as class or instance. If None, all the predefined
+models are used.</p>
+<p></div><a id='trainsizingregressor-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metric on which to fit the models. Choose from any of sklearn's
-<a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>,
-a function with signature <code>metric(y_true, y_pred)</code>, 
-a scorer object or a sequence of these. If multiple metrics are
-selected, only the first is used to optimize the BO. If None, a
-default metric is selected:
-<ul style="line-height:1.2em;margin-top:5px">
+<a href="https://scikit-learn.org/stable/modules/model_evaluation.html">scorers</a>, a function with signature <code>function(y_true, y_pred)
+-&gt; score</code>, a scorer object or a sequence of these. If None, a
+default metric is selected for every task:</p>
+<ul>
 <li>"f1" for binary classification</li>
 <li>"f1_weighted" for multiclass classification</li>
 <li>"r2" for regression</li>
 </ul>
-<p>
-<strong>greater_is_better: bool or sequence, default=True</strong><br>
-Whether the metric is a score function or a loss function,
-i.e. if True, a higher score is better and if False, lower is
-better. This parameter is ignored if the metric is a string or
-a scorer. If sequence, the n-th value applies to the n-th
-metric.
-</p>
-<p>
-<strong>needs_proba: bool or sequence, default=False</strong><br>
-Whether the metric function requires probability estimates out
-of a classifier. If True, make sure that every selected model has
-a <code>predict_proba</code> method. This parameter is ignored
-if the metric is a string or a scorer. If sequence, the n-th
-value applies to the n-th metric.
-</p>
-<p>
-<strong>needs_threshold: bool or sequence, default=False</strong><br>
-Whether the metric function takes a continuous decision certainty.
-This only works for binary classification using estimators that
-have either a <code>decision_function</code> or <code>predict_proba</code>
-method. This parameter is ignored if the metric is a string or a
-scorer. If sequence, the n-th value applies to the n-th metric.
-</p>
-<strong>train_sizes: int or sequence, default=5</strong><br>
-Sequence of training set sizes used to run the trainings.
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
-<li>If int: Number of equally distributed splits, i.e. for a
-value N it's equal to np.linspace(1.0/N, 1.0, N).</li>
-<li>If sequence: Fraction of the training set when <=1, else
-total number of samples.</li>
+<p></div><a id='trainsizingregressor-train_sizes'></a><strong>train_sizes: int or sequence, default=5</strong><br><div markdown class='param'>
+Sequence of training set sizes used to run the trainings.</p>
+<ul>
+<li>If int: Number of equally distributed splits, i.e. for a value
+  <code>N</code>, it's equal to <code>np.linspace(1.0/N, 1.0, N)</code>.</li>
+<li>If sequence: Fraction of the training set when &lt;=1, else total
+  number of samples.</li>
 </ul>
-<p>
-<strong>n_trials: int or sequence, default=0</strong><br>
-Maximum number of iterations of the BO. It includes the random
-points of <code>n_initial_points</code>. If 0, skip the BO and
-fit the model on its default parameters. If sequence, the n-th
-value applies to the n-th model.
-</p>
-<p>
-<strong>n_initial_points: int or sequence, default=5</strong><br>
-Initial number of random tests of the BO before fitting the
-surrogate function. If equal to <code>n_trials</code>, the optimizer will
-technically be performing a random search. If sequence, the n-th
-value applies to the n-th model.
-</p>
-<p>
-<strong>est_params: dict, default=None</strong><br>
-Additional parameters for the estimators. See the corresponding
+<p></div><a id='trainsizingregressor-n_trials'></a><strong>n_trials: int or sequence, default=0</strong><br><div markdown class='param'>
+Maximum number of iterations for the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.
+If 0, skip the tuning and fit the model on its default
+parameters. If sequence, the n-th value applies to the n-th
+model.</p>
+<p></div><a id='trainsizingregressor-est_params'></a><strong>est_params: dict or None, default=None</strong><br><div markdown class='param'>
+Additional parameters for the models. See their corresponding
 documentation for the available options. For multiple models,
 use the acronyms as key (or 'all' for all models) and a dict
-of the parameters as value. Add _fit to the parameter's name
-to pass it to the fit method instead of the initializer.
-</p>
-<strong>ht_params: dict, default=None</strong><br>
-Additional parameters to for the BO. These can include:
-<ul style="line-height:1.2em;margin-top:5px">
-<li><b>base_estimator: str, default="GP"</b><br>
-Base estimator to use in the BO. Choose from:
-<ul style="line-height:1.2em;margin-top:5px">
-<li>"GP" for Gaussian Process</li>
-<li>"RF" for Random Forest</li>
-<li>"ET" for Extra-Trees</li>
-<li>"GBRT" for Gradient Boosted Regression Trees</li>
-</ul></li>
-<li><b>max_time: int, default=np.inf</b><br>Stop the optimization after <code>max_time</code> seconds.</li>
-<li><b>delta_x: int or float, default=0</b><br>Stop the optimization when <code>|x1 - x2| < delta_x</code>.</li>
-<li><b>delta_y: int or float, default=0)</b><br>Stop the optimization if the 5 minima are within <code>delta_y</code> (the function is always minimized.</li>
-<li><b>cv: int, default=1</b><br>Number of folds for
-the cross-validation. If 1, the training set is randomly split
-in a subtrain and validation set.</li>
-<li><b>early stopping: int, float or None, default=None</b><br>Training
-will stop if the model didn't improve in last <code>early_stopping</code> rounds. If <1,
-fraction of rounds from the total. If None, no early stopping is performed. Only
-available for models that allow in-training validation.</li>
-<li><b>callback: callable or list of callables, default=None</b><br>Callbacks for the BO.</li>
-<li><b>dimensions: dict, list or None, default=None</b><br>Custom hyperparameter
-space for the bayesian optimization. Can be a list to share dimensions across
-models or a dict with the model's name as key (or 'all' for all models). If None,
-ATOM's predefined dimensions are used.</li>
-<li><b>plot: bool, default=False</b><br>Whether to plot the BO's progress as it runs.
-Creates a canvas with two plots: the first plot shows the score of every trial
-and the second shows the distance between the last consecutive steps.</li>
-<li><b>Additional keyword arguments for skopt's optimizer.</b></li>                
+of the parameters as value. Add <code>_fit</code> to the parameter's name
+to pass it to the estimator's fit method instead of the
+constructor.</p>
+<p></div><a id='trainsizingregressor-ht_params'></a><strong>ht_params: dict or None, default=None</strong><br><div markdown class='param'>
+Additional parameters for the hyperparameter tuning. If None,
+it uses the same parameters as the first run. Can include:</p>
+<ul>
+<li><strong>cv: int, dict or sequence, default=1</strong><br>
+  Number of folds for the cross-validation. If 1, the training
+  set is randomly split in a subtrain and validation set.</li>
+<li><strong>plot: bool, dict or sequence, default=False</strong><br>
+  Whether to plot the optimization's progress as it runs.
+  Creates a canvas with two plots: the first plot shows the
+  score of every trial and the second shows the distance between
+  the last consecutive steps. See the <a class="autorefs autorefs-internal" href="../../plots/plot_trials/#plot_trials">plot_trials</a> method.</li>
+<li><strong>distributions: dict, sequence or None, default=None</strong><br>
+  Custom hyperparameter distributions. If None, it uses the
+  model's predefined distributions. Read more in the
+  <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">user guide</a>.</li>
+<li><strong>tags: dict, sequence or None, default=None</strong><br>
+  Custom tags for the model's <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">mlflow run</a>.</li>
+<li><strong>**kwargs</strong><br>
+  Additional Keyword arguments for the constructor of the
+  <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html">study</a> class or the <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize">optimize</a> method.</li>
 </ul>
-<p>
-<strong>bootstrap: int or sequence, default=0</strong><br>
-Number of data sets (bootstrapped from the training set) to use in
-the bootstrap algorithm. If 0, no bootstrap is performed.
-If sequence, the n-th value will apply to the n-th model.
-</p>
-<strong>n_jobs: int, default=1</strong><br>
-Number of cores to use for parallel processing.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If >0: Number of cores to use.</li>
+<p></div><a id='trainsizingregressor-n_bootstrap'></a><strong>n_bootstrap: int or sequence, default=0</strong><br><div markdown class='param'>
+Number of data sets to use for <a class="autorefs autorefs-internal" href="../../../user_guide/training/#bootstrapping">bootstrapping</a>. If 0, no
+bootstrapping is performed. If sequence, the n-th value applies
+to the n-th model.</p>
+<p></div><a id='trainsizingregressor-n_jobs'></a><strong>n_jobs: int, default=1</strong><br><div markdown class='param'>
+Number of cores to use for parallel processing.</p>
+<ul>
+<li>If &gt;0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
-<li>If <-1: Use available_cores - 1 + <code>n_jobs</code>.</li>
+<li>If &lt;-1: Use number of cores - 1 + <code>n_jobs</code>.</li>
 </ul>
-<p style="margin-top:5px">
-Beware that using multiple processes on the same machine may cause
-memory issues for large datasets.
-</p>
-<strong>gpu: bool or str, default=False</strong><br>
-Train models on GPU. Refer to the
-<a href="../../../user_guide/gpu">documentation</a>
-to check which estimators are supported.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If False: Always use CPU implementation.</li>
-<li>If True: Use GPU implementation if possible.</li>
-<li>If "force": Force GPU implementation.</li>
+<p></div><a id='trainsizingregressor-device'></a><strong>device: str, default="cpu"</strong><br><div markdown class='param'>
+Device on which to train the estimators. Use any string
+that follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector,
+e.g. <code>device="gpu"</code> to use the GPU. Read more in the
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#accelerating-pipelines">user guide</a>.</p>
+<p></div><a id='trainsizingregressor-engine'></a><strong>engine: str, default="sklearn"</strong><br><div markdown class='param'>
+Execution engine to use for the estimators. Refer to the
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#accelerating-pipelines">user guide</a> for an explanation
+regarding every choice. Choose from:</p>
+<ul>
+<li>"sklearn" (only if device="cpu")</li>
+<li>"sklearnex"</li>
+<li>"cuml" (only if device="gpu")</li>
 </ul>
-<strong>verbose: int, default=0</strong><br>
-Verbosity level of the class. Choose from:
-<ul style="line-height:1.2em;margin-top:5px">
+<p></div><a id='trainsizingregressor-verbose'></a><strong>verbose: int, default=0</strong><br><div markdown class='param'>
+Verbosity level of the class. Choose from:</p>
+<ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>warnings: bool or str, default=False</strong><br>
-<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
+<p></div><a id='trainsizingregressor-warnings'></a><strong>warnings: bool or str, default=False</strong><br><div markdown class='param'></p>
+<ul>
 <li>If True: Default warning action (equal to "default").</li>
 <li>If False: Suppress all warnings (equal to "ignore").</li>
-<li>If str: One of the actions in python's warnings environment.</li>
+<li>If str: One of python's <a href="https://docs.python.org/3/library/warnings.html#the-warnings-filter">warnings filters</a>.</li>
 </ul>
-<p style="margin-top:5px">
-Changing this parameter affects the <code>PYTHONWARNINGS</code> environment.
-<br>ATOM can't manage warnings that go directly from C/C++ code to stdout.</p>
-<strong>logger: str, Logger or None, default=None</strong><br>
-<ul style="line-height:1.2em;margin-top:5px">
+<p>Changing this parameter affects the <code>PYTHONWARNINGS</code> environment.
+ATOM can't manage warnings that go from C/C++ code to stdout.</p>
+<p></div><a id='trainsizingregressor-logger'></a><strong>logger: str, Logger or None, default=None</strong><br><div markdown class='param'></p>
+<ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If str: Name of the log file. Use "auto" for automatic naming.</li>
+<li>If str: Name of the log file. Use "auto" for automatic name.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
-<p>
-<strong>experiment: str or None, default=None</strong><br>
-Name of the mlflow experiment to use for tracking. If None,
-no mlflow tracking is performed.
-</p>
-<p>
-<strong>random_state: int or None, default=None</strong><br>
-Seed used by the random number generator. If None, the random number
-generator is the <code>RandomState</code> instance used by <code>np.random</code>.
-</p>
-</td>
-</tr>
+<p></div><a id='trainsizingregressor-experiment'></a><strong>experiment: str or None, default=None</strong><br><div markdown class='param'>
+Name of the <a href="https://www.mlflow.org/docs/latest/tracking.html#organizing-runs-in-experiments">mlflow experiment</a> to use for tracking.
+If None, no mlflow tracking is performed.</p>
+<p></div><a id='trainsizingregressor-random_state'></a><strong>random_state: int or None, default=None</strong><br><div markdown class='param'>
+Seed used by the random number generator. If None, the random
+number generator is the <code>RandomState</code> used by <code>np.random</code>.</p>
+<p></div></td></tr></p>
 </table>
 <p><br></p>
-<h2 id="magic-methods">Magic methods</h2>
-<p>The class contains some magic methods to help you access some of its
-elements faster.</p>
-<ul>
-<li><strong>__len__:</strong> Returns the length of the dataset.</li>
-<li><strong>__contains__:</strong> Checks if the provided item is a column in the dataset.</li>
-<li><strong>__getitem__:</strong> Access a model, column or subset of the dataset.</li>
-</ul>
+<div class="admonition info">
+<p class="admonition-title">See Also</p>
+<p><a class="autorefs autorefs-internal" href="../../ATOM/atomregressor/#atomregressor">ATOMRegressor</a><br>    <div style='margin: -1em 0 0 1.2em'>Main class for regression tasks.</div></p>
+<p><a class="autorefs autorefs-internal" href="../directregressor/#directregressor">DirectRegressor</a><br>    <div style='margin: -1em 0 0 1.2em'>Train and evaluate the models in a direct fashion.</div></p>
+<p><a class="autorefs autorefs-internal" href="../successivehalvingregressor/#successivehalvingregressor">SuccessiveHalvingRegressor</a><br>    <div style='margin: -1em 0 0 1.2em'>Train and evaluate the models in a <a class="autorefs autorefs-internal" href="../../../user_guide/training/#successive-halving">successive halving</a> fashion.</div></p>
+</div>
+<p><br></p>
+<h2 id="example">Example</h2>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.training</span> <span class="kn">import</span> <span class="n">TrainSizingRegressor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_digits</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_digits</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">X</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">runner</span> <span class="o">=</span> <span class="n">TrainSizingRegressor</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;OLS&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;r2&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
+
+<span class="go">Training ========================= &gt;&gt;</span>
+<span class="go">Metric: r2</span>
+
+
+<span class="go">Run: 0 =========================== &gt;&gt;</span>
+<span class="go">Models: OLS02</span>
+<span class="go">Size of training set: 79 (20%)</span>
+<span class="go">Size of test set: 171</span>
+
+
+<span class="go">Results for OrdinaryLeastSquares:</span>
+<span class="go">Fit ---------------------------------------------</span>
+<span class="go">Train evaluation --&gt; r2: 0.8554</span>
+<span class="go">Test evaluation --&gt; r2: 0.4273</span>
+<span class="go">Time elapsed: 0.008s</span>
+<span class="go">-------------------------------------------------</span>
+<span class="go">Total time: 0.008s</span>
+
+
+<span class="go">Final results ==================== &gt;&gt;</span>
+<span class="go">Total time: 0.107s</span>
+<span class="go">-------------------------------------</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.4273 ~</span>
+
+
+<span class="go">Run: 1 =========================== &gt;&gt;</span>
+<span class="go">Models: OLS04</span>
+<span class="go">Size of training set: 159 (40%)</span>
+<span class="go">Size of test set: 171</span>
+
+
+<span class="go">Results for OrdinaryLeastSquares:</span>
+<span class="go">Fit ---------------------------------------------</span>
+<span class="go">Train evaluation --&gt; r2: 0.7987</span>
+<span class="go">Test evaluation --&gt; r2: 0.653</span>
+<span class="go">Time elapsed: 0.008s</span>
+<span class="go">-------------------------------------------------</span>
+<span class="go">Total time: 0.008s</span>
+
+
+<span class="go">Final results ==================== &gt;&gt;</span>
+<span class="go">Total time: 0.129s</span>
+<span class="go">-------------------------------------</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.653</span>
+
+
+<span class="go">Run: 2 =========================== &gt;&gt;</span>
+<span class="go">Models: OLS06</span>
+<span class="go">Size of training set: 238 (60%)</span>
+<span class="go">Size of test set: 171</span>
+
+
+<span class="go">Results for OrdinaryLeastSquares:</span>
+<span class="go">Fit ---------------------------------------------</span>
+<span class="go">Train evaluation --&gt; r2: 0.7828</span>
+<span class="go">Test evaluation --&gt; r2: 0.7161</span>
+<span class="go">Time elapsed: 0.008s</span>
+<span class="go">-------------------------------------------------</span>
+<span class="go">Total time: 0.008s</span>
+
+
+<span class="go">Final results ==================== &gt;&gt;</span>
+<span class="go">Total time: 0.156s</span>
+<span class="go">-------------------------------------</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.7161</span>
+
+
+<span class="go">Run: 3 =========================== &gt;&gt;</span>
+<span class="go">Models: OLS08</span>
+<span class="go">Size of training set: 318 (80%)</span>
+<span class="go">Size of test set: 171</span>
+
+
+<span class="go">Results for OrdinaryLeastSquares:</span>
+<span class="go">Fit ---------------------------------------------</span>
+<span class="go">Train evaluation --&gt; r2: 0.7866</span>
+<span class="go">Test evaluation --&gt; r2: 0.7306</span>
+<span class="go">Time elapsed: 0.009s</span>
+<span class="go">-------------------------------------------------</span>
+<span class="go">Total time: 0.009s</span>
+
+
+<span class="go">Final results ==================== &gt;&gt;</span>
+<span class="go">Total time: 0.187s</span>
+<span class="go">-------------------------------------</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.7306</span>
+
+
+<span class="go">Run: 4 =========================== &gt;&gt;</span>
+<span class="go">Models: OLS10</span>
+<span class="go">Size of training set: 398 (100%)</span>
+<span class="go">Size of test set: 171</span>
+
+
+<span class="go">Results for OrdinaryLeastSquares:</span>
+<span class="go">Fit ---------------------------------------------</span>
+<span class="go">Train evaluation --&gt; r2: 0.7798</span>
+<span class="go">Test evaluation --&gt; r2: 0.7394</span>
+<span class="go">Time elapsed: 0.009s</span>
+<span class="go">-------------------------------------------------</span>
+<span class="go">Total time: 0.009s</span>
+
+
+<span class="go">Final results ==================== &gt;&gt;</span>
+<span class="go">Total time: 0.226s</span>
+<span class="go">-------------------------------------</span>
+<span class="go">OrdinaryLeastSquares --&gt; r2: 0.7394</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Analyze the results</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">runner</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+
+<span class="go">       neg_mean_absolute_error  ...  neg_root_mean_squared_error</span>
+<span class="go">OLS02                  -0.2766  ...                      -0.3650</span>
+<span class="go">OLS04                  -0.2053  ...                      -0.2841</span>
+<span class="go">OLS06                  -0.1957  ...                      -0.2570</span>
+<span class="go">OLS08                  -0.1928  ...                      -0.2504</span>
+<span class="go">OLS10                  -0.1933  ...                      -0.2463</span>
+
+<span class="go">[5 rows x 6 columns]</span>
+</code></pre></div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
 <h3 id="data-attributes">Data attributes</h3>
-<p>The dataset can be accessed at any time through multiple attributes,
-e.g. calling <code>trainer.train</code> will return the training set. Updating
-one of the data attributes will automatically update the rest as well.
-Changing the branch will also change the response from these attributes
-accordingly.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>dataset: pd.DataFrame</strong><br>
-Complete dataset in the pipeline.
-</p>
-<p>
-<strong>train: pd.DataFrame</strong><br>
-Training set.
-</p>
-<p>
-<strong>test: pd.DataFrame</strong><br>
-Test set.
-</p>
-<p>
-<strong>X: pd.DataFrame</strong><br>
-Feature set.
-</p>
-<p>
-<strong>y: pd.Series</strong><br>
-Target column.
-</p>
-<p>
-<strong>X_train: pd.DataFrame</strong><br>
-Training features.
-</p>
-<p>
-<strong>y_train: pd.Series</strong><br>
-Training target.
-</p>
-<p>
-<strong>X_test: pd.DataFrame</strong><br>
-Test features.
-</p>
-<p>
-<strong>y_test: pd.Series</strong><br>
-Test target.
-</p>
-<p>
-<strong>shape: tuple</strong><br>
-Dataset's shape: (n_rows x n_columns).
-</p>
-<p>
-<strong>columns: pd.Index</strong><br>
-Names of the columns in the dataset.
-</p>
-<p>
-<strong>n_columns: int</strong><br>
-Number of columns in the dataset.
-</p>
-<p>
-<strong>features: pd.Index</strong><br>
-Names of the features in the dataset.
-</p>
-<p>
-<strong>n_features: int</strong><br>
-Number of features in the dataset.
-</p>
-<p>
-<strong>target: str</strong><br>
-Name of the target column.
-</p>
-</td>
-</tr>
+<p>The data attributes are used to access the dataset and its properties.
+Updating the dataset will automatically update the response of these
+attributes accordingly.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-dataset'></a><strong>dataset: pd.DataFrame</strong><br><div markdown class='param'>Complete data set.</div><a id='trainsizingregressor-train'></a><strong>train: pd.DataFrame</strong><br><div markdown class='param'>Training set.</div><a id='trainsizingregressor-test'></a><strong>test: pd.DataFrame</strong><br><div markdown class='param'>Test set.</div><a id='trainsizingregressor-X'></a><strong>X: pd.DataFrame</strong><br><div markdown class='param'>Feature set.</div><a id='trainsizingregressor-y'></a><strong>y: pd.Series</strong><br><div markdown class='param'>Target column.</div><a id='trainsizingregressor-X_train'></a><strong>X_train: pd.DataFrame</strong><br><div markdown class='param'>Features of the training set.</div><a id='trainsizingregressor-y_train'></a><strong>y_train: pd.Series</strong><br><div markdown class='param'>Target column of the training set.</div><a id='trainsizingregressor-X_test'></a><strong>X_test: pd.DataFrame</strong><br><div markdown class='param'>Features of the test set.</div><a id='trainsizingregressor-y_test'></a><strong>y_test: pd.Series</strong><br><div markdown class='param'>Target column of the test set.</div><a id='trainsizingregressor-shape'></a><strong>shape: tuple</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_cols).</div><a id='trainsizingregressor-columns'></a><strong>columns: pd.Series</strong><br><div markdown class='param'>Name of all the columns.</div><a id='trainsizingregressor-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='trainsizingregressor-features'></a><strong>features: pd.Series</strong><br><div markdown class='param'>Name of the features.</div><a id='trainsizingregressor-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='trainsizingregressor-target'></a><strong>target: str</strong><br><div markdown class='param'>Name of the target column.</div></td></tr></p>
 </table>
 <p><br></p>
 <h3 id="utility-attributes">Utility attributes</h3>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>models: list</strong><br>
-Names of the models in the instance.
-</p>
-<p>
-<strong>metric: str or list</strong><br>
-Metric(s) used to fit the models.
-</p>
-<p>
-<strong>errors: dict</strong><br>
-Dictionary of the encountered exceptions (if any).
-</p>
-<p>
-<strong>winners: list of str</strong><br>
-Model names ordered by performance on the test set (either through the
-<code>score_test</code> or <code>mean_bootstrap</code> attribute).
-</p>
-<p>
-<strong>winner: <a href="../../../user_guide/models">model</a></strong><br>
-Model subclass that performed best on the test set (either through the
-<code>score_test</code> or <code>mean_bootstrap</code> attribute).
-</p>
-<strong>results: pd.DataFrame</strong><br>
-Dataframe of the training results. Columns can include:
-<ul style="line-height:1.2em;margin-top:5px">
-<li><b>metric_bo:</b> Best score achieved during the BO.</li>
-<li><b>time_bo:</b> Time spent on the BO.</li>
-<li><b>score_train:</b> Metric score on the training set.</li>
-<li><b>score_test:</b> Metric score on the test set.</li>
-<li><b>time_fit:</b> Time spent fitting and evaluating.</li>
-<li><b>mean_bootstrap:</b> Mean score of the bootstrap results.</li>
-<li><b>std_bootstrap:</b> Standard deviation score of the bootstrap results.</li>
-<li><b>time_bootstrap:</b> Time spent on the bootstrap algorithm.</li>
-<li><b>time:</b> Total time spent on the whole run.</li>
+<p>The utility attributes are used to access information about the models
+in the instance after <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">training</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-models'></a><strong>models: str or list</strong><br><div markdown class='param'>Name of the model(s).</div><a id='trainsizingregressor-metric'></a><strong>metric: str or list</strong><br><div markdown class='param'>Name of the metric(s).</div><a id='trainsizingregressor-errors'></a><strong>errors: dict</strong><br><div markdown class='param'>Errors encountered during model training.</p>
+<p>The key is the model's name and the value is the exception
+object that was raised. Use the <code>__traceback__</code> attribute to
+investigate the error.</div><a id='trainsizingregressor-winners'></a><strong>winners: list</strong><br><div markdown class='param'>Model names ordered by performance.</p>
+<p>Performance is measured as the highest score on the model's
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
+that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
+is compared.</div><a id='trainsizingregressor-winner'></a><strong>winner: <a class="autorefs autorefs-internal" href="../../../user_guide/models/#models">model</a></strong><br><div markdown class='param'>Best performing model.</p>
+<p>Performance is measured as the highest score on the model's
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
+<a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
+that order. For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, only the main metric
+is compared.</div><a id='trainsizingregressor-results'></a><strong>results: pd.DataFrame</strong><br><div markdown class='param'>Overview of the training results.</p>
+<p>All durations are in seconds. Columns include:</p>
+<ul>
+<li><strong>score_ht:</strong> Score obtained by the hyperparameter tuning.</li>
+<li><strong>time_ht:</strong> Duration of the hyperparameter tuning.</li>
+<li><strong>score_train:</strong> Metric score on the train set.</li>
+<li><strong>score_test:</strong> Metric score on the test set.</li>
+<li><strong>time_fit:</strong> Duration of the model fitting on the train set.</li>
+<li><strong>score_bootstrap:</strong> Mean score on the bootstrapped samples.</li>
+<li><strong>time_bootstrap:</strong> Duration of the bootstrapping.</li>
+<li><strong>time:</strong> Total duration of the model run.</div></td></tr></li>
 </ul>
-</td>
-</tr>
+</table>
+<p><br></p>
+<h3 id="tracking-attributes">Tracking attributes</h3>
+<p>The tracking attributes are used to customize what elements of the
+experiment are tracked. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-log_ht'></a><strong>log_ht: bool</strong><br><div markdown class='param'>Whether to track every trial of the hyperparameter tuning.</div><a id='trainsizingregressor-log_model'></a><strong>log_model: bool</strong><br><div markdown class='param'>Whether to save the model's estimator after fitting.</div><a id='trainsizingregressor-log_plots'></a><strong>log_plots: bool</strong><br><div markdown class='param'>Whether to save plots as artifacts.</div><a id='trainsizingregressor-log_data'></a><strong>log_data: bool</strong><br><div markdown class='param'>Whether to save the train and test sets.</div><a id='trainsizingregressor-log_pipeline'></a><strong>log_pipeline: bool</strong><br><div markdown class='param'>Whether to save the model's pipeline.</div></td></tr></p>
 </table>
 <p><br></p>
 <h3 id="plot-attributes">Plot attributes</h3>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>style: str</strong><br>
-Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
-</p>
-<p>
-<strong>palette: str</strong><br>
-Color palette. See seaborn's <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
-</p>
-<p>
-<strong>title_fontsize: int</strong><br>
-Fontsize for the plot's title.
-</p>
-<p>
-<strong>label_fontsize: int</strong><br>
-Fontsize for labels and legends.
-</p>
-<p>
-<strong>tick_fontsize: int</strong><br>
-Fontsize for the ticks along the plot's axes.
-</p>
-</td>
-</tr>
+<p>The plot attributes are used to customize the plot's aesthetics. Read
+more in the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='trainsizingregressor-style'></a><strong>style: str</strong><br><div markdown class='param'>Plotting <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">style</a>.</div><a id='trainsizingregressor-palette'></a><strong>palette: str</strong><br><div markdown class='param'>Color <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">palette</a>.</div><a id='trainsizingregressor-title_fontsize'></a><strong>title_fontsize: int</strong><br><div markdown class='param'>Fontsize for the plot's title.</div><a id='trainsizingregressor-label_fontsize'></a><strong>label_fontsize: int</strong><br><div markdown class='param'>Fontsize for labels and legends.</div><a id='trainsizingregressor-tick_fontsize'></a><strong>tick_fontsize: int</strong><br><div markdown class='param'>Fontsize for the ticks along the plot's axes.</div></td></tr></p>
+</table>
+<p><br></p>
+<h2 id="methods">Methods</h2>
+<p>Next to the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#plots">plotting</a> methods, the class contains a variety
+of methods to handle the data, run the training, and manage the pipeline.</p>
+<table style="font-size: 0.9em">
+<p><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-available_models">available_models</a></td><td>Give an overview of the available predefined models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-canvas">canvas</a></td><td>Create a figure with multiple plots.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-clear">clear</a></td><td>Clear attributes from all models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-delete">delete</a></td><td>Delete models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-evaluate">evaluate</a></td><td>Get all models' scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-export_pipeline">export_pipeline</a></td><td>Export the pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-get_class_weight">get_class_weight</a></td><td>Return class weights for a balanced dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-merge">merge</a></td><td>Merge another instance of the same class into this one.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-reset_aesthetics">reset_aesthetics</a></td><td>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-run">run</a></td><td>Train and evaluate the models.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-stacking">stacking</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#trainsizingregressor-voting">voting</a></td><td>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</td></tr></p>
+</table>
+<p><br></p>
+<p><a id='trainsizingregressor-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L595>[source]</a></span></div>Give an overview of the available predefined models.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='available_models-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Information about the available <a class="autorefs autorefs-internal" href="../../../user_guide/models/#predefined-models">predefined models</a>. Columns
+include:</p>
+<ul>
+<li><strong>acronym:</strong> Model's acronym (used to call the model).</li>
+<li><strong>model:</strong> Name of the model's class.</li>
+<li><strong>estimator:</strong> The model's underlying estimator.</li>
+<li><strong>module:</strong> The estimator's module.</li>
+<li><strong>needs_scaling:</strong> Whether the model requires feature scaling.</li>
+<li><strong>accepts_sparse:</strong> Whether the model accepts sparse matrices.</li>
+<li><strong>has_validation:</strong> Whether the model has <a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">in-training validation</a>.</li>
+<li><strong>supports_engines:</strong> List of engines supported by the model.
+</div></td></tr></li>
+</ul>
 </table>
 <p><br><br></p>
-<h2 id="methods">Methods</h2>
-<table style="font-size:16px">
-<tr>
-<td><a href="#available-models">available_models</a></td>
-<td>Give an overview of the available predefined models.</td>
-</tr>
-
-<tr>
-<td><a href="#canvas">canvas</a></td>
-<td>Create a figure with multiple plots.</td>
-</tr>
-
-<tr>
-<td><a href="#clear">clear</a></td>
-<td>Clear attributes from all models.</td>
-</tr>
-
-<tr>
-<td><a href="#delete">delete</a></td>
-<td>Delete models.</td>
-</tr>
-
-<tr>
-<td><a href="#evaluate">evaluate</a></td>
-<td>Get all models' scores for the provided metrics.</td>
-</tr>
-
-<tr>
-<td><a href="#get-params">get_params</a></td>
-<td>Get parameters for this estimator.</td>
-</tr>
-
-<tr>
-<td><a href="#log">log</a></td>
-<td>Save information to the logger and print to stdout.</td>
-</tr>
-
-<tr>
-<td><a href="#merge">merge</a></td>
-<td>Merge another instance of the same class into this one.</td>
-</tr>
-
-<tr>
-<td><a href="#reset-aesthetics">reset_aesthetics</a></td>
-<td>Reset the plot aesthetics to their default values.</td>
-</tr>
-
-<tr>
-<td><a href="#run">run</a></td>
-<td>Fit and evaluate the models.</td>
-</tr>
-
-<tr>
-<td><a href="#save">save</a></td>
-<td>Save the instance to a pickle file.</td>
-</tr>
-
-<tr>
-<td><a href="#set-params">set_params</a></td>
-<td>Set the parameters of this estimator.</td>
-</tr>
-
-<tr>
-<td><a href="#stacking">stacking</a></td>
-<td>Train a Stacking model.</td>
-</tr>
-
-<tr>
-<td><a href="#voting">voting</a></td>
-<td>Train a Voting model.</td>
-</tr>
-</table>
-<p><br></p>
-<p><a name="available-models"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">available_models</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L500">[source]</a>
-</span>
-</div>
-<p>Give an overview of the available predefined models.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>pd.DataFrame</strong><br>
-Information about the predefined models available for the current task.
-Columns include:
-<ul style="line-height:1.2em;margin-top:5px">
-<li><b>acronym:</b> Model's acronym (used to call the model).</li>
-<li><b>fullname:</b> Complete name of the model.</li>
-<li><b>estimator:</b> The model's underlying estimator.</li>
-<li><b>module:</b> The estimator's module.</li>
-<li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
-<li><b>accepts_sparse:</b> Whether the model has native support for sparse matrices.</li>
-<li><b>supports_gpu:</b> Whether the model has GPU support.</li>
-</ul>
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="canvas"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1,
-ncols=2, title=None, figsize=None, filename=None, display=True)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L427">[source]</a>
-</span>
-</div>
-<p>This <code>@contextmanager</code> allows you to draw many plots in one figure.
-The default option is to add two plots side by side. See the
-<a href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>nrows: int, default=1</strong><br>
-Number of plots in length.
-</p>
-<p>
-<strong>ncols: int, default=2</strong><br>
-Number of plots in width.
-</p>
-<p>
-<strong>title: str or None, default=None</strong><br>
-Plot's title. If None, no title is displayed.
-</p>
-<p>
-<strong>figsize: tuple or None, default=None</strong><br>
-Figure's size, format as (x, y). If None, it adapts the size to the
-number of plots in the canvas.
-</p>
-<p>
-<strong>filename: str or None, default=None</strong><br>
-Name of the file. Use "auto" for automatic naming.
-If None, the figure is not saved.
-</p>
-<p>
-<strong>display: bool, default=True</strong><br>
+<p><a id='trainsizingregressor-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(nrows=1, ncols=2, title=None, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L529>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p>This <code>@contextmanager</code> allows you to draw many plots in one
+figure. The default option is to add two plots side by side.
+See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='canvas-nrows'></a><strong>nrows: int, default=1</strong><br><div markdown class='param'>
+Number of plots in length.</p>
+<p></div><a id='canvas-ncols'></a><strong>ncols: int, default=2</strong><br><div markdown class='param'>
+Number of plots in width.</p>
+<p></div><a id='canvas-title'></a><strong>title: str or None, default=None</strong><br><div markdown class='param'>
+Plot's title. If None, no title is displayed.</p>
+<p></div><a id='canvas-figsize'></a><strong>figsize: tuple or None, default=None</strong><br><div markdown class='param'>
+Figure's size, format as (x, y). If None, it adapts the
+size to the number of plots in the canvas.</p>
+<p></div><a id='canvas-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
+Name of the file. Use "auto" for automatic naming. If
+None, the figure is not saved.</p>
+<p></div><a id='canvas-display'></a><strong>display: bool, default=True</strong><br><div markdown class='param'>
 Whether to render the plot.
-</p>
-</td>
-</tr>
+</div></td></tr></p>
 </table>
-<p><br /></p>
-<p><a name="clear"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">clear</strong>()
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L536">[source]</a>
-</span>
-</div>
-<p>Reset all model attributes to their initial state, deleting potentially
-large data arrays. Use this method to free some memory before saving
-the class. The cleared attributes per model are:</p>
+<p><br><br></p>
+<p><a id='trainsizingregressor-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L634>[source]</a></span></div>Clear attributes from all models.</p>
+<p>Reset all model attributes to their initial state, deleting
+potentially large data arrays. Use this method to free some
+memory before <a class="autorefs autorefs-internal" href="#trainsizingregressor-save">saving</a> the instance. The cleared
+attributes per model are:</p>
 <ul>
-<li><a href="../../../user_guide/predicting">Prediction attributes</a>.</li>
-<li><a href="../../../user_guide/training/#metric">Metrics scores</a>.</li>
-<li><a href="../../../user_guide/plots/#shap">Shap values</a>.</li>
-<li><a href="../../../user_guide/data_management/#dashboard">Dashboard instance</a>.</li>
+<li><a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-attributes">Prediction attributes</a></li>
+<li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">Metric scores</a></li>
+<li><a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">Shap values</a></li>
+<li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_app">App instance</a></li>
+<li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_dashboard">Dashboard instance</a></li>
 </ul>
-<p><br /><br /><br /></p>
-<p><a name="delete"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L551">[source]</a>
-</span>
-</div>
-<p>Delete models. If all models are removed, the metric
-is reset. Use this method to drop unwanted models from the pipeline
-or to free some memory before saving. Deleted models are not removed
-from any active mlflow experiment.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>models: str or sequence, default=None</strong><br>
-Models to delete. If None, delete them all.
-</td>
-</tr>
+<p><br><br></p>
+<p><a id='trainsizingregressor-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L653>[source]</a></span></div>Delete models.</p>
+<p>If all models are removed, the metric is reset. Use this method
+to drop unwanted models from the pipeline or to free some memory
+before <a class="autorefs autorefs-internal" href="#trainsizingregressor-save">saving</a>. Deleted models are not removed from
+any active <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">mlflow experiment</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='delete-models'></a><strong>models: int, str, slice, sequence or None, default=None</strong><br><div markdown class='param'>
+Names, positions or regex pattern of the models to delete.
+If None, all models are deleted.
+</div></td></tr></p>
 </table>
-<p><br /></p>
-<p><a name="evaluate"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None,
-dataset="test")
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L578">[source]</a>
-</span>
-</div>
-<p>Get all the models' scores for the provided metrics.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>metric: str, func, scorer, sequence or None, default=None</strong><br>
-Metrics to calculate. If None, a selection of the most common
-metrics per task are used.
-</p>
-<p>
-<strong>dataset: str, default="test"</strong><br>
-Data set on which to calculate the metric. Choose from: "train",
-"test" or "holdout".
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>pd.DataFrame</strong><br>
+<p><br><br></p>
+<p><a id='trainsizingregressor-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L681>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
+Metric to calculate. If None, it returns an overview of
+the most common metrics per task.</p>
+<p></div><a id='evaluate-dataset'></a><strong>dataset: str, default="test"</strong><br><div markdown class='param'>
+Data set on which to calculate the metric. Choose from:
+"train", "test" or "holdout".</p>
+<p></div><a id='evaluate-threshold'></a><strong>threshold: float, default=0.5</strong><br><div markdown class='param'>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only used when:</p>
+<ul>
+<li>The task is binary classification.</li>
+<li>The model has a <code>predict_proba</code> method.</li>
+<li>The metric evaluates predicted target values.</li>
+</ul>
+<p></div><a id='evaluate-sample_weight'></a><strong>sample_weight: sequence or None, default=None</strong><br><div markdown class='param'>
+Sample weights corresponding to y in <code>dataset</code>.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='evaluate-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
 Scores of the models.
-</td>
-</tr>
+</div></td></tr></p>
 </table>
-<p><br /></p>
-<p><a name="get-class-weight"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L624">[source]</a>
-</span>
+<p><br><br></p>
+<p><a id='trainsizingregressor-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None, memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L727>[source]</a></span></div>Export the pipeline to a sklearn-like object.</p>
+<p>Optionally, you can add a model as final estimator. The
+returned pipeline is already fitted on the training set.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>The returned pipeline behaves similarly to sklearn's
+<a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>, and additionally:</p>
+<ul>
+<li>Accepts transformers that change the target column.</li>
+<li>Accepts transformers that drop rows.</li>
+<li>Accepts transformers that only are fitted on a subset of
+  the provided dataset.</li>
+<li>Always returns pandas objects.</li>
+<li>Uses transformers that are only applied on the training
+  set to fit the pipeline, not to make predictions.</li>
+</ul>
 </div>
-<p>Return class weights for a balanced data set. Statistically, the class
-weights re-balance the data set so that the sampled data set represents
-the target population as closely as possible. The returned weights are
-inversely proportional to the class frequencies in the selected data set. </p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>dataset: str, default="train"</strong><br>
-Data set from which to get the weights. Choose from: "train", "test" or "dataset".
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>dict</strong><br>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='export_pipeline-model'></a><strong>model: str or None, default=None</strong><br><div markdown class='param'>
+Name of the model for which to export the pipeline. If the
+model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>, the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is
+added to the pipeline. If None, the pipeline in the current
+branch is exported.</p>
+<p></div><a id='export_pipeline-memory'></a><strong>memory: bool, str, Memory or None, default=None</strong><br><div markdown class='param'>
+Used to cache the fitted transformers of the pipeline.
+    - If None or False: No caching is performed.
+    - If True: A default temp directory is used.
+    - If str: Path to the caching directory.
+    - If Memory: Object with the joblib.Memory interface.</p>
+<p></div><a id='export_pipeline-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
+Verbosity level of the transformers in the pipeline. If
+None, it leaves them to their original verbosity. Note
+that this is not the pipeline's own verbose parameter.
+To change that, use the <code>set_params</code> method.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='export_pipeline-Pipeline'></a><strong>Pipeline</strong><br><div markdown class='param'>
+Sklearn-like Pipeline object with all transformers in the
+current branch.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L809>[source]</a></span></div>Return class weights for a balanced dataset.</p>
+<p>Statistically, the class weights re-balance the data set so
+that the sampled data set represents the target population
+as closely as possible. The returned weights are inversely
+proportional to the class frequencies in the selected data set.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_class_weight-dataset'></a><strong>dataset: str, default="train"</strong><br><div markdown class='param'>
+Data set from which to get the weights. Choose from:
+"train", "test" or "dataset".</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_class_weight-dict'></a><strong>dict</strong><br><div markdown class='param'>
 Classes with the corresponding weights.
-</td>
-</tr>
+</div></td></tr></p>
 </table>
-<p><br /></p>
-<p><a name="get-params"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True)
-<span style="float:right">
-<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a>
-</span>
-</div>
-<p>Get parameters for this estimator.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>deep: bool, default=True</strong><br>
-If True, will return the parameters for this estimator and contained
-subobjects that are estimators.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>dict</strong><br>
+<p><br><br></p>
+<p><a id='trainsizingregressor-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L194>[source]</a></span></div>Get parameters for this estimator.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
+If True, will return the parameters for this estimator and
+contained subobjects that are estimators.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_params-params '></a><strong>params : dict</strong><br><div markdown class='param'>
 Parameter names mapped to their values.
-</td>
-</tr>
+</div></td></tr></p>
 </table>
-<p><br /></p>
-<p><a name="log"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
-</span>
-</div>
-<p>Write a message to the logger and print it to stdout.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>msg: str</strong><br>
-Message to write to the logger and print to stdout.
-</p>
-<p>
-<strong>level: int, default=0</strong><br>
-Minimum verbosity level to print the message.
-</p>
-</td>
-</tr>
+<p><br><br></p>
+<p><a id='trainsizingregressor-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L731>[source]</a></span></div>Print message and save to log file.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
+Message to save to the logger and print to stdout.</p>
+<p></div><a id='log-level'></a><strong>level: int, default=0</strong><br><div markdown class='param'>
+Minimum verbosity level to print the message.</p>
+<p></div><a id='log-severity'></a><strong>severity: str, default="info"</strong><br><div markdown class='param'>
+Severity level of the message. Choose from: debug, info,
+warning, error, critical.
+</div></td></tr></p>
 </table>
-<p><br /></p>
-<p><a name="merge"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">merge</strong>(other, suffix="2")
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L659">[source]</a>
-</span>
-</div>
-<p>Merge another instance of the same class into this one. Branches,
-models, metrics and attributes of the other instance are merged into
-this one. If there are branches and/or models with the same name,
-they are merged adding the <code>suffix</code> parameter to their name. The
-errors and missing attributes are extended with those of the other
-instance. It's only possible to merge two instances if they are
-initialized with the same dataset and trained with the same metric.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>other: TrainSizingRegressor</strong><br>
-Instance with which to merge. Should be of the same class as self.
-</p>
-<p>
-<strong>suffix: str, default="2"</strong><br>
+<p><br><br></p>
+<p><a id='trainsizingregressor-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L844>[source]</a></span></div>Merge another instance of the same class into this one.</p>
+<p>Branches, models, metrics and attributes of the other instance
+are merged into this one. If there are branches and/or models
+with the same name, they are merged adding the <code>suffix</code>
+parameter to their name. The errors and missing attributes are
+extended with those of the other instance. It's only possible
+to merge two instances if they are initialized with the same
+dataset and trained with the same metric.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='merge-other'></a><strong>other: Runner</strong><br><div markdown class='param'>
+Instance with which to merge. Should be of the same class
+as self.</p>
+<p></div><a id='merge-suffix'></a><strong>suffix: str, default="2"</strong><br><div markdown class='param'>
 Conflicting branches and models are merged adding <code>suffix</code>
 to the end of their names.
-</p>
-</td>
-</tr>
+</div></td></tr></p>
 </table>
-<p><br /></p>
-<p><a name="reset-aesthetics"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L213">[source]</a>
-</span>
-</div>
-<p>Reset the <a href="../../../user_guide/plots/#aesthetics">plot aesthetics</a> to their default values.
-<br /><br /><br /></p>
-<p><a name="run"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">run</strong>(*arrays)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L201">[source]</a>
-</span>
-</div>
-<p>Fit and evaluate the models.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>*arrays: sequence of indexables</strong><br>
-Training and test set (and optionally a holdout set). Allowed formats are:
-<ul style="line-height:1.2em;margin-top:5px">
+<p><br><br></p>
+<p><a id='trainsizingregressor-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L226>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><br><br></p>
+<p><a id='trainsizingregressor-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(*arrays)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L179>[source]</a></span></div>Train and evaluate the models.</p>
+<p>Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/training/#training">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='run-\*arrays'></a><strong>*arrays: sequence of indexables</strong><br><div markdown class='param'>
+Training set and test set. Allowed formats are:</p>
+<ul>
 <li>train, test</li>
-<li>train, test, holdout</li>
 <li>X_train, X_test, y_train, y_test</li>
-<li>X_train, X_test, X_holdout, y_train, y_test, y_holdout</li>
-<li>(X_train, y_train), (X_test, y_test)</li>
-<li>(X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)</li>
+<li>(X_train, y_train), (X_test, y_test)
+</div></td></tr></li>
 </ul>
-</td>
-</tr>
 </table>
-<p><br /></p>
-<p><a name="save"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto", save_data=True)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
-</span>
-</div>
-<p>Save the instance to a pickle file. Remember that the class contains
-the complete dataset as attribute, so the file can become large for
-big datasets! To avoid this, use <code>save_data=False</code>.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>filename: str, default="auto"</strong><br>
-Name of the file. Use "auto" for automatic naming.
-</p>
-<p>
-<strong>save_data: bool, default=True</strong><br>
-Whether to save the data as an attribute of the instance. If False,
-remember to add the data to <a href="../../ATOM/atomloader">ATOMLoader</a>
+<p><br><br></p>
+<p><a id='trainsizingregressor-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L763>[source]</a></span></div>Save the instance to a pickle file.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
+Name of the file. Use "auto" for automatic naming.</p>
+<p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
+Whether to save the dataset with the instance. This
+parameter is ignored if the method is not called from
+atom. If False, remember to add the data to <a class="autorefs autorefs-internal" href="../../ATOM/atomloader/#atomloader">ATOMLoader</a>
 when loading the file.
-</p>
-</td>
-</tr>
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L218>[source]</a></span></div>Set the parameters of this estimator.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
+Estimator parameters.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='set_params-self '></a><strong>self : estimator instance</strong><br><div markdown class='param'>
+Estimator instance.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(name="Stack", models=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L914>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='stacking-name'></a><strong>name: str, default="Stack"</strong><br><div markdown class='param'>
+Name of the model. The name is always presided with the
+model's acronym: <code>stack</code>.</p>
+<p></div><a id='stacking-models'></a><strong>models: sequence or None, default=None</strong><br><div markdown class='param'>
+Models that feed the stacking estimator. If None, it selects
+all non-ensemble models trained on the current branch.</p>
+<p></div><a id='stacking-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
+Additional keyword arguments for sklearn's stacking instance.
+The model's acronyms can be used for the <code>final_estimator</code>
+parameter.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='trainsizingregressor-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(name="Vote", models=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L984>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='voting-name'></a><strong>name: str, default="Vote"</strong><br><div markdown class='param'>
+Name of the model. The name is always presided with the
+model's acronym: <code>vote</code>.</p>
+<p></div><a id='voting-models'></a><strong>models: sequence or None, default=None</strong><br><div markdown class='param'>
+Models that feed the voting estimator. If None, it selects
+all non-ensemble models trained on the current branch.</p>
+<p></div><a id='voting-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
+Additional keyword arguments for sklearn's voting instance.
+</div></td></tr></p>
 </table>
 <p><br></p>
-<p><a name="set-params"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">set_params</strong>(**params)
-<span style="float:right">
-<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a>
-</span>
-</div>
-<p>Set the parameters of this estimator.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**params: dict</strong><br>
-Estimator parameters.
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>TrainSizingRegressor</strong><br>
-Estimator instance.
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="stacking"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">stacking</strong>(name="Stack",
-models=None, **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L728">[source]</a>
-</span>
-</div>
-<p>Add a <a href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>name: str, default="Stack"</strong><br>
-Name of the model. The name is always presided with the
-model's acronym: <code>Stack</code>.
-</p>
-<p>
-<strong>models: sequence or None, default=None</strong><br>
-Models that feed the stacking estimator. If None, it selects
-all non-ensemble models trained on the current branch.
-</p>
-<p>
-<strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingRegressor.html">StackingRegressor</a>
-instance. The <a href="../../../user_guide/models/#predefined-models">predefined model's</a>
-acronyms can be used for the <code>final_estimator</code> parameter.
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="voting"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">voting</strong>(name="Vote",
-models=None, **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L798">[source]</a>
-</span>
-</div>
-<p>Add a <a href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>name: str, default="Vote"</strong><br>
-Name of the model. The name is always presided with the
-model's acronym: <code>Vote</code>.
-</p>
-<p>
-<strong>models: sequence or None, default=None</strong><br>
-Models that feed the voting estimator. If None, it selects
-all non-ensemble models trained on the current branch.
-</p>
-<p>
-<strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html">VotingRegressor</a>
-instance.
-</td>
-</tr>
-</table>
-<p><br /><br /></p>
-<h2 id="example">Example</h2>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.training</span> <span class="kn">import</span> <span class="n">TrainSizingRegressor</span>
-
-<span class="c1"># Run the pipeline</span>
-<span class="n">trainer</span> <span class="o">=</span> <span class="n">TrainSizingRegressor</span><span class="p">(</span><span class="s2">&quot;RF&quot;</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span>
-
-<span class="c1"># Analyze the results</span>
-<span class="n">trainer</span><span class="o">.</span><span class="n">plot_learning_curve</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
-</code></pre></div>
 
 
   

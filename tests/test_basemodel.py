@@ -803,7 +803,7 @@ def test_evaluate_metric_None(dataset):
     atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("OLS")
     scores = atom.ols.evaluate(dataset=dataset)
-    assert len(scores) == 7
+    assert len(scores) == 6
 
 
 def test_evaluate_custom_metric():

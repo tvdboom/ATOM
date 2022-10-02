@@ -781,7 +781,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
         self.clear()
 
-        if self.trials is not None:
+        if self.trials is None:
             self.T.log(f"Results for {self._fullname}:", 1)
         self.T.log(f"Fit {'-' * 45}", 1)
 
@@ -2047,7 +2047,8 @@ class BaseModel(ModelPlot, ShapPlot):
                     "recall_weighted",
                 ]
             else:
-                metric = ["mae", "mape", "me", "mse", "msle", "r2", "rmse"]
+                # No msle since it fails for negative values
+                metric = ["mae", "mape", "me", "mse", "r2", "rmse"]
 
         scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):
