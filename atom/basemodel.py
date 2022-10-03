@@ -570,6 +570,8 @@ class BaseModel(ModelPlot, ShapPlot):
             # Get parameter suggestions and store rounded values in user_attrs
             params = self._get_parameters(trial)
             trial.set_user_attr("params", params)
+            for key, value in self._ht["tags"].items():
+                trial.set_user_attr(key, value)
 
             # Create estimator instance with trial specific hyperparameters
             estimator = self._get_est(

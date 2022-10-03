@@ -49,7 +49,7 @@ SEQUENCE = (list, tuple, np.ndarray, pd.Series)
 
 # Groups of variable types for type hinting
 INT = Union[int, np.integer]
-FLOAT = Union[float, np.float]
+FLOAT = Union[float, np.floating]
 SCALAR = Union[INT, FLOAT]
 SEQUENCE_TYPES = Union[SEQUENCE]
 PANDAS_TYPES = Union[pd.Series, pd.DataFrame]

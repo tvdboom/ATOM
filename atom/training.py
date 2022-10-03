@@ -296,7 +296,7 @@ class DirectClassifier(Direct):
           model's predefined distributions. Read more in the
           [user guide][hyperparameter-tuning].
         - **tags: dict, sequence or None, default=None**<br>
-          Custom tags for the model's [mlflow run][tracking].
+          Custom tags for the model's trial and [mlflow run][tracking].
         - **\*\*kwargs**<br>
           Additional Keyword arguments for the constructor of the
           [study][] class or the [optimize][] method.
@@ -508,7 +508,7 @@ class DirectRegressor(Direct):
           model's predefined distributions. Read more in the
           [user guide][hyperparameter-tuning].
         - **tags: dict, sequence or None, default=None**<br>
-          Custom tags for the model's [mlflow run][tracking].
+          Custom tags for the model's trial and [mlflow run][tracking].
         - **\*\*kwargs**<br>
           Additional Keyword arguments for the constructor of the
           [study][] class or the [optimize][] method.
@@ -722,7 +722,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
           model's predefined distributions. Read more in the
           [user guide][hyperparameter-tuning].
         - **tags: dict, sequence or None, default=None**<br>
-          Custom tags for the model's [mlflow run][tracking].
+          Custom tags for the model's trial and [mlflow run][tracking].
         - **\*\*kwargs**<br>
           Additional Keyword arguments for the constructor of the
           [study][] class or the [optimize][] method.
@@ -964,7 +964,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
           model's predefined distributions. Read more in the
           [user guide][hyperparameter-tuning].
         - **tags: dict, sequence or None, default=None**<br>
-          Custom tags for the model's [mlflow run][tracking].
+          Custom tags for the model's trial and [mlflow run][tracking].
         - **\*\*kwargs**<br>
           Additional Keyword arguments for the constructor of the
           [study][] class or the [optimize][] method.
@@ -1212,7 +1212,7 @@ class TrainSizingClassifier(TrainSizing):
           model's predefined distributions. Read more in the
           [user guide][hyperparameter-tuning].
         - **tags: dict, sequence or None, default=None**<br>
-          Custom tags for the model's [mlflow run][tracking].
+          Custom tags for the model's trial and [mlflow run][tracking].
         - **\*\*kwargs**<br>
           Additional Keyword arguments for the constructor of the
           [study][] class or the [optimize][] method.
@@ -1515,7 +1515,7 @@ class TrainSizingRegressor(TrainSizing):
           model's predefined distributions. Read more in the
           [user guide][hyperparameter-tuning].
         - **tags: dict, sequence or None, default=None**<br>
-          Custom tags for the model's [mlflow run][tracking].
+          Custom tags for the model's trial and [mlflow run][tracking].
         - **\*\*kwargs**<br>
           Additional Keyword arguments for the constructor of the
           [study][] class or the [optimize][] method.

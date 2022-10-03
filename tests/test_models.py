@@ -15,7 +15,6 @@ from optuna.distributions import IntDistribution
 from sklearn.ensemble import RandomForestRegressor
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.models import MODELS
 from atom.pipeline import Pipeline
 
 from .conftest import X_bin, X_class, X_reg, y_bin, y_class, y_reg
@@ -32,22 +31,25 @@ def test_custom_models(model):
 def test_all_models_binary():
     """Assert that all models work with binary classification."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.2, n_jobs=-1, random_state=1)
-    atom.run(models=None, n_trials=1)
-    assert len(atom.models) + len(atom.errors) == 30
+    atom.run(models="!CatNB", n_trials=1)
+    assert not atom.errors
+    assert "CatNB" not in atom.models
 
 
 def test_all_models_multiclass():
     """Assert that all models work with multiclass classification."""
     atom = ATOMClassifier(X_class, y_class, n_rows=0.4, n_jobs=-1, random_state=1)
-    atom.run(models=None, n_trials=1)
-    assert len(atom.models) + len(atom.errors) == 30
+    atom.run(models="!CatNB", n_trials=1)
+    assert not atom.errors
+    assert "CatNB" not in atom.models
 
 
 def test_all_models_regression():
     """Assert that all models work with regression."""
     atom = ATOMRegressor(X_reg, y_reg, n_rows=0.2, n_jobs=-1, random_state=1)
-    atom.run(models=None, n_trials=1)
-    assert len(atom.models) + len(atom.errors) == 28
+    atom.run(models="!CatNB", n_trials=1)
+    assert not atom.errors
+    assert "CatNB" not in atom.models
 
 
 def test_models_sklearnex_classification():
@@ -68,7 +70,8 @@ def test_models_sklearnex_regression():
 def test_models_cuml():
     """Assert that all models work with cuml."""
     atom = ATOMRegressor(X_reg, y_reg, device="gpu", engine="cuml", random_state=1)
-    atom.run(models=None, n_trials=1)
+    with pytest.raises(PermissionError):
+        atom.run(models=["!CatB", "!LGB", "!XGB"], n_trials=1)
 
 
 def test_CatNB():

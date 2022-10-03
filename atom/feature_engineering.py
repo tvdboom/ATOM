@@ -229,20 +229,6 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed feature set.
 
         """
-
-        def encode_variable(idx, name, values, min_val=0, max_val=None):
-            """Encode a feature in an ordinal or cyclic fashion."""
-            if self.encoding_type.lower() == "ordinal" or max_val is None:
-                self.log(f"   --> Creating feature {name}.", 2)
-                X.insert(idx, name, values)
-            elif self.encoding_type.lower() == "cyclic":
-                self.log(f"   --> Creating cyclic feature {name}.", 2)
-                pos = 2 * np.pi * (values - min_val) / np.array(max_val)
-                X.insert(idx, f"{name}_sin", np.sin(pos))
-                X.insert(idx + 1, f"{name}_cos", np.cos(pos))
-
-            return X.copy()  # Avoid dataframe fragmentation
-
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
@@ -318,13 +304,18 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                         min_val, max_val = 1, 4
 
                 # Add every new feature after the previous one
-                X = encode_variable(
-                    idx=X.columns.get_loc(name),
-                    name=f"{name}_{fx}",
-                    values=values,
-                    min_val=min_val,
-                    max_val=max_val,
-                )
+                new_name = f"{name}_{fx}"
+                idx = X.columns.get_loc(name)
+                if self.encoding_type.lower() == "ordinal" or max_val is None:
+                    self.log(f"   --> Creating feature {new_name}.", 2)
+                    X.insert(idx, new_name, values)
+                elif self.encoding_type.lower() == "cyclic":
+                    self.log(f"   --> Creating cyclic feature {new_name}.", 2)
+                    pos = 2 * np.pi * (values - min_val) / np.array(max_val)
+                    X.insert(idx, f"{new_name}_sin", np.sin(pos))
+                    X.insert(idx + 1, f"{new_name}_cos", np.cos(pos))
+
+                X = X.copy()  # Avoid dataframe fragmentation
 
             # Drop the original datetime column
             if self.drop_columns:
@@ -1535,12 +1526,17 @@ class FeatureSelector(
             for col in list(dict.fromkeys(to_drop)):
                 corr_feature = corr[col].drop(col).index
                 corr_value = corr[col].drop(col).round(4).astype(str)
-                self.collinear = self.collinear.append(
-                    {
-                        "drop": col,
-                        "corr_feature": ", ".join(corr_feature),
-                        "corr_value": ", ".join(corr_value),
-                    },
+                self.collinear = pd.concat(
+                    [
+                        self.collinear,
+                        pd.DataFrame(
+                            {
+                                "drop": [col],
+                                "corr_feature": [", ".join(corr_feature)],
+                                "corr_value": [", ".join(corr_value)],
+                            }
+                        )
+                    ],
                     ignore_index=True,
                 )
 

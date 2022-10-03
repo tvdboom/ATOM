@@ -76,16 +76,12 @@ def test_only_task_models():
     with pytest.raises(ValueError, match=".*can't perform classification.*"):
         trainer.run(bin_train, bin_test)
 
-    trainer = DirectRegressor("LDA", random_state=1)  # Only classification
-    with pytest.raises(ValueError, match=".*can't perform regression.*"):
-        trainer.run(reg_train, reg_test)
 
-
-def test_reruns():
-    """Assert that rerunning a trainer works."""
-    trainer = DirectClassifier(["lr", "lda"], random_state=1)
-    trainer.run(bin_train, bin_test)
-    trainer.run(bin_train, bin_test)
+def test_inc_and_exc():
+    """Assert that an error is raised when models are included and excluded."""
+    trainer = DirectClassifier(["LR", "!LGB"], random_state=1)
+    with pytest.raises(ValueError, match=".*include or exclude.*"):
+        trainer.run(bin_train, bin_test)
 
 
 def test_duplicate_models():
@@ -93,6 +89,13 @@ def test_duplicate_models():
     trainer = DirectClassifier(["lr", "LR", "lgb"], random_state=1)
     with pytest.raises(ValueError, match=".*duplicate models.*"):
         trainer.run(bin_train, bin_test)
+
+
+def test_reruns():
+    """Assert that rerunning a trainer works."""
+    trainer = DirectClassifier(["lr", "lda"], random_state=1)
+    trainer.run(bin_train, bin_test)
+    trainer.run(bin_train, bin_test)
 
 
 def test_default_metric():
@@ -196,11 +199,25 @@ def test_est_params_for_fit():
     """Assert that est_params is used for fit if ends in _fit."""
     trainer = DirectClassifier(
         models="LGB",
-        est_params={"n_estimators": 100, "early_stopping_rounds_fit": 2},
+        est_params={"feature_name_fit": [f"x{i}" for i in range(30)]},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert len(trainer.lgb.evals[0]) < 100
+    assert not trainer.errors
+
+
+def test_custom_tags():
+    """Assert that custom tags can be defined."""
+    trainer = DirectClassifier(
+        models="LR",
+        n_trials=1,
+        ht_params={"tags": {"tag1": 1, "LR": {"tag2": 2}}},
+        experiment="test",
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert trainer.lr.best_trial.user_attrs["tag1"] == 1
+    assert trainer.lr.best_trial.user_attrs["tag2"] == 2
 
 
 def test_custom_distributions():

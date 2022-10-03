@@ -321,7 +321,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             kwargs["objective"] = self._metric[0]
         elif kwargs.get("objective"):
             kwargs["objective"] = CustomDict(
-                {(s := get_custom_scorer(m)).name: s for m in [kwargs["objective"]]}
+                {(s := get_custom_scorer(kwargs["objective"])).name: s}
             )
             if not self._metric:
                 self._metric = kwargs["objective"]  # Update the pipeline's metric
@@ -355,14 +355,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
                 self._add_transformer(est)
                 self.log(f" --> Adding {est.__class__.__name__} to the pipeline...", 2)
             else:
+                est.acronym = create_acronym(est.__class__.__name__)
                 for key, value in MODELS.items():
                     m = value(self, fast_init=True)
                     if m._est_class.__name__ == est._component_obj.__class__.__name__:
                         est.acronym = key
-
-                # If it's not any of the predefined models, create a new acronym
-                if not hasattr(est, "acronym"):
-                    est.acronym = create_acronym(est.__class__.__name__)
 
                 model = CustomModel(self, estimator=est)
                 model._estimator = model.est
@@ -739,8 +736,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
 
-        memory = self.dataset.memory_usage(deep=True).sum()
-        if memory < 1e6:
+        if (memory := self.dataset.memory_usage(deep=True).sum()) < 1e6:
             self.log(f"Memory: {memory / 1e3:.2f} kB", _vb)
         else:
             self.log(f"Memory: {memory / 1e6:.2f} MB", _vb)

@@ -542,7 +542,8 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
                     self.log(f" --> Removing {diff} samples from class: {key}.", 2)
 
             # Add the new samples to the old dataframe
-            X, y = X.append(X_new), y.append(y_new)
+            X = pd.concat([X, X_new], ignore_index=True)
+            y = pd.concat([y, y_new], ignore_index=True)
 
         # Add the estimator as attribute to the instance
         setattr(self, estimator.__class__.__name__.lower(), estimator)

@@ -9,7 +9,7 @@ Description: Unit tests for atom.py
 
 import glob
 from unittest.mock import patch
-
+from sklearn.datasets import make_classification
 import numpy as np
 import pandas as pd
 import pytest
@@ -228,6 +228,17 @@ def test_automl_binary_classification(cls):
     assert atom.models == ["Tree", "SVM"]
 
 
+@patch("evalml.AutoMLSearch")
+def test_automl_custom_objective(cls):
+    """Assert that the automl method works for a custom objective."""
+    pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
+    cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.automl(objective="r2")
+    cls.assert_called_once()
+
+
 def test_automl_invalid_objective():
     """Assert that an error is raised when the provided objective is invalid."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
@@ -346,14 +357,16 @@ def test_shrink_exclude_columns():
 
 def test_stats_mixed_sparse_dense():
     """Assert that stats show new information for mixed datasets."""
-    atom = ATOMClassifier(X_sparse, y10, random_state=1)
-    atom.apply(lambda x: x + 1, columns=0)
+    X = X_sparse.copy()
+    X["dense column"] = 2
+
+    atom = ATOMClassifier(X, y10, random_state=1)
     atom.stats()
 
 
 def test_status():
     """Assert that the status method prints an overview of the instance."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom = ATOMClassifier(*make_classification(100000), verbose=2, random_state=1)
     atom.status()
 
 
@@ -797,10 +810,7 @@ def test_models_and_metric_are_updated():
 def test_errors_are_removed():
     """Assert that the errors are removed if subsequent runs are successful."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(
-        models=["BNB", "Tree"],
-        ht_params={"distributions": ["max_depth"]},  # Fails for BNB
-    )
+    atom.run(["BNB", "Tree"], ht_params={"distributions": "max_depth"})  # Fails for BNB
     atom.run("BNB")  # Runs correctly
     assert not atom.errors  # Errors should be empty
 

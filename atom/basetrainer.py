@@ -125,55 +125,64 @@ class BaseTrainer(BaseTransformer, BaseRunner):
 
         # If left to default, select all predefined models per task
         if self._models is None:
-            if self.goal == "class":
-                models = [m(self) for m in MODELS.values() if "class" in m._estimators]
-            else:
-                models = [m(self) for m in MODELS.values() if "reg" in m._estimators]
+            self._models = CustomDict(
+                {k: v(self) for k, v in MODELS.items() if self.goal in v._estimators}
+            )
         else:
-            models = []
+            inc, exc = [], []
             for m in lst(self._models):
                 if isinstance(m, str):
-                    # Get the acronym from the called model
-                    names = [n for n in MODELS if m.lower().startswith(n.lower())]
-                    if not names:
-                        raise ValueError(
-                            f"Unknown model: {m}. Choose from: {', '.join(MODELS)}."
-                        )
+                    if m.startswith("!"):
+                        exc.append(m[1:])
                     else:
-                        acronym = names[0]
+                        names = [n for n in MODELS if m.lower().startswith(n.lower())]
+                        if not names:
+                            raise ValueError(
+                                f"Unknown model: {m}. Choose from: {', '.join(MODELS)}."
+                            )
+                        else:
+                            acronym = names[0]
 
-                    # Check if packages for non-sklearn models are available
-                    packages = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
-                    if acronym in packages and not find_spec(packages[acronym]):
-                        raise ModuleNotFoundError(
-                            f"Unable to import the {packages[acronym]} package. "
-                            f"Install it using: pip install {packages[acronym]}"
-                        )
+                        # Check if libraries for non-sklearn models are available
+                        libs = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
+                        if acronym in libs and not find_spec(libs[acronym]):
+                            raise ModuleNotFoundError(
+                                f"Unable to import the {libs[acronym]} package. "
+                                f"Install it using: pip install {libs[acronym]}"
+                            )
 
-                    models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
+                        inc.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 
-                    # Check for regression/classification-only models
-                    if self.goal == "class" and self.goal not in models[-1]._estimators:
-                        raise ValueError(
-                            f"The {acronym} model can't perform classification tasks!"
-                        )
-                    elif self.goal == "reg" and self.goal not in models[-1]._estimators:
-                        raise ValueError(
-                            f"The {acronym} model can't perform regression tasks!"
-                        )
+                        # Check for regression/classification-only models
+                        if self.goal not in inc[-1]._estimators:
+                            raise ValueError(
+                                f"The {acronym} model can't perform {self.goal} tasks!"
+                            )
 
                 else:  # Model is a custom estimator
-                    models.append(CustomModel(self, estimator=m))
+                    inc.append(CustomModel(self, estimator=m))
 
-        names = [m.name for m in models]
-        if len(set(names)) != len(names):
-            raise ValueError(
-                "Invalid value for the models parameter. It seems there are "
-                "duplicate models. Add a tag to a model's acronym to train two "
-                "different models with the same estimator, e.g. models=['LR1', 'LR2']."
-            )
-
-        self._models = CustomDict({name: model for name, model in zip(names, models)})
+            if inc and exc:
+                raise ValueError(
+                    "Invalid value for the models parameter. You can either "
+                    "include or exclude models, not combinations of these."
+                )
+            elif inc:
+                names = [m.name for m in inc]
+                if len(set(names)) != len(names):
+                    raise ValueError(
+                        "Invalid value for the models parameter. There are duplicate "
+                        "models. Add a tag to a model's acronym to train two different "
+                        "models with the same estimator, e.g. models=['LR1', 'LR2']."
+                    )
+                self._models = CustomDict({n: m for n, m in zip(names, inc)})
+            elif exc:
+                self._models = CustomDict(
+                    {
+                        k: v(self) for k, v in MODELS.items()
+                        if self.goal in v._estimators and v.acronym not in exc
+                    }
+                )
 
         # Define scorer ============================================ >>
 

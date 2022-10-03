@@ -276,8 +276,8 @@ def test_results_property_dropna():
 
 def test_results_property_successive_halving():
     """Assert that the results works for successive halving runs."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.successive_halving(["LR", "Tree"])
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.successive_halving(["OLS", "Tree"])
     assert atom.results.shape == (3, 4)
     assert list(atom.results.index.get_level_values(0)) == [0.5, 0.5, 1.0]
 
