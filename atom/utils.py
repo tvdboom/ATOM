@@ -73,39 +73,6 @@ DF_ATTRS = (
     "ndim",
 )
 
-# List of custom metric acronyms for the evaluate method
-CUSTOM_METRICS = (
-    "cm",
-    "tn",
-    "fp",
-    "fn",
-    "tp",
-    "lift",
-    "fpr",
-    "tpr",
-    "fnr",
-    "tnr",
-    "sup",
-)
-
-# Acronyms for some common scorers
-SCORERS_ACRONYMS = dict(
-    ap="average_precision",
-    ba="balanced_accuracy",
-    auc="roc_auc",
-    logloss="neg_log_loss",
-    ev="explained_variance",
-    me="max_error",
-    mae="neg_mean_absolute_error",
-    mse="neg_mean_squared_error",
-    rmse="neg_root_mean_squared_error",
-    msle="neg_mean_squared_log_error",
-    mape="neg_mean_absolute_percentage_error",
-    medae="neg_median_absolute_error",
-    poisson="neg_mean_poisson_deviance",
-    gamma="neg_mean_gamma_deviance",
-)
-
 
 # Classes ========================================================== >>
 
@@ -230,15 +197,11 @@ class CatBMetric:
         else:
             y_pred = approxes[0]
 
+        kwargs = {}
         if "sample_weight" in signature(self.scorer._score_func).parameters:
-            score = self.scorer._score_func(
-                targets,
-                y_pred,
-                sample_weight=weight,
-                **self.scorer._kwargs,
-            )
-        else:
-            score = self.scorer._score_func(targets, y_pred, **self.scorer._kwargs)
+            kwargs["sample_weight"] = weight
+
+        score = self.scorer._score_func(targets, y_pred, **self.scorer._kwargs)
 
         return self.scorer._sign * score, 1.0
 
@@ -297,15 +260,11 @@ class LGBMetric:
                 y_pred = y_pred.reshape(len(np.unique(y_true)), len(y_true)).T
                 y_pred = np.argmax(y_pred, axis=1)
 
+        kwargs = {}
         if "sample_weight" in signature(self.scorer._score_func).parameters:
-            score = self.scorer._score_func(
-                y_true,
-                y_pred,
-                sample_weight=weight,
-                **self.scorer._kwargs,
-            )
-        else:
-            score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs)
+            kwargs["sample_weight"] = weight
+
+        score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs, **kwargs)
 
         return self.scorer.name, self.scorer._sign * score, True
 
@@ -484,15 +443,11 @@ class TrialsCallback:
             self.T.log(self._table.print_line(), 2)
 
     def __call__(self, study: Study, trial: FrozenTrial):
+        # The trial values are None when it fails
         if len(self.T._metric) == 1:
-            score = trial.value
+            score = [trial.value or np.NaN]
         else:
-            score = trial.values
-
-        if score is None:  # Trial failed
-            score = [np.NaN] * len(self.T._metric)
-        else:
-            score = lst(score)
+            score = trial.values or [np.NaN] * len(self.T._metric)
 
         if trial.state.name == "PRUNED" and self.model.acronym == "XGB":
             # XGBoost's eval_metric minimizes the function
@@ -1074,17 +1029,6 @@ def variable_return(X, y):
         return X, y
 
 
-def catch_return(output):
-    """Get not None arguments from transformer output."""
-    if isinstance(output, tuple):
-        if output[0] is None:
-            return output[1]
-        elif output[1] is None:
-            return output[0]
-
-    return output
-
-
 def is_sparse(df):
     """Check if the dataframe contains any sparse columns."""
     return any(pd.api.types.is_sparse(df[col]) for col in df)
@@ -1111,14 +1055,8 @@ def get_versions(models: CustomDict) -> dict:
     """Get the versions of atom and the models' packages."""
     versions = {"atom": __version__}
     for name, model in models.items():
-        try:
-            module = model.estimator.__module__.split(".")[0]
-            if module in sys.modules:
-                versions[module] = sys.modules[module].__version__
-            else:
-                versions[module] = import_module(module).__version__
-        except (ImportError, AttributeError):
-            continue
+        module = model.estimator.__module__.split(".")[0]
+        versions[module] = sys.modules.get(module, import_module(module)).__version__
 
     return versions
 
@@ -1456,7 +1394,22 @@ def get_custom_scorer(metric):
 
     """
     if isinstance(metric, str):
-        metric = metric.lower()
+        custom_acronyms = dict(
+            ap="average_precision",
+            ba="balanced_accuracy",
+            auc="roc_auc",
+            logloss="neg_log_loss",
+            ev="explained_variance",
+            me="max_error",
+            mae="neg_mean_absolute_error",
+            mse="neg_mean_squared_error",
+            rmse="neg_root_mean_squared_error",
+            msle="neg_mean_squared_log_error",
+            mape="neg_mean_absolute_percentage_error",
+            medae="neg_median_absolute_error",
+            poisson="neg_mean_poisson_deviance",
+            gamma="neg_mean_gamma_deviance",
+        )
 
         custom_scorers = dict(
             tn=true_negatives,
@@ -1470,12 +1423,13 @@ def get_custom_scorer(metric):
             mcc=matthews_corrcoef,
         )
 
+        metric = metric.lower()
         if metric in get_scorer_names():
             scorer = get_scorer(metric)
             scorer.name = metric
-        elif metric in SCORERS_ACRONYMS:
-            scorer = get_scorer(SCORERS_ACRONYMS[metric])
-            scorer.name = SCORERS_ACRONYMS[metric]
+        elif metric in custom_acronyms:
+            scorer = get_scorer(custom_acronyms[metric])
+            scorer.name = custom_acronyms[metric]
         elif metric in custom_scorers:
             scorer = make_scorer(custom_scorers[metric])
             scorer.name = scorer._score_func.__name__
@@ -1829,7 +1783,7 @@ def transform_one(transformer, X=None, y=None, method="transform"):
         elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
-    output = catch_return(getattr(transformer, method)(*args))
+    output = getattr(transformer, method)(*args)
 
     # Transform can return X, y or both
     if isinstance(output, tuple):

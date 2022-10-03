@@ -30,11 +30,10 @@ from .conftest import (
 def test_getstate_and_setstate():
     """Assert that versions are checked and a warning raised."""
     atom = ATOMClassifier(X_bin, y_bin, warnings=True)
-    atom.run(["LR", "XGB"])
+    atom.run("LR")
     atom.save("atom")
 
-    sys.modules.pop("sklearn")
-    sys.modules["xgboost"].__version__ = "1.0.0"  # Fake version
+    sys.modules["sklearn"].__version__ = "1.0.0"  # Fake version
     with pytest.warns(Warning, match=".*while the version in this environment.*"):
         ATOMLoader("atom")
 

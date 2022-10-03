@@ -155,11 +155,18 @@ def test_hyperparameter_tuning_with_plot():
     """Assert that you can plot the hyperparameter tuning as it runs."""
     atom = ATOMClassifier(X_bin, y_bin, n_jobs=-1, random_state=1)
     atom.run(
-        models=["lSVM", "SVM", "MLP"],
-        n_trials=(17, 17, 20),
+        models=["LDA", "lSVM", "SVM", "MLP"],
+        n_trials=(17, 17, 17, 20),
         ht_params={"plot": True},
     )
     assert not atom.errors
+
+
+def test_xgb_optimizes_score():
+    """Assert that the XGB model optimizes the score."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("XGB", n_trials=10, ht_params={"pruner": PatientPruner(None, patience=2)})
+    assert atom.xgb.trials["score"].sum() > 0  # All scores are positive
 
 
 def test_empty_study():

@@ -104,7 +104,7 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
     - For cuML: CUDA & NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5
     - For sklearnex: Intel® GPU drivers.
 * Libraries:
-    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with atom)
+    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with ATOM) and [dpctl](https://github.com/IntelPython/dpctl)>=0.11.3
     - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=22.08
 
 ### Supported estimators

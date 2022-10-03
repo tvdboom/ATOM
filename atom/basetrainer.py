@@ -156,7 +156,7 @@ class BaseTrainer(BaseTransformer, BaseRunner):
                         # Check for regression/classification-only models
                         if self.goal not in inc[-1]._estimators:
                             raise ValueError(
-                                f"The {acronym} model can't perform {self.goal} tasks!"
+                                f"The {acronym} model can't perform {self.task} tasks!"
                             )
 
                 else:  # Model is a custom estimator

@@ -2023,8 +2023,7 @@ class ModelPlot(BasePlot):
         # Create dataframe with columns as indices to plot with barh
         df = pd.DataFrame()
         for m in models:
-            fi = get_feature_importance(m.estimator)
-            if fi is None:
+            if (fi := get_feature_importance(m.estimator)) is None:
                 raise ValueError(
                     f"Invalid value for the models parameter. The {m._fullname}'s "
                     f"estimator {m.estimator.__class__.__name__} has no "
@@ -3483,19 +3482,10 @@ class ModelPlot(BasePlot):
             else:
                 return get_best_score(m, metric)
 
-        def get_bootstrap(m):
-            """Get the bootstrap results for a specific metric."""
-            # Use getattr since ensembles don't have the attribute
-            if isinstance(getattr(m, "score_bootstrap", None), np.ndarray):
-                if len(self._metric) == 1:
-                    return m.score_bootstrap
-                else:
-                    return m.score_bootstrap[metric]
-
         def std(m):
             """Get the standard deviation of the bootstrap results."""
-            if isinstance(metric, int) and getattr(m, "std_bootstrap", None):
-                return lst(m.std_bootstrap)[metric]
+            if m.bootstrap is not None:
+                return m.bootstrap.iloc[:, metric].std()
             else:
                 return 0
 
@@ -3510,14 +3500,14 @@ class ModelPlot(BasePlot):
         models = sorted(models, key=lambda m: get_metric(m, metric))
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]  # First color
 
-        all_bootstrap = all(isinstance(get_bootstrap(m), np.ndarray) for m in models)
+        all_bootstrap = all(m.score_bootstrap for m in models)
         for i, m in enumerate(models):
             names.append(m.name)
             if isinstance(metric, str):
                 ax.barh(y=i, width=getattr(m, metric), height=0.5, color=color)
             elif all_bootstrap:
                 ax.boxplot(
-                    x=get_bootstrap(m),
+                    x=[m.bootstrap.iloc[:, metric]],
                     vert=False,
                     positions=[i],
                     widths=0.5,
@@ -3532,8 +3522,8 @@ class ModelPlot(BasePlot):
                     color=color,
                 )
 
-        min_lim = 0.95 * (get_metric(models[0], metric) - std(models[0]))
-        max_lim = 1.01 * (get_metric(models[-1], metric) + std(models[-1]))
+        min_lim = 0.9 * (get_metric(models[0], metric) - std(models[0]))
+        max_lim = 1.05 * (get_metric(models[-1], metric) + std(models[-1]))
         ax.set_yticks(range(len(models)))
         ax.set_yticklabels(names)
 

@@ -45,7 +45,7 @@ def test_style_property():
 
 def test_style_setter():
     """Assert that the style setter works as intended."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=".*the style parameter.*"):
         BasePlot().style = "unknown"
 
 
@@ -67,7 +67,7 @@ def test_title_fontsize_property():
 
 def test_title_fontsize_setter():
     """Assert that the title_fontsize setter works as intended."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=".*the title_fontsize parameter.*"):
         BasePlot().title_fontsize = 0
 
 
@@ -78,7 +78,7 @@ def test_label_fontsize_property():
 
 def test_label_fontsize_setter():
     """Assert that the label_fontsize setter works as intended."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=".*the label_fontsize parameter.*"):
         BasePlot().label_fontsize = 0
 
 
@@ -89,7 +89,7 @@ def test_tick_fontsize_property():
 
 def test_tick_fontsize_setter():
     """Assert that the tick_fontsize setter works as intended."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=".*the tick_fontsize parameter.*"):
         BasePlot().tick_fontsize = 0
 
 
@@ -169,7 +169,11 @@ def test_plot_components(show):
     """Assert that the plot_components method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="pca", n_features=10)
-    pytest.raises(ValueError, atom.plot_components, show=0)
+
+    # Invalid show parameter
+    with pytest.raises(ValueError, match=".*Value should be >0.*"):
+        atom.plot_components(show=0, display=False)
+
     atom.plot_components(show=show, display=False)
 
 
@@ -199,7 +203,11 @@ def test_plot_rfecv(scoring):
 def test_plot_correlation():
     """Assert that the plot_correlation method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.plot_correlation, method="invalid")
+
+    # Invalid method
+    with pytest.raises(ValueError, match=".*the method parameter.*"):
+        atom.plot_correlation(method="invalid", display=False)
+
     atom.plot_correlation(display=False)
 
 
@@ -207,7 +215,11 @@ def test_plot_correlation():
 def test_plot_distribution(columns):
     """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    pytest.raises(ValueError, atom.plot_distribution, columns=2, show=-1, display=False)
+
+    # Invalid show parameter
+    with pytest.raises(ValueError, match=".*the show parameter.*"):
+        atom.plot_distribution(columns=2, show=-1, display=False)
+
     atom.plot_distribution(columns=columns, distributions="pearson3", display=False)
 
 
@@ -215,7 +227,11 @@ def test_plot_distribution(columns):
 def test_plot_ngrams(ngram):
     """Assert that the plot_ngrams method work as intended."""
     atom = ATOMClassifier(X_text, y10, random_state=1)
-    pytest.raises(ValueError, atom.plot_ngrams, ngram=6)
+
+    # Invalid ngram parameter
+    with pytest.raises(ValueError, match=".*the ngram parameter.*"):
+        atom.plot_ngrams(ngram=6, display=False)
+
     atom.plot_ngrams(ngram=ngram, display=False)  # When corpus is str
     atom.tokenize()
     atom.plot_ngrams(ngram=ngram, display=False)  # When corpus are tokens
@@ -230,9 +246,12 @@ def test_plot_qq():
 def test_plot_scatter_matrix():
     """Assert that the plot_scatter_matrix method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with atom.canvas():
-        with pytest.raises(PermissionError, match=".*can not be called from.*"):
+
+    # Can't be called from a canvas
+    with atom.canvas(display=False):
+        with pytest.raises(PermissionError, match=".*from a canvas.*"):
             atom.plot_scatter_matrix()
+
     atom.plot_scatter_matrix(columns=[0, 1, 2], display=False)
 
 
@@ -251,7 +270,11 @@ def test_plot_calibration():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_calibration)
     atom.run(["Tree", "SVM"], metric="f1")
-    pytest.raises(ValueError, atom.plot_calibration, n_bins=4)
+
+    # Invalid n_bins parameter
+    with pytest.raises(ValueError, match=".*the n_bins parameter.*"):
+        atom.plot_calibration(n_bins=4, display=False)
+
     atom.plot_calibration(display=False)
     atom.tree.plot_calibration(display=False)
 
@@ -262,15 +285,26 @@ def test_plot_confusion_matrix():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_confusion_matrix)
     atom.run(["RF", "LGB"])
-    pytest.raises(ValueError, atom.plot_confusion_matrix, dataset="invalid")
-    pytest.raises(ValueError, atom.plot_confusion_matrix, dataset="holdout")
+
+    # Invalid dataset parameter
+    with pytest.raises(ValueError, match=".*from: train, test or holdout.*"):
+        atom.plot_confusion_matrix(dataset="invalid", display=False)
+
+    # No holdout data set
+    with pytest.raises(ValueError, match=".*No holdout.*"):
+        atom.plot_confusion_matrix(dataset="holdout", display=False)
+
     atom.plot_confusion_matrix(display=False)
     atom.lgb.plot_confusion_matrix(normalize=True, display=False)
 
     # For multiclass classification tasks
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run(["RF", "LGB"])
-    pytest.raises(NotImplementedError, atom.plot_confusion_matrix)
+
+    # Not available for multiclass
+    with pytest.raises(NotImplementedError, match=".*not support the comparison.*"):
+        atom.plot_confusion_matrix(display=False)
+
     atom.lgb.plot_confusion_matrix(normalize=True, display=False)
 
 
@@ -278,7 +312,16 @@ def test_plot_det():
     """Assert that the plot_det method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_det)
-    atom.run(["LGB", "SVM"], metric="f1")
+    atom.run(["LGB", "SVM"])
+
+    # No holdout data set
+    with pytest.raises(ValueError, match=".*No holdout data set.*"):
+        atom.lgb.plot_det(dataset="holdout", display=False)
+
+    # Invalid dataset parameter
+    with pytest.raises(ValueError, match=".*from: train, test, both.*"):
+        atom.lgb.plot_det(dataset="invalid", display=False)
+
     atom.plot_det(display=False)
     atom.lgb.plot_det(display=False)
 
@@ -286,14 +329,17 @@ def test_plot_det():
 def test_plot_evals():
     """Assert that the plot_evals method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"], metric="f1")
+    atom.run(["LR", "LGB", "MLP"], metric="f1")
 
+    # No holdout allowed in dataset
     with pytest.raises(ValueError, match=".*Choose from: train, test or both.*"):
         atom.lgb.plot_evals(dataset="holdout")
 
+    # No in-training validation
     with pytest.raises(ValueError, match=".*no in-training validation.*"):
-        atom.lr.plot_evals()
+        atom.lr.plot_evals(display=False)
 
+    atom.plot_evals(models=["LGB", "MLP"], display=False)
     atom.lgb.plot_evals(display=False)
 
 
@@ -310,15 +356,18 @@ def test_plot_feature_importance():
     """Assert that the plot_feature_importance method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.plot_feature_importance)
-    atom.run(
-        models=["KNN", "Tree", "Bag", "Bag2"],
-        est_params={"bag2": {"base_estimator": LogisticRegression()}},
-    )
-    with pytest.raises(ValueError, match=".*has no feature.*"):
-        atom.knn.plot_feature_importance()
+    atom.run(["KNN", "Tree", "Bag"])
 
-    atom.plot_feature_importance(models=["Tree", "Bag", "Bag2"], display=False)
-    atom.tree.plot_feature_importance(display=False)
+    # Show is invalid
+    with pytest.raises(ValueError, match=".*value for the show parameter.*"):
+        atom.tree.plot_feature_importance(show=-1, display=False)
+
+    # Model has no feature importance values
+    with pytest.raises(ValueError, match=".*has no feature.*"):
+        atom.knn.plot_feature_importance(display=False)
+
+    atom.plot_feature_importance(models=["Tree", "Bag"], display=False)
+    atom.tree.plot_feature_importance(show=5, display=False)
 
 
 def test_plot_gains():
@@ -336,6 +385,11 @@ def test_plot_learning_curve(metric):
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_learning_curve)
     atom.train_sizing(["Tree", "LGB"], metric=metric, n_bootstrap=4)
+
+    # Invalid metric parameter
+    with pytest.raises(ValueError, match=".*for the metric parameter.*"):
+        atom.plot_learning_curve(metric="invalid", display=False)
+
     atom.plot_learning_curve(display=False)
     atom.train_sizing(["Tree", "LGB"], metric=metric)
     atom.plot_learning_curve(display=False)
@@ -394,8 +448,8 @@ def test_plot_partial_dependence_binary():
 
     del atom.branch
     atom.plot_partial_dependence(columns=[0, 1, 2], kind="both", display=False)
-    atom.lgb.plot_feature_importance(show=5, display=False)
-    atom.knn.plot_partial_dependence(display=False)
+    atom.knn.plot_partial_dependence(display=False)  # No feature_importance
+    atom.lgb.plot_partial_dependence(display=False)  # Has feature_importance
 
 
 @pytest.mark.parametrize("columns", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
@@ -420,8 +474,11 @@ def test_plot_permutation_importance():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_permutation_importance)
     atom.run(["Tree", "LGB"], metric="f1")
-    pytest.raises(ValueError, atom.plot_permutation_importance, show=0)
-    pytest.raises(ValueError, atom.plot_permutation_importance, n_repeats=0)
+
+    # Invalid n_repeats parameter
+    with pytest.raises(ValueError, match=".*the n_repeats parameter.*"):
+        atom.plot_permutation_importance(n_repeats=0, display=False)
+
     atom.plot_permutation_importance(display=False)
     atom.lgb.plot_permutation_importance(display=False)
 
@@ -429,7 +486,7 @@ def test_plot_permutation_importance():
 def test_plot_pipeline():
     """Assert that the plot_pipeline method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
+    atom.run("LGB")
     atom.plot_pipeline(display=False)  # No transformers
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
@@ -461,7 +518,11 @@ def test_plot_probabilities():
     atom.clean()  # Encode the target column
     pytest.raises(NotFittedError, atom.plot_probabilities)
     atom.run(["Tree", "LGB", "SVM"], metric="f1")
-    pytest.raises(AttributeError, atom.svm.plot_probabilities)  # No predict_proba
+
+    # Model has no predict_proba attribute
+    with pytest.raises(AttributeError, match=".*with a predict_proba method.*"):
+        atom.svm.plot_probabilities(display=False)
+
     atom.plot_probabilities(models=["Tree", "LGB"], target="y", display=False)
     atom.lgb.plot_probabilities(target="n", display=False)
 
@@ -498,8 +559,11 @@ def test_plot_results_time(metric):
     """Assert that the plot_results method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(["Tree", "LGB"], metric="r2", n_trials=1)
+
+    # No bootstrap available
     with pytest.raises(ValueError, match=".*doesn't have metric.*"):
-        atom.plot_results(metric="time_bootstrap")
+        atom.plot_results(metric="time_bootstrap", display=False)
+
     atom.plot_results(metric=metric, display=False)
     atom.tree.plot_results(metric=metric, display=False)
 
@@ -507,12 +571,6 @@ def test_plot_results_time(metric):
 @pytest.mark.parametrize("dataset", ["train", "test", "both", "holdout"])
 def test_plot_roc(dataset):
     """Assert that the plot_roc method work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_roc)
-    atom.run("LGB")
-    pytest.raises(ValueError, atom.lgb.plot_roc, dataset="holdout")  # No holdout set
-    pytest.raises(ValueError, atom.lgb.plot_roc, dataset="invalid")  # Invalid dataset
-
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run(["LGB", "SVM"], metric="f1")
     atom.plot_roc(dataset=dataset, display=False)
@@ -536,8 +594,6 @@ def test_plot_threshold(metric):
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_threshold)
     atom.run(["Tree", "LGB", "SVM"], metric="f1")
-    pytest.raises(AttributeError, atom.svm.plot_threshold)  # No predict_proba
-    pytest.raises(ValueError, atom.tree.plot_threshold, metric="unknown")
     atom.plot_threshold(models=["Tree", "LGB"], display=False)
     atom.lgb.plot_threshold(metric=metric, display=False)
 
@@ -547,14 +603,12 @@ def test_plot_trials():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_trials)
     atom.run("lasso", metric="max_error", n_trials=0)
-    pytest.raises(ValueError, atom.plot_trials, models="unknown")
-    pytest.raises(ValueError, atom.plot_trials, models="BR")
-    pytest.raises(ValueError, atom.plot_trials, metric="unknown")
-    pytest.raises(ValueError, atom.plot_trials, metric=-1)
-    pytest.raises(ValueError, atom.plot_trials, metric=1)
-    pytest.raises(ValueError, atom.plot_trials, metric="roc_auc")
-    pytest.raises(PermissionError, atom.plot_trials)  # No BO in pipeline
-    atom.run(["lasso", "ridge"], metric="max_error", n_trials=10)
+
+    # Model didn't run hyperparameter tuning
+    with pytest.raises(PermissionError, match=".*ran hyperparameter tuning.*"):
+        atom.plot_trials(display=False)
+
+    atom.run(["lasso", "ridge"], metric="max_error", n_trials=1)
     atom.plot_trials(display=False)
     atom.lasso.plot_trials(display=False)
 
@@ -565,8 +619,12 @@ def test_plot_shap_bar():
     """Assert that the plot_shap_bar method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.plot_shap_bar)
-    atom.run("LR", metric="f1_macro")
-    atom.plot_shap_bar(display=False)
+    atom.run(["LR", "Tree"], metric="f1_macro")
+
+    with pytest.raises(ValueError, match=".*only accepts one model.*"):
+        atom.plot_shap_bar(display=False)
+
+    atom.lr.plot_shap_bar(display=False)
 
 
 def test_plot_shap_beeswarm():
@@ -590,8 +648,11 @@ def test_plot_shap_force():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.plot_shap_force)
     atom.run(["LR", "MLP"], metric="MSE")
+
+    # Can't be called from a canvas
     with atom.canvas(display=False):
-        pytest.raises(PermissionError, atom.plot_shap_force, matplotlib=True)
+        with pytest.raises(PermissionError, match=".*called from a canvas.*"):
+            atom.plot_shap_force(matplotlib=True)
 
     # Expected value from Explainer
     atom.lr.plot_shap_force(index=100, matplotlib=True, display=False)

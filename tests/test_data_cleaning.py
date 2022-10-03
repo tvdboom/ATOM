@@ -469,6 +469,15 @@ def test_rows_too_many_nans(max_nan_rows):
     assert X.isna().sum().sum() == 0
 
 
+def test_all_rows_too_many_nans():
+    """Assert that an error is raised when all rows have too many nans."""
+    X = X_bin.copy()
+    X["only nans"] = np.NaN
+    imputer = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_rows=0.01)
+    with pytest.raises(ValueError, match=".*All rows contain.*"):
+        imputer.fit_transform(X, y_bin)
+
+
 @pytest.mark.parametrize("max_nan_cols", [20, 0.5])
 def test_cols_too_many_nans(max_nan_cols):
     """Assert that columns with too many missing values are dropped."""

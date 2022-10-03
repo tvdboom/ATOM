@@ -72,8 +72,8 @@ def test_multiple_same_models():
 
 def test_only_task_models():
     """Assert that an error is raised for models at invalid task."""
-    trainer = DirectClassifier("OLS", random_state=1)  # Only regression
-    with pytest.raises(ValueError, match=".*can't perform classification.*"):
+    trainer = DirectRegressor("LR", random_state=1)
+    with pytest.raises(ValueError, match=".*can't perform regression.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -127,11 +127,12 @@ def test_metric_is_acronym():
     assert trainer.metric == "roc_auc"
 
 
-def test_metric_is_custom():
-    """Assert that using the metric acronyms work."""
-    trainer = DirectClassifier("LR", metric="fnr", random_state=1)
+@pytest.mark.parametrize("metric", ["tn", "fp", "fn", "tp", "fpr", "tpr", "tnr", "fnr"])
+def test_metric_is_custom(metric):
+    """Assert that you can use the custom metrics."""
+    trainer = DirectClassifier("LR", metric=metric, random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.metric == "false_negative_rate"
+    assert not trainer.errors
 
 
 def test_metric_is_invalid_scorer_name():

@@ -9,12 +9,13 @@ Description: Unit tests for atom.py
 
 import glob
 from unittest.mock import patch
-from sklearn.datasets import make_classification
+
 import numpy as np
 import pandas as pd
 import pytest
 from category_encoders.leave_one_out import LeaveOneOutEncoder
 from evalml.pipelines.components.estimators import SVMClassifier
+from sklearn.datasets import make_classification
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel
@@ -366,7 +367,7 @@ def test_stats_mixed_sparse_dense():
 
 def test_status():
     """Assert that the status method prints an overview of the instance."""
-    atom = ATOMClassifier(*make_classification(100000), verbose=2, random_state=1)
+    atom = ATOMClassifier(*make_classification(100000), random_state=1)
     atom.status()
 
 
@@ -461,8 +462,15 @@ def test_add_transformer_y_ignore_X():
     assert np.all((y == 0) | (y == 1))
 
 
+def test_add_default_X_is_used():
+    """Assert that X is autofilled when required but not provided."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    atom.clean(columns=-1)
+    assert atom.mapping
+
+
 def test_add_invalid_columns_only_y():
-    """Assert that an error is raised when ."""
+    """Assert that an error is raised when the transformer requires features."""
     atom = ATOMClassifier(X10, y10_str, random_state=1)
     with pytest.raises(ValueError, match=".*trying to fit transformer.*"):
         atom.encode(columns=-1)  # Encoder.fit requires X

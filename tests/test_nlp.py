@@ -120,6 +120,14 @@ def test_quadgrams():
     assert isinstance(tokenizer.quadgrams, pd.DataFrame)
 
 
+def test_no_ngrams():
+    """Assert that nothing happens when no n-grams are found."""
+    tokenizer = Tokenizer(quadgram_freq=2)
+    X = tokenizer.transform([["a b c d"]])
+    assert X["corpus"][0] == ["a", "b", "c", "d"]
+    assert tokenizer.quadgrams is None
+
+
 # Test TextNormalizer ================================================== >>
 
 def test_normalizer_space_separation():

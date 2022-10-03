@@ -350,32 +350,33 @@ class BaseModel(ModelPlot, ShapPlot):
     def _final_output(self) -> str:
         """Returns the model's final output as a string.
 
+        If [bootstrapping][] was used, use the format: mean +- std.
+
         Returns
         -------
         str
             Final score representation.
 
         """
-        # If bootstrap was used, use a different format
         if self.bootstrap is None:
             out = "   ".join(
                 [
-                    f"{m.name}: {rnd(lst(self.score_test)[i])}"
-                    for i, m in enumerate(self.T._metric.values())
+                    f"{name}: {rnd(lst(self.score_test)[i])}"
+                    for i, name in enumerate(self.T._metric)
                 ]
             )
         else:
             out = "   ".join(
                 [
-                    f"{m.name}: {rnd(self.bootstrap.mean()[i])} "
-                    f"\u00B1 {rnd(self.bootstrap.std()[i])}"
-                    for i, m in enumerate(self.T._metric.values())
+                    f"{name}: {rnd(self.bootstrap[name].mean())} "
+                    f"\u00B1 {rnd(self.bootstrap[name].std())}"
+                    for name in self.T._metric
                 ]
             )
 
         # Annotate if model overfitted when train 20% > test
-        score_train = self._get_score(self.T._metric[0], "train")
-        score_test = self._get_score(self.T._metric[0], "test")
+        score_train = lst(self.score_train)[0]
+        score_test = lst(self.score_test)[0]
         if score_train - 0.2 * score_train > score_test:
             out += " ~"
 
@@ -453,17 +454,13 @@ class BaseModel(ModelPlot, ShapPlot):
                 if scorer.__class__.__name__ == "_PredictScorer":
                     y_pred = (y_pred > threshold).astype("int")
 
+            kwargs = {}
             if "sample_weight" in self._sign(scorer._score_func):
-                score = scorer._score_func(
-                    getattr(self, f"y_{dataset}"),
-                    y_pred,
-                    sample_weight=sample_weight,
-                    **scorer._kwargs,
-                )
-            else:
-                score = scorer._score_func(
-                    getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs
-                )
+                kwargs["sample_weight"] = sample_weight
+
+            score = scorer._score_func(
+                getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs, **kwargs
+            )
 
             self._scores[key] = rnd(scorer._sign * float(score))
 
