@@ -780,8 +780,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             estimator = self._get_est_class("LabelEncoder", "preprocessing")
             self._estimator = estimator().fit(y)
+
+            # Convert classes to numpy since cuDF series can't be iterated over
             self.mapping = {
-                str(it(v)): i for i, v in enumerate(self._estimator.classes_)
+                str(it(v)): i for i, v in enumerate(self._estimator.classes_.to_numpy())
             }
 
         self._is_fitted = True
@@ -1230,11 +1232,17 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
                         )
 
                 estimator = self._get_est_class("KBinsDiscretizer", "preprocessing")
+
+                # cuML implementation has no random_state
+                kwargs = {}
+                if "random_state" in signature(estimator).parameters:
+                    kwargs["random_state"] = self.random_state
+
                 self._discretizers[col] = estimator(
                     n_bins=bins,
                     encode="ordinal",
                     strategy=self.strategy.lower(),
-                    random_state=self.random_state,
+                    **kwargs,
                 ).fit(X[[col]])
 
                 # Save labels for transform method

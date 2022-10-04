@@ -648,7 +648,11 @@ class FeatureSelectorPlot(BasePlot):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlot._fig.grid)
-        scr.plot.barh(label=f"Total variance retained: {var.sum():.3f}", width=0.6)
+        ax = scr.plot.barh(
+            ax=ax,
+            width=0.6,
+            label=f"Total variance retained: {var.sum():.3f}",
+        )
         ax.set_xlim(0, max(scr) + 0.1 * max(scr))  # Make extra space for numbers
         for i, v in enumerate(scr):
             ax.text(v + 0.005, i - 0.08, f"{v:.3f}", fontsize=self.tick_fontsize)
@@ -1167,7 +1171,11 @@ class DataPlot(BasePlot):
         ax = fig.add_subplot(BasePlot._fig.grid)
 
         data = series[-show:]  # Subset of series to plot
-        data[-show:].plot.barh(ax=ax, width=0.6, label=f"Total {ngram}: {len(series)}")
+        ax = data[-show:].plot.barh(
+            ax=ax,
+            width=0.6,
+            label=f"Total {ngram}: {len(series)}",
+        )
 
         # Add the counts at the end of the bar
         for i, v in enumerate(data[-show:]):
@@ -2040,7 +2048,7 @@ class ModelPlot(BasePlot):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlot._fig.grid)
-        df.plot.barh(
+        ax = df.plot.barh(
             ax=ax,
             width=0.75 if len(models) > 1 else 0.6,
             legend=len(models) > 1,

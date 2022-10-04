@@ -3038,7 +3038,8 @@
 <p>ATOM uses <a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>
 to accelerate sklearn applications and still have full conformance
 with its API. This tool can bring over 10-100X acceleration across a
-variety of transformers and models.</p>
+variety of transformers and models. See <a class="autorefs autorefs-internal" href="../../examples/accelerating_pipelines/#example-accelerating-pipelines">here</a>
+an example.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <ul>
 <li>Operating System:<ul>
@@ -3115,16 +3116,9 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.</
 </div>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
-<p><a href="https://colab.research.google.com/drive/1b-piLK6_O99EDpLNmeKIsSRkQlk0WoTl#offline=true&amp;sandboxMode=true"><img alt="Colab" src="https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667" /></a><br><br>
-Train a model on a GPU yourself using Google Colab. Just click on
-the badge above and follow the notebook. Note two things:</p>
-<ul>
-<li>Make sure you've been allocated a Tesla T4, P4, or P100. If this is not
-the case (check it using <code>!nvidia-smi</code>), reset the runtime (Runtime -&gt; 
-Factory reset runtime) until you get one.</li>
-<li>Setting up the environment and installing the necessary libraries may
-take quite some time (usually up to 15min).</li>
-</ul>
+<p><a href="https://d743w1pyd5hcqas.studio.us-east-2.sagemaker.aws/studiolab/default/jupyter/lab/tree/atom-gpu/cuml.ipynb"><img alt="SageMaker Studio Lab" src="https://studiolab.sagemaker.aws/studiolab.svg" /></a><br><br>
+Train a model on a GPU yourself using SageMaker Studio Lab. Just click on
+the badge above and run the notebook!</p>
 </div>
 <h3 id="prerequisites_1">Prerequisites</h3>
 <ul>
@@ -3144,7 +3138,7 @@ take quite some time (usually up to 15min).</li>
 </ul>
 </li>
 <li>Libraries:<ul>
-<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2021.6.3 (automatically installed with ATOM) and <a href="https://github.com/IntelPython/dpctl">dpctl</a>&gt;=0.11.3</li>
+<li><a href="https://intel.github.io/scikit-learn-intelex/index.html">sklearnex</a>&gt;=2021.6.3 (automatically installed with ATOM)</li>
 <li><a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>&gt;=22.08</li>
 </ul>
 </li>

@@ -89,6 +89,11 @@ includes = ["README.md", "LICENSE", "images/"]
 excludes = ["tests/mlruns"]
 source-includes = ["tests/"]
 
+[tool.pytest]
+testpaths = "tests/"
+python_files = "*.py"
+python_functions = "test_*"
+
 [tool.flake8]
 max-line-length = 89
 ignore = [

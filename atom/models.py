@@ -775,21 +775,22 @@ class CatBoost(BaseModel):
         # gpu implementation fails if callbacks!=None
         estimator.fit(*data, eval_set=validation, callbacks=callbacks or None, **params)
 
-        if validation:
-            # Create evals attribute with train and validation scores
-            m = self.T._metric[0].name
-            evals = estimator.evals_result_
-            self._evals[f"{m}_train"] = evals["learn"]["CatBMetric"]
-            self._evals[f"{m}_test"] = evals["validation"]["CatBMetric"]
+        if not self._gpu:
+            if validation:
+                # Create evals attribute with train and validation scores
+                m = self.T._metric[0].name
+                evals = estimator.evals_result_
+                self._evals[f"{m}_train"] = evals["learn"]["CatBMetric"]
+                self._evals[f"{m}_test"] = evals["validation"]["CatBMetric"]
 
-        if trial and len(self.T._metric) == 1 and cb._pruned:
-            # Hacky solution to add the pruned step to the output
-            steps = estimator.get_params()[self.has_validation]
-            p = trial.storage.get_trial_user_attrs(trial.number)["params"]
-            p[self.has_validation] = f"{len(self.evals[f'{m}_train'])}/{steps}"
+            if trial and len(self.T._metric) == 1 and cb._pruned:
+                # Hacky solution to add the pruned step to the output
+                steps = estimator.get_params()[self.has_validation]
+                p = trial.storage.get_trial_user_attrs(trial.number)["params"]
+                p[self.has_validation] = f"{len(self.evals[f'{m}_train'])}/{steps}"
 
-            trial.set_user_attr("estimator", estimator)
-            raise TrialPruned(cb._message)
+                trial.set_user_attr("estimator", estimator)
+                raise TrialPruned(cb._message)
 
         return estimator
 
@@ -4135,6 +4136,15 @@ class Voting(BaseModel):
                 "Invalid value for the models parameter. All "
                 "models must have been fitted on the current branch."
             )
+
+        if self._est_params.get("voting") == "soft":
+            for m in self._models.values():
+                if not hasattr(m.estimator, "predict_proba"):
+                    raise ValueError(
+                        "Invalid value for the voting parameter. If "
+                        "'soft', all models in the ensemble should have "
+                        f"a predict_proba method, got {m._fullname}."
+                    )
 
     def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.

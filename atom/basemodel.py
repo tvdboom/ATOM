@@ -437,14 +437,19 @@ class BaseModel(ModelPlot, ShapPlot):
             has_dec_func = hasattr(self.estimator, "decision_function")
 
             # Select method to use for predictions
+            attr = "predict"
             if scorer.__class__.__name__ == "_ThresholdScorer":
-                attr = "decision_function" if has_dec_func else "predict_proba"
+                if has_dec_func:
+                    attr = "decision_function"
+                elif has_pred_proba:
+                    attr = "predict_proba"
             elif scorer.__class__.__name__ == "_ProbaScorer":
-                attr = "predict_proba" if has_pred_proba else "decision_function"
+                if has_pred_proba:
+                    attr = "predict_proba"
+                elif has_dec_func:
+                    attr = "decision_function"
             elif self.T.task.startswith("bin") and has_pred_proba:
                 attr = "predict_proba"  # Needed to use threshold parameter
-            else:
-                attr = "predict"
 
             y_pred = getattr(self, f"{attr}_{dataset}")
             if self.T.task.startswith("bin") and attr == "predict_proba":

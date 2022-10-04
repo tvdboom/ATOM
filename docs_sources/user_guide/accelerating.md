@@ -6,7 +6,8 @@
 ATOM uses [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)
 to accelerate sklearn applications and still have full conformance
 with its API. This tool can bring over 10-100X acceleration across a
-variety of transformers and models.
+variety of transformers and models. See [here][example-accelerating-pipelines]
+an example.
 
 ### Prerequisites
 
@@ -81,15 +82,9 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
       one to use, the first one is used by default.
 
 !!! example
-    [![Colab](https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667)](https://colab.research.google.com/drive/1b-piLK6_O99EDpLNmeKIsSRkQlk0WoTl#offline=true&sandboxMode=true)<br><br>
-    Train a model on a GPU yourself using Google Colab. Just click on
-    the badge above and follow the notebook. Note two things:
-
-    * Make sure you've been allocated a Tesla T4, P4, or P100. If this is not
-    the case (check it using `!nvidia-smi`), reset the runtime (Runtime -> 
-    Factory reset runtime) until you get one.
-    * Setting up the environment and installing the necessary libraries may
-    take quite some time (usually up to 15min).
+    [![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://d743w1pyd5hcqas.studio.us-east-2.sagemaker.aws/studiolab/default/jupyter/lab/tree/atom-gpu/cuml.ipynb)<br><br>
+    Train a model on a GPU yourself using SageMaker Studio Lab. Just click on
+    the badge above and run the notebook!
 
 
 ### Prerequisites
@@ -104,7 +99,7 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
     - For cuML: CUDA & NVIDIA Drivers of versions 11.0, 11.2, 11.4 or 11.5
     - For sklearnex: Intel® GPU drivers.
 * Libraries:
-    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with ATOM) and [dpctl](https://github.com/IntelPython/dpctl)>=0.11.3
+    - [sklearnex](https://intel.github.io/scikit-learn-intelex/index.html)>=2021.6.3 (automatically installed with ATOM)
     - [cuML](https://docs.rapids.ai/api/cuml/stable/)>=22.08
 
 ### Supported estimators

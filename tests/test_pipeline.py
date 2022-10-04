@@ -34,6 +34,16 @@ def pipeline():
     return get_pipeline
 
 
+def test_getattr(pipeline):
+    """Assert that attributes can be fetched from the final estimator."""
+    pl = pipeline(model=True).fit(X_bin, y_bin)
+    assert isinstance(pl.coef_, np.ndarray)
+
+    # Final estimator has no attribute
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        print(pl.test)
+
+
 def test_fit(pipeline):
     """Assert that the pipeline can be fitted normally."""
     pl = pipeline(model=True)

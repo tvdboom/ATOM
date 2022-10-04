@@ -109,7 +109,7 @@ or via `conda`:
 ⚡ Usage
 -------
 
-[![Colab](https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667)](https://colab.research.google.com/drive/1tgcn6qw_P0QLsrlQpSpMjjv_MV5GP17j#offline=true&sandboxMode=true)
+[![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://d743w1pyd5hcqas.studio.us-east-2.sagemaker.aws/studiolab/default/jupyter/lab/tree/atom-gpu/getting_started.ipynb)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tvdboom/ATOM/HEAD)
 
 ATOM contains a variety of classes and functions to perform data cleaning,
@@ -161,7 +161,7 @@ and [AdaBoost](https://tvdboom.github.io/ATOM/latest/API/models/adab) model,
 and apply [hyperparameter tuning](https://tvdboom.github.io/ATOM/latest/user_guide/training/#hyperparameter-tuning).
 
 ```python
-atom.run(models=["RF", "AdaB"], metric="auc", n_trials=10, n_initial_points=4)
+atom.run(models=["RF", "AdaB"], metric="auc", n_trials=10)
 ```
 
 Lastly, visualize the result using the integrated [plots](https://tvdboom.github.io/ATOM/latest/user_guide/plots).

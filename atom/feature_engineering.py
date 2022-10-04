@@ -315,8 +315,6 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     X.insert(idx, f"{new_name}_sin", np.sin(pos))
                     X.insert(idx + 1, f"{new_name}_cos", np.cos(pos))
 
-                X = X.copy()  # Avoid dataframe fragmentation
-
             # Drop the original datetime column
             if self.drop_columns:
                 X = X.drop(name, axis=1)
@@ -971,7 +969,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
             to_drop.update(group)
 
             self.groups[name] = group
-            self.log(f" --> Group {name} successfully created.")
+            self.log(f" --> Group {name} successfully created.", 2)
 
         if self.drop_columns:
             X = X.drop(to_drop, axis=1)
@@ -1448,7 +1446,7 @@ class FeatureSelector(
                 "Invalid value for the min_repeated parameter. Value "
                 f"should be >0, got {self.min_repeated}."
             )
-        elif self.min_repeated < 1:
+        elif self.min_repeated <= 1:
             min_repeated = self.min_repeated * len(X)
         else:
             min_repeated = int(self.min_repeated)

@@ -2956,7 +2956,7 @@
 
 <h1 id="featuregenerator">FeatureGenerator</h1>
 <hr />
-<p><a id='FeatureGenerator'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureGenerator</strong>(strategy="dfs", n_features=None, operators=None, n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L327>[source]</a></span></div>Generate new features.</p>
+<p><a id='FeatureGenerator'></a><div class='sign'><em>class</em> atom.feature_engineering.<strong style='color:#008AB8'>FeatureGenerator</strong>(strategy="dfs", n_features=None, operators=None, n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L325>[source]</a></span></div>Generate new features.</p>
 <p>Create new combinations of existing features to capture the
 non-linear relations between the original features.</p>
 <p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-feature_generation">feature_generation</a> method. Read more in the
@@ -3122,7 +3122,7 @@ Number of features seen during fit.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#featuregenerator-transform">transform</a></td><td>Generate new features.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='featuregenerator-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L527>[source]</a></span></div>Fit to data.</p>
+<p><a id='featuregenerator-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L525>[source]</a></span></div>Fit to data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -3223,7 +3223,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='featuregenerator-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L633>[source]</a></span></div>Generate new features.</p>
+<p><a id='featuregenerator-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L631>[source]</a></span></div>Generate new features.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

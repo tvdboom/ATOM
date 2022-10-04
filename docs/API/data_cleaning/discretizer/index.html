@@ -2956,7 +2956,7 @@
 
 <h1 id="discretizer">Discretizer</h1>
 <hr />
-<p><a id='Discretizer'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Discretizer</strong>(strategy="quantile", bins=5, labels=None, device="cpu", engine="sklearn", verbose=0, logger=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L918>[source]</a></span></div>Bin continuous data into intervals.</p>
+<p><a id='Discretizer'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Discretizer</strong>(strategy="quantile", bins=5, labels=None, device="cpu", engine="sklearn", verbose=0, logger=None, random_state=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L920>[source]</a></span></div>Bin continuous data into intervals.</p>
 <p>For each feature, the bin edges are computed during fit and,
 together with the number of bins, they define the intervals.
 Ignores categorical columns.</p>
@@ -3160,7 +3160,7 @@ Number of features seen during fit.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#discretizer-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#discretizer-transform">transform</a></td><td>Bin the data into intervals.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='discretizer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1157>[source]</a></span></div>Fit to data.</p>
+<p><a id='discretizer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1159>[source]</a></span></div>Fit to data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
@@ -3256,7 +3256,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='discretizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1264>[source]</a></span></div>Bin the data into intervals.</p>
+<p><a id='discretizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1272>[source]</a></span></div>Bin the data into intervals.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

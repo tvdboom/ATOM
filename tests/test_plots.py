@@ -11,7 +11,6 @@ import glob
 from unittest.mock import patch
 
 import pytest
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score, get_scorer
 
 from atom import ATOMClassifier, ATOMRegressor
@@ -192,7 +191,7 @@ def test_plot_rfecv(scoring):
     atom.feature_selection(
         strategy="rfecv",
         solver="lr",
-        n_features=10,
+        n_features=20,
         scoring=scoring,
     )
     atom.plot_rfecv(display=False)
@@ -388,7 +387,7 @@ def test_plot_learning_curve(metric):
 
     # Invalid metric parameter
     with pytest.raises(ValueError, match=".*for the metric parameter.*"):
-        atom.plot_learning_curve(metric="invalid", display=False)
+        atom.plot_learning_curve(metric=10, display=False)
 
     atom.plot_learning_curve(display=False)
     atom.train_sizing(["Tree", "LGB"], metric=metric)

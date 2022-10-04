@@ -90,7 +90,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.scale()
 atom.prune()
-atom.run("RF", n_trials=10, n_initial_points=3)
+atom.run("RF", n_trials=10)
 
 atom.branch = "oversample"
 atom.balance(strategy="adasyn")

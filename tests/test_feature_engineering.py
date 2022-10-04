@@ -92,7 +92,6 @@ def test_all_cyclic_features(fxs):
     """Assert that all cyclic columns create two features."""
     extractor = FeatureExtractor(features=fxs[0], fmt=fxs[1], encoding_type="cyclic")
     X = extractor.transform(X10_dt)
-    print(X)
     assert any(X.columns.str.contains(f"{fxs[0]}_cos"))
     assert X.shape[1] == 4 + 1  # 2 new and og is dropped
 

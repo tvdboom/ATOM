@@ -14,7 +14,7 @@ from typing import Callable, Generator, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from sklearn import pipeline
+from sklearn.pipeline import Pipeline as skPipeline, _final_estimator_has
 from sklearn.base import clone
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
@@ -26,32 +26,7 @@ from atom.utils import (
 )
 
 
-def _final_estimator_has(attr: str) -> Callable:
-    """Check that final_estimator has attribute `attr`.
-
-    Used together with `available_if` in Pipeline.
-
-    Parameters
-    ----------
-    attr: str
-        Name of the attribute the final-estimator should have.
-
-    Returns
-    -------
-    callable
-        Function that makes the check.
-
-    """
-
-    def check(self):
-        # Raise original `AttributeError` if `attr` does not exist
-        getattr(self._final_estimator, attr)
-        return True
-
-    return check
-
-
-class Pipeline(pipeline.Pipeline):
+class Pipeline(skPipeline):
     """Custom Pipeline class.
 
     This class behaves as a sklearn pipeline, and additionally:
@@ -66,6 +41,8 @@ class Pipeline(pipeline.Pipeline):
       to fit the pipeline, not to make predictions on new data.
     - The instance is considered fitted at initialization if all
       the underlying transformers/estimator in the pipeline are.
+    - It returns attributes from the final estimator if they are
+      not of the Pipeline.
 
     Note: This Pipeline only works with estimators whose parameters
     for fit, transform, predict, etc... are named X and/or y.
@@ -88,6 +65,12 @@ class Pipeline(pipeline.Pipeline):
         self._is_fitted = False
         if all(check_is_fitted(est[2], False) for est in self._iter(True, True, False)):
             self._is_fitted = True
+
+    def __getattr__(self, item):
+        try:
+            return getattr(self._final_estimator, item)
+        except AttributeError:
+            raise AttributeError(f"'Pipeline' object has no attribute '{item}'.")
 
     @property
     def memory(self) -> Memory:

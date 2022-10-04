@@ -13,8 +13,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from optuna.distributions import IntDistribution
-from sklearn.ensemble import RandomForestRegressor
 from optuna.pruners import PatientPruner
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+
 from atom import ATOMClassifier, ATOMRegressor
 from atom.pipeline import Pipeline
 
@@ -39,16 +40,16 @@ def test_all_models_binary():
 
 def test_all_models_multiclass():
     """Assert that all models work with multiclass classification."""
-    atom = ATOMClassifier(X_class, y_class, n_rows=0.4, n_jobs=-1, random_state=1)
-    atom.run(models=["!CatNB", "!KNN", "!RNN"], n_trials=5)
+    atom = ATOMClassifier(X_class, y_class, n_rows=0.5, n_jobs=-1, random_state=1)
+    atom.run(models=["!CatNB", "!RNN"], n_trials=5, ht_params={"catch": (ValueError,)})
     assert not atom.errors
     assert "CatNB" not in atom.models
 
 
 def test_all_models_regression():
     """Assert that all models work with regression."""
-    atom = ATOMRegressor(X_reg, y_reg, n_rows=0.2, n_jobs=-1, random_state=1)
-    atom.run(models=None, n_trials=5)
+    atom = ATOMRegressor(X_reg, y_reg, n_rows=0.5, n_jobs=-1, random_state=1)
+    atom.run(models=None, n_trials=5, ht_params={"catch": (ValueError,)})
     assert not atom.errors
 
 
@@ -166,11 +167,16 @@ def test_stacking_feature_importance():
 
 def test_voting():
     """Assert that the Voting model works."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(models=["OLS", "RF"])
-    atom.voting()
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(models=["SVM", "Tree", "RF"])
+
+    # Not all models have predict_proba
+    with pytest.raises(ValueError, match=".*a predict_proba method.*"):
+        atom.voting(voting="soft")
+
+    atom.voting(models=["SVM", "RF"])
     assert isinstance(atom.vote.estimator.estimators_[0], Pipeline)
-    assert isinstance(atom.vote.estimator.estimators_[1], RandomForestRegressor)
+    assert isinstance(atom.vote.estimator.estimators_[1], RandomForestClassifier)
 
 
 def test_voting_multiple_branches():
@@ -185,6 +191,6 @@ def test_voting_multiple_branches():
 def test_voting_feature_importance():
     """Assert that the feature_importance attr can be retrieved."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LDA"])
+    atom.run(["LDA", "lSVM"])
     atom.voting()
     assert isinstance(atom.vote.feature_importance, pd.Series)
