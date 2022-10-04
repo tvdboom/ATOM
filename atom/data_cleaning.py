@@ -780,11 +780,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             estimator = self._get_est_class("LabelEncoder", "preprocessing")
             self._estimator = estimator().fit(y)
-
-            # Convert classes to numpy since cuDF series can't be iterated over
-            self.mapping = {
-                str(it(v)): i for i, v in enumerate(self._estimator.classes_.to_numpy())
-            }
+            self.mapping = {str(it(v)): i for i, v in enumerate(np.unique(y))}
 
         self._is_fitted = True
         return self

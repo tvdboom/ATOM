@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 from optuna.distributions import IntDistribution
 from optuna.pruners import PatientPruner
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.pipeline import Pipeline

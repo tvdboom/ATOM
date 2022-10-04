@@ -9,13 +9,14 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 from __future__ import annotations
 
-from typing import Callable, Generator, List, Optional, Tuple, Union
+from typing import Generator, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from sklearn.pipeline import Pipeline as skPipeline, _final_estimator_has
 from sklearn.base import clone
+from sklearn.pipeline import Pipeline as skPipeline
+from sklearn.pipeline import _final_estimator_has
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
