@@ -2956,7 +2956,7 @@
 
 <h1 id="encoder">Encoder</h1>
 <hr />
-<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="LeaveOneOut", max_onehot=10, ordinal=None, rare_to_value=None, value="rare", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1309>[source]</a></span></div>Perform encoding of categorical features.</p>
+<p><a id='Encoder'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Encoder</strong>(strategy="LeaveOneOut", max_onehot=10, ordinal=None, rare_to_value=None, value="rare", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1305>[source]</a></span></div>Perform encoding of categorical features.</p>
 <p>The encoding type depends on the number of classes in the column:</p>
 <ul>
 <li>If n_classes=2 or ordinal feature, use Ordinal-encoding.</li>
@@ -3154,7 +3154,7 @@ Number of features seen during fit.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#encoder-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#encoder-transform">transform</a></td><td>Encode the data.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='encoder-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1547>[source]</a></span></div>Fit to data.</p>
+<p><a id='encoder-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1543>[source]</a></span></div>Fit to data.</p>
 <p>Note that leaving y=None can lead to errors if the <code>strategy</code>
 encoder requires target values.</p>
 <table class="table_params">
@@ -3258,7 +3258,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1714>[source]</a></span></div>Encode the data.</p>
+<p><a id='encoder-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1710>[source]</a></span></div>Encode the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>

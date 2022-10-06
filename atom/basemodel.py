@@ -143,14 +143,26 @@ class BaseModel(ModelPlot, ShapPlot):
 
     @property
     def _est_class(self) -> Predictor:
-        """Return the estimator's class (not the instance)."""
+        """Return the estimator's class.
+
+        Returns
+        -------
+        Predictor
+            Estimator's class (not instance).
+
+        """
+        # Goal can fail when model initialized with fast_init=True
+        estimator = self._estimators.get(self.T.goal, self._estimators[0])
+
         try:
             module = import_module(f"{self.T.engine}.{self._module}")
+            return getattr(module, estimator)
         except (ModuleNotFoundError, AttributeError):
-            module = import_module(self._module)
-
-        # Goal can fail when model initialized with fast_init=True
-        return getattr(module, self._estimators.get(self.T.goal, self._estimators[0]))
+            if "sklearn" in self.supports_engines:
+                module = import_module(f"sklearn.{self._module}")
+            else:
+                module = import_module(self._module)
+            return getattr(module, estimator)
 
     @property
     def _gpu(self) -> bool:
@@ -1065,7 +1077,7 @@ class BaseModel(ModelPlot, ShapPlot):
         return self._bootstrap
 
     @property
-    def score_bootstrap(self) -> Union[FLOAT, List[FLOAT]]:
+    def score_bootstrap(self) -> Optional[Union[FLOAT, List[FLOAT]]]:
         """Mean metric score on the bootstrapped samples."""
         if self.bootstrap is not None:
             return flt(self.bootstrap.mean().tolist())
@@ -1226,7 +1238,7 @@ class BaseModel(ModelPlot, ShapPlot):
         """Confidence scores on the training set."""
         if self._pred[0] is None:
             data = self.estimator.decision_function(self.X_train)
-            if data.ndim == 1:
+            if data.ndim == 1 or data.shape[0] == 1:
                 self._pred[0] = pd.Series(
                     data=data,
                     index=self.X_train.index,
@@ -1246,7 +1258,7 @@ class BaseModel(ModelPlot, ShapPlot):
         """Confidence scores on the test set."""
         if self._pred[1] is None:
             data = self.estimator.decision_function(self.X_test)
-            if data.ndim == 1:
+            if data.ndim == 1 or data.shape[0] == 1:
                 self._pred[1] = pd.Series(
                     data=data,
                     index=self.X_test.index,
@@ -1266,7 +1278,7 @@ class BaseModel(ModelPlot, ShapPlot):
         """Confidence scores on the holdout set."""
         if self.T.holdout is not None and self._pred[2] is None:
             data = self.estimator.decision_function(self.X_holdout)
-            if data.ndim == 1:
+            if data.ndim == 1 or data.shape[0] == 1:
                 self._pred[2] = pd.Series(
                     data=data,
                     index=self.X_holdout.index,
@@ -1889,7 +1901,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
         # Add shap values from the internal ShapExplanation object
         explainer.set_shap_values(
-            base_value=self._shap.get_expected_value(return_one=False),
+            base_value=self._shap.get_expected_value(return_all_classes=True),
             shap_values=self._shap.get_shap_values(X, return_all_classes=True),
         )
 

@@ -2716,8 +2716,7 @@ class LogisticRegression(BaseModel):
 
         if self._gpu:
             dist.pop("solver")
-            if self.T.engine == "sklearnex":
-                dist.pop("penalty")  # Only 'l2' is supported
+            dist.pop("penalty")  # Only 'l2' is supported
         elif self.T.engine == "sklearnex":
             dist["solver"] = Categorical(["lbfgs", "newton-cg"])
 
@@ -4074,6 +4073,7 @@ class Stacking(BaseModel):
     acronym = "Stack"
     needs_scaling = False
     has_validation = None
+    supports_engines = []
 
     _module = "atom.ensembles"
     _estimators = CustomDict({"class": "StackingClassifier", "reg": "StackingRegressor"})
@@ -4122,6 +4122,7 @@ class Voting(BaseModel):
     acronym = "Vote"
     needs_scaling = False
     has_validation = None
+    supports_engines = []
 
     _module = "atom.ensembles"
     _estimators = CustomDict({"class": "VotingClassifier", "reg": "VotingRegressor"})
