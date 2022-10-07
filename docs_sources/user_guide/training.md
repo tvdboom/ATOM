@@ -306,7 +306,7 @@ Extra things to take into account:
     with many hyperparameters. If you are working in a Jupyter Notebook,
     you can change the output's width running the following code in a cell:
     ```pycon
-    >>> from IPython.core.display import display, HTML
+    >>> from IPython.display import display, HTML
     >>> display(HTML("<style>.container { width:100% !important; }</style>"))
     ```
 

@@ -13,12 +13,14 @@ from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
 from typing import List, Optional, Tuple, Union
-
+from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import plotly.io as pio
 import shap
+import plotly.graph_objects as go
 from joblib import Parallel, delayed
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from matplotlib.ticker import MaxNLocator
@@ -48,22 +50,22 @@ from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, Model, check_is_fitted, check_predict_proba,
     composed, crash, get_best_score, get_corpus, get_custom_scorer,
     get_feature_importance, has_attr, has_task, lst, partial_dependence,
-    plot_from_model,
+    plot_from_model, divide, rnd
 )
 
 
 class BaseFigure:
-    """Base class for the matplotlib figures.
+    """Base plotly figure.
 
     The instance stores the position of the current axes in grid,
     as well as the models used for the plot (to track in mlflow).
 
     Parameters
     ----------
-    nrows: int, default=1
+    rows: int, default=1
         Number of subplot rows in the canvas.
 
-    ncols: int, default=1
+    cols: int, default=1
         Number of subplot columns in the canvas.
 
     create_figure: bool, default=True
@@ -77,42 +79,102 @@ class BaseFigure:
 
     def __init__(
         self,
-        nrows: int = 1,
-        ncols: int = 1,
+        rows: int = 1,
+        cols: int = 1,
         create_figure: bool = True,
         is_canvas: bool = False,
     ):
-        self.nrows = nrows
-        self.ncols = ncols
+        self.rows = rows
+        self.cols = cols
         self.create_figure = create_figure
         self.is_canvas = is_canvas
-        self._idx = -1  # Index of the current axes
-        self._used_models = []  # Models plotted in this figure
 
-        # Create new figure and corresponding grid
-        if self.create_figure:
-            figure = plt.figure(constrained_layout=is_canvas)
-            self.gridspec = GridSpec(nrows=self.nrows, ncols=self.ncols, figure=figure)
+        self._idx = 0
+        self._used_models = []  # Models plotted in this figure
+        self._figure = go.Figure()
 
     @property
-    def figure(self) -> plt.Figure:
-        """Get the current figure and increase the subplot index."""
-        self._idx += 1
+    def figure(self) -> go.Figure:
+        """Get the current figure and increase the subplot index.\
 
-        # Check if there are too many plots in the contextmanager
-        if self._idx >= self.nrows * self.ncols:
+        Returns
+        -------
+        go.Figure
+            Current pyplot figure.
+
+        """
+        # Check if there are too many plots in the canvas
+        if self._idx >= self.rows * self.cols:
             raise ValueError(
                 "Invalid number of plots in the canvas! Increase "
                 "the number of rows and cols to add more plots."
             )
+        else:
+            self._idx += 1
 
-        if self.create_figure:
-            return plt.gcf()
+        return self._figure
 
     @property
-    def grid(self) -> GridSpec:
-        """Return the position of the current axes in the grid."""
-        return self.gridspec[self._idx]
+    def grid(self) -> Tuple[int, int]:
+        """Position of the current axes on the grid.
+
+        Returns
+        -------
+        int
+            X-position.
+
+        int
+            Y-position.
+
+        """
+        return (self._idx - 1) // self.cols + 1, self._idx % self.cols or self.cols
+
+    def get_axes(
+        self, x: Tuple[int, int] = (0, 1), y: Tuple[int, int] = (0, 1)
+    ) -> Tuple[str, str]:
+        """Create and update the plot's axes.
+
+        Parameters
+        ----------
+        x: tuple of int
+            Relative x-size of the plot.
+
+        y: tuple of int
+            Relative y-size of the plot.
+
+        Returns
+        -------
+        str
+            Name of the x-axis.
+
+        str
+            Name of the y-axis.
+
+        """
+        x_offset = divide(0.05, (self.cols - 1))
+        y_offset = divide(0.05, (self.rows - 1))
+
+        # Determine the size of the plots
+        x_size = (x[1] - x[0]) * ((1 - ((x_offset * 2) * (self.cols - 1))) / self.cols)
+        y_size = (y[1] - y[0]) * ((1 - ((y_offset * 2) * (self.rows - 1))) / self.rows)
+
+        # Determine the position for the axes
+        x_pos = (self.grid[1] - 1) * (x_size + 2 * x_offset)
+        y_pos = (self.rows - self.grid[0]) * (y_size + 2 * y_offset)
+
+        # Update the figure with the new axes
+        self._figure.update_layout(
+            {
+                f"xaxis{self._idx}": dict(
+                    domain=(x_pos, rnd(x_pos + x_size)), anchor=f"y{self._idx}"
+                ),
+                f"yaxis{self._idx}": dict(
+                    domain=(y_pos, rnd(y_pos + y_size)), anchor=f"x{self._idx}"
+                ),
+            }
+        )
+
+        return f"x{self._idx}", f"y{self._idx}"
 
 
 class BasePlot:
@@ -125,14 +187,11 @@ class BasePlot:
 
     _fig = None
     _aesthetics = dict(
-        style="darkgrid",  # Seaborn plotting style
-        palette="GnBu_r_d",  # Matplotlib color palette
-        title_fontsize=20,  # Fontsize for titles
+        template="plotly",  # Plotly plotting template
+        title_fontsize=24,  # Fontsize for titles
         label_fontsize=16,  # Fontsize for labels and legends
         tick_fontsize=12,  # Fontsize for ticks
     )
-    sns.set_style(_aesthetics["style"])
-    sns.set_palette(_aesthetics["palette"])
 
     # Properties =================================================== >>
 
@@ -144,39 +203,26 @@ class BasePlot:
     @aesthetics.setter
     @typechecked
     def aesthetics(self, value: dict):
-        self.style = value.get("style", self.style)
-        self.palette = value.get("palette", self.palette)
+        self.template = value.get("template", self.template)
         self.title_fontsize = value.get("title_fontsize", self.title_fontsize)
         self.label_fontsize = value.get("label_fontsize", self.label_fontsize)
         self.tick_fontsize = value.get("tick_fontsize", self.tick_fontsize)
 
     @property
-    def style(self) -> str:
-        """Plotting [style][]."""
-        return self._aesthetics["style"]
+    def template(self) -> str:
+        """Plotting [template][]."""
+        return self._aesthetics["template"]
 
-    @style.setter
+    @template.setter
     @typechecked
-    def style(self, value: str):
-        styles = ["darkgrid", "whitegrid", "dark", "white", "ticks"]
-        if value not in styles:
+    def template(self, value: Union[str, go.layout.Template]):
+        if isinstance(value, str) and value not in pio.templates:
             raise ValueError(
-                "Invalid value for the style parameter, got "
-                f"{value}. Choose from: {', '.join(styles)}."
+                "Invalid value for the template parameter, got "
+                f"{value}. Choose from: {', '.join(pio.templates)}."
             )
-        sns.set_style(value)
-        self._aesthetics["style"] = value
-
-    @property
-    def palette(self) -> str:
-        """Color [palette][]."""
-        return self._aesthetics["palette"]
-
-    @palette.setter
-    @typechecked
-    def palette(self, value: str):
-        sns.set_palette(value)
-        self._aesthetics["palette"] = value
+        pio.templates.default = value
+        self._aesthetics["template"] = value
 
     @property
     def title_fontsize(self) -> int:
@@ -226,9 +272,8 @@ class BasePlot:
     def reset_aesthetics(self):
         """Reset the plot [aesthetics][] to their default values."""
         self.aesthetics = dict(
-            style="darkgrid",
-            palette="GnBu_r_d",
-            title_fontsize=20,
+            template="plotly",
+            title_fontsize=24,
             label_fontsize=16,
             tick_fontsize=12,
         )
@@ -236,37 +281,34 @@ class BasePlot:
     # Methods ====================================================== >>
 
     @staticmethod
-    def _draw_line(ax: plt.Axes, y: SCALAR):
+    def _draw_line(y: SCALAR, xaxis: str, yaxis: str):
         """Draw a line across the axis.
 
         Parameters
         ----------
-        ax: plt.Axes
-            Plot's axes object.
-
         y: int or float
             Value on the y-axis to draw the line.
 
         """
-        ax.plot(
-            [0, 1],
-            [0, 1] if y == "diagonal" else [y, y],
-            color="black",
-            linestyle="--",
-            linewidth=2,
-            alpha=0.6,
-            zorder=-2,
-            transform=blended_transform_factory(ax.transAxes, ax.transData),
+        return go.Scatter(
+            x=[0, 1],
+            y=[0, 1] if y == "diagonal" else [y, y],
+            mode="lines",
+            line=dict(color="black", width=2, dash="dash"),
+            opacity=0.6,
+            hoverinfo="skip",
+            showlegend=False,
+            xaxis=xaxis,
+            yaxis=yaxis,
         )
 
-    @staticmethod
-    def _get_figure(**kwargs):
+    def _get_figure(self, **kwargs):
         """Return existing figure if in canvas, else a new figure."""
-        if BasePlot._fig and BasePlot._fig.is_canvas:
-            return BasePlot._fig.figure
+        if self._fig and self._fig.is_canvas:
+            return self._fig.figure
         else:
-            BasePlot._fig = BaseFigure(**kwargs)
-            return BasePlot._fig.figure
+            self._fig = BaseFigure(**kwargs)
+            return self._fig.figure
 
     def _get_subclass(
         self,
@@ -434,8 +476,8 @@ class BasePlot:
 
     def _plot(
         self,
-        fig: Optional[plt.Figure] = None,
-        ax: Optional[plt.Axes] = None,
+        fig: Optional[go.Figure] = None,
+        axes: Optional[Tuple[str, str]] = None,
         **kwargs,
     ) -> Optional[plt.Figure]:
         """Make the plot.
@@ -448,54 +490,83 @@ class BasePlot:
         matplotlib.figure.Figure, default=None
             Current plotting figure. If None, ignore the figure.
 
-        ax: matplotlib.axes.Axes or None, default=None
+        axes:tuple or None, default=None
             Current plotting axes. If None, ignore the axes.
 
         **kwargs
-            Keyword arguments containing the plot's parameters.
-            Axes parameters:
+            Keyword arguments containing the figure's parameters.
 
-            - title: Axes' title.
-            - legend: Location of the legend and number of items.
+            - title: Name of the title or custom configuration.
+            - legend: Whether to show the legend or custom configuration.
             - xlabel: Label for the x-axis.
             - ylabel: Label for the y-axis.
             - xlim: Limits for the x-axis.
             - ylim: Limits for the y-axis.
-
-            Figure parameters:
-
             - figsize: Size of the figure.
-            - tight_layout: Whether to apply it (default=True).
             - filename: Name of the saved file.
             - plotname: Name of the plot.
-            - display: Whether to render the plot. If None, return the figure.
+            - display: Whether to show the plot. If None, return the figure.
 
         Returns
         -------
-        matplotlib.figure.Figure or None
-            Created figure.
+        go.Figure or None
+            Created figure. Only returned if `display=None`.
 
         """
-        if kwargs.get("title"):
-            ax.set_title(kwargs.get("title"), fontsize=self.title_fontsize, pad=20)
-        if kwargs.get("legend"):
-            ax.legend(
-                loc=kwargs["legend"][0],
-                ncol=max(1, kwargs["legend"][1] // 3),
-                fontsize=self.label_fontsize,
+        if axes:
+            fig.update_layout(
+                {
+                    f"{axes[0]}_title": kwargs.get("xlabel"),
+                    f"{axes[1]}_title": kwargs.get("ylabel"),
+                    f"{axes[0]}_title_font_size": self.label_fontsize,
+                    f"{axes[1]}_title_font_size": self.label_fontsize,
+                    f"{axes[0]}_range": kwargs.get("xlim"),
+                    f"{axes[1]}_range": kwargs.get("ylim"),
+                }
             )
-        if kwargs.get("xlabel"):
-            ax.set_xlabel(kwargs["xlabel"], fontsize=self.label_fontsize, labelpad=12)
-        if kwargs.get("ylabel"):
-            ax.set_ylabel(kwargs["ylabel"], fontsize=self.label_fontsize, labelpad=12)
-        if kwargs.get("xlim"):
-            ax.set_xlim(kwargs["xlim"])
-        if kwargs.get("ylim"):
-            ax.set_ylim(kwargs["ylim"])
-        if ax is not None:
-            ax.tick_params(axis="both", labelsize=self.tick_fontsize)
 
-        if fig and not getattr(BasePlot._fig, "is_canvas", None):
+        if self._fig.is_canvas:
+            # Add a subtitle to a plot in the canvas
+            if title := kwargs.get("title"):
+                default_title = {
+                    "y": 1,
+                    "xref": f"x{axes[0][-1] if int(axes[0][-1]) > 1 else ''}",
+                    "x": 0.5,
+                    "yref": f"y{axes[1][-1] if int(axes[1][-1]) > 1 else ''}",
+                    "showarrow": False,
+                    "font_size": self.title_fontsize - 4,
+                }
+
+                if isinstance(title, dict):
+                    title = {**default_title, **title}
+                else:
+                    title = {"text": title, **default_title}
+
+                fig.update_layout(dict(annotations=fig.layout.annotations + (title,)))
+
+        else:
+            default_title = dict(x=0.5, font_size=self.title_fontsize)
+            if not isinstance(title := kwargs.get("title"), dict):
+                title = {"text": title, **default_title}
+            else:
+                title = {**default_title, **title}
+
+            default_legend = dict(font_size=self.label_fontsize)
+            if not isinstance(legend := kwargs.get("legend"), dict):
+                legend = default_legend
+            else:
+                legend = {**default_legend, **legend}
+
+            fig.update_layout(
+                title=title,
+                showlegend=bool(kwargs.get("legend")),
+                legend=legend,
+                legend_font_size=self.label_fontsize,
+                font_size=self.tick_fontsize,
+                width=kwargs["figsize"][0],
+                height=kwargs["figsize"][1],
+            )
+
             # Set name with which to save the file
             if kwargs.get("filename"):
                 if kwargs["filename"].endswith("auto"):
@@ -505,34 +576,31 @@ class BasePlot:
             else:
                 name = kwargs.get("plotname")
 
-            if kwargs.get("figsize"):
-                fig.set_size_inches(*kwargs["figsize"])
-            if kwargs.get("tight_layout", True):
-                fig.tight_layout()
             if kwargs.get("filename"):
-                fig.savefig(name)
-
-            sns.set_style(self.style)  # Reset style
+                fig.write_image(name if "." in name else name + ".png")
 
             # Log plot to mlflow run of every model visualized
             if getattr(self, "experiment", None) and self.log_plots:
-                for m in set(BasePlot._fig._used_models):
+                for m in set(self._fig._used_models):
                     MlflowClient().log_figure(
                         run_id=m._run.info.run_id,
                         figure=fig,
                         artifact_file=name if name.endswith(".png") else f"{name}.png",
                     )
-            plt.show() if kwargs.get("display") else plt.close()
-            if kwargs.get("display") is None:
+
+            if kwargs.get("display") is True:
+                fig.show()
+            elif kwargs.get("display") is None:
                 return fig
 
     @composed(contextmanager, crash, typechecked)
     def canvas(
         self,
-        nrows: INT = 1,
-        ncols: INT = 2,
+        rows: INT = 1,
+        cols: INT = 2,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
+        legend: Union[bool, dict] = True,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
@@ -545,18 +613,29 @@ class BasePlot:
 
         Parameters
         ----------
-        nrows: int, default=1
+        rows: int, default=1
             Number of plots in length.
 
-        ncols: int, default=2
+        cols: int, default=2
             Number of plots in width.
 
-        title: str or None, default=None
-            Plot's title. If None, no title is displayed.
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: bool or dict, default=True
+            Legend for the plot.
+
+            - If True, the legend is shown.
+            - If False, no legend is shown.
+            - If dict, [legend configuration][parameters].
 
         figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of plots in the canvas.
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of plots in the canvas.
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
@@ -566,17 +645,16 @@ class BasePlot:
             Whether to render the plot.
 
         """
-        BasePlot._fig = BaseFigure(nrows=nrows, ncols=ncols, is_canvas=True)
+        self._fig = BaseFigure(rows=rows, cols=cols, is_canvas=True)
         try:
-            yield plt.gcf()
+            yield self._fig._figure
         finally:
-            if title:
-                plt.suptitle(title, fontsize=self.title_fontsize + 4)
-            BasePlot._fig.is_canvas = False  # Close the canvas
+            self._fig.is_canvas = False  # Close the canvas
             self._plot(
-                fig=plt.gcf(),
-                figsize=figsize or (6 + 4 * ncols, 2 + 4 * nrows),
-                tight_layout=False,
+                fig=self._fig._figure,
+                title=title,
+                legend=legend,
+                figsize=figsize or (600 + 300 * cols, 200 + 400 * rows),
                 plotname="canvas",
                 filename=filename,
                 display=display,
@@ -597,7 +675,7 @@ class FeatureSelectorPlot(BasePlot):
         self,
         show: Optional[INT] = None,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -674,7 +752,7 @@ class FeatureSelectorPlot(BasePlot):
     def plot_pca(
         self,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -746,7 +824,7 @@ class FeatureSelectorPlot(BasePlot):
     def plot_rfecv(
         self,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -844,7 +922,7 @@ class DataPlot(BasePlot):
         columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         method: str = "pearson",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (8, 7),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -931,7 +1009,7 @@ class DataPlot(BasePlot):
         distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1083,7 +1161,7 @@ class DataPlot(BasePlot):
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: INT = 10,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1200,7 +1278,7 @@ class DataPlot(BasePlot):
         columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
         distributions: Union[str, SEQUENCE_TYPES] = "norm",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1282,7 +1360,7 @@ class DataPlot(BasePlot):
         self,
         columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1359,7 +1437,7 @@ class DataPlot(BasePlot):
         self,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1456,7 +1534,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         n_bins: INT = 10,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1563,7 +1641,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         normalize: bool = False,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1724,7 +1802,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1802,7 +1880,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1897,7 +1975,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1982,7 +2060,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2078,7 +2156,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2161,7 +2239,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         metric: Union[INT, str] = 0,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2249,7 +2327,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2332,7 +2410,7 @@ class ModelPlot(BasePlot):
         columns: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2516,7 +2594,7 @@ class ModelPlot(BasePlot):
         kind: str = "average",
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2769,7 +2847,7 @@ class ModelPlot(BasePlot):
         show: Optional[INT] = None,
         n_repeats: INT = 10,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2898,7 +2976,7 @@ class ModelPlot(BasePlot):
         draw_hyperparameter_tuning: bool = True,
         color_branches: Optional[bool] = None,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3162,7 +3240,8 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
+        legend: Union[bool, dict] = True,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3182,23 +3261,33 @@ class ModelPlot(BasePlot):
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: bool or dict, default=True
+            Legend for the plot.
+
+            - If True, the legend is shown.
+            - If False, no legend is shown.
+            - If dict, [legend configuration][parameters].
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        matplotlib.figure.Figure
+        go.Figure or None
             Plot object. Only returned if `display=None`.
 
         """
@@ -3207,7 +3296,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for set_ in dataset:
                 if hasattr(m.estimator, "predict_proba"):
@@ -3218,18 +3307,28 @@ class ModelPlot(BasePlot):
                 # Get precision-recall pairs for different thresholds
                 prec, rec, _ = precision_recall_curve(getattr(m, f"y_{set_}"), y_pred)
 
-                ap = f" (AP={round(m.evaluate('ap', set_)['average_precision'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
-                plt.plot(rec, prec, lw=2, label=label)
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                fig.add_trace(
+                    go.Scatter(
+                        x=rec,
+                        y=prec,
+                        mode="lines",
+                        name=label,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
 
-        self._draw_line(ax=ax, y=m.y_test.sort_values().iloc[-1] / len(m.y_test))
+        fig.add_trace(
+            self._draw_line(y=sum(m.y_test) / len(m.y_test), xaxis=xaxis, yaxis=yaxis)
+        )
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
-            ax=ax,
+            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
             title=title,
-            legend=("best", len(models)),
+            legend=legend,
             xlabel="Recall",
             ylabel="Precision",
             figsize=figsize,
@@ -3246,7 +3345,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3336,7 +3435,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3431,7 +3530,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         metric: Union[INT, str] = 0,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3555,8 +3654,9 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        title: Optional[Union[str, dict]] = None,
+        legend: Union[bool, dict] = True,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
@@ -3575,23 +3675,33 @@ class ModelPlot(BasePlot):
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: bool or dict, default=True
+            Legend for the plot.
+
+            - If True, the legend is shown.
+            - If False, no legend is shown.
+            - If dict, [legend configuration][parameters].
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        matplotlib.figure.Figure
+        go.Figure or None
             Plot object. Only returned if `display=None`.
 
         """
@@ -3600,7 +3710,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for set_ in dataset:
                 if hasattr(m.estimator, "predict_proba"):
@@ -3611,18 +3721,28 @@ class ModelPlot(BasePlot):
                 # Get False (True) Positive Rate as arrays
                 fpr, tpr, _ = roc_curve(getattr(m, f"y_{set_}"), y_pred)
 
-                roc = f" (AUC={round(m.evaluate('auc', set_)['roc_auc'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
-                ax.plot(fpr, tpr, lw=2, label=label)
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                fig.add_trace(
+                    go.Scatter(
+                        x=fpr,
+                        y=tpr,
+                        mode="lines",
+                        name=label,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
 
-        self._draw_line(ax=ax, y="diagonal")
+        fig.add_trace(self._draw_line(y="diagonal", xaxis=xaxis, yaxis=yaxis))
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
-            ax=ax,
+            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
             title=title,
-            legend=("lower right", len(models)),
+            legend=legend,
+            xlim=(-0.05, 1.05),
+            ylim=(-0.05, 1.05),
             xlabel="FPR",
             ylabel="TPR",
             figsize=figsize,
@@ -3637,7 +3757,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         metric: Union[INT, str] = 0,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3731,7 +3851,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         steps: INT = 100,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3829,7 +3949,7 @@ class ModelPlot(BasePlot):
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         metric: Union[INT, str] = 0,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 8),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3943,7 +4063,7 @@ class ShapPlot(BasePlot):
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4032,7 +4152,7 @@ class ShapPlot(BasePlot):
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4119,7 +4239,7 @@ class ShapPlot(BasePlot):
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4216,7 +4336,7 @@ class ShapPlot(BasePlot):
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (14, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4319,7 +4439,7 @@ class ShapPlot(BasePlot):
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4409,7 +4529,7 @@ class ShapPlot(BasePlot):
         feature: Union[INT, str] = 0,
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4498,7 +4618,7 @@ class ShapPlot(BasePlot):
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
         *,
-        title: Optional[str] = None,
+        title: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
