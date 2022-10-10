@@ -19,13 +19,14 @@ from atom.baserunner import BaseRunner
 from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
+from atom.plots import ModelPlot
 from atom.utils import (
     SEQUENCE, CustomDict, check_scaling, get_best_score, get_custom_scorer,
     is_sparse, lst, time_to_str,
 )
 
 
-class BaseTrainer(BaseTransformer, BaseRunner):
+class BaseTrainer(BaseTransformer, ModelPlot, BaseRunner):
     """Base class for trainers.
 
     Implements methods to check the validity of the parameters,

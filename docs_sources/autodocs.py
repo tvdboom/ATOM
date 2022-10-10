@@ -190,8 +190,7 @@ CUSTOM_URLS = dict(
     tfidf="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html",
     hashing="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html",
     # Plots
-    style="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles",
-    palette="https://seaborn.pydata.org/tutorial/color_palettes.html",
+    palette="https://plotly.com/python/discrete-color/",
     # Training
     scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
 )

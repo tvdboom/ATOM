@@ -118,7 +118,6 @@ more in the [user guide][aesthetics].
     - attributes:
         from_docstring: False
         include:
-            - style
             - palette
             - title_fontsize
             - label_fontsize

@@ -90,7 +90,6 @@ more in the [user guide][aesthetics].
     - attributes:
         from_docstring: False
         include:
-            - style
             - palette
             - title_fontsize
             - label_fontsize
@@ -116,6 +115,7 @@ of methods to handle the data, run the training, and manage the pipeline.
         - get_params
         - log
         - merge
+        - update_layout
         - reset_aesthetics
         - run
         - save

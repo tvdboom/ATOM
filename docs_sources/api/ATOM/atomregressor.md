@@ -118,7 +118,6 @@ more in the [user guide][aesthetics].
     - attributes:
         from_docstring: False
         include:
-            - style
             - palette
             - title_fontsize
             - label_fontsize
@@ -148,6 +147,7 @@ of utility methods to handle the data and manage the pipeline.
         - inverse_transform
         - log
         - merge
+        - update_layout
         - report
         - reset
         - reset_aesthetics

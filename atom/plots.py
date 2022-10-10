@@ -13,16 +13,16 @@ from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
 from typing import List, Optional, Tuple, Union
-from plotly.subplots import make_subplots
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import plotly.io as pio
-import shap
+import plotly.express as px
 import plotly.graph_objects as go
+import seaborn as sns
+import shap
 from joblib import Parallel, delayed
-from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+from matplotlib.gridspec import GridSpecFromSubplotSpec
 from matplotlib.ticker import MaxNLocator
 from matplotlib.transforms import blended_transform_factory
 from mlflow.tracking import MlflowClient
@@ -48,9 +48,9 @@ from wordcloud import WordCloud
 
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, Model, check_is_fitted, check_predict_proba,
-    composed, crash, get_best_score, get_corpus, get_custom_scorer,
+    composed, crash, divide, get_best_score, get_corpus, get_custom_scorer,
     get_feature_importance, has_attr, has_task, lst, partial_dependence,
-    plot_from_model, divide, rnd
+    plot_from_model, rnd,
 )
 
 
@@ -68,10 +68,6 @@ class BaseFigure:
     cols: int, default=1
         Number of subplot columns in the canvas.
 
-    create_figure: bool, default=True
-        Whether to create a new figure. Is False when an external
-        library creates the figure (e.g. force_plot).
-
     is_canvas: bool, default=False
         Whether the figure shows multiple plots.
 
@@ -81,38 +77,30 @@ class BaseFigure:
         self,
         rows: int = 1,
         cols: int = 1,
-        create_figure: bool = True,
+        palette: Union[str, SEQUENCE_TYPES] = "Prism",
         is_canvas: bool = False,
     ):
         self.rows = rows
         self.cols = cols
-        self.create_figure = create_figure
         self.is_canvas = is_canvas
 
-        self._idx = 0
-        self._used_models = []  # Models plotted in this figure
-        self._figure = go.Figure()
+        self.idx = 0  # N-th plot in the canvas
+        self.axes = 0  # N-th axis in the canvas
+        self.figure = go.Figure()
+
+        self.pos = {}
+        self.custom_layout = {}
+        self.used_models = []  # Models plotted in this figure
+
+        if isinstance(palette, str):
+            self.palette = cycle(getattr(px.colors.qualitative, palette))
+        else:
+            self.palette = cycle(palette)
 
     @property
-    def figure(self) -> go.Figure:
-        """Get the current figure and increase the subplot index.\
-
-        Returns
-        -------
-        go.Figure
-            Current pyplot figure.
-
-        """
-        # Check if there are too many plots in the canvas
-        if self._idx >= self.rows * self.cols:
-            raise ValueError(
-                "Invalid number of plots in the canvas! Increase "
-                "the number of rows and cols to add more plots."
-            )
-        else:
-            self._idx += 1
-
-        return self._figure
+    def color(self):
+        """Get the next color in the palette."""
+        return next(self.palette)
 
     @property
     def grid(self) -> Tuple[int, int]:
@@ -127,7 +115,27 @@ class BaseFigure:
             Y-position.
 
         """
-        return (self._idx - 1) // self.cols + 1, self._idx % self.cols or self.cols
+        return (self.idx - 1) // self.cols + 1, self.idx % self.cols or self.cols
+
+    def next_subplot(self) -> go.Figure:
+        """Increase the subplot index.
+
+        Returns
+        -------
+        go.Figure
+            Current pyplot figure.
+
+        """
+        # Check if there are too many plots in the canvas
+        if self.idx >= self.rows * self.cols:
+            raise ValueError(
+                "Invalid number of plots in the canvas! Increase "
+                "the number of rows and cols to add more plots."
+            )
+        else:
+            self.idx += 1
+
+        return self.figure
 
     def get_axes(
         self, x: Tuple[int, int] = (0, 1), y: Tuple[int, int] = (0, 1)
@@ -151,30 +159,40 @@ class BaseFigure:
             Name of the y-axis.
 
         """
-        x_offset = divide(0.05, (self.cols - 1))
-        y_offset = divide(0.05, (self.rows - 1))
+        self.axes += 1
 
-        # Determine the size of the plots
-        x_size = (x[1] - x[0]) * ((1 - ((x_offset * 2) * (self.cols - 1))) / self.cols)
-        y_size = (y[1] - y[0]) * ((1 - ((y_offset * 2) * (self.rows - 1))) / self.rows)
+        # Calculate the distance between subplots
+        x_offset = divide(0.05, (self.cols - 1))
+        y_offset = divide(0.07, (self.rows - 1))
+
+        # Calculate the size of the subplot
+        x_size = (1 - ((x_offset * 2) * (self.cols - 1))) / self.cols
+        y_size = (1 - ((y_offset * 2) * (self.rows - 1))) / self.rows
+
+        # Calculate the size of the axes
+        ax_size = (x[1] - x[0]) * x_size
+        ay_size = (y[1] - y[0]) * y_size
 
         # Determine the position for the axes
-        x_pos = (self.grid[1] - 1) * (x_size + 2 * x_offset)
-        y_pos = (self.rows - self.grid[0]) * (y_size + 2 * y_offset)
+        x_pos = (self.grid[1] - 1) * (x_size + 2 * x_offset) + x[0] * x_size
+        y_pos = (self.rows - self.grid[0]) * (y_size + 2 * y_offset) + y[0] * y_size
+
+        # Store positions for subplot title
+        self.pos[str(self.axes)] = (x_pos + ax_size / 2, rnd(y_pos + ay_size))
 
         # Update the figure with the new axes
-        self._figure.update_layout(
+        self.figure.update_layout(
             {
-                f"xaxis{self._idx}": dict(
-                    domain=(x_pos, rnd(x_pos + x_size)), anchor=f"y{self._idx}"
+                f"xaxis{self.axes}": dict(
+                    domain=(x_pos, rnd(x_pos + ax_size)), anchor=f"y{self.axes}"
                 ),
-                f"yaxis{self._idx}": dict(
-                    domain=(y_pos, rnd(y_pos + y_size)), anchor=f"x{self._idx}"
+                f"yaxis{self.axes}": dict(
+                    domain=(y_pos, rnd(y_pos + ay_size)), anchor=f"x{self.axes}"
                 ),
             }
         )
 
-        return f"x{self._idx}", f"y{self._idx}"
+        return f"x{self.axes}", f"y{self.axes}"
 
 
 class BasePlot:
@@ -185,13 +203,15 @@ class BasePlot:
 
     """
 
-    _fig = None
-    _aesthetics = dict(
-        template="plotly",  # Plotly plotting template
-        title_fontsize=24,  # Fontsize for titles
-        label_fontsize=16,  # Fontsize for labels and legends
-        tick_fontsize=12,  # Fontsize for ticks
-    )
+    def __init__(self):
+        self._fig = None
+        self._custom_layout = {}
+        self._aesthetics = dict(
+            palette="Prism",  # Pyplot color palette
+            title_fontsize=24,  # Fontsize for titles
+            label_fontsize=16,  # Fontsize for labels, legend and hoverinfo
+            tick_fontsize=12,  # Fontsize for ticks
+        )
 
     # Properties =================================================== >>
 
@@ -203,26 +223,27 @@ class BasePlot:
     @aesthetics.setter
     @typechecked
     def aesthetics(self, value: dict):
-        self.template = value.get("template", self.template)
+        self.palette = value.get("palette", self.palette)
         self.title_fontsize = value.get("title_fontsize", self.title_fontsize)
         self.label_fontsize = value.get("label_fontsize", self.label_fontsize)
         self.tick_fontsize = value.get("tick_fontsize", self.tick_fontsize)
 
     @property
-    def template(self) -> str:
-        """Plotting [template][]."""
-        return self._aesthetics["template"]
+    def palette(self) -> str:
+        """Color [palette][]."""
+        return self._aesthetics["palette"]
 
-    @template.setter
+    @palette.setter
     @typechecked
-    def template(self, value: Union[str, go.layout.Template]):
-        if isinstance(value, str) and value not in pio.templates:
+    def palette(self, value: Union[str, SEQUENCE_TYPES]):
+        if isinstance(value, str) and not hasattr(px.colors.qualitative, value):
             raise ValueError(
-                "Invalid value for the template parameter, got "
-                f"{value}. Choose from: {', '.join(pio.templates)}."
+                f"Invalid value for the palette parameter, got {value}. Choose "
+                f"from one of plotly's built-in qualitative color sequences in "
+                f"the px.colors.qualitative module or define your own sequence."
             )
-        pio.templates.default = value
-        self._aesthetics["template"] = value
+
+        self._aesthetics["palette"] = value
 
     @property
     def title_fontsize(self) -> int:
@@ -241,7 +262,7 @@ class BasePlot:
 
     @property
     def label_fontsize(self) -> int:
-        """Fontsize for labels and legends."""
+        """Fontsize for the labels, legend and hover information."""
         return self._aesthetics["label_fontsize"]
 
     @label_fontsize.setter
@@ -271,12 +292,40 @@ class BasePlot:
 
     def reset_aesthetics(self):
         """Reset the plot [aesthetics][] to their default values."""
-        self.aesthetics = dict(
-            template="plotly",
+        self._aesthetics = dict(
+            palette="Prism",
             title_fontsize=24,
             label_fontsize=16,
             tick_fontsize=12,
         )
+
+    def update_layout(
+        self,
+        dict1: Optional[dict] = None,
+        overwrite: bool = False,
+        **kwargs,
+    ):
+        """Update the properties of the plot's layout.
+
+        This recursively updates the structure of the original layout
+        with the values in the input dict / keyword arguments.
+
+        Parameters
+        ----------
+        dict1: dict or None, default=None
+            Dictionary of properties to be updated.
+
+        overwrite: bool, default=False
+            If True, overwrite existing properties. If False, apply
+            updates to existing properties recursively, preserving
+            existing properties that are not specified in the update
+            operation.
+
+        **kwargs
+            Keyword/value pair of properties to be updated.
+
+        """
+        self._custom_layout = dict(dict1=dict1, overwrite=overwrite, **kwargs)
 
     # Methods ====================================================== >>
 
@@ -302,13 +351,13 @@ class BasePlot:
             yaxis=yaxis,
         )
 
-    def _get_figure(self, **kwargs):
+    def _get_figure(self):
         """Return existing figure if in canvas, else a new figure."""
         if self._fig and self._fig.is_canvas:
-            return self._fig.figure
+            return self._fig.next_subplot()
         else:
-            self._fig = BaseFigure(**kwargs)
-            return self._fig.figure
+            self._fig = BaseFigure(palette=self.palette)
+            return self._fig.next_subplot()
 
     def _get_subclass(
         self,
@@ -475,10 +524,7 @@ class BasePlot:
         return show
 
     def _plot(
-        self,
-        fig: Optional[go.Figure] = None,
-        axes: Optional[Tuple[str, str]] = None,
-        **kwargs,
+        self, axes: Optional[Tuple[str, str]] = None, **kwargs
     ) -> Optional[plt.Figure]:
         """Make the plot.
 
@@ -487,11 +533,8 @@ class BasePlot:
 
         Parameters
         ----------
-        matplotlib.figure.Figure, default=None
-            Current plotting figure. If None, ignore the figure.
-
-        axes:tuple or None, default=None
-            Current plotting axes. If None, ignore the axes.
+        axes: tuple or None, default=None
+            Names of the axes to update. If None, ignore their update.
 
         **kwargs
             Keyword arguments containing the figure's parameters.
@@ -514,7 +557,7 @@ class BasePlot:
 
         """
         if axes:
-            fig.update_layout(
+            self._fig.figure.update_layout(
                 {
                     f"{axes[0]}_title": kwargs.get("xlabel"),
                     f"{axes[1]}_title": kwargs.get("ylabel"),
@@ -525,14 +568,15 @@ class BasePlot:
                 }
             )
 
-        if self._fig.is_canvas:
-            # Add a subtitle to a plot in the canvas
-            if title := kwargs.get("title"):
+            if self._fig.is_canvas and (title := kwargs.get("title")):
+                # Add a subtitle to a plot in the canvas
                 default_title = {
-                    "y": 1,
-                    "xref": f"x{axes[0][-1] if int(axes[0][-1]) > 1 else ''}",
-                    "x": 0.5,
-                    "yref": f"y{axes[1][-1] if int(axes[1][-1]) > 1 else ''}",
+                    "x": self._fig.pos[axes[0][-1]][0],
+                    "y": self._fig.pos[axes[0][-1]][1],
+                    "xref": "paper",
+                    "yref": "paper",
+                    "xanchor": "center",
+                    "yanchor": "bottom",
                     "showarrow": False,
                     "font_size": self.title_fontsize - 4,
                 }
@@ -542,9 +586,11 @@ class BasePlot:
                 else:
                     title = {"text": title, **default_title}
 
-                fig.update_layout(dict(annotations=fig.layout.annotations + (title,)))
+                self._fig.figure.update_layout(
+                    dict(annotations=self._fig.figure.layout.annotations + (title,))
+                )
 
-        else:
+        if not self._fig.is_canvas and kwargs.get("plotname"):
             default_title = dict(x=0.5, font_size=self.title_fontsize)
             if not isinstance(title := kwargs.get("title"), dict):
                 title = {"text": title, **default_title}
@@ -557,15 +603,20 @@ class BasePlot:
             else:
                 legend = {**default_legend, **legend}
 
-            fig.update_layout(
+            # Update layout with predefined settings
+            self._fig.figure.update_layout(
                 title=title,
                 showlegend=bool(kwargs.get("legend")),
                 legend=legend,
                 legend_font_size=self.label_fontsize,
+                hoverlabel=dict(font_size=self.label_fontsize),
                 font_size=self.tick_fontsize,
                 width=kwargs["figsize"][0],
                 height=kwargs["figsize"][1],
             )
+
+            # Update layout with custom settings
+            self._fig.figure.update_layout(**self._custom_layout)
 
             # Set name with which to save the file
             if kwargs.get("filename"):
@@ -577,21 +628,21 @@ class BasePlot:
                 name = kwargs.get("plotname")
 
             if kwargs.get("filename"):
-                fig.write_image(name if "." in name else name + ".png")
+                self._fig.figure.write_image(name if "." in name else name + ".png")
 
             # Log plot to mlflow run of every model visualized
             if getattr(self, "experiment", None) and self.log_plots:
-                for m in set(self._fig._used_models):
+                for m in set(self._fig.used_models):
                     MlflowClient().log_figure(
                         run_id=m._run.info.run_id,
-                        figure=fig,
+                        figure=self._fig.figure,
                         artifact_file=name if name.endswith(".png") else f"{name}.png",
                     )
 
             if kwargs.get("display") is True:
-                fig.show()
+                self._fig.figure.show()
             elif kwargs.get("display") is None:
-                return fig
+                return self._fig.figure
 
     @composed(contextmanager, crash, typechecked)
     def canvas(
@@ -645,16 +696,15 @@ class BasePlot:
             Whether to render the plot.
 
         """
-        self._fig = BaseFigure(rows=rows, cols=cols, is_canvas=True)
+        self._fig = BaseFigure(rows, cols, palette=self.palette, is_canvas=True)
         try:
-            yield self._fig._figure
+            yield self._fig.figure
         finally:
             self._fig.is_canvas = False  # Close the canvas
             self._plot(
-                fig=self._fig._figure,
                 title=title,
                 legend=legend,
-                figsize=figsize or (600 + 300 * cols, 200 + 400 * rows),
+                figsize=figsize or (550 + 350 * cols, 200 + 400 * rows),
                 plotname="canvas",
                 filename=filename,
                 display=display,
@@ -725,7 +775,7 @@ class FeatureSelectorPlot(BasePlot):
         ).sort_values()
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         ax = scr.plot.barh(
             ax=ax,
             width=0.6,
@@ -791,7 +841,7 @@ class FeatureSelectorPlot(BasePlot):
         var_all = np.array(self.pca.explained_variance_ratio_)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         ax.scatter(
             x=self.pca._comps,
             y=var.sum(),
@@ -862,7 +912,7 @@ class FeatureSelectorPlot(BasePlot):
             ylabel = "score"
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
 
         n_features = self.rfecv.get_params()["min_features_to_select"]
         mean = self.rfecv.cv_results_["mean_test_score"]
@@ -980,7 +1030,7 @@ class DataPlot(BasePlot):
 
         sns.set_style("white")  # Only for this plot
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         sns.heatmap(
             data=corr,
             mask=mask,
@@ -1068,7 +1118,7 @@ class DataPlot(BasePlot):
         palette_2 = sns.color_palette("Blues_r", 3)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
 
         cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
         if len(columns) == 1 and columns[0] in cat_columns:
@@ -1246,7 +1296,7 @@ class DataPlot(BasePlot):
             ).sort_values(ascending=True)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
 
         data = series[-show:]  # Subset of series to plot
         ax = data[-show:].plot.barh(
@@ -1319,7 +1369,7 @@ class DataPlot(BasePlot):
         palette = cycle(sns.color_palette())
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
 
         percentiles = np.linspace(0, 100, 101)
         for col in columns:
@@ -1401,7 +1451,7 @@ class DataPlot(BasePlot):
             Plot object. Only returned if `display=None`.
 
         """
-        if getattr(BasePlot._fig, "is_canvas", None):
+        if getattr(self._fig, "is_canvas", None):
             raise PermissionError(
                 "The plot_scatter_matrix method can not be called from "
                 "a canvas because of incompatibility of the APIs."
@@ -1491,7 +1541,7 @@ class DataPlot(BasePlot):
         rows = self.dataset.loc[self._get_rows(index, return_test=False)]
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
 
         background_color = kwargs.pop("background_color", "white")
         random_state = kwargs.pop("random_state", self.random_state)
@@ -1535,7 +1585,8 @@ class ModelPlot(BasePlot):
         n_bins: INT = 10,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 10),
+        legend: Union[bool, dict] = True,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 900),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
@@ -1565,11 +1616,22 @@ class ModelPlot(BasePlot):
             Number of bins used for calibration. Minimum of 5
             required.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 10)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: bool or dict, default=True
+            Legend for the plot.
+
+            - If True, the legend is shown.
+            - If False, no legend is shown.
+            - If dict, [legend configuration][parameters].
+
+        figsize: tuple, default=(900, 900)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
@@ -1595,10 +1657,11 @@ class ModelPlot(BasePlot):
             )
 
         fig = self._get_figure()
-        gs = GridSpecFromSubplotSpec(4, 1, BasePlot._fig.grid, hspace=0.05)
-        ax1 = fig.add_subplot(gs[:3, 0])
-        ax2 = fig.add_subplot(gs[3:4, 0], sharex=ax1)
+        xaxis, yaxis = self._fig.get_axes(y=(0.31, 1.0))
+        xaxis2, yaxis2 = self._fig.get_axes(y=(0.0, 0.29))
         for m in models:
+            color = self._fig.color
+
             if hasattr(m.estimator, "decision_function"):
                 prob = m.decision_function_test
                 prob = (prob - prob.min()) / (prob.max() - prob.min())
@@ -1608,25 +1671,57 @@ class ModelPlot(BasePlot):
             # Get calibration (frac of positives and predicted values)
             frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
 
-            ax1.plot(pred, frac_pos, marker="o", lw=2, label=f"{m.name}")
-            ax2.hist(prob, n_bins, range=(0, 1), label=m.name, histtype="step", lw=2)
+            fig.add_trace(
+                go.Scatter(
+                    x=pred,
+                    y=frac_pos,
+                    mode="lines+markers",
+                    line=dict(color=color),
+                    name=m.name,
+                    legendgroup=m.name,
+                    xaxis=xaxis2,
+                    yaxis=yaxis,
+                )
+            )
 
-        plt.setp(ax1.get_xticklabels(), visible=False)
-        self._draw_line(ax=ax1, y="diagonal")
+            fig.add_trace(
+                go.Histogram(
+                    x=prob,
+                    xbins=dict(start=0, end=1, size=1. / n_bins),
+                    marker_color=color,
+                    opacity=0.7,
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=False,
+                    xaxis=xaxis2,
+                    yaxis=yaxis2,
+                )
+            )
 
-        BasePlot._fig._used_models.extend(models)
+        fig.add_trace(self._draw_line(y="diagonal", xaxis=xaxis2, yaxis=yaxis))
+
+        fig.update_layout(
+            {
+                f"xaxis{xaxis2[-1]}_showgrid": True,
+                f"xaxis{xaxis[-1]}_showticklabels": False,
+                "barmode": "overlay",
+            }
+        )
+
         self._plot(
-            ax=ax1,
+            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
             title=title,
-            legend=("lower right" if len(models) > 1 else False, len(models)),
             ylabel="Fraction of positives",
             ylim=(-0.05, 1.05),
         )
+
+        self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax2,
+            axes=(f"xaxis{xaxis2[-1]}", f"yaxis{yaxis2[-1]}"),
+            legend=legend,
             xlabel="Predicted value",
             ylabel="Count",
+            xlim=(0, 1),
             figsize=figsize,
             plotname="plot_calibration",
             filename=filename,
@@ -1718,7 +1813,7 @@ class ModelPlot(BasePlot):
         )
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         for m in models:
             cm = confusion_matrix(
                 getattr(m, f"y_{dataset}"), getattr(m, f"predict_{dataset}")
@@ -1768,7 +1863,7 @@ class ModelPlot(BasePlot):
             else:
                 df[m.name] = cm.ravel()
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         if len(models) > 1:
             df.plot.barh(ax=ax, width=0.6)
             figsize = figsize or (10, 6)
@@ -1846,7 +1941,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         for m in models:
             for set_ in dataset:
                 if hasattr(m.estimator, "predict_proba"):
@@ -1859,7 +1954,7 @@ class ModelPlot(BasePlot):
 
                 plt.plot(fpr, fnr, lw=2, label=m.name)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -1928,7 +2023,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         for m in models:
             for set_ in dataset:
                 r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
@@ -1955,7 +2050,7 @@ class ModelPlot(BasePlot):
 
         self._draw_line(ax=ax, y="diagonal")
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2019,7 +2114,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset, allow_holdout=False)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         for m in models:
             if not m.evals:
                 raise ValueError(
@@ -2040,7 +2135,7 @@ class ModelPlot(BasePlot):
         else:
             xlabel = "Iterations"
 
-        BasePlot._fig._used_models.append(m)
+        self._fig.used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2125,7 +2220,7 @@ class ModelPlot(BasePlot):
         df = df.reindex(sorted(df.index, key=lambda i: df.loc[i].sum()))
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         ax = df.plot.barh(
             ax=ax,
             width=0.75 if len(models) > 1 else 0.6,
@@ -2135,7 +2230,7 @@ class ModelPlot(BasePlot):
             for i, v in enumerate(df[df.columns[0]]):
                 ax.text(v + 0.01, i - 0.08, f"{v:.2f}", fontsize=self.tick_fontsize)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2200,7 +2295,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         for m in models:
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}")
@@ -2217,7 +2312,7 @@ class ModelPlot(BasePlot):
 
         self._draw_line(ax=ax, y="diagonal")
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2283,7 +2378,7 @@ class ModelPlot(BasePlot):
         metric = self._get_metric(metric)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
 
         # Prepare dataframes for seaborn lineplot (one df per line)
         # Not using sns hue parameter because of legend formatting
@@ -2306,7 +2401,7 @@ class ModelPlot(BasePlot):
 
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2371,7 +2466,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         for m in models:
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}")
@@ -2388,7 +2483,7 @@ class ModelPlot(BasePlot):
 
         self._draw_line(ax=ax, y=1)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2474,7 +2569,7 @@ class ModelPlot(BasePlot):
         markers = cycle(["o", "^", "s", "p", "D", "H", "p", "*"])
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         for m in models:
             fxs = self._get_columns(columns, include_target=False, branch=m.branch)
             marker = next(markers)
@@ -2572,7 +2667,7 @@ class ModelPlot(BasePlot):
 
         self._draw_line(ax=ax, y="diagonal")
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -2709,7 +2804,7 @@ class ModelPlot(BasePlot):
         axes = []
         fig = self._get_figure()
         n_cols = 3 if not columns else len(lst(columns))
-        gs = GridSpecFromSubplotSpec(1, n_cols, BasePlot._fig.grid)
+        gs = GridSpecFromSubplotSpec(1, n_cols, self._fig.grid)
         for i in range(n_cols):
             axes.append(fig.add_subplot(gs[0, i]))
 
@@ -2824,14 +2919,14 @@ class ModelPlot(BasePlot):
 
         if title:
             # Place title if not in canvas, else above first or middle image
-            if len(cols) == 1 or (len(cols) == 2 and BasePlot._fig.is_canvas):
+            if len(cols) == 1 or (len(cols) == 2 and self._fig.is_canvas):
                 axes[0].set_title(title, fontsize=self.title_fontsize, pad=20)
             elif len(cols) == 3:
                 axes[1].set_title(title, fontsize=self.title_fontsize, pad=20)
-            elif not BasePlot._fig.is_canvas:
+            elif not self._fig.is_canvas:
                 plt.suptitle(title, fontsize=self.title_fontsize)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             figsize=figsize,
@@ -2936,7 +3031,7 @@ class ModelPlot(BasePlot):
         column_order = get_idx["features"].values[:show]
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         sns.boxplot(
             x="score",
             y="features",
@@ -2956,7 +3051,7 @@ class ModelPlot(BasePlot):
             # Hide the legend created by seaborn
             ax.legend().set_visible(False)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3082,7 +3177,7 @@ class ModelPlot(BasePlot):
                 branch["color"] = "black"
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         sns.set_style("white")  # Only for this plot
 
         # Create schematic drawing
@@ -3219,7 +3314,7 @@ class ModelPlot(BasePlot):
         for k, v in colors.items():
             plt.plot((-9e9, -9e9), (-9e9, -9e9), color=v, lw=2, zorder=-2, label=k)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=figure.fig,
             ax=figure.ax,
@@ -3313,6 +3408,7 @@ class ModelPlot(BasePlot):
                         x=rec,
                         y=prec,
                         mode="lines",
+                        line=dict(color=self._fig.color),
                         name=label,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3323,9 +3419,8 @@ class ModelPlot(BasePlot):
             self._draw_line(y=sum(m.y_test) / len(m.y_test), xaxis=xaxis, yaxis=yaxis)
         )
 
-        self._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
             axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
             title=title,
             legend=legend,
@@ -3396,7 +3491,7 @@ class ModelPlot(BasePlot):
         palette = cycle(sns.color_palette())
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         for m in models:
             for set_ in dataset:
                 for value in m.y.sort_values().unique():
@@ -3413,7 +3508,7 @@ class ModelPlot(BasePlot):
                         ax=ax,
                     )
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3486,7 +3581,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        gs = GridSpecFromSubplotSpec(1, 4, BasePlot._fig.grid, wspace=0.05)
+        gs = GridSpecFromSubplotSpec(1, 4, self._fig.grid, wspace=0.05)
         ax1 = fig.add_subplot(gs[0, :3])
         ax2 = fig.add_subplot(gs[0, 3:4])
         for m in models:
@@ -3506,12 +3601,12 @@ class ModelPlot(BasePlot):
         self._plot(ax=ax2, xlabel="Distribution")
 
         if title:
-            if not BasePlot._fig.is_canvas:
+            if not self._fig.is_canvas:
                 plt.suptitle(title, fontsize=self.title_fontsize, y=0.98)
             else:
                 ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax1,
@@ -3601,7 +3696,7 @@ class ModelPlot(BasePlot):
         metric = self._get_metric(metric)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
 
         names = []
         models = sorted(models, key=lambda m: get_metric(m, metric))
@@ -3634,7 +3729,7 @@ class ModelPlot(BasePlot):
         ax.set_yticks(range(len(models)))
         ax.set_yticklabels(names)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3727,6 +3822,7 @@ class ModelPlot(BasePlot):
                         x=fpr,
                         y=tpr,
                         mode="lines",
+                        line=dict(color=self._fig.color),
                         name=label,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3735,9 +3831,8 @@ class ModelPlot(BasePlot):
 
         fig.add_trace(self._draw_line(y="diagonal", xaxis=xaxis, yaxis=yaxis))
 
-        self._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
             axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
             title=title,
             legend=legend,
@@ -3801,7 +3896,7 @@ class ModelPlot(BasePlot):
         metric = self._get_metric(metric)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
 
         # Prepare dataframes for seaborn lineplot (one df per line)
         # Not using sns hue parameter because of legend formatting
@@ -3828,7 +3923,7 @@ class ModelPlot(BasePlot):
         ax.set_xlim(max(n_models) + 0.1, min(n_models) - 0.1)
         ax.set_xticks(range(1, max(n_models) + 1))
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -3911,7 +4006,7 @@ class ModelPlot(BasePlot):
             metric_list = [get_custom_scorer(m)._score_func for m in lst(metric)]
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         steps = np.linspace(0, 1, steps)
         for m in models:
             for met in metric_list:
@@ -3929,7 +4024,7 @@ class ModelPlot(BasePlot):
                         label = f"{m.name}{l_set} ({met.__name__})"
                     ax.plot(steps, results, label=label, lw=2)
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -4003,7 +4098,7 @@ class ModelPlot(BasePlot):
             )
 
         fig = self._get_figure()
-        gs = GridSpecFromSubplotSpec(4, 1, BasePlot._fig.grid, hspace=0.05)
+        gs = GridSpecFromSubplotSpec(4, 1, self._fig.grid, hspace=0.05)
         ax1 = fig.add_subplot(gs[0:3, 0])
         ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
         for m in models:
@@ -4032,7 +4127,7 @@ class ModelPlot(BasePlot):
             ylabel=self._metric[metric].name,
         )
 
-        BasePlot._fig._used_models.extend(models)
+        self._fig.used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax2,
@@ -4128,12 +4223,12 @@ class ShapPlot(BasePlot):
         explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         shap.plots.bar(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlot._fig._used_models.append(m)
+        self._fig.used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -4215,12 +4310,12 @@ class ShapPlot(BasePlot):
         explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         shap.plots.beeswarm(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlot._fig._used_models.append(m)
+        self._fig.used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -4305,7 +4400,7 @@ class ShapPlot(BasePlot):
         target = self._get_target(target)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         shap.decision_plot(
             base_value=m._shap.get_expected_value(target),
             shap_values=m._shap.get_shap_values(rows, target),
@@ -4318,7 +4413,7 @@ class ShapPlot(BasePlot):
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlot._fig._used_models.append(m)
+        self._fig.used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -4388,7 +4483,7 @@ class ShapPlot(BasePlot):
             Plot object. Only if `display=None` and `matplotlib=True`.
 
         """
-        if getattr(BasePlot._fig, "is_canvas", None):
+        if getattr(self._fig, "is_canvas", None):
             raise PermissionError(
                 "The force_plot method can not be called from a canvas "
                 "because of incompatibility between the ATOM and shap API."
@@ -4411,7 +4506,7 @@ class ShapPlot(BasePlot):
         )
 
         if kwargs.get("matplotlib"):
-            BasePlot._fig._used_models.append(m)
+            self._fig.used_models.append(m)
             return self._plot(
                 fig=plt.gcf(),
                 title=title,
@@ -4505,12 +4600,12 @@ class ShapPlot(BasePlot):
         explanation = m._shap.get_explanation(rows, target)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         shap.plots.heatmap(explanation, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlot._fig._used_models.append(m)
+        self._fig.used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -4593,13 +4688,13 @@ class ShapPlot(BasePlot):
         explanation = m._shap.get_explanation(rows, target, feature)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         shap.plots.scatter(explanation, color=explanation, ax=ax, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
         ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlot._fig._used_models.append(m)
+        self._fig.used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,
@@ -4687,12 +4782,12 @@ class ShapPlot(BasePlot):
         explanation = m._shap.get_explanation(rows, target, only_one=True)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlot._fig.grid)
+        ax = fig.add_subplot(self._fig.grid)
         shap.plots.waterfall(explanation, max_display=show, show=False)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        BasePlot._fig._used_models.append(m)
+        self._fig.used_models.append(m)
         return self._plot(
             fig=fig,
             ax=ax,

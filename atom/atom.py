@@ -71,6 +71,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
     ):
+        super().__init__()
+
         self.index = index
         self.shuffle = shuffle
         self.stratify = stratify

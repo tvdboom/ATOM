@@ -432,7 +432,7 @@ class Branch:
         attrs = []
         for p in dir(self):
             if (
-                p in vars(self) and p not in ("T", "name", "_data", "_idx", "_holdout")
+                p in vars(self) and p not in ("T", "name", "_data", "idx", "_holdout")
                 or isinstance(getattr(Branch, p, None), property)
             ):
                 attrs.append(p)
