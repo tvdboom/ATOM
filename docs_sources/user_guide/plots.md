@@ -118,6 +118,7 @@ depend on the task at hand.
         exclude:
             - canvas
             - reset_aesthetics
+            - update_layout
 
 ### Data plots
 
@@ -127,6 +128,7 @@ depend on the task at hand.
         exclude:
             - canvas
             - reset_aesthetics
+            - update_layout
 
 ### Model plots
 
@@ -136,6 +138,7 @@ depend on the task at hand.
         exclude:
             - canvas
             - reset_aesthetics
+            - update_layout
 
 ### Shap plots
 
@@ -145,3 +148,4 @@ depend on the task at hand.
         exclude:
             - canvas
             - reset_aesthetics
+            - update_layout

@@ -69,10 +69,10 @@ extra:
 plugins:
     - search
     - autorefs
-    - mkdocs-jupyter:
-          include: ["*.ipynb"]
-          include_source: true
-          ignore_h1_titles: true
+#    - mkdocs-jupyter:
+#          include: ["*.ipynb"]
+#          include_source: true
+#          ignore_h1_titles: true
     - mkdocs-simple-hooks:
         hooks:
             on_page_markdown: "docs_sources.autodocs:render"
@@ -104,7 +104,7 @@ extra_css:
 extra_javascript:
     - stylesheets/extra.js
     - https://polyfill.io/v3/polyfill.min.js?features=es6
-    - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js  # MathJax configuration
+    - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js  # MathJax
 
 nav:
     - About: about.md
