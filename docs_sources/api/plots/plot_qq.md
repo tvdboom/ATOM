@@ -14,6 +14,3 @@
 ## Example
 
 :: examples
-
-:: insert:
-    url: /img/plots/plot_qq.html

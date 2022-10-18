@@ -10,11 +10,11 @@ Description: Module containing the documentation rendering.
 from __future__ import annotations
 
 import importlib
+import os
 from inspect import (
     Parameter, getattr_static, getdoc, getmembers, getsourcelines, isclass,
     isfunction, isroutine, signature,
 )
-import os
 from typing import Any, Callable, Optional
 
 import regex as re
@@ -194,6 +194,7 @@ CUSTOM_URLS = dict(
     palette="https://plotly.com/python/discrete-color/",
     gofigure="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html",
     kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
+    wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
     calibration="https://scikit-learn.org/stable/modules/calibration.html",
     # Training
     scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
@@ -808,6 +809,8 @@ def render(markdown: str, **kwargs) -> str:
             text = ""
 
         markdown = markdown[:match.start()] + text + markdown[match.end():]
+
+        # Change the custom autorefs now to use [self-...][]
         markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)
@@ -840,23 +843,26 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
 
     """
     result, start = "", 0
-    for match in re.finditer("\[([\.`': \w_-]*?)\]\[([\w_:-]*?)\]", markdown):
-        anchor = match.group(1)
-        link = match.group(2)
 
-        text = match.group()
-        if not link:
-            # Only adapt when has form [anchor][]
-            link = anchor.replace(' ', '-').replace('.', '').lower()
-            text = f"[{anchor}][{link}]"
-        if link in CUSTOM_URLS:
-            # Replace keyword with custom url
-            text = f"[{anchor}]({CUSTOM_URLS[link]})"
-        if "self" in link and autodocs:
-            link = link.replace("self", autodocs.obj.__name__.lower())
-            text = f"[{anchor}][{link}]"
+    # Skip regex check for very long docs
+    if len(markdown) < 1e5:
+        for match in re.finditer("\[([\.`': \w_-]*?)\]\[([\w_:-]*?)\]", markdown):
+            anchor = match.group(1)
+            link = match.group(2)
 
-        result += markdown[start:match.start()] + text
-        start = match.end()
+            text = match.group()
+            if not link:
+                # Only adapt when has form [anchor][]
+                link = anchor.replace(' ', '-').replace('.', '').lower()
+                text = f"[{anchor}][{link}]"
+            if link in CUSTOM_URLS:
+                # Replace keyword with custom url
+                text = f"[{anchor}]({CUSTOM_URLS[link]})"
+            if "self" in link and autodocs:
+                link = link.replace("self", autodocs.obj.__name__.lower())
+                text = f"[{anchor}][{link}]"
+
+            result += markdown[start:match.start()] + text
+            start = match.end()
 
     return result + markdown[start:]

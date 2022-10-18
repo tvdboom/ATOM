@@ -2322,7 +2322,9 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         >>> atom.plot_distribution(columns=0)
 
         ```
-        ![plot_distribution_1](../../img/plots/plot_distribution_1.png)
+
+        :: insert:
+            url: /img/plots/plot_distribution_3.html
 
         ```pycon
 
@@ -2353,7 +2355,8 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         ```
 
-        ![plot_distribution_1](../../img/plots/plot_distribution_2.png)
+        :: insert:
+            url: /img/plots/plot_distribution_4.html
 
     === "stand-alone"
         ```pycon

@@ -1230,7 +1230,8 @@ class FeatureSelector(
         >>> atom.plot_pca()
         ```
 
-        ![plot_pca](../../img/plots/plot_pca.png)
+        :: insert:
+            url: /img/plots/plot_pca.html
 
     === "stand-alone"
         ```pycon
@@ -1266,10 +1267,7 @@ class FeatureSelector(
         568  -5.475243  -0.670637  1.490443  ... -0.047726 -0.144094 -0.179496
         [569 rows x 12 columns]
 
-        >>> fs.plot_pca()
         ```
-
-        ![plot_pca](../../img/plots/plot_pca.png)
 
     """
 

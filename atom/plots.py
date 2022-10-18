@@ -94,29 +94,26 @@ class BaseFigure:
         self.cols = cols
         self.horizontal_spacing = horizontal_spacing
         self.vertical_spacing = vertical_spacing
-        self.is_canvas = is_canvas
-
-        self.idx = 0  # N-th plot in the canvas
-        self.axes = 0  # N-th axis in the canvas
-        self.groups = {}
-        self.figure = go.Figure()
-
-        self.pos = {}
-        self.custom_layout = {}
-        self.used_models = []  # Models plotted in this figure
-
         if isinstance(palette, str):
             self.palette = cycle(getattr(px.colors.qualitative, palette))
         else:
             self.palette = cycle(palette)
+        self.is_canvas = is_canvas
+
+        self.idx = 0  # N-th plot in the canvas
+        self.axes = 0  # N-th axis in the canvas
+        self.figure = go.Figure()
+
+        self.groups = []
+        self.style = dict(colors={}, markers={}, dashes={})
+
+        self.pos = {}  # Subplot position to use for title
+        self.custom_layout = {}  # Layout params specified by user
+        self.used_models = []  # Models plotted in this figure
+        self._markers = cycle(["circle", "x", "diamond", "pentagon", "star", "hexagon"])
+        self._dashes = cycle([None, "dashdot", "dash", "dot"])
 
         # Perform parameter checks
-        if self.rows + self.cols > 9:
-            raise ValueError(
-                "Invalid value for the rows and cols parameters. A canvas "
-                f"can show up to 9 plots, got {self.rows + self.cols}."
-            )
-
         if not 0 < horizontal_spacing < 1:
             raise ValueError(
                 "Invalid value for the horizontal_spacing parameter. The "
@@ -128,11 +125,6 @@ class BaseFigure:
                 "Invalid value for the vertical_spacing parameter. The "
                 f"value must lie between 0 and 1, got {vertical_spacing}."
             )
-
-    @property
-    def color(self):
-        """Get the next color in the palette."""
-        return next(self.palette)
 
     @property
     def grid(self) -> Tuple[int, int]:
@@ -149,6 +141,7 @@ class BaseFigure:
         """
         return (self.idx - 1) // self.cols + 1, self.idx % self.cols or self.cols
 
+    @property
     def next_subplot(self) -> go.Figure:
         """Increase the subplot index.
 
@@ -168,6 +161,92 @@ class BaseFigure:
             self.idx += 1
 
         return self.figure
+
+    def get_color(self, elem: Optional[str] = None) -> str:
+        """Get the next color.
+
+        Parameters
+        ----------
+        elem: str or None
+            Element for which to get the color.
+
+        Returns
+        -------
+        str
+            Color code.
+
+        """
+        if elem is None:
+            return next(self.palette)
+        elif elem in self.style["colors"]:
+            return self.style["colors"][elem]
+        else:
+            return self.style["colors"].setdefault(elem, next(self.palette))
+
+    def get_marker(self, elem: Optional[str] = None) -> str:
+        """Get the next marker.
+
+        Parameters
+        ----------
+        elem: str or None
+            Element for which to get the marker.
+
+        Returns
+        -------
+        str
+            Marker code.
+
+        """
+        if elem is None:
+            return next(self._markers)
+        elif elem in self.style["markers"]:
+            return self.style["markers"][elem]
+        else:
+            return self.style["markers"].setdefault(elem, next(self._markers))
+
+    def get_dashes(self, elem: Optional[str] = None) -> str:
+        """Get the next dash style.
+
+        Parameters
+        ----------
+        elem: str or None
+            Element for which to get the dash.
+
+        Returns
+        -------
+        str
+            Dash style.
+
+        """
+        if elem is None:
+            return next(self._dashes)
+        elif elem in self.style["dashes"]:
+            return self.style["dashes"][elem]
+        else:
+            return self.style["dashes"].setdefault(elem, next(self._dashes))
+
+    def get_showlegend(self, name: str) -> bool:
+        """Get whether the trace should be showed in the legend.
+
+        If there's already a trace with the same name, it's not
+        necessary to show it in the plot's legend.
+
+        Parameters
+        ----------
+        name: str
+            Name of the trace.
+
+        Returns
+        -------
+        bool
+            Whether the trace should be placed in the legend.
+
+        """
+        if name in self.groups:
+            return False
+        else:
+            self.groups.append(name)
+            return True
 
     def get_axes(
         self,
@@ -255,25 +334,6 @@ class BaseFigure:
             self.figure.update_layout({f"coloraxis{self.axes}": coloraxis})
 
         return f"x{self.axes}", f"y{self.axes}"
-
-    def check_group(self, name: str) -> Tuple[bool, str]:
-        """Return whether a group name already exists in the figure.
-
-        Parameters
-        ----------
-        name: str
-            Name of the group. The same as showed in the legend.
-
-        Returns
-        -------
-        bool
-            Whether to show the group in the legend.
-
-        str
-            Color of the group.
-
-        """
-        return name not in self.groups, self.groups.setdefault(name, self.color)
 
 
 class BasePlot:
@@ -470,10 +530,10 @@ class BasePlot:
 
         """
         if self._fig and self._fig.is_canvas:
-            return self._fig.next_subplot()
+            return self._fig.next_subplot
         else:
             self._fig = BaseFigure(palette=self.palette)
-            return self._fig.next_subplot()
+            return self._fig.next_subplot
 
     def _get_subclass(
         self,
@@ -681,6 +741,8 @@ class BasePlot:
                     f"{axes[1]}_title_font_size": self.label_fontsize,
                     f"{axes[0]}_range": kwargs.get("xlim"),
                     f"{axes[1]}_range": kwargs.get("ylim"),
+                    f"{axes[0]}_automargin": True,
+                    f"{axes[1]}_automargin": True,
                 }
             )
 
@@ -908,8 +970,8 @@ class FeatureSelectorPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:ModelPlot.plot_pca
-        atom.plots:ModelPlot.plot_rfecv
+        atom.plots:FeatureSelectorPlot.plot_pca
+        atom.plots:FeatureSelectorPlot.plot_rfecv
 
         Examples
         --------
@@ -919,10 +981,13 @@ class FeatureSelectorPlot(BasePlot):
         >>> from sklearn.datasets import load_breast_cancer
 
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_selection("pca", n_features=12)
-        >>> atom.plot_components(show=8)
+        >>> atom.feature_selection("pca", n_features=14)
+        >>> atom.plot_components(show=10)
 
         ```
+
+        :: insert:
+            url: /img/plots/plot_components.html
 
         """
         if show is None or show > self.pca.components_.shape[0]:
@@ -941,7 +1006,7 @@ class FeatureSelectorPlot(BasePlot):
                 x=(var := np.array(self.pca.explained_variance_ratio_)[:show]),
                 y=[f"pca{str(i)}" for i in range(len(var))],
                 orientation="h",
-                marker_color=self._fig.color,
+                marker_color=self._fig.get_color(),
                 hovertemplate="%{x}<extra></extra>",
                 showlegend=False,
                 xaxis=xaxis,
@@ -949,10 +1014,10 @@ class FeatureSelectorPlot(BasePlot):
             )
         )
 
-        fig.update_layout({f"yaxis{yaxis[-1]}": dict(categoryorder="total ascending")})
+        fig.update_layout({f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending")})
 
         return self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             xlabel="Explained variance ratio",
@@ -1008,6 +1073,27 @@ class FeatureSelectorPlot(BasePlot):
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:FeatureSelectorPlot.plot_components
+        atom.plots:FeatureSelectorPlot.plot_rfecv
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.feature_selection("pca", n_features=12)
+        >>> atom.plot_pca()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_pca.html
+
         """
         # Create star symbol at selected number of components
         sizes = [6] * self.pca.n_features_in_
@@ -1022,7 +1108,7 @@ class FeatureSelectorPlot(BasePlot):
                 x=tuple(range(1, self.pca.n_features_in_ + 1)),
                 y=np.cumsum(self.pca.explained_variance_ratio_),
                 mode="lines+markers",
-                line=dict(width=2, color=self._fig.color),
+                line=dict(width=2, color=self._fig.get_color()),
                 marker=dict(symbol=symbols, size=sizes, opacity=1, line=dict(width=0)),
                 hovertemplate="%{y}<extra></extra>",
                 showlegend=False,
@@ -1034,14 +1120,14 @@ class FeatureSelectorPlot(BasePlot):
         fig.update_layout(
             {
                 "hovermode": "x",
-                f"xaxis{xaxis[-1]}_showspikes": True,
-                f"yaxis{yaxis[-1]}_showspikes": True,
+                f"xaxis{xaxis[1:]}_showspikes": True,
+                f"yaxis{yaxis[1:]}_showspikes": True,
             }
         )
 
         margin = self.pca.n_features_in_ / 30
         return self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             xlabel="First N principal components",
@@ -1096,6 +1182,27 @@ class FeatureSelectorPlot(BasePlot):
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:FeatureSelectorPlot.plot_components
+        atom.plots:FeatureSelectorPlot.plot_pca
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.feature_selection("rfecv", solver="Tree")
+        >>> atom.plot_rfecv()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_rfecv.html
+
         """
         try:  # Define the y-label for the plot
             ylabel = self.rfecv.get_params()["scoring"].name
@@ -1113,7 +1220,6 @@ class FeatureSelectorPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
 
-        color = self._fig.color
         mean = self.rfecv.cv_results_["mean_test_score"]
         std = self.rfecv.cv_results_["std_test_score"]
 
@@ -1122,7 +1228,7 @@ class FeatureSelectorPlot(BasePlot):
                 x=tuple(x),
                 y=mean,
                 mode="lines+markers",
-                line=dict(width=2, color=color),
+                line=dict(width=2, color=self._fig.get_color(ylabel)),
                 marker=dict(symbol=symbols, size=sizes, opacity=1, line=dict(width=0)),
                 name=ylabel,
                 showlegend=False,
@@ -1138,7 +1244,7 @@ class FeatureSelectorPlot(BasePlot):
                     x=tuple(x),
                     y=mean + std,
                     mode="lines",
-                    line=dict(width=1, color=color),
+                    line=dict(width=1, color=self._fig.get_color(ylabel)),
                     name="upper bound",
                     showlegend=False,
                     xaxis=xaxis,
@@ -1148,7 +1254,7 @@ class FeatureSelectorPlot(BasePlot):
                     x=tuple(x),
                     y=mean - std,
                     mode="lines",
-                    line=dict(width=1, color=color),
+                    line=dict(width=1, color=self._fig.get_color(ylabel)),
                     fill="tonexty",
                     fillcolor=f"rgba{color[3:-1]}, 0.5)",  # Add opacity
                     name="lower bound",
@@ -1162,13 +1268,13 @@ class FeatureSelectorPlot(BasePlot):
         fig.update_layout(
             {
                 "hovermode": "x",
-                f"xaxis{xaxis[-1]}_showspikes": True,
-                f"yaxis{yaxis[-1]}_showspikes": True,
+                f"xaxis{xaxis[1:]}_showspikes": True,
+                f"yaxis{yaxis[1:]}_showspikes": True,
             }
         )
 
         return self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             xlabel="Number of features",
@@ -1242,6 +1348,27 @@ class DataPlot(BasePlot):
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:DataPlot.plot_distribution
+        atom.plots:DataPlot.plot_qq
+        atom.plots:DataPlot.plot_scatter_matrix
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.plot_correlation()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_correlation.html
+
         """
         columns = self._get_columns(columns, only_numerical=True)
         if method.lower() not in ("pearson", "kendall", "spearman"):
@@ -1260,8 +1387,8 @@ class DataPlot(BasePlot):
 
         coloraxis = dict(
             colorscale="rdbu_r",
-            cmax=1,
             cmin=-1,
+            cmax=1,
             title=f"{method.lower()} correlation",
             font_size=self.label_fontsize,
         )
@@ -1273,7 +1400,7 @@ class DataPlot(BasePlot):
                 z=corr.mask(mask),
                 x=columns,
                 y=columns,
-                coloraxis=f"coloraxis{xaxis[-1]}",
+                coloraxis=f"coloraxis{xaxis[1:]}",
                 hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
                 hoverongaps=False,
                 showlegend=False,
@@ -1285,14 +1412,14 @@ class DataPlot(BasePlot):
         fig.update_layout(
             {
                 "template": "plotly_white",
-                f"yaxis{yaxis[-1]}_autorange": "reversed",
-                f"xaxis{xaxis[-1]}_showgrid": False,
-                f"yaxis{yaxis[-1]}_showgrid": False,
+                f"yaxis{yaxis[1:]}_autorange": "reversed",
+                f"xaxis{xaxis[1:]}_showgrid": False,
+                f"yaxis{yaxis[1:]}_showgrid": False,
              }
         )
 
         return self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             figsize=figsize,
@@ -1370,6 +1497,35 @@ class DataPlot(BasePlot):
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:DataPlot.plot_correlation
+        atom.plots:DataPlot.plot_qq
+        atom.plots:DataPlot.plot_scatter_matrix
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.plot_distribution(columns=[0, 1, 2])
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_distribution_1.html
+
+        ```pycon
+        >>> atom.plot_distribution(columns=0, distributions=["norm", "invgauss"])
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_distribution_2.html
+
         """
         columns = self._get_columns(columns)
         cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
@@ -1388,13 +1544,12 @@ class DataPlot(BasePlot):
                     f"Value should be >0, got {show}."
                 )
 
-            color = self._fig.color
             fig.add_trace(
                 go.Bar(
                     x=(data := series[-show:]),
                     y=data.index,
                     orientation="h",
-                    marker_color=color,
+                    marker_color=self._fig.get_color(),
                     hovertemplate="%{x}<extra></extra>",
                     showlegend=False,
                     xaxis=xaxis,
@@ -1404,10 +1559,10 @@ class DataPlot(BasePlot):
 
             fig.add_annotation(
                 x=0.98,
-                xref=f"x{xaxis[-1] if int(xaxis[-1]) > 1 else ''} domain",
+                xref=f"x{xaxis[1:] if int(xaxis[1:]) > 1 else ''} domain",
                 xanchor="right",
                 y=0.02,
-                yref=f"y{yaxis[-1] if int(yaxis[-1]) > 1 else ''} domain",
+                yref=f"y{yaxis[1:] if int(yaxis[1:]) > 1 else ''} domain",
                 yanchor="bottom",
                 text=f"{columns[0]}: {len(series)} classes",
                 font=dict(color="black", size=self.label_fontsize),
@@ -1419,7 +1574,7 @@ class DataPlot(BasePlot):
             )
 
             return self._plot(
-                axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+                axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
                 title=title,
                 legend=legend,
                 xlabel="Counts",
@@ -1431,24 +1586,22 @@ class DataPlot(BasePlot):
 
         else:
             for col in [c for c in columns if c not in cat_columns]:
-                color = self._fig.color
-
                 fig.add_trace(
                     go.Histogram(
                         x=self.dataset[col],
                         histnorm="probability density",
                         marker=dict(
-                            color=f"rgba({color[4:-1]}, 0.2)",
-                            line=dict(width=2, color=color),
+                            color=f"rgba({self._fig.get_color(col)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=self._fig.get_color(col)),
                         ),
                         name=col,
                         legendgroup=col,
+                        showlegend=len(columns) > 1,
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
                 )
 
-                dashes = cycle(["dash", "dashdot", "dot"])
                 x = np.linspace(self.dataset[col].min(), self.dataset[col].max(), 200)
 
                 # Drop missing values for compatibility with scipy.stats
@@ -1465,9 +1618,13 @@ class DataPlot(BasePlot):
                                 x=x,
                                 y=getattr(stats, dist).pdf(x, *params),
                                 mode="lines",
-                                line=dict(width=2, color=color, dash=next(dashes)),
+                                line=dict(
+                                    width=2,
+                                    color=self._fig.get_color(col),
+                                    dash=self._fig.get_dashes(dist),
+                                ),
                                 name=dist,
-                                legendgroup=col,
+                                legendgroup=col if len(columns) > 1 else None,
                                 xaxis=xaxis,
                                 yaxis=yaxis,
                             )
@@ -1479,9 +1636,9 @@ class DataPlot(BasePlot):
                             x=x,
                             y=stats.gaussian_kde(values)(x),
                             mode="lines",
-                            line=dict(width=2, color=color),
+                            line=dict(width=2, color=self._fig.get_color(col)),
                             name="kde",
-                            legendgroup=col,
+                            legendgroup=col if len(columns) > 1 else None,
                             xaxis=xaxis,
                             yaxis=yaxis,
                         )
@@ -1490,7 +1647,7 @@ class DataPlot(BasePlot):
             fig.update_layout({"barmode": "overlay"})
 
             return self._plot(
-                axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+                axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
                 title=title,
                 legend=legend,
                 xlabel="Values",
@@ -1516,10 +1673,10 @@ class DataPlot(BasePlot):
     ):
         """Plot n-gram frequencies.
 
-        The text for the plot is extracted from the column
-        named `corpus`. If there is no column with that name,
-        an exception is raised. If the documents are not
-        tokenized, the words are separated by spaces.
+        The text for the plot is extracted from the column named
+        `corpus`. If there is no column with that name, an exception
+        is raised. If the documents are not tokenized, the words are
+        separated by spaces.
 
         Parameters
         ----------
@@ -1565,8 +1722,6 @@ class DataPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:DataPlot.plot_correlation
-        atom.plots:DataPlot.plot_scatter_matrix
         atom.plots:DataPlot.plot_wordcloud
 
         Examples
@@ -1594,6 +1749,9 @@ class DataPlot(BasePlot):
         >>> atom.plot_ngrams()
 
         ```
+
+        :: insert:
+            url: /img/plots/plot_ngrams.html
 
         """
 
@@ -1646,13 +1804,12 @@ class DataPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
 
-        color = self._fig.color
         fig.add_trace(
             go.Bar(
                 x=(data := series[-show:]),
                 y=data.index,
                 orientation="h",
-                marker_color=color,
+                marker_color=self._fig.get_color(),
                 hovertemplate="%{x}<extra></extra>",
                 showlegend=False,
                 xaxis=xaxis,
@@ -1662,10 +1819,10 @@ class DataPlot(BasePlot):
 
         fig.add_annotation(
             x=0.98,
-            xref=f"x{xaxis[-1] if int(xaxis[-1]) > 1 else ''} domain",
+            xref=f"x{xaxis[1:] if int(xaxis[1:]) > 1 else ''} domain",
             xanchor="right",
             y=0.02,
-            yref=f"y{yaxis[-1] if int(yaxis[-1]) > 1 else ''} domain",
+            yref=f"y{yaxis[1:] if int(yaxis[1:]) > 1 else ''} domain",
             yanchor="bottom",
             text=f"Total {ngram}: {len(series)}",
             font=dict(color="black", size=self.label_fontsize),
@@ -1677,7 +1834,7 @@ class DataPlot(BasePlot):
         )
 
         return self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             xlabel="Counts",
@@ -1707,7 +1864,7 @@ class DataPlot(BasePlot):
             Slice, names or indices of the columns to plot. Selected
             categorical columns are ignored.
 
-        distributions: str, sequence or None, default="norm"
+        distributions: str or sequence, default="norm"
             Names of the `scipy.stats` distributions to fit to the
             columns.
 
@@ -1759,6 +1916,17 @@ class DataPlot(BasePlot):
 
         ```
 
+        :: insert:
+            url: /img/plots/plot_qq_1.html
+
+        ```pycon
+        >>> atom.plot_qq(columns=0, distributions=["norm", "invgauss", "triang"])
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_qq_2.html
+
         """
         columns = self._get_columns(columns)
 
@@ -1772,30 +1940,29 @@ class DataPlot(BasePlot):
             missing = self.missing + [np.inf, -np.inf]
             values = self.dataset[col].replace(missing, np.NaN).dropna()
 
-            markers = cycle(["circle", "x", "diamond", "pentagon", "star", "hexagon"])
-            qn_b = np.percentile(values, percentiles)
-
             for dist in lst(distributions):
                 stat = getattr(stats, dist)
                 params = stat.fit(values)
-
-                # Get the theoretical percentiles
                 samples = stat.rvs(*params, size=101, random_state=self.random_state)
-                qn_a = np.percentile(samples, percentiles)
 
-                label = col + (" - " + dist if len(lst(distributions)) > 1 else "")
-                showlegend, color = self._fig.check_group(label)
+                label = ""
+                if len(columns) > 1:
+                    label += col
+                    if len(lst(distributions)) > 1:
+                        label += f" - {dist}"
+                elif len(lst(distributions)) > 1:
+                    label += dist
+
                 fig.add_trace(
                     go.Scatter(
-                        x=qn_a,
-                        y=qn_b,
+                        x=(qn_a := np.percentile(samples, percentiles)),
+                        y=(qn_b := np.percentile(values, percentiles)),
                         mode="markers",
-                        # marker_size=50,
-                        marker_symbol=next(markers),
-                        line=dict(width=2, color=color),
+                        marker_symbol=self._fig.get_marker(dist),
+                        line=dict(width=2, color=self._fig.get_color(col)),
                         name=label,
                         legendgroup=label,
-                        showlegend=showlegend,
+                        showlegend=self._fig.get_showlegend(label),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -1808,7 +1975,7 @@ class DataPlot(BasePlot):
         fig.add_trace(self._draw_line(xaxis, yaxis, x=(minimum, maximum)))
 
         return self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             xlabel="Theoretical quantiles",
@@ -1825,15 +1992,17 @@ class DataPlot(BasePlot):
         columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 10),
+        legend: Union[bool, dict] = True,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 900),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
-        **kwargs,
     ):
         """Plot a matrix of scatter plots.
 
-        A subset of max 250 random samples are selected from every
-        column to not clutter the plot.
+        Shows a grid of numerical features, where the bottom triangle
+        contain scatter plots (max 250 random samples), the diagonal
+        line contains column distributions, and the upper triangle
+        contains contour histograms for all samples in the columns.
 
         Parameters
         ----------
@@ -1842,55 +2011,148 @@ class DataPlot(BasePlot):
             plot all columns in the dataset. Selected categorical
             columns are ignored.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple or None, default=(10, 10))
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][aesthetics].
+
+        legend: bool or dict, default=True
+            Legend for the plot.
+
+            - If True, the legend is shown.
+            - If False, no legend is shown.
+            - If dict, [legend configuration][aesthetics].
+
+        figsize: tuple, default=(900, 900)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for seaborn's pairplot.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
-        """
-        if getattr(self._fig, "is_canvas", None):
-            raise PermissionError(
-                "The plot_scatter_matrix method can not be called from "
-                "a canvas because of incompatibility of the APIs."
-            )
+        See Also
+        --------
+        atom.plots:DataPlot.plot_correlation
+        atom.plots:DataPlot.plot_distribution
+        atom.plots:DataPlot.plot_qq
 
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.plot_scatter_matrix(columns=[0, 4, 5])
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_scatter_matrix.html
+
+        """
         columns = self._get_columns(columns, only_numerical=True)
 
         # Use max 250 samples to not clutter the plot
-        samples = self.dataset[columns].sample(
+        sample = lambda col: self.dataset[col].sample(
             n=min(len(self.dataset), 250), random_state=self.random_state
         )
 
-        diag_kind = kwargs.get("diag_kind", "kde")
-        grid = sns.pairplot(samples, diag_kind=diag_kind, **kwargs)
+        fig = self._get_figure()
+        color = self._fig.get_color()
+        for i in range(len(columns)**2):
+            x, y = i // len(columns), i % len(columns)
 
-        # Set right fontsize for all axes in grid
-        for axi in grid.axes.flatten():
-            axi.tick_params(axis="both", labelsize=self.tick_fontsize)
-            axi.set_xlabel(axi.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
-            axi.set_ylabel(axi.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
+            # Calculate the distance between subplots
+            offset = divide(0.0125, (len(columns) - 1))
+
+            # Calculate the size of the subplot
+            size = (1 - ((offset * 2) * (len(columns) - 1))) / len(columns)
+
+            # Determine the position for the axes
+            x_pos = y * (size + 2 * offset)
+            y_pos = (len(columns) - x - 1) * (size + 2 * offset)
+
+            xaxis, yaxis = self._fig.get_axes(
+                x=(x_pos, rnd(x_pos + size)),
+                y=(y_pos, rnd(y_pos + size)),
+            )
+
+            if x < len(columns) - 1:
+                fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
+            if y > 0:
+                fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
+
+            self._plot(
+                axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                xlabel=columns[y] if x == len(columns) - 1 else None,
+                ylabel=columns[x] if y == 0 else None,
+            )
+
+            if x == y:
+                fig.add_trace(
+                    go.Histogram(
+                        x=self.dataset[columns[x]],
+                        marker=dict(
+                            color=f"rgba({color[4:-1]}, 0.2)",
+                            line=dict(width=2, color=color),
+                        ),
+                        name=columns[x],
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+            elif x > y:
+                fig.add_trace(
+                    go.Scatter(
+                        x=sample(columns[y]),
+                        y=sample(columns[x]),
+                        mode="markers",
+                        marker=dict(color=color),
+                        hovertemplate="(%{x}, %{y})<extra></extra>",
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+            elif y > x:
+                fig.add_trace(
+                    go.Histogram2dContour(
+                        x=self.dataset[columns[y]],
+                        y=self.dataset[columns[x]],
+                        coloraxis="coloraxis99",
+                        hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+        # Same colorbar for all plots
+        coloraxis = dict(
+            colorscale="Blues",
+            cmin=0,
+            cmax=len(self.dataset),
+            showscale=False,
+        )
+        fig.update_layout({f"coloraxis99": coloraxis})
 
         return self._plot(
-            fig=plt.gcf(),
             title=title,
-            figsize=figsize or (10, 10),
+            legend=legend,
+            figsize=figsize or (900, 900),
             plotname="plot_scatter_matrix",
             filename=filename,
             display=display,
@@ -1902,16 +2164,17 @@ class DataPlot(BasePlot):
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Union[bool, dict] = False,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
         **kwargs,
     ):
         """Plot a wordcloud from the corpus.
 
-        The text for the plot is extracted from the column
-        named `corpus`. If there is no column with that name,
-        an exception is raised.
+        The text for the plot is extracted from the column named
+        `corpus`. If there is no column with that name, an exception
+        is raised.
 
         Parameters
         ----------
@@ -1920,11 +2183,18 @@ class DataPlot(BasePlot):
             include in the wordcloud. If None, it selects all documents
             in the dataset.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][aesthetics].
+
+        legend: bool or dict, default=False
+            Does nothing. Implemented for continuity of the API.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Name of the file. Use "auto" for automatic naming. If
@@ -1935,12 +2205,45 @@ class DataPlot(BasePlot):
             matplotlib figure.
 
         **kwargs
-            Additional keyword arguments for the WordCloud class.
+            Additional keyword arguments for the [Wordlcoud][] object.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:DataPlot.plot_ngrams
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import fetch_20newsgroups
+
+        >>> X, y = fetch_20newsgroups(
+        ...     return_X_y=True,
+        ...     categories=[
+        ...         'alt.atheism',
+        ...         'sci.med',
+        ...         'comp.windows.x',
+        ...     ],
+        ...     shuffle=True,
+        ...     random_state=1,
+        ... )
+        >>> X = np.array(X).reshape(-1, 1)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.textclean()
+        >>> atom.textnormalize()
+        >>> atom.plot_wordcloud()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_wordcloud.html
 
         """
 
@@ -1954,27 +2257,38 @@ class DataPlot(BasePlot):
         corpus = get_corpus(self.X)
         rows = self.dataset.loc[self._get_rows(index, return_test=False)]
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
-
-        background_color = kwargs.pop("background_color", "white")
-        random_state = kwargs.pop("random_state", self.random_state)
         wordcloud = WordCloud(
-            width=figsize[0] * 100 if figsize else 1000,
-            height=figsize[1] * 100 if figsize else 600,
-            background_color=background_color,
-            random_state=random_state,
+            width=figsize[0],
+            height=figsize[1],
+            background_color=kwargs.pop("background_color", "white"),
+            random_state=kwargs.pop("random_state", self.random_state),
             **kwargs,
         )
 
-        plt.imshow(wordcloud.generate(get_text(rows[corpus])))
-        plt.axis("off")
+        fig = self._get_figure()
+        xaxis, yaxis = self._fig.get_axes()
+
+        fig.add_trace(
+            go.Image(
+                z=wordcloud.generate(get_text(rows[corpus])),
+                hoverinfo="skip",
+                xaxis=xaxis,
+                yaxis=yaxis,
+            )
+        )
+
+        fig.update_layout(
+            {
+                f"xaxis{xaxis[1:]}_showticklabels": False,
+                f"yaxis{xaxis[1:]}_showticklabels": False,
+            }
+        )
 
         return self._plot(
-            fig=fig,
-            ax=ax,
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
-            figsize=figsize or (10, 6),
+            legend=legend,
+            figsize=figsize or (900, 600),
             plotname="plot_wordcloud",
             filename=filename,
             display=display,
@@ -2107,7 +2421,7 @@ class ModelPlot(BasePlot):
             # Get calibration (frac of positives and predicted values)
             frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
 
-            showlegend, color = self._fig.check_group(m.name)
+            showlegend, color = self._fig.get_group(m.name)
             fig.add_trace(
                 go.Scatter(
                     x=pred,
@@ -2143,13 +2457,13 @@ class ModelPlot(BasePlot):
         fig.update_layout(
             {
                 f"xaxis{xaxis2[-1]}_showgrid": True,
-                f"xaxis{xaxis[-1]}_showticklabels": False,
+                f"xaxis{xaxis[1:]}_showticklabels": False,
                 "barmode": "overlay",
             }
         )
 
         self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             ylabel="Fraction of positives",
             ylim=(-0.05, 1.05),
@@ -3777,14 +4091,13 @@ class ModelPlot(BasePlot):
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Union[bool, dict] = True,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
         """Plot the precision-recall curve.
 
-        The legend shows the average precision (AP) score. Only for
-        binary classification tasks.
+        Only for binary classification tasks.
 
         Parameters
         ----------
@@ -3843,16 +4156,19 @@ class ModelPlot(BasePlot):
                 prec, rec, _ = precision_recall_curve(getattr(m, f"y_{set_}"), y_pred)
 
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                showlegend, color = self._fig.check_group(label)
                 fig.add_trace(
                     go.Scatter(
                         x=rec,
                         y=prec,
                         mode="lines",
-                        line=dict(width=2, color=color),
+                        line=dict(
+                            width=2,
+                            color=self._fig.get_color(m.name),
+                            dash=self._fig.get_dashes(set_),
+                        ),
                         name=label,
                         legendgroup=label,
-                        showlegend=showlegend,
+                        showlegend=self._fig.get_showlegend(label),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -3862,7 +4178,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             xlabel="Recall",
@@ -4198,7 +4514,6 @@ class ModelPlot(BasePlot):
     ):
         """Plot the Receiver Operating Characteristics curve.
 
-        The legend shows the Area Under the ROC Curve (AUC) score.
         Only for binary classification tasks.
 
         Parameters
@@ -4258,16 +4573,19 @@ class ModelPlot(BasePlot):
                 fpr, tpr, _ = roc_curve(getattr(m, f"y_{set_}"), y_pred)
 
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                showlegend, color = self._fig.check_group(label)
                 fig.add_trace(
                     go.Scatter(
                         x=fpr,
                         y=tpr,
                         mode="lines",
-                        line=dict(width=2, color=color),
+                        line=dict(
+                            width=2,
+                            color=self._fig.get_color(m.name),
+                            dash=self._fig.get_dashes(set_),
+                        ),
                         name=label,
                         legendgroup=label,
-                        showlegend=showlegend,
+                        showlegend=self._fig.get_showlegend(label),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -4277,7 +4595,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[-1]}", f"yaxis{yaxis[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             xlim=(-0.05, 1.05),

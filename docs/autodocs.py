@@ -10,6 +10,7 @@ Description: Module containing the documentation rendering.
 from __future__ import annotations
 
 import importlib
+import os
 from inspect import (
     Parameter, getattr_static, getdoc, getmembers, getsourcelines, isclass,
     isfunction, isroutine, signature,
@@ -190,8 +191,11 @@ CUSTOM_URLS = dict(
     tfidf="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html",
     hashing="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.HashingVectorizer.html",
     # Plots
-    style="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles",
-    palette="https://seaborn.pydata.org/tutorial/color_palettes.html",
+    palette="https://plotly.com/python/discrete-color/",
+    gofigure="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html",
+    kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
+    wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
+    calibration="https://scikit-learn.org/stable/modules/calibration.html",
     # Training
     scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
 )
@@ -246,6 +250,7 @@ class AutoDocs:
     - parameters
     - attributes
     - returns
+    - yields
     - raises
     - see also
     - notes
@@ -273,6 +278,7 @@ class AutoDocs:
         "Parameters",
         "Attributes",
         "Returns",
+        "Yields",
         "Raises",
         "See Also",
         "Notes",
@@ -345,6 +351,33 @@ class AutoDocs:
         text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(True)])
 
         return text + "\n"
+
+    @staticmethod
+    def insert(config: dict) -> str:
+        """Insert a string from another file at location.
+
+        Parameters
+        ----------
+        config: dict
+            Options to configure. Choose from:
+
+            - url: Path to the file to insert.
+
+        Returns
+        -------
+        str
+            Content of the file to insert.
+
+        """
+        url = os.path.dirname(os.path.realpath(__file__)) + config["url"]
+        with open(url, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # For plotly graphs: correct sizes of the plot to adjust to frame
+        content = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', content)
+        content = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', content)
+
+        return content
 
     def get_tags(self) -> str:
         """Return the object's tags.
@@ -700,7 +733,7 @@ class AutoDocs:
                 if func.obj.__module__.startswith("atom"):
                     if description := func.get_description():
                         blocks += "\n\n" + description + "\n"
-                if table := func.get_table(["Parameters", "Returns"]):
+                if table := func.get_table(["Parameters", "Returns", "Yields"]):
                     blocks += table + "<br>"
                 else:
                     # \n to exit markdown and <br> to insert space
@@ -770,10 +803,14 @@ def render(markdown: str, **kwargs) -> str:
             text = autodocs.get_hyperparameters()
         elif "methods" in command:
             text = autodocs.get_methods(command["methods"] or {})
+        elif "insert" in command:
+            text = autodocs.insert(command["insert"] or {})
         else:
             text = ""
 
         markdown = markdown[:match.start()] + text + markdown[match.end():]
+
+        # Change the custom autorefs now to use [self-...][]
         markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)
@@ -806,23 +843,26 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
 
     """
     result, start = "", 0
-    for match in re.finditer("\[([\.`': \w_-]*?)\]\[([\w_:-]*?)\]", markdown):
-        anchor = match.group(1)
-        link = match.group(2)
 
-        text = match.group()
-        if not link:
-            # Only adapt when has form [anchor][]
-            link = anchor.replace(' ', '-').lower()
-            text = f"[{anchor}][{link}]"
-        if link in CUSTOM_URLS:
-            # Replace keyword with custom url
-            text = f"[{anchor}]({CUSTOM_URLS[link]})"
-        if "self" in link and autodocs:
-            link = link.replace("self", autodocs.obj.__name__.lower())
-            text = f"[{anchor}][{link}]"
+    # Skip regex check for very long docs
+    if len(markdown) < 1e5:
+        for match in re.finditer("\[([\.`': \w_-]*?)\]\[([\w_:-]*?)\]", markdown):
+            anchor = match.group(1)
+            link = match.group(2)
 
-        result += markdown[start:match.start()] + text
-        start = match.end()
+            text = match.group()
+            if not link:
+                # Only adapt when has form [anchor][]
+                link = anchor.replace(' ', '-').replace('.', '').lower()
+                text = f"[{anchor}][{link}]"
+            if link in CUSTOM_URLS:
+                # Replace keyword with custom url
+                text = f"[{anchor}]({CUSTOM_URLS[link]})"
+            if "self" in link and autodocs:
+                link = link.replace("self", autodocs.obj.__name__.lower())
+                text = f"[{anchor}][{link}]"
+
+            result += markdown[start:match.start()] + text
+            start = match.end()
 
     return result + markdown[start:]
