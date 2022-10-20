@@ -196,6 +196,9 @@ CUSTOM_URLS = dict(
     kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
     wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
     calibration="https://scikit-learn.org/stable/modules/calibration.html",
+    det="https://scikit-learn.org/stable/auto_examples/model_selection/plot_det.html",
+    roc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html",
+    prc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_precision_recall.html",
     # Training
     scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
 )
@@ -235,6 +238,33 @@ class DummyTrainer:
         self.task = "binary" if goal == "class" else "reg"
         self.device = device
         self.engine = engine
+
+
+def insert(config: dict) -> str:
+    """Insert a string from another file at location.
+
+    Parameters
+    ----------
+    config: dict
+        Options to configure. Choose from:
+
+        - url: Path to the file to insert.
+
+    Returns
+    -------
+    str
+        Content of the file to insert.
+
+    """
+    url = os.path.dirname(os.path.realpath(__file__)) + config["url"]
+    with open(url, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # For plotly graphs: correct sizes of the plot to adjust to frame
+    content = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', content)
+    content = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', content)
+
+    return content
 
 
 class AutoDocs:
@@ -351,33 +381,6 @@ class AutoDocs:
         text += "".join([b if b == "\n" else b[4:] for b in body.splitlines(True)])
 
         return text + "\n"
-
-    @staticmethod
-    def insert(config: dict) -> str:
-        """Insert a string from another file at location.
-
-        Parameters
-        ----------
-        config: dict
-            Options to configure. Choose from:
-
-            - url: Path to the file to insert.
-
-        Returns
-        -------
-        str
-            Content of the file to insert.
-
-        """
-        url = os.path.dirname(os.path.realpath(__file__)) + config["url"]
-        with open(url, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        # For plotly graphs: correct sizes of the plot to adjust to frame
-        content = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', content)
-        content = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', content)
-
-        return content
 
     def get_tags(self) -> str:
         """Return the object's tags.
@@ -767,6 +770,7 @@ def render(markdown: str, **kwargs) -> str:
         Modified markdown/html source text of page.
 
     """
+    autodocs = None
     while match := re.search("(:: )(\w.*?)(?=::|\n\n|\Z)", markdown, re.S):
         command = yaml.safe_load(match.group(2))
 
@@ -804,7 +808,7 @@ def render(markdown: str, **kwargs) -> str:
         elif "methods" in command:
             text = autodocs.get_methods(command["methods"] or {})
         elif "insert" in command:
-            text = autodocs.insert(command["insert"] or {})
+            text = insert(command["insert"] or {})
         else:
             text = ""
 
@@ -833,7 +837,7 @@ def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
     markdown: str
         Markdown source text of page.
 
-    autodocs: Autodocs
+    autodocs: Autodocs or None
         Class for which the page is created.
 
     Returns

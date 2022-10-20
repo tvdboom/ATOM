@@ -13,7 +13,7 @@ from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
 from typing import List, Optional, Tuple, Union
-
+from plotly.colors import convert_colors_to_same_type, label_rgb, color_parser
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -50,7 +50,7 @@ from atom.utils import (
     INT, FLOAT, SCALAR, SEQUENCE_TYPES, Model, check_is_fitted, check_predict_proba,
     composed, crash, divide, get_best_score, get_corpus, get_custom_scorer,
     get_feature_importance, has_attr, has_task, lst, partial_dependence,
-    plot_from_model, rnd,
+    plot_from_model, rnd, to_rgb
 )
 
 
@@ -97,7 +97,8 @@ class BaseFigure:
         if isinstance(palette, str):
             self.palette = cycle(getattr(px.colors.qualitative, palette))
         else:
-            self.palette = cycle(palette)
+            # Convert color names or hex to rgb
+            self.palette = cycle(map(to_rgb, palette))
         self.is_canvas = is_canvas
 
         self.idx = 0  # N-th plot in the canvas
@@ -165,6 +166,9 @@ class BaseFigure:
     def get_color(self, elem: Optional[str] = None) -> str:
         """Get the next color.
 
+        This method is used to assign the same color to the same
+        elements (columns, models, etc...) in a canvas.
+
         Parameters
         ----------
         elem: str or None
@@ -186,6 +190,9 @@ class BaseFigure:
     def get_marker(self, elem: Optional[str] = None) -> str:
         """Get the next marker.
 
+        This method is used to assign the same marker to the same
+        elements (e.g. distribution) in a canvas.
+
         Parameters
         ----------
         elem: str or None
@@ -206,6 +213,9 @@ class BaseFigure:
 
     def get_dashes(self, elem: Optional[str] = None) -> str:
         """Get the next dash style.
+
+        This method is used to assign the same dash style to the same
+        elements (e.g. data set) in a canvas.
 
         Parameters
         ----------
@@ -348,7 +358,18 @@ class BasePlot:
         self._fig = None
         self._custom_layout = {}
         self._aesthetics = dict(
-            palette="Prism",  # Pyplot color palette
+            palette=[
+                "rgb(0, 98, 98)",
+                "rgb(29, 105, 150)",
+                "rgb(56, 166, 165)",
+                "rgb(115, 175, 72)",
+                "rgb(237, 173, 8)",
+                "rgb(225, 124, 5)",
+                "rgb(204, 80, 62)",
+                "rgb(148, 52, 110)",
+                "rgb(111, 64, 112)",
+                "rgb(102, 102, 102)",
+            ],
             title_fontsize=24,  # Fontsize for titles
             label_fontsize=16,  # Fontsize for labels, legend and hoverinfo
             tick_fontsize=12,  # Fontsize for ticks
@@ -370,8 +391,13 @@ class BasePlot:
         self.tick_fontsize = value.get("tick_fontsize", self.tick_fontsize)
 
     @property
-    def palette(self) -> str:
-        """Color [palette][]."""
+    def palette(self) -> Union[str, SEQUENCE_TYPES]:
+        """Color palette.
+
+        Specify one of plotly's [built-in palettes][palette] or create
+        a custom one, e.g. `atom.palette = ["red", "green", "blue"]`.
+
+        """
         return self._aesthetics["palette"]
 
     @palette.setter
@@ -433,8 +459,20 @@ class BasePlot:
 
     def reset_aesthetics(self):
         """Reset the plot [aesthetics][] to their default values."""
+        self._custom_layout = {}
         self._aesthetics = dict(
-            palette="Prism",
+            palette=[
+                "rgb(0, 98, 98)",
+                "rgb(29, 105, 150)",
+                "rgb(56, 166, 165)",
+                "rgb(115, 175, 72)",
+                "rgb(237, 173, 8)",
+                "rgb(225, 124, 5)",
+                "rgb(204, 80, 62)",
+                "rgb(148, 52, 110)",
+                "rgb(111, 64, 112)",
+                "rgb(102, 102, 102)",
+            ],
             title_fontsize=24,
             label_fontsize=16,
             tick_fontsize=12,
@@ -647,7 +685,7 @@ class BasePlot:
         """
         dataset = dataset.lower()
         if dataset == "both":
-            return ["train", "test"]
+            return ["test", "train"]
         elif dataset in ("train", "test"):
             return [dataset]
         elif allow_holdout:
@@ -701,7 +739,7 @@ class BasePlot:
 
     def _plot(
         self, axes: Optional[Tuple[str, str]] = None, **kwargs
-    ) -> Optional[plt.Figure]:
+    ) -> Optional[Union[go.Figure, plt.Figure]]:
         """Make the plot.
 
         Customize the axes to the default layout and plot the figure
@@ -728,7 +766,7 @@ class BasePlot:
 
         Returns
         -------
-        go.Figure or None
+        plt.Figure, go.Figure or None
             Created figure. Only returned if `display=None`.
 
         """
@@ -769,13 +807,28 @@ class BasePlot:
                 )
 
         if not self._fig.is_canvas and kwargs.get("plotname"):
-            default_title = dict(x=0.5, font_size=self.title_fontsize)
+            default_title = dict(
+                x=0.5,
+                y=1,
+                pad=dict(t=15, b=15),
+                xanchor="center",
+                yanchor="top",
+                xref="paper",
+                font_size=self.title_fontsize,
+            )
             if not isinstance(title := kwargs.get("title"), dict):
                 title = {"text": title, **default_title}
             else:
                 title = {**default_title, **title}
 
-            default_legend = dict(font_size=self.label_fontsize)
+            default_legend = dict(
+                x=0.99,
+                y=0.99,
+                yanchor="top",
+                xanchor="right",
+                font_size=self.label_fontsize,
+                bgcolor="rgba(255, 255, 255, 0.5)",
+            )
             if not isinstance(legend := kwargs.get("legend"), dict):
                 legend = default_legend
             else:
@@ -784,11 +837,17 @@ class BasePlot:
             # Update layout with predefined settings
             self._fig.figure.update_layout(
                 title=title,
-                showlegend=bool(kwargs.get("legend")),
                 legend=legend,
-                legend_font_size=self.label_fontsize,
+                showlegend=bool(kwargs.get("legend")),
                 hoverlabel=dict(font_size=self.label_fontsize),
                 font_size=self.tick_fontsize,
+                margin=dict(
+                    l=0,
+                    b=0,
+                    r=0,
+                    t=25 + (self.title_fontsize if title.get("text") else 10),
+                    pad=0,
+                ),
                 width=kwargs["figsize"][0],
                 height=kwargs["figsize"][1],
             )
@@ -866,22 +925,24 @@ class BasePlot:
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=True
             Legend for the plot.
 
             - If True, the legend is shown.
             - If False, no legend is shown.
-            - If dict, [legend configuration][aesthetics].
+            - If dict, [legend configuration][parameters].
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the number of plots in the canvas.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool, default=True
             Whether to render the plot.
@@ -937,6 +998,11 @@ class FeatureSelectorPlot(BasePlot):
     ):
         """Plot the explained variance ratio per component.
 
+        Selected components are colored and non-selected components
+        are transparent. The total variance retained by the selected
+        components is shown on the bottom right. This plot is available
+        only when feature selection was applied with strategy="pca".
+
         Parameters
         ----------
         show: int or None, default=None
@@ -947,7 +1013,7 @@ class FeatureSelectorPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=False
             Does nothing. Implemented for continuity of the API.
@@ -957,8 +1023,10 @@ class FeatureSelectorPlot(BasePlot):
             adapts the size to the number of components shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -979,6 +1047,8 @@ class FeatureSelectorPlot(BasePlot):
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
         >>> atom.feature_selection("pca", n_features=14)
@@ -1001,17 +1071,37 @@ class FeatureSelectorPlot(BasePlot):
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
+
+        variance = np.array(self.pca.explained_variance_ratio_)
+        color = self._fig.get_color()
+        colors = [color] * self.pca._comps + ["rgba(0, 0, 0, 0)"] * (len(variance) - self.pca._comps)
         fig.add_trace(
             go.Bar(
-                x=(var := np.array(self.pca.explained_variance_ratio_)[:show]),
-                y=[f"pca{str(i)}" for i in range(len(var))],
+                x=variance[:show],
+                y=[f"pca{str(i)}" for i in range(show)],
                 orientation="h",
-                marker_color=self._fig.get_color(),
+                marker=dict(color=colors, line=dict(width=2, color=color)),
                 hovertemplate="%{x}<extra></extra>",
                 showlegend=False,
                 xaxis=xaxis,
                 yaxis=yaxis,
             )
+        )
+
+        fig.add_annotation(
+            x=0.98,
+            xref=f"x{xaxis[1:] if int(xaxis[1:]) > 1 else ''} domain",
+            xanchor="right",
+            y=0.02,
+            yref=f"y{yaxis[1:] if int(yaxis[1:]) > 1 else ''} domain",
+            yanchor="bottom",
+            text=f"Total variance retained: {variance[:self.pca._comps].sum():.3f}",
+            font=dict(color="black", size=self.label_fontsize),
+            bordercolor=f"rgba{color[3:-1]}, 0.8)",
+            borderwidth=1.5,
+            borderpad=4,
+            bgcolor=f"rgba{color[3:-1]}, 0.03)",
+            showarrow=False,
         )
 
         fig.update_layout({f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending")})
@@ -1040,11 +1130,12 @@ class FeatureSelectorPlot(BasePlot):
     ):
         """Plot the explained variance ratio vs number of components.
 
-        If the underlying estimator is pca (for dense datasets), all
-        possible components are plotted. If the underlying estimator
-        is TruncatedSVD (for sparse datasets), it only shows the
+        If the underlying estimator is [PCA][] (for dense datasets),
+        all possible components are plotted. If the underlying estimator
+        is [TruncatedSVD][] (for sparse datasets), it only shows the
         selected components. The star marks the number of components
-        selected by the user.
+        selected by the user. This plot is available only when feature
+        selection was applied with strategy="pca".
 
         Parameters
         ----------
@@ -1053,7 +1144,7 @@ class FeatureSelectorPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=False
             Does nothing. Implemented for continuity of the API.
@@ -1062,8 +1153,10 @@ class FeatureSelectorPlot(BasePlot):
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -1084,6 +1177,8 @@ class FeatureSelectorPlot(BasePlot):
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
         >>> atom.feature_selection("pca", n_features=12)
@@ -1153,7 +1248,8 @@ class FeatureSelectorPlot(BasePlot):
         """Plot the rfecv results.
 
         Plot the scores obtained by the estimator fitted on every
-        subset of the dataset.
+        subset of the dataset. Only available when feature selection
+        was applied with strategy="rfecv".
 
         Parameters
         ----------
@@ -1162,7 +1258,7 @@ class FeatureSelectorPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=False
             Does nothing. Implemented for continuity of the API.
@@ -1171,8 +1267,10 @@ class FeatureSelectorPlot(BasePlot):
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -1193,6 +1291,8 @@ class FeatureSelectorPlot(BasePlot):
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
         >>> atom.feature_selection("rfecv", solver="Tree")
@@ -1256,7 +1356,7 @@ class FeatureSelectorPlot(BasePlot):
                     mode="lines",
                     line=dict(width=1, color=self._fig.get_color(ylabel)),
                     fill="tonexty",
-                    fillcolor=f"rgba{color[3:-1]}, 0.5)",  # Add opacity
+                    fillcolor=f"rgba{self._fig.get_color(ylabel)[3:-1]}, 0.5)",  # Add opacity
                     name="lower bound",
                     showlegend=False,
                     xaxis=xaxis,
@@ -1312,6 +1412,10 @@ class DataPlot(BasePlot):
     ):
         """Plot a correlation matrix.
 
+        Displays a heatmap showing the correlation between columns in
+        the dataset. The colors red, blue and white stand for positive,
+        negative, and no correlation respectively.
+
         Parameters
         ----------
         columns: slice, sequence or None, default=None
@@ -1328,7 +1432,7 @@ class DataPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=False
             Does nothing. Implemented for continuity of the API.
@@ -1337,8 +1441,10 @@ class DataPlot(BasePlot):
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -1352,7 +1458,7 @@ class DataPlot(BasePlot):
         --------
         atom.plots:DataPlot.plot_distribution
         atom.plots:DataPlot.plot_qq
-        atom.plots:DataPlot.plot_scatter_matrix
+        atom.plots:DataPlot.plot_relationships
 
         Examples
         --------
@@ -1360,6 +1466,8 @@ class DataPlot(BasePlot):
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
         >>> atom.plot_correlation()
@@ -1449,6 +1557,10 @@ class DataPlot(BasePlot):
         - For categorical columns, plot the class distribution.
           Only one categorical column can be plotted at the same time.
 
+        !!! tip
+            Use atom's [distribution][atomclassifier-distribution]
+            method to check which distribution fits the column best.
+
         Parameters
         ----------
         columns: int, str, slice or sequence, default=0
@@ -1472,22 +1584,24 @@ class DataPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=True
             Legend for the plot.
 
             - If True, the legend is shown.
             - If False, no legend is shown.
-            - If dict, [legend configuration][aesthetics].
+            - If dict, [legend configuration][parameters].
 
         figsize: tuple, default=None
             Figure's size in pixels, format as (x, y). If None, it
             adapts the size to the plot's type.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -1501,17 +1615,25 @@ class DataPlot(BasePlot):
         --------
         atom.plots:DataPlot.plot_correlation
         atom.plots:DataPlot.plot_qq
-        atom.plots:DataPlot.plot_scatter_matrix
+        atom.plots:DataPlot.plot_relationships
 
         Examples
         --------
 
         ```pycon
         >>> from atom import ATOMClassifier
+        >>> import numpy as np
         >>> from sklearn.datasets import load_breast_cancer
 
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> # Add a categorical feature
+        >>> animals = ["cat", "dog", "bird", "lion", "zebra"]
+        >>> probabilities = [0.001, 0.1, 0.2, 0.3, 0.399]
+        >>> X["animals"] = np.random.choice(animals, size=len(X), p=probabilities)
+
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.plot_distribution(columns=[0, 1, 2])
+        >>> atom.plot_distribution(columns=[0, 1])
 
         ```
 
@@ -1525,6 +1647,14 @@ class DataPlot(BasePlot):
 
         :: insert:
             url: /img/plots/plot_distribution_2.html
+
+        ```pycon
+        >>> atom.plot_distribution(columns="animals")
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_distribution_3.html
 
         """
         columns = self._get_columns(columns)
@@ -1544,12 +1674,13 @@ class DataPlot(BasePlot):
                     f"Value should be >0, got {show}."
                 )
 
+            color = self._fig.get_color()
             fig.add_trace(
                 go.Bar(
                     x=(data := series[-show:]),
                     y=data.index,
                     orientation="h",
-                    marker_color=self._fig.get_color(),
+                    marker_color=color,
                     hovertemplate="%{x}<extra></extra>",
                     showlegend=False,
                     xaxis=xaxis,
@@ -1594,9 +1725,9 @@ class DataPlot(BasePlot):
                             color=f"rgba({self._fig.get_color(col)[4:-1]}, 0.2)",
                             line=dict(width=2, color=self._fig.get_color(col)),
                         ),
+                        nbinsx=40,
                         name=col,
                         legendgroup=col,
-                        showlegend=len(columns) > 1,
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -1644,7 +1775,9 @@ class DataPlot(BasePlot):
                         )
                     )
 
-            fig.update_layout({"barmode": "overlay"})
+            fig.update_layout(
+                dict(barmode="overlay", legend=dict(groupclick="toggleitem"))
+            )
 
             return self._plot(
                 axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -1678,6 +1811,11 @@ class DataPlot(BasePlot):
         is raised. If the documents are not tokenized, the words are
         separated by spaces.
 
+        !!! tip
+            Use atom's [tokenize][atomclassifier-tokenize] method to
+            separate the words creating n-grams based on their frequency
+            in the corpus.
+
         Parameters
         ----------
         ngram: str or int, default="bigram"
@@ -1699,7 +1837,7 @@ class DataPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=False
             Does nothing. Implemented for continuity of the API.
@@ -1709,8 +1847,10 @@ class DataPlot(BasePlot):
             adapts the size to the number of n-grams shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -1873,21 +2013,23 @@ class DataPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=True
             Legend for the plot.
 
             - If True, the legend is shown.
             - If False, no legend is shown.
-            - If dict, [legend configuration][aesthetics].
+            - If dict, [legend configuration][parameters].
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -1902,7 +2044,7 @@ class DataPlot(BasePlot):
         --------
         atom.plots:DataPlot.plot_correlation
         atom.plots:DataPlot.plot_distribution
-        atom.plots:DataPlot.plot_scatter_matrix
+        atom.plots:DataPlot.plot_relationships
 
         Examples
         --------
@@ -1945,13 +2087,12 @@ class DataPlot(BasePlot):
                 params = stat.fit(values)
                 samples = stat.rvs(*params, size=101, random_state=self.random_state)
 
-                label = ""
                 if len(columns) > 1:
-                    label += col
+                    label = col
                     if len(lst(distributions)) > 1:
                         label += f" - {dist}"
-                elif len(lst(distributions)) > 1:
-                    label += dist
+                else:
+                    label = dist
 
                 fig.add_trace(
                     go.Scatter(
@@ -1987,50 +2128,48 @@ class DataPlot(BasePlot):
         )
 
     @composed(crash, typechecked)
-    def plot_scatter_matrix(
+    def plot_relationships(
         self,
-        columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
+        columns: Union[slice, SEQUENCE_TYPES] = [0, 1, 2],
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Union[bool, dict] = False,
         figsize: Tuple[SCALAR, SCALAR] = (900, 900),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot a matrix of scatter plots.
+        """Plot pairwise relationships in a dataset.
 
-        Shows a grid of numerical features, where the bottom triangle
-        contain scatter plots (max 250 random samples), the diagonal
-        line contains column distributions, and the upper triangle
+        Creates a grid of axes such that each numerical column appears
+        once on the x-axes and once on the y-axes. The bottom triangle
+        contains scatter plots (max 250 random samples), the diagonal
+        plots contain column distributions, and the upper triangle
         contains contour histograms for all samples in the columns.
 
         Parameters
         ----------
-        columns: slice, sequence or None, default=None
-            Slice, names or indices of the columns to plot. If None,
-            plot all columns in the dataset. Selected categorical
-            columns are ignored.
+        columns: slice or sequence, default=[0, 1, 2]
+            Slice, names or indices of the columns to plot. Selected
+            categorical columns are ignored.
 
         title: str, dict or None, default=None
             Title for the plot.
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
-
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][aesthetics].
+        legend: bool or dict, default=False
+            Does nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(900, 900)
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -2053,13 +2192,15 @@ class DataPlot(BasePlot):
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
 
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.plot_scatter_matrix(columns=[0, 4, 5])
+        >>> atom.plot_relationships(columns=[0, 4, 5])
 
         ```
 
         :: insert:
-            url: /img/plots/plot_scatter_matrix.html
+            url: /img/plots/plot_relationships.html
 
         """
         columns = self._get_columns(columns, only_numerical=True)
@@ -2153,7 +2294,7 @@ class DataPlot(BasePlot):
             title=title,
             legend=legend,
             figsize=figsize or (900, 900),
-            plotname="plot_scatter_matrix",
+            plotname="plot_relationships",
             filename=filename,
             display=display,
         )
@@ -2188,7 +2329,7 @@ class DataPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=False
             Does nothing. Implemented for continuity of the API.
@@ -2197,8 +2338,10 @@ class DataPlot(BasePlot):
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -2333,7 +2476,7 @@ class ModelPlot(BasePlot):
         and the y-axis is the fraction of positives, i.e. the proportion
         of samples whose class is the positive class (in each bin); and
         a distribution of all predicted probabilities of the classifier.
-        Only for binary classification tasks.
+        Only available for binary classification tasks.
 
         !!! tip
             Use the [calibrate][adaboost-calibrate] method to calibrate
@@ -2354,21 +2497,23 @@ class ModelPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=True
             Legend for the plot.
 
             - If True, the legend is shown.
             - If False, no legend is shown.
-            - If dict, [legend configuration][aesthetics].
+            - If dict, [legend configuration][parameters].
 
         figsize: tuple, default=(900, 900)
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -2499,8 +2644,8 @@ class ModelPlot(BasePlot):
 
         For one model, the plot shows a heatmap. For multiple models,
         it compares TP, FP, FN and TN in a barplot (not implemented
-        for multiclass classification tasks). Only for classification
-        tasks.
+        for multiclass classification tasks). Only available for
+        classification tasks.
 
         Parameters
         ----------
@@ -2523,8 +2668,10 @@ class ModelPlot(BasePlot):
             size to the plot's type.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -2652,13 +2799,15 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Union[bool, dict] = True,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the detection error tradeoff curve.
+        """Plot the Detection Error Tradeoff curve.
 
-        Only for binary classification tasks.
+        Read more about [DET][] in sklearn's documentation. Only
+        available for binary classification tasks.
 
         Parameters
         ----------
@@ -2670,24 +2819,62 @@ class ModelPlot(BasePlot):
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: bool or dict, default=True
+            Legend for the plot.
+
+            - If True, the legend is shown.
+            - If False, no legend is shown.
+            - If dict, [legend configuration][parameters].
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_gains
+        atom.plots:ModelPlot.plot_roc
+        atom.plots:ModelPlot.plot_prc
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_det()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_det.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -2695,7 +2882,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for set_ in dataset:
                 if hasattr(m.estimator, "predict_proba"):
@@ -2706,14 +2893,30 @@ class ModelPlot(BasePlot):
                 # Get fpr-fnr pairs for different thresholds
                 fpr, fnr, _ = det_curve(getattr(m, f"y_{set_}"), y_pred)
 
-                plt.plot(fpr, fnr, lw=2, label=m.name)
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                fig.add_trace(
+                    go.Scatter(
+                        x=fpr,
+                        y=fnr,
+                        mode="lines",
+                        line=dict(
+                            width=2,
+                            color=self._fig.get_color(m.name),
+                            dash=self._fig.get_dashes(set_),
+                        ),
+                        name=label,
+                        legendgroup=label,
+                        showlegend=self._fig.get_showlegend(label),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
-            legend=("best", len(models)),
+            legend=legend,
             xlabel="FPR",
             ylabel="FNR",
             figsize=figsize,
@@ -2740,7 +2943,7 @@ class ModelPlot(BasePlot):
         generated by the regressor. A linear fit is made on the data.
         The gray, intersected line shows the identity line. This pot can
         be useful to detect noise or heteroscedasticity along a range of
-        the target domain. Only for regression tasks.
+        the target domain. Only available for regression tasks.
 
         Parameters
         ----------
@@ -2759,8 +2962,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -2831,7 +3036,7 @@ class ModelPlot(BasePlot):
     ):
         """Plot evaluation curves for the train and test set.
 
-        Only for models that allow [in-training validation][].
+        Only available for models that allow [in-training validation][].
 
         Parameters
         ----------
@@ -2850,8 +3055,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -2917,8 +3124,8 @@ class ModelPlot(BasePlot):
         """Plot a model's feature importance.
 
         The feature importance values are normalized in order to be
-        able to compare them between models. Only for models whose
-        estimator has a `feature_importances_` or `coef` attribute.
+        able to compare them between models. Only available for models
+        whose estimator has a `feature_importances_` or `coef` attribute.
 
         Parameters
         ----------
@@ -2938,8 +3145,10 @@ class ModelPlot(BasePlot):
             size to the number of features shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -3006,13 +3215,14 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Union[bool, dict] = True,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
         """Plot the cumulative gains curve.
 
-        Only for binary classification tasks.
+        Only available for binary classification tasks.
 
         Parameters
         ----------
@@ -3024,24 +3234,62 @@ class ModelPlot(BasePlot):
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: bool or dict, default=True
+            Legend for the plot.
+
+            - If True, the legend is shown.
+            - If False, no legend is shown.
+            - If dict, [legend configuration][parameters].
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_det
+        atom.plots:ModelPlot.plot_lift
+        atom.plots:ModelPlot.plot_roc
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_gains()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_gains.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -3049,7 +3297,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}")
@@ -3062,16 +3310,31 @@ class ModelPlot(BasePlot):
                 x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
 
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                ax.plot(x, gains, lw=2, label=label)
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=gains,
+                        mode="lines",
+                        line=dict(
+                            width=2,
+                            color=self._fig.get_color(m.name),
+                            dash=self._fig.get_dashes(set_),
+                        ),
+                        name=label,
+                        legendgroup=label,
+                        showlegend=self._fig.get_showlegend(label),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
 
-        self._draw_line(ax=ax, y="diagonal")
+        fig.add_trace(self._draw_line(xaxis, yaxis))
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
-            legend=("best", len(models)),
+            legend=legend,
             xlabel="Fraction of sample",
             ylabel="Gain",
             xlim=(0, 1),
@@ -3114,8 +3377,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -3177,13 +3442,14 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Union[bool, dict] = True,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
         """Plot the lift curve.
 
-        Only for binary classification tasks.
+        Only available for binary classification tasks.
 
         Parameters
         ----------
@@ -3195,24 +3461,62 @@ class ModelPlot(BasePlot):
             Data set on which to calculate the metric. Choose from:
             "train", "test", "both" (train and test) or "holdout".
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: bool or dict, default=True
+            Legend for the plot.
+
+            - If True, the legend is shown.
+            - If False, no legend is shown.
+            - If dict, [legend configuration][parameters].
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_det
+        atom.plots:ModelPlot.plot_gains
+        atom.plots:ModelPlot.plot_prc
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_lift()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_lift.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -3220,7 +3524,7 @@ class ModelPlot(BasePlot):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}")
@@ -3233,16 +3537,31 @@ class ModelPlot(BasePlot):
                 x = np.arange(start=1, stop=len(y_true) + 1) / len(y_true)
 
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                ax.plot(x, gains / x, lw=2, label=label)
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=gains / x,
+                        mode="lines",
+                        line=dict(
+                            width=2,
+                            color=self._fig.get_color(m.name),
+                            dash=self._fig.get_dashes(set_),
+                        ),
+                        name=label,
+                        legendgroup=label,
+                        showlegend=self._fig.get_showlegend(label),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
 
-        self._draw_line(ax=ax, y=1)
+        fig.add_trace(self._draw_line(xaxis, yaxis, y=1))
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
-            legend=("best", len(models)),
+            legend=legend,
             xlabel="Fraction of sample",
             ylabel="Lift",
             xlim=(0, 1),
@@ -3302,8 +3621,10 @@ class ModelPlot(BasePlot):
             size to the number of features shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -3491,8 +3812,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -3731,8 +4054,10 @@ class ModelPlot(BasePlot):
             size to the number of features shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -3853,8 +4178,10 @@ class ModelPlot(BasePlot):
             size to the pipeline drawn.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -4097,7 +4424,8 @@ class ModelPlot(BasePlot):
     ):
         """Plot the precision-recall curve.
 
-        Only for binary classification tasks.
+        Read more about [PRC][] in sklearn's documentation. Only
+        available for binary classification tasks.
 
         Parameters
         ----------
@@ -4114,21 +4442,23 @@ class ModelPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=True
             Legend for the plot.
 
             - If True, the legend is shown.
             - If False, no legend is shown.
-            - If dict, [legend configuration][aesthetics].
+            - If dict, [legend configuration][parameters].
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -4137,6 +4467,32 @@ class ModelPlot(BasePlot):
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_det
+        atom.plots:ModelPlot.plot_lift
+        atom.plots:ModelPlot.plot_roc
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_prc()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_prc.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -4204,7 +4560,7 @@ class ModelPlot(BasePlot):
     ):
         """Plot the probability distribution of the target classes.
 
-        Only for classification tasks.
+        Only available for classification tasks.
 
         Parameters
         ----------
@@ -4227,8 +4583,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -4301,7 +4659,8 @@ class ModelPlot(BasePlot):
         variance of the error of the regressor. If the points are
         randomly dispersed around the horizontal axis, a linear
         regression model is appropriate for the data; otherwise, a
-        non-linear model is more appropriate. Only for regression tasks.
+        non-linear model is more appropriate. Only available for
+        regression tasks.
 
         Parameters
         ----------
@@ -4320,8 +4679,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -4414,8 +4775,10 @@ class ModelPlot(BasePlot):
             size to the number of models shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -4514,7 +4877,8 @@ class ModelPlot(BasePlot):
     ):
         """Plot the Receiver Operating Characteristics curve.
 
-        Only for binary classification tasks.
+        Read more about [ROC][] in sklearn's documentation. Only
+        available for binary classification tasks.
 
         Parameters
         ----------
@@ -4531,21 +4895,23 @@ class ModelPlot(BasePlot):
 
             - If None, no title is shown.
             - If str, text for the title.
-            - If dict, [title configuration][aesthetics].
+            - If dict, [title configuration][parameters].
 
         legend: bool or dict, default=True
             Legend for the plot.
 
             - If True, the legend is shown.
             - If False, no legend is shown.
-            - If dict, [legend configuration][aesthetics].
+            - If dict, [legend configuration][parameters].
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the figure.
@@ -4554,6 +4920,32 @@ class ModelPlot(BasePlot):
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_gains
+        atom.plots:ModelPlot.plot_lift
+        atom.plots:ModelPlot.plot_prc
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_roc()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_roc.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -4640,8 +5032,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -4715,7 +5109,7 @@ class ModelPlot(BasePlot):
     ):
         """Plot metric performances against threshold values.
 
-        Only for binary classification tasks.
+        Only available for binary classification tasks.
 
         Parameters
         ----------
@@ -4743,8 +5137,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -4813,10 +5209,10 @@ class ModelPlot(BasePlot):
     ):
         """Plot the hyperparameter tuning trials.
 
-        Only for models that ran [hyperparameter tuning][]. Creates a
-        figure with two plots: the first plot shows the score of every
-        trial and the second shows the distance between the last
-        consecutive steps. This is the same plot as produced by
+        Only available for models that ran [hyperparameter tuning][].
+        Creates a figure with two plots: the first plot shows the score
+        of every trial and the second shows the distance between the
+        last consecutive steps. This is the same plot as produced by
         `ht_params={"plot": True}`.
 
         Parameters
@@ -4835,8 +5231,10 @@ class ModelPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -4961,8 +5359,10 @@ class ShapPlot(BasePlot):
             the size to the number of features shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -5048,8 +5448,10 @@ class ShapPlot(BasePlot):
             size to the number of features shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -5139,8 +5541,10 @@ class ShapPlot(BasePlot):
             size to the number of features shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -5338,8 +5742,10 @@ class ShapPlot(BasePlot):
             size to the number of features shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -5427,8 +5833,10 @@ class ShapPlot(BasePlot):
             Figure's size, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the
@@ -5523,8 +5931,10 @@ class ShapPlot(BasePlot):
             size to the number of features shown.
 
         filename: str or None, default=None
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no period,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
             Whether to render the plot. If None, it returns the

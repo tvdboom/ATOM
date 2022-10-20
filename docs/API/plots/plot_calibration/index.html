@@ -2223,6 +2223,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_relationships/" class="md-nav__link">
+        plot_relationships
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_residuals/" class="md-nav__link">
         plot_residuals
       </a>
@@ -2267,20 +2281,6 @@
     <li class="md-nav__item">
       <a href="../plot_roc/" class="md-nav__link">
         plot_roc
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_scatter_matrix/" class="md-nav__link">
-        plot_scatter_matrix
       </a>
     </li>
   
@@ -2490,6 +2490,20 @@
     <li class="md-nav__item">
       <a href="../../../examples/accelerating_pipelines.ipynb" class="md-nav__link">
         Accelerating pipelines
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/advanced_plotting.ipynb" class="md-nav__link">
+        Advanced plotting
       </a>
     </li>
   
@@ -2943,7 +2957,7 @@
 
 <h1 id="plot_calibration">plot_calibration</h1>
 <hr />
-<p><a id='plot_calibration'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_calibration</strong>(models=None, n_bins=10, title=None, legend=True, figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2308>[source]</a></span></div>Plot the calibration curve for a binary classifier.</p>
+<p><a id='plot_calibration'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_calibration</strong>(models=None, n_bins=10, title=None, legend=True, figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2451>[source]</a></span></div>Plot the calibration curve for a binary classifier.</p>
 <p>Well calibrated classifiers are probabilistic classifiers for
 which the output of the <code>predict_proba</code> method can be directly
 interpreted as a confidence level. For instance a well
@@ -2956,7 +2970,7 @@ x-axis represents the average predicted probability in each bin
 and the y-axis is the fraction of positives, i.e. the proportion
 of samples whose class is the positive class (in each bin); and
 a distribution of all predicted probabilities of the classifier.
-Only for binary classification tasks.</p>
+Only available for binary classification tasks.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-calibrate">calibrate</a> method to calibrate
@@ -2974,20 +2988,22 @@ Title for the plot.</p>
 <ul>
 <li>If None, no title is shown.</li>
 <li>If str, text for the title.</li>
-<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">title configuration</a>.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
 </ul>
 <p></div><a id='plot_calibration-legend'></a><strong>legend: bool or dict, default=True</strong><br><div markdown class='param'>
 Legend for the plot.</p>
 <ul>
 <li>If True, the legend is shown.</li>
 <li>If False, no legend is shown.</li>
-<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">legend configuration</a>.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">legend configuration</a>.</li>
 </ul>
 <p></div><a id='plot_calibration-figsize'></a><strong>figsize: tuple, default=(900, 900)</strong><br><div markdown class='param'>
 Figure's size in pixels, format as (x, y).</p>
 <p></div><a id='plot_calibration-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
-Name of the file. Use "auto" for automatic naming. If
-None, the figure is not saved.</p>
+Save the plot using this name. Use "auto" for automatic
+naming. The type of the file depends on the provided name
+(.html, .png, .pdf, etc...). If <code>filename</code> has no period,
+the plot is saved as html. If None, the plot is not saved.</p>
 <p></div><a id='plot_calibration-display'></a><strong>display: bool or None, default=True</strong><br><div markdown class='param'>
 Whether to render the plot. If None, it returns the
 matplotlib figure.</p>

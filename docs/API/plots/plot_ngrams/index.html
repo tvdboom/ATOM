@@ -2223,6 +2223,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_relationships/" class="md-nav__link">
+        plot_relationships
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_residuals/" class="md-nav__link">
         plot_residuals
       </a>
@@ -2267,20 +2281,6 @@
     <li class="md-nav__item">
       <a href="../plot_roc/" class="md-nav__link">
         plot_roc
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_scatter_matrix/" class="md-nav__link">
-        plot_scatter_matrix
       </a>
     </li>
   
@@ -2490,6 +2490,20 @@
     <li class="md-nav__item">
       <a href="../../../examples/accelerating_pipelines.ipynb" class="md-nav__link">
         Accelerating pipelines
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/advanced_plotting.ipynb" class="md-nav__link">
+        Advanced plotting
       </a>
     </li>
   
@@ -2943,11 +2957,17 @@
 
 <h1 id="plot_ngrams">plot_ngrams</h1>
 <hr />
-<p><a id='plot_ngrams'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_ngrams</strong>(ngram="bigram", index=None, show=10, title=None, legend=False, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1661>[source]</a></span></div>Plot n-gram frequencies.</p>
+<p><a id='plot_ngrams'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_ngrams</strong>(ngram="bigram", index=None, show=10, title=None, legend=False, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1794>[source]</a></span></div>Plot n-gram frequencies.</p>
 <p>The text for the plot is extracted from the column named
 <code>corpus</code>. If there is no column with that name, an exception
 is raised. If the documents are not tokenized, the words are
 separated by spaces.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use atom's <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-tokenize">tokenize</a> method to
+separate the words creating n-grams based on their frequency
+in the corpus.</p>
+</div>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_ngrams-ngram'></a><strong>ngram: str or int, default="bigram"</strong><br><div markdown class='param'>
 Number of contiguous words to search for (size of
@@ -2965,7 +2985,7 @@ Title for the plot.</p>
 <ul>
 <li>If None, no title is shown.</li>
 <li>If str, text for the title.</li>
-<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">title configuration</a>.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
 </ul>
 <p></div><a id='plot_ngrams-legend'></a><strong>legend: bool or dict, default=False</strong><br><div markdown class='param'>
 Does nothing. Implemented for continuity of the API.</p>
@@ -2973,8 +2993,10 @@ Does nothing. Implemented for continuity of the API.</p>
 Figure's size in pixels, format as (x, y). If None, it
 adapts the size to the number of n-grams shown.</p>
 <p></div><a id='plot_ngrams-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
-Name of the file. Use "auto" for automatic naming. If
-None, the figure is not saved.</p>
+Save the plot using this name. Use "auto" for automatic
+naming. The type of the file depends on the provided name
+(.html, .png, .pdf, etc...). If <code>filename</code> has no period,
+the plot is saved as html. If None, the plot is not saved.</p>
 <p></div><a id='plot_ngrams-display'></a><strong>display: bool or None, default=True</strong><br><div markdown class='param'>
 Whether to render the plot. If None, it returns the figure.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='plot_ngrams-<a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a> or None'></a><strong><a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a> or None</strong><br><div markdown class='param'>

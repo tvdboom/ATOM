@@ -220,11 +220,11 @@ nav:
             - plot_prc: API/plots/plot_prc.md
             - plot_probabilities: API/plots/plot_probabilities.md
             - plot_qq: API/plots/plot_qq.md
+            - plot_relationships: API/plots/plot_relationships.md
             - plot_residuals: API/plots/plot_residuals.md
             - plot_results: API/plots/plot_results.md
             - plot_rfecv: API/plots/plot_rfecv.md
             - plot_roc: API/plots/plot_roc.md
-            - plot_scatter_matrix: API/plots/plot_scatter_matrix.md
             - plot_shap_bar: API/plots/plot_shap_bar.md
             - plot_shap_beeswarm: API/plots/plot_shap_beeswarm.md
             - plot_shap_decision: API/plots/plot_shap_decision.md
@@ -238,6 +238,7 @@ nav:
             - plot_wordcloud: API/plots/plot_wordcloud.md
     - Examples:
         - Accelerating pipelines: examples/accelerating_pipelines.ipynb
+        - Advanced plotting: examples/advanced_plotting.ipynb
         - Automated feature scaling: examples/automated_feature_scaling.ipynb
         - AutoML: examples/automl.ipynb
         - Binary classification: examples/binary_classification.ipynb

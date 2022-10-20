@@ -18,7 +18,7 @@ from importlib import import_module
 from inspect import Parameter, signature
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from typing import Any, Callable, List, Optional, Protocol, Tuple, Union
-
+from matplotlib.colors import to_rgba
 import matplotlib.pyplot as plt
 import mlflow
 import nltk
@@ -1159,6 +1159,27 @@ def divide(a: SCALAR, b: SCALAR) -> SCALAR:
 
     """
     return np.divide(a, b) if b != 0 else 0
+
+
+def to_rgb(c: str) -> str:
+    """Convert a color name or hex to rgb.
+
+    Parameters
+    ----------
+    c: str
+        Color name or code.
+
+    Returns
+    -------
+    str
+        Color's RGB representation.
+
+    """
+    if not c.startswith("rgb"):
+        colors = to_rgba(c)[:3]
+        return f"rgb({colors[0]}, {colors[1]}, {colors[2]})"
+
+    return c
 
 
 def merge(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:

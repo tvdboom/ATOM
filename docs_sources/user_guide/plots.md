@@ -3,10 +3,11 @@
 
 ATOM provides many plotting methods to analyze the data or compare the
 model performances. Descriptions and examples can be found in the API
-section. ATOM uses the packages [matplotlib](https://matplotlib.org/),
-[seaborn](https://seaborn.pydata.org/), [shap](https://github.com/slundberg/shap),
-[wordcloud](http://amueller.github.io/word_cloud/) and [schemdraw](https://schemdraw.readthedocs.io/en/latest/)
-for plotting.
+section. ATOM mainly uses the [plotly](https://plotly.com/python/) library
+for plotting. Plotly makes interactive, publication-quality graphs that
+are rendered using html. Some plots require other libraries like
+[matplotlib](https://matplotlib.org/), [shap](https://github.com/slundberg/shap),
+[wordcloud](http://amueller.github.io/word_cloud/) and [schemdraw](https://schemdraw.readthedocs.io/en/latest/).
 
 Plots that compare model performances (methods with the `models`
 parameter) can be called directly from atom, e.g. `atom.plot_roc()`,
@@ -22,10 +23,17 @@ can only be called from atom, and not from the models.
 
 ## Parameters
 
-Apart from the plot-specific parameters, all plots have four
-parameters in common:
+Apart from the plot-specific parameters, all plots have five parameters
+in common:
 
-* The `title` parameter allows you to add a title to the plot.
+* The `title` parameter adds a title to the plot. The default value doesn't
+  show any title. Provide a configuration (as dictionary) to customize its
+  appearance, e.g. `title=dict(text="Awesome plot", color="red")`.
+  Read more in plotly's [documentation](https://plotly.com/python/figure-labels/).
+* The `legend` parameter is used to show/hide and customize the plot's legend.
+  Provide a configuration (as dictionary) to customize its appearance, e.g.
+  `legend=dict(title="Title for legend", title_font_color="red")`. Read more
+  in plotly's [documentation](https://plotly.com/python/figure-labels/).
 * The `figsize` parameter adjust the plot's size.
 * The `filename` parameter is used to save the plot.
 * The `display` parameter determines whether to show or return the plot.
@@ -34,43 +42,50 @@ parameters in common:
 
 ## Aesthetics
 
-The plot aesthetics can be customized using the plot attributes, e.g.
-`atom.style = "white"`. These attributes can be called from any instance
-with plotting methods. Note that the plot attributes are attached to the
-class and not the instance. This means that changing the attribute will
-also change it for all other instances in the module. Use the
-[reset_aesthetics][atomclassifier-reset_aesthetics] method to reset all
-the aesthetics to their default value. The default values are:
+The plot's aesthetics can be customized using the plot attributes, e.g.
+`atom.title_fontsize = 30`. The default values are:
 
-* **style:** "darkgrid"
-* **palette:** "GnBu_r_d"
-* **title_fontsize:** 20
+* **palette:** ["rgb(0, 98, 98)", "rgb(29, 105, 150)" , "rgb(56, 166, 165)",
+  "rgb(115, 175, 72)", "rgb(237, 173, 8)", "rgb(225, 124, 5)", "rgb(204, 80, 62)",
+  "rgb(148, 52, 110)", "rgb(111, 64, 112)", "rgb(102, 102, 102)"]
+* **title_fontsize:** 24
 * **label_fontsize:** 16
 * **tick_fontsize:** 12
+
+Use atom's [update_layout][atomclassifier-update_layout] method to further
+customize the plot's aesthetics using any of plotly's [layout properties](https://plotly.com/python/reference/layout/),
+e.g. `atom.update_layout(template="plotly_dark")`. Use the [reset_aesthetics][atomclassifier-reset_aesthetics]
+method to reset the aesthetics to their default value. See [advanced plotting][example-advanced-plotting]
+for various examples.
 
 <br>
 
 ## Canvas
 
-Sometimes it's desirable to draw multiple plots side by side in order
-to be able to compare them easier. Use the [canvas][atomclassifier-canvas]
-method for this. The canvas method is a `@contextmanager`, i.e. it's
-used through the `with` command. Plots in a canvas will ignore the
-figsize, filename and display parameters. Instead, call these parameters
-from the canvas for the final figure. If a variable is assigned to the
-canvas (e.g. `with atom.canvas() as fig`), it contains the resulting
-matplotlib figure.
+Use the [canvas][atomclassifier-canvas] method to draw multiple plots side
+by side, for example to make it easier to compare similar results. The canvas
+method is a `@contextmanager`, i.e. it's used through Python's `with` command.
+Plots in a canvas ignore the legend, figsize, filename and display parameters.
+Instead, specify these parameters in the canvas. If a variable is assigned to
+the canvas (e.g. `with atom.canvas() as fig`), it yields the resulting figure.
 
-For example, we can use a canvas to compare the results of a [XGBoost][]
-and [LightGBM][] model on the train and test set. We could also draw the
-lines for both models in the same axes, but then the plot would become
-too cluttered.
+For example, we can use a canvas to compare the results of a XGBoost and
+LightGBM model on the train and test set. We could also draw the lines for
+both models in the same axes, but that would clutter the plot too much.
+Click [here][example-advanced-plotting] for more examples.
 
 ```pycon
->>> atom = ATOMClassifier(X, y)
->>> atom.run(["xgb", "lgb"], n_trials=0)
+>>> from atom import ATOMClassifier
+>>> import pandas as pd
 
->>> with atom.canvas(2, 2, title="XGBoost vs LightGBM", filename="canvas"):
+>>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+>>> atom = ATOMClassifier(X, y="RainTomorrow")
+>>> atom.impute()
+>>> atom.encode()
+>>> atom.run(["xgb", "lgb"])
+
+>>> with atom.canvas(2, 2, title="XGBoost vs LightGBM"):
 ...     atom.xgb.plot_roc(dataset="both", title="ROC - XGBoost")
 ...     atom.lgb.plot_roc(dataset="both", title="ROC - LightGBM")
 ...     atom.xgb.plot_prc(dataset="both", title="PRC - XGBoost")
@@ -78,7 +93,8 @@ too cluttered.
 
 ```
 
-![canvas](../img/plots/canvas.png)
+:: insert:
+    url: /img/plots/canvas.html
 
 <br>
 

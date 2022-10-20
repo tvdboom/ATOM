@@ -2324,7 +2324,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
         :: insert:
-            url: /img/plots/plot_distribution_3.html
+            url: /img/plots/plot_distribution_4.html
 
         ```pycon
 
@@ -2356,7 +2356,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ```
 
         :: insert:
-            url: /img/plots/plot_distribution_4.html
+            url: /img/plots/plot_distribution_5.html
 
     === "stand-alone"
         ```pycon

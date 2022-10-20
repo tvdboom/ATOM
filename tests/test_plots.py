@@ -242,16 +242,16 @@ def test_plot_qq():
     atom.plot_qq(columns=[0, 1], distributions="pearson3", display=False)
 
 
-def test_plot_scatter_matrix():
-    """Assert that the plot_scatter_matrix method work as intended."""
+def test_plot_relationships():
+    """Assert that the plot_relationships method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
     # Can't be called from a canvas
     with atom.canvas(display=False):
         with pytest.raises(PermissionError, match=".*from a canvas.*"):
-            atom.plot_scatter_matrix()
+            atom.plot_relationships()
 
-    atom.plot_scatter_matrix(columns=[0, 1, 2], display=False)
+    atom.plot_relationships(columns=[0, 1, 2], display=False)
 
 
 def test_plot_wordcloud():

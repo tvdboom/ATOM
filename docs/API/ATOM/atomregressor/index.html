@@ -2306,6 +2306,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_relationships/" class="md-nav__link">
+        plot_relationships
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_residuals/" class="md-nav__link">
         plot_residuals
       </a>
@@ -2350,20 +2364,6 @@
     <li class="md-nav__item">
       <a href="../../plots/plot_roc/" class="md-nav__link">
         plot_roc
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_scatter_matrix/" class="md-nav__link">
-        plot_scatter_matrix
       </a>
     </li>
   
@@ -2573,6 +2573,20 @@
     <li class="md-nav__item">
       <a href="../../../examples/accelerating_pipelines.ipynb" class="md-nav__link">
         Accelerating pipelines
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/advanced_plotting.ipynb" class="md-nav__link">
+        Advanced plotting
       </a>
     </li>
   
@@ -3414,7 +3428,9 @@ experiment are tracked. Read more in the <a class="autorefs autorefs-internal" h
 <p>The plot attributes are used to customize the plot's aesthetics. Read
 more in the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">user guide</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='atomregressor-palette'></a><strong>palette: str</strong><br><div markdown class='param'>Color <a href="https://plotly.com/python/discrete-color/">palette</a>.</div><a id='atomregressor-title_fontsize'></a><strong>title_fontsize: int</strong><br><div markdown class='param'>Fontsize for the plot's title.</div><a id='atomregressor-label_fontsize'></a><strong>label_fontsize: int</strong><br><div markdown class='param'>Fontsize for the labels, legend and hover information.</div><a id='atomregressor-tick_fontsize'></a><strong>tick_fontsize: int</strong><br><div markdown class='param'>Fontsize for the ticks along the plot's axes.</div></td></tr></p>
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='atomregressor-palette'></a><strong>palette: Union[str, list, tuple, numpy.ndarray, pandas.core.series.Series]</strong><br><div markdown class='param'>Color palette.</p>
+<p>Specify one of plotly's <a href="https://plotly.com/python/discrete-color/">built-in palettes</a> or create
+a custom one, e.g. <code>atom.palette = ["red", "green", "blue"]</code>.</div><a id='atomregressor-title_fontsize'></a><strong>title_fontsize: int</strong><br><div markdown class='param'>Fontsize for the plot's title.</div><a id='atomregressor-label_fontsize'></a><strong>label_fontsize: int</strong><br><div markdown class='param'>Fontsize for the labels, legend and hover information.</div><a id='atomregressor-tick_fontsize'></a><strong>tick_fontsize: int</strong><br><div markdown class='param'>Fontsize for the ticks along the plot's axes.</div></td></tr></p>
 </table>
 <p><br></p>
 <h2 id="utility-methods">Utility methods</h2>
@@ -3553,7 +3569,7 @@ include:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend=True, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L828>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p><a id='atomregressor-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend=True, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L887>[source]</a></span></div>Create a figure with multiple plots.</p>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one
 figure. The default option is to add two plots side by side.
 See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
@@ -3573,21 +3589,23 @@ Title for the plot.</p>
 <ul>
 <li>If None, no title is shown.</li>
 <li>If str, text for the title.</li>
-<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">title configuration</a>.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
 </ul>
 <p></div><a id='canvas-legend'></a><strong>legend: bool or dict, default=True</strong><br><div markdown class='param'>
 Legend for the plot.</p>
 <ul>
 <li>If True, the legend is shown.</li>
 <li>If False, no legend is shown.</li>
-<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">legend configuration</a>.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">legend configuration</a>.</li>
 </ul>
 <p></div><a id='canvas-figsize'></a><strong>figsize: tuple or None, default=None</strong><br><div markdown class='param'>
 Figure's size in pixels, format as (x, y). If None, it
 adapts the size to the number of plots in the canvas.</p>
 <p></div><a id='canvas-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
-Name of the file. Use "auto" for automatic naming. If
-None, the figure is not saved.</p>
+Save the plot using this name. Use "auto" for automatic
+naming. The type of the file depends on the provided name
+(.html, .png, .pdf, etc...). If <code>filename</code> has no period,
+the plot is saved as html. If None, the plot is not saved.</p>
 <p></div><a id='canvas-display'></a><strong>display: bool, default=True</strong><br><div markdown class='param'>
 Whether to render the plot.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Yields</strong></td><td class='td_params'><a id='canvas-<a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a>'></a><strong><a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a></strong><br><div markdown class='param'>
@@ -3783,7 +3801,7 @@ to the end of their names.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(dict1=None, overwrite=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L443>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='atomregressor-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(dict1=None, overwrite=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L481>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>This recursively updates the structure of the original layout
 with the values in the input dict / keyword arguments.</p>
 <table class="table_params">
@@ -3827,7 +3845,7 @@ instance.
 <p>Deletes all branches and models. The dataset is also reset
 to its form after initialization.</p>
 <p><br><br></p>
-<p><a id='atomregressor-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L434>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='atomregressor-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L460>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
 <p><a id='atomregressor-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L763>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
