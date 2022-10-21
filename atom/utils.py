@@ -18,12 +18,13 @@ from importlib import import_module
 from inspect import Parameter, signature
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from typing import Any, Callable, List, Optional, Protocol, Tuple, Union
-from matplotlib.colors import to_rgba
+
 import matplotlib.pyplot as plt
 import mlflow
 import nltk
 import numpy as np
 import pandas as pd
+from matplotlib.colors import to_rgba
 from matplotlib.gridspec import GridSpec
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -72,6 +73,20 @@ DF_ATTRS = (
     "empty",
     "ndim",
 )
+
+# Default color palette (discrete color, continuous scale)
+PALETTE = {
+    "rgb(0, 98, 98)": "Teal",
+    "rgb(29, 105, 150)": "Blues",
+    "rgb(56, 166, 165)": "Teal",
+    "rgb(115, 175, 72)": "Greens",
+    "rgb(237, 173, 8)": "Oranges",
+    "rgb(225, 124, 5)": "Oranges",
+    "rgb(204, 80, 62)": "OrRd",
+    "rgb(148, 52, 110)": "PuRd",
+    "rgb(111, 64, 112)": "Purples",
+    "rgb(102, 102, 102)": "Greys",
+}
 
 
 # Classes ========================================================== >>

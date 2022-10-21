@@ -13,7 +13,7 @@ from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
 from typing import List, Optional, Tuple, Union
-from plotly.colors import convert_colors_to_same_type, label_rgb, color_parser
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,7 +23,6 @@ import seaborn as sns
 import shap
 from joblib import Parallel, delayed
 from matplotlib.gridspec import GridSpecFromSubplotSpec
-from matplotlib.ticker import MaxNLocator
 from matplotlib.transforms import blended_transform_factory
 from mlflow.tracking import MlflowClient
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -47,10 +46,10 @@ from typeguard import typechecked
 from wordcloud import WordCloud
 
 from atom.utils import (
-    INT, FLOAT, SCALAR, SEQUENCE_TYPES, Model, check_is_fitted, check_predict_proba,
-    composed, crash, divide, get_best_score, get_corpus, get_custom_scorer,
-    get_feature_importance, has_attr, has_task, lst, partial_dependence,
-    plot_from_model, rnd, to_rgb
+    FLOAT, INT, PALETTE, SCALAR, SEQUENCE_TYPES, Model, check_is_fitted,
+    check_predict_proba, composed, crash, divide, get_best_score, get_corpus,
+    get_custom_scorer, get_feature_importance, has_attr, has_task, lst,
+    partial_dependence, plot_from_model, rnd, to_rgb,
 )
 
 
@@ -75,6 +74,9 @@ class BaseFigure:
     vertical_spacing: float, default=0.07
         Space between subplot cols in normalized plot coordinates.
         The spacing is relative to the figure's size.
+
+    palette: str or sequence, default="Prism"
+        Name or color sequence for the palette.
 
     is_canvas: bool, default=False
         Whether the figure shows multiple plots.
@@ -235,7 +237,7 @@ class BaseFigure:
         else:
             return self.style["dashes"].setdefault(elem, next(self._dashes))
 
-    def get_showlegend(self, name: str) -> bool:
+    def showlegend(self, name: str, legend: Optional[Union[str, dict]]) -> bool:
         """Get whether the trace should be showed in the legend.
 
         If there's already a trace with the same name, it's not
@@ -245,6 +247,9 @@ class BaseFigure:
         ----------
         name: str
             Name of the trace.
+
+        legend: str, dict or None
+            Legend parameter.
 
         Returns
         -------
@@ -256,13 +261,13 @@ class BaseFigure:
             return False
         else:
             self.groups.append(name)
-            return True
+            return legend is not None
 
     def get_axes(
         self,
         x: Tuple[int, int] = (0, 1),
         y: Tuple[int, int] = (0, 1),
-        coloraxis: Optional[str] = None,
+        coloraxis: Optional[dict] = None,
     ) -> Tuple[str, str]:
         """Create and update the plot's axes.
 
@@ -274,8 +279,8 @@ class BaseFigure:
         y: tuple of int
             Relative y-size of the plot.
 
-        coloraxis: str or None
-            Name of the coloraxis to create. None to ignore.
+        coloraxis: dict or None
+            Properties of the coloraxis to create. None to ignore.
 
         Returns
         -------
@@ -321,7 +326,7 @@ class BaseFigure:
 
         # Place a colorbar right of the axes
         if coloraxis:
-            if title := coloraxis.pop("title"):
+            if title := coloraxis.pop("title", None):
                 # Add a title as annotation since plotly's
                 # title can't be oriented correctly
                 self.figure.add_annotation(
@@ -358,18 +363,7 @@ class BasePlot:
         self._fig = None
         self._custom_layout = {}
         self._aesthetics = dict(
-            palette=[
-                "rgb(0, 98, 98)",
-                "rgb(29, 105, 150)",
-                "rgb(56, 166, 165)",
-                "rgb(115, 175, 72)",
-                "rgb(237, 173, 8)",
-                "rgb(225, 124, 5)",
-                "rgb(204, 80, 62)",
-                "rgb(148, 52, 110)",
-                "rgb(111, 64, 112)",
-                "rgb(102, 102, 102)",
-            ],
+            palette=PALETTE,  # Sequence of colors
             title_fontsize=24,  # Fontsize for titles
             label_fontsize=16,  # Fontsize for labels, legend and hoverinfo
             tick_fontsize=12,  # Fontsize for ticks
@@ -461,18 +455,7 @@ class BasePlot:
         """Reset the plot [aesthetics][] to their default values."""
         self._custom_layout = {}
         self._aesthetics = dict(
-            palette=[
-                "rgb(0, 98, 98)",
-                "rgb(29, 105, 150)",
-                "rgb(56, 166, 165)",
-                "rgb(115, 175, 72)",
-                "rgb(237, 173, 8)",
-                "rgb(225, 124, 5)",
-                "rgb(204, 80, 62)",
-                "rgb(148, 52, 110)",
-                "rgb(111, 64, 112)",
-                "rgb(102, 102, 102)",
-            ],
+            palette=PALETTE,
             title_fontsize=24,
             label_fontsize=16,
             tick_fontsize=12,
@@ -787,8 +770,8 @@ class BasePlot:
             if self._fig.is_canvas and (title := kwargs.get("title")):
                 # Add a subtitle to a plot in the canvas
                 default_title = {
-                    "x": self._fig.pos[axes[0][-1]][0],
-                    "y": self._fig.pos[axes[0][-1]][1],
+                    "x": self._fig.pos[axes[0][5:]][0],
+                    "y": self._fig.pos[axes[0][5:]][1] + 0.005,
                     "xref": "paper",
                     "yref": "paper",
                     "xanchor": "center",
@@ -822,32 +805,52 @@ class BasePlot:
                 title = {**default_title, **title}
 
             default_legend = dict(
-                x=0.99,
-                y=0.99,
-                yanchor="top",
-                xanchor="right",
+                traceorder="grouped",
                 font_size=self.label_fontsize,
                 bgcolor="rgba(255, 255, 255, 0.5)",
             )
-            if not isinstance(legend := kwargs.get("legend"), dict):
-                legend = default_legend
-            else:
+            if isinstance(legend := kwargs.get("legend"), str):
+                position = {}
+                legend = legend.lower()
+                if legend == "upper left":
+                    position = dict(x=0.01, y=0.99, xanchor="left", yanchor="top")
+                elif legend == "lower left":
+                    position = dict(x=0.01, y=0.01, xanchor="left", yanchor="bottom")
+                elif legend == "upper right":
+                    position = dict(x=0.99, y=0.99, xanchor="right", yanchor="top")
+                elif legend == "lower right":
+                    position = dict(x=0.99, y=0.01, xanchor="right", yanchor="bottom")
+                elif legend == "upper center":
+                    position = dict(x=0.5, y=0.99, xanchor="center", yanchor="top")
+                elif legend == "lower center":
+                    position = dict(x=0.5, y=0.01, xanchor="center", yanchor="bottom")
+                elif legend == "center left":
+                    position = dict(x=0.01, y=0.5, xanchor="left", yanchor="middle")
+                elif legend == "center right":
+                    position = dict(x=0.99, y=0.5, xanchor="right", yanchor="middle")
+                elif legend == "center":
+                    position = dict(x=0.5, y=0.5, xanchor="center", yanchor="middle")
+                elif legend != "out":
+                    raise ValueError(
+                        "Invalid value for the legend parameter. Got unknown position: "
+                        f"{legend}. Choose from: upper left, upper right, lower left, "
+                        "lower right, upper center, lower center, center left, center "
+                        "right, center, out."
+                    )
+                legend = {**default_legend, **position}
+            elif isinstance(legend, dict):
                 legend = {**default_legend, **legend}
 
             # Update layout with predefined settings
+            space1 = self.title_fontsize if title.get("text") else 10
+            space2 = self.title_fontsize * int(bool(self._fig.figure.layout.annotations))
             self._fig.figure.update_layout(
                 title=title,
                 legend=legend,
                 showlegend=bool(kwargs.get("legend")),
                 hoverlabel=dict(font_size=self.label_fontsize),
                 font_size=self.tick_fontsize,
-                margin=dict(
-                    l=0,
-                    b=0,
-                    r=0,
-                    t=25 + (self.title_fontsize if title.get("text") else 10),
-                    pad=0,
-                ),
+                margin=dict(l=0, b=0, r=0, t=25 + space1 + space2, pad=0),
                 width=kwargs["figsize"][0],
                 height=kwargs["figsize"][1],
             )
@@ -893,7 +896,7 @@ class BasePlot:
         horizontal_spacing: FLOAT = 0.05,
         vertical_spacing: FLOAT = 0.07,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "out",
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
@@ -927,12 +930,13 @@ class BasePlot:
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: bool, str or dict, default="out"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -965,6 +969,7 @@ class BasePlot:
         try:
             yield self._fig.figure
         finally:
+            self._fig.figure.layout.legend.groupclick = "togglegroup"
             self._fig.is_canvas = False  # Close the canvas
             self._plot(
                 title=title,
@@ -991,17 +996,16 @@ class FeatureSelectorPlot(BasePlot):
         show: Optional[INT] = None,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = False,
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
         """Plot the explained variance ratio per component.
 
-        Selected components are colored and non-selected components
-        are transparent. The total variance retained by the selected
-        components is shown on the bottom right. This plot is available
-        only when feature selection was applied with strategy="pca".
+        Kept components are colored and discarted components are
+        transparent. This plot is available only when feature selection
+        was applied with strategy="pca".
 
         Parameters
         ----------
@@ -1015,8 +1019,13 @@ class FeatureSelectorPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=False
-            Does nothing. Implemented for continuity of the API.
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=None
             Figure's size in pixels, format as (x, y).  If None, it
@@ -1051,7 +1060,7 @@ class FeatureSelectorPlot(BasePlot):
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_selection("pca", n_features=14)
+        >>> atom.feature_selection("pca", n_features=5)
         >>> atom.plot_components(show=10)
 
         ```
@@ -1069,39 +1078,32 @@ class FeatureSelectorPlot(BasePlot):
                 f"Value should be >0, got {show}."
             )
 
+        # Get the variance ratio per component
+        variance = np.array(self.pca.explained_variance_ratio_)
+
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
 
-        variance = np.array(self.pca.explained_variance_ratio_)
-        color = self._fig.get_color()
-        colors = [color] * self.pca._comps + ["rgba(0, 0, 0, 0)"] * (len(variance) - self.pca._comps)
+        # Create color scheme: first normal and then fully transparent
+        color = self._fig.get_color("components")
+        opacity = [0.2] * self.pca._comps + [0] * (len(variance) - self.pca._comps)
+
         fig.add_trace(
             go.Bar(
                 x=variance[:show],
                 y=[f"pca{str(i)}" for i in range(show)],
                 orientation="h",
-                marker=dict(color=colors, line=dict(width=2, color=color)),
+                marker=dict(
+                    color=[f"rgba({color[4:-1]}, {o})" for o in opacity],
+                    line=dict(width=2, color=color),
+                ),
                 hovertemplate="%{x}<extra></extra>",
-                showlegend=False,
+                name=f"Variance retained: {variance[:self.pca._comps].sum():.3f}",
+                legendgroup="components",
+                showlegend=self._fig.showlegend("components", legend),
                 xaxis=xaxis,
                 yaxis=yaxis,
             )
-        )
-
-        fig.add_annotation(
-            x=0.98,
-            xref=f"x{xaxis[1:] if int(xaxis[1:]) > 1 else ''} domain",
-            xanchor="right",
-            y=0.02,
-            yref=f"y{yaxis[1:] if int(yaxis[1:]) > 1 else ''} domain",
-            yanchor="bottom",
-            text=f"Total variance retained: {variance[:self.pca._comps].sum():.3f}",
-            font=dict(color="black", size=self.label_fontsize),
-            bordercolor=f"rgba{color[3:-1]}, 0.8)",
-            borderwidth=1.5,
-            borderpad=4,
-            bgcolor=f"rgba{color[3:-1]}, 0.03)",
-            showarrow=False,
         )
 
         fig.update_layout({f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending")})
@@ -1123,7 +1125,7 @@ class FeatureSelectorPlot(BasePlot):
         self,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = False,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1146,7 +1148,7 @@ class FeatureSelectorPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=False
+        legend: str, dict or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(900, 600)
@@ -1181,7 +1183,7 @@ class FeatureSelectorPlot(BasePlot):
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.feature_selection("pca", n_features=12)
+        >>> atom.feature_selection("pca", n_features=5)
         >>> atom.plot_pca()
 
         ```
@@ -1203,7 +1205,7 @@ class FeatureSelectorPlot(BasePlot):
                 x=tuple(range(1, self.pca.n_features_in_ + 1)),
                 y=np.cumsum(self.pca.explained_variance_ratio_),
                 mode="lines+markers",
-                line=dict(width=2, color=self._fig.get_color()),
+                line=dict(width=2, color=self._fig.get_color("pca")),
                 marker=dict(symbol=symbols, size=sizes, opacity=1, line=dict(width=0)),
                 hovertemplate="%{y}<extra></extra>",
                 showlegend=False,
@@ -1240,7 +1242,7 @@ class FeatureSelectorPlot(BasePlot):
         self,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = False,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1260,8 +1262,13 @@ class FeatureSelectorPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=False
-            Does nothing. Implemented for continuity of the API.
+        legend: str, dict or None, default=None
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -1328,10 +1335,11 @@ class FeatureSelectorPlot(BasePlot):
                 x=tuple(x),
                 y=mean,
                 mode="lines+markers",
-                line=dict(width=2, color=self._fig.get_color(ylabel)),
+                line=dict(width=2, color=self._fig.get_color("rfecv")),
                 marker=dict(symbol=symbols, size=sizes, opacity=1, line=dict(width=0)),
                 name=ylabel,
-                showlegend=False,
+                legendgroup="rfecv",
+                showlegend=self._fig.showlegend("rfecv", legend),
                 xaxis=xaxis,
                 yaxis=yaxis,
             )
@@ -1344,9 +1352,11 @@ class FeatureSelectorPlot(BasePlot):
                     x=tuple(x),
                     y=mean + std,
                     mode="lines",
-                    line=dict(width=1, color=self._fig.get_color(ylabel)),
-                    name="upper bound",
-                    showlegend=False,
+                    line=dict(width=1, color=self._fig.get_color("rfecv")),
+                    hovertemplate="%{y}<extra>upper bound</extra>",
+                    name="bounds",
+                    legendgroup="bounds",
+                    showlegend=self._fig.showlegend("bounds", legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 ),
@@ -1354,10 +1364,11 @@ class FeatureSelectorPlot(BasePlot):
                     x=tuple(x),
                     y=mean - std,
                     mode="lines",
-                    line=dict(width=1, color=self._fig.get_color(ylabel)),
+                    line=dict(width=1, color=self._fig.get_color("rfecv")),
                     fill="tonexty",
-                    fillcolor=f"rgba{self._fig.get_color(ylabel)[3:-1]}, 0.5)",  # Add opacity
-                    name="lower bound",
+                    fillcolor=f"rgba{self._fig.get_color('rfecv')[3:-1]}, 0.2)",
+                    hovertemplate="%{y}<extra>lower bound</extra>",
+                    legendgroup="bounds",
                     showlegend=False,
                     xaxis=xaxis,
                     yaxis=yaxis,
@@ -1405,7 +1416,7 @@ class DataPlot(BasePlot):
         method: str = "pearson",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = False,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (800, 700),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1434,7 +1445,7 @@ class DataPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=False
+        legend: str, dict or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(800, 700)
@@ -1493,16 +1504,18 @@ class DataPlot(BasePlot):
         mask = np.zeros_like(corr, dtype=bool)
         mask[np.triu_indices_from(mask, k=1)] = True
 
-        coloraxis = dict(
-            colorscale="rdbu_r",
-            cmin=-1,
-            cmax=1,
-            title=f"{method.lower()} correlation",
-            font_size=self.label_fontsize,
+        fig = self._get_figure()
+        xaxis, yaxis = self._fig.get_axes(
+            x=(0, 0.9),
+            coloraxis=dict(
+                colorscale="rdbu_r",
+                cmin=-1,
+                cmax=1,
+                title=f"{method.lower()} correlation",
+                font_size=self.label_fontsize,
+            ),
         )
 
-        fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes(x=(0, 0.9), coloraxis=coloraxis)
         fig.add_trace(
             go.Heatmap(
                 z=corr.mask(mask),
@@ -1523,7 +1536,7 @@ class DataPlot(BasePlot):
                 f"yaxis{yaxis[1:]}_autorange": "reversed",
                 f"xaxis{xaxis[1:]}_showgrid": False,
                 f"yaxis{yaxis[1:]}_showgrid": False,
-             }
+            }
         )
 
         return self._plot(
@@ -1544,7 +1557,7 @@ class DataPlot(BasePlot):
         show: Optional[INT] = None,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "upper right",
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1582,16 +1595,17 @@ class DataPlot(BasePlot):
         title: str, dict or None, default=None
             Title for the plot.
 
-            - If None, no title is shown.
-            - If str, text for the title.
-            - If dict, [title configuration][parameters].
+            - If None: No title is shown.
+            - If str: Text for the title.
+            - If dict: [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -1649,7 +1663,7 @@ class DataPlot(BasePlot):
             url: /img/plots/plot_distribution_2.html
 
         ```pycon
-        >>> atom.plot_distribution(columns="animals")
+        >>> atom.plot_distribution(columns="animals", legend="lower right")
 
         ```
 
@@ -1680,28 +1694,17 @@ class DataPlot(BasePlot):
                     x=(data := series[-show:]),
                     y=data.index,
                     orientation="h",
-                    marker_color=color,
+                    marker=dict(
+                        color=f"rgba({color[4:-1]}, 0.2)",
+                        line=dict(width=2, color=color),
+                    ),
                     hovertemplate="%{x}<extra></extra>",
-                    showlegend=False,
+                    name=f"{columns[0]}: {len(series)} classes",
+                    legendgroup=columns[0],
+                    showlegend=self._fig.showlegend(columns[0], legend),
                     xaxis=xaxis,
                     yaxis=yaxis,
                 )
-            )
-
-            fig.add_annotation(
-                x=0.98,
-                xref=f"x{xaxis[1:] if int(xaxis[1:]) > 1 else ''} domain",
-                xanchor="right",
-                y=0.02,
-                yref=f"y{yaxis[1:] if int(yaxis[1:]) > 1 else ''} domain",
-                yanchor="bottom",
-                text=f"{columns[0]}: {len(series)} classes",
-                font=dict(color="black", size=self.label_fontsize),
-                bordercolor=f"rgba{color[3:-1]}, 0.8)",
-                borderwidth=1.5,
-                borderpad=4,
-                bgcolor=f"rgba{color[3:-1]}, 0.03)",
-                showarrow=False,
             )
 
             return self._plot(
@@ -1728,6 +1731,7 @@ class DataPlot(BasePlot):
                         nbinsx=40,
                         name=col,
                         legendgroup=col,
+                        showlegend=self._fig.showlegend(col, legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -1755,7 +1759,8 @@ class DataPlot(BasePlot):
                                     dash=self._fig.get_dashes(dist),
                                 ),
                                 name=dist,
-                                legendgroup=col if len(columns) > 1 else None,
+                                legendgroup=col,
+                                showlegend=self._fig.showlegend(f"{col}-{dist}", legend),
                                 xaxis=xaxis,
                                 yaxis=yaxis,
                             )
@@ -1767,17 +1772,20 @@ class DataPlot(BasePlot):
                             x=x,
                             y=stats.gaussian_kde(values)(x),
                             mode="lines",
-                            line=dict(width=2, color=self._fig.get_color(col)),
+                            line=dict(
+                                width=2,
+                                color=self._fig.get_color(col),
+                                dash=self._fig.get_dashes(dist),
+                            ),
                             name="kde",
-                            legendgroup=col if len(columns) > 1 else None,
+                            legendgroup=col,
+                            showlegend=self._fig.showlegend(f"{col}-kde", legend),
                             xaxis=xaxis,
                             yaxis=yaxis,
                         )
                     )
 
-            fig.update_layout(
-                dict(barmode="overlay", legend=dict(groupclick="toggleitem"))
-            )
+            fig.update_layout(dict(barmode="overlay", legend_groupclick="toggleitem"))
 
             return self._plot(
                 axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -1799,7 +1807,7 @@ class DataPlot(BasePlot):
         show: INT = 10,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = False,
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -1839,8 +1847,13 @@ class DataPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=False
-            Does nothing. Implemented for continuity of the API.
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=None
             Figure's size in pixels, format as (x, y). If None, it
@@ -1949,28 +1962,17 @@ class DataPlot(BasePlot):
                 x=(data := series[-show:]),
                 y=data.index,
                 orientation="h",
-                marker_color=self._fig.get_color(),
+                marker=dict(
+                    color=f"rgba({self._fig.get_color(ngram)[4:-1]}, 0.2)",
+                    line=dict(width=2, color=self._fig.get_color(ngram)),
+                ),
                 hovertemplate="%{x}<extra></extra>",
-                showlegend=False,
+                name=f"Total {ngram}: {len(series)}",
+                legendgroup=ngram,
+                showlegend=self._fig.showlegend(ngram, legend),
                 xaxis=xaxis,
                 yaxis=yaxis,
             )
-        )
-
-        fig.add_annotation(
-            x=0.98,
-            xref=f"x{xaxis[1:] if int(xaxis[1:]) > 1 else ''} domain",
-            xanchor="right",
-            y=0.02,
-            yref=f"y{yaxis[1:] if int(yaxis[1:]) > 1 else ''} domain",
-            yanchor="bottom",
-            text=f"Total {ngram}: {len(series)}",
-            font=dict(color="black", size=self.label_fontsize),
-            bordercolor=f"rgba{color[3:-1]}, 0.8)",
-            borderwidth=1.5,
-            borderpad=4,
-            bgcolor=f"rgba{color[3:-1]}, 0.03)",
-            showarrow=False,
         )
 
         return self._plot(
@@ -1991,12 +1993,15 @@ class DataPlot(BasePlot):
         distributions: Union[str, SEQUENCE_TYPES] = "norm",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
         """Plot a quantile-quantile plot.
+
+        Columns are distinguished by color and the distributions are
+        distinguished by marker type.
 
         Parameters
         ----------
@@ -2015,12 +2020,13 @@ class DataPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -2103,7 +2109,7 @@ class DataPlot(BasePlot):
                         line=dict(width=2, color=self._fig.get_color(col)),
                         name=label,
                         legendgroup=label,
-                        showlegend=self._fig.get_showlegend(label),
+                        showlegend=self._fig.showlegend(f"{col}-{dist}", legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -2133,7 +2139,7 @@ class DataPlot(BasePlot):
         columns: Union[slice, SEQUENCE_TYPES] = [0, 1, 2],
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = False,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (900, 900),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2159,7 +2165,7 @@ class DataPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=False
+        legend: str, dict or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(900, 900)
@@ -2228,6 +2234,12 @@ class DataPlot(BasePlot):
             xaxis, yaxis = self._fig.get_axes(
                 x=(x_pos, rnd(x_pos + size)),
                 y=(y_pos, rnd(y_pos + size)),
+                coloraxis=dict(
+                    colorscale=PALETTE.get(color, "Blues"),
+                    cmin=0,
+                    cmax=len(self.dataset),
+                    showscale=False,
+                )
             )
 
             if x < len(columns) - 1:
@@ -2237,6 +2249,7 @@ class DataPlot(BasePlot):
 
             self._plot(
                 axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                title=title if x == 0 and y == 1 else None,
                 xlabel=columns[y] if x == len(columns) - 1 else None,
                 ylabel=columns[x] if y == 0 else None,
             )
@@ -2273,22 +2286,13 @@ class DataPlot(BasePlot):
                     go.Histogram2dContour(
                         x=self.dataset[columns[y]],
                         y=self.dataset[columns[x]],
-                        coloraxis="coloraxis99",
+                        coloraxis=f"coloraxis{xaxis[1:]}",
                         hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
                         showlegend=False,
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
                 )
-
-        # Same colorbar for all plots
-        coloraxis = dict(
-            colorscale="Blues",
-            cmin=0,
-            cmax=len(self.dataset),
-            showscale=False,
-        )
-        fig.update_layout({f"coloraxis99": coloraxis})
 
         return self._plot(
             title=title,
@@ -2305,7 +2309,7 @@ class DataPlot(BasePlot):
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = False,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2331,7 +2335,7 @@ class DataPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=False
+        legend: str, dict or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         figsize: tuple, default=(900, 600)
@@ -2456,7 +2460,7 @@ class ModelPlot(BasePlot):
         n_bins: INT = 10,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "upper left",
         figsize: Tuple[SCALAR, SCALAR] = (900, 900),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2499,12 +2503,13 @@ class ModelPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: str, dict or None, default="upper left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 900)
             Figure's size in pixels, format as (x, y).
@@ -2537,7 +2542,11 @@ class ModelPlot(BasePlot):
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
 
-        >>> atom = ATOMClassifier(X, y)
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
         >>> atom.run(["LR", "RF"])
         >>> atom.plot_calibration()
 
@@ -2566,16 +2575,15 @@ class ModelPlot(BasePlot):
             # Get calibration (frac of positives and predicted values)
             frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
 
-            showlegend, color = self._fig.get_group(m.name)
             fig.add_trace(
                 go.Scatter(
                     x=pred,
                     y=frac_pos,
                     mode="lines+markers",
-                    line=dict(width=2, color=color),
+                    line=dict(width=2, color=self._fig.get_color(m.name)),
                     name=m.name,
                     legendgroup=m.name,
-                    showlegend=showlegend,
+                    showlegend=self._fig.showlegend(m.name, legend),
                     xaxis=xaxis2,
                     yaxis=yaxis,
                 )
@@ -2586,8 +2594,8 @@ class ModelPlot(BasePlot):
                     x=prob,
                     xbins=dict(start=0, end=1, size=1. / n_bins),
                     marker=dict(
-                        color=f"rgba({color[4:-1]}, 0.2)",
-                        line=dict(width=2, color=color),
+                        color=f"rgba({self._fig.get_color(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=self._fig.get_color(m.name)),
                     ),
                     name=m.name,
                     legendgroup=m.name,
@@ -2601,26 +2609,26 @@ class ModelPlot(BasePlot):
 
         fig.update_layout(
             {
-                f"xaxis{xaxis2[-1]}_showgrid": True,
+                f"xaxis{xaxis2[1:]}_showgrid": True,
                 f"xaxis{xaxis[1:]}_showticklabels": False,
                 "barmode": "overlay",
             }
         )
 
         self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            ylabel="Fraction of positives",
-            ylim=(-0.05, 1.05),
+            axes=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            xlabel="Predicted value",
+            ylabel="Count",
+            xlim=(0, 1),
         )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis2[-1]}", f"yaxis{yaxis2[-1]}"),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            title=title,
             legend=legend,
-            xlabel="Predicted value",
-            ylabel="Count",
-            xlim=(0, 1),
+            ylabel="Fraction of positives",
+            ylim=(-0.05, 1.05),
             figsize=figsize,
             plotname="plot_calibration",
             filename=filename,
@@ -2799,7 +2807,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "upper right",
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -2826,12 +2834,13 @@ class ModelPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -2865,7 +2874,7 @@ class ModelPlot(BasePlot):
 
         >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
         >>> atom.run(["LR", "RF"])
@@ -2906,7 +2915,7 @@ class ModelPlot(BasePlot):
                         ),
                         name=label,
                         legendgroup=label,
-                        showlegend=self._fig.get_showlegend(label),
+                        showlegend=self._fig.showlegend(label, legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -3215,7 +3224,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3241,12 +3250,13 @@ class ModelPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -3280,7 +3290,7 @@ class ModelPlot(BasePlot):
 
         >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
         >>> atom.run(["LR", "RF"])
@@ -3322,7 +3332,7 @@ class ModelPlot(BasePlot):
                         ),
                         name=label,
                         legendgroup=label,
-                        showlegend=self._fig.get_showlegend(label),
+                        showlegend=self._fig.showlegend(label, legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -3442,7 +3452,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "upper right",
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -3468,12 +3478,13 @@ class ModelPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -3507,7 +3518,7 @@ class ModelPlot(BasePlot):
 
         >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
         >>> atom.run(["LR", "RF"])
@@ -3549,7 +3560,7 @@ class ModelPlot(BasePlot):
                         ),
                         name=label,
                         legendgroup=label,
-                        showlegend=self._fig.get_showlegend(label),
+                        showlegend=self._fig.showlegend(label, legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -4124,7 +4135,7 @@ class ModelPlot(BasePlot):
         ax.yaxis.label.set_visible(False)
         if len(models) > 1:
             # Remove seaborn's legend title
-            handles, labels = ax.get_legend_handles_labels()
+            handles, labels = ax.showlegend_handles_labels()
             ax.legend(handles=handles[1:], labels=labels[1:])
         else:
             # Hide the legend created by seaborn
@@ -4417,7 +4428,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "upper right",
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4444,12 +4455,13 @@ class ModelPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -4483,7 +4495,7 @@ class ModelPlot(BasePlot):
 
         >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
         >>> atom.run(["LR", "RF"])
@@ -4524,7 +4536,7 @@ class ModelPlot(BasePlot):
                         ),
                         name=label,
                         legendgroup=label,
-                        showlegend=self._fig.get_showlegend(label),
+                        showlegend=self._fig.showlegend(label, legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
@@ -4870,7 +4882,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Union[bool, dict] = True,
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4897,12 +4909,13 @@ class ModelPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: bool or dict, default=True
-            Legend for the plot.
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
 
-            - If True, the legend is shown.
-            - If False, no legend is shown.
-            - If dict, [legend configuration][parameters].
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple, default=(900, 600)
             Figure's size in pixels, format as (x, y).
@@ -4936,7 +4949,7 @@ class ModelPlot(BasePlot):
 
         >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow")
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
         >>> atom.run(["LR", "RF"])
@@ -4977,7 +4990,7 @@ class ModelPlot(BasePlot):
                         ),
                         name=label,
                         legendgroup=label,
-                        showlegend=self._fig.get_showlegend(label),
+                        showlegend=self._fig.showlegend(label, legend),
                         xaxis=xaxis,
                         yaxis=yaxis,
                     )
