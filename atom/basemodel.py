@@ -63,6 +63,8 @@ class BaseModel(ModelPlot, ShapPlot):
     """
 
     def __init__(self, *args, fast_init=False):
+        super().__init__()
+
         self.T = args[0]  # Parent class
 
         self.scaler = None
@@ -326,7 +328,7 @@ class BaseModel(ModelPlot, ShapPlot):
             if not trial:
                 # In-training validation is skipped during hyperparameter tuning
                 m = self.T._metric[0].name
-                self._evals = CustomDict({f"={m}_train": [], f"{m}_test": []})
+                self._evals = CustomDict({f"{m}_train": [], f"{m}_test": []})
 
             # Loop over first parameter in estimator
             for step in range(steps := estimator.get_params()[self.has_validation]):

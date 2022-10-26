@@ -197,8 +197,9 @@ CUSTOM_URLS = dict(
     wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
     calibration="https://scikit-learn.org/stable/modules/calibration.html",
     det="https://scikit-learn.org/stable/auto_examples/model_selection/plot_det.html",
-    roc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html",
+    partial_dependence="https://scikit-learn.org/stable/modules/partial_dependence.html#partial-dependence-and-individual-conditional-expectation-plots",
     prc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_precision_recall.html",
+    roc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html",
     # Training
     scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
 )

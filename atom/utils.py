@@ -77,7 +77,6 @@ DF_ATTRS = (
 # Default color palette (discrete color, continuous scale)
 PALETTE = {
     "rgb(0, 98, 98)": "Teal",
-    "rgb(29, 105, 150)": "Blues",
     "rgb(56, 166, 165)": "Teal",
     "rgb(115, 175, 72)": "Greens",
     "rgb(237, 173, 8)": "Oranges",
@@ -1866,8 +1865,8 @@ def get_feature_importance(
 ) -> list:
     """Return the feature importance from an estimator.
 
-    Get the feature importance from the provided attribute. For
-    meta-estimators, get the mean of the values of the underlying
+    Gets the feature importance from the provided attribute. For
+    meta-estimators, it gets the mean of the values of the underlying
     estimators.
 
     Parameters
