@@ -108,13 +108,14 @@ class BaseFigure:
         self.figure = go.Figure()
 
         self.groups = []
-        self.style = dict(colors={}, markers={}, dashes={})
+        self.style = dict(colors={}, markers={}, dashes={}, shapes={})
+        self.markers = cycle(["circle", "x", "diamond", "pentagon", "star", "hexagon"])
+        self.dashes = cycle([None, "dashdot", "dash", "dot"])
+        self.shapes = cycle(["", "/", "x", "\\", "-", "|", "+", "."])
 
         self.pos = {}  # Subplot position to use for title
         self.custom_layout = {}  # Layout params specified by user
         self.used_models = []  # Models plotted in this figure
-        self._markers = cycle(["circle", "x", "diamond", "pentagon", "star", "hexagon"])
-        self._dashes = cycle([None, "dashdot", "dash", "dot"])
 
         # Perform parameter checks
         if not 0 < horizontal_spacing < 1:
@@ -165,15 +166,15 @@ class BaseFigure:
 
         return self.figure
 
-    def get_color(self, elem: Optional[str] = None) -> str:
+    def get_color(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
         """Get the next color.
 
         This method is used to assign the same color to the same
-        elements (columns, models, etc...) in a canvas.
+        elements (columns, models, etc...) in a plot.
 
         Parameters
         ----------
-        elem: str or None
+        elem: int, float or str or None
             Element for which to get the color.
 
         Returns
@@ -189,15 +190,15 @@ class BaseFigure:
         else:
             return self.style["colors"].setdefault(elem, next(self.palette))
 
-    def get_marker(self, elem: Optional[str] = None) -> str:
+    def get_marker(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
         """Get the next marker.
 
         This method is used to assign the same marker to the same
-        elements (e.g. distribution) in a canvas.
+        elements (e.g. distribution) in a plot.
 
         Parameters
         ----------
-        elem: str or None
+        elem: int, float or str or None
             Element for which to get the marker.
 
         Returns
@@ -207,21 +208,21 @@ class BaseFigure:
 
         """
         if elem is None:
-            return next(self._markers)
+            return next(self.markers)
         elif elem in self.style["markers"]:
             return self.style["markers"][elem]
         else:
-            return self.style["markers"].setdefault(elem, next(self._markers))
+            return self.style["markers"].setdefault(elem, next(self.markers))
 
-    def get_dashes(self, elem: Optional[str] = None) -> str:
+    def get_dashes(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
         """Get the next dash style.
 
         This method is used to assign the same dash style to the same
-        elements (e.g. data set) in a canvas.
+        elements (e.g. data set) in a plot.
 
         Parameters
         ----------
-        elem: str or None
+        elem: int, float or str or None
             Element for which to get the dash.
 
         Returns
@@ -231,11 +232,35 @@ class BaseFigure:
 
         """
         if elem is None:
-            return next(self._dashes)
+            return next(self.dashes)
         elif elem in self.style["dashes"]:
             return self.style["dashes"][elem]
         else:
-            return self.style["dashes"].setdefault(elem, next(self._dashes))
+            return self.style["dashes"].setdefault(elem, next(self.dashes))
+
+    def get_shapes(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
+        """Get the next shape pattern.
+
+        This method is used to assign the same shape pattern to the
+        same elements in a plot.
+
+        Parameters
+        ----------
+        elem: int, float or str or None
+            Element for which to get the shape.
+
+        Returns
+        -------
+        str
+            Pattern shape.
+
+        """
+        if elem is None:
+            return next(self.shapes)
+        elif elem in self.style["shapes"]:
+            return self.style["shapes"][elem]
+        else:
+            return self.style["shapes"].setdefault(elem, next(self.shapes))
 
     def showlegend(self, name: str, legend: Optional[Union[str, dict]]) -> bool:
         """Get whether the trace should be showed in the legend.
@@ -327,19 +352,8 @@ class BaseFigure:
         # Place a colorbar right of the axes
         if coloraxis:
             if title := coloraxis.pop("title", None):
-                # Add a title as annotation since plotly's
-                # title can't be oriented correctly
-                self.figure.add_annotation(
-                    x=x_pos + x_size,
-                    xref="paper",
-                    xanchor="right",
-                    y=y_pos + ay_size / 2,
-                    yref="paper",
-                    yanchor="middle",
-                    text=title,
-                    textangle=90,
-                    font_size=coloraxis.pop("font_size"),
-                    showarrow=False,
+                coloraxis["colorbar_title"] = dict(
+                    text=title, side="right", font_size=coloraxis.pop("font_size")
                 )
 
             coloraxis["colorbar_x"] = rnd(x_pos + ax_size) + ax_size / 40
@@ -350,7 +364,9 @@ class BaseFigure:
             coloraxis["colorbar_thickness"] = ax_size * 30  # Default width in pixels
             self.figure.update_layout({f"coloraxis{self.axes}": coloraxis})
 
-        return f"x{self.axes}", f"y{self.axes}"
+        xaxis = f"x{self.axes if self.axes > 1 else ''}"
+        yaxis = f"y{self.axes if self.axes > 1 else ''}"
+        return xaxis, yaxis
 
 
 class BasePlot:
@@ -493,13 +509,7 @@ class BasePlot:
 
     # Methods ====================================================== >>
 
-    @staticmethod
-    def _draw_straight_line(
-        x: Tuple[SCALAR, SCALAR] = (0, 1),
-        y: Union[SCALAR, str] = "diagonal",
-        xaxis: str = "x",
-        yaxis: str = "y",
-    ) -> go.Scatter:
+    def _draw_straight_line(self, y: Union[SCALAR, str], xaxis: str, yaxis: str):
         """Draw a line across the axis.
 
         The line can be either horizontal or diagonal. The line should
@@ -508,35 +518,28 @@ class BasePlot:
 
         Parameters
         ----------
-        x: tuple, default=(0, 1)
-            Coordinates on the x-axis.
-
         y: int, float or str, default = "diagonal"
             Coordinates on the y-axis. If a value, draw a horizontal line
             at that value. If "diagonal", draw a diagonal line from x.
 
-        xaxis: str, default="x"
+        xaxis: str
             Name of the x-axis to draw in.
 
-        yaxis: str, default="y"
+        yaxis: str
             Name of the y-axis to draw in.
 
-        Returns
-        -------
-        go.Scatter
-            New trace to add to figure.
-
         """
-        return go.Scatter(
-            x=x,
-            y=x if y == "diagonal" else [y, y],
-            mode="lines",
-            line=dict(width=2, color="black", dash="dash"),
+        self._fig.figure.add_shape(
+            type="line",
+            x0=0,
+            x1=1,
+            xref=f"{xaxis} domain",
+            y0=0 if y == "diagonal" else y,
+            y1=1 if y == "diagonal" else y,
+            yref=f"{yaxis} domain",
+            line=dict(width=1, color="black", dash="dash"),
             opacity=0.6,
-            hoverinfo="skip",
-            showlegend=False,
-            xaxis=xaxis,
-            yaxis=yaxis,
+            layer="below",
         )
 
     def _draw_line(
@@ -661,7 +664,11 @@ class BasePlot:
 
         return models[0] if max_one else models
 
-    def _get_metric(self, metric: Union[int, str]) -> int:
+    def _get_metric(
+        self,
+        metric: Union[int, str],
+        max_one: bool = True,
+    ) -> Union[int, str, List[int]]:
         """Check and return the provided metric index.
 
         Parameters
@@ -669,19 +676,31 @@ class BasePlot:
         metric: int or str
             Name or position of the metric to get.
 
+        max_one: bool, default=True
+            Whether one or multiple metrics are allowed.
+
         Returns
         -------
-        int
-            Position index of the metric.
+        int, str or sequence
+            Position index of the metric or time metric.
 
         """
         if isinstance(metric, str):
-            if metric.lower() in ("time_ht", "time_fit", "time_bootstrap", "time"):
+            if metric.lower().startswith("time"):
+                for met in metric.lower().split("+"):
+                    if met not in ("time_ht", "time_fit", "time_bootstrap", "time"):
+                        raise ValueError(
+                            f"Invalid value for the metric parameter, got {met}. "
+                            "Choose from: time_ht, time_fit, time_bootstrap, time."
+                        )
                 return metric.lower()
             else:
-                name = get_custom_scorer(metric).name
-                if name in self.metric:
-                    return self._metric.index(name)
+                metrics = []
+                for met in metric.lower().split("+"):
+                    if (name := get_custom_scorer(met).name) in self.metric:
+                        metrics.append(self._metric.index(name))
+
+                return metrics[0] if max_one else metrics
 
         elif 0 <= metric < len(self._metric):
             return metric
@@ -721,7 +740,12 @@ class BasePlot:
 
         return target
 
-    def _get_set(self, dataset: str, allow_holdout: bool = True) -> List[str]:
+    def _get_set(
+        self,
+        dataset: str,
+        allow_holdout: bool = True,
+        max_one: bool = False,
+    ) -> Union[str, List[str]]:
         """Check and return the provided metric.
 
         Parameters
@@ -732,35 +756,36 @@ class BasePlot:
         allow_holdout: bool, default=True
             Whether to allow the retrieval of the holdout set.
 
+        max_one: bool, default=True
+            Whether one or multiple data sets are allowed. If True, return
+            the data set instead of a list.
+
         Returns
         -------
-        list of str
-            Selected data sets.
+        str or list
+            Selected data set(s).
 
         """
-        dataset = dataset.lower()
-        if dataset == "both":
-            return ["test", "train"]
-        elif dataset in ("train", "test"):
-            return [dataset]
-        elif allow_holdout:
-            if dataset == "holdout":
+        if "holdout" in (ds := dataset.lower().split("+")):
+            if allow_holdout:
                 if self.holdout is None:
                     raise ValueError(
                         "Invalid value for the dataset parameter. No holdout "
                         "data set was specified when initializing the instance."
                     )
-                return [dataset]
             else:
                 raise ValueError(
                     "Invalid value for the dataset parameter, got "
-                    f"{dataset}. Choose from: train, test, both or holdout."
+                    f"{dataset}. Choose from: train or test."
                 )
-        else:
+
+        if max_one and len(ds) > 1:
             raise ValueError(
                 "Invalid value for the dataset parameter, got "
-                f"{dataset}. Choose from: train, test or both."
+                f"{dataset}. Only one data set is allowed."
             )
+
+        return ds[0] if max_one else ds
 
     @staticmethod
     def _get_show(show: Optional[int], model: Union[Model, List[Model]]) -> int:
@@ -828,10 +853,12 @@ class BasePlot:
         if axes:
             self._fig.figure.update_layout(
                 {
-                    f"{axes[0]}_title": kwargs.get("xlabel"),
-                    f"{axes[1]}_title": kwargs.get("ylabel"),
-                    f"{axes[0]}_title_font_size": self.label_fontsize,
-                    f"{axes[1]}_title_font_size": self.label_fontsize,
+                    f"{axes[0]}_title": dict(
+                        text=kwargs.get("xlabel"), font_size=self.label_fontsize
+                    ),
+                    f"{axes[1]}_title": dict(
+                        text=kwargs.get("ylabel"), font_size=self.label_fontsize
+                    ),
                     f"{axes[0]}_range": kwargs.get("xlim"),
                     f"{axes[1]}_range": kwargs.get("ylim"),
                     f"{axes[0]}_automargin": True,
@@ -1183,10 +1210,10 @@ class FeatureSelectorPlot(BasePlot):
 
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="Explained variance ratio",
             ylim=(len(variance) - show - 0.5, len(variance) - 0.5),
+            title=title,
+            legend=legend,
             figsize=figsize or (900, 400 + show * 50),
             plotname="plot_components",
             filename=filename,
@@ -1299,11 +1326,11 @@ class FeatureSelectorPlot(BasePlot):
         margin = self.pca.n_features_in_ / 30
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="First N principal components",
             ylabel="Cumulative variance ratio",
             xlim=(1 - margin, self.pca.n_features_in_ - 1 + margin),
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_pca",
             filename=filename,
@@ -1460,12 +1487,12 @@ class FeatureSelectorPlot(BasePlot):
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
-            title=title,
-            legend=legend,
             xlabel="Number of features",
             ylabel=ylabel,
             xlim=(min(x) - len(x) / 30, max(x) + len(x) / 30),
             ylim=(min(mean) - 3 * max(std), max(mean) + 3 * max(std)),
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_rfecv",
             filename=filename,
@@ -1782,10 +1809,10 @@ class DataPlot(BasePlot):
 
             return self._plot(
                 axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                title=title,
-                legend=legend,
                 xlabel="Counts",
                 ylim=(len(series) - show - 0.5, len(series) - 0.5),
+                title=title,
+                legend=legend,
                 figsize=figsize or (900, 400 + show * 50),
                 plotname="plot_distribution",
                 filename=filename,
@@ -1852,10 +1879,10 @@ class DataPlot(BasePlot):
 
             return self._plot(
                 axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                title=title,
-                legend=legend,
                 xlabel="Values",
                 ylabel="Probability density",
+                title=title,
+                legend=legend,
                 figsize=figsize or (900, 600),
                 plotname="plot_distribution",
                 filename=filename,
@@ -2040,9 +2067,9 @@ class DataPlot(BasePlot):
 
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="Counts",
             title=title,
             legend=legend,
-            xlabel="Counts",
             figsize=figsize or (900, 400 + show * 50),
             plotname="plot_ngrams",
             filename=filename,
@@ -2144,7 +2171,6 @@ class DataPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
 
-        min_, max_ = np.inf, -np.inf
         percentiles = np.linspace(0, 100, 101)
         for col in columns:
             # Drop missing values for compatibility with scipy.stats
@@ -2158,8 +2184,8 @@ class DataPlot(BasePlot):
 
                 fig.add_trace(
                     self._draw_line(
-                        x=(qn_a := np.percentile(samples, percentiles)),
-                        y=(qn_b := np.percentile(values, percentiles)),
+                        x=np.percentile(samples, percentiles),
+                        y=np.percentile(values, percentiles),
                         parent=col,
                         child=dist,
                         legend=legend,
@@ -2168,18 +2194,14 @@ class DataPlot(BasePlot):
                     )
                 )
 
-                # Keep track of the min and max values for the diagonal line
-                min_ = min(min_, min(qn_a), min(qn_b))
-                max_ = max(max_, max(qn_a), max(qn_b))
-
-        fig.add_trace(self._draw_straight_line(x=(min_, max_), xaxis=xaxis, yaxis=yaxis))
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="Theoretical quantiles",
             ylabel="Observed quantiles",
+            title=title,
+            legend=legend,
             figsize=figsize or (900, 600),
             plotname="plot_qq",
             filename=filename,
@@ -2302,9 +2324,9 @@ class DataPlot(BasePlot):
 
             self._plot(
                 axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                title=title if x == 0 and y == 1 else None,
                 xlabel=columns[y] if x == len(columns) - 1 else None,
                 ylabel=columns[x] if y == 0 else None,
+                title=title if x == 0 and y == 1 else None,
             )
 
             if x == y:
@@ -2658,7 +2680,7 @@ class ModelPlot(BasePlot):
                 )
             )
 
-        fig.add_trace(self._draw_straight_line(xaxis=xaxis2, yaxis=yaxis))
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         fig.update_layout(
             {
@@ -2678,10 +2700,10 @@ class ModelPlot(BasePlot):
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             ylabel="Fraction of positives",
             ylim=(-0.05, 1.05),
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_calibration",
             filename=filename,
@@ -2880,6 +2902,8 @@ class ModelPlot(BasePlot):
                     )
                 )
 
+                fig.update_layout(bargroupgap=0.05)
+
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -2918,8 +2942,9 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one. Choose from: "train",
+            "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3011,10 +3036,10 @@ class ModelPlot(BasePlot):
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="FPR",
             ylabel="FNR",
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_det",
             filename=filename,
@@ -3048,8 +3073,9 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one. Choose from: "train",
+            "test" or "holdout".
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
@@ -3103,7 +3129,7 @@ class ModelPlot(BasePlot):
                 x = np.linspace(*ax.get_xlim(), 100)
                 ax.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
 
-        self._draw_straight_line(ax=ax, y="diagonal")
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         self._fig.used_models.extend(models)
         return self._plot(
@@ -3144,8 +3170,10 @@ class ModelPlot(BasePlot):
             pipeline are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the evaluation curves.
-            Choose from: "train", "test" or "both".
+            Data set on which to calculate the evaluation curves. Add
+            `+` between options to select more than one. Add `+` between
+            options to select more than one. Choose from: "train" or
+            "test".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3233,10 +3261,10 @@ class ModelPlot(BasePlot):
         self._fig.used_models.append(m)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="Iterations",
             ylabel=self._metric[0].name,
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_evals",
             filename=filename,
@@ -3364,15 +3392,20 @@ class ModelPlot(BasePlot):
                 )
             )
 
-        fig.update_layout({f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending")})
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                "bargroupgap": 0.05,
+            }
+        )
 
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="Normalized feature importance",
             ylim=(m.n_features - show - 0.5, m.n_features - 0.5),
+            title=title,
+            legend=legend,
             figsize=figsize or (900, 400 + show * 50),
             plotname="plot_feature_importance",
             filename=filename,
@@ -3403,8 +3436,9 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one. Choose from: "train",
+            "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3491,17 +3525,17 @@ class ModelPlot(BasePlot):
                     )
                 )
 
-        fig.add_trace(self._draw_straight_line(xaxis=xaxis, yaxis=yaxis))
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="Fraction of sample",
             ylabel="Gain",
             xlim=(0, 1),
             ylim=(0, 1.02),
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_gains",
             filename=filename,
@@ -3691,8 +3725,9 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one. Choose from: "train",
+            "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3781,16 +3816,16 @@ class ModelPlot(BasePlot):
                     )
                 )
 
-        fig.add_trace(self._draw_straight_line(y=1, xaxis=xaxis, yaxis=yaxis))
+        self._draw_straight_line(y=1, xaxis=xaxis, yaxis=yaxis)
 
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="Fraction of sample",
             ylabel="Lift",
             xlim=(0, 1),
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_lift",
             filename=filename,
@@ -3920,7 +3955,6 @@ class ModelPlot(BasePlot):
             coloraxis=coloraxis if needs_colorbar else None,
         )
 
-        min_, max_ = np.inf, -np.inf
         for m in models:
             parshap = {}
             fxs = self._get_columns(columns, include_target=False, branch=m.branch)
@@ -3987,19 +4021,15 @@ class ModelPlot(BasePlot):
                 )
             )
 
-            # Keep track of the min and max values for the diagonal line
-            min_ = min(min_, min(parshap["train"]), min(parshap["test"]))
-            max_ = max(max_, max(parshap["train"]), max(parshap["test"]))
-
-        fig.add_trace(self._draw_straight_line(x=(min_, max_), xaxis=xaxis, yaxis=yaxis))
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="Training set",
             ylabel="Test set",
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_parshap",
             filename=filename,
@@ -4015,7 +4045,7 @@ class ModelPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower left",
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4025,11 +4055,10 @@ class ModelPlot(BasePlot):
         The partial dependence of a feature (or a set of features)
         corresponds to the response of the model for each possible
         value of the feature. Two-way partial dependence plots are
-        plotted as contour plots (only allowed for single model plots).
-        The deciles of the feature values are shown with tick marks
-        on the x-axes for one-way plots, and on both axes for two-way
-        plots. Read more about partial dependence on sklearn's
-        [documentation][partial_dependence].
+        plotted as contour plots (only allowed for a single model and
+        for the same feature on the y-axes). The deciles of the feature
+        values are shown with tick marks on the bottom. Read more about
+        partial dependence on sklearn's [documentation][partial_dependence].
 
         Parameters
         ----------
@@ -4038,20 +4067,18 @@ class ModelPlot(BasePlot):
             are selected.
 
         columns: int, str, slice, sequence or None, default=None
-            Features or feature pairs (name or index) to get the partial
-            dependence from. Maximum of 3 allowed. If None, it uses the
-            best 3 features if the `feature_importance` attribute is
-            defined, else it uses the first 3 features in the dataset.
+            Features or feature pairs (not combinations) to get the
+            partial dependence from. If None, it uses the first 3
+            features in the dataset.
 
         kind: str, default="average"
-            Kind of depedence to plot. Choose from:
+            Kind of depedence to plot. Add `+` between options to select
+            more than one. Choose from:
 
             - "average": Partial dependence averaged across all samples
               in the dataset.
-            - "individual": Partial dependence per sample (Individual
-              Conditional Expectation).
-            - "both": Plot both the average (as a thick line) and the
-              individual (thin lines) partial dependence.
+            - "individual": Partial dependence for up to 50 random samples
+              (Individual Conditional Expectation).
 
             This parameter is ignored when plotting feature pairs.
 
@@ -4117,7 +4144,7 @@ class ModelPlot(BasePlot):
             url: /img/plots/plot_partial_dependence_1.html
 
         ```pycon
-        >>> atom.tree.plot_partial_dependence(features=(4, (3, 4)))
+        >>> atom.tree.plot_partial_dependence(columns=(4, (3, 4)))
 
         ```
 
@@ -4125,26 +4152,25 @@ class ModelPlot(BasePlot):
             url: /img/plots/plot_partial_dependence_2.html
 
         """
+        check_is_fitted(self, attributes="_models")
+        models = self._get_subclass(models)
+        target = self._get_target(target) if self.task.startswith("multi") else 0
 
-        def get_features(features, m):
-            """Select feature list from provided columns."""
-            # Default is to select the best or the first 3 features
-            if not features:
-                if (fxs := m.feature_importance) is not None:
-                    features = list(fxs.index[:3])
-                else:
-                    features = list(m.features[:3])
+        if kind.lower() not in ("average", "individual", "average+individual"):
+            raise ValueError(
+                f"Invalid value for the kind parameter, got {kind}. "
+                "Choose from: average, individual, average+individual."
+            )
 
-            features = lst(features)
-            if len(features) > 3:
-                raise ValueError(
-                    "Invalid value for the columns parameter. "
-                    f"Maximum 3 allowed, got {len(features)}."
-                )
+        axes, names = [], []
+        fig = self._get_figure()
+        for m in models:
+            color = self._fig.get_color(m.name)
 
-            # Convert features into a sequence of int tuples
+            # Since every model can have different fxs, select them
+            # every time and make sure the models use the same fxs
             cols = []
-            for fxs in features:
+            for fxs in lst(columns or list(m.features[:3])):
                 if isinstance(fxs, (int, str, slice)):
                     cols.append((self._get_columns(fxs, False, branch=m.branch)[0],))
                 elif len(models) == 1:
@@ -4163,45 +4189,48 @@ class ModelPlot(BasePlot):
                         "Invalid value for the columns parameter. Feature pairs "
                         f"are invalid when plotting multiple models, got {fxs}."
                     )
-            return cols
 
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models)
-        target = self._get_target(target) if self.task.startswith("multi") else 0
-        palette = cycle(sns.color_palette())
+            # Avoid combinations of line and contour
+            if len(set(map(len, cols))) > 1:
+                raise ValueError(
+                    "Invalid value for the columns parameter. Individual "
+                    "features and pairs can't be combined. Use the canvas "
+                    "method to visualize both types together."
+                )
 
-        if kind.lower() not in ("average", "individual", "both"):
-            raise ValueError(
-                f"Invalid value for the kind parameter, got {kind}. "
-                "Choose from: average, individual, both."
-            )
+            # Check that all plots have the same y-axis
+            if len(cols[0]) > 1 and len(set(fx[1] for fx in cols)) > 1:
+                raise ValueError(
+                    "Invalid value for the columns parameter. All feature "
+                    "pairs must have the same feature on the y-axis."
+                )
 
-        axes = []
-        fig = self._get_figure()
-        n_cols = 3 if not columns else len(lst(columns))
-        gs = GridSpecFromSubplotSpec(1, n_cols, self._fig.grid)
-        for i in range(n_cols):
-            axes.append(fig.add_subplot(gs[0, i]))
+            # The features must be the same for all models
+            if not names:
+                names = cols
+            elif names != cols:
+                raise ValueError(
+                    "Invalid value for the columns parameter. Not all "
+                    f"models use the same features, got {names} and {cols}."
+                )
 
-        names = []  # Names of the features (to compare between models)
-        for m in models:
-            color = next(palette)
+            # Create new axes
+            if not axes:
+                for i, col in enumerate(cols):
+                    # Calculate the distance between subplots
+                    offset = divide(0.05 if len(col) > 1 else 0.025, (len(cols) - 1))
 
-            # Since every model can have different fxs, select them again
-            cols = get_features(columns, m)
+                    # Calculate the size of the subplot
+                    size = (1 - ((offset * 2) * (len(cols) - 1))) / len(cols)
 
-            # Make sure the models use the same features
-            if len(models) > 1:
-                if not names:
-                    names = cols
-                elif names != cols:
-                    raise ValueError(
-                        "Invalid value for the columns parameter. Not all "
-                        f"models use the same features, got {names} and {cols}."
-                    )
+                    # Determine the position for the axes
+                    x_pos = i % len(cols) * (size + 2 * offset)
+
+                    xaxis, yaxis = self._fig.get_axes(x=(x_pos, rnd(x_pos + size)))
+                    axes.append((xaxis, yaxis))
 
             # Compute averaged predictions
-            pd_results = Parallel(n_jobs=self.n_jobs)(
+            preds = Parallel(n_jobs=self.n_jobs)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
                     X=m.X_test,
@@ -4209,101 +4238,103 @@ class ModelPlot(BasePlot):
                 ) for col in cols
             )
 
-            # Get global min and max average predictions of PD grouped by plot type
-            pdp_lim = {}
-            for avg_pred, pred, values in pd_results:
-                min_pd, max_pd = avg_pred[target].min(), avg_pred[target].max()
-                old_min, old_max = pdp_lim.get(len(values), (min_pd, max_pd))
-                pdp_lim[len(values)] = (min(min_pd, old_min), max(max_pd, old_max))
+            # Compute deciles for ticks (only if line plots)
+            if len(cols[0]) == 1:
+                deciles = {}
+                for fx in chain.from_iterable(cols):
+                    if fx not in deciles:  # Skip if the feature is repeated
+                        X_col = _safe_indexing(m.X_test, fx, axis=1)
+                        deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
-            deciles = {}
-            for fx in chain.from_iterable(cols):
-                if fx not in deciles:  # Skip if the feature is repeated
-                    X_col = _safe_indexing(m.X_test, fx, axis=1)
-                    deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
-
-            for axi, fx, (avg_pred, pred, values) in zip(axes, cols, pd_results):
-                # For both types: draw ticks on the horizontal axis
-                trans = blended_transform_factory(axi.transData, axi.transAxes)
-                axi.vlines(deciles[fx[0]], 0, 0.05, transform=trans, color="k")
-                axi.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
-                self._plot(ax=axi, xlabel=fx[0])
-
+            for i, (ax, fx, (avg_pred, pred, val)) in enumerate(zip(axes, cols, preds)):
                 # Draw line or contour plot
-                if len(values) == 1:
+                if len(val) == 1:
+                    # For both average and individual: draw ticks on the horizontal axis
+                    for line in deciles[fx[0]]:
+                        fig.add_shape(
+                            type="line",
+                            x0=line,
+                            x1=line,
+                            xref=ax[0],
+                            y0=0,
+                            y1=0.05,
+                            yref=f"{axes[0][1]} domain",
+                            line=dict(width=1, color=self._fig.get_color(m.name)),
+                            opacity=0.6,
+                            layer="below",
+                        )
+
                     # Draw the mean of the individual lines
-                    if kind.lower() in ("average", "both"):
-                        axi.plot(
-                            values[0],
-                            avg_pred[target].ravel(),
-                            lw=2,
-                            color=color,
-                            label=m.name,
+                    if "average" in kind.lower():
+                        fig.add_trace(
+                            go.Scatter(
+                                x=val[0],
+                                y=avg_pred[target].ravel(),
+                                mode="lines",
+                                line=dict(width=2, color=color),
+                                name=m.name,
+                                legendgroup=m.name,
+                                showlegend=self._fig.showlegend(m.name, legend),
+                                xaxis=ax[0],
+                                yaxis=axes[0][1],
+                            )
                         )
 
                     # Draw all individual (per sample) lines (ICE)
-                    if kind.lower() in ("individual", "both"):
-                        # Select up to 100 random samples to plot
+                    if "individual" in kind.lower():
+                        # Select up to 50 random samples to plot
                         idx = np.random.choice(
                             list(range(len(pred[target]))),
-                            size=min(len(pred[target]), 100),
+                            size=min(len(pred[target]), 50),
                             replace=False,
                         )
                         for sample in pred[target, idx, :]:
-                            axi.plot(values[0], sample, lw=0.5, alpha=0.5, color=color)
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=val[0],
+                                    y=sample,
+                                    mode="lines",
+                                    line=dict(width=0.5, color=color),
+                                    name=m.name,
+                                    legendgroup=m.name,
+                                    showlegend=self._fig.showlegend(m.name, legend),
+                                    xaxis=ax[0],
+                                    yaxis=axes[0][1],
+                                )
+                            )
 
                 else:
-                    # Create contour levels for two-way plots
-                    levels = np.linspace(pdp_lim[2][0], pdp_lim[2][1] + 1e-9, num=8)
-
-                    # Draw contour plot
-                    XX, YY = np.meshgrid(values[0], values[1])
-                    Z = avg_pred[target].T
-                    CS = axi.contour(XX, YY, Z, levels=levels, linewidths=0.5)
-                    axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
-                    axi.contourf(
-                        XX,
-                        YY,
-                        Z,
-                        levels=levels,
-                        vmax=levels[-1],
-                        vmin=levels[0],
-                        alpha=0.75,
+                    fig.add_trace(
+                        go.Contour(
+                            x=val[0],
+                            y=val[1],
+                            z=avg_pred[target],
+                            contours=dict(
+                                showlabels=True,
+                                labelfont=dict(size=self.tick_fontsize, color="white")
+                            ),
+                            hovertemplate="x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
+                            hoverongaps=False,
+                            colorscale=PALETTE.get(self._fig.get_color(m.name), "Teal"),
+                            showscale=False,
+                            showlegend=False,
+                            xaxis=ax[0],
+                            yaxis=ax[1],
+                        )
                     )
 
-                    # Draw the ticks on the vertical axis
-                    trans = blended_transform_factory(axi.transAxes, axi.transData)
-                    axi.hlines(deciles[fx[1]], 0, 0.05, transform=trans, color="k")
-
-                    self._plot(
-                        ax=axi,
-                        ylabel=fx[1],
-                        xlim=(min(XX.flatten()), max(XX.flatten())),
-                        ylim=(min(YY.flatten()), max(YY.flatten())),
-                    )
-
-        # Place y-label and legend on first non-contour plot
-        for axi in axes:
-            if not axi.get_ylabel():
                 self._plot(
-                    ax=axi,
-                    ylabel="Score",
-                    legend=("best", len(models)) if len(models) > 1 else None,
+                    axes=(f"xaxis{ax[0][1:]}", f"yaxis{ax[1][1:]}"),
+                    title=title if len(cols) // 2 == i else None,
+                    xlabel=fx[0],
+                    ylabel=(fx[1] if len(fx) > 1 else "score") if i == 0 else None,
                 )
-                break
-
-        if title:
-            # Place title if not in canvas, else above first or middle image
-            if len(cols) == 1 or (len(cols) == 2 and self._fig.is_canvas):
-                axes[0].set_title(title, fontsize=self.title_fontsize, pad=20)
-            elif len(cols) == 3:
-                axes[1].set_title(title, fontsize=self.title_fontsize, pad=20)
-            elif not self._fig.is_canvas:
-                plt.suptitle(title, fontsize=self.title_fontsize)
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
+            groupclick="togglegroup",
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_partial_dependence",
             filename=filename,
@@ -4318,6 +4349,7 @@ class ModelPlot(BasePlot):
         n_repeats: INT = 10,
         *,
         title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4344,12 +4376,24 @@ class ModelPlot(BasePlot):
         n_repeats: int, default=10
             Number of times to permute each feature.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
 
         figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of features shown.
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of features shown.
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
@@ -4366,6 +4410,30 @@ class ModelPlot(BasePlot):
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_feature_importance
+        atom.plots:ModelPlot.plot_partial_dependence
+        atom.plots:ModelPlot.plot_parshap
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_permutation_importance(show=10, n_repeats=7)
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_permutation_importance.html
+
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
@@ -4377,7 +4445,9 @@ class ModelPlot(BasePlot):
                 f"Value should be >0, got {n_repeats}."
             )
 
-        rows = []
+        fig = self._get_figure()
+        xaxis, yaxis = self._fig.get_axes()
+
         for m in models:
             # If permutations are already calculated and n_repeats is
             # same, use known permutations (for efficient re-plotting)
@@ -4396,46 +4466,36 @@ class ModelPlot(BasePlot):
                     random_state=self.random_state,
                 )
 
-            # Append permutation scores to the dataframe
-            for i, feature in enumerate(m.features):
-                for score in m.permutations.importances[i, :]:
-                    rows.append({"features": feature, "score": score, "model": m.name})
+            fig.add_trace(
+                go.Box(
+                    x=m.permutations["importances"].flatten(),
+                    y=list(np.array([[fx] * n_repeats for fx in m.features]).flatten()),
+                    marker_color=self._fig.get_color(m.name),
+                    boxpoints="outliers",
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=self._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
 
-        # Get the column names sorted by sum of scores
-        df = pd.DataFrame(rows)
-        get_idx = df.groupby("features", as_index=False)["score"].sum()
-        get_idx = get_idx.sort_values("score", ascending=False)
-        column_order = get_idx["features"].values[:show]
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
-        sns.boxplot(
-            x="score",
-            y="features",
-            hue="model",
-            data=df,
-            ax=ax,
-            order=column_order,
-            width=0.75 if len(models) > 1 else 0.6,
+        fig.update_traces(orientation="h")
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                "boxmode": "group",
+            }
         )
-
-        ax.yaxis.label.set_visible(False)
-        if len(models) > 1:
-            # Remove seaborn's legend title
-            handles, labels = ax.showlegend_handles_labels()
-            ax.legend(handles=handles[1:], labels=labels[1:])
-        else:
-            # Hide the legend created by seaborn
-            ax.legend().set_visible(False)
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("lower right" if len(models) > 1 else False, len(models)),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Score",
-            figsize=figsize or (10, 4 + show // 2),
+            ylim=(m.n_features - show - 0.5, m.n_features - 0.5),
+            title=title,
+            legend=legend,
+            figsize=figsize or (900, 400 + show * 50),
             plotname="plot_permutation_importance",
             filename=filename,
             display=display,
@@ -4449,6 +4509,7 @@ class ModelPlot(BasePlot):
         color_branches: Optional[bool] = None,
         *,
         title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4715,7 +4776,7 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper right",
+        legend: Optional[Union[str, dict]] = "lower left",
         figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4732,8 +4793,9 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one. Choose from: "train",
+            "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -4742,7 +4804,7 @@ class ModelPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default="upper right"
+        legend: str, dict or None, default="lower left"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 
@@ -4822,21 +4884,15 @@ class ModelPlot(BasePlot):
                     )
                 )
 
-        fig.add_trace(
-            self._draw_straight_line(
-                y=sum(m.y_test) / len(m.y_test),
-                xaxis=xaxis,
-                yaxis=yaxis,
-            )
-        )
+        self._draw_straight_line(sum(m.y_test) / len(m.y_test), xaxis=xaxis, yaxis=yaxis)
 
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
             xlabel="Recall",
             ylabel="Precision",
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_prc",
             filename=filename,
@@ -4852,7 +4908,8 @@ class ModelPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Optional[Union[str, dict]] = "upper right",
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
@@ -4867,18 +4924,31 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one. Choose from: "train",
+            "test" or "holdout".
 
         target: int or str, default=1
             Probability of being that class in the target column
             (as index or name). Only for multiclass classification.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
@@ -4887,49 +4957,85 @@ class ModelPlot(BasePlot):
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        [go.Figure][]
+        [go.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_confusion_matrix
+        atom.plots:ModelPlot.plot_results
+        atom.plots:ModelPlot.plot_threshold
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_probabilities()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_probabilities.html
 
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
+        dataset = self._get_set(dataset, max_one=True)
         target = self._get_target(target)
         check_predict_proba(models, "plot_probabilities")
-        palette = cycle(sns.color_palette())
 
         fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            for set_ in dataset:
-                for value in m.y.sort_values().unique():
-                    # Get indices per class
-                    idx = np.where(getattr(m, f"y_{set_}") == value)[0]
+            for value in m.y.sort_values().unique():
+                # Get indices per class
+                idx = np.where(getattr(m, f"y_{dataset}") == value)[0]
+                hist = getattr(m, f"predict_proba_{dataset}").iloc[idx, target]
 
-                    label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                    sns.histplot(
-                        data=getattr(m, f"predict_proba_{set_}").iloc[idx, target],
-                        kde=True,
-                        bins=50,
-                        label=label + f" ({self.target}={value})",
-                        color=next(palette),
-                        ax=ax,
+                fig.add_trace(
+                    go.Scatter(
+                        x=(x := np.linspace(0, 1, 100)),
+                        y=stats.gaussian_kde(hist)(x),
+                        mode="lines",
+                        line=dict(
+                            width=2,
+                            color=self._fig.get_color(m.name),
+                            dash=self._fig.get_dashes(dataset),
+                        ),
+                        fill="tonexty",
+                        fillcolor=f"rgba{self._fig.get_color(m.name)[3:-1]}, 0.2)",
+                        fillpattern=dict(shape=self._fig.get_shapes(value)),
+                        name=f"{self.target}={value}",
+                        legendgroup=m.name,
+                        legendgrouptitle=dict(text=m.name, font_size=self.label_fontsize),
+                        showlegend=self._fig.showlegend(f"{m.name}-{value}", legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
                     )
+                )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="toggleitem",
             xlabel="Probability",
-            ylabel="Counts",
+            ylabel="Probability density",
             xlim=(0, 1),
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_probabilities",
             filename=filename,
@@ -4967,8 +5073,9 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one. Choose from: "train",
+            "test" or "holdout".
 
         title: str or None, default=None
             Plot's title. If None, the title is left empty.
@@ -5013,7 +5120,7 @@ class ModelPlot(BasePlot):
                 ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
 
         ax2.set_yticklabels([])
-        self._draw_straight_line(ax=ax2, y=0)
+        self._draw_straight_line(y=0, xaxis=xaxis, yaxis=yaxis)
         self._plot(ax=ax2, xlabel="Distribution")
 
         if title:
@@ -5042,11 +5149,12 @@ class ModelPlot(BasePlot):
         metric: Union[INT, str] = 0,
         *,
         title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = "lower right",
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot of the model results after the evaluation.
+        """Plot the model results.
 
         If all models applied bootstrap, the plot is a boxplot. If
         not, the plot is a barplot. Models are ordered based on
@@ -5061,16 +5169,29 @@ class ModelPlot(BasePlot):
             are selected.
 
         metric: int or str, default=0
-            Index or name of the metric (only for multi-metric runs).
-            Other available metrics are "time_bo", "time_fit",
-            "time_bootstrap" and "time".
+            Index or name of the metric to show (only for multi-metric
+            runs). Other available metrics are "time_bo", "time_fit",
+            "time_bootstrap" and "time".  Add `+` between options to
+            select more than one.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of models shown.
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of models.
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
@@ -5079,82 +5200,139 @@ class ModelPlot(BasePlot):
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_confusion_matrix
+        atom.plots:ModelPlot.plot_probabilities
+        atom.plots:ModelPlot.plot_threshold
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["GNB", "LR", "RF", "LGB"])
+        >>> atom.plot_results()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_results_1.html
+
+        ```pycon
+        >>> atom.run(["GNB", "LR", "RF", "LGB"], n_bootstrap=5)
+        >>> atom.plot_results()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_results_2.html
+
+        ```pycon
+        >>> atom.plot_results(metric="time_fit+time")
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_results_3.html
+
         """
-
-        def get_metric(m, metric):
-            """Get the metric or the timing attribute."""
-            if isinstance(metric, str):
-                if getattr(m, metric):
-                    return getattr(m, metric)
-                else:
-                    raise ValueError(
-                        "Invalid value for the metric parameter. "
-                        f"Model {m.name} doesn't have metric {metric}."
-                    )
-            else:
-                return get_best_score(m, metric)
-
-        def std(m):
-            """Get the standard deviation of the bootstrap results."""
-            if m.bootstrap is not None:
-                return m.bootstrap.iloc[:, metric].std()
-            else:
-                return 0
-
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        metric = self._get_metric(metric)
+        metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
 
-        names = []
-        models = sorted(models, key=lambda m: get_metric(m, metric))
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]  # First color
-
-        all_bootstrap = all(m.score_bootstrap for m in models)
-        for i, m in enumerate(models):
-            names.append(m.name)
-            if isinstance(metric, str):
-                ax.barh(y=i, width=getattr(m, metric), height=0.5, color=color)
-            elif all_bootstrap:
-                ax.boxplot(
-                    x=[m.bootstrap.iloc[:, metric]],
-                    vert=False,
-                    positions=[i],
-                    widths=0.5,
-                    boxprops=dict(color=color),
+        if isinstance(metric, str):
+            for met in metric.split("+"):
+                color = self._fig.get_color(met)
+                fig.add_trace(
+                    go.Bar(
+                        x=[getattr(m, met) for m in models],
+                        y=[m.name for m in models],
+                        orientation="h",
+                        marker=dict(
+                            color=f"rgba({color[4:-1]}, 0.2)",
+                            line=dict(width=2, color=color),
+                        ),
+                        hovertemplate=f"%{{x}}<extra>{met}</extra>",
+                        name=met,
+                        legendgroup=met,
+                        showlegend=self._fig.showlegend(met, legend),
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
                 )
-            else:
-                ax.barh(
-                    y=i,
-                    width=get_best_score(m, metric),
-                    height=0.5,
-                    xerr=std(m),
-                    color=color,
-                )
+        else:
+            for met in lst(metric):
+                name = self._metric[met].name
+                color = self._fig.get_color()
 
-        min_lim = 0.9 * (get_metric(models[0], metric) - std(models[0]))
-        max_lim = 1.05 * (get_metric(models[-1], metric) + std(models[-1]))
-        ax.set_yticks(range(len(models)))
-        ax.set_yticklabels(names)
+                if all(m.score_bootstrap for m in models):
+                    fig.add_trace(
+                        go.Box(
+                            x=np.array([m.bootstrap.iloc[:, met] for m in models]).flatten(),
+                            y=list(np.array([[m.name] * len(m.bootstrap) for m in models]).flatten()),
+                            marker_color=color,
+                            boxpoints="outliers",
+                            name=name,
+                            legendgroup=name,
+                            showlegend=self._fig.showlegend(name, legend),
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        )
+                    )
+                else:
+                    std = lambda m: 0 if m.bootstrap is None else m.bootstrap.iloc[:, met].std()
+                    fig.add_trace(
+                        go.Bar(
+                            x=[get_best_score(m, met) for m in models],
+                            y=[m.name for m in models],
+                            error_x=dict(type="data", array=[std(m) for m in models]),
+                            orientation="h",
+                            marker=dict(
+                                color=f"rgba({color[4:-1]}, 0.2)",
+                                line=dict(width=2, color=color),
+                            ),
+                            hovertemplate="%{x}<extra></extra>",
+                            name=name,
+                            legendgroup=name,
+                            showlegend=self._fig.showlegend(name, legend),
+                            xaxis=xaxis,
+                            yaxis=yaxis,
+                        )
+                    )
+
+        fig.update_traces(orientation="h")
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
+                "bargroupgap": 0.05,
+             }
+        )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel=self._metric[metric].name if isinstance(metric, int) else "time (s)",
-            xlim=(min_lim, max_lim) if not all_bootstrap else None,
-            figsize=figsize or (10, 4 + len(models) // 2),
+            title=title,
+            legend=legend,
+            figsize=figsize or (900, 400 + len(models) * 50),
             plotname="plot_results",
             filename=filename,
             display=display,
@@ -5185,8 +5363,9 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one. Choose from: "train",
+            "test", "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -5275,17 +5454,17 @@ class ModelPlot(BasePlot):
                     )
                 )
 
-        fig.add_trace(self._draw_straight_line(xaxis=xaxis, yaxis=yaxis))
+        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         self._fig.used_models.extend(models)
         return self._plot(
             axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            title=title,
-            legend=legend,
-            xlim=(-0.05, 1.05),
-            ylim=(-0.05, 1.05),
+            xlim=(-0.03, 1.03),
+            ylim=(-0.03, 1.03),
             xlabel="FPR",
             ylabel="TPR",
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_roc",
             filename=filename,
@@ -5416,8 +5595,9 @@ class ModelPlot(BasePlot):
             to run the pipeline is plotted.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Choose from:
-            "train", "test", "both" (train and test) or "holdout".
+            Data set on which to calculate the metric. Add `+` between
+            options to select more than one.Choose from: "train",
+            "test" or "holdout".
 
         steps: int, default=100
             Number of thresholds measured.
