@@ -2233,7 +2233,7 @@ class BaseModel(ModelPlot, ShapPlot):
 
         Parameters
         ----------
-        filename: str, default=None
+        filename: str, default="auto"
             Name of the file. Use "auto" for automatic naming.
 
         """

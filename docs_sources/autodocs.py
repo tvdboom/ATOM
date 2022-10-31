@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import warnings
 from inspect import (
     Parameter, getattr_static, getdoc, getmembers, getsourcelines, isclass,
     isfunction, isroutine, signature,
@@ -591,6 +592,20 @@ class AutoDocs:
             elif match := self.get_block(name):
                 # Headers start with letter, * or [ after new line
                 for header in re.findall("^[\[*\w].*?$", match, re.M):
+                    # Check that the default value in docstring matches the real one
+                    if default := re.search("(?<=default=)\w+?$", header):
+                        try:
+                            param = header.split(":")[0]
+                            real = signature(self.obj).parameters[param]
+                            if str(default.group()) != str(real.default):
+                                warnings.warn(
+                                    f"Default value {default.group()} of parameter "
+                                    f"{param} of object {self.obj} doesn't match "
+                                    f"the value in the docstring: {real.default}"
+                                )
+                        except KeyError:
+                            pass
+
                     # Get the body corresponding to the header
                     pattern = f"(?<={re.escape(header)}\n).*?(?=\n\w|\n\*|\n\[|\Z)"
                     body = re.search(pattern, match, re.S | re.M).group()

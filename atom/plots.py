@@ -49,7 +49,7 @@ from atom.utils import (
     FLOAT, INT, PALETTE, SCALAR, SEQUENCE_TYPES, Model, check_is_fitted,
     check_predict_proba, composed, crash, divide, get_best_score, get_corpus,
     get_custom_scorer, get_feature_importance, has_attr, has_task, lst,
-    partial_dependence, plot_from_model, rnd, to_rgb,
+    partial_dependence, plot_from_model, rnd, to_rgb
 )
 
 
@@ -544,14 +544,10 @@ class BasePlot:
 
     def _draw_line(
         self,
-        x: SEQUENCE_TYPES,
-        y: SEQUENCE_TYPES,
         parent: str,
         child: Optional[str] = None,
-        mode: str = "lines",
         legend: Optional[Union[dict, str]] = None,
-        xaxis: str = "x",
-        yaxis: str = "y",
+        **kwargs,
     ):
         """Draw a line.
 
@@ -562,29 +558,17 @@ class BasePlot:
 
         Parameters
         ----------
-        x: sequence
-            Values for the x-axis.
-
-        y: sequence
-            Values for the y-axis.
-
         parent: str
             Name of the model.
 
         child: str or None, default=None
             Data set which is plotted.
 
-        mode: str, default="lines"
-            Line mode: lines, lines+markers or markers.
-
         legend: str, dict or None
             Legend argument provided by the user.
 
-        xaxis: str
-            Name of the x-axis to draw in.
-
-        yaxis: str
-            Name of the y-axis to draw in.
+        **kwargs
+            Additional keyword arguments for the trace.
 
         Returns
         -------
@@ -595,9 +579,6 @@ class BasePlot:
         legendgrouptitle = dict(text=parent, font_size=self.label_fontsize)
         hover = f"(%{{x}}, %{{y}})<extra>{parent}{' - ' + child if child else ''}</extra>"
         return go.Scatter(
-            x=x,
-            y=y,
-            mode=mode,
             line=dict(
                 width=2,
                 color=self._fig.get_color(parent),
@@ -608,8 +589,7 @@ class BasePlot:
             legendgroup=parent,
             legendgrouptitle=legendgrouptitle if child else None,
             showlegend=self._fig.showlegend(f"{parent}-{child}", legend),
-            xaxis=xaxis,
-            yaxis=yaxis,
+            **kwargs,
         )
 
     def _get_figure(self) -> go.Figure:
@@ -666,26 +646,30 @@ class BasePlot:
 
     def _get_metric(
         self,
-        metric: Union[int, str],
+        metric: Optional[Union[int, str]],
         max_one: bool = True,
     ) -> Union[int, str, List[int]]:
         """Check and return the provided metric index.
 
         Parameters
         ----------
-        metric: int or str
-            Name or position of the metric to get.
+        metric: int, str or None
+            Name or position of the metric to get. If None,
+            all metrics are returned.
 
         max_one: bool, default=True
             Whether one or multiple metrics are allowed.
 
         Returns
         -------
-        int, str or sequence
-            Position index of the metric or time metric.
+        int, str or list
+            Position index of the metric or time metric. If
+            `max_one=False`, returns a list of metric positions.
 
         """
-        if isinstance(metric, str):
+        if metric is None:
+            return list(range(len(self._metric)))
+        elif isinstance(metric, str):
             if metric.lower().startswith("time"):
                 for met in metric.lower().split("+"):
                     if met not in ("time_ht", "time_fit", "time_bootstrap", "time"):
@@ -700,10 +684,16 @@ class BasePlot:
                     if (name := get_custom_scorer(met).name) in self.metric:
                         metrics.append(self._metric.index(name))
 
+                if len(metrics) > 1 and max_one:
+                    raise ValueError(
+                        "Invalid value for the metric parameter. "
+                        f"Only one metric is allowed, got {metric}."
+                    )
+
                 return metrics[0] if max_one else metrics
 
         elif 0 <= metric < len(self._metric):
-            return metric
+            return metric if max_one else [metric]
 
         raise ValueError(
             "Invalid value for the metric parameter. Value should be the index "
@@ -3546,7 +3536,7 @@ class ModelPlot(BasePlot):
     def plot_learning_curve(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        metric: Union[INT, str] = 0,
+        metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower right",
@@ -3565,8 +3555,10 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        metric: int or str, default=0
-            Index or name of the metric. Only for multi-metric runs.
+        metric: int, str or None, default=None
+            Index or name of the metric to show (only for multi-metric
+            runs). Add `+` between options to select more than one. If
+            None, the metric used to run the pipeline is selected.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3602,6 +3594,7 @@ class ModelPlot(BasePlot):
 
         See Also
         --------
+        atom.plots:FeatureSelectorPlot.plot_results
         atom.plots:FeatureSelectorPlot.plot_successive_halving
 
         Examples
@@ -3614,7 +3607,8 @@ class ModelPlot(BasePlot):
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.train_sizing(["LR", "RF"])
+        >>> atom.train_sizing(["LR", "RF"], n_bootstrap=5)
+        >>> atom.plot_learning_curve()
 
         ```
 
@@ -3624,68 +3618,64 @@ class ModelPlot(BasePlot):
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models, ensembles=False)
-        metric = self._get_metric(metric)
+        metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
 
-        x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
-        for m in models:
-            x[m._group].append(m._train_idx)
-            y[m._group].append(get_best_score(m, metric))
-            if m.bootstrap is not None:
-                std[m._group].append(m.bootstrap.iloc[:, metric].std())
+        for met in metric:
+            x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
+            for m in models:
+                x[m._group].append(m._train_idx)
+                y[m._group].append(get_best_score(m, met))
+                if m.bootstrap is not None:
+                    std[m._group].append(m.bootstrap.iloc[:, met].std())
 
-            # Add the scores to the group's dataframe
-            # lines[m._group] = pd.concat([lines[m._group], pd.Series(get_best_score(m, metric))])
-
-            # for m, df in zip(models, lines.values()):
-            #     df = df.reset_index(drop=True)
-            #     sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, ax=ax)
-
-        for group in x:
-            fig.add_trace(
-                self._draw_line(
-                    x=x[group],
-                    y=y[group],
-                    parent=group,
-                    mode="lines+markers",
-                    legend=legend,
-                    xaxis=xaxis,
-                    yaxis=yaxis,
+            for group in x:
+                fig.add_trace(
+                    self._draw_line(
+                        x=x[group],
+                        y=y[group],
+                        error_y=dict(type="data", array=std[group], visible=True),
+                        parent=group,
+                        child=self._metric[met].name,
+                        mode="lines+markers",
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
                 )
-            )
 
-            # Add error bands
-            if m.bootstrap is not None:
-                fig.add_traces(
-                    [
-                        go.Scatter(
-                            x=x[group],
-                            y=np.add(y[group], std[group]),
-                            mode="lines",
-                            line=dict(width=1, color=self._fig.get_color(group)),
-                            hovertemplate="%{y}<extra>upper bound</extra>",
-                            legendgroup=group,
-                            showlegend=False,
-                            xaxis=xaxis,
-                            yaxis=yaxis,
-                        ),
-                        go.Scatter(
-                            x=x[group],
-                            y=np.subtract(y[group], std[group]),
-                            mode="lines",
-                            line=dict(width=1, color=self._fig.get_color(group)),
-                            fill="tonexty",
-                            fillcolor=f"rgba{self._fig.get_color(group)[3:-1]}, 0.2)",
-                            hovertemplate="%{y}<extra>lower bound</extra>",
-                            legendgroup=group,
-                            showlegend=False,
-                            xaxis=xaxis,
-                            yaxis=yaxis,
-                        ),
-                    ]
-                )
+                # Add error bands
+                if m.bootstrap is not None:
+                    fig.add_traces(
+                        [
+                            go.Scatter(
+                                x=x[group],
+                                y=np.add(y[group], std[group]),
+                                mode="lines",
+                                line=dict(width=1, color=self._fig.get_color(group)),
+                                hovertemplate="%{y}<extra>upper bound</extra>",
+                                legendgroup=group,
+                                showlegend=False,
+                                xaxis=xaxis,
+                                yaxis=yaxis,
+                            ),
+                            go.Scatter(
+                                x=x[group],
+                                y=np.subtract(y[group], std[group]),
+                                mode="lines",
+                                line=dict(width=1, color=self._fig.get_color(group)),
+                                fill="tonexty",
+                                fillcolor=f"rgba{self._fig.get_color(group)[3:-1]}, 0.2)",
+                                hovertemplate="%{y}<extra>lower bound</extra>",
+                                legendgroup=group,
+                                showlegend=False,
+                                xaxis=xaxis,
+                                yaxis=yaxis,
+                            ),
+                        ]
+                    )
 
         self._fig.used_models.extend(models)
         return self._plot(
@@ -3694,7 +3684,7 @@ class ModelPlot(BasePlot):
             title=title,
             legend=legend,
             xlabel="Number of training samples",
-            ylabel=self._metric[metric].name,
+            ylabel="Score",
             figsize=figsize,
             plotname="plot_learning_curve",
             filename=filename,
@@ -5146,7 +5136,7 @@ class ModelPlot(BasePlot):
     def plot_results(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        metric: Union[INT, str] = 0,
+        metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower right",
@@ -5168,11 +5158,12 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        metric: int or str, default=0
+        metric: int, str or None, default=None
             Index or name of the metric to show (only for multi-metric
             runs). Other available metrics are "time_bo", "time_fit",
             "time_bootstrap" and "time".  Add `+` between options to
-            select more than one.
+            select more than one.  If None, the metric used to run the
+            pipeline is selected.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -5279,7 +5270,7 @@ class ModelPlot(BasePlot):
                     )
                 )
         else:
-            for met in lst(metric):
+            for met in metric:
                 name = self._metric[met].name
                 color = self._fig.get_color()
 
@@ -5475,17 +5466,18 @@ class ModelPlot(BasePlot):
     def plot_successive_halving(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        metric: Union[INT, str] = 0,
+        metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Optional[Union[str, dict]] = "lower right",
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
         """Plot scores per iteration of the successive halving.
 
-        Only use if the models were fitted using successive_halving.
-        Ensemble models are ignored.
+        Only use with models fitted using [successive halving][].
+        [Ensembles][] are ignored.
 
         Parameters
         ----------
@@ -5493,14 +5485,28 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        metric: int or str, default=0
-            Index or name of the metric. Only for multi-metric runs.
+        metric: int, str or None, default=None
+            Index or name of the metric to show (only for multi-metric
+            runs). Add `+` between options to select more than one. If
+            None, the metric used to run the pipeline is selected.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
@@ -5509,55 +5515,108 @@ class ModelPlot(BasePlot):
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:FeatureSelectorPlot.plot_learning_curve
+        atom.plots:FeatureSelectorPlot.plot_results
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.successive_halving(["LR", "RF"], n_bootstrap=5)
+        >>> atom.plot_successive_halving()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_successive_halving.html
+
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models, ensembles=False)
-        metric = self._get_metric(metric)
+        metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
 
-        # Prepare dataframes for seaborn lineplot (one df per line)
-        # Not using sns hue parameter because of legend formatting
-        lines = defaultdict(pd.DataFrame)
-        for m in models:
-            n_models = len(m.branch._idx[0]) // m._train_idx  # Number of models in iter
-            if m.bootstrap is None:
-                values = {"x": [n_models], "y": [get_best_score(m, metric)]}
-            else:
-                values = {
-                    "x": [n_models] * len(m.bootstrap),
-                    "y": m.bootstrap.iloc[:, metric],
-                }
+        for met in metric:
+            x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
+            for m in models:
+                x[m._group].append(len(m.branch._idx[0]) // m._train_idx)
+                y[m._group].append(get_best_score(m, met))
+                if m.bootstrap is not None:
+                    std[m._group].append(m.bootstrap.iloc[:, met].std())
 
-            # Add the scores to the group's dataframe
-            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
+            for group in x:
+                fig.add_trace(
+                    self._draw_line(
+                        x=x[group],
+                        y=y[group],
+                        error_y=dict(type="data", array=std[group], visible=True),
+                        parent=group,
+                        child=self._metric[met].name,
+                        mode="lines+markers",
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
 
-        for m, df in zip(models, lines.values()):
-            df = df.reset_index(drop=True)
-            kwargs = dict(err_style="band" if df["x"].nunique() > 1 else "bars", ax=ax)
-            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, **kwargs)
+                # Add error bands
+                if m.bootstrap is not None:
+                    fig.add_traces(
+                        [
+                            go.Scatter(
+                                x=x[group],
+                                y=np.add(y[group], std[group]),
+                                mode="lines",
+                                line=dict(width=1, color=self._fig.get_color(group)),
+                                hovertemplate="%{y}<extra>upper bound</extra>",
+                                legendgroup=group,
+                                showlegend=False,
+                                xaxis=xaxis,
+                                yaxis=yaxis,
+                            ),
+                            go.Scatter(
+                                x=x[group],
+                                y=np.subtract(y[group], std[group]),
+                                mode="lines",
+                                line=dict(width=1, color=self._fig.get_color(group)),
+                                fill="tonexty",
+                                fillcolor=f"rgba{self._fig.get_color(group)[3:-1]}, 0.2)",
+                                hovertemplate="%{y}<extra>lower bound</extra>",
+                                legendgroup=group,
+                                showlegend=False,
+                                xaxis=xaxis,
+                                yaxis=yaxis,
+                            ),
+                        ]
+                    )
 
-        n_models = [len(self.train) // m._train_idx for m in models]
-        ax.set_xlim(max(n_models) + 0.1, min(n_models) - 0.1)
-        ax.set_xticks(range(1, max(n_models) + 1))
+        fig.update_layout({f"xaxis{yaxis[1:]}": dict(dtick=1, autorange="reversed")})
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
             title=title,
-            legend=("lower right", len(lines)),
+            legend=legend,
             xlabel="n_models",
-            ylabel=self._metric[metric].name,
+            ylabel="Score",
             figsize=figsize,
             plotname="plot_successive_halving",
             filename=filename,
@@ -5574,7 +5633,8 @@ class ModelPlot(BasePlot):
         steps: INT = 100,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Optional[Union[str, dict]] = "lower left",
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
@@ -5592,21 +5652,32 @@ class ModelPlot(BasePlot):
             Metric to plot. Choose from any of sklearn's scorers, a
             function with signature `metric(y_true, y_pred)`, a scorer
             object or a sequence of these. If None, the metric used
-            to run the pipeline is plotted.
+            to run the pipeline is selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one.Choose from: "train",
-            "test" or "holdout".
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
 
         steps: int, default=100
             Number of thresholds measured.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
@@ -5615,53 +5686,81 @@ class ModelPlot(BasePlot):
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_calibration
+        atom.plots:ModelPlot.plot_confusion_matrix
+        atom.plots:ModelPlot.plot_probabilities
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_threshold()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_threshold.html
+
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
+        dataset = self._get_set(dataset, max_one=True)
         check_predict_proba(models, "plot_threshold")
 
         # Get all metric functions from the input
         if metric is None:
-            metric_list = [m._score_func for m in self._metric.values()]
+            metric = [m._score_func for m in self._metric.values()]
         else:
-            metric_list = [get_custom_scorer(m)._score_func for m in lst(metric)]
+            metric = [get_custom_scorer(m)._score_func for m in lst(metric)]
 
         fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
+
         steps = np.linspace(0, 1, steps)
         for m in models:
-            for met in metric_list:
-                for set_ in dataset:
-                    results = []
-                    for step in steps:
-                        pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1] >= step
-                        results.append(met(getattr(m, f"y_{set_}"), pred))
+            for met in metric:
+                results = []
+                for step in steps:
+                    pred = getattr(m, f"predict_proba_{dataset}").iloc[:, 1] >= step
+                    results.append(met(getattr(m, f"y_{dataset}"), pred))
 
-                    if len(models) == 1:
-                        l_set = f"{set_} - " if len(dataset) > 1 else ""
-                        label = f"{l_set}{met.__name__}"
-                    else:
-                        l_set = f" - {set_}" if len(dataset) > 1 else ""
-                        label = f"{m.name}{l_set} ({met.__name__})"
-                    ax.plot(steps, results, label=label, lw=2)
+                fig.add_trace(
+                    self._draw_line(
+                        x=steps,
+                        y=results,
+                        parent=m.name,
+                        child=met.__name__,
+                        legend=legend,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Threshold",
             ylabel="Score",
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_threshold",
             filename=filename,
@@ -5672,10 +5771,11 @@ class ModelPlot(BasePlot):
     def plot_trials(
         self,
         models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        metric: Union[INT, str] = 0,
+        metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 8),
+        legend: Optional[Union[str, dict]] = "upper left",
+        figsize: Tuple[SCALAR, SCALAR] = (900, 800),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
@@ -5693,14 +5793,28 @@ class ModelPlot(BasePlot):
             Name of the models to plot. If None, all models that
             used hyperparameter tuning are selected.
 
-        metric: int or str, default=0
-            Index or name of the metric. Only for multi-metric runs.
+        metric: int, str or None, default=None
+            Index or name of the metric to show (only for multi-metric
+            runs). Add `+` between options to select more than one. If
+            None, the metric used to run the pipeline is selected.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 8)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 900)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
@@ -5717,10 +5831,34 @@ class ModelPlot(BasePlot):
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_evals
+        atom.plots:ModelPlot.plot_results
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"], n_trials=15)
+        >>> atom.plot_trials()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_trials.html
+
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        metric = self._get_metric(metric)
+        metric = self._get_metric(metric, max_one=False)
 
         # Check there is at least one model that run hyperparameter tuning
         if all(m.trials is None for m in models):
@@ -5730,41 +5868,66 @@ class ModelPlot(BasePlot):
             )
 
         fig = self._get_figure()
-        gs = GridSpecFromSubplotSpec(4, 1, self._fig.grid, hspace=0.05)
-        ax1 = fig.add_subplot(gs[0:3, 0])
-        ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
+        xaxis, yaxis = self._fig.get_axes(y=(0.31, 1.0))
+        xaxis2, yaxis2 = self._fig.get_axes(y=(0.0, 0.29))
         for m in models:
-            if m.score_ht:  # Only models that did run hyperparameter tuning
-                y = m.trials["score"].apply(lambda value: lst(value)[metric])
-                if len(models) == 1:
-                    label = f"Score={round(lst(m.score_ht)[metric], 3)}"
-                else:
-                    label = f"{m.name} (Score={round(lst(m.score_ht)[metric], 3)})"
+            for met in metric:
+                if m.score_ht:  # Only models that did run hyperparameter tuning
+                    y = m.trials["score"].apply(lambda value: lst(value)[met])
 
-                # Draw bullets on all markers except the maximum
-                markers = [i for i in range(len(m.trials))]
-                markers.remove(int(np.argmax(y)))
+                    # Create star symbol at best trial
+                    sizes = [6] * len(y)
+                    sizes[m.best_trial.number] = 12
+                    symbols = ["circle"] * len(y)
+                    symbols[m.best_trial.number] = "star"
 
-                ax1.plot(range(len(y)), y, "-o", markevery=markers, label=label)
-                ax2.plot(range(1, len(y)), np.abs(np.diff(y)), "-o")
-                ax1.scatter(np.argmax(y), max(y), zorder=10, s=100, marker="*")
+                    fig.add_trace(
+                        self._draw_line(
+                            x=list(range(len(y))),
+                            y=y,
+                            marker=dict(
+                                symbol=symbols,
+                                size=sizes,
+                                opacity=1,
+                                line=dict(width=0),
+                            ),
+                            parent=m.name,
+                            child=self._metric[met].name,
+                            mode="lines+markers",
+                            legend=legend,
+                            xaxis=xaxis2,
+                            yaxis=yaxis,
+                        )
+                    )
 
-        plt.setp(ax1.get_xticklabels(), visible=False)
-        ax2.set_xticks(range(max(len(m.trials) for m in models)))
+                    fig.add_trace(
+                        self._draw_line(
+                            x=list(range(1, len(y))),
+                            y=np.abs(np.diff(y)),
+                            parent=m.name,
+                            child=self._metric[met].name,
+                            mode="lines+markers",
+                            legend=legend,
+                            xaxis=xaxis2,
+                            yaxis=yaxis2,
+                        )
+                    )
+
+        fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
 
         self._plot(
-            ax=ax1,
-            title=title,
-            legend=("best", len(models)),
-            ylabel=self._metric[metric].name,
+            axes=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            xlabel="Trial",
+            ylabel="d",
         )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax2,
-            xlabel="Trial",
-            ylabel="d",
+            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
+            ylabel="Score",
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_trials",
             filename=filename,

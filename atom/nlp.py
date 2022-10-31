@@ -85,7 +85,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Regex used to search for emojis. If None, it uses
         `r":[a-z_]+:"`.
 
-    drop_number: bool, default=False
+    drop_number: bool, default=True
         Whether to drop numbers from the text.
 
     regex_number: str, default=None
