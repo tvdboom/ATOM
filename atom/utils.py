@@ -1265,6 +1265,25 @@ def is_sparse(df: pd.DataFrame) -> bool:
     return any(pd.api.types.is_sparse(df[col]) for col in df)
 
 
+def check_canvas(is_canvas: bool, method: str):
+    """Raise an error if a model doesn't have a `predict_proba` method.
+
+    Parameters
+    ----------
+    is_canvas: bool
+        Whether the plot is in a canvas. If True, an error is raised.
+
+    method: str
+        Name of the method from which the check is called.
+
+    """
+    if is_canvas:
+        raise PermissionError(
+            f"The {method} method can not be called from a "
+            "canvas because it uses the matplotlib backend."
+        )
+
+
 def check_predict_proba(models: SEQUENCE_TYPES, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
@@ -2390,7 +2409,7 @@ def has_task(task: str) -> Callable:
 
     """
 
-    def check(self: Any) -> bool:
+    def check(self) -> bool:
         if hasattr(self, "task"):
             return task in self.task
         else:
@@ -2409,7 +2428,7 @@ def has_attr(attr: str) -> Callable:
 
     """
 
-    def check(self):
+    def check(self) -> bool:
         # Raise original `AttributeError` if `attr` does not exist
         getattr(self, attr)
         return True
@@ -2435,7 +2454,7 @@ def estimator_has_attr(attr: str) -> Callable:
     return check
 
 
-def composed(*decs):
+def composed(*decs) -> Callable:
     """Add multiple decorators in one line.
 
     Parameters
@@ -2453,7 +2472,7 @@ def composed(*decs):
     return decorator
 
 
-def crash(f, cache={"last_exception": None}):
+def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
     """Save program crashes to log file.
 
     We use a mutable argument to cache the last exception raised. If
@@ -2483,7 +2502,7 @@ def crash(f, cache={"last_exception": None}):
     return wrapper
 
 
-def method_to_log(f):
+def method_to_log(f: Callable) -> Callable:
     """Save called functions to log file."""
 
     @wraps(f)
@@ -2501,7 +2520,7 @@ def method_to_log(f):
     return wrapper
 
 
-def plot_from_model(f):
+def plot_from_model(f: Callable) -> Callable:
     """If a plot is called from a model, adapt the `models` parameter."""
 
     @wraps(f)

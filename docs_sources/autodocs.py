@@ -194,6 +194,7 @@ CUSTOM_URLS = dict(
     # Plots
     palette="https://plotly.com/python/discrete-color/",
     gofigure="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html",
+    pltfigure="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html",
     kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
     wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
     calibration="https://scikit-learn.org/stable/modules/calibration.html",
@@ -201,6 +202,9 @@ CUSTOM_URLS = dict(
     partial_dependence="https://scikit-learn.org/stable/modules/partial_dependence.html#partial-dependence-and-individual-conditional-expectation-plots",
     prc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_precision_recall.html",
     roc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html",
+    schemdraw="https://schemdraw.readthedocs.io/en/latest/index.html",
+    plotly="https://plotly.com/python/",
+    shapplotsforce="https://shap.readthedocs.io/en/latest/generated/shap.plots.force.html",
     # Training
     scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
 )

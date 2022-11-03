@@ -19,17 +19,14 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import seaborn as sns
 import shap
 from joblib import Parallel, delayed
-from matplotlib.gridspec import GridSpecFromSubplotSpec
-from matplotlib.transforms import blended_transform_factory
 from mlflow.tracking import MlflowClient
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
 )
+from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
 from schemdraw import Drawing
 from schemdraw.flow import Data, RoundBox, Subroutine, Wire
 from schemdraw.util import Point
@@ -46,10 +43,10 @@ from typeguard import typechecked
 from wordcloud import WordCloud
 
 from atom.utils import (
-    FLOAT, INT, PALETTE, SCALAR, SEQUENCE_TYPES, Model, check_is_fitted,
-    check_predict_proba, composed, crash, divide, get_best_score, get_corpus,
-    get_custom_scorer, get_feature_importance, has_attr, has_task, lst,
-    partial_dependence, plot_from_model, rnd, to_rgb
+    FLOAT, INT, PALETTE, SCALAR, SEQUENCE_TYPES, Model, check_canvas,
+    check_is_fitted, check_predict_proba, composed, crash, divide,
+    get_best_score, get_corpus, get_custom_scorer, has_attr, has_task, lst,
+    partial_dependence, plot_from_model, rnd, to_rgb,
 )
 
 
@@ -81,6 +78,12 @@ class BaseFigure:
     is_canvas: bool, default=False
         Whether the figure shows multiple plots.
 
+    backend: str, default="plotly"
+        Figure's backend. Choose between plotly or matplotlib.
+
+    create_figure: bool, default=True
+        Whether to create a new figure.
+
     """
 
     def __init__(
@@ -91,6 +94,8 @@ class BaseFigure:
         vertical_spacing: FLOAT = 0.07,
         palette: Union[str, SEQUENCE_TYPES] = "Prism",
         is_canvas: bool = False,
+        backend: str = "plotly",
+        create_figure: bool = True,
     ):
         self.rows = rows
         self.cols = cols
@@ -102,10 +107,16 @@ class BaseFigure:
             # Convert color names or hex to rgb
             self.palette = cycle(map(to_rgb, palette))
         self.is_canvas = is_canvas
+        self.backend = backend
+        self.create_figure = create_figure
 
         self.idx = 0  # N-th plot in the canvas
         self.axes = 0  # N-th axis in the canvas
-        self.figure = go.Figure()
+        if self.create_figure:
+            if self.backend == "plotly":
+                self.figure = go.Figure()
+            else:
+                self.figure, _ = plt.subplots(tight_layout=True)
 
         self.groups = []
         self.style = dict(colors={}, markers={}, dashes={}, shapes={})
@@ -146,13 +157,13 @@ class BaseFigure:
         return (self.idx - 1) // self.cols + 1, self.idx % self.cols or self.cols
 
     @property
-    def next_subplot(self) -> go.Figure:
+    def next_subplot(self) -> Optional[Union[go.Figure, plt.Figure]]:
         """Increase the subplot index.
 
         Returns
         -------
-        go.Figure
-            Current pyplot figure.
+        go.Figure, plt.Figure or None
+            Current figure. Returns None if `create_figure=False`.
 
         """
         # Check if there are too many plots in the canvas
@@ -164,7 +175,8 @@ class BaseFigure:
         else:
             self.idx += 1
 
-        return self.figure
+        if self.create_figure:
+            return self.figure
 
     def get_color(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
         """Get the next color.
@@ -536,7 +548,7 @@ class BasePlot:
             xref=f"{xaxis} domain",
             y0=0 if y == "diagonal" else y,
             y1=1 if y == "diagonal" else y,
-            yref=f"{yaxis} domain",
+            yref=f"{yaxis} domain" if y == "diagonal" else yaxis,
             line=dict(width=1, color="black", dash="dash"),
             opacity=0.6,
             layer="below",
@@ -592,23 +604,28 @@ class BasePlot:
             **kwargs,
         )
 
-    def _get_figure(self) -> go.Figure:
+    def _get_figure(self, **kwargs) -> Union[go.Figure, plt.Figure]:
         """Return existing figure if in canvas, else a new figure.
 
         Every time this method is called from a canvas, the plot
         index is raised by one to keep track in which subplot the
         BaseFigure is at.
 
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments for BaseFigure.
+
         Returns
         -------
-        [go.Figure][]
+        [go.Figure][] or [plt.Figure][]
             Existing figure or newly created.
 
         """
         if self._fig and self._fig.is_canvas:
             return self._fig.next_subplot
         else:
-            self._fig = BaseFigure(palette=self.palette)
+            self._fig = BaseFigure(palette=self.palette, **kwargs)
             return self._fig.next_subplot
 
     def _get_subclass(
@@ -808,7 +825,10 @@ class BasePlot:
         return show
 
     def _plot(
-        self, axes: Optional[Tuple[str, str]] = None, **kwargs
+        self,
+        fig: Optional[Union[go.Figure, plt.Figure]] = None,
+        ax: Optional[Union[plt.Axes, Tuple[str, str]]] = None,
+        **kwargs,
     ) -> Optional[Union[go.Figure, plt.Figure]]:
         """Make the plot.
 
@@ -817,8 +837,12 @@ class BasePlot:
 
         Parameters
         ----------
-        axes: tuple or None, default=None
-            Names of the axes to update. If None, ignore their update.
+        fig: go.Figure, plt.Figure or None
+            Current figure. If None, use `plt.gcf()`.
+
+        ax: plt.Axes, tuple or None, default=None
+            Axis object or names of the axes to update. If None, ignore
+            their update.
 
         **kwargs
             Keyword arguments containing the figure's parameters.
@@ -840,142 +864,176 @@ class BasePlot:
             Created figure. Only returned if `display=None`.
 
         """
-        if axes:
-            self._fig.figure.update_layout(
-                {
-                    f"{axes[0]}_title": dict(
-                        text=kwargs.get("xlabel"), font_size=self.label_fontsize
-                    ),
-                    f"{axes[1]}_title": dict(
-                        text=kwargs.get("ylabel"), font_size=self.label_fontsize
-                    ),
-                    f"{axes[0]}_range": kwargs.get("xlim"),
-                    f"{axes[1]}_range": kwargs.get("ylim"),
-                    f"{axes[0]}_automargin": True,
-                    f"{axes[1]}_automargin": True,
-                }
-            )
+        # Set name with which to save the file
+        if kwargs.get("filename"):
+            if kwargs["filename"].endswith("auto"):
+                name = kwargs["filename"].replace("auto", kwargs["plotname"])
+            else:
+                name = kwargs["filename"]
+        else:
+            name = kwargs.get("plotname")
 
-            if self._fig.is_canvas and (title := kwargs.get("title")):
-                # Add a subtitle to a plot in the canvas
-                default_title = {
-                    "x": self._fig.pos[axes[0][5:]][0],
-                    "y": self._fig.pos[axes[0][5:]][1] + 0.005,
-                    "xref": "paper",
-                    "yref": "paper",
-                    "xanchor": "center",
-                    "yanchor": "bottom",
-                    "showarrow": False,
-                    "font_size": self.title_fontsize - 4,
-                }
-
-                if isinstance(title, dict):
-                    title = {**default_title, **title}
-                else:
-                    title = {"text": title, **default_title}
-
-                self._fig.figure.update_layout(
-                    dict(annotations=self._fig.figure.layout.annotations + (title,))
+        fig = fig or self._fig.figure
+        if self._fig.backend == "plotly":
+            if ax:
+                fig.update_layout(
+                    {
+                        f"{ax[0]}_title": dict(
+                            text=kwargs.get("xlabel"), font_size=self.label_fontsize
+                        ),
+                        f"{ax[1]}_title": dict(
+                            text=kwargs.get("ylabel"), font_size=self.label_fontsize
+                        ),
+                        f"{ax[0]}_range": kwargs.get("xlim"),
+                        f"{ax[1]}_range": kwargs.get("ylim"),
+                        f"{ax[0]}_automargin": True,
+                        f"{ax[1]}_automargin": True,
+                    }
                 )
 
-        if not self._fig.is_canvas and kwargs.get("plotname"):
-            default_title = dict(
-                x=0.5,
-                y=1,
-                pad=dict(t=15, b=15),
-                xanchor="center",
-                yanchor="top",
-                xref="paper",
-                font_size=self.title_fontsize,
-            )
-            if not isinstance(title := kwargs.get("title"), dict):
-                title = {"text": title, **default_title}
-            else:
-                title = {**default_title, **title}
+                if self._fig.is_canvas and (title := kwargs.get("title")):
+                    # Add a subtitle to a plot in the canvas
+                    default_title = {
+                        "x": self._fig.pos[ax[0][5:]][0],
+                        "y": self._fig.pos[ax[0][5:]][1] + 0.005,
+                        "xref": "paper",
+                        "yref": "paper",
+                        "xanchor": "center",
+                        "yanchor": "bottom",
+                        "showarrow": False,
+                        "font_size": self.title_fontsize - 4,
+                    }
 
-            default_legend = dict(
-                traceorder="grouped",
-                groupclick=kwargs.get("groupclick", "toggleitem"),
-                font_size=self.label_fontsize,
-                bgcolor="rgba(255, 255, 255, 0.5)",
-            )
-            if isinstance(legend := kwargs.get("legend"), str):
-                position = {}
-                legend = legend.lower()
-                if legend == "upper left":
-                    position = dict(x=0.01, y=0.99, xanchor="left", yanchor="top")
-                elif legend == "lower left":
-                    position = dict(x=0.01, y=0.01, xanchor="left", yanchor="bottom")
-                elif legend == "upper right":
-                    position = dict(x=0.99, y=0.99, xanchor="right", yanchor="top")
-                elif legend == "lower right":
-                    position = dict(x=0.99, y=0.01, xanchor="right", yanchor="bottom")
-                elif legend == "upper center":
-                    position = dict(x=0.5, y=0.99, xanchor="center", yanchor="top")
-                elif legend == "lower center":
-                    position = dict(x=0.5, y=0.01, xanchor="center", yanchor="bottom")
-                elif legend == "center left":
-                    position = dict(x=0.01, y=0.5, xanchor="left", yanchor="middle")
-                elif legend == "center right":
-                    position = dict(x=0.99, y=0.5, xanchor="right", yanchor="middle")
-                elif legend == "center":
-                    position = dict(x=0.5, y=0.5, xanchor="center", yanchor="middle")
-                elif legend != "out":
-                    raise ValueError(
-                        "Invalid value for the legend parameter. Got unknown position: "
-                        f"{legend}. Choose from: upper left, upper right, lower left, "
-                        "lower right, upper center, lower center, center left, center "
-                        "right, center, out."
+                    if isinstance(title, dict):
+                        title = {**default_title, **title}
+                    else:
+                        title = {"text": title, **default_title}
+
+                    fig.update_layout(
+                        dict(annotations=fig.layout.annotations + (title,))
                     )
-                legend = {**default_legend, **position}
-            elif isinstance(legend, dict):
-                legend = {**default_legend, **legend}
 
-            # Update layout with predefined settings
-            space1 = self.title_fontsize if title.get("text") else 10
-            space2 = self.title_fontsize * int(bool(self._fig.figure.layout.annotations))
-            self._fig.figure.update_layout(
-                title=title,
-                legend=legend,
-                showlegend=bool(kwargs.get("legend")),
-                hoverlabel=dict(font_size=self.label_fontsize),
-                font_size=self.tick_fontsize,
-                margin=dict(l=0, b=0, r=0, t=25 + space1 + space2, pad=0),
-                width=kwargs["figsize"][0],
-                height=kwargs["figsize"][1],
-            )
-
-            # Update layout with custom settings
-            self._fig.figure.update_layout(**self._custom_layout)
-
-            # Set name with which to save the file
-            if kwargs.get("filename"):
-                if kwargs["filename"].endswith("auto"):
-                    name = kwargs["filename"].replace("auto", kwargs["plotname"])
+            if not self._fig.is_canvas and kwargs.get("plotname"):
+                default_title = dict(
+                    x=0.5,
+                    y=1,
+                    pad=dict(t=15, b=15),
+                    xanchor="center",
+                    yanchor="top",
+                    xref="paper",
+                    font_size=self.title_fontsize,
+                )
+                if not isinstance(title := kwargs.get("title"), dict):
+                    title = {"text": title, **default_title}
                 else:
-                    name = kwargs["filename"]
-            else:
-                name = kwargs.get("plotname")
+                    title = {**default_title, **title}
 
+                default_legend = dict(
+                    traceorder="grouped",
+                    groupclick=kwargs.get("groupclick", "toggleitem"),
+                    font_size=self.label_fontsize,
+                    bgcolor="rgba(255, 255, 255, 0.5)",
+                )
+                if isinstance(legend := kwargs.get("legend"), str):
+                    position = {}
+                    legend = legend.lower()
+                    if legend == "upper left":
+                        position = dict(x=0.01, y=0.99, xanchor="left", yanchor="top")
+                    elif legend == "lower left":
+                        position = dict(x=0.01, y=0.01, xanchor="left", yanchor="bottom")
+                    elif legend == "upper right":
+                        position = dict(x=0.99, y=0.99, xanchor="right", yanchor="top")
+                    elif legend == "lower right":
+                        position = dict(x=0.99, y=0.01, xanchor="right", yanchor="bottom")
+                    elif legend == "upper center":
+                        position = dict(x=0.5, y=0.99, xanchor="center", yanchor="top")
+                    elif legend == "lower center":
+                        position = dict(x=0.5, y=0.01, xanchor="center", yanchor="bottom")
+                    elif legend == "center left":
+                        position = dict(x=0.01, y=0.5, xanchor="left", yanchor="middle")
+                    elif legend == "center right":
+                        position = dict(x=0.99, y=0.5, xanchor="right", yanchor="middle")
+                    elif legend == "center":
+                        position = dict(x=0.5, y=0.5, xanchor="center", yanchor="middle")
+                    elif legend != "out":
+                        raise ValueError(
+                            "Invalid value for the legend parameter. Got unknown "
+                            f"position: {legend}. Choose from: upper left, upper "
+                            "right, lower left, lower right, upper center, lower "
+                            "center, center left, center right, center, out."
+                        )
+                    legend = {**default_legend, **position}
+                elif isinstance(legend, dict):
+                    legend = {**default_legend, **legend}
+
+                # Update layout with predefined settings
+                space1 = self.title_fontsize if title.get("text") else 10
+                space2 = self.title_fontsize * int(bool(fig.layout.annotations))
+                fig.update_layout(
+                    title=title,
+                    legend=legend,
+                    showlegend=bool(kwargs.get("legend")),
+                    hoverlabel=dict(font_size=self.label_fontsize),
+                    font_size=self.tick_fontsize,
+                    margin=dict(l=0, b=0, r=0, t=25 + space1 + space2, pad=0),
+                    width=kwargs["figsize"][0],
+                    height=kwargs["figsize"][1],
+                )
+
+                # Update layout with custom settings
+                fig.update_layout(**self._custom_layout)
+
+                if kwargs.get("filename"):
+                    if "." not in name or name.endswith(".html"):
+                        fig.write_html(name if "." in name else name + ".html")
+                    else:
+                        fig.write_image(name)
+
+                # Log plot to mlflow run of every model visualized
+                if getattr(self, "experiment", None) and self.log_plots:
+                    for m in set(self._fig.used_models):
+                        MlflowClient().log_figure(
+                            run_id=m._run.info.run_id,
+                            figure=fig,
+                            artifact_file=name if "." in name else f"{name}.html",
+                        )
+
+                if kwargs.get("display") is True:
+                    fig.show()
+                elif kwargs.get("display") is None:
+                    return fig
+
+        else:
+            if kwargs.get("title"):
+                ax.set_title(kwargs.get("title"), fontsize=self.title_fontsize, pad=20)
+            if kwargs.get("xlabel"):
+                ax.set_xlabel(kwargs["xlabel"], fontsize=self.label_fontsize, labelpad=12)
+            if kwargs.get("ylabel"):
+                ax.set_ylabel(kwargs["ylabel"], fontsize=self.label_fontsize, labelpad=12)
+            if ax is not None:
+                ax.tick_params(axis="both", labelsize=self.tick_fontsize)
+
+            if kwargs.get("figsize"):
+                # Convert from pixels to inches
+                fig.set_size_inches(
+                    kwargs["figsize"][0] // fig.get_dpi(),
+                    kwargs["figsize"][1] // fig.get_dpi(),
+                )
             if kwargs.get("filename"):
-                if "." not in name or name.endswith(".html"):
-                    self._fig.figure.write_html(name if "." in name else name + ".html")
-                else:
-                    self._fig.figure.write_image(name)
+                fig.savefig(name)
 
             # Log plot to mlflow run of every model visualized
-            if getattr(self, "experiment", None) and self.log_plots:
-                for m in set(self._fig.used_models):
+            if self.experiment and self.log_plots:
+                for m in set(self._fig._used_models):
                     MlflowClient().log_figure(
                         run_id=m._run.info.run_id,
-                        figure=self._fig.figure,
-                        artifact_file=name if "." in name else name + ".html",
+                        figure=fig,
+                        artifact_file=name if "." in name else f"{name}.png",
                     )
 
-            if kwargs.get("display") is True:
-                self._fig.figure.show()
-            elif kwargs.get("display") is None:
-                return self._fig.figure
+            plt.show() if kwargs.get("display") else plt.close()
+            if kwargs.get("display") is None:
+                return fig
 
     @composed(contextmanager, crash, typechecked)
     def canvas(
@@ -1035,7 +1093,7 @@ class BasePlot:
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool, default=True
@@ -1124,7 +1182,7 @@ class FeatureSelectorPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -1199,7 +1257,7 @@ class FeatureSelectorPlot(BasePlot):
         fig.update_layout({f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending")})
 
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Explained variance ratio",
             ylim=(len(variance) - show - 0.5, len(variance) - 0.5),
             title=title,
@@ -1248,7 +1306,7 @@ class FeatureSelectorPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -1315,7 +1373,7 @@ class FeatureSelectorPlot(BasePlot):
 
         margin = self.pca.n_features_in_ / 30
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="First N principal components",
             ylabel="Cumulative variance ratio",
             xlim=(1 - margin, self.pca.n_features_in_ - 1 + margin),
@@ -1367,7 +1425,7 @@ class FeatureSelectorPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -1475,7 +1533,7 @@ class FeatureSelectorPlot(BasePlot):
         )
 
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
             xlabel="Number of features",
             ylabel=ylabel,
@@ -1545,7 +1603,7 @@ class DataPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -1631,7 +1689,7 @@ class DataPlot(BasePlot):
         )
 
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             figsize=figsize,
@@ -1705,7 +1763,7 @@ class DataPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -1798,7 +1856,7 @@ class DataPlot(BasePlot):
             )
 
             return self._plot(
-                axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
                 xlabel="Counts",
                 ylim=(len(series) - show - 0.5, len(series) - 0.5),
                 title=title,
@@ -1868,7 +1926,7 @@ class DataPlot(BasePlot):
             fig.update_layout(dict(barmode="overlay"))
 
             return self._plot(
-                axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
                 xlabel="Values",
                 ylabel="Probability density",
                 title=title,
@@ -1942,7 +2000,7 @@ class DataPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -2056,7 +2114,7 @@ class DataPlot(BasePlot):
         )
 
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Counts",
             title=title,
             legend=legend,
@@ -2114,12 +2172,11 @@ class DataPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
@@ -2187,7 +2244,7 @@ class DataPlot(BasePlot):
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Theoretical quantiles",
             ylabel="Observed quantiles",
             title=title,
@@ -2239,7 +2296,7 @@ class DataPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -2313,7 +2370,7 @@ class DataPlot(BasePlot):
                 fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
 
             self._plot(
-                axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
                 xlabel=columns[y] if x == len(columns) - 1 else None,
                 ylabel=columns[x] if y == 0 else None,
                 title=title if x == 0 and y == 1 else None,
@@ -2409,12 +2466,11 @@ class DataPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         **kwargs
             Additional keyword arguments for the [Wordlcoud][] object.
@@ -2427,6 +2483,7 @@ class DataPlot(BasePlot):
         See Also
         --------
         atom.plots:DataPlot.plot_ngrams
+        atom.plots:DataPlot.plot_pipeline
 
         Examples
         --------
@@ -2497,7 +2554,7 @@ class DataPlot(BasePlot):
         )
 
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
             figsize=figsize or (900, 600),
@@ -2582,12 +2639,11 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
@@ -2675,13 +2731,13 @@ class ModelPlot(BasePlot):
         fig.update_layout(
             {
                 f"xaxis{xaxis2[1:]}_showgrid": True,
-                f"xaxis{xaxis[1:]}_showticklabels": False,
+                # f"xaxis{xaxis[1:]}_showticklabels": False,
                 "barmode": "overlay",
             }
         )
 
         self._plot(
-            axes=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
             xlabel="Predicted value",
             ylabel="Count",
             xlim=(0, 1),
@@ -2689,7 +2745,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             ylabel="Fraction of positives",
             ylim=(-0.05, 1.05),
             title=title,
@@ -2752,12 +2808,11 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
@@ -2817,35 +2872,40 @@ class ModelPlot(BasePlot):
                 " of various models for multiclass classification tasks."
             )
 
+        labels = np.array(
+            (("True negatives", "False positives"), ("False negatives", "True positives"))
+        )
+
         fig = self._get_figure()
         if len(models) == 1:  # Create matrix heatmap
-            xaxis, yaxis = self._fig.get_axes(
-                x=(0, 0.87),
-                coloraxis=dict(
-                    colorscale="Blues",
-                    cmin=0,
-                    cmax=1,
-                    title="Fraction",
-                    font_size=self.label_fontsize,
-                ),
-            )
-
             m = models[0]
             cm = confusion_matrix(
                 getattr(m, f"y_{dataset}"), getattr(m, f"predict_{dataset}")
             )
 
-            hover = "x:%{x}<br>y:%{y}<br>z:%{z}<br>Counts:%{text}<extra></extra>"
+            xaxis, yaxis = self._fig.get_axes(
+                x=(0, 0.87),
+                coloraxis=dict(
+                    colorscale="Blues",
+                    cmin=0,
+                    cmax=100,
+                    title="Percentage of samples",
+                    font_size=self.label_fontsize,
+                ),
+            )
+
+            hover = "<b>%{customdata}</b><br>" if self.task.startswith("bin") else ""
             fig.add_trace(
                 go.Heatmap(
-                    z=cm / cm.sum(axis=1)[:, np.newaxis],
                     x=m.mapping.get(m.target, m.y.sort_values().unique().astype(str)),
                     y=m.mapping.get(m.target, m.y.sort_values().unique().astype(str)),
+                    z=100. * cm / cm.sum(axis=1)[:, np.newaxis],
                     coloraxis=f"coloraxis{xaxis[1:]}",
                     text=cm,
-                    texttemplate="%{z:.2f}",
+                    customdata=labels,
+                    texttemplate="%{text}<br>(%{z:.2f}%)",
                     textfont=dict(size=self.label_fontsize),
-                    hovertemplate=hover,
+                    hovertemplate=hover + "x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>",
                     showlegend=False,
                     xaxis=xaxis,
                     yaxis=yaxis,
@@ -2872,12 +2932,7 @@ class ModelPlot(BasePlot):
                 fig.add_trace(
                     go.Bar(
                         x=cm.ravel(),
-                        y=[
-                            "True negatives",
-                            "False positives",
-                            "False negatives",
-                            "True positives",
-                        ],
+                        y=labels.flatten(),
                         orientation="h",
                         marker=dict(
                             color=f"rgba({color[4:-1]}, 0.2)",
@@ -2896,7 +2951,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Predicted label" if len(models) == 1 else "Count",
             ylabel="True label" if len(models) == 1 else None,
             title=title,
@@ -2957,7 +3012,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -3015,6 +3070,7 @@ class ModelPlot(BasePlot):
                     self._draw_line(
                         x=fpr,
                         y=fnr,
+                        mode="lines",
                         parent=m.name,
                         child=set_,
                         legend=legend,
@@ -3025,7 +3081,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="FPR",
             ylabel="FNR",
             title=title,
@@ -3044,7 +3100,8 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Optional[Union[str, dict]] = "lower right",
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
@@ -3052,9 +3109,10 @@ class ModelPlot(BasePlot):
 
         Plot the actual targets from a set against the predicted values
         generated by the regressor. A linear fit is made on the data.
-        The gray, intersected line shows the identity line. This pot can
-        be useful to detect noise or heteroscedasticity along a range of
-        the target domain. Only available for regression tasks.
+        The gray, intersected line shows the identity line. This plot
+        can be useful to detect noise or heteroscedasticity along a
+        range of the target domain. It's only available for regression
+        tasks.
 
         Parameters
         ----------
@@ -3063,71 +3121,114 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one. Choose from: "train",
-            "test" or "holdout".
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="lower right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_residuals
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMRegressor
+        >>> from sklearn.datasets import load_diabetes
+
+        >>> X, y = load_diabetes(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMRegressor(X, y)
+        >>> atom.run(["OLS", "LGB"])
+        >>> atom.plot_errors()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_errors.html
+
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
+        dataset = self._get_set(dataset, max_one=True)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            for set_ in dataset:
-                r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
-                ax.scatter(
-                    x=getattr(self, f"y_{set_}"),
-                    y=getattr(m, f"predict_{set_}"),
-                    alpha=0.8,
-                    label=label,
+            fig.add_trace(
+                go.Scatter(
+                    x=(x := getattr(m, f"y_{dataset}")),
+                    y=(y := getattr(m, f"predict_{dataset}")),
+                    mode="markers",
+                    line=dict(width=2, color=self._fig.get_color(m.name)),
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=self._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
+            )
 
-                # Fit the points using linear regression
-                from atom.models import OrdinaryLeastSquares
+            # Fit the points using linear regression
+            from atom.models import OrdinaryLeastSquares
 
-                model = OrdinaryLeastSquares(self, fast_init=True)._get_est()
-                model.fit(
-                    X=np.array(getattr(self, f"y_{set_}")).reshape(-1, 1),
-                    y=getattr(m, f"predict_{set_}"),
+            model = OrdinaryLeastSquares(self, fast_init=True)._get_est()
+            model.fit(np.array(x).reshape(-1, 1), y)
+
+            fig.add_trace(
+                go.Scatter(
+                    x=(x := np.linspace(min(x), max(x), 100)),
+                    y=model.predict(x[:, np.newaxis]),
+                    mode="lines",
+                    line=dict(width=2, color=self._fig.get_color(m.name)),
+                    hovertemplate="(%{x}, %{y})<extra></extra>",
+                    legendgroup=m.name,
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
-
-                # Draw the fit
-                x = np.linspace(*ax.get_xlim(), 100)
-                ax.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
+            )
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
             xlabel="True value",
+            title=title,
+            legend=legend,
             ylabel="Predicted value",
             figsize=figsize,
             plotname="plot_errors",
@@ -3186,12 +3287,11 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
@@ -3250,7 +3350,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.append(m)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Iterations",
             ylabel=self._metric[0].name,
             title=title,
@@ -3312,12 +3412,11 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
@@ -3391,7 +3490,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Normalized feature importance",
             ylim=(m.n_features - show - 0.5, m.n_features - 0.5),
             title=title,
@@ -3451,7 +3550,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -3507,6 +3606,7 @@ class ModelPlot(BasePlot):
                     self._draw_line(
                         x=np.arange(start=1, stop=len(y_true) + 1) / len(y_true),
                         y=np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum(),
+                        mode="lines",
                         parent=m.name,
                         child=set_,
                         legend=legend,
@@ -3519,7 +3619,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Fraction of sample",
             ylabel="Gain",
             xlim=(0, 1),
@@ -3581,7 +3681,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -3679,7 +3779,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
             title=title,
             legend=legend,
@@ -3740,7 +3840,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -3798,6 +3898,7 @@ class ModelPlot(BasePlot):
                     self._draw_line(
                         x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
                         y=gains / x,
+                        mode="lines",
                         parent=m.name,
                         child=set_,
                         legend=legend,
@@ -3810,7 +3911,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Fraction of sample",
             ylabel="Lift",
             xlim=(0, 1),
@@ -3881,7 +3982,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -3932,12 +4033,12 @@ class ModelPlot(BasePlot):
         # Colorbar is only needed when a model has feature_importance
         needs_colorbar = any(m.feature_importance is not None for m in models)
         coloraxis = dict(
-                colorscale="Reds",
-                cmin=0,
-                cmax=1,
-                title="Normalized feature importance",
-                font_size=self.label_fontsize,
-            )
+            colorscale="Reds",
+            cmin=0,
+            cmax=1,
+            title="Normalized feature importance",
+            font_size=self.label_fontsize,
+        )
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes(
@@ -4015,7 +4116,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Training set",
             ylabel="Test set",
             title=title,
@@ -4097,7 +4198,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -4314,7 +4415,7 @@ class ModelPlot(BasePlot):
                     )
 
                 self._plot(
-                    axes=(f"xaxis{ax[0][1:]}", f"yaxis{ax[1][1:]}"),
+                    ax=(f"xaxis{ax[0][1:]}", f"yaxis{ax[1][1:]}"),
                     title=title if len(cols) // 2 == i else None,
                     xlabel=fx[0],
                     ylabel=(fx[1] if len(fx) > 1 else "score") if i == 0 else None,
@@ -4388,12 +4489,11 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
@@ -4480,7 +4580,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Score",
             ylim=(m.n_features - show - 0.5, m.n_features - 0.5),
             title=title,
@@ -4499,12 +4599,17 @@ class ModelPlot(BasePlot):
         color_branches: Optional[bool] = None,
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
+        legend: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
         """Plot a diagram of the pipeline.
+
+        !!! warning
+            This plot uses the [schemdraw][] package, which is
+            incompatible with [plotly][]. The returned plot is therefore
+            a [matplotlib figure][pltfigure].
 
         Parameters
         ----------
@@ -4519,27 +4624,65 @@ class ModelPlot(BasePlot):
             Whether to draw every branch in a different color. If None,
             branches are colored when there is more than one.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the pipeline drawn.
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the pipeline drawn.
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        [go.Figure][] or None
+        [plt.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_wordcloud
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_pipeline()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_pipeline_1.html
+
+        ```pycon
+        >>> atom.plot_pipeline()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_pipeline_2.html
 
         """
 
@@ -4570,7 +4713,9 @@ class ModelPlot(BasePlot):
             d.elements[-1].segments[-1].arrowlength = 0.5
 
         models = self._get_subclass(models)
-        palette = cycle(sns.color_palette())
+
+        fig = self._get_figure(backend="matplotlib")
+        check_canvas(self._fig.is_canvas, "plot_pipeline")
 
         # Define branches to plot
         branches = []
@@ -4599,20 +4744,18 @@ class ModelPlot(BasePlot):
                 )
 
         # Define colors per branch
-        colors = {}
         for branch in branches:
             if color_branches or (color_branches is None and len(branches) > 1):
-                colors[branch["name"]] = branch["color"] = next(palette)
+                color = next(self._fig.palette)
+
+                # Convert back to format accepted by matplotlib
+                branch["color"] = unconvert_from_RGB_255(unlabel_rgb(color))
             else:
                 branch["color"] = "black"
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
-        sns.set_style("white")  # Only for this plot
-
         # Create schematic drawing
         d = Drawing(unit=1, backend="matplotlib")
-        d.config(fontsize=self.label_fontsize)
+        d.config(fontsize=self.tick_fontsize)
         d.add(Subroutine(w=8, s=0.7).label("Raw data"))
 
         height = 3  # Height of every block
@@ -4735,24 +4878,19 @@ class ModelPlot(BasePlot):
                     d.here = positions[id(m)]
                     add_wire(max_pos + length, y)
 
-        bbox = d.get_bbox()
-        figure = d.draw(ax=ax, showframe=False, show=False)
-        xlim, ylim = ax.get_xlim(), ax.get_ylim()
-        plt.axis("off")
+        if not figsize:
+            dpi, bbox = fig.get_dpi(), d.get_bbox()
+            figsize = (dpi * bbox.xmax // 4, 2 + dpi * (bbox.ymax - bbox.ymin + 1) // 4)
 
-        # Draw lines for legend (outside plot)
-        for k, v in colors.items():
-            plt.plot((-9e9, -9e9), (-9e9, -9e9), color=v, lw=2, zorder=-2, label=k)
+        d.draw(ax=plt.gca(), showframe=False, show=False)
+        plt.axis("off")
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=figure.fig,
-            ax=figure.ax,
+            ax=plt.gca(),
             title=title,
-            xlim=xlim,
-            ylim=(ylim[0] - 2, ylim[1] + 2),
-            legend=("upper left", 6) if colors else None,
-            figsize=figsize or (bbox.xmax // 4, 2.5 + (bbox.ymax - bbox.ymin + 1) // 4),
+            legend=legend,
+            figsize=figsize,
             plotname="plot_pipeline",
             filename=filename,
             display=display,
@@ -4808,7 +4946,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -4866,6 +5004,7 @@ class ModelPlot(BasePlot):
                     self._draw_line(
                         x=rec,
                         y=prec,
+                        mode="lines",
                         parent=m.name,
                         child=set_,
                         legend=legend,
@@ -4878,7 +5017,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Recall",
             ylabel="Precision",
             title=title,
@@ -4943,7 +5082,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -5019,7 +5158,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="toggleitem",
             xlabel="Probability",
             ylabel="Probability density",
@@ -5040,7 +5179,8 @@ class ModelPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Optional[Union[str, dict]] = "upper left",
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
@@ -5053,8 +5193,8 @@ class ModelPlot(BasePlot):
         variance of the error of the regressor. If the points are
         randomly dispersed around the horizontal axis, a linear
         regression model is appropriate for the data; otherwise, a
-        non-linear model is more appropriate. Only available for
-        regression tasks.
+        non-linear model is more appropriate. This plot is only
+        available for regression tasks.
 
         Parameters
         ----------
@@ -5063,69 +5203,120 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one. Choose from: "train",
-            "test" or "holdout".
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper left"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
         [go.Figure][] or None
             Plot object. Only returned if `display=None`.
 
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_errors
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMRegressor
+        >>> from sklearn.datasets import load_diabetes
+
+        >>> X, y = load_diabetes(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMRegressor(X, y)
+        >>> atom.run(["OLS", "LGB"])
+        >>> atom.plot_residuals()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_residuals.html
+
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
+        dataset = self._get_set(dataset, max_one=True)
 
         fig = self._get_figure()
-        gs = GridSpecFromSubplotSpec(1, 4, self._fig.grid, wspace=0.05)
-        ax1 = fig.add_subplot(gs[0, :3])
-        ax2 = fig.add_subplot(gs[0, 3:4])
+        xaxis, yaxis = self._fig.get_axes(x=(0, 0.69))
+        xaxis2, yaxis2 = self._fig.get_axes(x=(0.71, 1.0))
         for m in models:
-            for set_ in dataset:
-                r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
-                res = np.subtract(
-                    getattr(m, f"predict_{set_}"),
-                    getattr(self, f"y_{set_}"),
+            fig.add_trace(
+                go.Scatter(
+                    x=(x := getattr(m, f"predict_{dataset}")),
+                    y=(res := np.subtract(x, getattr(m, f"y_{dataset}"))),
+                    mode="markers",
+                    line=dict(width=2, color=self._fig.get_color(m.name)),
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=self._fig.showlegend(m.name, legend),
+                    xaxis=xaxis,
+                    yaxis=yaxis,
                 )
+            )
 
-                ax1.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
-                ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
+            fig.add_trace(
+                go.Histogram(
+                    y=res,
+                    bingroup="residuals",
+                    marker=dict(
+                        color=f"rgba({self._fig.get_color(m.name)[4:-1]}, 0.2)",
+                        line=dict(width=2, color=self._fig.get_color(m.name)),
+                    ),
+                    name=m.name,
+                    legendgroup=m.name,
+                    showlegend=False,
+                    xaxis=xaxis2,
+                    yaxis=yaxis,
+                )
+            )
 
-        ax2.set_yticklabels([])
         self._draw_straight_line(y=0, xaxis=xaxis, yaxis=yaxis)
-        self._plot(ax=ax2, xlabel="Distribution")
 
-        if title:
-            if not self._fig.is_canvas:
-                plt.suptitle(title, fontsize=self.title_fontsize, y=0.98)
-            else:
-                ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
+        fig.update_layout({f"yaxis{xaxis[1:]}_showgrid": True, "barmode": "overlay"})
+
+        self._plot(
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            xlabel="Distribution",
+            title=title,
+        )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            fig=fig,
-            ax=ax1,
-            legend=("lower right", len(models)),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
             ylabel="Residuals",
             xlabel="True value",
+            title=title,
+            legend=legend,
             figsize=figsize,
             plotname="plot_residuals",
             filename=filename,
@@ -5187,7 +5378,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -5242,6 +5433,29 @@ class ModelPlot(BasePlot):
             url: /img/plots/plot_results_3.html
 
         """
+
+        def get_std(model: Model, metric: int) -> SCALAR:
+            """Get the standard deviation of the bootstrap scores.
+
+            Parameters
+            ----------
+            model: Model
+                 Model to get the std from.
+
+            metric: int
+                Index of the metric to get it from.
+
+            Returns
+            -------
+            int or float
+                Standard deviation score or 0 if not bootstrapped.
+
+            """
+            if model.bootstrap is None:
+                return 0
+            else:
+                return model.bootstrap.iloc[:, metric].std()
+
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         metric = self._get_metric(metric, max_one=False)
@@ -5275,10 +5489,12 @@ class ModelPlot(BasePlot):
                 color = self._fig.get_color()
 
                 if all(m.score_bootstrap for m in models):
+                    x = np.array([m.bootstrap.iloc[:, met] for m in models]).flatten()
+                    y = np.array([[m.name] * len(m.bootstrap) for m in models]).flatten()
                     fig.add_trace(
                         go.Box(
-                            x=np.array([m.bootstrap.iloc[:, met] for m in models]).flatten(),
-                            y=list(np.array([[m.name] * len(m.bootstrap) for m in models]).flatten()),
+                            x=x,
+                            y=list(y),
                             marker_color=color,
                             boxpoints="outliers",
                             name=name,
@@ -5289,12 +5505,14 @@ class ModelPlot(BasePlot):
                         )
                     )
                 else:
-                    std = lambda m: 0 if m.bootstrap is None else m.bootstrap.iloc[:, met].std()
                     fig.add_trace(
                         go.Bar(
                             x=[get_best_score(m, met) for m in models],
                             y=[m.name for m in models],
-                            error_x=dict(type="data", array=[std(m) for m in models]),
+                            error_x=dict(
+                                type="data",
+                                array=[get_std(m, met) for m in models],
+                            ),
                             orientation="h",
                             marker=dict(
                                 color=f"rgba({color[4:-1]}, 0.2)",
@@ -5314,12 +5532,12 @@ class ModelPlot(BasePlot):
             {
                 f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
                 "bargroupgap": 0.05,
-             }
+            }
         )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel=self._metric[metric].name if isinstance(metric, int) else "time (s)",
             title=title,
             legend=legend,
@@ -5379,7 +5597,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -5437,6 +5655,7 @@ class ModelPlot(BasePlot):
                     self._draw_line(
                         x=fpr,
                         y=tpr,
+                        mode="lines",
                         parent=m.name,
                         child=set_,
                         legend=legend,
@@ -5449,7 +5668,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlim=(-0.03, 1.03),
             ylim=(-0.03, 1.03),
             xlabel="FPR",
@@ -5511,7 +5730,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -5611,7 +5830,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
             title=title,
             legend=legend,
@@ -5682,7 +5901,7 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
@@ -5756,7 +5975,7 @@ class ModelPlot(BasePlot):
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Threshold",
             ylabel="Score",
             title=title,
@@ -5819,12 +6038,11 @@ class ModelPlot(BasePlot):
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
@@ -5916,14 +6134,14 @@ class ModelPlot(BasePlot):
         fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
 
         self._plot(
-            axes=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
+            ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
             xlabel="Trial",
             ylabel="d",
         )
 
         self._fig.used_models.extend(models)
         return self._plot(
-            axes=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             groupclick="togglegroup",
             ylabel="Score",
             title=title,
@@ -5954,17 +6172,18 @@ class ShapPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
-        **kwargs,
     ):
         """Plot SHAP's bar plot.
 
         Create a bar plot of a set of SHAP values. If a single sample
         is passed, then the SHAP values are plotted. If many samples
         are passed, then the mean absolute value for each feature
-        column is plotted.
+        column is plotted. Read more about SHAP plots in the
+        [user guide][#shap].
 
         Parameters
         ----------
@@ -5986,30 +6205,59 @@ class ShapPlot(BasePlot):
             Index or name of the class in the target column to
             look at. Only for multi-class classification tasks.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts
-            the size to the number of features shown.
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of features shown.
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for SHAP's bar plot.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        [go.Figure][] or None
+        [plt.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_parshap
+        atom.plots:ModelPlot.plot_shap_beeswarm
+        atom.plots:ModelPlot.plot_shap_scatter
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run("LR")
+        >>> atom.plot_shap_bar()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_shap_bar.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -6019,19 +6267,19 @@ class ShapPlot(BasePlot):
         target = self._get_target(target)
         explanation = m._shap.get_explanation(rows, target)
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
-        shap.plots.bar(explanation, max_display=show, show=False, **kwargs)
+        self._get_figure(backend="matplotlib")
+        check_canvas(self._fig.is_canvas, "plot_shap_bar")
 
-        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        shap.plots.bar(explanation, max_display=show, show=False)
 
         self._fig.used_models.append(m)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            ax=plt.gca(),
+            xlabel=plt.gca().get_xlabel(),
             title=title,
-            figsize=figsize or (10, 4 + show // 2),
-            plotname="bar_plot",
+            legend=legend,
+            figsize=figsize or (900, 400 + show * 50),
+            plotname="plot_shap_bar",
             filename=filename,
             display=display,
         )
@@ -6045,14 +6293,15 @@ class ShapPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
-        **kwargs,
     ):
         """Plot SHAP's beeswarm plot.
 
-        The plot is colored by feature values.
+        The plot is colored by feature values. Read more about SHAP
+        plots in the [user guide][#shap].
 
         Parameters
         ----------
@@ -6075,30 +6324,59 @@ class ShapPlot(BasePlot):
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of features shown.
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of features shown.
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for SHAP's beeswarm plot.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        [go.Figure][] or None
+        [plt.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_parshap
+        atom.plots:ModelPlot.plot_shap_bar
+        atom.plots:ModelPlot.plot_shap_scatter
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run("LR")
+        >>> atom.plot_shap_beeswarm()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_shap_beeswarm.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -6108,19 +6386,18 @@ class ShapPlot(BasePlot):
         target = self._get_target(target)
         explanation = m._shap.get_explanation(rows, target)
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
-        shap.plots.beeswarm(explanation, max_display=show, show=False, **kwargs)
+        self._get_figure(backend="matplotlib")
+        check_canvas(self._fig.is_canvas, "plot_shap_beeswarm")
 
-        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        shap.plots.beeswarm(explanation, max_display=show, show=False)
 
         self._fig.used_models.append(m)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            ax=plt.gca(),
+            xlabel=plt.gca().get_xlabel(),
             title=title,
-            figsize=figsize or (10, 4 + show // 2),
-            plotname="beeswarm_plot",
+            legend=legend,
+            figsize=figsize or (900, 400 + show * 50),
             filename=filename,
             display=display,
         )
@@ -6134,10 +6411,10 @@ class ShapPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
-        **kwargs,
     ):
         """Plot SHAP's decision plot.
 
@@ -6147,6 +6424,7 @@ class ShapPlot(BasePlot):
         plot (if supplied). If multiple predictions are plotted
         together, feature values will not be printed. Plotting too
         many predictions together will make the plot unintelligible.
+        Read more about SHAP plots in the [user guide][#shap].
 
         Parameters
         ----------
@@ -6168,30 +6446,59 @@ class ShapPlot(BasePlot):
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of features shown.
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of features shown.
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for SHAP's decision plot.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        [go.Figure][] or None
+        [plt.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_shap_bar
+        atom.plots:ModelPlot.plot_shap_beeswarm
+        atom.plots:ModelPlot.plot_shap_force
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run("LR")
+        >>> atom.plot_shap_decision()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_shap_decision.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -6200,8 +6507,9 @@ class ShapPlot(BasePlot):
         show = self._get_show(show, m)
         target = self._get_target(target)
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
+        self._get_figure(backend="matplotlib")
+        check_canvas(self._fig.is_canvas, "plot_shap_decision")
+
         shap.decision_plot(
             base_value=m._shap.get_expected_value(target),
             shap_values=m._shap.get_shap_values(rows, target),
@@ -6209,18 +6517,16 @@ class ShapPlot(BasePlot):
             feature_display_range=slice(-1, -show - 1, -1),
             auto_size_plot=False,
             show=False,
-            **kwargs,
         )
-
-        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
         self._fig.used_models.append(m)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            ax=plt.gca(),
+            xlabel=plt.gca().get_xlabel(),
             title=title,
-            figsize=figsize or (10, 4 + show // 2),
-            plotname="decision_plot",
+            legend=legend,
+            figsize=figsize or (900, 400 + show * 50),
+            plotname="plot_shap_decision",
             filename=filename,
             display=display,
         )
@@ -6233,7 +6539,8 @@ class ShapPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (14, 6),
+        legend: Optional[Union[str, dict]] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 300),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
         **kwargs,
@@ -6243,7 +6550,8 @@ class ShapPlot(BasePlot):
         Visualize the given SHAP values with an additive force layout.
         Note that by default this plot will render using javascript.
         For a regular figure use `matplotlib=True` (this option is
-        only available when only a single sample is plotted).
+        only available when only a single sample is plotted). Read more
+        about SHAP plots in the [user guide][#shap].
 
         Parameters
         ----------
@@ -6261,47 +6569,83 @@ class ShapPlot(BasePlot):
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(14, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        figsize: tuple or None, default=(900, 300)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
-            Name of the file. If matplotlib=False, the figure will
-            be saved as a html file. If None, the figure is not saved.
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         **kwargs
-            Additional keyword arguments for SHAP's force plot.
+            Additional keyword arguments for [shap.plots.force][].
 
         Returns
         -------
-        [go.Figure][] or None
-            Plot object. Only if `display=None` and `matplotlib=True`.
+        [plt.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_shap_beeswarm
+        atom.plots:ModelPlot.plot_shap_scatter
+        atom.plots:ModelPlot.plot_shap_decision
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run("LR")
+        >>> atom.plot_shap_force()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_shap_force_1.html
+
+        >>> atom.plot_shap_force(matplotlib=True)
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_shap_force_2.html
 
         """
-        if getattr(self._fig, "is_canvas", None):
-            raise PermissionError(
-                "The force_plot method can not be called from a canvas "
-                "because of incompatibility between the ATOM and shap API."
-            )
-
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
         target = self._get_target(target)
 
-        self._get_figure(create_figure=False)
-        sns.set_style("white")  # Only for this plot
+        self._get_figure(create_figure=False, backend="matplotlib")
+        check_canvas(self._fig.is_canvas, "plot_shap_force")
+
         plot = shap.force_plot(
             base_value=m._shap.get_expected_value(target),
             shap_values=m._shap.get_shap_values(rows, target),
             features=rows,
-            figsize=figsize,
+            # figsize=(figsize[0] // 58, figsize[1] // 58),
             show=False,
             **kwargs,
         )
@@ -6310,13 +6654,15 @@ class ShapPlot(BasePlot):
             self._fig.used_models.append(m)
             return self._plot(
                 fig=plt.gcf(),
+                ax=plt.gca(),
                 title=title,
-                plotname="force_plot",
+                legend=legend,
+                figsize=figsize,
+                plotname="plot_shap_force",
                 filename=filename,
                 display=display,
             )
         else:
-            sns.set_style(self.style)  # Reset style
             if filename:  # Save to a html file
                 if not filename.endswith(".html"):
                     filename += ".html"
@@ -6336,17 +6682,18 @@ class ShapPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
-        **kwargs,
     ):
         """Plot SHAP's heatmap plot.
 
         This plot is designed to show the population substructure of a
         dataset using supervised clustering and a heatmap. Supervised
         clustering involves clustering data points not by their original
-        feature values but by their explanations.
+        feature values but by their explanations. Read more about SHAP
+        plots in the [user guide][#shap].
 
         Parameters
         ----------
@@ -6369,30 +6716,59 @@ class ShapPlot(BasePlot):
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of features shown.
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of features shown.
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for SHAP's heatmap plot.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        [go.Figure][] or None
+        [plt.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_shap_decision
+        atom.plots:ModelPlot.plot_shap_force
+        atom.plots:ModelPlot.plot_shap_waterfall
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run("LR")
+        >>> atom.plot_shap_heatmap()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_shap_heatmap.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -6402,19 +6778,19 @@ class ShapPlot(BasePlot):
         target = self._get_target(target)
         explanation = m._shap.get_explanation(rows, target)
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
-        shap.plots.heatmap(explanation, max_display=show, show=False, **kwargs)
+        self._get_figure(backend="matplotlib")
+        check_canvas(self._fig.is_canvas, "plot_shap_heatmap")
 
-        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        shap.plots.heatmap(explanation, max_display=show, show=False)
 
         self._fig.used_models.append(m)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            ax=plt.gca(),
+            xlabel=plt.gca().get_xlabel(),
             title=title,
-            figsize=figsize,
-            plotname="heatmap_plot",
+            legend=legend,
+            figsize=figsize or (900, 400 + show * 50),
+            plotname="plot_shap_heatmap",
             filename=filename,
             display=display,
         )
@@ -6428,10 +6804,10 @@ class ShapPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        legend: Optional[Union[str, dict]] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
-        **kwargs,
     ):
         """Plot SHAP's scatter plot.
 
@@ -6439,7 +6815,8 @@ class ShapPlot(BasePlot):
         of the same feature on the y-axis. This shows how the model
         depends on the given feature, and is like a richer extension of
         the classical partial dependence plots. Vertical dispersion of
-        the data points represents interaction effects.
+        the data points represents interaction effects. Read more about
+        SHAP plots in the [user guide][#shap].
 
         Parameters
         ----------
@@ -6461,29 +6838,58 @@ class ShapPlot(BasePlot):
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple, default=(10, 6)
-            Figure's size, format as (x, y).
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        figsize: tuple or None, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        **kwargs
-            Additional keyword arguments for SHAP's scatter plot.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        [go.Figure][] or None
+        [plt.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_shap_beeswarm
+        atom.plots:ModelPlot.plot_shap_decision
+        atom.plots:ModelPlot.plot_shap_force
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run("LR")
+        >>> atom.plot_shap_scatter()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_shap_scatter.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -6492,19 +6898,19 @@ class ShapPlot(BasePlot):
         target = self._get_target(target)
         explanation = m._shap.get_explanation(rows, target, feature)
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
-        shap.plots.scatter(explanation, color=explanation, ax=ax, show=False, **kwargs)
+        self._get_figure(backend="matplotlib")
+        check_canvas(self._fig.is_canvas, "plot_shap_scatter")
 
-        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
-        ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
+        shap.plots.scatter(explanation, color=explanation, ax=plt.gca(), show=False)
 
         self._fig.used_models.append(m)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            ax=plt.gca(),
+            xlabel=plt.gca().get_xlabel(),
+            ylabel=plt.gca().get_ylabel(),
             title=title,
-            plotname="scatter_plot",
+            legend=legend,
+            plotname="plot_shap_scatter",
             figsize=figsize,
             filename=filename,
             display=display,
@@ -6519,6 +6925,7 @@ class ShapPlot(BasePlot):
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -6534,7 +6941,8 @@ class ShapPlot(BasePlot):
         features. Features are sorted by the magnitude of their SHAP
         values with the smallest magnitude features grouped together
         at the bottom of the plot when the number of features in the
-        models exceeds the `show` parameter.
+        models exceeds the `show` parameter. Read more about SHAP plots
+        in the [user guide][#shap].
 
         Parameters
         ----------
@@ -6558,27 +6966,58 @@ class ShapPlot(BasePlot):
             Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        title: str or None, default=None
-            Plot's title. If None, the title is left empty.
+        title: str, dict or None, default=None
+            Title for the plot.
 
-        figsize: tuple or None, default=None
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of features shown.
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        figsize: tuple or None, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
             naming. The type of the file depends on the provided name
-            (.html, .png, .pdf, etc...). If `filename` has no period,
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
             the plot is saved as html. If None, the plot is not saved.
 
         display: bool or None, default=True
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
+            Whether to render the plot. If None, it returns the figure.
 
         Returns
         -------
-        [go.Figure][] or None
+        [plt.Figure][] or None
             Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_shap_bar
+        atom.plots:ModelPlot.plot_shap_beeswarm
+        atom.plots:ModelPlot.plot_shap_heatmap
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run("LR")
+        >>> atom.plot_shap_waterfall()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_shap_waterfall.html
 
         """
         check_is_fitted(self, attributes="_models")
@@ -6588,19 +7027,18 @@ class ShapPlot(BasePlot):
         target = self._get_target(target)
         explanation = m._shap.get_explanation(rows, target, only_one=True)
 
-        fig = self._get_figure()
-        ax = fig.add_subplot(self._fig.grid)
-        shap.plots.waterfall(explanation, max_display=show, show=False)
+        self._get_figure(backend="matplotlib")
+        check_canvas(self._fig.is_canvas, "plot_shap_waterfall")
 
-        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        shap.plots.waterfall(explanation, max_display=show, show=False)
 
         self._fig.used_models.append(m)
         return self._plot(
-            fig=fig,
-            ax=ax,
+            ax=plt.gca(),
             title=title,
-            figsize=figsize or (10, 4 + show // 2),
-            plotname="waterfall_plot",
+            legend=legend,
+            figsize=figsize or (900, 400 + show * 50),
+            plotname="plot_shap_waterfall",
             filename=filename,
             display=display,
         )
