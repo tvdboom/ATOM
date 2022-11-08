@@ -132,8 +132,8 @@ dataset.
 
 !!! warning
     Models implemented with [keras](https://keras.io/) can only use
-    [custom hyperparameter tuning][hyperparameter-tuning] when `n_jobs=1`
-    or `ht_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises a
+    [custom hyperparameter tuning][hyperparameter-tuning] when `#!python n_jobs=1`
+    or `#!python ht_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises a
     PicklingError due to incompatibilities of the APIs.
 
 <br>

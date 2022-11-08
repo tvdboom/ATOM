@@ -71,16 +71,14 @@ def test_models_sklearnex_regression():
 def test_models_cuml_classification():
     """Assert that all classification models can be called with cuml."""
     atom = ATOMClassifier(X_bin, y_bin, device="gpu", engine="cuml", random_state=1)
-    with pytest.raises(RuntimeError):
-        atom.run(models=["!CatB", "!LGB", "!XGB"], n_trials=1)
+    atom.run(models=["!CatB", "!LGB", "!XGB"], n_trials=1)
 
 
 @patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
 def test_models_cuml_regression():
     """Assert that all regression models can be called with cuml."""
     atom = ATOMRegressor(X_reg, y_reg, device="gpu", engine="cuml", random_state=1)
-    with pytest.raises(RuntimeError):
-        atom.run(models=["!CatB", "!LGB", "!XGB"], n_trials=1)
+    atom.run(models=["!CatB", "!LGB", "!XGB"], n_trials=1)
 
 
 def test_CatNB():

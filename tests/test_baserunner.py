@@ -241,7 +241,7 @@ def test_winners_property():
     """Assert that the winners property returns the best models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "Tree", "LGB"])
-    assert atom.winners == ["LR", "Tree", "LGB"]
+    assert atom.winners == [atom.lr, atom.tree, atom.lgb]
 
 
 def test_winner_property():
@@ -439,7 +439,7 @@ def test_get_models_winner():
     """Assert that the winner is returned when used as name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR1", "LR2"])
-    assert atom._get_models(models="winner") == ["LR2"]
+    assert atom._get_models(models="winner") == ["LR1"]
 
 
 def test_get_models_by_regex():
@@ -459,6 +459,21 @@ def test_get_models_exclude():
     atom.run(["LR1", "LR2"])
     assert atom._get_models(models="!lr1") == ["LR2"]
     assert atom._get_models(models="!.*2$") == ["LR1"]
+
+
+def test_get_models_by_model():
+    """Assert that a model can be called using a Model instance."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert atom._get_models(models=atom.lr) == ["LR"]
+
+
+def test_get_models_wrong_type():
+    """Assert that an error is raised when the wrong type is used."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    with pytest.raises(TypeError, match=".*type for the models parameter.*"):
+        atom._get_models(models=atom)
 
 
 def test_get_models_include_or_exclude():

@@ -59,9 +59,9 @@ take hours to run on a single processor. However, if you offload those
 tasks to a GPU, you can reduce training time to minutes instead.
 
 Training transformers and models in atom using a GPU is as easy as
-initializing the instance with parameter `device="gpu"`. The [`device`]
-[atomclassifier-device] parameter accepts any string that follows the
-[SYCL_DEVICE_FILTER][] filter selector. Examples are:
+initializing the instance with parameter `#!python device="gpu"`. The
+[`device`][atomclassifier-device] parameter accepts any string that
+follows the [SYCL_DEVICE_FILTER][] filter selector. Examples are:
 
 * device="cpu" (use CPU)
 * device="gpu" (use default GPU)

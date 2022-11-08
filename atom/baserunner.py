@@ -17,6 +17,7 @@ import pandas as pd
 from joblib.memory import Memory
 from typeguard import typechecked
 
+from atom.basemodel import BaseModel
 from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
@@ -232,8 +233,8 @@ class BaseRunner:
         return self._errors
 
     @property
-    def winners(self) -> List[str]:
-        """Model names ordered by performance.
+    def winners(self) -> List[Model]:
+        """Models ordered by performance.
 
         Performance is measured as the highest score on the model's
         [`score_bootstrap`][adaboost-score_bootstrap] or
@@ -243,8 +244,9 @@ class BaseRunner:
 
         """
         if self._models:  # Returns None if not fitted
-            models = sorted(self._models.values(), key=lambda x: get_best_score(x))
-            return [m.name for m in models[::-1]]
+            return sorted(
+                self._models.values(), key=lambda x: get_best_score(x), reverse=True
+            )
 
     @property
     def winner(self) -> Model:
@@ -258,7 +260,7 @@ class BaseRunner:
 
         """
         if self._models:  # Returns None if not fitted
-            return self._models[self.winners[0]]
+            return self.winners[0]
 
     @winner.deleter
     def winner(self):
@@ -489,7 +491,7 @@ class BaseRunner:
 
     def _get_models(
         self,
-        models: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         ensembles: bool = True,
     ) -> List[str]:
         """Get names of models.
@@ -500,7 +502,7 @@ class BaseRunner:
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Names or indices of the models to select. If None, it
             returns all models.
 
@@ -531,7 +533,7 @@ class BaseRunner:
                             f"{model} is out of range for a pipeline with "
                             f"{len(available_models)} models."
                         )
-                else:
+                elif isinstance(model, str):
                     array = inc
                     if model.startswith("!"):
                         array = exc
@@ -553,6 +555,13 @@ class BaseRunner:
                                 f"not find any model that matches {model}. The "
                                 f"available models are: {', '.join(available_models)}."
                             )
+                elif isinstance(model, BaseModel):
+                    inc.append(model.name)
+                else:
+                    raise TypeError(
+                        "Invalid type for the models parameter. Allowed types "
+                        f"are int, str or a Model instance, got {type(model)}."
+                    )
 
         if inc and exc:
             raise ValueError(
@@ -651,7 +660,9 @@ class BaseRunner:
             model.clear()
 
     @composed(crash, method_to_log, typechecked)
-    def delete(self, models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None):
+    def delete(
+        self, models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None
+    ):
         """Delete models.
 
         If all models are removed, the metric is reset. Use this method
@@ -661,9 +672,8 @@ class BaseRunner:
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
-            Names, positions or regex pattern of the models to delete.
-            If None, all models are deleted.
+        models: int, str, slice, Model, sequence or None, default=None
+            Models to delete. If None, all models are deleted.
 
         """
         models = self._get_models(models)
@@ -727,7 +737,7 @@ class BaseRunner:
     @composed(crash, typechecked)
     def export_pipeline(
         self,
-        model: Optional[str] = None,
+        model: Optional[Union[str, Model]] = None,
         *,
         memory: Optional[Union[bool, str, Memory]] = None,
         verbose: Optional[INT] = None,
@@ -751,11 +761,11 @@ class BaseRunner:
 
         Parameters
         ----------
-        model: str or None, default=None
-            Name of the model for which to export the pipeline. If the
-            model used [automated feature scaling][], the [Scaler][] is
-            added to the pipeline. If None, the pipeline in the current
-            branch is exported.
+        model: str, Model or None, default=None
+            Model for which to export the pipeline. If the model used
+            [automated feature scaling][], the [Scaler][] is added to
+            the pipeline. If None, the pipeline in the current branch
+            is exported.
 
         memory: bool, str, Memory or None, default=None
             Used to cache the fitted transformers of the pipeline.
@@ -915,7 +925,7 @@ class BaseRunner:
     def stacking(
         self,
         name: str = "Stack",
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
         """Add a [Stacking][] model to the pipeline.
@@ -926,7 +936,7 @@ class BaseRunner:
             Name of the model. The name is always presided with the
             model's acronym: `stack`.
 
-        models: sequence or None, default=None
+        models: slice, sequence or None, default=None
             Models that feed the stacking estimator. If None, it selects
             all non-ensemble models trained on the current branch.
 
@@ -985,7 +995,7 @@ class BaseRunner:
     def voting(
         self,
         name: str = "Vote",
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
         """Add a [Voting][] model to the pipeline.
@@ -996,7 +1006,7 @@ class BaseRunner:
             Name of the model. The name is always presided with the
             model's acronym: `vote`.
 
-        models: sequence or None, default=None
+        models: slice, sequence or None, default=None
             Models that feed the voting estimator. If None, it selects
             all non-ensemble models trained on the current branch.
 

@@ -11,12 +11,12 @@ classes to apply the most common transformations fast and easy.
     All of atom's data cleaning methods automatically adopt the relevant
     transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`)
     from atom. A different choice can be added as parameter to the method
-    call, e.g. `atom.scale(verbose=2)`.
+    call, e.g. `#!python atom.scale(verbose=2)`.
 
 !!! note
     Like the [add][atomclassifier-add] method, the data cleaning methods
     accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g. `atom.scale(columns=[0, 1])`.
+    dataset's features, e.g. `#!python atom.scale(columns=[0, 1])`.
 
 
 <br>

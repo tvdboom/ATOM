@@ -729,9 +729,15 @@ class BaseModel(ModelPlot, ShapPlot):
 
         kwargs = {k: v for k, v in self._ht.items() if k in self._sign(Study.optimize)}
         n_jobs = kwargs.pop("n_jobs", 1)
-        callbacks = kwargs.pop("callbacks", []) + [TrialsCallback(self, n_jobs)]
+
+        # Initialize live study plot
         if self._ht.get("plot", False) and n_jobs == 1:
-            callbacks.append(PlotCallback(self))
+            plot_callback = PlotCallback(self)
+        else:
+            plot_callback = None
+
+        callbacks = kwargs.pop("callbacks", []) + [TrialsCallback(self, n_jobs)]
+        callbacks += [plot_callback] if plot_callback else []
 
         self._study.optimize(
             func=objective,

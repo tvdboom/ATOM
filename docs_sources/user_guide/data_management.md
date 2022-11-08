@@ -119,15 +119,15 @@ cause unexpected model behaviour and break down the plotting methods.
 Instead, create a new branch for every unique pipeline.
 
 By default, atom starts with one branch called "master". To start a new
-branch, set a new name to the property, e.g. `atom.branch = "undersample"`.
-This will create a new branch from the current one. To create a branch
-from any other branch type "\_from\_" between the new name and the branch
-from which to split, e.g. `atom.branch = "oversample_from_master"` will
-create branch "oversample" from branch "master", even if the current branch
-is "undersample". To switch between existing branches, just type the name
-of the desired branch, e.g. `atom.branch = "master"` brings you back to the
-master branch. Note that every branch contains a unique copy of the whole
-dataset! Creating many branches can cause memory issues for large datasets.
+branch, set a new name to the property, e.g. `#!python atom.branch = "undersample"`.
+This creates a new branch from the current one. To create a branch from any
+other branch type "\_from\_" between the new name and the branch from which
+to split, e.g. `#!python atom.branch = "oversample_from_master"` creates
+branch "oversample" from branch "master", even if the current branch is
+"undersample". To switch between existing branches, just type the name of
+the desired branch, e.g. `#!python atom.branch = "master"` brings you back
+to the master branch. Note that every branch contains a unique copy of the
+whole dataset! Creating many branches can cause memory issues for large datasets.
 
 See the [Imbalanced datasets][example-imbalanced-datasets] or
 [Feature engineering][example-feature-engineering] examples for
@@ -161,9 +161,9 @@ dataset is occupying too much memory, consider using the [shrink]
 possible matching dtype.
 
 Apart from the dataset itself, a model's [prediction attributes][] (e.g.
-`atom.lr.predict_train`), metric scores and [shap values][shap] are also
-stored as attributes of the model to avoid having to recalculate them
-every time they are needed. This data can occupy a considerable amount
+`#!python atom.lr.predict_train`), metric scores and [shap values][shap]
+are also stored as attributes of the model to avoid having to recalculate
+them every time they are needed. This data can occupy a considerable amount
 of memory for large datasets. You can delete all these attributes using
 the [clear][atomclassifier-clear] method in order to free some memory
 before [saving][atomclassifier-save] the class.

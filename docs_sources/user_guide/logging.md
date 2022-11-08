@@ -45,13 +45,13 @@ to the fit method are not tracked.
 The model's estimator is stored as artifact. The estimator has to be
 compatible with the [mlflow.sklearn](https://www.mlflow.org/docs/latest/python_api/mlflow.sklearn.html),
 module. This option can be switched off using atom's [`log_model`]
-[atomclassifier-log_model] attribute, e.g. `atom.log_model = False`.
+[atomclassifier-log_model] attribute, e.g. `#!python atom.log_model = False`.
 
 **Hyperparameter tuning**<br>
 If hyperparameter tuning is performed, every call of the BO is tracked
 as a nested run in the model's main run. This option can be switched
 off using atom's [`log_ht`][atomclassifier-log_ht] attribute, e.g.
-`atom.log_ht = False`.
+`#!python atom.log_ht = False`.
 
 **Metrics**<br>
 All metric results are tracked, not only during training, but also when
@@ -62,16 +62,16 @@ Metrics calculated during in-training validation are also logged.
 The train and test sets used to fit and evaluate the model can be stored
 as .csv files to the run's artifacts. This option can be switched on
 using atom's [`log_data`][atomclassifier-log_data] attribute, e.g.
-`atom.log_data = True`.
+`#!python atom.log_data = True`.
 
 **Pipeline**<br>
 The model's pipeline (returned from the [export_pipeline][atomclassifier-export_pipeline]
-method) can be stored as an artifact using atom's [`log_pipeline`]
-[atomclassifier-log_pipeline] attribute, e.g. `atom.log_pipeline = True`.
+method) can be stored as an artifact using atom's [`log_pipeline`][atomclassifier-log_pipeline]
+attribute, e.g. `#!python atom.log_pipeline = True`.
 
 **Plots**<br>
 By default, plots are stored as `.png` artifacts in all runs corresponding
 to the models that are showed in the plot. If the `filename` parameter is
 specified, they are stored under that name, else the plot's name is used.
 This option can be switched off using atom's [`log_plots`][atomclassifier-log_plots]
-attribute, e.g. `atom.log_plots = False`.
+attribute, e.g. `#!python atom.log_plots = False`.

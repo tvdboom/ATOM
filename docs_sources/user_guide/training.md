@@ -32,7 +32,7 @@ directly. Instead, every approach can be called directly from atom through
 the [run][atomclassifier-run], [successive_halving][atomclassifier-successive_halving]
 and [train_sizing][atomclassifier-train_sizing] methods respectively.
 
-Models are called through their [acronyms][models], e.g. `atom.run(models="RF")`
+Models are called through their [acronyms][models], e.g. `#!python atom.run(models="RF")`
 will train a [RandomForest][]. If you want to run the same model multiple
 times, add a tag after the acronym to differentiate them.
 
@@ -76,7 +76,7 @@ function). The [`metric`][directclassifier-metric] parameter accepts
 three ways of defining the scorer:
 
 * Using the name of one of the [predefined scorers][].
-* Using a function with signature `function(y_true, y_pred) -> score`.
+* Using a function with signature `#!python function(y_true, y_pred) -> score`.
   In this case, ATOM uses [make_scorer](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html)
   with default parameters.
 * Using a scorer object.
@@ -97,7 +97,7 @@ sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms
 for some of the most commonly used ones. These acronyms are
 case-insensitive and can be used in the [`metric`][directclassifier-metric]
-parameter instead of the scorer's full name, e.g. `atom.run("LR", metric="BA")`
+parameter instead of the scorer's full name, e.g. `#!python atom.run("LR", metric="BA")`
 uses `balanced_accuracy`. The available acronyms are:
 
 * "AP" for "average_precision"
@@ -132,16 +132,18 @@ tasks.
 <br>
 
 #### Multi-metric runs
+
 Sometimes it is useful to measure the performance of the models in more
 than one way. ATOM lets you run the pipeline with multiple metrics at
 the same time. To do so, provide the `metric` parameter with a list of
-desired metrics, e.g. `atom.run("LDA", metric=["r2", "mse"])`.
+desired metrics, e.g. `#!python atom.run("LDA", metric=["r2", "mse"])`.
 
 When fitting multi-metric runs, the resulting scores will return a list
 of metrics. For example, if you provided three metrics to the pipeline,
-`atom.knn.score_train` could return [0.8734, 0.6672, 0.9001]. Only the
-first metric of a multi-metric run (this metric is called the **main**
-metric) is used to select the [winning][atomclassifier-winner] model.
+`#!python atom.knn.score_train` could return [0.8734, 0.6672, 0.9001].
+Only the first metric of a multi-metric run (this metric is called the
+**main** metric) is used to select the [winning][atomclassifier-winner]
+model.
 
 !!! info
     * The [`winning`][atomclassifier-winner] model is retrieved comparing only
@@ -249,7 +251,7 @@ parameter. For example, to change [XGBoost][]'s verbosity, we can run:
 
 !!! note
     If a parameter is specified through `est_params`, it's ignored
-    by the study, even if it's added manually to `ht_params["distributions"]`.
+    by the study, even if it's added manually to `#!python ht_params["distributions"]`.
 
 !!! info
     The estimator's `n_jobs` and `random_state` parameters adopt atom's

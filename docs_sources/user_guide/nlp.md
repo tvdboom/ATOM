@@ -20,7 +20,7 @@ Documents are expected to be strings or sequences of words. Click
 !!! note
     All of atom's NLP methods automatically adopt the relevant transformer
     attributes (`verbose`, `logger`) from atom. A different choice can be
-    added as parameter to the method call, e.g. `atom.tokenize(verbose=0)`.
+    added as parameter to the method call, e.g. `#!python atom.tokenize(verbose=0)`.
 
 !!! info
     ATOM doesn't do topic modelling! The module's goal is to help process

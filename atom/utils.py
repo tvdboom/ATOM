@@ -7,8 +7,10 @@ Description: Module containing utility constants, classes and functions.
 
 """
 
+from itertools import cycle
 import pprint
 import sys
+import time
 from collections import deque
 from collections.abc import MutableMapping
 from copy import copy
@@ -18,12 +20,13 @@ from importlib import import_module
 from inspect import Parameter, signature
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from typing import Any, Callable, List, Optional, Protocol, Tuple, Union
-
+from IPython.display import display
 import matplotlib.pyplot as plt
 import mlflow
 import nltk
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 from matplotlib.colors import to_rgba
 from matplotlib.gridspec import GridSpec
 from optuna.study import Study
@@ -572,15 +575,95 @@ class PlotCallback:
         self.M = args[0]
         self.T = self.M.T
 
-        self.y1 = {m: deque(maxlen=self.max_len) for m in self.T._metric}
-        self.y2 = {m: deque(maxlen=self.max_len) for m in self.T._metric}
+        self.y1 = {i: deque(maxlen=self.max_len) for i in range(len(self.T._metric))}
+        self.y2 = {i: deque(maxlen=self.max_len) for i in range(len(self.T._metric))}
 
-        self.line1 = {m: None for m in self.T._metric}
-        self.line2 = {m: None for m in self.T._metric}
-        self.scat = {m: None for m in self.T._metric}
-        self.ax1, self.ax2 = None, None
+        traces = []
+        colors = cycle(self.T.palette)
+        for met in self.T._metric:
+            color = next(colors)
+            traces.extend(
+                [
+                    go.Scatter(
+                        mode="lines+markers",
+                        line=dict(width=self.T.line_width, color=color),
+                        marker=dict(
+                            symbol="circle",
+                            size=self.T.marker_size,
+                            line=dict(width=1, color="white"),
+                            opacity=1,
+                        ),
+                        # hovertemplate=f"(%{{x}}, %{{y}})<extra>{met}</extra>",
+                        name=met,
+                        legendgroup=met,
+                        xaxis="x2",
+                        yaxis="y1",
+                    ),
+                    go.Scatter(
+                        mode="lines+markers",
+                        line=dict(width=self.T.line_width, color=color),
+                        marker=dict(
+                            line=dict(width=1, color="white"),
+                            symbol="circle",
+                            size=self.T.marker_size,
+                            opacity=1,
+                        ),
+                        name=met,
+                        legendgroup=met,
+                        showlegend=False,
+                        xaxis="x2",
+                        yaxis="y2",
+                    )
+                ]
+            )
 
-        self.create_figure()
+        self.figure = go.FigureWidget(
+            data=traces,
+            layout=dict(
+                xaxis1=dict(domain=(0, 1), anchor="y1", showticklabels=False),
+                yaxis1=dict(
+                    domain=(0.31, 1.0),
+                    title=dict(text="Score", font_size=self.T.label_fontsize),
+                    anchor="x1",
+                ),
+                xaxis2=dict(
+                    domain=(0, 1),
+                    title=dict(text="Trial", font_size=self.T.label_fontsize),
+                    anchor="y2",
+                ),
+                yaxis2=dict(
+                    domain=(0, 0.29),
+                    title=dict(text="d", font_size=self.T.label_fontsize),
+                    anchor="x2",
+                ),
+                title=dict(
+                    text=f"Hyperparameter tuning for {self.M._fullname}",
+                    x=0.5,
+                    y=1,
+                    pad=dict(t=15, b=15),
+                    xanchor="center",
+                    yanchor="top",
+                    xref="paper",
+                    font_size=self.T.title_fontsize,
+                ),
+                legend=dict(
+                    x=0.99,
+                    y=0.99,
+                    xanchor="right",
+                    yanchor="top",
+                    font_size=self.T.label_fontsize,
+                    bgcolor="rgba(255, 255, 255, 0.5)",
+                ),
+                hovermode="x unified",
+                hoverlabel=dict(font_size=self.T.label_fontsize),
+                font_size=self.T.tick_fontsize,
+                margin=dict(l=0, b=0, r=0, t=25 + self.T.title_fontsize, pad=0),
+                width=900,
+                height=800,
+            )
+        )
+
+        display(self.figure)
 
     def __call__(self, study: Study, trial: FrozenTrial):
         """Calculates new values for lines and plots them.
@@ -594,77 +677,20 @@ class PlotCallback:
             Finished trial.
 
         """
-        for m, score in zip(self.T._metric, lst(self.M.trials["score"][trial.number])):
-            self.y1[m].append(score)
-            if self.y2[m]:
-                self.y2[m].append(abs(self.y1[m][-1] - self.y1[m][-2]))
+        x = range(x_min := max(0, trial.number - self.max_len), x_min + self.max_len)
+
+        for i, score in enumerate(lst(self.M.trials["score"][trial.number])):
+            self.y1[i].append(score)
+            if self.y2[i]:
+                self.y2[i].append(abs(self.y1[i][-1] - self.y1[i][-2]))
             else:
-                self.y2[m].append(np.NaN)
+                self.y2[i].append(None)
 
-        self.animate_plot(trial.number)
-
-    def create_figure(self):
-        """Creates the figure."""
-        plt.ion()  # Call to matplotlib that allows dynamic plotting
-
-        plt.gcf().set_size_inches(10, 8)
-        gs = GridSpec(4, 1, hspace=0.05)
-
-        # First subplot
-        self.ax1 = plt.subplot(gs[0:3, 0])
-        self.ax1.set_title(
-            label=f"Hyperparameter tuning for {self.M._fullname}",
-            fontsize=self.T.title_fontsize,
-            pad=20,
-        )
-        self.ax1.set_ylabel(ylabel="Score", fontsize=self.T.label_fontsize, labelpad=12)
-
-        # Second subplot
-        self.ax2 = plt.subplot(gs[3:4, 0], sharex=self.ax1)
-        self.ax2.set_xlabel(xlabel="Trial", fontsize=self.T.label_fontsize, labelpad=12)
-        self.ax2.set_ylabel(ylabel="d", fontsize=self.T.label_fontsize, labelpad=12)
-
-        for m in self.T._metric:
-            self.line1[m], = self.ax1.plot([], "o-", alpha=0.8)
-            self.line2[m], = self.ax2.plot([], "o-", alpha=0.8)
-            self.scat[m] = self.ax1.scatter([], [], zorder=10, s=100, marker="*")
-
-        plt.setp(self.ax1.get_xticklabels(), visible=False)
-        plt.xticks(fontsize=self.T.tick_fontsize)
-        plt.yticks(fontsize=self.T.tick_fontsize)
-
-    def animate_plot(self, trial_number: int):
-        """Plot the study's progress as it runs.
-
-        Parameters
-        ----------
-        trial_number: int
-            The current trial id.
-
-        """
-        x_min = max(0, trial_number - self.max_len)
-        x_max = x_min + self.max_len
-        x = range(x_min, x_max)
-
-        for m in self.T._metric:
-            self.line1[m].set_label(f"{m}={rnd(max(self.y1[m]))}")
-            self.line1[m].set_data(x[:len(self.y1[m])], self.y1[m])
-            self.line2[m].set_data(x[:len(self.y2[m])], self.y2[m])
-            self.scat[m].set_offsets((np.argmax(self.y1[m]), max(self.y1[m])))
-
-        for ax in (self.ax1, self.ax2):
-            ax.relim()  # Adjust y limits if new data goes beyond bounds
-            ax.autoscale_view(tight=True)
-            ax.set_xlim(x_min - 0.5, x_max - 0.5)
-            ax.set_xticks(x)
-
-        self.ax1.legend(
-            handles=[self.line1[m] for m in self.T._metric],
-            fontsize=self.T.label_fontsize,
-        )
-
-        # Pause the data so the figure/axis can catch up
-        plt.pause(0.05)
+            # Update trace data
+            self.figure.data[i * 2].x = list(x[:len(self.y1[i])])
+            self.figure.data[i * 2].y = list(self.y1[i])
+            self.figure.data[i * 2 + 1].x = list(x[:len(self.y1[i])])
+            self.figure.data[i * 2 + 1].y = list(self.y2[i])
 
 
 class ShapExplanation:

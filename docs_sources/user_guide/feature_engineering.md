@@ -20,12 +20,13 @@ example.
     All of atom's feature engineering methods automatically adopt the relevant
     transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
     atom. A different choice can be added as parameter to the method call,
-    e.g. `atom.feature_selection("pca", n_features=10, random_state=2)`.
+    e.g. `#!python atom.feature_selection("pca", n_features=10, random_state=2)`.
 
 !!! note
     Like the [add][atomclassifier-add] method, the feature engineering
     methods accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g. `atom.feature_selection("pca", n_features=10, columns=slice(5, 15))`.
+    dataset's features, e.g. `#!python atom.feature_selection("pca", 
+    n_features=10, columns=slice(5, 15))`.
 
 <br>
 
@@ -183,8 +184,8 @@ SFM uses an estimator with `feature_importances_` or `coef_` attributes
 to select the best features in a dataset based on importance weights.
 The estimator is provided through the `solver` parameter and can be
 already fitted. ATOM allows you to use one its predefined [models][],
-e.g. `solver="RF"`. If you didn't call the FeatureSelector through atom,
-don't forget to indicate the estimator's task adding `_class` or `_reg`
+e.g. `#!python solver="RF"`. If you didn't call the FeatureSelector through
+atom, don't forget to indicate the estimator's task adding `_class` or `_reg`
 after the name, e.g. `RF_class` to use a random forest classifier. Read
 more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
 

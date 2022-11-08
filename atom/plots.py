@@ -389,6 +389,9 @@ class BasePlot:
 
     """
 
+    line_width = 2
+    marker_size = 8
+
     def __init__(self):
         self._fig = None
         self._custom_layout = {}
@@ -592,13 +595,19 @@ class BasePlot:
         hover = f"(%{{x}}, %{{y}})<extra>{parent}{' - ' + child if child else ''}</extra>"
         return go.Scatter(
             line=dict(
-                width=2,
+                width=self.line_width,
                 color=self._fig.get_color(parent),
                 dash=self._fig.get_dashes(child) if child else None,
             ),
-            hovertemplate=hover,
-            name=child if child else parent,
-            legendgroup=parent,
+            marker=dict(
+                symbol="circle",
+                size=self.marker_size,
+                line=dict(width=1, color="white"),
+                opacity=1,
+            ),
+            hovertemplate=kwargs.pop("hovertemplate", hover),
+            name=kwargs.pop("name", child if child else parent),
+            legendgroup=kwargs.pop("legendgroup", parent),
             legendgrouptitle=legendgrouptitle if child else None,
             showlegend=self._fig.showlegend(f"{parent}-{child}", legend),
             **kwargs,
@@ -630,15 +639,18 @@ class BasePlot:
 
     def _get_subclass(
         self,
-        models: Union[str, List[str]],
+        models: Union[str, Model, SEQUENCE_TYPES],
         max_one: bool = False,
         ensembles: bool = True,
     ) -> Union[Model, List[Model]]:
-        """Get model subclasses from names.
+        """Get model subclasses.
+
+        Optionally, restrict the number of models to one and filter
+        out ensembles.
 
         Parameters
         ----------
-        models: str or sequence
+        models: str, Model or sequence
             Models provided by the plot's parameter.
 
         max_one: bool, default=False
@@ -700,6 +712,11 @@ class BasePlot:
                 for met in metric.lower().split("+"):
                     if (name := get_custom_scorer(met).name) in self.metric:
                         metrics.append(self._metric.index(name))
+                    else:
+                        raise ValueError(
+                            "Invalid value for the metric parameter. The "
+                            f"{name} metric wasn't used to fit the models."
+                        )
 
                 if len(metrics) > 1 and max_one:
                     raise ValueError(
@@ -709,13 +726,14 @@ class BasePlot:
 
                 return metrics[0] if max_one else metrics
 
-        elif 0 <= metric < len(self._metric):
-            return metric if max_one else [metric]
-
-        raise ValueError(
-            "Invalid value for the metric parameter. Value should be the index "
-            f"or name of a metric used to run the pipeline, got {metric}."
-        )
+        else:
+            if 0 <= metric < len(self._metric):
+                return metric if max_one else [metric]
+            else:
+                raise ValueError(
+                    "Invalid value for the metric parameter. Value should be the "
+                    f"index of a metric used to run the pipeline, got {metric}."
+                )
 
     def _get_target(self, target: Union[int, str]) -> int:
         """Check and return the provided target's index.
@@ -773,17 +791,23 @@ class BasePlot:
             Selected data set(s).
 
         """
-        if "holdout" in (ds := dataset.lower().split("+")):
-            if allow_holdout:
-                if self.holdout is None:
+        for set_ in (ds := dataset.lower().split("+")):
+            if set_ == "holdout":
+                if allow_holdout:
+                    if self.holdout is None:
+                        raise ValueError(
+                            "Invalid value for the dataset parameter. No holdout "
+                            "data set was specified when initializing the instance."
+                        )
+                else:
                     raise ValueError(
-                        "Invalid value for the dataset parameter. No holdout "
-                        "data set was specified when initializing the instance."
+                        "Invalid value for the dataset parameter, got "
+                        f"{dataset}. Choose from: train or test."
                     )
-            else:
+            elif set_ not in ("train", "test"):
                 raise ValueError(
-                    "Invalid value for the dataset parameter, got "
-                    f"{dataset}. Choose from: train or test."
+                    "Invalid value for the dataset parameter, "
+                    f"got {set_}. Choose from: train, test or holdout."
                 )
 
         if max_one and len(ds) > 1:
@@ -815,11 +839,10 @@ class BasePlot:
         max_fxs = max([m.n_features for m in lst(model)])
         if show is None or show > max_fxs:
             # Limit max features shown to avoid maximum figsize error
-            return min(200, max_fxs)
+            show = min(200, max_fxs)
         elif show < 1:
             raise ValueError(
-                "Invalid value for the show parameter."
-                f"Value should be >0, got {show}."
+                f"Invalid value for the show parameter. Value should be >0, got {show}."
             )
 
         return show
@@ -894,8 +917,8 @@ class BasePlot:
                 if self._fig.is_canvas and (title := kwargs.get("title")):
                     # Add a subtitle to a plot in the canvas
                     default_title = {
-                        "x": self._fig.pos[ax[0][5:]][0],
-                        "y": self._fig.pos[ax[0][5:]][1] + 0.005,
+                        "x": self._fig.pos[ax[0][5:] or "1"][0],
+                        "y": self._fig.pos[ax[0][5:] or "1"][1] + 0.005,
                         "xref": "paper",
                         "yref": "paper",
                         "xanchor": "center",
@@ -909,9 +932,7 @@ class BasePlot:
                     else:
                         title = {"text": title, **default_title}
 
-                    fig.update_layout(
-                        dict(annotations=fig.layout.annotations + (title,))
-                    )
+                    fig.update_layout(dict(annotations=fig.layout.annotations + (title,)))
 
             if not self._fig.is_canvas and kwargs.get("plotname"):
                 default_title = dict(
@@ -923,10 +944,10 @@ class BasePlot:
                     xref="paper",
                     font_size=self.title_fontsize,
                 )
-                if not isinstance(title := kwargs.get("title"), dict):
-                    title = {"text": title, **default_title}
-                else:
+                if isinstance(title := kwargs.get("title"), dict):
                     title = {**default_title, **title}
+                else:
+                    title = {"text": title, **default_title}
 
                 default_legend = dict(
                     traceorder="grouped",
@@ -1024,7 +1045,7 @@ class BasePlot:
 
             # Log plot to mlflow run of every model visualized
             if self.experiment and self.log_plots:
-                for m in set(self._fig._used_models):
+                for m in set(self._fig.used_models):
                     MlflowClient().log_figure(
                         run_id=m._run.info.run_id,
                         figure=fig,
@@ -1342,10 +1363,10 @@ class FeatureSelectorPlot(BasePlot):
 
         """
         # Create star symbol at selected number of components
-        sizes = [6] * self.pca.n_features_in_
-        sizes[self.pca._comps - 1] = 12
         symbols = ["circle"] * self.pca.n_features_in_
         symbols[self.pca._comps - 1] = "star"
+        sizes = [self.marker_size] * self.pca.n_features_in_
+        sizes[self.pca._comps - 1] = self.marker_size * 1.5
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
@@ -1354,8 +1375,13 @@ class FeatureSelectorPlot(BasePlot):
                 x=tuple(range(1, self.pca.n_features_in_ + 1)),
                 y=np.cumsum(self.pca.explained_variance_ratio_),
                 mode="lines+markers",
-                line=dict(width=2, color=self._fig.get_color("pca")),
-                marker=dict(symbol=symbols, size=sizes, opacity=1, line=dict(width=0)),
+                line=dict(width=self.line_width, color=self._fig.get_color("pca")),
+                marker=dict(
+                    symbol=symbols,
+                    size=sizes,
+                    line=dict(width=1, color="white"),
+                    opacity=1,
+                ),
                 hovertemplate="%{y}<extra></extra>",
                 showlegend=False,
                 xaxis=xaxis,
@@ -1484,8 +1510,13 @@ class FeatureSelectorPlot(BasePlot):
                 x=list(x),
                 y=mean,
                 mode="lines+markers",
-                line=dict(width=2, color=self._fig.get_color("rfecv")),
-                marker=dict(symbol=symbols, size=sizes, opacity=1, line=dict(width=0)),
+                line=dict(width=self.line_width, color=self._fig.get_color("rfecv")),
+                marker=dict(
+                    symbol=symbols,
+                    size=sizes,
+                    line=dict(width=1, color="white"),
+                    opacity=1,
+                ),
                 name=ylabel,
                 legendgroup="rfecv",
                 showlegend=self._fig.showlegend("rfecv", legend),
@@ -1524,13 +1555,7 @@ class FeatureSelectorPlot(BasePlot):
             ]
         )
 
-        fig.update_layout(
-            {
-                "hovermode": "x",
-                f"xaxis{xaxis[1:]}_showspikes": True,
-                f"yaxis{yaxis[1:]}_showspikes": True,
-            }
-        )
+        fig.update_layout({"hovermode": "x unified"})
 
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
@@ -2578,7 +2603,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         n_bins: INT = 10,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -2610,7 +2635,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -2760,7 +2785,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -2778,7 +2803,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -2854,18 +2879,8 @@ class ModelPlot(BasePlot):
         """
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
+        dataset = self._get_set(dataset, max_one=True)
 
-        dataset = dataset.lower()
-        if dataset not in ("train", "test", "holdout"):
-            raise ValueError(
-                "Unknown value for the dataset parameter. "
-                "Choose from: train, test or holdout."
-            )
-        if dataset == "holdout" and self.holdout is None:
-            raise ValueError(
-                "Invalid value for the dataset parameter. No holdout "
-                "data set was specified when initializing the instance."
-            )
         if self.task.startswith("multi") and len(models) > 1:
             raise NotImplementedError(
                 "The plot_confusion_matrix method does not support the comparison"
@@ -2966,7 +2981,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_det(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -2982,7 +2997,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -3096,7 +3111,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3116,7 +3131,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -3239,7 +3254,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_evals(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3256,7 +3271,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the model to plot. If None, all models in the
             pipeline are selected.
 
@@ -3364,7 +3379,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_feature_importance(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3382,7 +3397,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -3505,7 +3520,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3520,7 +3535,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -3635,7 +3650,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_learning_curve(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3651,7 +3666,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -3795,7 +3810,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3810,7 +3825,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -3926,7 +3941,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_parshap(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         *,
@@ -3950,7 +3965,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -4130,9 +4145,10 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_partial_dependence(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         kind: str = "average",
+        pair: Optional[Union[int, str]] = None,
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -4145,22 +4161,26 @@ class ModelPlot(BasePlot):
 
         The partial dependence of a feature (or a set of features)
         corresponds to the response of the model for each possible
-        value of the feature. Two-way partial dependence plots are
-        plotted as contour plots (only allowed for a single model and
-        for the same feature on the y-axes). The deciles of the feature
-        values are shown with tick marks on the bottom. Read more about
-        partial dependence on sklearn's [documentation][partial_dependence].
+        value of the feature. The plot can take two forms:
+
+        - If `pair` is None: Single feature partial dependence lines.
+          The deciles of the feature values are shown with tick marks
+          on the bottom.
+        - If `pair` is defined: Two-way partial dependence plots are
+          plotted as contour plots (only allowed for a single model).
+
+        Read more about partial dependence on sklearn's
+        [documentation][partial_dependence].
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
         columns: int, str, slice, sequence or None, default=None
-            Features or feature pairs (not combinations) to get the
-            partial dependence from. If None, it uses the first 3
-            features in the dataset.
+            Features to get the partial dependence from. If None, it
+            uses the first 3 features in the dataset.
 
         kind: str, default="average"
             Kind of depedence to plot. Add `+` between options to select
@@ -4168,10 +4188,17 @@ class ModelPlot(BasePlot):
 
             - "average": Partial dependence averaged across all samples
               in the dataset.
-            - "individual": Partial dependence for up to 50 random samples
-              (Individual Conditional Expectation).
+            - "individual": Partial dependence for up to 50 random
+              samples (Individual Conditional Expectation).
 
             This parameter is ignored when plotting feature pairs.
+
+        pair: int, str or None, default=None
+            Feature name or index with which to pair the features
+            selected by `columns`. If specified, the resulting figure
+            displays contour plots. Only allowed when plotting a single
+            model. If None, the plots show the partial dependece of
+            single features.
 
         target: int or str, default=1
             Index or name of the class in the target column to look at.
@@ -4235,7 +4262,7 @@ class ModelPlot(BasePlot):
             url: /img/plots/plot_partial_dependence_1.html
 
         ```pycon
-        >>> atom.tree.plot_partial_dependence(columns=(4, (3, 4)))
+        >>> atom.tree.plot_partial_dependence(columns=(3, 4), pair=2)
 
         ```
 
@@ -4260,41 +4287,7 @@ class ModelPlot(BasePlot):
 
             # Since every model can have different fxs, select them
             # every time and make sure the models use the same fxs
-            cols = []
-            for fxs in lst(columns or list(m.features[:3])):
-                if isinstance(fxs, (int, str, slice)):
-                    cols.append((self._get_columns(fxs, False, branch=m.branch)[0],))
-                elif len(models) == 1:
-                    if len(fxs) == 2:
-                        add = []
-                        for fx in fxs:
-                            add.append(self._get_columns(fx, False, branch=m.branch)[0])
-                        cols.append(tuple(add))
-                    else:
-                        raise ValueError(
-                            "Invalid value for the columns parameter. Features "
-                            f"should be single or in pairs, got {fxs}."
-                        )
-                else:
-                    raise ValueError(
-                        "Invalid value for the columns parameter. Feature pairs "
-                        f"are invalid when plotting multiple models, got {fxs}."
-                    )
-
-            # Avoid combinations of line and contour
-            if len(set(map(len, cols))) > 1:
-                raise ValueError(
-                    "Invalid value for the columns parameter. Individual "
-                    "features and pairs can't be combined. Use the canvas "
-                    "method to visualize both types together."
-                )
-
-            # Check that all plots have the same y-axis
-            if len(cols[0]) > 1 and len(set(fx[1] for fx in cols)) > 1:
-                raise ValueError(
-                    "Invalid value for the columns parameter. All feature "
-                    "pairs must have the same feature on the y-axis."
-                )
+            cols = self._get_columns(columns, include_target=False, branch=m.branch)
 
             # The features must be the same for all models
             if not names:
@@ -4304,6 +4297,18 @@ class ModelPlot(BasePlot):
                     "Invalid value for the columns parameter. Not all "
                     f"models use the same features, got {names} and {cols}."
                 )
+
+            if pair is not None:
+                if len(models) > 1:
+                    raise ValueError(
+                        f"Invalid value for the pair parameter, got {pair}. "
+                        "The value must be None when plotting multiple models"
+                    )
+                else:
+                    pair = self._get_columns(pair, include_target=False, branch=m.branch)
+                    cols = [(c, pair[0]) for c in cols]
+            else:
+                cols = [(c,) for c in cols]
 
             # Create new axes
             if not axes:
@@ -4435,7 +4440,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_permutation_importance(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         n_repeats: INT = 10,
         *,
@@ -4456,7 +4461,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -4594,7 +4599,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_pipeline(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         draw_hyperparameter_tuning: bool = True,
         color_branches: Optional[bool] = None,
         *,
@@ -4613,7 +4618,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models for which to draw the pipeline.
             If None, all pipelines are plotted.
 
@@ -4900,7 +4905,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -4916,7 +4921,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -5032,7 +5037,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         target: Union[INT, str] = 1,
         *,
@@ -5048,7 +5053,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -5175,7 +5180,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -5198,7 +5203,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -5326,7 +5331,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_results(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -5345,7 +5350,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -5551,7 +5556,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -5567,7 +5572,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -5684,7 +5689,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -5700,7 +5705,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -5846,7 +5851,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         steps: INT = 100,
@@ -5863,7 +5868,7 @@ class ModelPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name or index of the models to plot. If None, all models
             are selected.
 
@@ -5989,7 +5994,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_trials(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -6003,12 +6008,12 @@ class ModelPlot(BasePlot):
         Only available for models that ran [hyperparameter tuning][].
         Creates a figure with two plots: the first plot shows the score
         of every trial and the second shows the distance between the
-        last consecutive steps. This is the same plot as produced by
-        `ht_params={"plot": True}`.
+        last consecutive steps. The best trial is indicated with a star.
+        This is the same plot as produced by `ht_params={"plot": True}`.
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the models to plot. If None, all models that
             used hyperparameter tuning are selected.
 
@@ -6094,24 +6099,21 @@ class ModelPlot(BasePlot):
                     y = m.trials["score"].apply(lambda value: lst(value)[met])
 
                     # Create star symbol at best trial
-                    sizes = [6] * len(y)
-                    sizes[m.best_trial.number] = 12
                     symbols = ["circle"] * len(y)
                     symbols[m.best_trial.number] = "star"
+                    sizes = [self.marker_size] * len(y)
+                    sizes[m.best_trial.number] = self.marker_size * 1.5
 
                     fig.add_trace(
                         self._draw_line(
                             x=list(range(len(y))),
                             y=y,
-                            marker=dict(
-                                symbol=symbols,
-                                size=sizes,
-                                opacity=1,
-                                line=dict(width=0),
-                            ),
+                            mode="lines+markers",
+                            marker_symbol=symbols,
+                            marker_size=sizes,
+                            hovertemplate=None,
                             parent=m.name,
                             child=self._metric[met].name,
-                            mode="lines+markers",
                             legend=legend,
                             xaxis=xaxis2,
                             yaxis=yaxis,
@@ -6122,16 +6124,21 @@ class ModelPlot(BasePlot):
                         self._draw_line(
                             x=list(range(1, len(y))),
                             y=np.abs(np.diff(y)),
+                            mode="lines+markers",
                             parent=m.name,
                             child=self._metric[met].name,
-                            mode="lines+markers",
                             legend=legend,
                             xaxis=xaxis2,
                             yaxis=yaxis2,
                         )
                     )
 
-        fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
+        fig.update_layout(
+            {
+                f"xaxis{xaxis[1:]}_showticklabels": False,
+                "hovermode": "x unified",
+            },
+        )
 
         self._plot(
             ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),
@@ -6166,7 +6173,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_bar(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6187,7 +6194,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the model to plot. If None, all models are selected.
             Note that leaving the default option could raise an exception
             if there are multiple models. To avoid this, call the plot
@@ -6287,7 +6294,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_beeswarm(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6305,7 +6312,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the model to plot. If None, all models are selected.
             Note that leaving the default option could raise an exception
             if there are multiple models. To avoid this, call the plot
@@ -6405,7 +6412,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_decision(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6428,7 +6435,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the model to plot. If None, all models are selected.
             Note that leaving the default option could raise an exception
             if there are multiple models. To avoid this, call the plot
@@ -6534,7 +6541,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_force(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         *,
@@ -6555,7 +6562,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the model to plot. If None, all models are selected.
             Note that leaving the default option could raise an exception
             if there are multiple models. To avoid this, call the plot
@@ -6676,7 +6683,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_heatmap(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6697,7 +6704,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the model to plot. If None, all models are selected.
             Note that leaving the default option could raise an exception
             if there are multiple models. To avoid this, call the plot
@@ -6798,7 +6805,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_scatter(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         feature: Union[INT, str] = 0,
         target: Union[INT, str] = 1,
@@ -6820,7 +6827,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the model to plot. If None, all models are selected.
             Note that leaving the default option could raise an exception
             if there are multiple models. To avoid this, call the plot
@@ -6919,7 +6926,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_waterfall(
         self,
-        models: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6946,7 +6953,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, slice, sequence or None, default=None
+        models: int, str, slice, Model, sequence or None, default=None
             Name of the model to plot. If None, all models are selected.
             Note that leaving the default option could raise an exception
             if there are multiple models. To avoid this, call the plot
