@@ -602,7 +602,7 @@ class BasePlot:
             marker=dict(
                 symbol="circle",
                 size=self.marker_size,
-                line=dict(width=1, color="white"),
+                line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                 opacity=1,
             ),
             hovertemplate=kwargs.pop("hovertemplate", hover),
@@ -1379,7 +1379,7 @@ class FeatureSelectorPlot(BasePlot):
                 marker=dict(
                     symbol=symbols,
                     size=sizes,
-                    line=dict(width=1, color="white"),
+                    line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                     opacity=1,
                 ),
                 hovertemplate="%{y}<extra></extra>",
@@ -1514,7 +1514,7 @@ class FeatureSelectorPlot(BasePlot):
                 marker=dict(
                     symbol=symbols,
                     size=sizes,
-                    line=dict(width=1, color="white"),
+                    line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                     opacity=1,
                 ),
                 name=ylabel,

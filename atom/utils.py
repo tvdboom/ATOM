@@ -7,10 +7,8 @@ Description: Module containing utility constants, classes and functions.
 
 """
 
-from itertools import cycle
 import pprint
 import sys
-import time
 from collections import deque
 from collections.abc import MutableMapping
 from copy import copy
@@ -18,17 +16,17 @@ from datetime import datetime as dt
 from functools import wraps
 from importlib import import_module
 from inspect import Parameter, signature
+from itertools import cycle
 from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from typing import Any, Callable, List, Optional, Protocol, Tuple, Union
-from IPython.display import display
-import matplotlib.pyplot as plt
+
 import mlflow
 import nltk
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from IPython.display import display
 from matplotlib.colors import to_rgba
-from matplotlib.gridspec import GridSpec
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from scipy import sparse
@@ -603,7 +601,7 @@ class PlotCallback:
                         mode="lines+markers",
                         line=dict(width=self.T.line_width, color=color),
                         marker=dict(
-                            line=dict(width=1, color="white"),
+                            line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                             symbol="circle",
                             size=self.T.marker_size,
                             opacity=1,

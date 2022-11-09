@@ -80,7 +80,6 @@ using `pip install atom-ml[dev]`.
 
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.1.0)
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=3.0.0)
-* **[tensorflow](https://www.tensorflow.org/)** (>=2.3.1)
 
 **Documentation**
 

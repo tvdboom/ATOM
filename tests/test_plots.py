@@ -90,7 +90,6 @@ def test_palette_property():
 
 def test_palette_setter():
     """Assert that the palette setter works."""
-    base = BasePlot(["red", "blue", "green"])
     with pytest.raises(ValueError, match=".*the palette parameter.*"):
         base.palette = "unknown"
 
@@ -142,6 +141,13 @@ def test_update_layout():
     plotter = BasePlot()
     plotter.update_layout(template="plotly-dark")
     plotter._custom_layout["template"] = "plotly-dark"
+
+
+def test_custom_palette():
+    """Assert that a custom palette can be defined."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.palette = ["red", "green", "blue"]
+    atom.plot_correlation(columns=[0, 1, 2], display=False)
 
 
 def test_get_subclass_max_one():
