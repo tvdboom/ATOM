@@ -318,25 +318,30 @@ class BaseRunner:
 
     def _get_rows(
         self,
-        index: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         return_test: bool = True,
         branch: Optional[Branch] = None,
-    ) -> List[Any]:
-        """Get a subset of the rows.
+    ) -> list:
+        """Get a subset of the rows in the dataset.
+
+        Rows can be selected by name, index or regex pattern. If a
+        string is provided, use `+` to select multiple rows and `!`
+        to exclude them. Rows cannot be included and excluded in the
+        same call.
 
         Parameters
         ----------
         index: int, str, slice, sequence or None, default=None
-            Names or indices of the rows to select. If None,
-            returns the complete dataset or the test set.
+            Names or indices of the rows to select. If None, returns
+            the complete dataset or the test set.
 
         return_test: bool, default=True
-            Whether to return the test or the complete dataset
-            when no index is provided.
+            Whether to return the test or the complete dataset when no
+            index is provided.
 
         branch: Branch or None, default=None
-            Get columns from specified branch. If None, use the
-            current branch.
+            Get columns from specified branch. If None, use the current
+            branch.
 
         Returns
         -------
@@ -344,6 +349,35 @@ class BaseRunner:
             Indices of the included rows.
 
         """
+
+        def get_match(idx: str, ex: Optional[ValueError] = None):
+            """Try to find a match by regex.
+
+            Parameters
+            ----------
+            idx: str
+                Regex pattern to match with indices.
+
+            ex: ValueError or None
+                Exception to raise if failed (from previous call).
+
+            """
+            nonlocal inc, exc
+
+            array = inc
+            if idx.startswith("!") and idx not in indices:
+                array = exc
+                idx = idx[1:]
+
+            # Find rows using regex matches
+            if matches := [i for i in indices if re.fullmatch(idx, str(i))]:
+                array.extend(matches)
+            else:
+                raise ex or ValueError(
+                    "Invalid value for the index parameter. "
+                    f"Could not find any row that matches {idx}."
+                )
+
         if not branch:
             branch = self.branch
 
@@ -351,14 +385,14 @@ class BaseRunner:
         if branch.holdout is not None:
             indices += list(branch.holdout.index)
 
+        inc, exc = [], []
         if index is None:
             inc = list(branch._idx[1]) if return_test else list(branch.X.index)
         elif isinstance(index, slice):
             inc = indices[index]
         else:
-            inc = []
             for idx in lst(index):
-                if idx in indices:
+                if isinstance(idx, (int, float, str)) and idx in indices:
                     inc.append(idx)
                 elif isinstance(idx, int):
                     if -len(indices) <= idx <= len(indices):
@@ -366,25 +400,40 @@ class BaseRunner:
                     else:
                         raise ValueError(
                             f"Invalid value for the index parameter. Value {index} is "
-                            f"out of range for a dataset with length {len(indices)}."
+                            f"out of range for a dataset with {len(indices)} rows."
                         )
+                elif isinstance(idx, str):
+                    try:
+                        get_match(idx)
+                    except ValueError as ex:
+                        for i in idx.split("+"):
+                            get_match(i, ex)
                 else:
-                    raise ValueError(
-                        "Invalid value for the index parameter. "
-                        f"Value {idx} not found in the dataset."
+                    raise TypeError(
+                        f"Invalid type for the index parameter, got {type(idx)}. "
+                        "Use a row's name or position to select it."
                     )
 
-        if not inc:
+        if len(inc) + len(exc) == 0:
             raise ValueError(
                 "Invalid value for the index parameter, got "
                 f"{index}. At least one row has to be selected."
             )
+        elif inc and exc:
+            raise ValueError(
+                "Invalid value for the index parameter. You can either "
+                "include or exclude rows, not combinations of these."
+            )
 
-        return inc
+        if exc:
+            # If rows were excluded with `!`, select all but those
+            inc = [idx for idx in indices if idx not in exc]
+
+        return list(dict.fromkeys(inc))  # Avoid duplicates
 
     def _get_columns(
         self,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         include_target: bool = True,
         return_inc_exc: bool = False,
         only_numerical: bool = False,
@@ -392,9 +441,10 @@ class BaseRunner:
     ) -> Union[List[str], Tuple[List[str], List[str]]]:
         """Get a subset of the columns.
 
-        Select columns in the dataset by name, index, dtype or regex
-        pattern. Duplicate columns are ignored. Exclude columns if
-        the string starts with `!`.
+        Columns can be selected by name, index or regex pattern. If a
+        string is provided, use `+` to select multiple columns and `!`
+        to exclude them. Columns cannot be included and excluded in
+        the same call.
 
         Parameters
         ----------
@@ -427,6 +477,39 @@ class BaseRunner:
             return_inc_exc=True.
 
         """
+
+        def get_match(col: str, ex: Optional[ValueError] = None):
+            """Try to find a match by regex.
+
+            Parameters
+            ----------
+            col: str
+                Regex pattern to match with the column names.
+
+            ex: ValueError or None
+                Exception to raise if failed (from previous call).
+
+            """
+            nonlocal inc, exc
+
+            array = inc
+            if col.startswith("!") and col not in df.columns:
+                array = exc
+                col = col[1:]
+
+            # Find columns using regex matches
+            if matches := [c for c in df.columns if re.fullmatch(col, str(c))]:
+                array.extend(matches)
+            else:
+                # Find columns by type
+                try:
+                    array.extend(list(df.select_dtypes(col).columns))
+                except TypeError:
+                    raise ex or ValueError(
+                        "Invalid value for the columns parameter. "
+                        f"Could not find any column that matches {col}."
+                    )
+
         if not branch:
             branch = self.branch
 
@@ -451,24 +534,17 @@ class BaseRunner:
                             f"Invalid value for the columns parameter. Value {col} "
                             f"is out of range for a dataset with {df.shape[1]} columns."
                         )
+                elif isinstance(col, str):
+                    try:
+                        get_match(col)
+                    except ValueError as ex:
+                        for c in col.split("+"):
+                            get_match(c, ex)
                 else:
-                    array = inc
-                    if col.startswith("!") and col not in df.columns:
-                        array = exc
-                        col = col[1:]
-
-                    # Find columns using regex matches
-                    matches = [c for c in df.columns if re.fullmatch(col, c)]
-                    if matches:
-                        array.extend(matches)
-                    else:
-                        try:
-                            array.extend(list(df.select_dtypes(col).columns))
-                        except TypeError:
-                            raise ValueError(
-                                "Invalid value for the columns parameter. "
-                                f"Could not find any column that matches {col}."
-                            )
+                    raise TypeError(
+                        f"Invalid type for the columns parameter, got {type(col)}. "
+                        "Use a column's name or position to select it."
+                    )
 
         if len(inc) + len(exc) == 0:
             raise ValueError(
@@ -496,9 +572,10 @@ class BaseRunner:
     ) -> List[str]:
         """Get names of models.
 
-        Select models in the dataset by name, index or regex pattern.
-        Duplicate models are ignored. Exclude models if the string
-        starts with `!`. The input is case-insensitive.
+        Models can be selected by name, index or regex pattern. If a
+        string is provided, use `+` to select multiple models and `!`
+        to exclude them. Models cannot be included and excluded in
+        the same call. The input is case-insensitive.
 
         Parameters
         ----------
@@ -513,11 +590,44 @@ class BaseRunner:
         Returns
         -------
         list
-            List of model names.
+            Model names.
 
         """
-        inc, exc = [], []
+
+        def get_match(model: str, ex: Optional[ValueError] = None):
+            """Try to find a match by regex.
+
+            Parameters
+            ----------
+            model: str
+                Regex pattern to match with model names.
+
+            ex: ValueError or None
+                Exception to raise if failed (from previous call).
+
+            """
+            nonlocal inc, exc
+
+            array = inc
+            if model.startswith("!") and model not in available_models:
+                array = exc
+                model = model[1:]
+
+            # Find rows using regex matches
+            if model.lower() == "winner":
+                array.append(self.winner.name)
+            elif matches := [m for m in available_models if re.fullmatch(model, m, re.IGNORECASE)]:
+                array.extend(matches)
+            else:
+                raise ex or ValueError(
+                    "Invalid value for the models parameter. Could "
+                    f"not find any model that matches {model}. The "
+                    f"available models are: {', '.join(available_models)}."
+                )
+
         available_models = self._models.min("og")
+
+        inc, exc = [], []
         if models is None:
             inc.extend(available_models)
         elif isinstance(models, slice):
@@ -534,33 +644,17 @@ class BaseRunner:
                             f"{len(available_models)} models."
                         )
                 elif isinstance(model, str):
-                    array = inc
-                    if model.startswith("!"):
-                        array = exc
-                        model = model[1:]
-
-                    if model.lower() == "winner":
-                        array.append(self.winner.name)
-                    else:
-                        # Find models using regex matches
-                        matches = [
-                            v.name for k, v in available_models.items()
-                            if re.fullmatch(model.lower(), k.lower())
-                        ]
-                        if matches:
-                            array.extend(matches)
-                        else:
-                            raise ValueError(
-                                "Invalid value for the models parameter. Could "
-                                f"not find any model that matches {model}. The "
-                                f"available models are: {', '.join(available_models)}."
-                            )
+                    try:
+                        get_match(model)
+                    except ValueError as ex:
+                        for m in model.split("+"):
+                            get_match(m, ex)
                 elif isinstance(model, BaseModel):
                     inc.append(model.name)
                 else:
                     raise TypeError(
-                        "Invalid type for the models parameter. Allowed types "
-                        f"are int, str or a Model instance, got {type(model)}."
+                        f"Invalid type for the models parameter, got {type(model)}. "
+                        "Use a model's name, position or instance to select it."
                     )
 
         if inc and exc:
@@ -661,7 +755,7 @@ class BaseRunner:
 
     @composed(crash, method_to_log, typechecked)
     def delete(
-        self, models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None
+        self, models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None
     ):
         """Delete models.
 

@@ -10,6 +10,7 @@ Description: Unit tests for plots.py
 import glob
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 from sklearn.metrics import f1_score, get_scorer
 
@@ -91,7 +92,7 @@ def test_palette_property():
 def test_palette_setter():
     """Assert that the palette setter works."""
     with pytest.raises(ValueError, match=".*the palette parameter.*"):
-        base.palette = "unknown"
+        BasePlot().palette = "unknown"
 
 
 def test_title_fontsize_property():
@@ -212,36 +213,15 @@ def test_get_metric_invalid_int():
     """Assert that an error is raised when the value is out of range."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric=["f1", "recall"])
-    with pytest.raises(ValueError, match=".*index of a metric.*"):
+    with pytest.raises(ValueError, match=".*out of range.*"):
         atom._get_metric(metric=3)
-
-
-def test_get_target():
-    """Assert that the target can be retrieved from the name."""
-    atom = ATOMClassifier(X10, y10_str, random_state=1)
-    atom.clean()
-    assert atom._get_target(target="y") == 1
-    assert atom._get_target(target=0) == 0
-
-
-def test_get_target_str_invalid():
-    """Assert that an error is raised when the value is invalid."""
-    atom = ATOMClassifier(X10, y10_str, random_state=1)
-    with pytest.raises(ValueError, match=".*not found in the mapping.*"):
-        atom._get_target(target="invalid")
-
-
-def test_get_target_int_invalid():
-    """Assert that an error is raised when the value is invalid."""
-    atom = ATOMClassifier(X10, y10_str, random_state=1)
-    with pytest.raises(ValueError, match=".*There are 2 classes.*"):
-        atom._get_target(target=3)
 
 
 def test_get_set():
     """Assert that data sets can be selected."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     assert atom._get_set(dataset="Train+Holdout") == ["train", "holdout"]
+    assert atom._get_set(dataset=["Train", "Holdout"]) == ["train", "holdout"]
 
 
 def test_get_set_no_holdout():
@@ -270,6 +250,28 @@ def test_get_set_multiple():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*Only one data set is allowed.*"):
         atom._get_set(dataset="train+test", max_one=True)
+
+
+def test_get_target():
+    """Assert that the target can be retrieved from the name."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    atom.clean()
+    assert atom._get_target(target="y") == 1
+    assert atom._get_target(target=0) == 0
+
+
+def test_get_target_invalid():
+    """Assert that an error is raised when the target is invalid."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    with pytest.raises(ValueError, match=".*not found in the mapping.*"):
+        atom._get_target(target="invalid")
+
+
+def test_get_target_int_invalid():
+    """Assert that an error is raised when the value is invalid."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    with pytest.raises(ValueError, match=".*There are 2 classes.*"):
+        atom._get_target(target=3)
 
 
 def test_get_show():

@@ -183,6 +183,7 @@ nav:
             - MultiLayerPerceptron: API/models/mlp.md
             - MultinomialNB: API/models/mnb.md
             - OrdinaryLeastSquares: API/models/ols.md
+            - OrthogonalMatchingPursuit: API/models/omp.md
             - PassiveAggressive: API/models/pa.md
             - Perceptron: API/models/perc.md
             - QuadraticDiscriminantAnalysis: API/models/qda.md

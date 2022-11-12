@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/models/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>Models - ATOM</title>
@@ -1706,6 +1706,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -3076,6 +3090,7 @@ acronyms are:</p>
 <li>"MLP" for <a class="autorefs autorefs-internal" href="../../API/models/mlp/#multilayerperceptron">MultiLayerPerceptron</a></li>
 <li>"MNB" for <a class="autorefs autorefs-internal" href="../../API/models/mnb/#multinomialnb">MultinomialNB</a></li>
 <li>"OLS" for <a class="autorefs autorefs-internal" href="../../API/models/ols/#ordinaryleastsquares">OrdinaryLeastSquares</a></li>
+<li>"OMP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.OrthogonalMatchingPursuit.html">OrthogonalMatchingPursuit</a></li>
 <li>"PA" for <a class="autorefs autorefs-internal" href="../../API/models/pa/#passiveaggressive">PassiveAggressive</a></li>
 <li>"Perc" for <a class="autorefs autorefs-internal" href="../../API/models/perc/#perceptron">Perceptron</a></li>
 <li>"QDA" for <a class="autorefs autorefs-internal" href="../../API/models/qda/#quadraticdiscriminantanalysis">QuadraticDiscriminantAnalysis</a></li>
@@ -3158,8 +3173,8 @@ dataset.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Models implemented with <a href="https://keras.io/">keras</a> can only use
-<a class="autorefs autorefs-internal" href="../training/#hyperparameter-tuning">custom hyperparameter tuning</a> when <code>n_jobs=1</code>
-or <code>ht_params={"cv": 1}</code>. Using n_jobs &gt; 1 and cv &gt; 1 raises a
+<a class="autorefs autorefs-internal" href="../training/#hyperparameter-tuning">custom hyperparameter tuning</a> when <code class="language-python highlight"><span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span></code>
+or <code class="language-python highlight"><span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cv&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span></code>. Using n_jobs &gt; 1 and cv &gt; 1 raises a
 PicklingError due to incompatibilities of the APIs.</p>
 </div>
 <p><br></p>

@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/logging/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>Logging & Tracking - ATOM</title>
@@ -1672,6 +1672,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -3004,12 +3018,12 @@ to the fit method are not tracked.</p>
 <p><strong>Model</strong><br>
 The model's estimator is stored as artifact. The estimator has to be
 compatible with the <a href="https://www.mlflow.org/docs/latest/python_api/mlflow.sklearn.html">mlflow.sklearn</a>,
-module. This option can be switched off using atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-log_model"><code>log_model</code></a> attribute, e.g. <code>atom.log_model = False</code>.</p>
+module. This option can be switched off using atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-log_model"><code>log_model</code></a> attribute, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">log_model</span> <span class="o">=</span> <span class="kc">False</span></code>.</p>
 <p><strong>Hyperparameter tuning</strong><br>
 If hyperparameter tuning is performed, every call of the BO is tracked
 as a nested run in the model's main run. This option can be switched
 off using atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-log_ht"><code>log_ht</code></a> attribute, e.g.
-<code>atom.log_ht = False</code>.</p>
+<code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">log_ht</span> <span class="o">=</span> <span class="kc">False</span></code>.</p>
 <p><strong>Metrics</strong><br>
 All metric results are tracked, not only during training, but also when
 the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-evaluate">evaluate</a> method is called at a later point.
@@ -3018,16 +3032,17 @@ Metrics calculated during in-training validation are also logged.</p>
 The train and test sets used to fit and evaluate the model can be stored
 as .csv files to the run's artifacts. This option can be switched on
 using atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-log_data"><code>log_data</code></a> attribute, e.g.
-<code>atom.log_data = True</code>.</p>
+<code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">log_data</span> <span class="o">=</span> <span class="kc">True</span></code>.</p>
 <p><strong>Pipeline</strong><br>
 The model's pipeline (returned from the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-export_pipeline">export_pipeline</a>
-method) can be stored as an artifact using atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-log_pipeline"><code>log_pipeline</code></a> attribute, e.g. <code>atom.log_pipeline = True</code>.</p>
+method) can be stored as an artifact using atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-log_pipeline"><code>log_pipeline</code></a>
+attribute, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">log_pipeline</span> <span class="o">=</span> <span class="kc">True</span></code>.</p>
 <p><strong>Plots</strong><br>
 By default, plots are stored as <code>.png</code> artifacts in all runs corresponding
 to the models that are showed in the plot. If the <code>filename</code> parameter is
 specified, they are stored under that name, else the plot's name is used.
 This option can be switched off using atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-log_plots"><code>log_plots</code></a>
-attribute, e.g. <code>atom.log_plots = False</code>.</p>
+attribute, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">log_plots</span> <span class="o">=</span> <span class="kc">False</span></code>.</p>
 
 
   

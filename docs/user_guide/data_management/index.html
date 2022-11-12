@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/data_management/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>Data management - ATOM</title>
@@ -1700,6 +1700,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -3093,6 +3107,11 @@ To avoid this, specify the <code>index</code> parameter. If the dataset has an
 <li><a class="autorefs autorefs-internal" href="../predicting/#predicting">Predictions</a> of specific rows can be accessed through
   their index.</li>
 </ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Avoid duplicate indices in the dataframe. Having them may potentially
+lead to unexpected behavior.</p>
+</div>
 <p><br></p>
 <h2 id="sparse-datasets">Sparse datasets</h2>
 <p>If atom is initialized using a scipy sparse matrix, it is converted
@@ -3127,15 +3146,15 @@ the data in a branch after fitting a model with it. Doing this would
 cause unexpected model behaviour and break down the plotting methods.
 Instead, create a new branch for every unique pipeline.</p>
 <p>By default, atom starts with one branch called "master". To start a new
-branch, set a new name to the property, e.g. <code>atom.branch = "undersample"</code>.
-This will create a new branch from the current one. To create a branch
-from any other branch type "_from_" between the new name and the branch
-from which to split, e.g. <code>atom.branch = "oversample_from_master"</code> will
-create branch "oversample" from branch "master", even if the current branch
-is "undersample". To switch between existing branches, just type the name
-of the desired branch, e.g. <code>atom.branch = "master"</code> brings you back to the
-master branch. Note that every branch contains a unique copy of the whole
-dataset! Creating many branches can cause memory issues for large datasets.</p>
+branch, set a new name to the property, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">branch</span> <span class="o">=</span> <span class="s2">&quot;undersample&quot;</span></code>.
+This creates a new branch from the current one. To create a branch from any
+other branch type "_from_" between the new name and the branch from which
+to split, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">branch</span> <span class="o">=</span> <span class="s2">&quot;oversample_from_master&quot;</span></code> creates
+branch "oversample" from branch "master", even if the current branch is
+"undersample". To switch between existing branches, just type the name of
+the desired branch, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">branch</span> <span class="o">=</span> <span class="s2">&quot;master&quot;</span></code> brings you back
+to the master branch. Note that every branch contains a unique copy of the
+whole dataset! Creating many branches can cause memory issues for large datasets.</p>
 <p>See the [Imbalanced datasets][example-imbalanced-datasets] or
 [Feature engineering][example-feature-engineering] examples for
 branching use cases.</p>
@@ -3163,9 +3182,9 @@ first data transformation) and it's stored in an internal branch called
 dataset is occupying too much memory, consider using the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-shrink">shrink</a> method to convert the dtypes to their smallest
 possible matching dtype.</p>
 <p>Apart from the dataset itself, a model's <a class="autorefs autorefs-internal" href="../predicting/#prediction-attributes">prediction attributes</a> (e.g.
-<code>atom.lr.predict_train</code>), metric scores and <a class="autorefs autorefs-internal" href="../plots/#shap">shap values</a> are also
-stored as attributes of the model to avoid having to recalculate them
-every time they are needed. This data can occupy a considerable amount
+<code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">predict_train</span></code>), metric scores and <a class="autorefs autorefs-internal" href="../plots/#shap">shap values</a>
+are also stored as attributes of the model to avoid having to recalculate
+them every time they are needed. This data can occupy a considerable amount
 of memory for large datasets. You can delete all these attributes using
 the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clear">clear</a> method in order to free some memory
 before <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-save">saving</a> the class.</p>

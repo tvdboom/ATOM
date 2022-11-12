@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import warnings
 from inspect import (
     Parameter, getattr_static, getdoc, getmembers, getsourcelines, isclass,
     isfunction, isroutine, signature,
@@ -161,6 +162,8 @@ CUSTOM_URLS = dict(
     mlpdocs="https://scikit-learn.org/stable/modules/neural_networks_supervised.html#neural-networks-supervised",
     linearregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html",
     olsdocs="https://scikit-learn.org/stable/modules/linear_model.html#ordinary-least-squares",
+    orthogonalmatchingpursuit="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.OrthogonalMatchingPursuit.html",
+    ompdocs="https://scikit-learn.org/stable/modules/linear_model.html#orthogonal-matching-pursuit-omp",
     passiveaggressiveclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html",
     passiveaggressiveregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html",
     padocs="https://scikit-learn.org/stable/modules/linear_model.html#passive-aggressive",
@@ -193,12 +196,17 @@ CUSTOM_URLS = dict(
     # Plots
     palette="https://plotly.com/python/discrete-color/",
     gofigure="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html",
+    pltfigure="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html",
     kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
     wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
     calibration="https://scikit-learn.org/stable/modules/calibration.html",
     det="https://scikit-learn.org/stable/auto_examples/model_selection/plot_det.html",
-    roc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html",
+    partial_dependence="https://scikit-learn.org/stable/modules/partial_dependence.html#partial-dependence-and-individual-conditional-expectation-plots",
     prc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_precision_recall.html",
+    roc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html",
+    schemdraw="https://schemdraw.readthedocs.io/en/latest/index.html",
+    plotly="https://plotly.com/python/",
+    shapplotsforce="https://shap.readthedocs.io/en/latest/generated/shap.plots.force.html",
     # Training
     scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
 )
@@ -208,8 +216,8 @@ TYPES_CONVERSION = {
     "atom.branch.Branch": "[Branch][branches]",
     "atom.utils.CustomDict": "dict",
     "atom.utils.Model": "[model][models]",
+    "List[atom.utils.Model]": "list",
     "atom.utils.Predictor": "Predictor",
-    "List[str]": "list",
     "Tuple[int, int]": "tuple",
     "Optional[int]": "int or None",
     "Optional[float]": "float or None",
@@ -256,13 +264,18 @@ def insert(config: dict) -> str:
         Content of the file to insert.
 
     """
+    content = ""
     url = os.path.dirname(os.path.realpath(__file__)) + config["url"]
-    with open(url, "r", encoding="utf-8") as f:
-        content = f.read()
+    try:
+        with open(url, "r", encoding="utf-8") as f:
+            content = f.read()
 
-    # For plotly graphs: correct sizes of the plot to adjust to frame
-    content = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', content)
-    content = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', content)
+        # For plotly graphs: correct sizes of the plot to adjust to frame
+        content = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', content)
+        content = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', content)
+
+    except FileNotFoundError:
+        warnings.warn(f"File not found: {url}.")
 
     return content
 
@@ -590,6 +603,20 @@ class AutoDocs:
             elif match := self.get_block(name):
                 # Headers start with letter, * or [ after new line
                 for header in re.findall("^[\[*\w].*?$", match, re.M):
+                    # Check that the default value in docstring matches the real one
+                    if default := re.search("(?<=default=)\w+?$", header):
+                        try:
+                            param = header.split(":")[0]
+                            real = signature(self.obj).parameters[param]
+                            if str(default.group()) != str(real.default):
+                                warnings.warn(
+                                    f"Default value {default.group()} of parameter "
+                                    f"{param} of object {self.obj} doesn't match "
+                                    f"the value in the docstring: {real.default}"
+                                )
+                        except KeyError:
+                            pass
+
                     # Get the body corresponding to the header
                     pattern = f"(?<={re.escape(header)}\n).*?(?=\n\w|\n\*|\n\[|\Z)"
                     body = re.search(pattern, match, re.S | re.M).group()

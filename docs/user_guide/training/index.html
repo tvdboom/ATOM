@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/training/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>Training - ATOM</title>
@@ -1741,6 +1741,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -3143,7 +3157,7 @@ and <a class="autorefs autorefs-internal" href="../feature_engineering/#feature-
 directly. Instead, every approach can be called directly from atom through
 the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-run">run</a>, <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-successive_halving">successive_halving</a>
 and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-train_sizing">train_sizing</a> methods respectively.</p>
-<p>Models are called through their <a class="autorefs autorefs-internal" href="../models/#models">acronyms</a>, e.g. <code>atom.run(models="RF")</code>
+<p>Models are called through their <a class="autorefs autorefs-internal" href="../models/#models">acronyms</a>, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;RF&quot;</span><span class="p">)</span></code>
 will train a <a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a>. If you want to run the same model multiple
 times, add a tag after the acronym to differentiate them.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
@@ -3181,7 +3195,7 @@ function). The <a class="autorefs autorefs-internal" href="../../API/training/di
 three ways of defining the scorer:</p>
 <ul>
 <li>Using the name of one of the <a class="autorefs autorefs-internal" href="#predefined-scorers">predefined scorers</a>.</li>
-<li>Using a function with signature <code>function(y_true, y_pred) -&gt; score</code>.
+<li>Using a function with signature <code class="language-python highlight"><span class="n">function</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">score</span></code>.
   In this case, ATOM uses <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html">make_scorer</a>
   with default parameters.</li>
 <li>Using a scorer object.</li>
@@ -3199,7 +3213,7 @@ sklearn's scorers have quite long names and ATOM is all about
 <s>lazy</s>fast experimentation, the package provides acronyms
 for some of the most commonly used ones. These acronyms are
 case-insensitive and can be used in the <a class="autorefs autorefs-internal" href="../../API/training/directclassifier/#directclassifier-metric"><code>metric</code></a>
-parameter instead of the scorer's full name, e.g. <code>atom.run("LR", metric="BA")</code>
+parameter instead of the scorer's full name, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;BA&quot;</span><span class="p">)</span></code>
 uses <code>balanced_accuracy</code>. The available acronyms are:</p>
 <ul>
 <li>"AP" for "average_precision"</li>
@@ -3235,12 +3249,13 @@ tasks. </p>
 <p>Sometimes it is useful to measure the performance of the models in more
 than one way. ATOM lets you run the pipeline with multiple metrics at
 the same time. To do so, provide the <code>metric</code> parameter with a list of
-desired metrics, e.g. <code>atom.run("LDA", metric=["r2", "mse"])</code>.</p>
+desired metrics, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LDA&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;r2&quot;</span><span class="p">,</span> <span class="s2">&quot;mse&quot;</span><span class="p">])</span></code>.</p>
 <p>When fitting multi-metric runs, the resulting scores will return a list
 of metrics. For example, if you provided three metrics to the pipeline,
-<code>atom.knn.score_train</code> could return [0.8734, 0.6672, 0.9001]. Only the
-first metric of a multi-metric run (this metric is called the <strong>main</strong>
-metric) is used to select the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-winner">winning</a> model.</p>
+<code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">knn</span><span class="o">.</span><span class="n">score_train</span></code> could return [0.8734, 0.6672, 0.9001].
+Only the first metric of a multi-metric run (this metric is called the
+<strong>main</strong> metric) is used to select the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-winner">winning</a>
+model.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <ul>
@@ -3334,7 +3349,7 @@ parameter. For example, to change <a class="autorefs autorefs-internal" href="..
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If a parameter is specified through <code>est_params</code>, it's ignored
-by the study, even if it's added manually to <code>ht_params["distributions"]</code>.</p>
+by the study, even if it's added manually to <code class="language-python highlight"><span class="n">ht_params</span><span class="p">[</span><span class="s2">&quot;distributions&quot;</span><span class="p">]</span></code>.</p>
 </div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>

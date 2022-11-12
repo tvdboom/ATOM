@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/ATOM/atomregressor/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>ATOMRegressor - ATOM</title>
@@ -1750,6 +1750,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -3393,7 +3407,7 @@ that name. The new branch is split from the current branch. Use
 branch. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#branches">user guide</a>.</div><a id='atomregressor-models'></a><strong>models: str or list</strong><br><div markdown class='param'>Name of the model(s).</div><a id='atomregressor-metric'></a><strong>metric: str or list</strong><br><div markdown class='param'>Name of the metric(s).</div><a id='atomregressor-errors'></a><strong>errors: dict</strong><br><div markdown class='param'>Errors encountered during model training.</p>
 <p>The key is the model's name and the value is the exception
 object that was raised. Use the <code>__traceback__</code> attribute to
-investigate the error.</div><a id='atomregressor-winners'></a><strong>winners: list</strong><br><div markdown class='param'>Model names ordered by performance.</p>
+investigate the error.</div><a id='atomregressor-winners'></a><strong>winners: list</strong><br><div markdown class='param'>Models ordered by performance.</p>
 <p>Performance is measured as the highest score on the model's
 <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_bootstrap"><code>score_bootstrap</code></a> or
 <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-score_test"><code>score_test</code></a> attributes, checked in
@@ -3551,7 +3565,7 @@ Additional keyword arguments for the AutoMLSearch instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L595>[source]</a></span></div>Give an overview of the available predefined models.</p>
+<p><a id='atomregressor-available_models'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>available_models</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L698>[source]</a></span></div>Give an overview of the available predefined models.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='available_models-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
 Information about the available <a class="autorefs autorefs-internal" href="../../../user_guide/models/#predefined-models">predefined models</a>. Columns
@@ -3569,7 +3583,7 @@ include:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend=True, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L887>[source]</a></span></div>Create a figure with multiple plots.</p>
+<p><a id='atomregressor-canvas'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>canvas</strong>(rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=0.07, title=None, legend="out", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1055>[source]</a></span></div>Create a figure with multiple plots.</p>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one
 figure. The default option is to add two plots side by side.
 See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
@@ -3591,12 +3605,13 @@ Title for the plot.</p>
 <li>If str, text for the title.</li>
 <li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
 </ul>
-<p></div><a id='canvas-legend'></a><strong>legend: bool or dict, default=True</strong><br><div markdown class='param'>
-Legend for the plot.</p>
+<p></div><a id='canvas-legend'></a><strong>legend: bool, str or dict, default="out"</strong><br><div markdown class='param'>
+Legend for the plot. See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">user guide</a> for
+an extended description of the choices.</p>
 <ul>
-<li>If True, the legend is shown.</li>
-<li>If False, no legend is shown.</li>
-<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">legend configuration</a>.</li>
+<li>If None: No legend is shown.</li>
+<li>If str: Location where to show the legend.</li>
+<li>If dict: Legend configuration.</li>
 </ul>
 <p></div><a id='canvas-figsize'></a><strong>figsize: tuple or None, default=None</strong><br><div markdown class='param'>
 Figure's size in pixels, format as (x, y). If None, it
@@ -3604,7 +3619,7 @@ adapts the size to the number of plots in the canvas.</p>
 <p></div><a id='canvas-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
 Save the plot using this name. Use "auto" for automatic
 naming. The type of the file depends on the provided name
-(.html, .png, .pdf, etc...). If <code>filename</code> has no period,
+(.html, .png, .pdf, etc...). If <code>filename</code> has no file type,
 the plot is saved as html. If None, the plot is not saved.</p>
 <p></div><a id='canvas-display'></a><strong>display: bool, default=True</strong><br><div markdown class='param'>
 Whether to render the plot.</p>
@@ -3613,7 +3628,7 @@ Plot object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L634>[source]</a></span></div>Clear attributes from all models.</p>
+<p><a id='atomregressor-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L737>[source]</a></span></div>Clear attributes from all models.</p>
 <p>Reset all model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="#atomregressor-save">saving</a> the instance. The cleared
@@ -3626,15 +3641,14 @@ attributes per model are:</p>
 <li><a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-create_dashboard">Dashboard instance</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='atomregressor-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L653>[source]</a></span></div>Delete models.</p>
+<p><a id='atomregressor-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>(models=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L756>[source]</a></span></div>Delete models.</p>
 <p>If all models are removed, the metric is reset. Use this method
 to drop unwanted models from the pipeline or to free some memory
 before <a class="autorefs autorefs-internal" href="#atomregressor-save">saving</a>. Deleted models are not removed from
 any active <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">mlflow experiment</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='delete-models'></a><strong>models: int, str, slice, sequence or None, default=None</strong><br><div markdown class='param'>
-Names, positions or regex pattern of the models to delete.
-If None, all models are deleted.
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='delete-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
+Models to delete. If None, all models are deleted.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -3668,7 +3682,7 @@ Statistic results with multiindex levels:</p>
 </ul>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L681>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
+<p><a id='atomregressor-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L785>[source]</a></span></div>Get all models' scores for the provided metrics.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metric to calculate. If None, it returns an overview of
@@ -3691,7 +3705,7 @@ Scores of the models.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None, memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L727>[source]</a></span></div>Export the pipeline to a sklearn-like object.</p>
+<p><a id='atomregressor-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(model=None, memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L831>[source]</a></span></div>Export the pipeline to a sklearn-like object.</p>
 <p>Optionally, you can add a model as final estimator. The
 returned pipeline is already fitted on the training set.</p>
 <div class="admonition info">
@@ -3709,11 +3723,11 @@ returned pipeline is already fitted on the training set.</p>
 </ul>
 </div>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='export_pipeline-model'></a><strong>model: str or None, default=None</strong><br><div markdown class='param'>
-Name of the model for which to export the pipeline. If the
-model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>, the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is
-added to the pipeline. If None, the pipeline in the current
-branch is exported.</p>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='export_pipeline-model'></a><strong>model: str, Model or None, default=None</strong><br><div markdown class='param'>
+Model for which to export the pipeline. If the model used
+<a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>, the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to
+the pipeline. If None, the pipeline in the current branch
+is exported.</p>
 <p></div><a id='export_pipeline-memory'></a><strong>memory: bool, str, Memory or None, default=None</strong><br><div markdown class='param'>
 Used to cache the fitted transformers of the pipeline.
     - If None or False: No caching is performed.
@@ -3731,7 +3745,7 @@ current branch.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L809>[source]</a></span></div>Return class weights for a balanced dataset.</p>
+<p><a id='atomregressor-get_class_weight'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_class_weight</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L913>[source]</a></span></div>Return class weights for a balanced dataset.</p>
 <p>Statistically, the class weights re-balance the data set so
 that the sampled data set represents the target population
 as closely as possible. The returned weights are inversely
@@ -3783,7 +3797,7 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L844>[source]</a></span></div>Merge another instance of the same class into this one.</p>
+<p><a id='atomregressor-merge'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>merge</strong>(other, suffix="2")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L948>[source]</a></span></div>Merge another instance of the same class into this one.</p>
 <p>Branches, models, metrics and attributes of the other instance
 are merged into this one. If there are branches and/or models
 with the same name, they are merged adding the <code>suffix</code>
@@ -3801,7 +3815,7 @@ to the end of their names.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(dict1=None, overwrite=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L481>[source]</a></span></div>Update the properties of the plot's layout.</p>
+<p><a id='atomregressor-update_layout'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>update_layout</strong>(dict1=None, overwrite=False, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L497>[source]</a></span></div>Update the properties of the plot's layout.</p>
 <p>This recursively updates the structure of the original layout
 with the values in the input dict / keyword arguments.</p>
 <table class="table_params">
@@ -3845,7 +3859,7 @@ instance.
 <p>Deletes all branches and models. The dataset is also reset
 to its form after initialization.</p>
 <p><br><br></p>
-<p><a id='atomregressor-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L460>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
+<p><a id='atomregressor-reset_aesthetics'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>reset_aesthetics</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L487>[source]</a></span></div>Reset the plot <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#aesthetics">aesthetics</a> to their default values.</p>
 <p><br><br></p>
 <p><a id='atomregressor-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L763>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
@@ -3886,12 +3900,12 @@ shrink. If None, transform all columns.</p>
 <p></div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(name="Stack", models=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L914>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
+<p><a id='atomregressor-stacking'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>stacking</strong>(name="Stack", models=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1018>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#stacking">Stacking</a> model to the pipeline.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='stacking-name'></a><strong>name: str, default="Stack"</strong><br><div markdown class='param'>
 Name of the model. The name is always presided with the
 model's acronym: <code>stack</code>.</p>
-<p></div><a id='stacking-models'></a><strong>models: sequence or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='stacking-models'></a><strong>models: slice, sequence or None, default=None</strong><br><div markdown class='param'>
 Models that feed the stacking estimator. If None, it selects
 all non-ensemble models trained on the current branch.</p>
 <p></div><a id='stacking-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
@@ -3947,12 +3961,12 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='atomregressor-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(name="Vote", models=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L984>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
+<p><a id='atomregressor-voting'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>voting</strong>(name="Vote", models=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/baserunner.py#L1088>[source]</a></span></div>Add a <a class="autorefs autorefs-internal" href="../../../user_guide/models/#voting">Voting</a> model to the pipeline.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='voting-name'></a><strong>name: str, default="Vote"</strong><br><div markdown class='param'>
 Name of the model. The name is always presided with the
 model's acronym: <code>vote</code>.</p>
-<p></div><a id='voting-models'></a><strong>models: sequence or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='voting-models'></a><strong>models: slice, sequence or None, default=None</strong><br><div markdown class='param'>
 Models that feed the voting estimator. If None, it selects
 all non-ensemble models trained on the current branch.</p>
 <p></div><a id='voting-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
@@ -4183,7 +4197,7 @@ more in the <a class="autorefs autorefs-internal" href="../../../user_guide/trai
 <p><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-run">run</a></td><td>Train and evaluate the models in a direct fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-successive_halving">successive_halving</a></td><td>Fit the models in a successive halving fashion.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#atomregressor-train_sizing">train_sizing</a></td><td>Train and evaluate the models in a train sizing fashion.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='atomregressor-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1791>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
+<p><a id='atomregressor-run'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>run</strong>(models=None, metric=None, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1798>[source]</a></span></div>Train and evaluate the models in a direct fashion.</p>
 <p>Contrary to <a class="autorefs autorefs-internal" href="#atomregressor-successive_halving">successive_halving</a> and
 <a class="autorefs autorefs-internal" href="#atomregressor-train_sizing">train_sizing</a>, the direct approach only
 iterates once over the models, using the full dataset.</p>
@@ -4200,7 +4214,7 @@ iterates once over the models, using the full dataset.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/directclassifier/#directclassifier">DirectClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/directregressor/#directregressor">DirectRegressor</a> class for a
 description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomregressor-successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1840>[source]</a></span></div>Fit the models in a successive halving fashion.</p>
+<p><a id='atomregressor-successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>successive_halving</strong>(models, metric=None, skip_runs=0, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1847>[source]</a></span></div>Fit the models in a successive halving fashion.</p>
 <p>The successive halving technique is a bandit-based algorithm
 that fits N models to 1/N of the data. The best half are
 selected to go to the next iteration where the process is
@@ -4223,7 +4237,7 @@ models.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../training/successivehalvingclassifier/#successivehalvingclassifier">SuccessiveHalvingClassifier</a> or <a class="autorefs autorefs-internal" href="../../training/successivehalvingregressor/#successivehalvingregressor">SuccessiveHalvingRegressor</a>
 class for a description of the parameters.</p>
 <p><br><br></p>
-<p><a id='atomregressor-train_sizing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1897>[source]</a></span></div>Train and evaluate the models in a train sizing fashion.</p>
+<p><a id='atomregressor-train_sizing'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>train_sizing</strong>(models, metric=None, train_sizes=5, est_params=None, n_trials=0, ht_params=None, n_bootstrap=0, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1904>[source]</a></span></div>Train and evaluate the models in a train sizing fashion.</p>
 <p>When training models, there is usually a trade-off between
 model performance and computation time, that is regulated by
 the number of samples in the training set. This method can be

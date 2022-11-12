@@ -46,7 +46,7 @@ from atom.utils import (
     FLOAT, INT, PALETTE, SCALAR, SEQUENCE_TYPES, Model, check_canvas,
     check_is_fitted, check_predict_proba, composed, crash, divide,
     get_best_score, get_corpus, get_custom_scorer, has_attr, has_task, lst,
-    partial_dependence, plot_from_model, rnd, to_rgb,
+    partial_dependence, plot_from_model, rnd, to_rgb, get_attr
 )
 
 
@@ -675,14 +675,14 @@ class BasePlot:
 
     def _get_metric(
         self,
-        metric: Optional[Union[int, str]],
+        metric: Optional[Union[int, str, SEQUENCE_TYPES]],
         max_one: bool = True,
     ) -> Union[int, str, List[int]]:
         """Check and return the provided metric index.
 
         Parameters
         ----------
-        metric: int, str or None
+        metric: int, str, sequence or None
             Name or position of the metric to get. If None,
             all metrics are returned.
 
@@ -691,62 +691,111 @@ class BasePlot:
 
         Returns
         -------
-        int, str or list
-            Position index of the metric or time metric. If
-            `max_one=False`, returns a list of metric positions.
+        int or list
+            Position index of the metric. If `max_one=False`, returns
+            a list of metric positions.
 
         """
         if metric is None:
             return list(range(len(self._metric)))
-        elif isinstance(metric, str):
-            if metric.lower().startswith("time"):
-                for met in metric.lower().split("+"):
-                    if met not in ("time_ht", "time_fit", "time_bootstrap", "time"):
-                        raise ValueError(
-                            f"Invalid value for the metric parameter, got {met}. "
-                            "Choose from: time_ht, time_fit, time_bootstrap, time."
-                        )
-                return metric.lower()
-            else:
-                metrics = []
-                for met in metric.lower().split("+"):
-                    if (name := get_custom_scorer(met).name) in self.metric:
-                        metrics.append(self._metric.index(name))
+        else:
+            inc = []
+            for met in lst(metric):
+                if isinstance(met, int):
+                    if 0 <= metric < len(self._metric):
+                        inc.append(met)
                     else:
                         raise ValueError(
-                            "Invalid value for the metric parameter. The "
-                            f"{name} metric wasn't used to fit the models."
+                            f"Invalid value for the metric parameter. Value {met} is out "
+                            f"of range for a pipeline with {len(self._metric)} metrics."
                         )
+                elif isinstance(met, str):
+                    met = met.lower()
+                    for m in met.split("+"):
+                        if met in ("time_ht", "time_fit", "time_bootstrap", "time"):
+                            inc.append(met)
+                        elif (name := get_custom_scorer(m).name) in self.metric:
+                            inc.append(self._metric.index(name))
+                        else:
+                            raise ValueError(
+                                "Invalid value for the metric parameter. The "
+                                f"{name} metric wasn't used to fit the models."
+                            )
 
-                if len(metrics) > 1 and max_one:
+        if len(inc) > 1 and max_one:
+            raise ValueError(
+                "Invalid value for the metric parameter. "
+                f"Only one metric is allowed, got {inc}."
+            )
+
+        return inc[0] if max_one else inc
+
+    def _get_set(
+        self,
+        dataset: Union[str, SEQUENCE_TYPES],
+        allow_holdout: bool = True,
+        max_one: bool = False,
+    ) -> Union[str, List[str]]:
+        """Check and return the provided data set.
+
+        Parameters
+        ----------
+        dataset: str or sequence
+            Name(s) of the data set to retrieve.
+
+        allow_holdout: bool, default=True
+            Whether to allow the retrieval of the holdout set.
+
+        max_one: bool, default=True
+            Whether one or multiple data sets are allowed. If True, return
+            the data set instead of a list.
+
+        Returns
+        -------
+        str or list
+            Selected data set(s).
+
+        """
+        for ds in (dataset := "+".join(lst(dataset)).lower().split("+")):
+            if ds == "holdout":
+                if allow_holdout:
+                    if self.holdout is None:
+                        raise ValueError(
+                            "Invalid value for the dataset parameter. No holdout "
+                            "data set was specified when initializing the instance."
+                        )
+                else:
                     raise ValueError(
-                        "Invalid value for the metric parameter. "
-                        f"Only one metric is allowed, got {metric}."
+                        "Invalid value for the dataset parameter, got "
+                        f"{ds}. Choose from: train or test."
                     )
-
-                return metrics[0] if max_one else metrics
-
-        else:
-            if 0 <= metric < len(self._metric):
-                return metric if max_one else [metric]
-            else:
+            elif ds not in ("train", "test"):
                 raise ValueError(
-                    "Invalid value for the metric parameter. Value should be the "
-                    f"index of a metric used to run the pipeline, got {metric}."
+                    "Invalid value for the dataset parameter, "
+                    f"got {ds}. Choose from: train, test or holdout."
                 )
+
+        if max_one and len(dataset) > 1:
+            raise ValueError(
+                "Invalid value for the dataset parameter, got "
+                f"{dataset}. Only one data set is allowed."
+            )
+
+        return dataset[0] if max_one else dataset
 
     def _get_target(self, target: Union[int, str]) -> int:
         """Check and return the provided target's index.
 
         Parameters
         ----------
-        metric: int or str
-            Name or position of the target to get.
+        target: int or str
+            Name or position of the target(s) to get. If None, return
+            all targets.
 
         Returns
         -------
         int
-            Position index of the target.
+            Position index of the selected target.
 
         """
         if isinstance(target, str):
@@ -764,59 +813,6 @@ class BasePlot:
             )
 
         return target
-
-    def _get_set(
-        self,
-        dataset: str,
-        allow_holdout: bool = True,
-        max_one: bool = False,
-    ) -> Union[str, List[str]]:
-        """Check and return the provided metric.
-
-        Parameters
-        ----------
-        dataset: str
-            Name of the data set to retrieve.
-
-        allow_holdout: bool, default=True
-            Whether to allow the retrieval of the holdout set.
-
-        max_one: bool, default=True
-            Whether one or multiple data sets are allowed. If True, return
-            the data set instead of a list.
-
-        Returns
-        -------
-        str or list
-            Selected data set(s).
-
-        """
-        for set_ in (ds := dataset.lower().split("+")):
-            if set_ == "holdout":
-                if allow_holdout:
-                    if self.holdout is None:
-                        raise ValueError(
-                            "Invalid value for the dataset parameter. No holdout "
-                            "data set was specified when initializing the instance."
-                        )
-                else:
-                    raise ValueError(
-                        "Invalid value for the dataset parameter, got "
-                        f"{dataset}. Choose from: train or test."
-                    )
-            elif set_ not in ("train", "test"):
-                raise ValueError(
-                    "Invalid value for the dataset parameter, "
-                    f"got {set_}. Choose from: train, test or holdout."
-                )
-
-        if max_one and len(ds) > 1:
-            raise ValueError(
-                "Invalid value for the dataset parameter, got "
-                f"{dataset}. Only one data set is allowed."
-            )
-
-        return ds[0] if max_one else ds
 
     @staticmethod
     def _get_show(show: Optional[int], model: Union[Model, List[Model]]) -> int:
@@ -2508,7 +2504,7 @@ class DataPlot(BasePlot):
         See Also
         --------
         atom.plots:DataPlot.plot_ngrams
-        atom.plots:DataPlot.plot_pipeline
+        atom.plots:ModelPlot.plot_pipeline
 
         Examples
         --------
@@ -2603,7 +2599,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         n_bins: INT = 10,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -2785,7 +2781,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -2981,8 +2977,8 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_det(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        dataset: Union[str, SEQUENCE_TYPES] = "test",
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "upper right",
@@ -3001,10 +2997,10 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one. Choose from: "train",
-            "test" or "holdout".
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3072,14 +3068,13 @@ class ModelPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            for set_ in dataset:
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
+            for ds in dataset:
+                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
+                if y_pred.ndim > 1:
+                    y_pred = y_pred.iloc[:, 1]
 
                 # Get fpr-fnr pairs for different thresholds
-                fpr, fnr, _ = det_curve(getattr(m, f"y_{set_}"), y_pred)
+                fpr, fnr, _ = det_curve(getattr(m, f"y_{ds}"), y_pred)
 
                 fig.add_trace(
                     self._draw_line(
@@ -3087,7 +3082,7 @@ class ModelPlot(BasePlot):
                         y=fnr,
                         mode="lines",
                         parent=m.name,
-                        child=set_,
+                        child=ds,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3111,7 +3106,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3254,8 +3249,8 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_evals(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        dataset: Union[str, SEQUENCE_TYPES] = "test",
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower right",
@@ -3275,11 +3270,10 @@ class ModelPlot(BasePlot):
             Name of the model to plot. If None, all models in the
             pipeline are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the evaluation curves. Add
-            `+` between options to select more than one. Add `+` between
-            options to select more than one. Choose from: "train" or
-            "test".
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the evaluation curves. Use a
+            sequence or add `+` between options to select more than one.
+            Choose from: "train" or "test".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3350,13 +3344,13 @@ class ModelPlot(BasePlot):
                     f"{m.name} has no in-training validation."
                 )
 
-            for set_ in dataset:
+            for ds in dataset:
                 fig.add_trace(
                     self._draw_line(
-                        x=list(range(len(m.evals[f"{self._metric[0].name}_{set_}"]))),
-                        y=m.evals[f"{self._metric[0].name}_{set_}"],
+                        x=list(range(len(m.evals[f"{self._metric[0].name}_{ds}"]))),
+                        y=m.evals[f"{self._metric[0].name}_{ds}"],
                         parent=m.name,
-                        child=set_,
+                        child=ds,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3379,7 +3373,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_feature_importance(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3520,8 +3514,8 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        dataset: Union[str, SEQUENCE_TYPES] = "test",
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower right",
@@ -3539,10 +3533,10 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one. Choose from: "train",
-            "test" or "holdout".
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3610,12 +3604,11 @@ class ModelPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            for set_ in dataset:
-                y_true = getattr(m, f"y_{set_}")
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
+            for ds in dataset:
+                y_true = getattr(m, f"y_{ds}")
+                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
+                if y_pred.ndim > 1:
+                    y_pred = y_pred.iloc[:, 1]
 
                 fig.add_trace(
                     self._draw_line(
@@ -3623,7 +3616,7 @@ class ModelPlot(BasePlot):
                         y=np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum(),
                         mode="lines",
                         parent=m.name,
-                        child=set_,
+                        child=ds,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3648,10 +3641,181 @@ class ModelPlot(BasePlot):
         )
 
     @composed(crash, plot_from_model, typechecked)
+    def plot_hyperparameters(
+        self,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        hyperparameters: Union[str, SEQUENCE_TYPES] = (0, 1),
+        *,
+        title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = "upper right",
+        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the Detection Error Tradeoff curve.
+
+        Read more about [DET][] in sklearn's documentation. Only
+        available for binary classification tasks.
+
+        Parameters
+        ----------
+        models: int, str, slice, Model, sequence or None, default=None
+            Name or index of the models to plot. If None, all models
+            are selected.
+
+        hyperparameters: str or sequence, default=(0, 1)
+
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default="upper right"
+            Legend for the plot. See the [user guide][parameters] for
+            an extended description of the choices.
+
+            - If None: No legend is shown.
+            - If str: Location where to show the legend.
+            - If dict: Legend configuration.
+
+        figsize: tuple, default=(900, 600)
+            Figure's size in pixels, format as (x, y).
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:ModelPlot.plot_gains
+        atom.plots:ModelPlot.plot_roc
+        atom.plots:ModelPlot.plot_prc
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> import pandas as pd
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"])
+        >>> atom.plot_det()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_det.html
+
+        """
+        check_is_fitted(self, attributes="_models")
+        m = self._get_subclass(models, max_one=True)
+
+        if not m._ht["distributions"]:
+            raise ValueError(
+                ""
+            )
+
+        if isinstance(hyperparameters, str):
+            hyperparameters = hyperparameters.lower().split("+")
+
+        params = []
+        for param in hyperparameters:
+            if isinstance(param, int):
+                params.append(list(m._ht["distributions"].keys())[param])
+            else:
+                if param not in m._ht["distributions"]:
+                    raise ValueError()
+                else:
+                    params.append(param)
+
+        fig = self._get_figure()
+        color = self._fig.get_color()
+        for i in range(len(params - 1) ** 2):
+            x, y = i // len(params) - 1, i % len(params) - 1
+
+            # Calculate the distance between subplots
+            offset = divide(0.0125, (len(params) - 2))
+
+            # Calculate the size of the subplot
+            size = (1 - ((offset * 2) * (len(params) - 2))) / (len(params) - 1)
+
+            # Determine the position for the axes
+            x_pos = y * (size + 2 * offset)
+            y_pos = (len(params) - x - 2) * (size + 2 * offset)
+
+            xaxis, yaxis = self._fig.get_axes(
+                x=(x_pos, rnd(x_pos + size)),
+                y=(y_pos, rnd(y_pos + size)),
+                coloraxis=dict(
+                    colorscale=PALETTE.get(color, "Blues"),
+                    cmin=m.trials["score"].min(),
+                    cmax=m.trials["score"].max(),
+                    showscale=False,
+                )
+            )
+
+            if x < len(params) - 1:
+                fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
+            if y > 0:
+                fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
+
+            self._plot(
+                ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                xlabel=hyperparameters[y] if x == len(hyperparameters) - 1 else None,
+                ylabel=hyperparameters[x] if y == 0 else None,
+                title=title if x == 0 and y == 1 else None,
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=m.trials.apply(lambda x: x["params"][param]),
+                    marker=dict(
+                        color=f"rgba({color[4:-1]}, 0.2)",
+                        line=dict(width=2, color=color),
+                    ),
+                    name=columns[x],
+                    showlegend=False,
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+        self._fig.used_models.extend(models)
+        return self._plot(
+            ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            xlabel="FPR",
+            ylabel="FNR",
+            title=title,
+            legend=legend,
+            figsize=figsize,
+            plotname="plot_det",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
     def plot_learning_curve(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower right",
@@ -3670,7 +3834,7 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        metric: int, str or None, default=None
+        metric: int, str, sequence or None, default=None
             Index or name of the metric to show (only for multi-metric
             runs). Add `+` between options to select more than one. If
             None, the metric used to run the pipeline is selected.
@@ -3709,8 +3873,8 @@ class ModelPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:FeatureSelectorPlot.plot_results
-        atom.plots:FeatureSelectorPlot.plot_successive_halving
+        atom.plots:ModelPlot.plot_results
+        atom.plots:ModelPlot.plot_successive_halving
 
         Examples
         --------
@@ -3810,8 +3974,8 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        dataset: Union[str, SEQUENCE_TYPES] = "test",
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "upper right",
@@ -3829,10 +3993,10 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one. Choose from: "train",
-            "test" or "holdout".
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3900,12 +4064,11 @@ class ModelPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            for set_ in dataset:
-                y_true = getattr(m, f"y_{set_}")
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
+            for ds in dataset:
+                y_true = getattr(m, f"y_{ds}")
+                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
+                if y_pred.ndim > 1:
+                    y_pred = y_pred.iloc[:, 1]
 
                 gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
 
@@ -3915,7 +4078,7 @@ class ModelPlot(BasePlot):
                         y=gains / x,
                         mode="lines",
                         parent=m.name,
-                        child=set_,
+                        child=ds,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3941,7 +4104,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_parshap(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         *,
@@ -4010,9 +4173,9 @@ class ModelPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:DataPlot.plot_feature_importance
-        atom.plots:DataPlot.plot_partial_dependence
-        atom.plots:DataPlot.plot_permutation_importance
+        atom.plots:ModelPlot.plot_feature_importance
+        atom.plots:ModelPlot.plot_partial_dependence
+        atom.plots:ModelPlot.plot_permutation_importance
 
         Examples
         --------
@@ -4065,8 +4228,8 @@ class ModelPlot(BasePlot):
             parshap = {}
             fxs = self._get_columns(columns, include_target=False, branch=m.branch)
 
-            for set_ in ("train", "test"):
-                X, y = getattr(m, f"X_{set_}"), getattr(m, f"y_{set_}")
+            for ds in ("train", "test"):
+                X, y = getattr(m, f"X_{ds}"), getattr(m, f"y_{ds}")
                 data = pd.concat([X, y], axis=1)
 
                 # Calculating shap values is computationally expensive,
@@ -4077,7 +4240,7 @@ class ModelPlot(BasePlot):
                 # Replace data with the calculated shap values
                 data.iloc[:, :-1] = m._shap.get_shap_values(data.iloc[:, :-1], target)
 
-                parshap[set_] = pd.Series(index=data.columns[:-1], dtype=float)
+                parshap[ds] = pd.Series(index=data.columns[:-1], dtype=float)
                 for fx in fxs:
                     # All other features are covariates
                     covariates = [f for f in data.columns[:-1] if f != fx]
@@ -4102,7 +4265,7 @@ class ModelPlot(BasePlot):
                         semi_partial_correlation = partial_corr / V_sqrt / Vi_sqrt
 
                     # X covariates are removed
-                    parshap[set_][fx] = semi_partial_correlation[1, 0]
+                    parshap[ds][fx] = semi_partial_correlation[1, 0]
 
             # Get the feature importance or coefficients
             if m.feature_importance is not None:
@@ -4145,7 +4308,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_partial_dependence(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         kind: str = "average",
         pair: Optional[Union[int, str]] = None,
@@ -4440,7 +4603,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_permutation_importance(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         n_repeats: INT = 10,
         *,
@@ -4599,7 +4762,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_pipeline(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         draw_hyperparameter_tuning: bool = True,
         color_branches: Optional[bool] = None,
         *,
@@ -4659,7 +4822,7 @@ class ModelPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:ModelPlot.plot_wordcloud
+        atom.plots:DataPlot.plot_wordcloud
 
         Examples
         --------
@@ -4905,8 +5068,8 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        dataset: Union[str, SEQUENCE_TYPES] = "test",
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower left",
@@ -4925,10 +5088,10 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one. Choose from: "train",
-            "test" or "holdout".
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -4996,14 +5159,13 @@ class ModelPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            for set_ in dataset:
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
+            for ds in dataset:
+                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
+                if y_pred.ndim > 1:
+                    y_pred = y_pred.iloc[:, 1]
 
                 # Get precision-recall pairs for different thresholds
-                prec, rec, _ = precision_recall_curve(getattr(m, f"y_{set_}"), y_pred)
+                prec, rec, _ = precision_recall_curve(getattr(m, f"y_{ds}"), y_pred)
 
                 fig.add_trace(
                     self._draw_line(
@@ -5011,7 +5173,7 @@ class ModelPlot(BasePlot):
                         y=prec,
                         mode="lines",
                         parent=m.name,
-                        child=set_,
+                        child=ds,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -5037,7 +5199,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         target: Union[INT, str] = 1,
         *,
@@ -5058,9 +5220,8 @@ class ModelPlot(BasePlot):
             are selected.
 
         dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one. Choose from: "train",
-            "test" or "holdout".
+            Data set on which to calculate the metric. Choose from:
+            "train", "test" or "holdout".
 
         target: int or str, default=1
             Probability of being that class in the target column
@@ -5180,7 +5341,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
@@ -5331,8 +5492,8 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_results(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower right",
@@ -5354,8 +5515,8 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        metric: int, str or None, default=None
-            Index or name of the metric to show (only for multi-metric
+        metric: int, str, sequence or None, default=None
+            Index or name of the metrics to show (only for multi-metric
             runs). Other available metrics are "time_bo", "time_fit",
             "time_bootstrap" and "time".  Add `+` between options to
             select more than one.  If None, the metric used to run the
@@ -5468,8 +5629,8 @@ class ModelPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
 
-        if isinstance(metric, str):
-            for met in metric.split("+"):
+        for met in metric:
+            if isinstance(met, str):
                 color = self._fig.get_color(met)
                 fig.add_trace(
                     go.Bar(
@@ -5488,8 +5649,7 @@ class ModelPlot(BasePlot):
                         yaxis=yaxis,
                     )
                 )
-        else:
-            for met in metric:
+            else:
                 name = self._metric[met].name
                 color = self._fig.get_color()
 
@@ -5556,8 +5716,8 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        dataset: Union[str, SEQUENCE_TYPES] = "test",
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower right",
@@ -5568,7 +5728,7 @@ class ModelPlot(BasePlot):
         """Plot the Receiver Operating Characteristics curve.
 
         Read more about [ROC][] in sklearn's documentation. Only
-        available for binary classification tasks.
+        available for classification tasks.
 
         Parameters
         ----------
@@ -5576,10 +5736,10 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        dataset: str, default="test"
-            Data set on which to calculate the metric. Add `+` between
-            options to select more than one. Choose from: "train",
-            "test", "holdout".
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -5647,14 +5807,13 @@ class ModelPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            for set_ in dataset:
-                if hasattr(m.estimator, "predict_proba"):
-                    y_pred = getattr(m, f"predict_proba_{set_}").iloc[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
+            for ds in dataset:
+                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
+                if y_pred.ndim > 1:
+                    y_pred = y_pred.iloc[:, 1]
 
                 # Get False (True) Positive Rate as arrays
-                fpr, tpr, _ = roc_curve(getattr(m, f"y_{set_}"), y_pred)
+                fpr, tpr, _ = roc_curve(getattr(m, f"y_{ds}"), y_pred)
 
                 fig.add_trace(
                     self._draw_line(
@@ -5662,7 +5821,7 @@ class ModelPlot(BasePlot):
                         y=tpr,
                         mode="lines",
                         parent=m.name,
-                        child=set_,
+                        child=ds,
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -5689,8 +5848,8 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "lower right",
@@ -5709,7 +5868,7 @@ class ModelPlot(BasePlot):
             Name or index of the models to plot. If None, all models
             are selected.
 
-        metric: int, str or None, default=None
+        metric: int, str, sequence or None, default=None
             Index or name of the metric to show (only for multi-metric
             runs). Add `+` between options to select more than one. If
             None, the metric used to run the pipeline is selected.
@@ -5721,7 +5880,7 @@ class ModelPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default=None
+        legend: str, dict or None, default="lower right"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 
@@ -5748,8 +5907,8 @@ class ModelPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:FeatureSelectorPlot.plot_learning_curve
-        atom.plots:FeatureSelectorPlot.plot_results
+        atom.plots:ModelPlot.plot_learning_curve
+        atom.plots:ModelPlot.plot_results
 
         Examples
         --------
@@ -5851,7 +6010,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         steps: INT = 100,
@@ -5994,7 +6153,7 @@ class ModelPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_trials(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[INT, str]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -6173,7 +6332,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_bar(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6243,8 +6402,8 @@ class ShapPlot(BasePlot):
         See Also
         --------
         atom.plots:ModelPlot.plot_parshap
-        atom.plots:ModelPlot.plot_shap_beeswarm
-        atom.plots:ModelPlot.plot_shap_scatter
+        atom.plots:ShapPlot.plot_shap_beeswarm
+        atom.plots:ShapPlot.plot_shap_scatter
 
         Examples
         --------
@@ -6294,7 +6453,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_beeswarm(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6362,8 +6521,8 @@ class ShapPlot(BasePlot):
         See Also
         --------
         atom.plots:ModelPlot.plot_parshap
-        atom.plots:ModelPlot.plot_shap_bar
-        atom.plots:ModelPlot.plot_shap_scatter
+        atom.plots:ShapPlot.plot_shap_bar
+        atom.plots:ShapPlot.plot_shap_scatter
 
         Examples
         --------
@@ -6412,7 +6571,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_decision(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6483,9 +6642,9 @@ class ShapPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:ModelPlot.plot_shap_bar
-        atom.plots:ModelPlot.plot_shap_beeswarm
-        atom.plots:ModelPlot.plot_shap_force
+        atom.plots:ShapPlot.plot_shap_bar
+        atom.plots:ShapPlot.plot_shap_beeswarm
+        atom.plots:ShapPlot.plot_shap_force
 
         Examples
         --------
@@ -6541,7 +6700,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_force(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         *,
@@ -6608,9 +6767,9 @@ class ShapPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:ModelPlot.plot_shap_beeswarm
-        atom.plots:ModelPlot.plot_shap_scatter
-        atom.plots:ModelPlot.plot_shap_decision
+        atom.plots:ShapPlot.plot_shap_beeswarm
+        atom.plots:ShapPlot.plot_shap_scatter
+        atom.plots:ShapPlot.plot_shap_decision
 
         Examples
         --------
@@ -6683,7 +6842,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_heatmap(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6753,9 +6912,9 @@ class ShapPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:ModelPlot.plot_shap_decision
-        atom.plots:ModelPlot.plot_shap_force
-        atom.plots:ModelPlot.plot_shap_waterfall
+        atom.plots:ShapPlot.plot_shap_decision
+        atom.plots:ShapPlot.plot_shap_force
+        atom.plots:ShapPlot.plot_shap_waterfall
 
         Examples
         --------
@@ -6805,7 +6964,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_scatter(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         feature: Union[INT, str] = 0,
         target: Union[INT, str] = 1,
@@ -6874,9 +7033,9 @@ class ShapPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:ModelPlot.plot_shap_beeswarm
-        atom.plots:ModelPlot.plot_shap_decision
-        atom.plots:ModelPlot.plot_shap_force
+        atom.plots:ShapPlot.plot_shap_beeswarm
+        atom.plots:ShapPlot.plot_shap_decision
+        atom.plots:ShapPlot.plot_shap_force
 
         Examples
         --------
@@ -6926,7 +7085,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_waterfall(
         self,
-        models: Optional[Union[int, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
         index: Optional[Union[INT, str]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -7002,9 +7161,9 @@ class ShapPlot(BasePlot):
 
         See Also
         --------
-        atom.plots:ModelPlot.plot_shap_bar
-        atom.plots:ModelPlot.plot_shap_beeswarm
-        atom.plots:ModelPlot.plot_shap_heatmap
+        atom.plots:ShapPlot.plot_shap_bar
+        atom.plots:ShapPlot.plot_shap_beeswarm
+        atom.plots:ShapPlot.plot_shap_heatmap
 
         Examples
         --------

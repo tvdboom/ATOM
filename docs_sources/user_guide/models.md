@@ -41,6 +41,7 @@ acronyms are:
 * "MLP" for [MultiLayerPerceptron][]
 * "MNB" for [MultinomialNB][]
 * "OLS" for [OrdinaryLeastSquares][]
+* "OMP" for [OrthogonalMatchingPursuit][]
 * "PA" for [PassiveAggressive][]
 * "Perc" for [Perceptron][]
 * "QDA" for [QuadraticDiscriminantAnalysis][]

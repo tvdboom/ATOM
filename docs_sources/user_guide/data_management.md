@@ -74,6 +74,10 @@ To avoid this, specify the `index` parameter. If the dataset has an
 * [Predictions][predicting] of specific rows can be accessed through
   their index.
 
+!!! warning
+    Avoid duplicate indices in the dataframe. Having them may potentially
+    lead to unexpected behavior.
+
 <br>
 
 ## Sparse datasets

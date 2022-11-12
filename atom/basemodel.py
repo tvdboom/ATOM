@@ -851,10 +851,10 @@ class BaseModel(ModelPlot, ShapPlot):
                 mlflow.sklearn.log_model(self.estimator, self._est_class.__name__)
 
             if self.T.log_data:
-                for set_ in ("train", "test"):
-                    getattr(self, set_).to_csv(f"{set_}.csv")
-                    mlflow.log_artifact(f"{set_}.csv")
-                    os.remove(f"{set_}.csv")
+                for ds in ("train", "test"):
+                    getattr(self, ds).to_csv(f"{ds}.csv")
+                    mlflow.log_artifact(f"{ds}.csv")
+                    os.remove(f"{ds}.csv")
 
             if self.T.log_pipeline:
                 mlflow.sklearn.log_model(self.export_pipeline(), f"pl_{self.name}")
@@ -863,12 +863,12 @@ class BaseModel(ModelPlot, ShapPlot):
 
         # Print and log results ==================================== >>
 
-        for set_ in ("train", "test"):
+        for ds in ("train", "test"):
             out = [
-                f"{metric.name}: {self._get_score(metric, set_)}"
+                f"{metric.name}: {self._get_score(metric, ds)}"
                 for metric in self.T._metric.values()
             ]
-            self.T.log(f"T{set_[1:]} evaluation --> {'   '.join(out)}", 1)
+            self.T.log(f"T{ds[1:]} evaluation --> {'   '.join(out)}", 1)
 
         # Get duration and print to log
         self._time_fit += (dt.now() - t_init).total_seconds()
@@ -1468,7 +1468,7 @@ class BaseModel(ModelPlot, ShapPlot):
         try:
             # Raises ValueError if X can't select indices
             rows = self.T._get_rows(X, branch=self.branch)
-        except ValueError:
+        except TypeError:
             rows = None
 
             # When there is a pipeline, apply transformations first
@@ -1486,8 +1486,8 @@ class BaseModel(ModelPlot, ShapPlot):
                 # Concatenate the predictions for all sets and retrieve indices
                 predictions = pd.concat(
                     [
-                        getattr(self, f"{method}_{set_}")
-                        for set_ in ("train", "test", "holdout")
+                        getattr(self, f"{method}_{ds}")
+                        for ds in ("train", "test", "holdout")
                     ]
                 )
                 return predictions.loc[rows]

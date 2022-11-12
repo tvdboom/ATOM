@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/plots/plot_successive_halving/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>plot_successive_halving - ATOM</title>
@@ -1624,6 +1624,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -2957,72 +2971,62 @@
 
 <h1 id="plot_successive_halving">plot_successive_halving</h1>
 <hr />
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_successive_halving</strong>(models=None,
-metric=0, title=None, figsize=(10, 6), filename=None, display=True)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L982">[source]</a>
-</span>
-</div>
-
-<p>Plot of the models' scores per iteration of the successive
-halving. Only use with models fitted using <a href="../../../user_guide/training/#successive-halving">successive halving</a>.
-<a href="../../../user_guide/models/#ensembles">Ensemble</a> models are
-ignored.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>models: int, str, slice, sequence or None, default=None</strong><br>
-Name of the models to plot. If None, all the models are selected.
-</p>
-<p>
-<strong>metric: int or str, default=0</strong><br>
-Index or name of the metric to plot. Only for <a href="../../../user_guide/training/#metric">multi-metric</a> runs.
-</p>
-<p>
-<strong>title: str or None, default=None</strong><br>
-Plot's title. If None, the title is left empty.
-</p>
-<p>
-<strong>figsize: tuple, default=(10, 6)</strong><br>
-Figure's size, format as (x, y).
-</p>
-<p>
-<strong>filename: str or None, default=None</strong><br>
-Name of the file. Use "auto" for automatic naming.
-If None, the figure is not saved.
-</p>
-<p>
-<strong>display: bool or None, default=True</strong><br>
-Whether to render the plot. If None, it returns the matplotlib figure.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>matplotlib.figure.Figure</strong><br>
-Plot object. Only returned if <code>display=None</code>.
-</td>
-</tr>
+<p><a id='plot_successive_halving'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_successive_halving</strong>(models=None, metric=None, title=None, legend="lower right", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L5848>[source]</a></span></div>Plot scores per iteration of the successive halving.</p>
+<p>Only use with models fitted using <a class="autorefs autorefs-internal" href="../../../user_guide/training/#successive-halving">successive halving</a>.
+<a class="autorefs autorefs-internal" href="../../../user_guide/models/#ensembles">Ensembles</a> are ignored.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_successive_halving-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
+Name or index of the models to plot. If None, all models
+are selected.</p>
+<p></div><a id='plot_successive_halving-metric'></a><strong>metric: int, str, sequence or None, default=None</strong><br><div markdown class='param'>
+Index or name of the metric to show (only for multi-metric
+runs). Add <code>+</code> between options to select more than one. If
+None, the metric used to run the pipeline is selected.</p>
+<p></div><a id='plot_successive_halving-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
+Title for the plot.</p>
+<ul>
+<li>If None, no title is shown.</li>
+<li>If str, text for the title.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
+</ul>
+<p></div><a id='plot_successive_halving-legend'></a><strong>legend: str, dict or None, default=None</strong><br><div markdown class='param'>
+Legend for the plot. See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">user guide</a> for
+an extended description of the choices.</p>
+<ul>
+<li>If None: No legend is shown.</li>
+<li>If str: Location where to show the legend.</li>
+<li>If dict: Legend configuration.</li>
+</ul>
+<p></div><a id='plot_successive_halving-figsize'></a><strong>figsize: tuple, default=(900, 600)</strong><br><div markdown class='param'>
+Figure's size in pixels, format as (x, y).</p>
+<p></div><a id='plot_successive_halving-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
+Save the plot using this name. Use "auto" for automatic
+naming. The type of the file depends on the provided name
+(.html, .png, .pdf, etc...). If <code>filename</code> has no file type,
+the plot is saved as html. If None, the plot is not saved.</p>
+<p></div><a id='plot_successive_halving-display'></a><strong>display: bool or None, default=True</strong><br><div markdown class='param'>
+Whether to render the plot. If None, it returns the figure.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='plot_successive_halving-<a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a> or None'></a><strong><a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a> or None</strong><br><div markdown class='param'>
+Plot object. Only returned if <code>display=None</code>.</p>
+<p></div></td></tr></p>
 </table>
-<p><br /></p>
-<h2 id="example">Example</h2>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
-
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">successive_halving</span><span class="p">(</span>
-    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;tree&quot;</span><span class="p">,</span> <span class="s2">&quot;et&quot;</span><span class="p">,</span> <span class="s2">&quot;rf&quot;</span><span class="p">,</span> <span class="s2">&quot;xgb&quot;</span><span class="p">,</span> <span class="s2">&quot;lgb&quot;</span><span class="p">,</span> <span class="s2">&quot;catb&quot;</span><span class="p">],</span>
-    <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;f1_weighted&quot;</span><span class="p">,</span>
-    <span class="n">n_bootstrap</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">plot_successive_halving</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;successive_halving&quot;</span><span class="p">)</span>
-</code></pre></div>
-<div align="center">
-    <img src="../../../img/plots/plot_successive_halving.png" alt="plot_successive_halving" width="700" height="420"/>
+<p><br></p>
+<div class="admonition info">
+<p class="admonition-title">See Also</p>
+<p><a class="autorefs autorefs-internal" href="../plot_learning_curve/#plot_learning_curve">plot_learning_curve</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot the learning curve: score vs number of training samples.</div></p>
+<p><a class="autorefs autorefs-internal" href="../plot_results/#plot_results">plot_results</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot the model results.</div></p>
 </div>
+<p><br></p>
+<h2 id="example">Example</h2>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">successive_halving</span><span class="p">([</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span> <span class="n">n_bootstrap</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">plot_successive_halving</span><span class="p">()</span>
+</code></pre></div>
 
 
   

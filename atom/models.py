@@ -3,13 +3,9 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing all available models. All classes must
-             have the following structure:
-
-        Name
-        ----
-        Name of the model's class in camel case format.
-
+Description: Module containing all available models. The models are
+             ordered alphabetically. Classes must have the following
+             structure:
 
         Class attributes
         ----------------
@@ -103,6 +99,7 @@ List of available models:
 - "MLP" for MultiLayerPerceptron
 - "MNB" for MultinomialNB
 - "OLS" for OrdinaryLeastSquares (no hyperparameter tuning)
+- "OMP" for OrthogonalMatchingPursuit (no hyperparameter tuning)
 - "PA" for PassiveAggressive
 - "Perc" for Perceptron
 - "QDA" for QuadraticDiscriminantAnalysis
@@ -297,9 +294,9 @@ class AutomaticRelevanceDetermination(BaseModel):
 
     ```pycon
     >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = load_boston(return_X_y=True)
+    >>> X, y = fetch_california_housing(return_X_y=True)
 
     >>> atom = ATOMRegressor(X, y)
     >>> atom.run(models="ARD", metric="r2", verbose=2)
@@ -466,9 +463,9 @@ class BayesianRidge(BaseModel):
 
     ```pycon
     >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = load_boston(return_X_y=True)
+    >>> X, y = fetch_california_housing(return_X_y=True)
 
     >>> atom = ATOMRegressor(X, y)
     >>> atom.run(models="BR", metric="r2", verbose=2)
@@ -1194,9 +1191,9 @@ class ElasticNet(BaseModel):
 
     ```pycon
     >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = load_boston(return_X_y=True)
+    >>> X, y = fetch_california_housing(return_X_y=True)
 
     >>> atom = ATOMRegressor(X, y)
     >>> atom.run(models="EN", metric="r2", verbose=2)
@@ -1775,9 +1772,9 @@ class HuberRegression(BaseModel):
 
     ```pycon
     >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = load_boston(return_X_y=True)
+    >>> X, y = fetch_california_housing(return_X_y=True)
 
     >>> atom = ATOMRegressor(X, y)
     >>> atom.run(models="Huber", metric="r2", verbose=2)
@@ -2045,9 +2042,9 @@ class Lasso(BaseModel):
 
     ```pycon
     >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = load_boston(return_X_y=True)
+    >>> X, y = fetch_california_housing(return_X_y=True)
 
     >>> atom = ATOMRegressor(X, y)
     >>> atom.run(models="Lasso", metric="r2", verbose=2)
@@ -2127,9 +2124,9 @@ class LeastAngleRegression(BaseModel):
 
     ```pycon
     >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = load_boston(return_X_y=True)
+    >>> X, y = fetch_california_housing(return_X_y=True)
 
     >>> atom = ATOMRegressor(X, y)
     >>> atom.run(models="Lars", metric="r2", verbose=2)
@@ -2976,9 +2973,9 @@ class OrdinaryLeastSquares(BaseModel):
 
     ```pycon
     >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = load_boston(return_X_y=True)
+    >>> X, y = fetch_california_housing(return_X_y=True)
 
     >>> atom = ATOMRegressor(X, y)
     >>> atom.run(models="OLS", metric="r2", verbose=2)
@@ -3014,6 +3011,68 @@ class OrdinaryLeastSquares(BaseModel):
 
     _module = "linear_model"
     _estimators = CustomDict({"reg": "LinearRegression"})
+
+
+class OrthogonalMatchingPursuit(BaseModel):
+    """Orthogonal Matching Pursuit.
+
+    Orthogonal Matching Pursuit implements the OMP algorithm for
+    approximating the fit of a linear model with constraints imposed
+    on the number of non-zero coefficients.
+
+    Corresponding estimators are:
+
+    - [OrthogonalMatchingPursuit][] for regression tasks.
+
+    Read more in sklearn's [documentation][ompdocs].
+
+    See Also
+    --------
+    atom.models:Lasso
+    atom.models:LeastAngleRegression
+    atom.models:OrdinaryLeastSquares
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import fetch_california_housing
+
+    >>> X, y = fetch_california_housing(return_X_y=True)
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(models="OMP", metric="r2", verbose=2)
+
+    Training ========================= >>
+    Models: OMP
+    Metric: r2
+
+
+    Train evaluation --> r2: 0.4751
+    Test evaluation --> r2: 0.4668
+    Time elapsed: 0.028s
+    -------------------------------------------------
+    Total time: 0.028s
+
+
+    Final results ==================== >>
+    Total time: 0.028s
+    -------------------------------------
+    OrthogonalMatchingPursuit --> r2: 0.4668
+
+    ```
+
+    """
+
+    acronym = "OMP"
+    needs_scaling = True
+    accepts_sparse = False
+    has_validation = None
+    supports_engines = ["sklearn"]
+
+    _module = "linear_model"
+    _estimators = CustomDict({"reg": "OrthogonalMatchingPursuit"})
 
 
 class PassiveAggressive(BaseModel):
@@ -3555,9 +3614,9 @@ class Ridge(BaseModel):
 
     ```pycon
     >>> from atom import ATOMRegressor
-    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.datasets import fetch_california_housing
 
-    >>> X, y = load_boston(return_X_y=True)
+    >>> X, y = fetch_california_housing(return_X_y=True)
 
     >>> atom = ATOMRegressor(X, y)
     >>> atom.run(models="Ridge", metric="r2", verbose=2)
@@ -4206,6 +4265,7 @@ MODELS = CustomDict(
     MLP=MultiLayerPerceptron,
     MNB=MultinomialNB,
     OLS=OrdinaryLeastSquares,
+    OMP=OrthogonalMatchingPursuit,
     PA=PassiveAggressive,
     Perc=Perceptron,
     QDA=QuadraticDiscriminantAnalysis,

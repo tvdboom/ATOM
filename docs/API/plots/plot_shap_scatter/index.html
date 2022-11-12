@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/plots/plot_shap_scatter/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>plot_shap_scatter - ATOM</title>
@@ -1624,6 +1624,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -2957,89 +2971,70 @@
 
 <h1 id="plot_shap_scatter">plot_shap_scatter</h1>
 <hr />
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">scatter_plot</strong>(models=None,
-index=None, feature=0, target=1, title=None, figsize=(10, 6),
-filename=None, display=True, **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3655">[source]</a>
-</span>
-</div>
-
-<p>Plot SHAP's scatter plot. Plots the value of the feature on the x-axis
-and the SHAP value of the same feature on the y-axis. This shows how
-the model depends on the given feature, and is like a richer extension
-of the classical partial dependence plots. Vertical dispersion of the
-data points represents interaction effects. Read more about SHAP plots
-in the <a href="../../../user_guide/plots/#shap">user guide</a>.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>models: int, str, slice, sequence or None, default=None</strong><br>
+<p><a id='plot_shap_scatter'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_scatter</strong>(models=None, index=None, feature=0, target=1, title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L6964>[source]</a></span></div>Plot SHAP's scatter plot.</p>
+<p>Plots the value of the feature on the x-axis and the SHAP value
+of the same feature on the y-axis. This shows how the model
+depends on the given feature, and is like a richer extension of
+the classical partial dependence plots. Vertical dispersion of
+the data points represents interaction effects. Read more about
+SHAP plots in the [user guide][#shap].</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_shap_scatter-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
 Name of the model to plot. If None, all models are selected.
 Note that leaving the default option could raise an exception
-if there are multiple models. To avoid this, call the plot from a
-model, e.g. <code>atom.xgb.scatter_plot()</code>.
-</p>
-<p>
-<strong>index: slice, sequence or None, default=None</strong><br>
+if there are multiple models. To avoid this, call the plot
+from a model, e.g. <code>atom.xgb.scatter_plot()</code>.</p>
+<p></div><a id='plot_shap_scatter-index'></a><strong>index: slice, sequence or None, default=None</strong><br><div markdown class='param'>
 Index names or positions of the rows in the dataset to
 plot. If None, it selects all rows in the test set. The
-scatter plot does not support plotting a single sample.
-</p>
-<p>
-<strong>feature: int or str, default=0</strong><br>
-Index or name of the feature to plot.
-</p>
-<p>
-<strong>target: int or str, default=1</strong><br>
-Index or name of the class in the target column to look at. Only for
-multi-class classification tasks.
-</p>
-<p>
-<strong>title: str or None, default=None</strong><br>
-Plot's title. If None, the title is left empty.
-</p>
-<p>
-<strong>figsize: tuple, default=(10, 6))</strong><br>
-Figure's size, format as (x, y).
-</p>
-<p>
-<strong>filename: str or None, default=None</strong><br>
-Name of the file. Use "auto" for automatic naming.
-If None, the figure is not saved.
-</p>
-<p>
-<strong>display: bool or None, default=True</strong><br>
-Whether to render the plot. If None, it returns the matplotlib figure.
-</p>
-<p>
-<strong>**kwargs</strong><br>
-Additional keyword arguments for SHAP's <a href="https://shap.readthedocs.io/en/latest/generated/shap.plots.scatter.html">scatter plot</a>.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>matplotlib.figure.Figure</strong><br>
-Plot object. Only returned if <code>display=None</code>.
-</td>
-</tr>
+scatter plot does not support plotting a single sample.</p>
+<p></div><a id='plot_shap_scatter-feature'></a><strong>feature: int or str, default=0</strong><br><div markdown class='param'>
+Index or name of the feature to plot.</p>
+<p></div><a id='plot_shap_scatter-target'></a><strong>target: int or str, default=1</strong><br><div markdown class='param'>
+Index or name of the class in the target column to look at.
+Only for multi-class classification tasks.</p>
+<p></div><a id='plot_shap_scatter-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
+Title for the plot.</p>
+<ul>
+<li>If None, no title is shown.</li>
+<li>If str, text for the title.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
+</ul>
+<p></div><a id='plot_shap_scatter-legend'></a><strong>legend: str, dict or None, default=None</strong><br><div markdown class='param'>
+Does nothing. Implemented for continuity of the API.</p>
+<p></div><a id='plot_shap_scatter-figsize'></a><strong>figsize: tuple or None, default=(900, 600)</strong><br><div markdown class='param'>
+Figure's size in pixels, format as (x, y).</p>
+<p></div><a id='plot_shap_scatter-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
+Save the plot using this name. Use "auto" for automatic
+naming. The type of the file depends on the provided name
+(.html, .png, .pdf, etc...). If <code>filename</code> has no file type,
+the plot is saved as html. If None, the plot is not saved.</p>
+<p></div><a id='plot_shap_scatter-display'></a><strong>display: bool or None, default=True</strong><br><div markdown class='param'>
+Whether to render the plot. If None, it returns the figure.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='plot_shap_scatter-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html">plt.Figure</a> or None'></a><strong><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html">plt.Figure</a> or None</strong><br><div markdown class='param'>
+Plot object. Only returned if <code>display=None</code>.</p>
+<p></div></td></tr></p>
 </table>
-<p><br /></p>
-<h2 id="example">Example</h2>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
-
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;RF&quot;</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">scatter_plot</span><span class="p">(</span><span class="n">feature</span><span class="o">=</span><span class="s2">&quot;bmi&quot;</span><span class="p">)</span>
-</code></pre></div>
-<div align="center">
-    <img src="../../../img/plots/scatter_plot.png" alt="scatter_plot" width="700" height="420"/>
+<p><br></p>
+<div class="admonition info">
+<p class="admonition-title">See Also</p>
+<p><a class="autorefs autorefs-internal" href="../plot_shap_beeswarm/#plot_shap_beeswarm">plot_shap_beeswarm</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot SHAP's beeswarm plot.</div></p>
+<p><a class="autorefs autorefs-internal" href="../plot_shap_decision/#plot_shap_decision">plot_shap_decision</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot SHAP's decision plot.</div></p>
+<p><a class="autorefs autorefs-internal" href="../plot_shap_force/#plot_shap_force">plot_shap_force</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot SHAP's force plot.</div></p>
 </div>
+<p><br></p>
+<h2 id="example">Example</h2>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">plot_shap_scatter</span><span class="p">()</span>
+</code></pre></div>
 
 
   

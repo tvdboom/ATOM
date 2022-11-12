@@ -715,10 +715,7 @@ class ShapExplanation:
 
     @property
     def attr(self) -> str:
-        """Get the model's prediction attribute.
-
-        Get predict_proba, decision_function or predict in that order
-        if available.
+        """Get the model's main prediction method.
 
         Returns
         -------
@@ -726,9 +723,7 @@ class ShapExplanation:
             Name of the prediction method.
 
         """
-        for attr in ("predict_proba", "decision_function", "predict"):
-            if hasattr(self.T.estimator, attr):
-                return attr
+        return get_attr(self.T.estimator)
 
     @property
     def explainer(self) -> Explainer:
@@ -1349,6 +1344,23 @@ def check_scaling(df: pd.DataFrame) -> bool:
     mean = df.mean(numeric_only=True).mean()
     std = df.std(numeric_only=True).mean()
     return -0.05 < mean < 0.05 and 0.85 < std < 1.15
+
+
+def get_attr(estimator: Estimator) -> str:
+    """Get the main estimator's prediction method.
+
+    Get predict_proba, decision_function or predict in that order
+    when available.
+
+    Returns
+    -------
+    str
+        Name of the prediction method.
+
+    """
+    for attr in ("predict_proba", "decision_function", "predict"):
+        if hasattr(estimator, attr):
+            return attr
 
 
 def get_versions(models: CustomDict) -> dict:

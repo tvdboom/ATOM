@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/predicting/predict/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>predict - ATOM</title>
@@ -1624,6 +1624,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -2957,7 +2971,7 @@
 
 <h1 id="predict">predict</h1>
 <hr />
-<p><a id='predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1550>[source]</a></span></div>Get class predictions on new data or rows in the dataset.</p>
+<p><a id='predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1558>[source]</a></span></div>Get class predictions on new data or rows in the dataset.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict</code> method.</p>

@@ -1,7 +1,7 @@
 # plot_shap_force
 -----------------
 
-:: atom.plots:ModelPlot.plot_shap_force
+:: atom.plots:ShapPlot.plot_shap_force
     :: signature
     :: head
     :: table:

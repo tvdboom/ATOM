@@ -762,6 +762,13 @@ def test_default_scoring(cls):
 
 # Test training methods ============================================ >>
 
+def test_non_numerical_target_column():
+    """Assert that an error is raised when the target column is categorical."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    with pytest.raises(ValueError, match=".*target column is not numerical.*"):
+        atom.run("Tree")
+
+
 def test_assign_existing_metric():
     """Assert that the existing metric_ is assigned if rerun."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

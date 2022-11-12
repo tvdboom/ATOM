@@ -162,6 +162,8 @@ CUSTOM_URLS = dict(
     mlpdocs="https://scikit-learn.org/stable/modules/neural_networks_supervised.html#neural-networks-supervised",
     linearregression="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html",
     olsdocs="https://scikit-learn.org/stable/modules/linear_model.html#ordinary-least-squares",
+    orthogonalmatchingpursuit="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.OrthogonalMatchingPursuit.html",
+    ompdocs="https://scikit-learn.org/stable/modules/linear_model.html#orthogonal-matching-pursuit-omp",
     passiveaggressiveclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html",
     passiveaggressiveregressor="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html",
     padocs="https://scikit-learn.org/stable/modules/linear_model.html#passive-aggressive",
@@ -262,13 +264,18 @@ def insert(config: dict) -> str:
         Content of the file to insert.
 
     """
+    content = ""
     url = os.path.dirname(os.path.realpath(__file__)) + config["url"]
-    with open(url, "r", encoding="utf-8") as f:
-        content = f.read()
+    try:
+        with open(url, "r", encoding="utf-8") as f:
+            content = f.read()
 
-    # For plotly graphs: correct sizes of the plot to adjust to frame
-    content = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', content)
-    content = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', content)
+        # For plotly graphs: correct sizes of the plot to adjust to frame
+        content = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', content)
+        content = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', content)
+
+    except FileNotFoundError:
+        warnings.warn(f"File not found: {url}.")
 
     return content
 

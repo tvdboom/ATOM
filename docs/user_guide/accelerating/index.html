@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/accelerating/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>Accelerating pipelines - ATOM</title>
@@ -1712,6 +1712,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -3106,8 +3120,9 @@ GPU's massively parallel architecture. Training on large datasets can
 take hours to run on a single processor. However, if you offload those
 tasks to a GPU, you can reduce training time to minutes instead.</p>
 <p>Training transformers and models in atom using a GPU is as easy as
-initializing the instance with parameter <code>device="gpu"</code>. The <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-device"><code>device</code></a> parameter accepts any string that follows the
-<a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector. Examples are:</p>
+initializing the instance with parameter <code class="language-python highlight"><span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span></code>. The
+<a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-device"><code>device</code></a> parameter accepts any string that
+follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector. Examples are:</p>
 <ul>
 <li>device="cpu" (use CPU)</li>
 <li>device="gpu" (use default GPU)</li>

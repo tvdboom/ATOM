@@ -133,37 +133,42 @@ class BaseTrainer(BaseTransformer, BaseRunner, ModelPlot, ShapPlot):
             )
         else:
             inc, exc = [], []
-            for m in lst(self._models):
-                if isinstance(m, str):
-                    if m.startswith("!"):
-                        exc.append(m[1:])
-                    else:
-                        names = [n for n in MODELS if m.lower().startswith(n.lower())]
-                        if not names:
-                            raise ValueError(
-                                f"Unknown model: {m}. Choose from: {', '.join(MODELS)}."
-                            )
+            for model in lst(self._models):
+                if isinstance(model, str):
+                    for m in model.split("+"):
+                        if m.startswith("!"):
+                            exc.append(m[1:])
                         else:
-                            acronym = names[0]
+                            names = [n for n in MODELS if m.lower().startswith(n.lower())]
+                            if not names:
+                                raise ValueError(
+                                    f"Invalid value for the models parameter, got {m}. "
+                                    f"Choose from: {', '.join(MODELS)}."
+                                )
+                            else:
+                                acronym = names[0]
 
-                        # Check if libraries for non-sklearn models are available
-                        libs = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
-                        if acronym in libs and not find_spec(libs[acronym]):
-                            raise ModuleNotFoundError(
-                                f"Unable to import the {libs[acronym]} package. "
-                                f"Install it using: pip install {libs[acronym]}"
-                            )
+                            # Check if libraries for non-sklearn models are available
+                            libraries = {
+                                "XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"
+                            }
+                            if acronym in libraries and not find_spec(libraries[acronym]):
+                                raise ModuleNotFoundError(
+                                    f"Unable to import the {libraries[acronym]} package. "
+                                    f"Install it using: pip install {libraries[acronym]}"
+                                )
 
-                        inc.append(MODELS[acronym](self, acronym + m[len(acronym):]))
+                            inc.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 
-                        # Check for regression/classification-only models
-                        if self.goal not in inc[-1]._estimators:
-                            raise ValueError(
-                                f"The {acronym} model can't perform {self.task} tasks!"
-                            )
+                            # Check for regression/classification-only models
+                            if self.goal not in inc[-1]._estimators:
+                                raise ValueError(
+                                    f"The {acronym} model is not "
+                                    f"available for {self.task} tasks!"
+                                )
 
                 else:  # Model is a custom estimator
-                    inc.append(CustomModel(self, estimator=m))
+                    inc.append(CustomModel(self, estimator=model))
 
             if inc and exc:
                 raise ValueError(
@@ -200,8 +205,15 @@ class BaseTrainer(BaseTransformer, BaseRunner, ModelPlot, ShapPlot):
 
         # Ignore if it's the same scorer as previous call
         elif not isinstance(self._metric, CustomDict):
+            metrics = []
+            for m in lst(self._metric):
+                if isinstance(m, str):
+                    metrics.extend(m.split("+"))
+                else:
+                    metrics.append(m)
+
             self._metric = CustomDict(
-                {(s := get_custom_scorer(m)).name: s for m in lst(self._metric)}
+                {(s := get_custom_scorer(m)).name: s for m in metrics}
             )
 
         # Prepare est_params ======================================= >>

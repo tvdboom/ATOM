@@ -59,8 +59,15 @@ def test_models_get_right_name():
 def test_invalid_model_name():
     """Assert that an error is raised when the model is unknown."""
     trainer = DirectClassifier(models="invalid", random_state=1)
-    with pytest.raises(ValueError, match=".*Unknown model.*"):
+    with pytest.raises(ValueError, match=".*for the models parameter.*"):
         trainer.run(bin_train, bin_test)
+
+
+def test_multiple_models_with_add():
+    """Assert that you can add model names to select them."""
+    trainer = DirectClassifier("gnb+lr+lr2", random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.models == ["GNB", "LR", "LR2"]
 
 
 def test_multiple_same_models():
@@ -73,7 +80,7 @@ def test_multiple_same_models():
 def test_only_task_models():
     """Assert that an error is raised for models at invalid task."""
     trainer = DirectRegressor("LR", random_state=1)
-    with pytest.raises(ValueError, match=".*can't perform regression.*"):
+    with pytest.raises(ValueError, match=".*is not available for regression.*"):
         trainer.run(bin_train, bin_test)
 
 
@@ -113,11 +120,11 @@ def test_default_metric():
     assert trainer.metric == "r2"
 
 
-def test_metric_is_sklearn_scorer():
-    """Assert that using a sklearn SCORER works."""
-    trainer = DirectClassifier("LR", metric="balanced_accuracy", random_state=1)
+def test_multiple_metrics_with_add():
+    """Assert that you can add metric names to select them."""
+    trainer = DirectClassifier("LR", metric="f1+recall", random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.metric == "balanced_accuracy"
+    assert trainer.metric == ["f1", "recall"]
 
 
 def test_metric_is_acronym():

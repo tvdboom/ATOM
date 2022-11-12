@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/data_cleaning/scaler/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>Scaler - ATOM</title>
@@ -926,8 +926,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#attributes" class="md-nav__link">
-    Attributes
+  <a href="#example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -935,13 +935,6 @@
         <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
   </a>
   
 </li>
@@ -1669,6 +1662,20 @@
     <li class="md-nav__item">
       <a href="../../models/ols/" class="md-nav__link">
         OrdinaryLeastSquares
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
       </a>
     </li>
   
@@ -2945,8 +2952,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#attributes" class="md-nav__link">
-    Attributes
+  <a href="#example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -2954,13 +2961,6 @@
         <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
   </a>
   
 </li>
@@ -2985,326 +2985,264 @@
 
 <h1 id="scaler">Scaler</h1>
 <hr />
-<div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(strategy="standard",
-gpu=False, verbose=0, logger=None, **kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L198">[source]</a>
-</span>
-</div>
-
-<p>Apply one of sklearn's scalers. Categorical columns are ignored.
-This class can be accessed from atom through the
-<a href="../../ATOM/atomclassifier/#scale">scale</a> method. Read more in the
-<a href="../../../user_guide/data_cleaning/#scaling-the-feature-set">user guide</a>.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>strategy: str, default="standard"</strong><br>
-Strategy with which to scale the data. Choose from:
-<ul style="line-height:1.2em;margin-top:5px">
+<p><a id='Scaler'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Scaler</strong>(strategy="standard", device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2939>[source]</a></span></div>Scale the data.</p>
+<p>Apply one of sklearn's scalers. Categorical columns are ignored.</p>
+<p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-scale">scale</a> method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#scaling-the-feature-set">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='scaler-strategy'></a><strong>strategy: str, default="standard"</strong><br><div markdown class='param'>
+Strategy with which to scale the data. Choose from:</p>
+<ul>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">standard</a>": Remove mean and scale to unit variance.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">minmax</a>": Scale features to a given range.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">maxabs</a>": Scale features by their maximum absolute value.</li>
 <li>"<a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">robust</a>": Scale using statistics that are robust to outliers.</li>
 </ul>
-<strong>gpu: bool or str, default=False</strong><br>
-Train strategy on GPU.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If False: Always use CPU implementation.</li>
-<li>If True: Use GPU implementation if possible.</li>
-<li>If "force": Force GPU implementation.</li>
+<p></div><a id='scaler-device'></a><strong>device: str, default="cpu"</strong><br><div markdown class='param'>
+Device on which to train the estimators. Use any string
+that follows the <a href="https://github.com/intel/llvm/blob/sycl/sycl/doc/EnvironmentVariables.md#sycl_device_filter">SYCL_DEVICE_FILTER</a> filter selector,
+e.g. <code>device="gpu"</code> to use the GPU. Read more in the
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#accelerating-pipelines">user guide</a>.</p>
+<p></div><a id='scaler-engine'></a><strong>engine: str, default="sklearn"</strong><br><div markdown class='param'>
+Execution engine to use for the estimators. Refer to the
+<a class="autorefs autorefs-internal" href="../../../user_guide/accelerating/#accelerating-pipelines">user guide</a> for an explanation
+regarding every choice. Choose from:</p>
+<ul>
+<li>"sklearn" (only if device="cpu")</li>
+<li>"cuml" (only if device="gpu")</li>
 </ul>
-<strong>verbose: int, default=0</strong><br>
-Verbosity level of the class. Choose from:
-<ul style="line-height:1.2em;margin-top:5px">
+<p></div><a id='scaler-verbose'></a><strong>verbose: int, default=0</strong><br><div markdown class='param'>
+Verbosity level of the class. Choose from:</p>
+<ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 </ul>
-<strong>logger: str, Logger or None, default=None</strong><br>
-<ul style="line-height:1.2em;margin-top:5px">
+<p></div><a id='scaler-logger'></a><strong>logger: str, Logger or None, default=None</strong><br><div markdown class='param'></p>
+<ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
-<p>
-<strong>**kwargs</strong><br>
-Additional keyword arguments for the <code>strategy</code> estimator.
-</p>
-</td>
-</tr>
-</table>
-
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>Use atom's <a href="../../ATOM/atomclassifier/#data-attributes">scaled</a> attribute
-to check if the feature set is scaled.</p>
-</div>
-<p><br></p>
-<h2 id="attributes">Attributes</h2>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>estimator: sklearn transformer</strong><br>
-Object instance with which the data is scaled.
-</p>
-<p>
-<strong>feature_names_in_: np.array</strong><br>
-Names of features seen during fit.
-</p>
-<p>
-<strong>n_features_in_: int</strong><br>
-Number of features seen during fit.
-</p>
-</td>
-</tr>
+<p></div><a id='scaler-\*\*kwargs'></a><strong>**kwargs</strong><br><div markdown class='param'>
+Additional keyword arguments for the <code>strategy</code> estimator.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='scaler-[strategy]'></a><strong>[strategy]: sklearn transformer</strong><br><div markdown class='param'>
+Object with which the data is scaled.</p>
+<p></div><a id='scaler-feature_names_in_'></a><strong>feature_names_in_: np.array</strong><br><div markdown class='param'>
+Names of features seen during fit.</p>
+<p></div><a id='scaler-n_features_in_'></a><strong>n_features_in_: int</strong><br><div markdown class='param'>
+Number of features seen during fit.</p>
+<p></div></td></tr></p>
 </table>
 <p><br></p>
-<h2 id="methods">Methods</h2>
-<table style="font-size:16px">
-<tr>
-<td><a href="#fit">fit</a></td>
-<td>Fit to data.</td>
-</tr>
-
-<tr>
-<td><a href="#fit-transform">fit_transform</a></td>
-<td>Fit to data, then transform it.</td>
-</tr>
-
-<tr>
-<td><a href="#get-params">get_params</a></td>
-<td>Get parameters for this estimator.</td>
-</tr>
-
-<tr>
-<td><a href="#log">log</a></td>
-<td>Write information to the logger and print to stdout.</td>
-</tr>
-
-<tr>
-<td><a href="#save">save</a></td>
-<td>Save the instance to a pickle file.</td>
-</tr>
-
-<tr>
-<td><a href="#set-params">set_params</a></td>
-<td>Set the parameters of this estimator.</td>
-</tr>
-
-<tr>
-<td><a href="#transform">transform</a></td>
-<td>Transform the data.</td>
-</tr>
-</table>
+<div class="admonition info">
+<p class="admonition-title">See Also</p>
+<p><a class="autorefs autorefs-internal" href="../balancer/#balancer">Balancer</a><br>    <div style='margin: -1em 0 0 1.2em'>Balance the number of samples per class in the target column.</div></p>
+<p><a class="autorefs autorefs-internal" href="../normalizer/#normalizer">Normalizer</a><br>    <div style='margin: -1em 0 0 1.2em'>Transform the data to follow a Normal/Gaussian distribution.</div></p>
+<p><a class="autorefs autorefs-internal" href="#scaler">Scaler</a><br>    <div style='margin: -1em 0 0 1.2em'>Scale the data.</div></p>
+</div>
 <p><br></p>
-<p><a name="fit"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L262">[source]</a>
-</span>
-</div>
-<p>Compute the mean and std to be used for scaling.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>X: dataframe-like</strong><br>
-Feature set with shape=(n_samples, n_features).
-</p>
-<p>
-<strong>y: int, str, dict, sequence or None, default=None</strong><br>
-Does nothing. Implemented for continuity of the API.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>Scaler</strong><br>
-Estimator instance.
-</tr>
-</table>
-<p><br /></p>
-<p><a name="fit-transform"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
-</span>
-</div>
-<p>Fit to data, then transform it.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>X: dataframe-like</strong><br>
-Feature set with shape=(n_samples, n_features).
-</p>
-<p>
-<strong>y: int, str, dict, sequence or None, default=None</strong><br>
-Does nothing. Implemented for continuity of the API.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>X: pd.DataFrame</strong><br>
-Scaled feature set.
-</tr>
-</table>
-<p><br /></p>
-<p><a name="get-params"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True)
-<span style="float:right">
-<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a>
-</span>
-</div>
-<p>Get parameters for this estimator.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>deep: bool, default=True</strong><br>
-If True, will return the parameters for this estimator and contained
-subobjects that are estimators.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>dict</strong><br>
-Parameter names mapped to their values.
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="log"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
-</span>
-</div>
-<p>Write a message to the logger and print it to stdout.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>msg: str</strong><br>
-Message to write to the logger and print to stdout.
-</p>
-<p>
-<strong>level: int, default=0</strong><br>
-Minimum verbosity level to print the message.
-</p>
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="save"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
-</span>
-</div>
-<p>Save the instance to a pickle file.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>filename: str, default="auto"</strong><br>
-Name of the file. Use "auto" for automatic naming.
-</td>
-</tr>
-</table>
-<p><br></p>
-<p><a name="set-params"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">set_params</strong>(**params)
-<span style="float:right">
-<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a>
-</span>
-</div>
-<p>Set the parameters of this estimator.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**params: dict</strong><br>
-Estimator parameters.
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>Scaler</strong><br>
-Estimator instance.
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="transform"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L313">[source]</a>
-</span>
-</div>
-<p>Perform standardization by centering and scaling.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>X: dataframe-like</strong><br>
-Feature set with shape=(n_samples, n_features).
-</p>
-<p>
-<strong>y: int, str, dict, sequence or None, default=None</strong><br>
-Does nothing. Implemented for continuity of the API.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>X: pd.DataFrame</strong><br>
-Scaled feature set.
-</tr>
-</table>
-<p><br /></p>
 <h2 id="example">Example</h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+
+<span class="go">     mean radius  mean texture  ...  worst fractal dimension  target</span>
+<span class="go">0          17.99         10.38  ...                  0.11890       0</span>
+<span class="go">1          12.25         17.94  ...                  0.08132       1</span>
+<span class="go">2          13.87         20.70  ...                  0.08492       1</span>
+<span class="go">3          12.06         12.74  ...                  0.07898       1</span>
+<span class="go">4          12.62         17.15  ...                  0.07330       1</span>
+<span class="go">..           ...           ...  ...                      ...     ...</span>
+<span class="go">564        11.34         18.61  ...                  0.06783       1</span>
+<span class="go">565        11.43         17.31  ...                  0.08096       1</span>
+<span class="go">566        11.06         14.96  ...                  0.09080       1</span>
+<span class="go">567        13.20         15.82  ...                  0.08385       1</span>
+<span class="go">568        20.55         20.86  ...                  0.07569       0</span>
+
+<span class="go">[569 rows x 31 columns]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="go">Fitting Scaler...</span>
+<span class="go">Scaling features...</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the reduced number of rows</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+
+<span class="go">     mean radius  mean texture  ...  worst fractal dimension  target</span>
+<span class="go">0       1.052603     -2.089926  ...                 1.952598       0</span>
+<span class="go">1      -0.529046     -0.336627  ...                -0.114004       1</span>
+<span class="go">2      -0.082657      0.303467  ...                 0.083968       1</span>
+<span class="go">3      -0.581401     -1.542600  ...                -0.242685       1</span>
+<span class="go">4      -0.427093     -0.519842  ...                -0.555040       1</span>
+<span class="go">..           ...           ...  ...                      ...     ...</span>
+<span class="go">564    -0.779796     -0.181242  ...                -0.855847       1</span>
+<span class="go">565    -0.754996     -0.482735  ...                -0.133801       1</span>
+<span class="go">566    -0.856949     -1.027742  ...                 0.407321       1</span>
+<span class="go">567    -0.267275     -0.828293  ...                 0.025126       1</span>
+<span class="go">568     1.758008      0.340573  ...                -0.423609       0</span>
+
+<span class="go">[569 rows x 31 columns]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Scaler</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Scaler</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 
-<span class="n">scaler</span> <span class="o">=</span> <span class="n">Scaler</span><span class="p">()</span>
-<span class="n">scaler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="go">     mean radius  mean texture  ...  worst symmetry  worst fractal dimension</span>
+<span class="go">0          17.99         10.38  ...          0.4601                  0.11890</span>
+<span class="go">1          20.57         17.77  ...          0.2750                  0.08902</span>
+<span class="go">2          19.69         21.25  ...          0.3613                  0.08758</span>
+<span class="go">3          11.42         20.38  ...          0.6638                  0.17300</span>
+<span class="go">4          20.29         14.34  ...          0.2364                  0.07678</span>
+<span class="go">..           ...           ...  ...             ...                      ...</span>
+<span class="go">564        21.56         22.39  ...          0.2060                  0.07115</span>
+<span class="go">565        20.13         28.25  ...          0.2572                  0.06637</span>
+<span class="go">566        16.60         28.08  ...          0.2218                  0.07820</span>
+<span class="go">567        20.60         29.33  ...          0.4087                  0.12400</span>
+<span class="go">568         7.76         24.54  ...          0.2871                  0.07039</span>
+
+<span class="go">[569 rows x 30 columns]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scaler</span> <span class="o">=</span> <span class="n">Scaler</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+<span class="go">Fitting Scaler...</span>
+<span class="go">Scaling features...</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Note the reduced number of rows</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+<span class="go">     mean radius  mean texture  ...  worst symmetry  worst fractal dimension</span>
+<span class="go">0       1.097064     -2.073335  ...        2.750622                 1.937015</span>
+<span class="go">1       1.829821     -0.353632  ...       -0.243890                 0.281190</span>
+<span class="go">2       1.579888      0.456187  ...        1.152255                 0.201391</span>
+<span class="go">3      -0.768909      0.253732  ...        6.046041                 4.935010</span>
+<span class="go">4       1.750297     -1.151816  ...       -0.868353                -0.397100</span>
+<span class="go">..           ...           ...  ...             ...                      ...</span>
+<span class="go">564     2.110995      0.721473  ...       -1.360158                -0.709091</span>
+<span class="go">565     1.704854      2.085134  ...       -0.531855                -0.973978</span>
+<span class="go">566     0.702284      2.045574  ...       -1.104549                -0.318409</span>
+<span class="go">567     1.838341      2.336457  ...        1.919083                 2.219635</span>
+<span class="go">568    -1.808401      1.221792  ...       -0.048138                -0.751207</span>
+
+<span class="go">[569 rows x 30 columns]</span>
 </code></pre></div>
 </div>
 </div>
 </div>
+<p><br></p>
+<h2 id="methods">Methods</h2>
+<table style="font-size: 0.9em">
+<p><tr><td><a class="autorefs autorefs-internal" href="#scaler-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-inverse_transform">inverse_transform</a></td><td>Apply the inverse transformation to the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-transform">transform</a></td><td>Perform standardization by centering and scaling.</td></tr></p>
+</table>
+<p><br></p>
+<p><a id='scaler-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3128>[source]</a></span></div>Fit to data.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
+Feature set with shape=(n_samples, n_features).</p>
+<p></div><a id='fit-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+Does nothing. Implemented for continuity of the API.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='fit-Scaler'></a><strong>Scaler</strong><br><div markdown class='param'>
+Estimator instance.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='scaler-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L110>[source]</a></span></div>Fit to data, then transform it.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Feature set with shape=(n_samples, n_features). If None,
+X is ignored.</p>
+<p></div><a id='fit_transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+Target column corresponding to X.</p>
+<ul>
+<li>If None: y is ignored.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
+</ul>
+<p></div><a id='fit_transform-\*\*fit_params'></a><strong>**fit_params</strong><br><div markdown class='param'>
+Additional keyword arguments for the fit method.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='fit_transform-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Transformed feature set. Only returned if provided.</p>
+<p></div><a id='fit_transform-pd.Series'></a><strong>pd.Series</strong><br><div markdown class='param'>
+Transformed target column. Only returned if provided.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='scaler-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L194>[source]</a></span></div>Get parameters for this estimator.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
+If True, will return the parameters for this estimator and
+contained subobjects that are estimators.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_params-params '></a><strong>params : dict</strong><br><div markdown class='param'>
+Parameter names mapped to their values.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='scaler-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3210>[source]</a></span></div>Apply the inverse transformation to the data.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
+Feature set with shape=(n_samples, n_features).</p>
+<p></div><a id='inverse_transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+Does nothing. Implemented for continuity of the API.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='inverse_transform-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Scaled dataframe.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='scaler-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L731>[source]</a></span></div>Print message and save to log file.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
+Message to save to the logger and print to stdout.</p>
+<p></div><a id='log-level'></a><strong>level: int, default=0</strong><br><div markdown class='param'>
+Minimum verbosity level to print the message.</p>
+<p></div><a id='log-severity'></a><strong>severity: str, default="info"</strong><br><div markdown class='param'>
+Severity level of the message. Choose from: debug, info,
+warning, error, critical.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='scaler-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L763>[source]</a></span></div>Save the instance to a pickle file.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
+Name of the file. Use "auto" for automatic naming.</p>
+<p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
+Whether to save the dataset with the instance. This
+parameter is ignored if the method is not called from
+atom. If False, remember to add the data to <a class="autorefs autorefs-internal" href="../../ATOM/atomloader/#atomloader">ATOMLoader</a>
+when loading the file.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='scaler-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L218>[source]</a></span></div>Set the parameters of this estimator.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
+Estimator parameters.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='set_params-self '></a><strong>self : estimator instance</strong><br><div markdown class='param'>
+Estimator instance.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='scaler-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3176>[source]</a></span></div>Perform standardization by centering and scaling.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
+Feature set with shape=(n_samples, n_features).</p>
+<p></div><a id='transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+Does nothing. Implemented for continuity of the API.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='transform-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Scaled dataframe.
+</div></td></tr></p>
+</table>
+<p><br></p>
 
 
   

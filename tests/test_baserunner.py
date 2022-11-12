@@ -316,15 +316,13 @@ def test_get_rows_is_slice():
     assert len(atom._get_rows(index=slice(20, 100, 2))) == 40
 
 
-def test_get_rows_by_name():
-    """Assert that rows can be retrieved by their index label."""
+def test_get_rows_by_exact_match():
+    """Assert that a row can be selected by name."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
-    with pytest.raises(ValueError, match=".*not found in the dataset.*"):
-        atom._get_rows(index="index")
-    assert atom._get_rows(index="index_34") == ["index_34"]
+    assert atom._get_rows(index="index_23") == ["index_23"]
 
 
-def test_get_rows_by_position():
+def test_get_rows_by_int():
     """Assert that rows can be retrieved by their index position."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
     with pytest.raises(ValueError, match=".*out of range.*"):
@@ -332,11 +330,37 @@ def test_get_rows_by_position():
     assert atom._get_rows(index=100) == [atom.X.index[100]]
 
 
+def test_get_rows_by_str():
+    """Assert that rows can be retrieved by name or regex."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    assert len(atom._get_rows(index="index_34+index_58")) == 2
+    assert len(atom._get_rows(index=["index_34+index_58", "index_57"])) == 3
+    assert len(atom._get_rows(index="index_3.*")) == 111
+    assert len(atom._get_rows(index="!index_3")) == len(X_idx) - 1
+    assert len(atom._get_rows(index="!index_3.*")) == len(X_idx) - 111
+    with pytest.raises(ValueError, match=".*any row that matches.*"):
+        atom._get_rows(index="invalid")
+
+
+def test_get_rows_invalid_type():
+    """Assert that an error is raised when the type is invalid."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    with pytest.raises(TypeError, match=".*Invalid type for the index.*"):
+        atom._get_rows(index=[3.2])
+
+
 def test_get_rows_none_selected():
     """Assert that an error is raised when no rows are selected."""
     atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
     with pytest.raises(ValueError, match=".*has to be selected.*"):
         atom._get_rows(index=slice(1000, 2000))
+
+
+def test_get_rows_include_or_exclude():
+    """Assert that an error is raised when rows are included and excluded."""
+    atom = ATOMClassifier(X_idx, y_idx, index=True, random_state=1)
+    with pytest.raises(ValueError, match=".*either include or exclude rows.*"):
+        atom._get_rows(index=["index_34", "!index_36"])
 
 
 def test_get_columns_is_None():
@@ -353,7 +377,7 @@ def test_get_columns_by_slice():
     assert len(atom._get_columns(columns=slice(2, 6))) == 4
 
 
-def test_get_columns_by_index():
+def test_get_columns_by_int():
     """Assert that columns can be retrieved by index."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*out of range for a dataset.*"):
@@ -361,19 +385,30 @@ def test_get_columns_by_index():
     assert atom._get_columns(columns=0) == ["mean radius"]
 
 
-def test_get_columns_by_regex():
-    """Assert that columns can be retrieved by regex."""
+def test_get_columns_by_str():
+    """Assert that columns can be retrieved by name or regex."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*not find any column.*"):
+    assert len(atom._get_columns(columns="mean radius+mean texture")) == 2
+    assert len(atom._get_columns(columns=["mean radius+mean texture", "mean area"])) == 3
+    assert len(atom._get_columns(columns="mean .*")) == 10
+    assert len(atom._get_columns(columns="!mean radius")) == X_bin.shape[1]
+    assert len(atom._get_columns(columns="!mean .*")) == X_bin.shape[1] - 9
+    with pytest.raises(ValueError, match=".*any column that matches.*"):
         atom._get_columns(columns="invalid")
-    assert len(atom._get_columns(columns="mean.*")) > 1
 
 
 def test_get_columns_by_type():
     """Assert that columns can be retrieved by type."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert len(atom._get_columns(columns="!number")) == 1
     assert len(atom._get_columns(columns="number")) == 4
+    assert len(atom._get_columns(columns="!number")) == 1
+
+
+def test_get_columns_invalid_type():
+    """Assert that an error is raised when the type is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(TypeError, match=".*Invalid type for the columns.*"):
+        atom._get_columns(columns=[3.2])
 
 
 def test_get_columns_exclude():
@@ -442,13 +477,24 @@ def test_get_models_winner():
     assert atom._get_models(models="winner") == ["LR1"]
 
 
-def test_get_models_by_regex():
-    """Assert that a single model is returned if the name matches exactly."""
+def test_get_models_by_str():
+    """Assert that models can be retrieved by name or regex."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=".*not find any model.*"):
+    atom.run(["GNB", "LR1", "LR2"])
+    assert len(atom._get_models(models="gnb+lr1")) == 2
+    assert len(atom._get_models(models=["gnb+lr1", "lr2"])) == 3
+    assert len(atom._get_models(models="lr.*")) == 2
+    assert len(atom._get_models(models="!lr1")) == 2
+    assert len(atom._get_models(models="!lr.*")) == 1
+    with pytest.raises(ValueError, match=".*any model that matches.*"):
         atom._get_models(models="invalid")
-    atom.train_sizing(["LR", "Tree"])
-    assert len(atom._get_models(models="lr.*")) == 5
+
+
+def test_get_models_invalid_type():
+    """Assert that an error is raised when the type is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(TypeError, match=".*Invalid type for the models.*"):
+        atom._get_models(models=[3.2])
 
 
 def test_get_models_exclude():

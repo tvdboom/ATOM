@@ -887,7 +887,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
     def _add_transformer(
         self,
         transformer: Transformer,
-        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -1760,7 +1760,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
             Instance that does the actual model training.
 
         """
+        if self.y.dtype.kind not in "ifu":
+            raise ValueError(
+                "The target column is not numerical. Use atom.clean() "
+                "to encode the target column to numerical values."
+            )
+
         try:
+            trainer._aesthetics = self._aesthetics
             trainer._tracking_params = self._tracking_params
             trainer._current = self._current
             trainer._branches = self._branches

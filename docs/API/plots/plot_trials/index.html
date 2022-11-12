@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/plots/plot_trials/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.3">
     
     
   <title>plot_trials - ATOM</title>
@@ -1624,6 +1624,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/pa/" class="md-nav__link">
         PassiveAggressive
       </a>
@@ -2957,70 +2971,66 @@
 
 <h1 id="plot_trials">plot_trials</h1>
 <hr />
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_bo</strong>(models=None,
-metric=0, title=None, figsize=(10, 8), filename=None, display=True)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1274">[source]</a>
-</span>
-</div>
-
-<p>Plot the bayesian optimization scores. Only for models that ran
-hyperparameter tuning. This is the same plot as the one produced
-by <code>ht_params={"plot": True}</code> while running the BO. Creates a
-canvas with two plots: the first plot shows the score of every trial
-and the second shows the distance between the last consecutive steps.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>models: int, str, slice, sequence or None, default=None</strong><br>
-Name of the models to plot. If None, all models that used
-hyperparameter tuning are selected.
-</p>
-<p>
-<strong>metric: int or str, default=0</strong><br>
-Index or name of the metric to plot. Only for <a href="../../../user_guide/training/#metric">multi-metric</a> runs.
-</p>
-<p>
-<strong>title: str or None, default=None</strong><br>
-Plot's title. If None, the title is left empty.
-</p>
-<p>
-<strong>figsize: tuple, default=(10, 8)</strong><br>
-Figure's size, format as (x, y).
-</p>
-<p>
-<strong>filename: str or None, default=None</strong><br>
-Name of the file. Use "auto" for automatic naming.
-If None, the figure is not saved.
-</p>
-<p>
-<strong>display: bool or None, default=True</strong><br>
-Whether to render the plot. If None, it returns the matplotlib figure.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>matplotlib.figure.Figure</strong><br>
-Plot object. Only returned if <code>display=None</code>.
-</td>
-</tr>
+<p><a id='plot_trials'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_trials</strong>(models=None, metric=None, title=None, legend="upper left", figsize=(900, 800), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L6153>[source]</a></span></div>Plot the hyperparameter tuning trials.</p>
+<p>Only available for models that ran <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.
+Creates a figure with two plots: the first plot shows the score
+of every trial and the second shows the distance between the
+last consecutive steps. The best trial is indicated with a star.
+This is the same plot as produced by <code>ht_params={"plot": True}</code>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_trials-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
+Name of the models to plot. If None, all models that
+used hyperparameter tuning are selected.</p>
+<p></div><a id='plot_trials-metric'></a><strong>metric: int, str or None, default=None</strong><br><div markdown class='param'>
+Index or name of the metric to show (only for multi-metric
+runs). Add <code>+</code> between options to select more than one. If
+None, the metric used to run the pipeline is selected.</p>
+<p></div><a id='plot_trials-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
+Title for the plot.</p>
+<ul>
+<li>If None, no title is shown.</li>
+<li>If str, text for the title.</li>
+<li>If dict, <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">title configuration</a>.</li>
+</ul>
+<p></div><a id='plot_trials-legend'></a><strong>legend: str, dict or None, default="upper left"</strong><br><div markdown class='param'>
+Legend for the plot. See the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#parameters">user guide</a> for
+an extended description of the choices.</p>
+<ul>
+<li>If None: No legend is shown.</li>
+<li>If str: Location where to show the legend.</li>
+<li>If dict: Legend configuration.</li>
+</ul>
+<p></div><a id='plot_trials-figsize'></a><strong>figsize: tuple, default=(900, 900)</strong><br><div markdown class='param'>
+Figure's size in pixels, format as (x, y).</p>
+<p></div><a id='plot_trials-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
+Save the plot using this name. Use "auto" for automatic
+naming. The type of the file depends on the provided name
+(.html, .png, .pdf, etc...). If <code>filename</code> has no file type,
+the plot is saved as html. If None, the plot is not saved.</p>
+<p></div><a id='plot_trials-display'></a><strong>display: bool or None, default=True</strong><br><div markdown class='param'>
+Whether to render the plot. If None, it returns the figure.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='plot_trials-<a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a> or None'></a><strong><a href="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html">go.Figure</a> or None</strong><br><div markdown class='param'>
+Plot object. Only returned if <code>display=None</code>.</p>
+<p></div></td></tr></p>
 </table>
-<p><br /></p>
-<h2 id="example">Example</h2>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
-
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;LDA&quot;</span><span class="p">,</span> <span class="s2">&quot;LGB&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;f1&quot;</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">plot_bo</span><span class="p">()</span>
-</code></pre></div>
-<div align="center">
-    <img src="../../../img/plots/plot_bo.png" alt="plot_bo" width="700" height="560"/>
+<p><br></p>
+<div class="admonition info">
+<p class="admonition-title">See Also</p>
+<p><a class="autorefs autorefs-internal" href="../plot_evals/#plot_evals">plot_evals</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot evaluation curves.</div></p>
+<p><a class="autorefs autorefs-internal" href="../plot_results/#plot_results">plot_results</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot the model results.</div></p>
 </div>
+<p><br></p>
+<h2 id="example">Example</h2>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;./examples/datasets/weatherAUS.csv&quot;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">plot_trials</span><span class="p">()</span>
+</code></pre></div>
 
 
   

@@ -596,7 +596,7 @@ def test_predictions_from_index():
 
 def test_transformations_first():
     """Assert that the transformations are applied before predicting."""
-    atom = ATOMClassifier(X10_str, y10, verbose=2, random_state=1)
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
     atom.run("Tree")
     assert isinstance(atom.tree.predict(X10_str), pd.Series)
