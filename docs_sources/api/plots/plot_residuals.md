@@ -1,7 +1,7 @@
 # plot_residuals
 ----------------
 
-:: atom.plots:ModelPlot.plot_residuals
+:: atom.plots:PredictionPlot.plot_residuals
     :: signature
     :: head
     :: table:

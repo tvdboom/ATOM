@@ -1100,7 +1100,7 @@ class FeatureSelector(
         - If >1: Minimum repetition number.
         - If <=1: Minimum repetition fraction.
 
-    max_repeated: int, float or None, default=1.
+    max_repeated: int, float or None, default=1.0
         Remove categorical features with the same value in at least
         `max_repeated` rows. The default is to keep all features with
         non-zero variance, i.e. remove the features that have the same
@@ -1110,7 +1110,7 @@ class FeatureSelector(
         - If >1: Maximum number of repeated occurences.
         - If <=1: Maximum fraction of repeated occurences.
 
-    max_correlation: float or None, default=1.
+    max_correlation: float or None, default=1.0
         Minimum absolute [Pearson correlation][pearson] to identify
         correlated features. For each group, it removes all except the
         feature with the highest correlation to `y` (if provided, else

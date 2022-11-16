@@ -30,7 +30,9 @@ from atom.feature_engineering import (
 )
 from atom.models import MODELS, MODELS_ENSEMBLES, CustomModel
 from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
-from atom.plots import DataPlot, FeatureSelectorPlot, ModelPlot, ShapPlot
+from atom.plots import (
+    DataPlot, FeatureSelectorPlot, HTPlot, PredictionPlot, ShapPlot,
+)
 from atom.training import (
     DirectClassifier, DirectRegressor, SuccessiveHalvingClassifier,
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
@@ -44,7 +46,7 @@ from atom.utils import (
 )
 
 
-class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, ModelPlot, ShapPlot):
+class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, ShapPlot):
     """ATOM base class.
 
     The ATOM class is a convenient wrapper for all data cleaning,

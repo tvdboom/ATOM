@@ -1,7 +1,7 @@
 # plot_calibration
 ------------------
 
-:: atom.plots:ModelPlot.plot_calibration
+:: atom.plots:PredictionPlot.plot_calibration
     :: signature
     :: head
     :: table:

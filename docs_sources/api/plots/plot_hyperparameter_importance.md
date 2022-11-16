@@ -1,7 +1,7 @@
-# plot_threshold
-----------------
+# plot_hyperparameter_importance
+--------------------------------
 
-:: atom.plots:PredictionPlot.plot_threshold
+:: atom.plots:HTPlot.plot_hyperparameter_importance
     :: signature
     :: head
     :: table:

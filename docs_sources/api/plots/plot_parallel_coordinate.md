@@ -1,7 +1,7 @@
-# plot_threshold
-----------------
+# plot_parallel_coordinate
+--------------------------
 
-:: atom.plots:PredictionPlot.plot_threshold
+:: atom.plots:HTPlot.plot_parallel_coordinate
     :: signature
     :: head
     :: table:

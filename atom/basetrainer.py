@@ -19,14 +19,14 @@ from atom.baserunner import BaseRunner
 from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
-from atom.plots import ModelPlot, ShapPlot
+from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     SEQUENCE, CustomDict, check_scaling, get_best_score, get_custom_scorer,
     is_sparse, lst, time_to_str,
 )
 
 
-class BaseTrainer(BaseTransformer, BaseRunner, ModelPlot, ShapPlot):
+class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot):
     """Base class for trainers.
 
     Implements methods to check the validity of the parameters,
@@ -52,7 +52,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, ModelPlot, ShapPlot):
             random_state=random_state,
         )
 
-        super(ModelPlot, self).__init__()
+        super(HTPlot, self).__init__()
 
         # Parameter attributes
         self._models = models

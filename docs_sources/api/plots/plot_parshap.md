@@ -1,7 +1,7 @@
 # plot_parshap
 --------------
 
-:: atom.plots:ModelPlot.plot_parshap
+:: atom.plots:PredictionPlot.plot_parshap
     :: signature
     :: head
     :: table:

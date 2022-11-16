@@ -1,7 +1,7 @@
 # plot_lift
 -----------
 
-:: atom.plots:ModelPlot.plot_lift
+:: atom.plots:PredictionPlot.plot_lift
     :: signature
     :: head
     :: table:

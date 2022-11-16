@@ -1,7 +1,7 @@
-# plot_threshold
-----------------
+# plot_edf
+----------
 
-:: atom.plots:PredictionPlot.plot_threshold
+:: atom.plots:HTPlot.plot_edf
     :: signature
     :: head
     :: table:

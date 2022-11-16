@@ -1,7 +1,7 @@
 # plot_results
 --------------
 
-:: atom.plots:ModelPlot.plot_results
+:: atom.plots:PredictionPlot.plot_results
     :: signature
     :: head
     :: table:

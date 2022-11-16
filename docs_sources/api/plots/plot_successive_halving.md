@@ -1,7 +1,7 @@
 # plot_successive_halving
 -------------------------
 
-:: atom.plots:ModelPlot.plot_successive_halving
+:: atom.plots:PredictionPlot.plot_successive_halving
     :: signature
     :: head
     :: table:

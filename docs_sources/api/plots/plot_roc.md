@@ -1,7 +1,7 @@
 # plot_roc
 ----------
 
-:: atom.plots:ModelPlot.plot_roc
+:: atom.plots:PredictionPlot.plot_roc
     :: signature
     :: head
     :: table:

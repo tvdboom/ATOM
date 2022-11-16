@@ -160,9 +160,19 @@ depend on the task at hand.
             - reset_aesthetics
             - update_layout
 
-### Model plots
+### Hyperparameter tuning plots
 
-:: atom.plots:ModelPlot
+:: atom.plots:HTPlot
+    :: methods:
+        toc_only: True
+        exclude:
+            - canvas
+            - reset_aesthetics
+            - update_layout
+
+### Prediction plots
+
+:: atom.plots:PredictionPlot
     :: methods:
         toc_only: True
         exclude:

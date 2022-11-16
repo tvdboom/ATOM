@@ -10,7 +10,6 @@ Description: Unit tests for plots.py
 import glob
 from unittest.mock import patch
 
-import pandas as pd
 import pytest
 from sklearn.metrics import f1_score, get_scorer
 
@@ -163,20 +162,20 @@ def test_get_metric_None():
     """Assert that all metrics are returned when None."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric=["f1", "recall"])
-    assert atom._get_metric(metric=None) == [0, 1]
+    assert atom._get_metric(metric=None, max_one=False) == [0, 1]
 
 
 def test_get_metric_time():
     """Assert that time metrics are accepted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom._get_metric(metric="TIME") == "time"
+    assert atom._get_metric(metric="TIME", max_one=True) == "time"
 
 
 def test_get_metric_time_invalid():
     """Assert that an error is raised for invalid time metrics."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*the metric parameter.*"):
-        atom._get_metric(metric="time+invalid")
+        atom._get_metric(metric="time+invalid", max_one=False)
 
 
 def test_get_metric_multiple():
@@ -191,7 +190,7 @@ def test_get_metric_invalid_name():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="recall")
     with pytest.raises(ValueError, match=".*wasn't used to fit the models.*"):
-        atom._get_metric(metric="precision")
+        atom._get_metric(metric="precision", max_one=True)
 
 
 def test_get_metric_max_one():
@@ -199,14 +198,14 @@ def test_get_metric_max_one():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric=["f1", "recall"])
     with pytest.raises(ValueError, match=".*Only one metric is allowed.*"):
-        atom._get_metric(metric="f1+recall")
+        atom._get_metric(metric="f1+recall", max_one=True)
 
 
 def test_get_metric_by_int():
     """Assert that a metric can be selected by position."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric=["f1", "recall"])
-    assert atom._get_metric(metric=1) == 1
+    assert atom._get_metric(metric=1, max_one=True) == 1
 
 
 def test_get_metric_invalid_int():
@@ -214,35 +213,35 @@ def test_get_metric_invalid_int():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric=["f1", "recall"])
     with pytest.raises(ValueError, match=".*out of range.*"):
-        atom._get_metric(metric=3)
+        atom._get_metric(metric=3, max_one=True)
 
 
 def test_get_set():
     """Assert that data sets can be selected."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
-    assert atom._get_set(dataset="Train+Holdout") == ["train", "holdout"]
-    assert atom._get_set(dataset=["Train", "Holdout"]) == ["train", "holdout"]
+    assert atom._get_set(dataset="Train+Test", max_one=False) == ["train", "test"]
+    assert atom._get_set(dataset=["Train", "Test"], max_one=False) == ["train", "test"]
 
 
 def test_get_set_no_holdout():
     """Assert that an error is raised when there's no holdout data set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*No holdout data set.*"):
-        atom._get_set(dataset="holdout")
+        atom._get_set(dataset="holdout", max_one=False)
 
 
 def test_get_set_no_holdout_allowed():
     """Assert that an error is raised when holdout isn't allowed."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     with pytest.raises(ValueError, match=".*Choose from: train or test.*"):
-        atom._get_set(dataset="holdout", allow_holdout=False)
+        atom._get_set(dataset="holdout", max_one=False, allow_holdout=False)
 
 
 def test_get_set_invalid():
     """Assert that an error is raised when the set is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*Choose from: train, test.*"):
-        atom._get_set(dataset="invalid")
+        atom._get_set(dataset="invalid", max_one=False)
 
 
 def test_get_set_multiple():
@@ -499,7 +498,83 @@ def test_plot_wordcloud():
     atom.plot_wordcloud(display=False)  # When corpus are tokens
 
 
-# Test ModelPlot =================================================== >>
+# Test HTPlot =========================================================== >>
+
+def test_plot_edf():
+    """Assert that the plot_edf method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_trials)
+    atom.run(["lasso", "ridge"], n_trials=(5, 0))
+
+    # Model didn't ran hyperparameter tuning
+    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
+        atom.ridge.plot_edf(display=False)
+
+    atom.lasso.plot_edf(display=False)
+
+
+def test_plot_hyperparameter_importance():
+    """Assert that the plot_hyperparameter_importance method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_trials)
+    atom.run(["lasso", "ridge"], n_trials=(5, 0))
+
+    # Invalid show parameter
+    with pytest.raises(ValueError, match=".*the show parameter.*"):
+        atom.lasso.plot_hyperparameter_importance(show=-1, display=False)
+
+    # Model didn't ran hyperparameter tuning
+    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
+        atom.ridge.plot_hyperparameter_importance(display=False)
+
+    atom.lasso.plot_hyperparameter_importance(display=False)
+
+
+def test_plot_hyperparameters():
+    """Assert that the plot_hyperparameters method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_trials)
+    atom.run(["lasso", "ridge"], n_trials=(5, 0))
+
+    # Model didn't ran hyperparameter tuning
+    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
+        atom.ridge.plot_hyperparameters(display=False)
+
+    # Only one hyperparameter
+    with pytest.raises(ValueError, match=".*minimum of two parameters.*"):
+        atom.lasso.plot_hyperparameters(params=[0], display=False)
+
+    atom.lasso.plot_hyperparameters(display=False)
+
+
+def test_plot_parallel_coordinate():
+    """Assert that the plot_parallel_coordinate method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_trials)
+    atom.run(["tree", "ridge"], n_trials=(5, 0))
+
+    # Model didn't ran hyperparameter tuning
+    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
+        atom.ridge.plot_parallel_coordinate(display=False)
+
+    atom.tree.plot_parallel_coordinate(display=False)
+
+
+def test_plot_trials():
+    """Assert that the plot_bo method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_trials)
+    atom.run("lasso", metric="max_error", n_trials=0)
+
+    # Model didn't ran hyperparameter tuning
+    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
+        atom.plot_trials(display=False)
+
+    atom.run(["lasso", "ridge"], metric="max_error", n_trials=1)
+    atom.plot_trials(display=False)
+
+
+# Test PredictionPlot =================================================== >>
 
 def test_plot_calibration():
     """Assert that the plot_calibration method works."""
@@ -754,20 +829,6 @@ def test_plot_threshold(metric):
     atom.run(["Tree", "LGB", "SVM"], metric="f1")
     atom.plot_threshold(models=["Tree", "LGB"], display=False)
     atom.lgb.plot_threshold(metric=metric, display=False)
-
-
-def test_plot_trials():
-    """Assert that the plot_bo method works."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_trials)
-    atom.run("lasso", metric="max_error", n_trials=0)
-
-    # Model didn't run hyperparameter tuning
-    with pytest.raises(PermissionError, match=".*ran hyperparameter tuning.*"):
-        atom.plot_trials(display=False)
-
-    atom.run(["lasso", "ridge"], metric="max_error", n_trials=1)
-    atom.plot_trials(display=False)
 
 
 # Test ShapPlot ==================================================== >>

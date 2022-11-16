@@ -1,7 +1,7 @@
 # plot_confusion_matrix
 -----------------------
 
-:: atom.plots:ModelPlot.plot_confusion_matrix
+:: atom.plots:PredictionPlot.plot_confusion_matrix
     :: signature
     :: head
     :: table:

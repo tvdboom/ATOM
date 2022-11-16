@@ -206,13 +206,17 @@ nav:
             - plot_correlation: API/plots/plot_correlation.md
             - plot_det: API/plots/plot_det.md
             - plot_distribution: API/plots/plot_distribution.md
+            - plot_edf: API/plots/plot_edf.md
             - plot_errors: API/plots/plot_errors.md
             - plot_evals: API/plots/plot_evals.md
             - plot_feature_importance: API/plots/plot_feature_importance.md
             - plot_gains: API/plots/plot_gains.md
+            - plot_hyperparameter_importance: API/plots/plot_hyperparameter_importance.md
+            - plot_hyperparameters: API/plots/plot_hyperparameters.md
             - plot_learning_curve: API/plots/plot_learning_curve.md
             - plot_lift: API/plots/plot_lift.md
             - plot_ngrams: API/plots/plot_ngrams.md
+            - plot_parallel_coordinate: API/plots/plot_parallel_coordinate.md
             - plot_parshap: API/plots/plot_parshap.md
             - plot_partial_dependence: API/plots/plot_partial_dependence.md
             - plot_pca: API/plots/plot_pca.md

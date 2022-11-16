@@ -1,7 +1,7 @@
 # plot_pipeline
 ---------------
 
-:: atom.plots:ModelPlot.plot_pipeline
+:: atom.plots:PredictionPlot.plot_pipeline
     :: signature
     :: head
     :: table:

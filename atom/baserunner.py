@@ -567,7 +567,7 @@ class BaseRunner:
 
     def _get_models(
         self,
-        models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
         ensembles: bool = True,
     ) -> List[str]:
         """Get names of models.
@@ -579,7 +579,7 @@ class BaseRunner:
 
         Parameters
         ----------
-        models: int, str, slice, Model, sequence or None, default=None
+        models: int, str, Model, slice, sequence or None, default=None
             Names or indices of the models to select. If None, it
             returns all models.
 
@@ -609,39 +609,39 @@ class BaseRunner:
             nonlocal inc, exc
 
             array = inc
-            if model.startswith("!") and model not in available_models:
+            if model.startswith("!") and model not in options:
                 array = exc
                 model = model[1:]
 
             # Find rows using regex matches
             if model.lower() == "winner":
                 array.append(self.winner.name)
-            elif matches := [m for m in available_models if re.fullmatch(model, m, re.IGNORECASE)]:
+            elif matches := [m for m in options if re.fullmatch(model, m, re.IGNORECASE)]:
                 array.extend(matches)
             else:
                 raise ex or ValueError(
                     "Invalid value for the models parameter. Could "
                     f"not find any model that matches {model}. The "
-                    f"available models are: {', '.join(available_models)}."
+                    f"available models are: {', '.join(options)}."
                 )
 
-        available_models = self._models.min("og")
+        options = self._models.min("og")
 
         inc, exc = [], []
         if models is None:
-            inc.extend(available_models)
+            inc.extend(options)
         elif isinstance(models, slice):
-            inc.extend(available_models[models])
+            inc.extend(options[models])
         else:
             for model in lst(models):
                 if isinstance(model, int):
                     try:
-                        inc.append(available_models[model].name)
+                        inc.append(options[model].name)
                     except KeyError:
                         raise ValueError(
                             "Invalid value for the models parameter. Value "
                             f"{model} is out of range for a pipeline with "
-                            f"{len(available_models)} models."
+                            f"{len(options)} models."
                         )
                 elif isinstance(model, str):
                     try:
@@ -665,7 +665,7 @@ class BaseRunner:
 
         if exc:
             # If models were excluded with `!`, select all but those
-            inc = [m for m in available_models if m not in exc]
+            inc = [m for m in options if m not in exc]
 
         if not ensembles:
             inc = [

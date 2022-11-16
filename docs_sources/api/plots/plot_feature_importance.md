@@ -1,7 +1,7 @@
 # plot_feature_importance
 -------------------------
 
-:: atom.plots:ModelPlot.plot_feature_importance
+:: atom.plots:PredictionPlot.plot_feature_importance
     :: signature
     :: head
     :: table:

@@ -766,8 +766,7 @@ class ShapExplanation:
             Only for multi-class classification tasks.
 
         feature: int, str or None, default=None
-            Index or name of the feature to look at. If None, look at all
-            features.
+            Feature to look at. If None, look at all features.
 
         only_one: bool, default=False
             Whether only one row is accepted.

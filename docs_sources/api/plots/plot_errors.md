@@ -1,7 +1,7 @@
 # plot_errors
 -------------
 
-:: atom.plots:ModelPlot.plot_errors
+:: atom.plots:PredictionPlot.plot_errors
     :: signature
     :: head
     :: table:

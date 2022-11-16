@@ -1,7 +1,7 @@
 # plot_trials
 -------------
 
-:: atom.plots:ModelPlot.plot_trials
+:: atom.plots:HTPlot.plot_trials
     :: signature
     :: head
     :: table:

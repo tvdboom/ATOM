@@ -1,7 +1,7 @@
 # plot_evals
 ------------
 
-:: atom.plots:ModelPlot.plot_evals
+:: atom.plots:PredictionPlot.plot_evals
     :: signature
     :: head
     :: table:

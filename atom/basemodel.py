@@ -39,7 +39,7 @@ from typeguard import typechecked
 
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
-from atom.plots import ModelPlot, ShapPlot
+from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
     CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
@@ -49,7 +49,7 @@ from atom.utils import (
 )
 
 
-class BaseModel(ModelPlot, ShapPlot):
+class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     """Base class for all models.
 
     Parameters
@@ -1105,15 +1105,15 @@ class BaseModel(ModelPlot, ShapPlot):
     def feature_importance(self) -> Optional[pd.Series]:
         """Normalized feature importance scores.
 
-        The scores are extracted from the estimator's `scores_`,
-        `coef_` or `feature_importances_` attribute, checked in that
-        order. Returns None for estimators without any of those
-        attributes.
+        The sum of importances for all features is 1. The scores are
+        extracted from the estimator's `scores_`, `coef_` or
+        `feature_importances_` attribute, checked in that order.
+        Returns None for estimators without any of those attributes.
 
         """
         if data := get_feature_importance(self.estimator):
             return pd.Series(
-                data=data / max(data),
+                data=data / sum(data),
                 index=self.features,
                 name="feature_importance",
                 dtype="float",

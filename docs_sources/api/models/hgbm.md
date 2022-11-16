@@ -103,7 +103,7 @@ attributes that are never used, saving time and memory.
 
 ## Methods
 
-The [model plots][] and [prediction methods][] can be called directly
+The [plots][available-plots] and [prediction methods][] can be called directly
 from the model. The remaining utility methods can be found hereunder.
 
 :: methods:

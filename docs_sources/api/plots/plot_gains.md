@@ -1,7 +1,7 @@
 # plot_gains
 ------------
 
-:: atom.plots:ModelPlot.plot_gains
+:: atom.plots:PredictionPlot.plot_gains
     :: signature
     :: head
     :: table:

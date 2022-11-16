@@ -1,7 +1,7 @@
 # plot_det
 ----------
 
-:: atom.plots:ModelPlot.plot_det
+:: atom.plots:PredictionPlot.plot_det
     :: signature
     :: head
     :: table:

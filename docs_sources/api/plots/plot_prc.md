@@ -1,7 +1,7 @@
 # plot_prc
 ----------
 
-:: atom.plots:ModelPlot.plot_prc
+:: atom.plots:PredictionPlot.plot_prc
     :: signature
     :: head
     :: table:
