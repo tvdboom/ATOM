@@ -1986,6 +1986,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_errors/" class="md-nav__link">
         plot_errors
       </a>
@@ -2042,6 +2056,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
@@ -2072,6 +2114,20 @@
     <li class="md-nav__item">
       <a href="../plot_ngrams/" class="md-nav__link">
         plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
       </a>
     </li>
   
@@ -2394,6 +2450,20 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_slice/" class="md-nav__link">
+        plot_slice
+      </a>
     </li>
   
 
@@ -2971,7 +3041,7 @@
 
 <h1 id="plot_shap_waterfall">plot_shap_waterfall</h1>
 <hr />
-<p><a id='plot_shap_waterfall'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_waterfall</strong>(models=None, index=None, show=None, target=1, title=None, legend=None, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7085>[source]</a></span></div>Plot SHAP's waterfall plot.</p>
+<p><a id='plot_shap_waterfall'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_waterfall</strong>(models=None, index=None, show=None, target=1, title=None, legend=None, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7791>[source]</a></span></div>Plot SHAP's waterfall plot.</p>
 <p>The SHAP value of a feature represents the impact of the
 evidence provided by that feature on the model’s output. The
 waterfall plot is designed to visually display how the SHAP
@@ -2982,24 +3052,23 @@ features. Features are sorted by the magnitude of their SHAP
 values with the smallest magnitude features grouped together
 at the bottom of the plot when the number of features in the
 models exceeds the <code>show</code> parameter. Read more about SHAP plots
-in the [user guide][#shap].</p>
+in the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">user guide</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_shap_waterfall-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
-Name of the model to plot. If None, all models are selected.
-Note that leaving the default option could raise an exception
-if there are multiple models. To avoid this, call the plot
-from a model, <code>atom.xgb.waterfall_plot()</code>.</p>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_shap_waterfall-models'></a><strong>models: int, str, Model or None, default=None</strong><br><div markdown class='param'>
+Model to plot. If None, all models are selected. Note that
+leaving the default option could raise an exception if there
+are multiple models. To avoid this, call the plot directly
+from a model, e.g. <code>atom.lr.plot_shap_waterfall()</code>.</p>
 <p></div><a id='plot_shap_waterfall-index'></a><strong>index: int, str or None, default=None</strong><br><div markdown class='param'>
-Index name or position of the row in the dataset to plot.
-If None, it selects the first row in the test set. The
-waterfall plot does not support plotting multiple
-samples.</p>
+Rows in the dataset to plot. If None, it selects all rows
+in the test set. The plot_shap_waterfall method does not
+support plotting multiple samples.</p>
 <p></div><a id='plot_shap_waterfall-show'></a><strong>show: int or None, default=None</strong><br><div markdown class='param'>
-Number of features (ordered by importance) to show. None
-to show all.</p>
+Number of features (ordered by importance) to show. If
+None, it shows all features.</p>
 <p></div><a id='plot_shap_waterfall-target'></a><strong>target: int or str, default=1</strong><br><div markdown class='param'>
-Index or name of the class in the target column to look at.
-Only for multi-class classification tasks.</p>
+Class in the target column to look at (only for multi-class
+classification tasks).</p>
 <p></div><a id='plot_shap_waterfall-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>
@@ -3009,8 +3078,9 @@ Title for the plot.</p>
 </ul>
 <p></div><a id='plot_shap_waterfall-legend'></a><strong>legend: str, dict or None, default=None</strong><br><div markdown class='param'>
 Does nothing. Implemented for continuity of the API.</p>
-<p></div><a id='plot_shap_waterfall-figsize'></a><strong>figsize: tuple or None, default=(900, 600)</strong><br><div markdown class='param'>
-Figure's size in pixels, format as (x, y).</p>
+<p></div><a id='plot_shap_waterfall-figsize'></a><strong>figsize: tuple or None, default=None</strong><br><div markdown class='param'>
+Figure's size in pixels, format as (x, y). If None, it
+adapts the size to the number of features shown.</p>
 <p></div><a id='plot_shap_waterfall-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
 Save the plot using this name. Use "auto" for automatic
 naming. The type of the file depends on the provided name
@@ -3088,13 +3158,13 @@ Plot object. Only returned if <code>display=None</code>.</p>
       
       
         
-        <a href="../plot_successive_halving/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_successive_halving" rel="next">
+        <a href="../plot_slice/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_slice" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              plot_successive_halving
+              plot_slice
             </div>
           </div>
           <div class="md-footer__button md-icon">

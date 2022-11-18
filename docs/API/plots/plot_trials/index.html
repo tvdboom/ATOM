@@ -1986,6 +1986,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_errors/" class="md-nav__link">
         plot_errors
       </a>
@@ -2042,6 +2056,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
@@ -2072,6 +2114,20 @@
     <li class="md-nav__item">
       <a href="../plot_ngrams/" class="md-nav__link">
         plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
       </a>
     </li>
   
@@ -2352,6 +2408,20 @@
     <li class="md-nav__item">
       <a href="../plot_shap_waterfall/" class="md-nav__link">
         plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_slice/" class="md-nav__link">
+        plot_slice
       </a>
     </li>
   
@@ -2971,20 +3041,21 @@
 
 <h1 id="plot_trials">plot_trials</h1>
 <hr />
-<p><a id='plot_trials'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_trials</strong>(models=None, metric=None, title=None, legend="upper left", figsize=(900, 800), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L6153>[source]</a></span></div>Plot the hyperparameter tuning trials.</p>
-<p>Only available for models that ran <a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.
-Creates a figure with two plots: the first plot shows the score
+<p><a id='plot_trials'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_trials</strong>(models=None, metric=None, title=None, legend="upper left", figsize=(900, 800), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3484>[source]</a></span></div>Plot the hyperparameter tuning trials.</p>
+<p>Creates a figure with two plots: the first plot shows the score
 of every trial and the second shows the distance between the
 last consecutive steps. The best trial is indicated with a star.
-This is the same plot as produced by <code>ht_params={"plot": True}</code>.</p>
+This is the same plot as produced by <code>ht_params={"plot": True}</code>.
+This plot is only available for models that ran
+<a class="autorefs autorefs-internal" href="../../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_trials-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
-Name of the models to plot. If None, all models that
-used hyperparameter tuning are selected.</p>
-<p></div><a id='plot_trials-metric'></a><strong>metric: int, str or None, default=None</strong><br><div markdown class='param'>
-Index or name of the metric to show (only for multi-metric
-runs). Add <code>+</code> between options to select more than one. If
-None, the metric used to run the pipeline is selected.</p>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_trials-models'></a><strong>models: int, str, Model, slice, sequence or None, default=None</strong><br><div markdown class='param'>
+Models to plot. If None, all models that used hyperparameter
+tuning are selected.</p>
+<p></div><a id='plot_trials-metric'></a><strong>metric: int, str, sequence or None, default=None</strong><br><div markdown class='param'>
+Metric to plot (only for multi-metric runs). Add <code>+</code> between
+options to select more than one. If None, all metrics are
+selected.</p>
 <p></div><a id='plot_trials-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>
@@ -3000,7 +3071,7 @@ an extended description of the choices.</p>
 <li>If str: Location where to show the legend.</li>
 <li>If dict: Legend configuration.</li>
 </ul>
-<p></div><a id='plot_trials-figsize'></a><strong>figsize: tuple, default=(900, 900)</strong><br><div markdown class='param'>
+<p></div><a id='plot_trials-figsize'></a><strong>figsize: tuple, default=(900, 800)</strong><br><div markdown class='param'>
 Figure's size in pixels, format as (x, y).</p>
 <p></div><a id='plot_trials-filename'></a><strong>filename: str or None, default=None</strong><br><div markdown class='param'>
 Save the plot using this name. Use "auto" for automatic
@@ -3017,6 +3088,7 @@ Plot object. Only returned if <code>display=None</code>.</p>
 <div class="admonition info">
 <p class="admonition-title">See Also</p>
 <p><a class="autorefs autorefs-internal" href="../plot_evals/#plot_evals">plot_evals</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot evaluation curves.</div></p>
+<p><a class="autorefs autorefs-internal" href="../plot_hyperparameters/#plot_hyperparameters">plot_hyperparameters</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot hyperparameter relationships in a study.</div></p>
 <p><a class="autorefs autorefs-internal" href="../plot_results/#plot_results">plot_results</a><br>    <div style='margin: -1em 0 0 1.2em'>Plot the model results.</div></p>
 </div>
 <p><br></p>

@@ -1986,6 +1986,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_errors/" class="md-nav__link">
         plot_errors
       </a>
@@ -2042,6 +2056,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
@@ -2072,6 +2114,20 @@
     <li class="md-nav__item">
       <a href="../plot_ngrams/" class="md-nav__link">
         plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
       </a>
     </li>
   
@@ -2393,6 +2449,20 @@
     <li class="md-nav__item">
       <a href="../plot_shap_waterfall/" class="md-nav__link">
         plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_slice/" class="md-nav__link">
+        plot_slice
       </a>
     </li>
   
@@ -2971,28 +3041,28 @@
 
 <h1 id="plot_shap_scatter">plot_shap_scatter</h1>
 <hr />
-<p><a id='plot_shap_scatter'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_scatter</strong>(models=None, index=None, feature=0, target=1, title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L6964>[source]</a></span></div>Plot SHAP's scatter plot.</p>
+<p><a id='plot_shap_scatter'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_scatter</strong>(models=None, index=None, feature=0, target=1, title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7670>[source]</a></span></div>Plot SHAP's scatter plot.</p>
 <p>Plots the value of the feature on the x-axis and the SHAP value
 of the same feature on the y-axis. This shows how the model
 depends on the given feature, and is like a richer extension of
 the classical partial dependence plots. Vertical dispersion of
 the data points represents interaction effects. Read more about
-SHAP plots in the [user guide][#shap].</p>
+SHAP plots in the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">user guide</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_shap_scatter-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
-Name of the model to plot. If None, all models are selected.
-Note that leaving the default option could raise an exception
-if there are multiple models. To avoid this, call the plot
-from a model, e.g. <code>atom.xgb.scatter_plot()</code>.</p>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_shap_scatter-models'></a><strong>models: int, str, Model or None, default=None</strong><br><div markdown class='param'>
+Model to plot. If None, all models are selected. Note that
+leaving the default option could raise an exception if there
+are multiple models. To avoid this, call the plot directly
+from a model, e.g. <code>atom.lr.plot_shap_scatter()</code>.</p>
 <p></div><a id='plot_shap_scatter-index'></a><strong>index: slice, sequence or None, default=None</strong><br><div markdown class='param'>
-Index names or positions of the rows in the dataset to
-plot. If None, it selects all rows in the test set. The
-scatter plot does not support plotting a single sample.</p>
+Rows in the dataset to plot. If None, it selects all rows
+in the test set. The plot_shap_scatter method does not
+support plotting a single sample.</p>
 <p></div><a id='plot_shap_scatter-feature'></a><strong>feature: int or str, default=0</strong><br><div markdown class='param'>
-Index or name of the feature to plot.</p>
+Feature to plot.</p>
 <p></div><a id='plot_shap_scatter-target'></a><strong>target: int or str, default=1</strong><br><div markdown class='param'>
-Index or name of the class in the target column to look at.
-Only for multi-class classification tasks.</p>
+Class in the target column to look at (only for multi-class
+classification tasks).</p>
 <p></div><a id='plot_shap_scatter-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>

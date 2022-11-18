@@ -150,6 +150,47 @@ def test_custom_palette():
     atom.plot_correlation(columns=[0, 1, 2], display=False)
 
 
+def test_get_show():
+    """Assert that the show returns max the number of features."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    assert atom._get_show(show=80, model=atom.tree) == X_bin.shape[1]
+
+
+def test_get_show_invalid():
+    """Assert that an error is raised when the value is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    with pytest.raises(ValueError, match=".*should be >0.*"):
+        atom._get_show(show=0, model=atom.tree)
+
+
+def test_get_hyperparams():
+    """Assert that hyperparameters can be retrieved."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree", n_trials=3)
+    assert len(atom._get_hyperparams(params=None, model=atom.tree)) == 7
+    assert len(atom._get_hyperparams(params=[0, 1], model=atom.tree)) == 2
+    assert len(atom._get_hyperparams(params=["criterion"], model=atom.tree)) == 1
+    assert len(atom._get_hyperparams(params="criterion+splitter", model=atom.tree)) == 2
+
+
+def test_get_hyperparams_invalid_name():
+    """Assert that an error is raised when a hyperparameter is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree", n_trials=3)
+    with pytest.raises(ValueError, match=".*value for the params parameter.*"):
+        atom._get_hyperparams(params="invalid", model=atom.tree)
+
+
+def test_get_hyperparams_empty():
+    """Assert that an error is raised when no hyperparameters are selected."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree", n_trials=3)
+    with pytest.raises(ValueError, match=".*Didn't find any hyperparameters.*"):
+        atom._get_hyperparams(params=[], model=atom.tree)
+
+
 def test_get_subclass_max_one():
     """Assert that an error is raised with more than one model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -158,11 +199,13 @@ def test_get_subclass_max_one():
         atom._get_subclass(models=["Tree", "LGB"], max_one=True)
 
 
-def test_get_metric_None():
-    """Assert that all metrics are returned when None."""
+def test_get_metric():
+    """Assert that metrics can be selected."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric=["f1", "recall"])
     assert atom._get_metric(metric=None, max_one=False) == [0, 1]
+    assert atom._get_metric(metric=["f1", "recall"], max_one=False) == [0, 1]
+    assert atom._get_metric(metric="f1+recall", max_one=False) == [0, 1]
 
 
 def test_get_metric_time():
@@ -176,13 +219,6 @@ def test_get_metric_time_invalid():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*the metric parameter.*"):
         atom._get_metric(metric="time+invalid", max_one=False)
-
-
-def test_get_metric_multiple():
-    """Assert that time metrics are accepted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree", metric=["f1", "recall"])
-    assert atom._get_metric(metric="f1+recall", max_one=False) == [0, 1]
 
 
 def test_get_metric_invalid_name():
@@ -271,21 +307,6 @@ def test_get_target_int_invalid():
     atom = ATOMClassifier(X10, y10_str, random_state=1)
     with pytest.raises(ValueError, match=".*There are 2 classes.*"):
         atom._get_target(target=3)
-
-
-def test_get_show():
-    """Assert that the show returns max the number of features."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    assert atom._get_show(show=80, model=atom.tree) == X_bin.shape[1]
-
-
-def test_get_show_invalid():
-    """Assert that an error is raised when the value is invalid."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    with pytest.raises(ValueError, match=".*should be >0.*"):
-        atom._get_show(show=0, model=atom.tree)
 
 
 @patch("atom.plots.go.Figure.show")
@@ -534,30 +555,29 @@ def test_plot_hyperparameters():
     """Assert that the plot_hyperparameters method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_trials)
-    atom.run(["lasso", "ridge"], n_trials=(5, 0))
-
-    # Model didn't ran hyperparameter tuning
-    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
-        atom.ridge.plot_hyperparameters(display=False)
+    atom.run("tree", n_trials=5)
 
     # Only one hyperparameter
     with pytest.raises(ValueError, match=".*minimum of two parameters.*"):
-        atom.lasso.plot_hyperparameters(params=[0], display=False)
+        atom.tree.plot_hyperparameters(params=[0], display=False)
 
-    atom.lasso.plot_hyperparameters(display=False)
+    atom.tree.plot_hyperparameters(display=False)
 
 
 def test_plot_parallel_coordinate():
     """Assert that the plot_parallel_coordinate method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_trials)
-    atom.run(["tree", "ridge"], n_trials=(5, 0))
-
-    # Model didn't ran hyperparameter tuning
-    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
-        atom.ridge.plot_parallel_coordinate(display=False)
-
+    atom.run("tree", n_trials=5)
     atom.tree.plot_parallel_coordinate(display=False)
+
+
+def test_plot_slice():
+    """Assert that the plot_slice method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_slice)
+    atom.run("tree", metric=["mae", "mse"], n_trials=5)
+    atom.tree.plot_slice(display=False)
 
 
 def test_plot_trials():

@@ -2027,6 +2027,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_errors/" class="md-nav__link">
         plot_errors
       </a>
@@ -2083,6 +2097,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
@@ -2113,6 +2155,20 @@
     <li class="md-nav__item">
       <a href="../plot_ngrams/" class="md-nav__link">
         plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
       </a>
     </li>
   
@@ -2393,6 +2449,20 @@
     <li class="md-nav__item">
       <a href="../plot_shap_waterfall/" class="md-nav__link">
         plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_slice/" class="md-nav__link">
+        plot_slice
       </a>
     </li>
   
@@ -2971,7 +3041,7 @@
 
 <h1 id="plot_distribution">plot_distribution</h1>
 <hr />
-<p><a id='plot_distribution'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_distribution</strong>(columns=0, distributions=None, show=None, title=None, legend="upper right", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1722>[source]</a></span></div>Plot column distributions.</p>
+<p><a id='plot_distribution'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_distribution</strong>(columns=0, distributions=None, show=None, title=None, legend="upper right", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1769>[source]</a></span></div>Plot column distributions.</p>
 <ul>
 <li>For numerical columns, plot the probability density
   distribution. Additionally, it's possible to plot any of
@@ -2986,18 +3056,17 @@ method to check which distribution fits the column best.</p>
 </div>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_distribution-columns'></a><strong>columns: int, str, slice or sequence, default=0</strong><br><div markdown class='param'>
-Slice, names or indices of the columns to plot. It is only
-possible to plot one categorical column. If more than just
-one categorical columns are selected, all categorical
-columns are ignored.</p>
+Columns to plot. I's only possible to plot one categorical
+column. If more than one categorical columns are selected,
+all categorical columns are ignored.</p>
 <p></div><a id='plot_distribution-distributions'></a><strong>distributions: str, sequence or None, default=None</strong><br><div markdown class='param'>
 Names of the <code>scipy.stats</code> distributions to fit to the
 columns. If None, a <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html">Gaussian kde distribution</a> is
 showed. Only for numerical columns.</p>
 <p></div><a id='plot_distribution-show'></a><strong>show: int or None, default=None</strong><br><div markdown class='param'>
 Number of classes (ordered by number of occurrences) to
-show in the plot. None to show all. Only for categorical
-columns.</p>
+show in the plot. If None, it shows all classes. Only for
+categorical columns.</p>
 <p></div><a id='plot_distribution-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>
@@ -3105,13 +3174,13 @@ Plot object. Only returned if <code>display=None</code>.</p>
       
       
         
-        <a href="../plot_errors/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_errors" rel="next">
+        <a href="../plot_edf/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_edf" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              plot_errors
+              plot_edf
             </div>
           </div>
           <div class="md-footer__button md-icon">

@@ -2075,6 +2075,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_errors/" class="md-nav__link">
         plot_errors
       </a>
@@ -2131,6 +2145,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
@@ -2161,6 +2203,20 @@
     <li class="md-nav__item">
       <a href="../../plots/plot_ngrams/" class="md-nav__link">
         plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
       </a>
     </li>
   
@@ -2441,6 +2497,20 @@
     <li class="md-nav__item">
       <a href="../../plots/plot_shap_waterfall/" class="md-nav__link">
         plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_slice/" class="md-nav__link">
+        plot_slice
       </a>
     </li>
   
@@ -3174,10 +3244,10 @@ an example.</div><a id='elasticnet-best_params'></a><strong>best_params: dict</s
 score obtained by every bootstrapped sample for every metric.
 Using <code>atom.bootstrap.mean()</code> yields the same values as
 <a class="autorefs autorefs-internal" href="#elasticnet-score_bootstrap">score_bootstrap</a>.</div><a id='elasticnet-score_bootstrap'></a><strong>score_bootstrap: Union[float, numpy.floating, List[Union[float, numpy.floating]], NoneType]</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='elasticnet-time_bootstrap'></a><strong>time_bootstrap: int or None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='elasticnet-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='elasticnet-feature_importance'></a><strong>feature_importance: pd.Series or None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
-<p>The scores are extracted from the estimator's <code>scores_</code>,
-<code>coef_</code> or <code>feature_importances_</code> attribute, checked in that
-order. Returns None for estimators without any of those
-attributes.</div><a id='elasticnet-results'></a><strong>results: pd.Series</strong><br><div markdown class='param'>Overview of the training results.</p>
+<p>The sum of importances for all features is 1. The scores are
+extracted from the estimator's <code>scores_</code>, <code>coef_</code> or
+<code>feature_importances_</code> attribute, checked in that order.
+Returns None for estimators without any of those attributes.</div><a id='elasticnet-results'></a><strong>results: pd.Series</strong><br><div markdown class='param'>Overview of the training results.</p>
 <p>All durations are in seconds. Values include:</p>
 <ul>
 <li><strong>score_ht:</strong> Score obtained by the hyperparameter tuning.</li>
@@ -3200,7 +3270,7 @@ attributes that are never used, saving time and memory.</p>
 </table>
 <p><br><br></p>
 <h2 id="methods">Methods</h2>
-<p>The <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#model-plots">model plots</a> and <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-methods">prediction methods</a> can be called directly
+<p>The <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#available-plots">plots</a> and <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-methods">prediction methods</a> can be called directly
 from the model. The remaining utility methods can be found hereunder.</p>
 <table style="font-size: 0.9em">
 <p><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-clear">clear</a></td><td>Clear attributes from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-delete">delete</a></td><td>Delete the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#elasticnet-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr></p>

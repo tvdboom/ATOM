@@ -1986,6 +1986,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_errors/" class="md-nav__link">
         plot_errors
       </a>
@@ -2083,6 +2097,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
@@ -2113,6 +2155,20 @@
     <li class="md-nav__item">
       <a href="../plot_ngrams/" class="md-nav__link">
         plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
       </a>
     </li>
   
@@ -2393,6 +2449,20 @@
     <li class="md-nav__item">
       <a href="../plot_shap_waterfall/" class="md-nav__link">
         plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_slice/" class="md-nav__link">
+        plot_slice
       </a>
     </li>
   
@@ -2971,18 +3041,16 @@
 
 <h1 id="plot_feature_importance">plot_feature_importance</h1>
 <hr />
-<p><a id='plot_feature_importance'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_feature_importance</strong>(models=None, show=None, title=None, legend="lower right", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3373>[source]</a></span></div>Plot a model's feature importance.</p>
-<p>The feature importance values are normalized in order to be
-able to compare them between models. Only available for models
-whose estimator has a <code>scores_</code>, <code>feature_importances_</code> or
-<code>coef</code> attribute.</p>
+<p><a id='plot_feature_importance'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_feature_importance</strong>(models=None, show=None, title=None, legend="lower right", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4428>[source]</a></span></div>Plot a model's feature importance.</p>
+<p>The sum of importances for all features (per model) is 1.
+Only available for models whose estimator has a <code>scores_</code>,
+<code>feature_importances_</code> or <code>coef</code> attribute.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_feature_importance-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
-Name or index of the models to plot. If None, all models
-are selected.</p>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_feature_importance-models'></a><strong>models: int, str, Model, slice, sequence or None, default=None</strong><br><div markdown class='param'>
+Models to plot. If None, all models are selected.</p>
 <p></div><a id='plot_feature_importance-show'></a><strong>show: int or None, default=None</strong><br><div markdown class='param'>
-Number of features (ordered by importance) to show.
-None to show all.</p>
+Number of features (ordered by importance) to show. If
+None, it shows all features.</p>
 <p></div><a id='plot_feature_importance-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>

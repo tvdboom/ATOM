@@ -237,6 +237,7 @@ nav:
             - plot_shap_heatmap: API/plots/plot_shap_heatmap.md
             - plot_shap_scatter: API/plots/plot_shap_scatter.md
             - plot_shap_waterfall: API/plots/plot_shap_waterfall.md
+            - plot_slice: API/plots/plot_slice.md
             - plot_successive_halving: API/plots/plot_successive_halving.md
             - plot_threshold: API/plots/plot_threshold.md
             - plot_trials: API/plots/plot_trials.md

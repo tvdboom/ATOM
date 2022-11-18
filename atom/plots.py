@@ -522,14 +522,18 @@ class BasePlot:
         return show
 
     @staticmethod
-    def _get_hyperparams(params: Union[str, SEQUENCE_TYPES], model: Model) -> List[str]:
+    def _get_hyperparams(
+        params: Optional[Union[str, SEQUENCE_TYPES]],
+        model: Model,
+    ) -> List[str]:
         """Check and return a model's hyperparameters.
 
         Parameters
         ----------
-        params: str or sequence
-            Hyperparameters to get. If str, add `+` between options to
-            select more than one.
+        params: str, sequence or None
+            Hyperparameters to get. Use a sequence or add `+` between
+            options to select more than one. If None, all the model's
+            hyperparameters are selcted.
 
         model: Model
             Get the params from this model.
@@ -540,19 +544,26 @@ class BasePlot:
             Selected hyperparameters.
 
         """
-        hyperparameters = []
-        for param in lst(params):
-            if isinstance(param, int):
-                hyperparameters.append(list(model._ht["distributions"].keys())[param])
-            elif isinstance(param, str):
-                for p in param.lower().split("+"):
-                    if [param] not in model._ht["distributions"]:
-                        raise ValueError(
-                            "Invalid value for the params parameter. Hyperparameter "
-                            f"{p} was not used during the tuning of model {model.name}."
-                        )
-                    else:
-                        hyperparameters.append(p)
+        if params is None:
+            hyperparameters = list(model._ht["distributions"])
+        else:
+            hyperparameters = []
+            for param in lst(params):
+                if isinstance(param, int):
+                    hyperparameters.append(list(model._ht["distributions"])[param])
+                elif isinstance(param, str):
+                    for p in param.split("+"):
+                        if p not in model._ht["distributions"]:
+                            raise ValueError(
+                                "Invalid value for the params parameter. "
+                                f"Hyperparameter {p} was not used during the "
+                                f"optimization of model {model.name}."
+                            )
+                        else:
+                            hyperparameters.append(p)
+
+        if not hyperparameters:
+            raise ValueError(f"Didn't find any hyperparameters for model {model.name}.")
 
         return hyperparameters
 
@@ -620,7 +631,7 @@ class BasePlot:
             inc = []
             for met in lst(metric):
                 if isinstance(met, int):
-                    if 0 <= metric < len(self._metric):
+                    if 0 <= met < len(self._metric):
                         inc.append(met)
                     else:
                         raise ValueError(
@@ -2417,18 +2428,6 @@ class DataPlot(BasePlot):
                 )
             )
 
-            if x < len(columns) - 1:
-                fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
-            if y > 0:
-                fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
-
-            self._plot(
-                ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                xlabel=columns[y] if x == len(columns) - 1 else None,
-                ylabel=columns[x] if y == 0 else None,
-                title=title if x == 0 and y == 1 else None,
-            )
-
             if x == y:
                 fig.add_trace(
                     go.Histogram(
@@ -2468,6 +2467,17 @@ class DataPlot(BasePlot):
                         yaxis=yaxis,
                     )
                 )
+
+            if x < len(columns) - 1:
+                fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
+            if y > 0:
+                fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
+
+            self._plot(
+                ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                xlabel=columns[y] if x == len(columns) - 1 else None,
+                ylabel=columns[x] if y == 0 else None,
+            )
 
         return self._plot(
             title=title,
@@ -2939,7 +2949,7 @@ class HTPlot(BasePlot):
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
@@ -2959,8 +2969,8 @@ class HTPlot(BasePlot):
             from a model, e.g. `atom.lr.plot_hyperparameters()`.
 
         params: str or sequence, default=(0, 1)
-            Hyperparameters to plot. If str, add `+` between parameter
-            names to select more than one.
+            Hyperparameters to plot. Use a sequence or add `+` between
+            options to select more than one.
 
         metric: int or str, default=0
             Metric to plot (only for multi-metric runs).
@@ -2975,8 +2985,9 @@ class HTPlot(BasePlot):
         legend: str, dict or None, default=None
             Does nothing. Implemented for continuity of the API.
 
-        figsize: tuple, default=(900, 600)
-            Figure's size in pixels, format as (x, y).
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of hyperparameters shown.
 
         filename: str or None, default=None
             Save the plot using this name. Use "auto" for automatic
@@ -3023,12 +3034,6 @@ class HTPlot(BasePlot):
         m = self._get_subclass(models, max_one=True)
         met = self._get_metric(metric, max_one=True)
 
-        if not m._ht["distributions"]:
-            raise ValueError(
-                "The plot_hyperparameters method is only available for "
-                f"models that ran hyperparameter tuning, got {m.name}."
-            )
-
         if len(params := self._get_hyperparams(params, m)) < 2:
             raise ValueError(
                 "Invalid value for the hyperparameters parameter. A minimum "
@@ -3036,16 +3041,16 @@ class HTPlot(BasePlot):
             )
 
         fig = self._get_figure()
-        for i in range((len(params) - 1) ** 2):
-            x, y = i // (len(params) - 1), i % (len(params) - 1)
+        for i in range((length := len(params) - 1) ** 2):
+            x, y = i // length, i % length
 
             if y <= x:
                 # Calculate the size of the subplot
-                size = 1 / (len(params) - 1)
+                size = 1 / length
 
                 # Determine the position for the axes
                 x_pos = y * size
-                y_pos = (len(params) - x - 2) * size
+                y_pos = (length - x - 1) * size
 
                 xaxis, yaxis = self._fig.get_axes(
                     x=(x_pos, rnd(x_pos + size)),
@@ -3112,14 +3117,7 @@ class HTPlot(BasePlot):
                     )
                 )
 
-                self._plot(
-                    ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-                    xlabel=params[y] if x == len(params) - 2 else None,
-                    ylabel=params[x + 1] if y == 0 else None,
-                    title=title if x == 0 and y == 1 else None,
-                )
-
-                if x < len(params) - 2:
+                if x < length - 1:
                     fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
                 if y > 0:
                     fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
@@ -3134,11 +3132,17 @@ class HTPlot(BasePlot):
                     }
                 )
 
+                self._plot(
+                    ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                    xlabel=params[y] if x == length - 1 else None,
+                    ylabel=params[x + 1] if y == 0 else None,
+                )
+
         self._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
-            figsize=figsize,
+            figsize=figsize or (800 + 100 * length, 500 + 100 * length),
             plotname="plot_hyperparameters",
             filename=filename,
             display=display,
@@ -3148,6 +3152,7 @@ class HTPlot(BasePlot):
     def plot_parallel_coordinate(
         self,
         models: Optional[Union[INT, str, Model]] = None,
+        params: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Union[INT, str] = 0,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3169,6 +3174,11 @@ class HTPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g. `atom.lr.plot_parallel_coordinate()`.
 
+        params: str, sequence or None, default=None
+            Hyperparameters to plot. Use a sequence or add `+` between
+            options to select more than one. If None, all the model's
+            hyperparameters are selected.
+
         metric: int or str, default=0
             Metric to plot (only for multi-metric runs).
 
@@ -3179,7 +3189,7 @@ class HTPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default="upper left"
+        legend: str, dict or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         figsize: tuple or None, default=None
@@ -3254,29 +3264,27 @@ class HTPlot(BasePlot):
 
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
+        params = self._get_hyperparams(params, m)
         met = self._get_metric(metric, max_one=True)
-
-        if m.trials is None:
-            raise ValueError(
-                "The plot_hyperparameters method is only available for "
-                f"models that ran hyperparameter tuning, got {m.name}."
-            )
 
         dims = _get_dims_from_info(
             _get_parallel_coordinate_info(
                 study=m.study,
+                params=params,
                 target=None if len(self._metric) == 1 else lambda x: x.values[met],
                 target_name=self._metric[met].name,
             )
         )
 
         # Clean up dimensions for nicer view
-        for d in dims:
+        for d in [dims[0]] + sorted(dims[1:], key=lambda x: params.index(x["label"])):
             if "ticktext" in d:
-                # Order categorical values
-                mapping = [d["ticktext"][i] for i in d["values"]]
-                d["ticktext"] = sort_mixed_types(d["ticktext"])
-                d["values"] = [d["ticktext"].index(v) for v in mapping]
+                # Skip processing for logarithmic params
+                if all(isinstance(i, int) for i in d["values"]):
+                    # Order categorical values
+                    mapping = [d["ticktext"][i] for i in d["values"]]
+                    d["ticktext"] = sort_mixed_types(d["ticktext"])
+                    d["values"] = [d["ticktext"].index(v) for v in mapping]
             else:
                 # Round numerical values
                 d["tickvals"] = list(
@@ -3312,8 +3320,163 @@ class HTPlot(BasePlot):
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
             legend=legend,
-            figsize=figsize or (700 + len(m._ht["distributions"]) * 50, 600),
+            figsize=figsize or (700 + len(params) * 50, 600),
             plotname="plot_parallel_coordinate",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_slice(
+        self,
+        models: Optional[Union[INT, str, Model]] = None,
+        params: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        *,
+        title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the parameter relationship in a study.
+
+        The color of the markers indicate the trial. This plot is only
+        available for models that ran [hyperparameter tuning][].
+
+        Parameters
+        ----------
+        models: int, str, Model or None, default=None
+            Model to plot. If None, all models are selected. Note that
+            leaving the default option could raise an exception if there
+            are multiple models. To avoid this, call the plot directly
+            from a model, e.g. `atom.lr.plot_parallel_coordinate()`.
+
+        params: str, sequence or None, default=None
+            Hyperparameters to plot. Use a sequence or add `+` between
+            options to select more than one. If None, all the model's
+            hyperparameters are selected.
+
+        metric: int or str, default=None
+            Metric to plot (only for multi-metric runs). If str, add `+`
+            between options to select more than one. If None, the metric
+            used to run the pipeline is selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of hyperparameters shown.
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:HTPlot.plot_edf
+        atom.plots:HTPlot.plot_hyperparameters
+        atom.plots:HTPlot.plot_parallel_coordinate
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"], n_trials=15)
+        >>> atom.plot_slice()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_slice.html
+
+        """
+        check_is_fitted(self, attributes="_models")
+        m = self._get_subclass(models, max_one=True)
+        params = self._get_hyperparams(params, m)
+        metric = self._get_metric(metric, max_one=False)
+
+        fig = self._get_figure()
+        for i in range(len(params) * len(metric)):
+            x, y = i // len(params), i % len(params)
+
+            # Calculate the distance between subplots
+            x_offset = divide(0.0125, (len(params) - 1))
+            y_offset = divide(0.0125, (len(metric) - 1))
+
+            # Calculate the size of the subplot
+            x_size = (1 - ((x_offset * 2) * (len(params) - 1))) / len(params)
+            y_size = (1 - ((y_offset * 2) * (len(metric) - 1))) / len(metric)
+
+            # Determine the position for the axes
+            x_pos = y * (x_size + 2 * x_offset)
+            y_pos = (len(metric) - x - 1) * (y_size + 2 * y_offset)
+
+            xaxis, yaxis = self._fig.get_axes(
+                x=(x_pos, rnd(x_pos + x_size)),
+                y=(y_pos, rnd(y_pos + y_size)),
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=m.trials.apply(lambda r: r["params"].get(params[y], None), axis=1),
+                    y=m.trials.apply(lambda r: lst(r["score"])[x], axis=1),
+                    mode="markers",
+                    marker=dict(
+                        size=self.marker_size,
+                        color=m.trials.index,
+                        colorscale="Teal",
+                        line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
+                    ),
+                    customdata=m.trials.index,
+                    hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
+                    xaxis=xaxis,
+                    yaxis=yaxis,
+                )
+            )
+
+            if x < len(metric) - 1:
+                fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
+            if y > 0:
+                fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
+
+            self._plot(
+                ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                xlabel=params[y] if x == len(metric) - 1 else None,
+                ylabel=self._metric[x].name if y == 0 else None,
+            )
+
+        self._fig.used_models.extend(models)
+        return self._plot(
+            title=title,
+            legend=legend,
+            figsize=figsize or (800 + 100 * len(params), 500 + 100 * len(metric)),
+            plotname="plot_slice",
             filename=filename,
             display=display,
         )
@@ -6815,16 +6978,22 @@ class PredictionPlot(BasePlot):
 
         # Get all metric functions from the input
         if metric is None:
-            metric = [m._score_func for m in self._metric.values()]
+            metrics = [m._score_func for m in self._metric.values()]
         else:
-            metric = [get_custom_scorer(m)._score_func for m in lst(metric)]
+            metrics = []
+            for m in lst(metric):
+                if isinstance(m, str):
+                    metrics.extend(m.split("+"))
+                else:
+                    metrics.append(m)
+            metrics = [get_custom_scorer(m)._score_func for m in metrics]
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
 
         steps = np.linspace(0, 1, steps)
         for m in models:
-            for met in metric:
+            for met in metrics:
                 results = []
                 for step in steps:
                     pred = getattr(m, f"predict_proba_{ds}").iloc[:, 1] >= step
@@ -6869,7 +7038,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_bar(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, Model]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -6890,7 +7059,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model or None, default=None
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
@@ -6990,7 +7159,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_beeswarm(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, Model]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -7008,7 +7177,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model or None, default=None
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
@@ -7108,7 +7277,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_decision(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, Model]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -7131,7 +7300,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model or None, default=None
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
@@ -7237,7 +7406,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_force(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, Model]] = None,
         index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         *,
@@ -7258,7 +7427,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model or None, default=None
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
@@ -7379,7 +7548,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_heatmap(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, Model]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -7400,7 +7569,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model or None, default=None
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
@@ -7501,7 +7670,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_scatter(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, Model]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         feature: Union[INT, str] = 0,
         target: Union[INT, str] = 1,
@@ -7523,7 +7692,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model or None, default=None
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
@@ -7622,7 +7791,7 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_waterfall(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: Optional[Union[INT, str, Model]] = None,
         index: Optional[Union[INT, str]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
@@ -7649,7 +7818,7 @@ class ShapPlot(BasePlot):
 
         Parameters
         ----------
-        models: int, str, Model, slice, sequence or None, default=None
+        models: int, str, Model or None, default=None
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly

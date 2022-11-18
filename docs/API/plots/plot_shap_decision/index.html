@@ -1986,6 +1986,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_errors/" class="md-nav__link">
         plot_errors
       </a>
@@ -2042,6 +2056,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
@@ -2072,6 +2114,20 @@
     <li class="md-nav__item">
       <a href="../plot_ngrams/" class="md-nav__link">
         plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
       </a>
     </li>
   
@@ -2393,6 +2449,20 @@
     <li class="md-nav__item">
       <a href="../plot_shap_waterfall/" class="md-nav__link">
         plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_slice/" class="md-nav__link">
+        plot_slice
       </a>
     </li>
   
@@ -2971,29 +3041,29 @@
 
 <h1 id="plot_shap_decision">plot_shap_decision</h1>
 <hr />
-<p><a id='plot_shap_decision'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_decision</strong>(models=None, index=None, show=None, target=1, title=None, legend=None, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L6571>[source]</a></span></div>Plot SHAP's decision plot.</p>
+<p><a id='plot_shap_decision'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_decision</strong>(models=None, index=None, show=None, target=1, title=None, legend=None, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7277>[source]</a></span></div>Plot SHAP's decision plot.</p>
 <p>Visualize model decisions using cumulative SHAP values. Each
 plotted line explains a single model prediction. If a single
 prediction is plotted, feature values are printed in the
 plot (if supplied). If multiple predictions are plotted
 together, feature values will not be printed. Plotting too
 many predictions together will make the plot unintelligible.
-Read more about SHAP plots in the [user guide][#shap].</p>
+Read more about SHAP plots in the <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">user guide</a>.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_shap_decision-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
-Name of the model to plot. If None, all models are selected.
-Note that leaving the default option could raise an exception
-if there are multiple models. To avoid this, call the plot
-from a model, <code>atom.xgb.decision_plot()</code>.</p>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_shap_decision-models'></a><strong>models: int, str, Model or None, default=None</strong><br><div markdown class='param'>
+Model to plot. If None, all models are selected. Note that
+leaving the default option could raise an exception if there
+are multiple models. To avoid this, call the plot directly
+from a model, e.g. <code>atom.lr.plot_shap_decision()</code>.</p>
 <p></div><a id='plot_shap_decision-index'></a><strong>index: int, str, sequence or None, default=None</strong><br><div markdown class='param'>
-Index names or positions of the rows in the dataset to plot.
-If None, it selects all rows in the test set.</p>
+Rows in the dataset to plot. If None, it selects all rows
+in the test set.</p>
 <p></div><a id='plot_shap_decision-show'></a><strong>show: int or None, default=None</strong><br><div markdown class='param'>
-Number of features (ordered by importance) to show. None
-to show all.</p>
+Number of features (ordered by importance) to show. If
+None, it shows all features.</p>
 <p></div><a id='plot_shap_decision-target'></a><strong>target: int or str, default=1</strong><br><div markdown class='param'>
-Index or name of the class in the target column to look at.
-Only for multi-class classification tasks.</p>
+Class in the target column to look at (only for multi-class
+classification tasks).</p>
 <p></div><a id='plot_shap_decision-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>

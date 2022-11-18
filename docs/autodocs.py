@@ -197,6 +197,7 @@ CUSTOM_URLS = dict(
     palette="https://plotly.com/python/discrete-color/",
     gofigure="https://plotly.com/python-api-reference/generated/plotly.graph_objects.Figure.html",
     pltfigure="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html",
+    fanova="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.importance.FanovaImportanceEvaluator.html",
     kde="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html",
     wordcloud="https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html",
     calibration="https://scikit-learn.org/stable/modules/calibration.html",
@@ -604,15 +605,20 @@ class AutoDocs:
                 # Headers start with letter, * or [ after new line
                 for header in re.findall("^[\[*\w].*?$", match, re.M):
                     # Check that the default value in docstring matches the real one
-                    if default := re.search("(?<=default=)\w+?$", header):
+                    if default := re.search("(?<=default=).+?$", header):
                         try:
                             param = header.split(":")[0]
                             real = signature(self.obj).parameters[param]
-                            if str(default.group()) != str(real.default):
+
+                            default = str(default.group()).replace('"', "'")
+                            if default.startswith("'") and default.endswith("'"):
+                                default = default[1:-1]
+
+                            if default != str(real.default):
                                 warnings.warn(
-                                    f"Default value {default.group()} of parameter "
-                                    f"{param} of object {self.obj} doesn't match "
-                                    f"the value in the docstring: {real.default}"
+                                    f"Default value {default} of parameter {param} "
+                                    f"of object {self.obj} doesn't match the value "
+                                    f"in the docstring: {real.default}."
                                 )
                         except KeyError:
                             pass

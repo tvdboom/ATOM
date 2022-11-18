@@ -1986,6 +1986,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_edf/" class="md-nav__link">
+        plot_edf
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_errors/" class="md-nav__link">
         plot_errors
       </a>
@@ -2042,6 +2056,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_learning_curve/" class="md-nav__link">
         plot_learning_curve
       </a>
@@ -2072,6 +2114,20 @@
     <li class="md-nav__item">
       <a href="../plot_ngrams/" class="md-nav__link">
         plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
       </a>
     </li>
   
@@ -2393,6 +2449,20 @@
     <li class="md-nav__item">
       <a href="../plot_shap_waterfall/" class="md-nav__link">
         plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_slice/" class="md-nav__link">
+        plot_slice
       </a>
     </li>
   
@@ -2971,7 +3041,7 @@
 
 <h1 id="plot_parshap">plot_parshap</h1>
 <hr />
-<p><a id='plot_parshap'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_parshap</strong>(models=None, columns=None, target=1, title=None, legend="upper left", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4104>[source]</a></span></div>Plot the partial correlation of shap values.</p>
+<p><a id='plot_parshap'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_parshap</strong>(models=None, columns=None, target=1, title=None, legend="upper left", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4982>[source]</a></span></div>Plot the partial correlation of shap values.</p>
 <p>Plots the train and test correlation between the shap value of
 every feature with its target value, after removing the effect
 of all other features (partial correlation). This plot is
@@ -2982,14 +3052,13 @@ If the estimator has a <code>scores_</code>, <code>feature_importances_</code> o
 <code>coef_</code> attribute, its normalized values are shown in a color
 map.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_parshap-models'></a><strong>models: int, str, slice, Model, sequence or None, default=None</strong><br><div markdown class='param'>
-Name or index of the models to plot. If None, all models
-are selected.</p>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_parshap-models'></a><strong>models: int, str, Model, slice, sequence or None, default=None</strong><br><div markdown class='param'>
+Models to plot. If None, all models are selected.</p>
 <p></div><a id='plot_parshap-columns'></a><strong>columns: int, str, slice, sequence or None, default=None</strong><br><div markdown class='param'>
-Names or indices of the features to plot. None to show all.</p>
+Features to plot. If None, it plots all features.</p>
 <p></div><a id='plot_parshap-target'></a><strong>target: int or str, default=1</strong><br><div markdown class='param'>
-Index or name of the class in the target column to look at.
-Only for multi-class classification tasks.</p>
+Class in the target column to look at (only for multi-class
+classification tasks).</p>
 <p></div><a id='plot_parshap-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>
@@ -3068,7 +3137,7 @@ Plot object. Only returned if <code>display=None</code>.</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../plot_ngrams/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_ngrams" rel="prev">
+        <a href="../plot_parallel_coordinate/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_parallel_coordinate" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -3077,7 +3146,7 @@ Plot object. Only returned if <code>display=None</code>.</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              plot_ngrams
+              plot_parallel_coordinate
             </div>
           </div>
         </a>
