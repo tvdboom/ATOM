@@ -217,6 +217,7 @@ nav:
             - plot_lift: API/plots/plot_lift.md
             - plot_ngrams: API/plots/plot_ngrams.md
             - plot_parallel_coordinate: API/plots/plot_parallel_coordinate.md
+            - plot_pareto_front: API/plots/plot_pareto_front.md
             - plot_parshap: API/plots/plot_parshap.md
             - plot_partial_dependence: API/plots/plot_partial_dependence.md
             - plot_pca: API/plots/plot_pca.md

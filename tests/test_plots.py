@@ -83,6 +83,13 @@ def test_aesthetics_setter():
     assert base.palette == "Prism"
 
 
+def test_custom_palette():
+    """Assert that a custom palette can be defined."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.palette = ["red", "green", "blue"]
+    atom.plot_distribution(columns=[0, 1], display=False)
+
+
 def test_palette_property():
     """Assert that palette returns the classes aesthetics as dict."""
     assert isinstance(BasePlot().palette, dict)
@@ -141,13 +148,6 @@ def test_update_layout():
     plotter = BasePlot()
     plotter.update_layout(template="plotly-dark")
     plotter._custom_layout["template"] = "plotly-dark"
-
-
-def test_custom_palette():
-    """Assert that a custom palette can be defined."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.palette = ["red", "green", "blue"]
-    atom.plot_correlation(columns=[0, 1, 2], display=False)
 
 
 def test_get_show():
@@ -524,7 +524,7 @@ def test_plot_wordcloud():
 def test_plot_edf():
     """Assert that the plot_edf method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_trials)
+    pytest.raises(NotFittedError, atom.plot_edf)
     atom.run(["lasso", "ridge"], n_trials=(5, 0))
 
     # Model didn't ran hyperparameter tuning
@@ -537,7 +537,7 @@ def test_plot_edf():
 def test_plot_hyperparameter_importance():
     """Assert that the plot_hyperparameter_importance method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_trials)
+    pytest.raises(NotFittedError, atom.plot_hyperparameter_importance)
     atom.run(["lasso", "ridge"], n_trials=(5, 0))
 
     # Invalid show parameter
@@ -554,22 +554,35 @@ def test_plot_hyperparameter_importance():
 def test_plot_hyperparameters():
     """Assert that the plot_hyperparameters method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_trials)
+    pytest.raises(NotFittedError, atom.plot_hyperparameters)
     atom.run("tree", n_trials=5)
 
     # Only one hyperparameter
     with pytest.raises(ValueError, match=".*minimum of two parameters.*"):
         atom.tree.plot_hyperparameters(params=[0], display=False)
 
-    atom.tree.plot_hyperparameters(display=False)
+    atom.tree.plot_hyperparameters(params=(0, 1, 2), display=False)
 
 
 def test_plot_parallel_coordinate():
     """Assert that the plot_parallel_coordinate method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_trials)
+    pytest.raises(NotFittedError, atom.plot_parallel_coordinate)
     atom.run("tree", n_trials=5)
     atom.tree.plot_parallel_coordinate(display=False)
+
+
+def test_plot_pareto_front():
+    """Assert that the plot_pareto_front method works."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_pareto_front)
+    atom.run("tree", metric=["mae", "mse", "rmse"], n_trials=5)
+
+    # Only one metric
+    with pytest.raises(ValueError, match=".*minimum of two metrics.*"):
+        atom.tree.plot_pareto_front(metric=[0], display=False)
+
+    atom.tree.plot_pareto_front(display=False)
 
 
 def test_plot_slice():

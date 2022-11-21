@@ -2747,7 +2747,6 @@ class HTPlot(BasePlot):
                     np.array([lst(row)[met] for row in m.trials["score"]])
                 )
 
-        print(values)
         x_min = np.nanmin(np.array(values))
         x_max = np.nanmax(np.array(values))
 
@@ -3327,6 +3326,161 @@ class HTPlot(BasePlot):
         )
 
     @composed(crash, plot_from_model, typechecked)
+    def plot_pareto_front(
+        self,
+        models: Optional[Union[INT, str, Model]] = None,
+        metric: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        *,
+        title: Optional[Union[str, dict]] = None,
+        legend: Optional[Union[str, dict]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the Pareto front of a study.
+
+        Shows the trial scores plotted against each other. The marker's
+        colors indicate the trial number. This plot is only available
+        for models that ran [multi-metric runs][] with
+        [hyperparameter tuning][].
+
+        Parameters
+        ----------
+        models: int, str, Model or None, default=None
+            Model to plot. If None, all models are selected. Note that
+            leaving the default option could raise an exception if there
+            are multiple models. To avoid this, call the plot directly
+            from a model, e.g. `atom.lr.plot_pareto_front()`.
+
+        metric: str, sequence or None, default=None
+            Metrics to plot.  Use a sequence or add `+` between options
+            to select more than one. If None, the metrics used to run
+            the pipeline are selected.
+
+        title: str, dict or None, default=None
+            Title for the plot.
+
+            - If None, no title is shown.
+            - If str, text for the title.
+            - If dict, [title configuration][parameters].
+
+        legend: str, dict or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        figsize: tuple or None, default=None
+            Figure's size in pixels, format as (x, y). If None, it
+            adapts the size to the number of metrics shown.
+
+        filename: str or None, default=None
+            Save the plot using this name. Use "auto" for automatic
+            naming. The type of the file depends on the provided name
+            (.html, .png, .pdf, etc...). If `filename` has no file type,
+            the plot is saved as html. If None, the plot is not saved.
+
+        display: bool or None, default=True
+            Whether to render the plot. If None, it returns the figure.
+
+        Returns
+        -------
+        [go.Figure][] or None
+            Plot object. Only returned if `display=None`.
+
+        See Also
+        --------
+        atom.plots:HTPlot.plot_edf
+        atom.plots:HTPlot.plot_slice
+        atom.plots:HTPlot.plot_trials
+
+        Examples
+        --------
+
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+
+        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
+        >>> atom.impute()
+        >>> atom.encode()
+        >>> atom.run(["LR", "RF"], n_trials=15)
+        >>> atom.plot_pareto_front()
+
+        ```
+
+        :: insert:
+            url: /img/plots/plot_pareto_front.html
+
+        """
+        check_is_fitted(self, attributes="_models")
+        m = self._get_subclass(models, max_one=True)
+        metric = self._get_metric(metric, max_one=False)
+
+        if len(metric) < 2:
+            raise ValueError(
+                "Invalid value for the metric parameter. A minimum "
+                f"of two metrics are required, got {len(metric)}."
+            )
+
+        fig = self._get_figure()
+        for i in range((length := len(metric) - 1) ** 2):
+            x, y = i // length, i % length
+
+            if y <= x:
+                # Calculate the distance between subplots
+                offset = divide(0.0125, length - 1)
+
+                # Calculate the size of the subplot
+                size = (1 - ((offset * 2) * (length - 1))) / length
+
+                # Determine the position for the axes
+                x_pos = y * (size + 2 * offset)
+                y_pos = (length - x - 1) * (size + 2 * offset)
+
+                xaxis, yaxis = self._fig.get_axes(
+                    x=(x_pos, rnd(x_pos + size)),
+                    y=(y_pos, rnd(y_pos + size)),
+                )
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=m.trials.apply(lambda row: row["score"][y], axis=1),
+                        y=m.trials.apply(lambda row: row["score"][x + 1], axis=1),
+                        mode="markers",
+                        marker=dict(
+                            size=self.marker_size,
+                            color=m.trials.index,
+                            colorscale="Teal",
+                            line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
+                        ),
+                        customdata=m.trials.index,
+                        hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
+
+                if x < len(metric) - 1:
+                    fig.update_layout({f"xaxis{xaxis[1:]}_showticklabels": False})
+                if y > 0:
+                    fig.update_layout({f"yaxis{yaxis[1:]}_showticklabels": False})
+
+                self._plot(
+                    ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+                    xlabel=self._metric[y].name if x == length - 1 else None,
+                    ylabel=self._metric[x + 1].name if y == 0 else None,
+                )
+
+        self._fig.used_models.extend(models)
+        return self._plot(
+            title=title,
+            legend=legend,
+            figsize=figsize or (500 + 100 * length, 500 + 100 * length),
+            plotname="plot_pareto_front",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
     def plot_slice(
         self,
         models: Optional[Union[INT, str, Model]] = None,
@@ -3350,7 +3504,7 @@ class HTPlot(BasePlot):
             Model to plot. If None, all models are selected. Note that
             leaving the default option could raise an exception if there
             are multiple models. To avoid this, call the plot directly
-            from a model, e.g. `atom.lr.plot_parallel_coordinate()`.
+            from a model, e.g. `atom.lr.plot_slice()`.
 
         params: str, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between

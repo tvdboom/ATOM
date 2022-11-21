@@ -2255,6 +2255,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_pareto_front/" class="md-nav__link">
+        plot_pareto_front
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_parshap/" class="md-nav__link">
         plot_parshap
       </a>
@@ -3469,7 +3483,8 @@ number of trials that are performed.</p>
 <ul>
 <li>The train/validation splits are different per trial but equal for all models.</li>
 <li>Re-evaluating the objective function at the same point (with the same
-  hyperparameters) automatically skips the calculation and returns the same score as the equivalent trial.</li>
+  hyperparameters) automatically skips the calculation and returns the
+  same score as the equivalent trial.</li>
 </ul>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -3562,6 +3577,11 @@ or add a custom callback.</p>
 or <code class="language-python highlight"><span class="n">ht_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cv&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span></code>. Using n_jobs &gt; 1 and cv &gt; 1 raises
 a PicklingError due to incompatibilities of the APIs. Read <a class="autorefs autorefs-internal" href="../models/#deep-learning">here</a>
 more about deep learning models.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>ATOM has several plots that can help you examine a model's study and
+trials. Have a look at them <a class="autorefs autorefs-internal" href="../plots/#hyperparameter-tuning-plots">here</a>.</p>
 </div>
 <p><br></p>
 <h2 id="pruning">Pruning</h2>

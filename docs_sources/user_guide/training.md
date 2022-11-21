@@ -301,7 +301,8 @@ Extra things to take into account:
 
 * The train/validation splits are different per trial but equal for all models.
 * Re-evaluating the objective function at the same point (with the same
-  hyperparameters) automatically skips the calculation and returns the same score as the equivalent trial.
+  hyperparameters) automatically skips the calculation and returns the
+  same score as the equivalent trial.
 
 !!! tip
     The hyperparameter tuning output can become quite wide for models
@@ -403,6 +404,10 @@ or add a custom callback.
     or `#!python ht_params={"cv": 1}`. Using n_jobs > 1 and cv > 1 raises
     a PicklingError due to incompatibilities of the APIs. Read [here][deep-learning]
     more about deep learning models.
+
+!!! tip
+    ATOM has several plots that can help you examine a model's study and
+    trials. Have a look at them [here][hyperparameter-tuning-plots].
 
 <br>
 
