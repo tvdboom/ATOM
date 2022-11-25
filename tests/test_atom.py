@@ -215,8 +215,8 @@ def test_n_classes():
 # Test utility methods ============================================= >>
 
 @patch("evalml.AutoMLSearch")
-def test_automl_binary_classification(cls):
-    """Assert that the automl method works for binary tasks."""
+def test_automl(cls):
+    """Assert that the automl method works."""
     pl = Pipeline([("scaler", StandardScaler()), ("clf", SVMClassifier())])
     cls.return_value.best_pipeline = pl.fit(X_bin, y_bin)
 

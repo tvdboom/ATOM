@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from inspect import signature
 from logging import Logger
 from random import sample
 from typing import Optional, Union
@@ -42,7 +41,7 @@ from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, check_scaling, composed, crash, get_custom_scorer,
     get_feature_importance, infer_task, is_sparse, lst, merge, method_to_log,
-    to_df,
+    sign, to_df,
 )
 
 
@@ -1587,7 +1586,7 @@ class FeatureSelector(
 
                 estimator = self._get_est_class("PCA", "decomposition")
 
-                s = lambda p: signature(estimator).parameters[p].default
+                s = lambda p: sign(estimator)[p].default
                 self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
                     svd_solver=s("svd_solver") if self.solver is None else self.solver,

@@ -170,6 +170,7 @@ def test_get_hyperparams():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", n_trials=3)
     assert len(atom._get_hyperparams(params=None, model=atom.tree)) == 7
+    assert len(atom._get_hyperparams(params=slice(1, 4), model=atom.tree)) == 3
     assert len(atom._get_hyperparams(params=[0, 1], model=atom.tree)) == 2
     assert len(atom._get_hyperparams(params=["criterion"], model=atom.tree)) == 1
     assert len(atom._get_hyperparams(params="criterion+splitter", model=atom.tree)) == 2
@@ -766,7 +767,7 @@ def test_plot_pipeline():
     # Called from a canvas
     with pytest.raises(PermissionError, match=".*called from a canvas.*"):
         with atom.canvas(2, 1, display=False):
-            atom.plot_pipeline(display=False)
+            atom.plot_results(display=False)
             atom.plot_pipeline(display=False)
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)

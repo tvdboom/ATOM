@@ -772,9 +772,10 @@ def test_scaler_all_strategies(strategy):
     scaler.fit_transform(X_bin)
 
 
-def test_scaler_categorical_columns():
-    """Assert that categorical columns are ignored."""
+def test_scaler_categorical_and_binary_columns():
+    """Assert that categorical and binary columns are ignored."""
     X = Scaler().fit_transform(X10_str)
+    assert np.isin(X["x0"].unique(), [0, 1]).all()
     assert X["x2"].dtype.kind == "O"
 
 

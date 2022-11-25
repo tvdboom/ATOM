@@ -14,6 +14,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import mlflow
+from optuna import Study, create_study
 
 from atom.baserunner import BaseRunner
 from atom.branch import Branch
@@ -22,7 +23,7 @@ from atom.models import MODELS, CustomModel
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     SEQUENCE, CustomDict, check_scaling, get_best_score, get_custom_scorer,
-    is_sparse, lst, time_to_str,
+    is_sparse, lst, sign, time_to_str,
 )
 
 
@@ -269,9 +270,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                                     )
                             elif k not in self._models:
                                 self._ht_params[key][name][k] = v
-            else:
-                # Kwargs for create_study and optimize
+            elif key in {**sign(create_study), **sign(Study.optimize)}:
                 self._ht_params[key] = {k: value for k in self._models}
+            else:
+                raise ValueError(
+                    f"Invalid value for the ht_params parameter. Key {key} is invalid."
+                )
 
     def _core_iteration(self):
         """Fit and evaluate the models.

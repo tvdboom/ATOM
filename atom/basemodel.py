@@ -8,12 +8,10 @@ Description: Module containing the BaseModel class.
 """
 
 import os
-from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime as dt
 from importlib import import_module
-from inspect import signature
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 from unittest.mock import patch
 
 import dill as pickle
@@ -45,7 +43,7 @@ from atom.utils import (
     CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
     TrialsCallback, composed, crash, custom_transform, estimator_has_attr, flt,
     get_best_score, get_custom_scorer, get_feature_importance, has_task, it,
-    lst, merge, method_to_log, rnd, score, time_to_str, variable_return,
+    lst, merge, method_to_log, rnd, score, sign, time_to_str, variable_return,
 )
 
 
@@ -171,11 +169,6 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """Return whether the model uses a GPU implementation."""
         return "gpu" in self.T.device.lower()
 
-    @staticmethod
-    def _sign(obj: Callable) -> OrderedDict:
-        """Get the parameters of a class or method."""
-        return signature(obj).parameters
-
     def _check_est_params(self):
         """Check that the parameters are valid for the estimator.
 
@@ -183,14 +176,14 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         """
         for param in self._est_params:
-            if all(p not in self._sign(self._est_class) for p in (param, "kwargs")):
+            if all(p not in sign(self._est_class) for p in (param, "kwargs")):
                 raise ValueError(
                     "Invalid value for the est_params parameter. Got unknown "
                     f"parameter {param} for estimator {self._est_class.__name__}."
                 )
 
         for param in self._est_params_fit:
-            if all(p not in self._sign(self._est_class.fit) for p in (param, "kwargs")):
+            if all(p not in sign(self._est_class.fit) for p in (param, "kwargs")):
                 raise ValueError(
                     f"Invalid value for the est_params parameter. Got "
                     f"unknown parameter {param} for the fit method of "
@@ -280,7 +273,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         """
         for param in ("n_jobs", "random_state"):
-            if param in self._sign(self._est_class):
+            if param in sign(self._est_class):
                 params[param] = params.pop(param, getattr(self.T, param))
 
         return self._est_class(**params)
@@ -474,7 +467,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     y_pred = (y_pred > threshold).astype("int")
 
             kwargs = {}
-            if "sample_weight" in self._sign(scorer._score_func):
+            if "sample_weight" in sign(scorer._score_func):
                 kwargs["sample_weight"] = sample_weight
 
             score = scorer._score_func(
@@ -702,17 +695,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             return
 
         if not self._study or reset:
-            kwargs = {k: v for k, v in self._ht.items() if k in self._sign(create_study)}
+            kw = {k: v for k, v in self._ht.items() if k in sign(create_study)}
             if len(self.T._metric) == 1:
-                kwargs["direction"] = "maximize"
-                kwargs["sampler"] = kwargs.pop(
-                    "sampler", TPESampler(seed=self.T.random_state)
-                )
+                kw["direction"] = "maximize"
+                kw["sampler"] = kw.pop("sampler", TPESampler(seed=self.T.random_state))
             else:
-                kwargs["directions"] = ["maximize"] * len(self.T._metric)
-                kwargs["sampler"] = kwargs.pop(
-                    "sampler", NSGAIISampler(seed=self.T.random_state)
-                )
+                kw["directions"] = ["maximize"] * len(self.T._metric)
+                kw["sampler"] = kw.pop("sampler", NSGAIISampler(seed=self.T.random_state))
 
             self._trials = pd.DataFrame(
                 columns=[
@@ -725,10 +714,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 ]
             )
             self._trials.index.name = "trial"
-            self._study = create_study(**kwargs)
+            self._study = create_study(**kw)
 
-        kwargs = {k: v for k, v in self._ht.items() if k in self._sign(Study.optimize)}
-        n_jobs = kwargs.pop("n_jobs", 1)
+        kw = {k: v for k, v in self._ht.items() if k in sign(Study.optimize)}
+        n_jobs = kw.pop("n_jobs", 1)
 
         # Initialize live study plot
         if self._ht.get("plot", False) and n_jobs == 1:
@@ -736,7 +725,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         else:
             plot_callback = None
 
-        callbacks = kwargs.pop("callbacks", []) + [TrialsCallback(self, n_jobs)]
+        callbacks = kw.pop("callbacks", []) + [TrialsCallback(self, n_jobs)]
         callbacks += [plot_callback] if plot_callback else []
 
         self._study.optimize(
@@ -744,8 +733,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             n_trials=n_trials,
             n_jobs=n_jobs,
             callbacks=callbacks,
-            show_progress_bar=kwargs.pop("show_progress_bar", self.T.verbose == 1),
-            **kwargs,
+            show_progress_bar=kw.pop("show_progress_bar", self.T.verbose == 1),
+            **kw,
         )
 
         if self._ht.get("plot", False) and n_jobs == 1:
@@ -1829,11 +1818,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             inputs=inputs,
             outputs="label",
             allow_flagging=kwargs.pop("allow_flagging", "never"),
-            **{k: v for k, v in kwargs.items() if k in self._sign(Interface)},
+            **{k: v for k, v in kwargs.items() if k in sign(Interface)},
         )
 
         self.app.launch(
-            **{k: v for k, v in kwargs.items() if k in self._sign(Interface.launch)}
+            **{k: v for k, v in kwargs.items() if k in sign(Interface.launch)}
         )
 
     @composed(crash, typechecked, method_to_log)

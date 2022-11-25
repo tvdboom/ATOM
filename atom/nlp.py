@@ -403,7 +403,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drops = pd.concat(drops.values(), axis=1)
 
         # Drop empty tokens from every row
-        if not isinstance(X[corpus][0], str):
+        if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: [w for w in row if w])
 
         return X
@@ -1145,7 +1145,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         corpus = get_corpus(X)
 
         # Convert sequence of tokens to space separated string
-        if not isinstance(X[corpus][0], str):
+        if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         strategies = CustomDict(

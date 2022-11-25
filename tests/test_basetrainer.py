@@ -288,6 +288,18 @@ def test_ht_params_kwargs():
     assert trainer.lr.study.pruner.__class__ == MedianPruner
 
 
+def test_ht_params_invalid_key():
+    """Assert that an error is raised when ht_params is invalid."""
+    trainer = DirectClassifier(
+        models="LR",
+        n_trials=1,
+        ht_params={"invalid": 3},
+        random_state=1,
+    )
+    with pytest.raises(ValueError, match=".*ht_params parameter.*"):
+        trainer.run(bin_train, bin_test)
+
+
 # Test _core_iteration ============================================= >>
 
 def test_sequence_parameters():

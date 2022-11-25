@@ -9,7 +9,7 @@ Description: Module containing utility constants, classes and functions.
 
 import pprint
 import sys
-from collections import deque
+from collections import OrderedDict, deque
 from collections.abc import MutableMapping
 from copy import copy
 from datetime import datetime as dt
@@ -213,7 +213,7 @@ class CatBMetric:
             y_pred = approxes[0]
 
         kwargs = {}
-        if "sample_weight" in signature(self.scorer._score_func).parameters:
+        if "sample_weight" in sign(self.scorer._score_func):
             kwargs["sample_weight"] = weight
 
         score = self.scorer._score_func(targets, y_pred, **self.scorer._kwargs)
@@ -276,7 +276,7 @@ class LGBMetric:
                 y_pred = np.argmax(y_pred, axis=1)
 
         kwargs = {}
-        if "sample_weight" in signature(self.scorer._score_func).parameters:
+        if "sample_weight" in sign(self.scorer._score_func):
             kwargs["sample_weight"] = weight
 
         score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs, **kwargs)
@@ -751,7 +751,7 @@ class ShapExplanation:
         self,
         df: pd.DataFrame,
         target: int = 1,
-        feature: Optional[Union[INT, str]] = None,
+        column: Optional[str] = None,
         only_one: bool = False,
     ) -> Explanation:
         """Get an Explanation object.
@@ -765,8 +765,8 @@ class ShapExplanation:
             Index of the class in the target column to look at.
             Only for multi-class classification tasks.
 
-        feature: int, str or None, default=None
-            Feature to look at. If None, look at all features.
+        column: str or None, default=None
+            Column to look at. If None, look at all features.
 
         only_one: bool, default=False
             Whether only one row is accepted.
@@ -783,11 +783,11 @@ class ShapExplanation:
             kwargs = {}
 
             # Minimum of 2 * n_features + 1 evals required (default=500)
-            if "max_evals" in signature(self.explainer.__call__).parameters:
+            if "max_evals" in sign(self.explainer.__call__):
                 kwargs["max_evals"] = 2 * self.T.n_features + 1
 
             # Additivity check fails sometimes for no apparent reason
-            if "check_additivity" in signature(self.explainer.__call__).parameters:
+            if "check_additivity" in sign(self.explainer.__call__):
                 kwargs["check_additivity"] = False
 
             # Calculate the new shap values
@@ -816,10 +816,10 @@ class ShapExplanation:
             if isinstance(explanation.base_values, np.ndarray):
                 explanation.base_values = explanation.base_values[target]
 
-        if feature is None:
+        if column is None:
             return explanation
         else:
-            return explanation[:, feature]
+            return explanation[:, df.columns.get_loc(column)]
 
     def get_shap_values(
         self,
@@ -1214,6 +1214,23 @@ def to_rgb(c: str) -> str:
     return c
 
 
+def sign(obj: Callable) -> OrderedDict:
+    """Get the parameters of an object.
+
+    Parameters
+    ----------
+    obj: Callable
+        Object from which to get the parameters.
+
+    Returns
+    -------
+    OrderedDict
+        Object's parameters.
+
+    """
+    return signature(obj).parameters
+
+
 def merge(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
     """Add a target column to the feature set.
 
@@ -1328,6 +1345,7 @@ def check_scaling(df: pd.DataFrame) -> bool:
     A data set is considered scaled when the mean of the mean of
     all columns lies between -0.05 and 0.05 and the mean of the
     standard deviation of all columns lies between 0.85 and 1.15.
+    Binary columns are excluded from the calculation.
 
     Parameters
     ----------
@@ -1340,6 +1358,9 @@ def check_scaling(df: pd.DataFrame) -> bool:
         Whether the data set is scaled.
 
     """
+    # Remove binary columns
+    df = df[[c for c in df if ~np.isin(df[c].unique(), [0, 1]).all()]]
+
     mean = df.mean(numeric_only=True).mean()
     std = df.std(numeric_only=True).mean()
     return -0.05 < mean < 0.05 and 0.85 < std < 1.15
@@ -2135,9 +2156,7 @@ def fit_one(
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
             args = []
-            params = signature(transformer.fit).parameters
-
-            if "X" in params:
+            if "X" in (params := sign(transformer.fit)):
                 if X is not None:
                     inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
                     if inc or exc:  # Skip if inc=[] (happens when columns=-1)
@@ -2235,8 +2254,7 @@ def transform_one(
     y = to_series(y, index=getattr(X, "index", None))
 
     args = []
-    params = signature(getattr(transformer, method)).parameters
-    if "X" in params:
+    if "X" in (params := sign(getattr(transformer, method))):
         if X is not None:
             inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
             if inc or exc:  # Skip if inc=[] (happens when columns=-1)

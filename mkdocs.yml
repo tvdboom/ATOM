@@ -21,6 +21,8 @@ theme:
         - navigation.tracking
         - content.tabs.link
         - announce.dismiss
+        - toc.follow
+        - search.suggest
     palette:
         # Light mode
         - amber: "(prefers-color-scheme: light)"
@@ -68,11 +70,14 @@ extra:
 
 plugins:
     - search
+    - exclude-search:
+        exclude:
+            - examples/*  # Exclude to avoid a search index > 100MB
     - autorefs
-#    - mkdocs-jupyter:
-#          include: ["*.ipynb"]
-#          include_source: true
-#          ignore_h1_titles: true
+    - mkdocs-jupyter:
+          include: ["*.ipynb"]
+          include_source: true
+          ignore_h1_titles: true
     - mkdocs-simple-hooks:
         hooks:
             on_page_markdown: "docs_sources.autodocs:render"

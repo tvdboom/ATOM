@@ -912,4 +912,4 @@ def test_transform():
     atom.run("LR")
     X = atom.lr.transform(X10_str)
     assert len(X.columns) > 3  # Data is one-hot encoded
-    assert check_scaling(X)  # Data is scaled
+    assert all(-3 <= v <= 3 for v in X.values.flatten())  # Data is scaled

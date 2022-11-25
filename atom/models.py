@@ -144,10 +144,7 @@ class CustomModel(BaseModel):
         self.est = kwargs["estimator"]  # Estimator provided by the user
 
         # If no acronym is provided, use capital letters in the class' name
-        if hasattr(self.est, "acronym"):
-            self.acronym = self.est.acronym
-        else:
-            self.acronym = create_acronym(self._fullname)
+        self.acronym = getattr(self.est, "acronym", create_acronym(self._fullname))
 
         self.needs_scaling = getattr(self.est, "needs_scaling", False)
         self.has_validation = getattr(self.est, "has_validation", None)
@@ -4024,7 +4021,6 @@ class XGBoost(BaseModel):
 
         return self._est_class(
             eval_metric=params.pop("eval_metric", eval_metric),
-            use_label_encoder=params.pop("use_label_encoder", False),
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             tree_method=params.pop("tree_method", "gpu_hist" if self._gpu else None),
             gpu_id=self.T._device_id,

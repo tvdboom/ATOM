@@ -10,7 +10,6 @@ Description: Module containing the data cleaning transformers.
 from __future__ import annotations
 
 from collections import defaultdict
-from inspect import signature
 from logging import Logger
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -44,16 +43,14 @@ from imblearn.under_sampling import (
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import KNNImputer
-from sklearn.preprocessing import (
-    FunctionTransformer, PowerTransformer, QuantileTransformer,
-)
+from sklearn.preprocessing import FunctionTransformer
 from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
 from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
-    check_is_fitted, composed, crash, it, lst, merge, method_to_log, to_df,
-    to_series, variable_return,
+    check_is_fitted, composed, crash, it, lst, merge, method_to_log, sign,
+    to_df, to_series, variable_return,
 )
 
 
@@ -1192,7 +1189,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
-        self._num_cols = list(X.select_dtypes(include="number").columns)
+        self._num_cols = list(X.select_dtypes(include="number"))
 
         if self.strategy.lower() not in ("uniform", "quantile", "kmeans", "custom"):
             raise ValueError(
@@ -1231,7 +1228,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # cuML implementation has no random_state
                 kwargs = {}
-                if "random_state" in signature(estimator).parameters:
+                if "random_state" in sign(estimator):
                     kwargs["random_state"] = self.random_state
 
                 self._discretizers[col] = estimator(
@@ -1684,7 +1681,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
             else:
                 args = [X[[name]]]
-                if "y" in signature(estimator.fit).parameters:
+                if "y" in sign(estimator.fit):
                     args.append(y)
                 self._encoders[name] = clone(estimator).fit(*args)
 
@@ -2005,7 +2002,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
-        self._num_cols = list(X.select_dtypes(include="number").columns)
+        self._num_cols = list(X.select_dtypes(include="number"))
 
         # Check input Parameters
         strategies = ["drop", "mean", "median", "knn", "most_frequent"]
@@ -2254,6 +2251,20 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - "[boxcox][]" (only works with strictly positive values)
         - "[quantile][]": Transform features using quantiles information.
 
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "cuml" (only if device="gpu")
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -2414,12 +2425,20 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "yeojohnson",
         *,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[INT] = None,
         **kwargs,
     ):
-        super().__init__(verbose=verbose, logger=logger, random_state=random_state)
+        super().__init__(
+            device=device,
+            engine=engine,
+            verbose=verbose,
+            logger=logger,
+            random_state=random_state,
+        )
         self.strategy = strategy
         self.kwargs = kwargs
 
@@ -2448,16 +2467,24 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
-        self._num_cols = list(X.select_dtypes(include="number").columns)
+        self._num_cols = list(X.select_dtypes(include="number"))
 
-        kwargs = self.kwargs.copy()
+        strategies = CustomDict(
+            yeojohnson="PowerTransformer",
+            boxcox="PowerTransformer",
+            quantile="QuantileTransformer",
+        )
+
         if self.strategy.lower() in ("yeojohnson", "boxcox"):
-            self._estimator = PowerTransformer(
+            estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
+            self._estimator = estimator(
                 method=self.strategy.lower()[:3] + "-" + self.strategy.lower()[3:],
-                **kwargs,
+                **self.kwargs,
             )
         elif self.strategy.lower() == "quantile":
-            self._estimator = QuantileTransformer(
+            kwargs = self.kwargs.copy()
+            estimator = self._get_est_class(strategies[self.strategy], "preprocessing")
+            self._estimator = estimator(
                 output_distribution=kwargs.pop("output_distribution", "normal"),
                 random_state=kwargs.pop("random_state", self.random_state),
                 **kwargs,
@@ -2465,7 +2492,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Choose from: yeojohnson, boxcox, quantile."
+                f"Choose from: {', '.join(strategies)}."
             )
 
         self.log("Fitting Normalizer...", 1)
@@ -2939,7 +2966,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale the data.
 
-    Apply one of sklearn's scalers. Categorical columns are ignored.
+    Apply one of sklearn's scalers. Categorical and binary columns
+    (only 0s and 1s) are ignored.
 
     This class can be accessed from atom through the [scale]
     [atomclassifier-scale] method. Read more in the [user guide]
@@ -3146,7 +3174,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
-        self._num_cols = list(X.select_dtypes(include="number").columns)
+        self._num_cols = [
+            name for name, column in X.select_dtypes(include="number").items()
+            if ~np.isin(column.unique(), [0, 1]).all()
+        ]
 
         strategies = CustomDict(
             standard="StandardScaler",

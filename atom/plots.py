@@ -120,7 +120,7 @@ class BaseFigure:
             if self.backend == "plotly":
                 self.figure = go.Figure()
             else:
-                self.figure, _ = plt.subplots(tight_layout=True)
+                self.figure, _ = plt.subplots()
 
         self.groups = []
         self.style = dict(colors={}, markers={}, dashes={}, shapes={})
@@ -369,7 +369,7 @@ class BaseFigure:
         if coloraxis:
             if title := coloraxis.pop("title", None):
                 coloraxis["colorbar_title"] = dict(
-                    text=title, font_size=coloraxis.pop("font_size")
+                    text=title, side="right", font_size=coloraxis.pop("font_size")
                 )
 
             coloraxis["colorbar_x"] = rnd(x_pos + ax_size) + ax_size / 40
@@ -510,7 +510,7 @@ class BasePlot:
             Number of features to show.
 
         """
-        max_fxs = max([m.n_features for m in lst(model)])
+        max_fxs = max(m.n_features for m in lst(model))
         if show is None or show > max_fxs:
             # Limit max features shown to avoid maximum figsize error
             show = min(200, max_fxs)
@@ -523,14 +523,14 @@ class BasePlot:
 
     @staticmethod
     def _get_hyperparams(
-        params: Optional[Union[str, SEQUENCE_TYPES]],
+        params: Optional[Union[str, slice, SEQUENCE_TYPES]],
         model: Model,
     ) -> List[str]:
         """Check and return a model's hyperparameters.
 
         Parameters
         ----------
-        params: str, sequence or None
+        params: str, slice, sequence or None
             Hyperparameters to get. Use a sequence or add `+` between
             options to select more than one. If None, all the model's
             hyperparameters are selcted.
@@ -546,6 +546,8 @@ class BasePlot:
         """
         if params is None:
             hyperparameters = list(model._ht["distributions"])
+        elif isinstance(params, slice):
+            hyperparameters = list(model._ht["distributions"])[params]
         else:
             hyperparameters = []
             for param in lst(params):
@@ -641,8 +643,8 @@ class BasePlot:
                 elif isinstance(met, str):
                     met = met.lower()
                     for m in met.split("+"):
-                        if met in ("time_ht", "time_fit", "time_bootstrap", "time"):
-                            inc.append(met)
+                        if m in ("time_ht", "time_fit", "time_bootstrap", "time"):
+                            inc.append(m)
                         elif (name := get_custom_scorer(m).name) in self.metric:
                             inc.append(self._metric.index(name))
                         else:
@@ -809,6 +811,7 @@ class BasePlot:
                 dash=self._fig.get_dashes(child) if child else None,
             ),
             marker=dict(
+                symbol=self._fig.get_marker(child),
                 size=self.marker_size,
                 color=self._fig.get_color(parent),
                 line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
@@ -2008,7 +2011,7 @@ class DataPlot(BasePlot):
     def plot_ngrams(
         self,
         ngram: Union[INT, str] = "bigram",
-        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         show: INT = 10,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -2036,7 +2039,7 @@ class DataPlot(BasePlot):
             Choose from: words (1), bigrams (2), trigrams (3),
             quadgrams (4).
 
-        index: int, str, sequence or None, default=None
+        index: int, str, slice, sequence or None, default=None
             Documents in the corpus to include in the search. If None,
             it selects all documents in the dataset.
 
@@ -2298,6 +2301,7 @@ class DataPlot(BasePlot):
                     self._draw_line(
                         x=np.percentile(samples, percentiles),
                         y=np.percentile(values, percentiles),
+                        mode="markers",
                         parent=col,
                         child=dist,
                         legend=legend,
@@ -2491,7 +2495,7 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_wordcloud(
         self,
-        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = None,
@@ -2508,7 +2512,7 @@ class DataPlot(BasePlot):
 
         Parameters
         ----------
-        index: int, str, sequence or None, default=None
+        index: int, str, slice, sequence or None, default=None
             Documents in the corpus to include in the wordcloud. If
             None, it selects all documents in the dataset.
 
@@ -2535,7 +2539,7 @@ class DataPlot(BasePlot):
             Whether to render the plot. If None, it returns the figure.
 
         **kwargs
-            Additional keyword arguments for the [Wordlcoud][] object.
+            Additional keyword arguments for the [Wordcloud][] object.
 
         Returns
         -------
@@ -2713,13 +2717,31 @@ class HTPlot(BasePlot):
 
         ```pycon
         >>> from atom import ATOMClassifier
+        >>> from optuna.distributions import IntDistribution
 
         >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
         >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
-        >>> atom.run(["LR", "RF"], n_trials=15)
+
+        # We run three models with different search spaces
+        >>> atom.run(
+        ...     models="RF1",
+        ...     n_trials=200,
+        ...     ht_params={"distributions": {"n_estimators": IntDistribution(10, 20)}},
+        ... )
+        >>> atom.run(
+        ...     models="RF1",
+        ...     n_trials=200,
+        ...     ht_params={"distributions": {"n_estimators": IntDistribution(50, 80)}},
+        ... )
+        >>> atom.run(
+        ...     models="RF1",
+        ...     n_trials=200,
+        ...     ht_params={"distributions": {"n_estimators": IntDistribution(100, 200)}},
+        ... )
+
         >>> atom.plot_edf()
 
         ```
@@ -2857,12 +2879,11 @@ class HTPlot(BasePlot):
 
         ```pycon
         >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run(["LR", "RF"], n_trials=15)
         >>> atom.plot_hyperparameter_importance()
 
@@ -2943,7 +2964,7 @@ class HTPlot(BasePlot):
     def plot_hyperparameters(
         self,
         models: Optional[Union[INT, str, Model]] = None,
-        params: Union[str, SEQUENCE_TYPES] = (0, 1),
+        params: Union[str, slice, SEQUENCE_TYPES] = (0, 1),
         metric: Union[int, str] = 0,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -2967,7 +2988,7 @@ class HTPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g. `atom.lr.plot_hyperparameters()`.
 
-        params: str or sequence, default=(0, 1)
+        params: str, slice or sequence, default=(0, 1)
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one.
 
@@ -3013,15 +3034,13 @@ class HTPlot(BasePlot):
 
         ```pycon
         >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        >>> from sklearn.datasets import load_breast_cancer
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
-        >>> atom.plot_hyperparameters()
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.run("RF")
+        >>> atom.plot_hyperparameters(params=(0, 1, 2))
 
         ```
 
@@ -3087,11 +3106,10 @@ class HTPlot(BasePlot):
                             )
                         ),
                         hovertemplate=(
-                            "Trial: %{customdata[0]}<br>"
                             f"{params[y]}:%{{x}}<br>"
                             f"{params[x + 1]}:%{{y}}<br>"
                             f"{self._metric[met].name}:%{{customdata[1]:.4f}}"
-                            "<extra></extra>"
+                            "<extra>Trial %{customdata[0]}</extra>"
                         ),
                         showlegend=False,
                         xaxis=xaxis,
@@ -3151,7 +3169,7 @@ class HTPlot(BasePlot):
     def plot_parallel_coordinate(
         self,
         models: Optional[Union[INT, str, Model]] = None,
-        params: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        params: Optional[Union[str, slice, SEQUENCE_TYPES]] = None,
         metric: Union[INT, str] = 0,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3173,7 +3191,7 @@ class HTPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g. `atom.lr.plot_parallel_coordinate()`.
 
-        params: str, sequence or None, default=None
+        params: str, slice, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one. If None, all the model's
             hyperparameters are selected.
@@ -3220,14 +3238,13 @@ class HTPlot(BasePlot):
 
         ```pycon
         >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"], n_trials=15)
-        >>> atom.plot_parallel_coordinate()
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.run("RF", n_trials=15)
+        >>> atom.plot_parallel_coordinate(params=slice(1, 5))
 
         ```
 
@@ -3314,7 +3331,7 @@ class HTPlot(BasePlot):
             )
         )
 
-        self._fig.used_models.extend(models)
+        self._fig.used_models.append(m)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
@@ -3396,13 +3413,12 @@ class HTPlot(BasePlot):
 
         ```pycon
         >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"], n_trials=15)
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.run("RF", metric=["f1", "accuracy", "recall"], n_trials=15)
         >>> atom.plot_pareto_front()
 
         ```
@@ -3470,7 +3486,7 @@ class HTPlot(BasePlot):
                     ylabel=self._metric[x + 1].name if y == 0 else None,
                 )
 
-        self._fig.used_models.extend(models)
+        self._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
@@ -3484,7 +3500,7 @@ class HTPlot(BasePlot):
     def plot_slice(
         self,
         models: Optional[Union[INT, str, Model]] = None,
-        params: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        params: Optional[Union[str, slice, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -3506,7 +3522,7 @@ class HTPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g. `atom.lr.plot_slice()`.
 
-        params: str, sequence or None, default=None
+        params: str, slice, sequence or None, default=None
             Hyperparameters to plot. Use a sequence or add `+` between
             options to select more than one. If None, all the model's
             hyperparameters are selected.
@@ -3555,14 +3571,13 @@ class HTPlot(BasePlot):
 
         ```pycon
         >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
-        >>> atom.run(["LR", "RF"], n_trials=15)
-        >>> atom.plot_slice()
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.run("RF", metric=["f1", "recall"], n_trials=15)
+        >>> atom.plot_slice(params=(0, 1, 2))
 
         ```
 
@@ -3625,7 +3640,7 @@ class HTPlot(BasePlot):
                 ylabel=self._metric[x].name if y == 0 else None,
             )
 
-        self._fig.used_models.extend(models)
+        self._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
@@ -3770,6 +3785,7 @@ class HTPlot(BasePlot):
                         x=list(range(1, len(y))),
                         y=np.abs(np.diff(y)),
                         mode="lines+markers",
+                        marker_symbol="circle",
                         parent=m.name,
                         child=self._metric[met].name,
                         legend=legend,
@@ -3907,7 +3923,7 @@ class PredictionPlot(BasePlot):
         >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
+        >>> atom.run(["RF", "LGB"])
         >>> atom.plot_calibration()
 
         ```
@@ -3944,6 +3960,7 @@ class PredictionPlot(BasePlot):
                     y=frac_pos,
                     parent=m.name,
                     mode="lines+markers",
+                    marker_symbol="circle",
                     legend=legend,
                     xaxis=xaxis2,
                     yaxis=yaxis,
@@ -3980,6 +3997,7 @@ class PredictionPlot(BasePlot):
         self._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
+            groupclick="togglegroup",
             ylabel="Fraction of positives",
             ylim=(-0.05, 1.05),
             title=title,
@@ -3998,7 +4016,7 @@ class PredictionPlot(BasePlot):
         dataset: str = "test",
         *,
         title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
+        legend: Optional[Union[str, dict]] = "upper right",
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: Optional[bool] = True,
@@ -4026,7 +4044,7 @@ class PredictionPlot(BasePlot):
             - If str, text for the title.
             - If dict, [title configuration][parameters].
 
-        legend: str, dict or None, default="lower right"
+        legend: str, dict or None, default="upper right"
             Legend for the plot. See the [user guide][parameters] for
             an extended description of the choices.
 
@@ -4532,7 +4550,7 @@ class PredictionPlot(BasePlot):
         >>> atom.impute()
         >>> atom.encode()
         >>> atom.run(["XGB", "LGB"])
-        >>> atom.lr.plot_evals()
+        >>> atom.plot_evals()
 
         ```
 
@@ -4558,6 +4576,7 @@ class PredictionPlot(BasePlot):
                     self._draw_line(
                         x=list(range(len(m.evals[f"{self._metric[0].name}_{ds}"]))),
                         y=m.evals[f"{self._metric[0].name}_{ds}"],
+                        marker_symbol="circle",
                         parent=m.name,
                         child=ds,
                         legend=legend,
@@ -4656,7 +4675,7 @@ class PredictionPlot(BasePlot):
 
         >>> atom = ATOMClassifier(X, y)
         >>> atom.run(["LR", "RF"])
-        >>> atom.plot_feature_importance()
+        >>> atom.plot_feature_importance(show=10)
 
         ```
 
@@ -4703,11 +4722,14 @@ class PredictionPlot(BasePlot):
             }
         )
 
+        # Unique number of features over all branches
+        n_fxs = len(set([fx for m in models for fx in m.features]))
+
         self._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Normalized feature importance",
-            ylim=(m.n_features - show - 0.5, m.n_features - 0.5),
+            ylim=(n_fxs - show - 0.5, n_fxs - 0.5),
             title=title,
             legend=legend,
             figsize=figsize or (900, 400 + show * 50),
@@ -4948,10 +4970,11 @@ class PredictionPlot(BasePlot):
                     self._draw_line(
                         x=x[group],
                         y=y[group],
+                        mode="lines+markers",
+                        marker_symbol="circle",
                         error_y=dict(type="data", array=std[group], visible=True),
                         parent=group,
                         child=self._metric[met].name,
-                        mode="lines+markers",
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -5218,8 +5241,8 @@ class PredictionPlot(BasePlot):
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.run(["LR", "RF"])
-        >>> atom.lgb.plot_parshap()
+        >>> atom.run(["GNB", "RF"])
+        >>> atom.rf.plot_parshap(legend=None)
 
         ```
 
@@ -5239,21 +5262,20 @@ class PredictionPlot(BasePlot):
         models = self._get_subclass(models, max_one=False)
         target = self._get_target(target)
 
-        # Colorbar is only needed when a model has feature_importance
-        needs_colorbar = any(m.feature_importance is not None for m in models)
-        coloraxis = dict(
-            colorscale="Reds",
-            cmin=0,
-            cmax=1,
-            title="Normalized feature importance",
-            font_size=self.label_fontsize,
-        )
-
         fig = self._get_figure()
-        xaxis, yaxis = self._fig.get_axes(
-            x=(0, 0.87) if needs_colorbar else (0, 1),
-            coloraxis=coloraxis if needs_colorbar else None,
-        )
+
+        # Colorbar is only needed when a model has feature_importance
+        if any(m.feature_importance is not None for m in models):
+            xaxis, yaxis = self._fig.get_axes()
+        else:
+            xaxis, yaxis = self._fig.get_axes(
+                x=(0, 0.87),
+                coloraxis=dict(
+                    colorscale="Reds",
+                    title="Normalized feature importance",
+                    font_size=self.label_fontsize,
+                )
+            )
 
         for m in models:
             parshap = {}
@@ -5271,7 +5293,7 @@ class PredictionPlot(BasePlot):
                 # Replace data with the calculated shap values
                 data.iloc[:, :-1] = m._shap.get_shap_values(data.iloc[:, :-1], target)
 
-                parshap[ds] = pd.Series(index=data.columns[:-1], dtype=float)
+                parshap[ds] = pd.Series(index=fxs, dtype=float)
                 for fx in fxs:
                     # All other features are covariates
                     covariates = [f for f in data.columns[:-1] if f != fx]
@@ -5300,7 +5322,7 @@ class PredictionPlot(BasePlot):
 
             # Get the feature importance or coefficients
             if m.feature_importance is not None:
-                color = m.feature_importance[fxs]
+                color = m.feature_importance.loc[fxs]
             else:
                 color = self._fig.get_color("parshap")
 
@@ -5309,10 +5331,20 @@ class PredictionPlot(BasePlot):
                     x=parshap["train"],
                     y=parshap["test"],
                     mode="markers+text",
-                    marker=dict(color=color, coloraxis=f"coloraxis{xaxis[1:]}"),
+                    marker=dict(
+                        color=color,
+                        size=self.marker_size,
+                        coloraxis=f"coloraxis{xaxis[1:]}",
+                        line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
+                    ),
                     text=m.features,
                     textposition="top center",
-                    hovertemplate=f"(%{{x}}, %{{y}})<br>%{{text}}<extra>{m.name}</extra>",
+                    customdata=(data := None if isinstance(color, str) else list(color)),
+                    hovertemplate=(
+                        f"%{{text}}<br>(%{{x}}, %{{y}})"
+                        f"{'<br>Feature importance: %{customdata:.4f}' if data else ''}"
+                        f"<extra>{m.name}</extra>"
+                    ),
                     name=m.name,
                     legendgroup=m.name,
                     showlegend=self._fig.showlegend(m.name, legend),
@@ -5440,14 +5472,13 @@ class PredictionPlot(BasePlot):
 
         ```pycon
         >>> from atom import ATOMClassifier
-        >>> import pandas as pd
+        >>> from sklearn.datasets import load_breast_cancer
 
-        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.feature_selection(strategy="pca", n_features=6)
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run(["LR", "RF"])
-        >>> atom.plot_partial_dependence()
+        >>> atom.plot_partial_dependence(kind="average+individual", legend="upper left")
 
         ```
 
@@ -5455,7 +5486,7 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_partial_dependence_1.html
 
         ```pycon
-        >>> atom.tree.plot_partial_dependence(columns=(3, 4), pair=2)
+        >>> atom.rf.plot_partial_dependence(columns=(3, 4), pair=2)
 
         ```
 
@@ -5480,9 +5511,12 @@ class PredictionPlot(BasePlot):
 
             # Since every model can have different fxs, select them
             # every time and make sure the models use the same fxs
-            cols = self._get_columns(columns, include_target=False, branch=m.branch)
+            cols = self._get_columns(
+                columns=columns or (0, 1, 2),
+                include_target=False,
+                branch=m.branch,
+            )
 
-            # The features must be the same for all models
             if not names:
                 names = cols
             elif names != cols:
@@ -5507,7 +5541,7 @@ class PredictionPlot(BasePlot):
             if not axes:
                 for i, col in enumerate(cols):
                     # Calculate the distance between subplots
-                    offset = divide(0.05 if len(col) > 1 else 0.025, (len(cols) - 1))
+                    offset = divide(0.025, len(cols) - 1)
 
                     # Calculate the size of the subplot
                     size = (1 - ((offset * 2) * (len(cols) - 1))) / len(cols)
@@ -5608,15 +5642,14 @@ class PredictionPlot(BasePlot):
                             showscale=False,
                             showlegend=False,
                             xaxis=ax[0],
-                            yaxis=ax[1],
+                            yaxis=axes[0][1],
                         )
                     )
 
                 self._plot(
                     ax=(f"xaxis{ax[0][1:]}", f"yaxis{ax[1][1:]}"),
-                    title=title if len(cols) // 2 == i else None,
                     xlabel=fx[0],
-                    ylabel=(fx[1] if len(fx) > 1 else "score") if i == 0 else None,
+                    ylabel=(fx[1] if len(fx) > 1 else "Score") if i == 0 else None,
                 )
 
         self._fig.used_models.extend(models)
@@ -5740,7 +5773,7 @@ class PredictionPlot(BasePlot):
             # same, use known permutations (for efficient re-plotting)
             if (
                 not hasattr(m, "permutations")
-                or m.permutations.importances.shape[1] == n_repeats
+                or m.permutations.importances.shape[1] != n_repeats
             ):
                 # Permutation importances returns Bunch object
                 m.permutations = permutation_importance(
@@ -5775,11 +5808,14 @@ class PredictionPlot(BasePlot):
             }
         )
 
+        # Unique number of features over all branches
+        n_fxs = len(set([fx for m in models for fx in m.features]))
+
         self._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Score",
-            ylim=(m.n_features - show - 0.5, m.n_features - 0.5),
+            ylim=(n_fxs - show - 0.5, n_fxs - 0.5),
             title=title,
             legend=legend,
             figsize=figsize or (900, 400 + show * 50),
@@ -5805,8 +5841,8 @@ class PredictionPlot(BasePlot):
 
         !!! warning
             This plot uses the [schemdraw][] package, which is
-            incompatible with [plotly][]. The returned plot is therefore
-            a [matplotlib figure][pltfigure].
+            incompatible with [plotly][]. The returned plot is
+            therefore a [matplotlib figure][pltfigure].
 
         Parameters
         ----------
@@ -5858,28 +5894,45 @@ class PredictionPlot(BasePlot):
 
         ```pycon
         >>> from atom import ATOMClassifier
-        >>> from sklearn.datasets import load_breast_cancer
 
-        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> X = pd.read_csv("./examples/datasets/weatherAUS.csv")
 
         >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
-        >>> atom.run(["LR", "RF"])
+        >>> atom.scale()
+        >>> atom.run(["GNB", "RNN", "SGD", "MLP"])
+        >>> atom.voting(models=atom.winners[:2])
         >>> atom.plot_pipeline()
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_pipeline_1.html
+        ![plot_pipeline](../../img/plots/plot_pipeline_1.png)
 
         ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.scale()
+        >>> atom.prune()
+        >>> atom.run("RF", n_trials=30)
+
+        >>> atom.branch = "undersample"
+        >>> atom.balance("nearmiss")
+        >>> atom.run("RF_undersample")
+
+        >>> atom.branch = "oversample_from_master"
+        >>> atom.balance("smote")
+        >>> atom.run("RF_oversample")
+
         >>> atom.plot_pipeline()
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_pipeline_2.html
+        ![plot_pipeline](../../img/plots/plot_pipeline_2.png)
 
         """
 
@@ -6077,7 +6130,7 @@ class PredictionPlot(BasePlot):
 
         if not figsize:
             dpi, bbox = fig.get_dpi(), d.get_bbox()
-            figsize = (dpi * bbox.xmax // 4, 2 + dpi * (bbox.ymax - bbox.ymin + 1) // 4)
+            figsize = (dpi * bbox.xmax // 4, (dpi / 2) * (bbox.ymax - bbox.ymin))
 
         d.draw(ax=plt.gca(), showframe=False, show=False)
         plt.axis("off")
@@ -6597,7 +6650,7 @@ class PredictionPlot(BasePlot):
         >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
         >>> atom.impute()
         >>> atom.encode()
-        >>> atom.run(["GNB", "LR", "RF", "LGB"])
+        >>> atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"])
         >>> atom.plot_results()
 
         ```
@@ -6606,7 +6659,7 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_results_1.html
 
         ```pycon
-        >>> atom.run(["GNB", "LR", "RF", "LGB"], n_bootstrap=5)
+        >>> atom.run(["GNB", "LR", "RF", "LGB"], metric=["f1", "recall"], n_bootstrap=5)
         >>> atom.plot_results()
 
         ```
@@ -6721,6 +6774,7 @@ class PredictionPlot(BasePlot):
             {
                 f"yaxis{yaxis[1:]}": dict(categoryorder="total ascending"),
                 "bargroupgap": 0.05,
+                "boxmode": "group",
             }
         )
 
@@ -6942,7 +6996,7 @@ class PredictionPlot(BasePlot):
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
         >>> atom = ATOMClassifier(X, y)
-        >>> atom.successive_halving(["LR", "RF"], n_bootstrap=5)
+        >>> atom.successive_halving(["Tree", "Bag", "RF", "LGB"], n_bootstrap=5)
         >>> atom.plot_successive_halving()
 
         ```
@@ -6971,10 +7025,11 @@ class PredictionPlot(BasePlot):
                     self._draw_line(
                         x=x[group],
                         y=y[group],
+                        mode="lines+markers",
+                        marker_symbol="circle",
                         error_y=dict(type="data", array=std[group], visible=True),
                         parent=group,
                         child=self._metric[met].name,
-                        mode="lines+markers",
                         legend=legend,
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -7193,7 +7248,7 @@ class ShapPlot(BasePlot):
     def plot_shap_bar(
         self,
         models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
         *,
@@ -7219,7 +7274,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g. `atom.lr.plot_shap_bar()`.
 
-        index: int, str, sequence or None, default=None
+        index: int, str, slice, sequence or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
             in the test set.
 
@@ -7274,16 +7329,13 @@ class ShapPlot(BasePlot):
 
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run("LR")
-        >>> atom.plot_shap_bar()
+        >>> atom.plot_shap_bar(show=10)
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_shap_bar.html
+        ![plot_shap_bar](../../img/plots/plot_shap_bar.png)
 
         """
         check_is_fitted(self, attributes="_models")
@@ -7393,16 +7445,13 @@ class ShapPlot(BasePlot):
 
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run("LR")
-        >>> atom.plot_shap_beeswarm()
+        >>> atom.plot_shap_beeswarm(show=10)
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_shap_beeswarm.html
+        ![plot_shap_beeswarm](../../img/plots/plot_shap_beeswarm.png)
 
         """
         check_is_fitted(self, attributes="_models")
@@ -7432,7 +7481,7 @@ class ShapPlot(BasePlot):
     def plot_shap_decision(
         self,
         models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         show: Optional[INT] = None,
         target: Union[INT, str] = 1,
         *,
@@ -7460,7 +7509,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g. `atom.lr.plot_shap_decision()`.
 
-        index: int, str, sequence or None, default=None
+        index: int, str, slice, sequence or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
             in the test set.
 
@@ -7515,16 +7564,20 @@ class ShapPlot(BasePlot):
 
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run("LR")
-        >>> atom.plot_shap_decision()
+        >>> atom.plot_shap_decision(show=10)
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_shap_decision.html
+        ![plot_shap_decision](../../img/plots/plot_shap_decision_1.png)
+
+        ```pycon
+        >>> atom.plot_shap_decision(index=-1, show=10)
+
+        ```
+
+        ![plot_shap_decision](../../img/plots/plot_shap_decision_2.png)
 
         """
         check_is_fitted(self, attributes="_models")
@@ -7561,7 +7614,7 @@ class ShapPlot(BasePlot):
     def plot_shap_force(
         self,
         models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -7587,7 +7640,7 @@ class ShapPlot(BasePlot):
             are multiple models. To avoid this, call the plot directly
             from a model, e.g. `atom.lr.plot_shap_force()`.
 
-        index: int, str, sequence or None, default=None
+        index: int, str, slice, sequence or None, default=None
             Rows in the dataset to plot. If None, it selects all rows
             in the test set.
 
@@ -7618,7 +7671,7 @@ class ShapPlot(BasePlot):
             Whether to render the plot. If None, it returns the figure.
 
         **kwargs
-            Additional keyword arguments for [shap.plots.force][].
+            Additional keyword arguments for [shap.plots.force][force].
 
         Returns
         -------
@@ -7640,23 +7693,13 @@ class ShapPlot(BasePlot):
 
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run("LR")
-        >>> atom.plot_shap_force()
+        >>> atom.plot_shap_force(index=-2, matplotlib=True, figsize=(1800, 300))
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_shap_force_1.html
-
-        >>> atom.plot_shap_force(matplotlib=True)
-
-        ```
-
-        :: insert:
-            url: /img/plots/plot_shap_force_2.html
+        ![plot_shap_force](../../img/plots/plot_shap_force.png)
 
         """
         check_is_fitted(self, attributes="_models")
@@ -7671,7 +7714,6 @@ class ShapPlot(BasePlot):
             base_value=m._shap.get_expected_value(target),
             shap_values=m._shap.get_shap_values(rows, target),
             features=rows,
-            # figsize=(figsize[0] // 58, figsize[1] // 58),
             show=False,
             **kwargs,
         )
@@ -7785,16 +7827,13 @@ class ShapPlot(BasePlot):
 
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run("LR")
-        >>> atom.plot_shap_heatmap()
+        >>> atom.plot_shap_heatmap(show=10)
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_shap_heatmap.html
+        ![plot_shap_heatmap](../../img/plots/plot_shap_heatmap.png)
 
         """
         check_is_fitted(self, attributes="_models")
@@ -7826,7 +7865,7 @@ class ShapPlot(BasePlot):
         self,
         models: Optional[Union[INT, str, Model]] = None,
         index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        feature: Union[INT, str] = 0,
+        columns: Union[INT, str] = 0,
         target: Union[INT, str] = 1,
         *,
         title: Optional[Union[str, dict]] = None,
@@ -7857,8 +7896,8 @@ class ShapPlot(BasePlot):
             in the test set. The plot_shap_scatter method does not
             support plotting a single sample.
 
-        feature: int or str, default=0
-            Feature to plot.
+        columns: int or str, default=0
+            Column to plot.
 
         target: int or str, default=1
             Class in the target column to look at (only for multi-class
@@ -7906,23 +7945,21 @@ class ShapPlot(BasePlot):
 
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run("LR")
-        >>> atom.plot_shap_scatter()
+        >>> atom.plot_shap_scatter(columns="symmetry error")
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_shap_scatter.html
+        ![plot_shap_scatter](../../img/plots/plot_shap_scatter.png)
 
         """
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         rows = m.X.loc[self._get_rows(index, branch=m.branch)]
+        column = self._get_columns(columns, include_target=False, branch=m.branch)[0]
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(rows, target, feature)
+        explanation = m._shap.get_explanation(rows, target, column)
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_scatter")
@@ -8034,16 +8071,13 @@ class ShapPlot(BasePlot):
 
         >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-        >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1e4)
-        >>> atom.impute()
-        >>> atom.encode()
+        >>> atom = ATOMClassifier(X, y)
         >>> atom.run("LR")
         >>> atom.plot_shap_waterfall()
 
         ```
 
-        :: insert:
-            url: /img/plots/plot_shap_waterfall.html
+        ![plot_shap_waterfall](../../img/plots/plot_shap_waterfall.png)
 
         """
         check_is_fitted(self, attributes="_models")

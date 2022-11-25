@@ -8,17 +8,15 @@ Description: Module containing the Branch class.
 """
 
 from copy import copy
-from inspect import signature
 from typing import Optional, Tuple, Union
 
 import pandas as pd
 from typeguard import typechecked
 
-from atom.basetransformer import BaseTransformer
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
     PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, CustomDict, composed, crash,
-    custom_transform, flt, merge, method_to_log, to_df, to_series,
+    custom_transform, merge, method_to_log, to_df, to_series,
 )
 
 
@@ -100,9 +98,6 @@ class Branch:
         out += f"\n --> Pipeline: {None if self.pipeline.empty else ''}"
         for est in self.pipeline:
             out += f"\n   --> {est.__class__.__name__}"
-            for param in signature(est.__init__).parameters:
-                if param not in BaseTransformer.attrs + ["self"]:
-                    out += f"\n     --> {param}: {str(flt(getattr(est, param)))}"
 
         # Add the models linked to the branch
         dependent = self._get_depending_models()

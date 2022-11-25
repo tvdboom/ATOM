@@ -207,7 +207,7 @@ CUSTOM_URLS = dict(
     roc="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html",
     schemdraw="https://schemdraw.readthedocs.io/en/latest/index.html",
     plotly="https://plotly.com/python/",
-    shapplotsforce="https://shap.readthedocs.io/en/latest/generated/shap.plots.force.html",
+    force="https://shap.readthedocs.io/en/latest/generated/shap.plots.force.html",
     # Training
     scorers="https://scikit-learn.org/stable/modules/model_evaluation.html",
 )
@@ -234,6 +234,7 @@ TYPES_CONVERSION = {
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame, NoneType]": "pd.Series, pd.DataFrame or None",
     "Optional[optuna.study.study.Study]": "[Study][] or None",
     "Optional[optuna.trial._trial.Trial]": "[Trial][] or None",
+    "Union[str, list, tuple, numpy.ndarray, pandas.core.series.Series]": "str or sequence",
 }
 
 

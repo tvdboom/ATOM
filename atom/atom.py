@@ -7,7 +7,6 @@ Description: Module containing the ATOM class.
 
 """
 
-from inspect import signature
 from platform import machine, platform, python_build, python_version
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -28,7 +27,7 @@ from atom.data_cleaning import (
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
 )
-from atom.models import MODELS, MODELS_ENSEMBLES, CustomModel
+from atom.models import MODELS, MODELS_ENSEMBLES
 from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
 from atom.plots import (
     DataPlot, FeatureSelectorPlot, HTPlot, PredictionPlot, ShapPlot,
@@ -40,9 +39,9 @@ from atom.training import (
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
     Runner, Scorer, Table, Transformer, __version__, check_is_fitted,
-    check_scaling, composed, crash, create_acronym, custom_transform, divide,
-    fit_one, flt, get_custom_scorer, has_task, infer_task, is_sparse, lst,
-    method_to_log, variable_return,
+    check_scaling, composed, crash, custom_transform, divide, fit_one, flt,
+    get_custom_scorer, has_task, infer_task, is_sparse, lst, method_to_log,
+    sign, variable_return,
 )
 
 
@@ -320,20 +319,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self.log("Searching for optimal pipeline...", 1)
 
-        # Define the scoring parameter
+        # Define the objective parameter
         if self._metric and not kwargs.get("objective"):
-            kwargs["objective"] = self._metric[0]
+            kwargs["objective"] = self._metric[0].name
         elif kwargs.get("objective"):
-            kwargs["objective"] = CustomDict(
-                {(s := get_custom_scorer(kwargs["objective"])).name: s}
-            )
             if not self._metric:
-                self._metric = kwargs["objective"]  # Update the pipeline's metric
-            elif kwargs["objective"][0].name != self.metric[0]:
+                self._metric = CustomDict(
+                    {(s := get_custom_scorer(kwargs["objective"])).name: s}
+                )
+            elif kwargs["objective"] != self._metric[0].name:
                 raise ValueError(
                     "Invalid value for the objective parameter! The metric "
                     "should be the same as the primary metric. Expected "
-                    f"{self.metric[0]}, got {kwargs['objective'][0].name}."
+                    f"{self._metric[0].name}, got {kwargs['objective']}."
                 )
 
         self.evalml = AutoMLSearch(
@@ -342,7 +340,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             X_holdout=self.X_test,
             y_holdout=self.y_test,
             problem_type=self.task.split(" ")[0],
-            objective=kwargs.pop("objective", "auto"),
+            objective=kwargs.pop("objective") if "objective" in kwargs else "auto",
             automl_algorithm=kwargs.pop("automl_algorithm", "iterative"),
             n_jobs=kwargs.pop("n_jobs", self.n_jobs),
             verbose=kwargs.pop("verbose", self.verbose > 1),
@@ -359,24 +357,20 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 self._add_transformer(est)
                 self.log(f" --> Adding {est.__class__.__name__} to the pipeline...", 2)
             else:
-                est.acronym = create_acronym(est.__class__.__name__)
                 for key, value in MODELS.items():
-                    m = value(self, fast_init=True)
+                    m = value(self)
                     if m._est_class.__name__ == est._component_obj.__class__.__name__:
-                        est.acronym = key
-
-                model = CustomModel(self, estimator=est)
-                model._estimator = model.est
+                        m._estimator = est._component_obj
+                        break
 
                 # Save metric scores on train and test set
                 for metric in self._metric.values():
-                    model._get_score(metric, "train")
-                    model._get_score(metric, "test")
+                    m._get_score(metric, "train")
+                    m._get_score(metric, "test")
 
-                self._models.update({model.name: model})
+                self._models.update({m.name: m})
                 self.log(
-                    f" --> Adding model {model._fullname} "
-                    f"({model.name}) to the pipeline...", 2
+                    f" --> Adding model {m._fullname} ({m.name}) to the pipeline...", 2
                 )
                 break  # Avoid non-linear pipelines
 
@@ -932,9 +926,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             raise AttributeError("Added transformers should have a transform method!")
 
         # Add BaseTransformer params to the estimator if left to default
-        sign = signature(transformer.__init__).parameters
+        sig = sign(transformer.__init__)
         for p in ("n_jobs", "random_state"):
-            if p in sign and transformer.get_params()[p] == sign[p]._default:
+            if p in sig and transformer.get_params()[p] == sig[p]._default:
                 transformer.set_params(**{p: getattr(self, p)})
 
         # Transformers remember the train_only and cols parameters
@@ -1122,7 +1116,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         columns = kwargs.pop("columns", None)
         balancer = Balancer(
             strategy=strategy,
-            **self._prepare_kwargs(kwargs, signature(Balancer).parameters),
+            **self._prepare_kwargs(kwargs, sign(Balancer)),
         )
 
         # Add target column mapping for cleaner printing
@@ -1165,7 +1159,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             drop_duplicates=drop_duplicates,
             drop_missing_target=drop_missing_target,
             encode_target=encode_target if self.goal == "class" else False,
-            **self._prepare_kwargs(kwargs, signature(Cleaner).parameters),
+            **self._prepare_kwargs(kwargs, sign(Cleaner)),
         )
 
         # Pass atom's missing values to the cleaner before transforming
@@ -1203,7 +1197,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             strategy=strategy,
             bins=bins,
             labels=labels,
-            **self._prepare_kwargs(kwargs, signature(Discretizer).parameters),
+            **self._prepare_kwargs(kwargs, sign(Discretizer)),
         )
 
         self._add_transformer(discretizer, columns=columns)
@@ -1252,7 +1246,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             ordinal=ordinal,
             rare_to_value=rare_to_value,
             value=value,
-            **self._prepare_kwargs(kwargs, signature(Encoder).parameters),
+            **self._prepare_kwargs(kwargs, sign(Encoder)),
         )
 
         self._add_transformer(encoder, columns=columns)
@@ -1291,7 +1285,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             strat_cat=strat_cat,
             max_nan_rows=max_nan_rows,
             max_nan_cols=max_nan_cols,
-            **self._prepare_kwargs(kwargs, signature(Imputer).parameters),
+            **self._prepare_kwargs(kwargs, sign(Imputer)),
         )
 
         # Pass atom's missing values to the imputer before transforming
@@ -1319,7 +1313,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         columns = kwargs.pop("columns", None)
         normalizer = Normalizer(
             strategy=strategy,
-            **self._prepare_kwargs(kwargs, signature(Normalizer).parameters),
+            **self._prepare_kwargs(kwargs, sign(Normalizer)),
         )
 
         self._add_transformer(normalizer, columns=columns)
@@ -1363,7 +1357,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             method=method,
             max_sigma=max_sigma,
             include_target=include_target,
-            **self._prepare_kwargs(kwargs, signature(Pruner).parameters),
+            **self._prepare_kwargs(kwargs, sign(Pruner)),
         )
 
         self._add_transformer(pruner, columns=columns)
@@ -1389,7 +1383,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         columns = kwargs.pop("columns", None)
         scaler = Scaler(
             strategy=strategy,
-            **self._prepare_kwargs(kwargs, signature(Scaler).parameters),
+            **self._prepare_kwargs(kwargs, sign(Scaler)),
         )
 
         self._add_transformer(scaler, columns=columns)
@@ -1445,7 +1439,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             drop_number=drop_number,
             regex_number=regex_number,
             drop_punctuation=drop_punctuation,
-            **self._prepare_kwargs(kwargs, signature(TextCleaner).parameters),
+            **self._prepare_kwargs(kwargs, sign(TextCleaner)),
         )
 
         self._add_transformer(textcleaner, columns=columns)
@@ -1480,7 +1474,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             custom_stopwords=custom_stopwords,
             stem=stem,
             lemmatize=lemmatize,
-            **self._prepare_kwargs(kwargs, signature(TextNormalizer).parameters),
+            **self._prepare_kwargs(kwargs, sign(TextNormalizer)),
         )
 
         self._add_transformer(normalizer, columns=columns)
@@ -1509,7 +1503,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             bigram_freq=bigram_freq,
             trigram_freq=trigram_freq,
             quadgram_freq=quadgram_freq,
-            **self._prepare_kwargs(kwargs, signature(Tokenizer).parameters),
+            **self._prepare_kwargs(kwargs, sign(Tokenizer)),
         )
 
         self._add_transformer(tokenizer, columns=columns)
@@ -1539,7 +1533,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         vectorizer = Vectorizer(
             strategy=strategy,
             return_sparse=return_sparse,
-            **self._prepare_kwargs(kwargs, signature(Vectorizer).parameters),
+            **self._prepare_kwargs(kwargs, sign(Vectorizer)),
         )
 
         self._add_transformer(vectorizer, columns=columns)
@@ -1579,7 +1573,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             fmt=fmt,
             encoding_type=encoding_type,
             drop_columns=drop_columns,
-            **self._prepare_kwargs(kwargs, signature(FeatureExtractor).parameters),
+            **self._prepare_kwargs(kwargs, sign(FeatureExtractor)),
         )
 
         self._add_transformer(feature_extractor, columns=columns)
@@ -1607,7 +1601,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             strategy=strategy,
             n_features=n_features,
             operators=operators,
-            **self._prepare_kwargs(kwargs, signature(FeatureGenerator).parameters),
+            **self._prepare_kwargs(kwargs, sign(FeatureGenerator)),
         )
 
         self._add_transformer(feature_generator, columns=columns)
@@ -1645,7 +1639,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             name=name,
             operators=operators,
             drop_columns=drop_columns,
-            **self._prepare_kwargs(kwargs, signature(FeatureGrouper).parameters),
+            **self._prepare_kwargs(kwargs, sign(FeatureGrouper)),
         )
 
         self._add_transformer(feature_grouper, columns=columns)
@@ -1704,7 +1698,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             min_repeated=min_repeated,
             max_repeated=max_repeated,
             max_correlation=max_correlation,
-            **self._prepare_kwargs(kwargs, signature(FeatureSelector).parameters),
+            **self._prepare_kwargs(kwargs, sign(FeatureSelector)),
         )
 
         self._add_transformer(feature_selector, columns=columns)
