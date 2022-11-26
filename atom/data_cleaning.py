@@ -2966,8 +2966,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale the data.
 
-    Apply one of sklearn's scalers. Categorical and binary columns
-    (only 0s and 1s) are ignored.
+    Apply one of sklearn's scalers. Categorical columns are ignored.
 
     This class can be accessed from atom through the [scale]
     [atomclassifier-scale] method. Read more in the [user guide]
@@ -2982,6 +2981,9 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         - "[minmax][]": Scale features to a given range.
         - "[maxabs][]": Scale features by their maximum absolute value.
         - "[robust][]": Scale using statistics that are robust to outliers.
+
+    include_binary: bool, default=False
+        Whether to scale binary columns (only 0s and 1s).
 
     device: str, default="cpu"
         Device on which to train the estimators. Use any string
@@ -3138,6 +3140,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: str = "standard",
+        include_binary: bool = False,
         *,
         device: str = "cpu",
         engine: str = "sklearn",
@@ -3147,6 +3150,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strategy = strategy
+        self.include_binary = include_binary
         self.kwargs = kwargs
 
         self._num_cols = None
@@ -3174,10 +3178,12 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
-        self._num_cols = [
-            name for name, column in X.select_dtypes(include="number").items()
-            if ~np.isin(column.unique(), [0, 1]).all()
-        ]
+        self._num_cols = list(X.select_dtypes(include="number"))
+
+        if not self.include_binary:
+            self._num_cols = [
+                col for col in self._num_cols if ~np.isin(X[col].unique(), [0, 1]).all()
+            ]
 
         strategies = CustomDict(
             standard="StandardScaler",

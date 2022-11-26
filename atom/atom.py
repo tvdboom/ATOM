@@ -1170,7 +1170,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         if cleaner.mapping:
             self.mapping.insert(-1, self.target, cleaner.mapping)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def discretize(
         self,
         strategy: str = "quantile",
@@ -1293,7 +1293,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._add_transformer(imputer, columns=columns)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def normalize(self, strategy: str = "yeojohnson", **kwargs):
         """Transform the data to follow a Normal/Gaussian distribution.
 
@@ -1367,11 +1367,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             if strat.lower() != "zscore":
                 setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
 
-    @composed(crash, method_to_log)
-    def scale(self, strategy: str = "standard", **kwargs):
+    @composed(crash, method_to_log, typechecked)
+    def scale(self, strategy: str = "standard", include_binary: bool = False, **kwargs):
         """Scale the data.
 
-        Apply one of sklearn's scalers. Ignores categorical columns.
+        Apply one of sklearn's scalers. Categorical columns are ignored.
 
         See the [Scaler][] class for a description of the parameters.
 
@@ -1383,6 +1383,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         columns = kwargs.pop("columns", None)
         scaler = Scaler(
             strategy=strategy,
+            include_binary=include_binary,
             **self._prepare_kwargs(kwargs, sign(Scaler)),
         )
 

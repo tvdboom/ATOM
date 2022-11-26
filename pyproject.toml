@@ -64,8 +64,8 @@ models = [
 dev = [
     # Linting
     "isort>=5.10.1",
-    "flake8>=5.0.4",
-    "flake8-pyproject>=1.1.0",  # To configure flake8 with pyproject.toml
+    "flake8>=6.0.0",
+    "flake8-pyproject>=1.2.0",  # To configure flake8 with pyproject.toml
     # Tetsing
     "pytest>=7.1.0",
     "pytest-cov>=3.0.0",
