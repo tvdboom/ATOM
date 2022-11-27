@@ -30,7 +30,7 @@ from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
-    composed, crash, get_corpus, is_sparse, method_to_log, nltk_get, to_df,
+    composed, crash, get_corpus, is_sparse, method_to_log, to_df,
 )
 
 
@@ -625,7 +625,6 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 self.stopwords = "english"
 
             # Get stopwords from the NLTK library
-            nltk_get("corpora/stopwords")
             stopwords = list(set(nltk.corpus.stopwords.words(self.stopwords.lower())))
 
         # Join predefined with customs stopwords
@@ -646,10 +645,6 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: [ss.stem(word) for word in row])
 
         if self.lemmatize:
-            nltk_get("corpora/wordnet")
-            nltk_get("taggers/averaged_perceptron_tagger")
-            nltk_get("corpora/omw-1.4")
-
             self.log(" --> Applying lemmatization.", 2)
             wnl = WordNetLemmatizer()
             f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
@@ -888,7 +883,6 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Tokenizing the corpus...", 1)
 
         if isinstance(X[corpus].iat[0], str):
-            nltk_get("tokenizers/punkt")
             X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
 
         ngrams = {

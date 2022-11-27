@@ -1427,21 +1427,6 @@ def get_corpus(df: pd.DataFrame) -> pd.Series:
         raise ValueError("The provided dataset does not contain a text corpus!")
 
 
-def nltk_get(library: str):
-    """Download a library from nltk if not already on machine.
-
-    Parameters
-    ----------
-    library: str
-        Name of the library.
-
-    """
-    try:
-        nltk.data.find(library)
-    except LookupError:
-        nltk.download(library.split("/")[-1])
-
-
 def get_pl_name(name: str, steps: Tuple[str, Estimator], counter: int = 1) -> str:
     """Get the estimator name for a pipeline.
 

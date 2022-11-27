@@ -715,6 +715,7 @@ def test_plot_parshap():
     atom.balance("smote")  # To get samples over 500
     pytest.raises(NotFittedError, atom.plot_parshap)
     atom.run(["GNB", "LR"])
+    atom.gnb.plot_parshap(display=False)
     atom.plot_parshap(display=False)
 
 

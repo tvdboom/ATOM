@@ -5265,7 +5265,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
 
         # Colorbar is only needed when a model has feature_importance
-        if any(m.feature_importance is not None for m in models):
+        if all(m.feature_importance is None for m in models):
             xaxis, yaxis = self._fig.get_axes()
         else:
             xaxis, yaxis = self._fig.get_axes(

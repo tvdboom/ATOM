@@ -3073,7 +3073,7 @@
 
 <h1 id="vectorizer">Vectorizer</h1>
 <hr />
-<p><a id='Vectorizer'></a><div class='sign'><em>class</em> atom.nlp.<strong style='color:#008AB8'>Vectorizer</strong>(strategy="bow", return_sparse=True, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L930>[source]</a></span></div>Vectorize text data.</p>
+<p><a id='Vectorizer'></a><div class='sign'><em>class</em> atom.nlp.<strong style='color:#008AB8'>Vectorizer</strong>(strategy="bow", return_sparse=True, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L924>[source]</a></span></div>Vectorize text data.</p>
 <p>Transform the corpus into meaningful vectors of numbers. The
 transformation is applied on the column named <code>corpus</code>. If
 there is no column with that name, an exception is raised.</p>
@@ -3233,7 +3233,7 @@ Number of features seen during fit.</p>
 <p><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#vectorizer-transform">transform</a></td><td>Vectorize the text.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='vectorizer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1122>[source]</a></span></div>Fit to data.</p>
+<p><a id='vectorizer-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1116>[source]</a></span></div>Fit to data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If X is
@@ -3331,7 +3331,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='vectorizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1178>[source]</a></span></div>Vectorize the text.</p>
+<p><a id='vectorizer-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1172>[source]</a></span></div>Vectorize the text.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If X is

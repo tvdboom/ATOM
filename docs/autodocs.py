@@ -272,10 +272,6 @@ def insert(config: dict) -> str:
         with open(url, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # For plotly graphs: correct sizes of the plot to adjust to frame
-        content = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', content)
-        content = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', content)
-
     except FileNotFoundError:
         warnings.warn(f"File not found: {url}.")
 
@@ -852,6 +848,44 @@ def render(markdown: str, **kwargs) -> str:
         markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)
+
+
+def convert_plotly(html: str, **kwargs) -> str:
+    """Prepare plotly plots from the html page.
+
+    This function changes the size of plotly plots to fit the screen's
+    width and fixes a problem that prevents plotly plots in the jupyter
+    notebook examples to be showed.
+
+    Parameters
+    ----------
+    html: str
+        HTML source text of page.
+
+    **kwargs
+        Additional keyword arguments of the hook.
+            - page: Mkdocs Page instance.
+            - config: Global configuration object.
+            - files: Global files collection.
+
+    Returns
+    -------
+    str
+        Modified html source text of page.
+
+    """
+    # Remove plotly js
+    html = re.sub('<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text\/html">\s*?<script type="text\/javascript">.*?<\/script>\s*?<\/div>', "", html, flags=re.S)
+
+    # Fix plots in jupyter notebook
+    html = re.sub('<script type="text\/javascript">\s*?require\(\["plotly"\], function\(Plotly\) {\s*?window\.PLOTLYENV', '<script type="text/javascript">window.PLOTLYENV', html)
+    html = re.sub('\).then\(function\(\){.*?<\/script>', ')};</script>', html, flags=re.S)
+
+    # Correct sizes of the plot to adjust to frame
+    html = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', html)
+    html = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', html)
+
+    return html
 
 
 def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:
