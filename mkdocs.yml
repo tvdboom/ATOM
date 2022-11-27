@@ -71,8 +71,9 @@ extra:
 plugins:
     - search
     - exclude-search:
-        exclude:
-            - examples/*  # Exclude to avoid a search index > 100MB
+        exclude:  # Exclude to avoid a large search index
+            - API/plots/*
+            - examples/*
     - autorefs
     - mkdocs-jupyter:
           include: ["*.ipynb"]

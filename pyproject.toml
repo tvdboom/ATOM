@@ -73,7 +73,6 @@ dev = [
     "mike>=1.1.2",  # For versioning
     "mkdocs>=1.2.3",
     "mkdocs-autorefs>=0.4.1",
-    "mkdocs-exclude-search>=0.6.4",
     "mkdocs-jupyter>=0.22.0",
     "mkdocs-material>=8.5.3",
     "mkdocs-simple-hooks>=0.1.5",
