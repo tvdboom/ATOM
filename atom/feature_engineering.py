@@ -7,7 +7,11 @@ Description: Module containing the feature engineering transformers.
 
 """
 
-from inspect import signature
+from __future__ import annotations
+
+import re
+from collections import defaultdict
+from logging import Logger
 from random import sample
 from typing import Optional, Union
 
@@ -15,8 +19,9 @@ import featuretools as ft
 import numpy as np
 import pandas as pd
 from gplearn.genetic import SymbolicTransformer
+from scipy import stats
 from sklearn.base import BaseEstimator, is_regressor
-from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_selection import (
     RFE, RFECV, SelectFromModel, SelectKBest, SequentialFeatureSelector, chi2,
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
@@ -31,12 +36,12 @@ from zoofs import (
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
-from atom.plots import FSPlotter
+from atom.plots import FeatureSelectorPlot
 from atom.utils import (
     FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
     check_is_fitted, check_scaling, composed, crash, get_custom_scorer,
     get_feature_importance, infer_task, is_sparse, lst, merge, method_to_log,
-    to_df,
+    sign, to_df,
 )
 
 
@@ -49,41 +54,51 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     successfully converted to a datetime format (less than 30% NaT
     values after conversion) are also used.
 
+    This class can be accessed from atom through the [feature_extraction]
+    [atomclassifier-feature_extraction] method. Read more in the
+    [user guide][extracting-datetime-features].
+
+    !!! warning
+        Decision trees based algorithms build their split rules
+        according to one feature at a time. This means that they will
+        fail to correctly process cyclic features since the sin/cos
+        features should be considered one single coordinate system.
+
     Parameters
     ----------
-    features: str or sequence, optional (default=["day", "month", "year"])
+    features: str or sequence, default=["day", "month", "year"]
         Features to create from the datetime columns. Note that
         created features with zero variance (e.g. the feature hour
         in a column that only contains dates) are ignored. Allowed
         values are datetime attributes from `pandas.Series.dt`.
 
-    fmt: str, sequence or None, optional (default=None)
+    fmt: str, sequence or None, default=None
         Format (`strptime`) of the categorical columns that need
         to be converted to datetime. If sequence, the n-th format
         corresponds to the n-th categorical column that can be
         successfully converted. If None, the format is inferred
         automatically from the first non NaN value. Values that can
-        not be converted are returned as NaT.
+        not be converted are returned as `NaT`.
 
-    encoding_type: str, optional (default="ordinal")
+    encoding_type: str, default="ordinal"
         Type of encoding to use. Choose from:
-            - "ordinal": Encode features in increasing order.
-            - "cyclic": Encode features using sine and cosine to capture
-                        their cyclic nature. Note that this creates two
-                        columns for every feature. Non-cyclic features
-                        still use ordinal encoding.
 
-    drop_columns: bool, optional (default=True)
-        Whether to drop the original columns after extracting the
-        features from it.
+        - "ordinal": Encode features in increasing order.
+        - "cyclic": Encode features using sine and cosine to capture
+          their cyclic nature. This approach creates two columns for
+          every feature. Non-cyclic features still use ordinal encoding.
 
-    verbose: int, optional (default=0)
+    drop_columns: bool, default=True
+        Whether to drop the original columns after transformation.
+
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -96,16 +111,98 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     n_features_in_: int
         Number of features seen during fit.
 
+    See Also
+    --------
+    atom.feature_engineering:FeatureGenerator
+    atom.feature_engineering:FeatureGrouper
+    atom.feature_engineering:FeatureSelector
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.feature_extraction(features=["day"], fmt="%d/%m/%Y", verbose=2)
+
+        Extracting datetime features...
+         --> Extracting features from column date.
+           --> Creating feature date_day.
+
+        >>> # Note the date_day column
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  date_day  target
+        0         11.300         18.19  ...        31       1
+        1         16.460         20.11  ...        27       0
+        2         11.370         18.89  ...        17       1
+        3          8.598         20.98  ...         3       1
+        4         12.800         17.46  ...         2       1
+        ..           ...           ...  ...       ...     ...
+        564       17.060         21.00  ...         2       0
+        565       11.940         20.76  ...        14       1
+        566       19.590         25.00  ...        28       0
+        567       12.360         18.54  ...        18       1
+        568       18.450         21.91  ...        15       0
+
+        [569 rows x 32 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.feature_engineering import FeatureExtractor
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
+        >>> X["date"] = pd.date_range(start="1/1/2018", periods=len(X))
+
+        >>> fe = FeatureExtractor(features=["day"], fmt="%Y-%m-%d", verbose=2)
+        >>> X = fe.transform(X)
+
+        Extracting datetime features...
+         --> Extracting features from column date.
+           --> Creating feature date_day.
+
+        >>> # Note the date_day column
+        >>> print(X)
+
+             mean radius  mean texture  ...  worst fractal dimension  date_day
+        0          17.99         10.38  ...                  0.11890         1
+        1          20.57         17.77  ...                  0.08902         2
+        2          19.69         21.25  ...                  0.08758         3
+        3          11.42         20.38  ...                  0.17300         4
+        4          20.29         14.34  ...                  0.07678         5
+        ..           ...           ...  ...                      ...       ...
+        564        21.56         22.39  ...                  0.07115        19
+        565        20.13         28.25  ...                  0.06637        20
+        566        16.60         28.08  ...                  0.07820        21
+        567        20.60         29.33  ...                  0.12400        22
+        568         7.76         24.54  ...                  0.07039        23
+
+        [569 rows x 31 columns]
+
+        ```
+
     """
+
+    _train_only = False
 
     def __init__(
         self,
         features: Union[str, SEQUENCE_TYPES] = ["day", "month", "year"],
         fmt: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        *,
         encoding_type: str = "ordinal",
         drop_columns: bool = True,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.fmt = fmt
@@ -114,7 +211,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_columns = drop_columns
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Extract the new features.
 
         Parameters
@@ -122,7 +219,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -131,18 +228,6 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed feature set.
 
         """
-
-        def encode_variable(idx, name, values, min_val=0, max_val=None):
-            """Encode a feature in an ordinal or cyclic fashion."""
-            if self.encoding_type.lower() == "ordinal" or max_val is None:
-                self.log(f"   >>> Creating feature {name}.", 2)
-                X.insert(idx, name, values)
-            elif self.encoding_type.lower() == "cyclic":
-                self.log(f"   >>> Creating cyclic feature {name}.", 2)
-                pos = 2 * np.pi * (values - min_val) / np.array(max_val)
-                X.insert(idx, f"{name}_sin", np.sin(pos))
-                X.insert(idx, f"{name}_cos", np.cos(pos))
-
         X, y = self._prepare_input(X, y)
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
@@ -160,7 +245,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         for name, column in X.select_dtypes(exclude="number").items():
             if column.dtype.name == "datetime64[ns]":
                 col_dt = column
-                self.log(f" --> Extracting features from datetime column {name}.", 1)
+                self.log(f" --> Extracting features from column {name}.", 1)
             else:
                 col_dt = pd.to_datetime(
                     arg=column,
@@ -192,7 +277,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 # Skip if the information is not present in the format
                 if not isinstance(values, pd.Series):
                     self.log(
-                        f"   >>> Extracting feature {fx} failed. "
+                        f"   --> Extracting feature {fx} failed. "
                         "Result is not a pd.Series.dt.", 2
                     )
                     continue
@@ -218,13 +303,16 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                         min_val, max_val = 1, 4
 
                 # Add every new feature after the previous one
-                encode_variable(
-                    idx=X.columns.get_loc(name),
-                    name=f"{name}_{fx}",
-                    values=values,
-                    min_val=min_val,
-                    max_val=max_val,
-                )
+                new_name = f"{name}_{fx}"
+                idx = X.columns.get_loc(name)
+                if self.encoding_type.lower() == "ordinal" or max_val is None:
+                    self.log(f"   --> Creating feature {new_name}.", 2)
+                    X.insert(idx, new_name, values)
+                elif self.encoding_type.lower() == "cyclic":
+                    self.log(f"   --> Creating cyclic feature {new_name}.", 2)
+                    pos = 2 * np.pi * (values - min_val) / np.array(max_val)
+                    X.insert(idx, f"{new_name}_sin", np.sin(pos))
+                    X.insert(idx + 1, f"{new_name}_cos", np.cos(pos))
 
             # Drop the original datetime column
             if self.drop_columns:
@@ -234,45 +322,69 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
 
 class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Apply automated feature engineering.
+    """Generate new features.
 
     Create new combinations of existing features to capture the
     non-linear relations between the original features.
 
+    This class can be accessed from atom through the [feature_generation]
+    [atomclassifier-feature_generation] method. Read more in the
+    [user guide][generating-new-features].
+
+    !!! warning
+        * Using the `div`, `log` or `sqrt` operators can return new
+          features with `inf` or `NaN` values. Check the warnings that
+          may pop up or use atom's [nans][atomclassifier-nans] attribute.
+        * When using dfs with `n_jobs>1`, make sure to protect your code
+          with `if __name__ == "__main__"`. Featuretools uses
+          [dask](https://dask.org/), which uses python multiprocessing
+          for parallelization. The spawn method on multiprocessing
+          starts a new python process, which requires it to import the
+          \__main__ module before it can do its task.
+        * gfg can be slow for very large populations.
+
+    !!! tip
+        dfs can create many new features and not all of them will be
+        useful. Use the [FeatureSelector][] class to reduce the number
+        of features.
+
     Parameters
     ----------
-    strategy: str, optional (default="dfs")
+    strategy: str, default="dfs"
         Strategy to crate new features. Choose from:
-            - "dfs": Deep Feature Synthesis.
-            - "gfg": Genetic Feature Generation.
 
-    n_features: int or None, optional (default=None)
+        - "[dfs][]": Deep Feature Synthesis.
+        - "[gfg][]": Genetic Feature Generation.
+
+    n_features: int or None, default=None
         Maximum number of newly generated features to add to the
         dataset. If None, select all created features.
 
-    operators: str, sequence or None, optional (default=None)
-        Mathematical operators to apply on the features. None for all.
-        Choose from: add, sub, mul, div, abs, sqrt, log, inv, sin, cos,
-        tan.
+    operators: str, sequence or None, default=None
+        Mathematical operators to apply on the features. None to use
+        all. Choose from: `add`, `sub`, `mul`, `div`, `abs`, `sqrt`,
+        `log`, `inv`, `sin`, `cos`, `tan`.
 
-    n_jobs: int, optional (default=1)
+    n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    verbose: int, optional (default=0)
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
-    random_state: int or None, optional (default=None)
+    random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
 
@@ -282,16 +394,17 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    gfg: SymbolicTransformer
+    gfg: [SymbolicTransformer][]
         Object used to calculate the genetic features. Only for the
         gfg strategy.
 
     genetic_features: pd.DataFrame
         Information on the newly created non-linear features. Only for
         the gfg strategy. Columns include:
-            - name: Name of the feature (automatically created).
-            - description: Operators used to create this feature.
-            - fitness: Fitness score.
+
+        - **name:** Name of the feature (generated automatically).
+        - **description:** Operators used to create this feature.
+        - **fitness:** Fitness score.
 
     feature_names_in_: np.array
         Names of features seen during fit.
@@ -299,16 +412,96 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     n_features_in_: int
         Number of features seen during fit.
 
+    See Also
+    --------
+    atom.feature_engineering:FeatureExtractor
+    atom.feature_engineering:FeatureGrouper
+    atom.feature_engineering:FeatureSelector
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.feature_generation(strategy="dfs", n_features=5, verbose=2)
+
+        Fitting FeatureGenerator...
+        Generating new features...
+         --> 5 new features were added.
+
+        >>> # Note the texture error / worst symmetry column
+        >>> print(atom.dataset)
+
+             mean radius  mean texture  ...  texture error / worst symmetry  target
+        0          15.75         19.22  ...                        3.118963       0
+        1          12.10         17.72  ...                        5.418170       1
+        2          20.16         19.66  ...                        2.246481       0
+        3          12.88         18.22  ...                        4.527498       1
+        4          13.03         18.42  ...                       11.786613       1
+        ..           ...           ...  ...                             ...     ...
+        564        21.75         20.99  ...                        4.772326       0
+        565        13.64         16.34  ...                        3.936061       1
+        566        10.08         15.11  ...                        4.323219       1
+        567        12.91         16.33  ...                        3.004630       1
+        568        11.60         18.36  ...                        2.385047       1
+
+        [569 rows x 36 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.feature_engineering import FeatureGenerator
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> fg = FeatureGenerator(strategy="dfs", n_features=5, verbose=2)
+        >>> X = fg.fit_transform(X, y)
+
+        Fitting FeatureGenerator...
+        Generating new features...
+         --> 5 new features were added.
+
+        >>> # Note the radius error * worst smoothness column
+        >>> print(X)
+
+             mean radius  ...  radius error * worst smoothness
+        0          17.99  ...                         0.177609
+        1          20.57  ...                         0.067285
+        2          19.69  ...                         0.107665
+        3          11.42  ...                         0.103977
+        4          20.29  ...                         0.104039
+        ..           ...  ...                              ...
+        564        21.56  ...                         0.165816
+        565        20.13  ...                         0.089257
+        566        16.60  ...                         0.051984
+        567        20.60  ...                         0.119790
+        568         7.76  ...                         0.034698
+
+        [569 rows x 35 columns]
+
+        ```
+
     """
+
+    _train_only = False
 
     def __init__(
         self,
         strategy: str = "dfs",
+        *,
         n_features: Optional[INT] = None,
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         n_jobs: INT = 1,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[INT] = None,
         **kwargs,
     ):
@@ -329,7 +522,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES):
+    def fit(self, X: X_TYPES, y: Y_TYPES) -> FeatureGenerator:
         """Fit to data.
 
         Parameters
@@ -338,13 +531,16 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
-            - If int: Index of the target column in X.
+            Target column corresponding to X.
+
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
-        FeatureGenerator
+        self
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -432,7 +628,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Generate new features.
 
         Parameters
@@ -440,7 +636,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -452,7 +648,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
-        self.log("Creating new features...", 1)
+        self.log("Generating new features...", 1)
 
         if self.strategy.lower() == "dfs":
             index = X.index
@@ -501,7 +697,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                     name = f"x{X.shape[1] + counter}"
                     if name not in X:
                         X[name] = array  # Add new feature to X
-                        df.iloc[i, 0] = name
+                        df.iat[i, 0] = name
                         break
                     else:
                         counter += 1
@@ -512,69 +708,375 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotter):
-    """Apply feature selection techniques.
+class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Extract statistics from similar features.
 
-    Remove features according to the selected strategy. Ties between
-    features with equal scores are broken in an unspecified way.
-    Additionally, remove multicollinear and low variance features.
+    Replace groups of features with related characteristics with new
+    features that summarize statistical properties of te group. The
+    statistical operators are calculated over every row of the group.
+    The group names and features can be accessed through the `groups`
+    method.
+
+    This class can be accessed from atom through the [feature_grouping]
+    [atomclassifier-feature_grouping] method. Read more in the
+    [user guide][grouping-similar-features].
+
+    !!! tip
+        Use a regex pattern with the `groups` parameter to select
+        groups easier, e.g. `atom.feature_generation(features="var_.+")`
+        to select all features that start with `var_`.
 
     Parameters
     ----------
-    strategy: str or None, optional (default=None)
+    group: str, slice or sequence
+        Features that belong to a group. Select them by name, position
+        or regex pattern. A feature can belong to multiple groups. Use
+        a sequence of sequences to define multiple groups.
+
+    name: str, sequence or None, default=None
+        Name of the group. The new features are named combining the
+        operator used and the group's name, e.g. `mean(group_1)`. If
+        specfified, the length should match with the number of groups
+        defined in `features`. If None, default group names of the form
+        `group1`, `group2`, etc... are used.
+
+    operators: str, sequence or None, default=None
+        Statistical operators to apply on the groups. Any operator from
+        `numpy` or `scipy.stats` (checked in that order) that is applied
+        on an array can be used. If None, it uses: `min`, `max`, `mean`,
+        `median`, `mode` and `std`.
+
+    drop_columns: bool, default=True
+        Whether to drop the columns in `groups` after transformation.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    Attributes
+    ----------
+    groups: dict
+        Names and features of every created group.
+
+    feature_names_in_: np.array
+        Names of features seen during fit.
+
+    n_features_in_: int
+        Number of features seen during fit.
+
+    See Also
+    --------
+    atom.feature_engineering:FeatureExtractor
+    atom.feature_engineering:FeatureGenerator
+    atom.feature_engineering:FeatureSelector
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.feature_grouping(group=["mean.+"], name="means", verbose=2)
+
+        Fitting FeatureGrouper...
+        Grouping features...
+         --> Group means successfully created.
+
+        >>> # Note the mean features are gone and the new std(means) feature
+        >>> print(atom.dataset)
+
+             radius error  texture error  ...  std(means)  target
+        0          0.2949         1.6560  ...  137.553584       1
+        1          0.2351         2.0110  ...   79.830195       1
+        2          0.4302         2.8780  ...   80.330330       1
+        3          0.2345         1.2190  ...  151.858455       1
+        4          0.3511         0.9527  ...  145.769474       1
+        ..            ...            ...  ...         ...     ...
+        564        0.4866         1.9050  ...  116.749243       1
+        565        0.5925         0.6863  ...  378.431333       0
+        566        0.2577         1.0950  ...  141.220243       1
+        567        0.4615         0.9197  ...  257.903846       0
+        568        0.5462         1.5110  ...  194.704033       1
+
+        [569 rows x 27 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.feature_engineering import FeatureGrouper
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> # Group all features that start with mean
+        >>> fg = FeatureGrouper(group="mean.+", name="means", verbose=2)
+        >>> X = fg.transform(X)
+
+        Fitting FeatureGrouper...
+        Grouping features...
+         --> Group means successfully created.
+
+        >>> # Note the mean features are gone and the new std(means) feature
+        >>> print(X)
+
+             radius error  texture error  ...  mode(means)  std(means)
+        0          1.0950         0.9053  ...      0.07871  297.404540
+        1          0.5435         0.7339  ...      0.05667  393.997131
+        2          0.7456         0.7869  ...      0.05999  357.203084
+        3          0.4956         1.1560  ...      0.09744  114.444620
+        4          0.7572         0.7813  ...      0.05883  385.450556
+        ..            ...            ...  ...          ...         ...
+        564        1.1760         1.2560  ...      0.05623  439.441252
+        565        0.7655         2.4630  ...      0.05533  374.274845
+        566        0.4564         1.0750  ...      0.05302  254.320568
+        567        0.7260         1.5950  ...      0.07016  375.376476
+        568        0.3857         1.4280  ...      0.00000   53.739926
+
+        [569 rows x 26 columns]
+
+        ```
+
+    """
+
+    _train_only = False
+
+    def __init__(
+        self,
+        group: Union[str, SEQUENCE_TYPES],
+        name: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        *,
+        operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        drop_columns: bool = True,
+        verbose: INT = 0,
+        logger: Optional[Union[str, Logger]] = None,
+    ):
+        super().__init__(verbose=verbose, logger=logger)
+        self.group = group
+        self.name = name
+        self.operators = operators
+        self.drop_columns = drop_columns
+        self.groups = defaultdict(list)
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+        """Group features.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed feature set.
+
+        """
+        X, _ = self._prepare_input(X, y)
+
+        self.log("Grouping features...", 1)
+
+        if np.array(self.group).ndim < 2:
+            self.group = [self.group]
+
+        # Make the groups
+        groups = []
+        for group in lst(self.group):
+            groups.append([])
+            for col in lst(group):
+                if isinstance(col, int):
+                    try:
+                        groups[-1].append(X.columns[col])
+                    except IndexError:
+                        raise ValueError(
+                            f"Invalid value for the groups parameter. Value {col} "
+                            f"is out of range for a dataset with {X.shape[1]} columns."
+                        )
+                else:
+                    # Find columns using regex matches
+                    matches = [c for c in X.columns if re.fullmatch(col, c)]
+                    if matches:
+                        groups[-1].extend(matches)
+                    else:
+                        try:
+                            groups[-1].extend(list(X.select_dtypes(col).columns))
+                        except TypeError:
+                            raise ValueError(
+                                "Invalid value for the groups parameter. "
+                                f"Could not find any column that matches {col}."
+                            )
+
+        if self.name is None:
+            names = [f"group_{i}" for i in range(1, len(groups) + 1)]
+        else:
+            names = lst(self.name)
+
+        if self.operators is None:
+            operators = ["min", "max", "mean", "median", "mode", "std"]
+        else:
+            operators = lst(self.operators)
+
+        if len(groups) != len(names):
+            raise ValueError(
+                f"Invalid value for the names parameter, got {self.name}. The "
+                f"number of groups ({len(groups)}) does not match with the number "
+                f"of names ({len(names)})."
+            )
+
+        to_drop = set()
+        self.groups = defaultdict(list)  # Reset attr for repeated transforms
+        for name, group in zip(names, groups):
+            group_df = X[group]
+
+            for operator in operators:
+                try:
+                    result = group_df.apply(getattr(np, operator), axis=1)
+                except AttributeError:
+                    try:
+                        result = getattr(stats, operator)(group_df, axis=1)[0]
+                    except AttributeError:
+                        raise ValueError(
+                            "Invalid value for the operators parameter. Value "
+                            f"{operator} is not an attribute of numpy nor scipy.stats."
+                        )
+
+                try:
+                    X[f"{operator}({name})"] = result
+                except ValueError:
+                    raise ValueError(
+                        "Invalid value for the operators parameter. Value "
+                        f"{operator} doesn't return a one-dimensional array."
+                    )
+
+            to_drop.update(group)
+
+            self.groups[name] = group
+            self.log(f" --> Group {name} successfully created.", 2)
+
+        if self.drop_columns:
+            X = X.drop(to_drop, axis=1)
+
+        return X
+
+
+class FeatureSelector(
+    BaseEstimator,
+    TransformerMixin,
+    BaseTransformer,
+    FeatureSelectorPlot,
+):
+    """Reduce the number of features in the data.
+
+    Apply feature selection or dimensionality reduction, either to
+    improve the estimators' accuracy or to boost their performance on
+    very high-dimensional datasets. Additionally, remove multicollinear
+    and low variance features.
+
+    This class can be accessed from atom through the [feature_selection]
+    [atomclassifier-feature_selection] method. Read more in the
+    [user guide][selecting-useful-features].
+
+    !!! warning
+        - Ties between features with equal scores are broken in an
+          unspecified way.
+        - For strategy="rfecv", the `n_features` parameter is the
+          **minimum** number of features to select, not the actual
+          number of features that the transformer returns. It may very
+          well be that it returns more!
+
+    !!! info
+        - The "sklearnex" and "cuml" engines are only supported for
+          strategy="pca" with dense datasets.
+        - If strategy="pca" and the data is dense and unscaled, it's
+          scaled to mean=0 and std=1 before fitting the PCA transformer.
+        - If strategy="pca" and the provided data is sparse, the used
+          estimator is [TruncatedSVD][], which works more efficiently
+          with sparse matrices.
+
+    !!! tip
+        Use the [plot_feature_importance][] method to examine how much
+        a specific feature contributes to the final predictions. If the
+        model doesn't have a `feature_importances_` attribute, use
+        [plot_permutation_importance][] instead.
+
+    Parameters
+    ----------
+    strategy: str or None, default=None
         Feature selection strategy to use. Choose from:
-            - None: Do not perform any feature selection strategy.
-            - "univariate": Univariate statistical F-test.
-            - "pca": Principal Component Analysis.
-            - "sfm": Select best features according to a model.
-            - "sfs": Sequential Feature Selection.
-            - "rfe": Recursive Feature Elimination.
-            - "rfecv": RFE with cross-validated selection.
-            - "pso": Particle Swarm Optimization.
-            - "hho": Harris Hawks Optimization.
-            - "gwo": Grey Wolf Optimization.
-            - "dfo": Dragonfly Optimization.
-            - "genetic": Genetic Optimization.
 
-    solver: str, estimator or None, optional (default=None)
-        Solver/model to use for the feature selection strategy. See the
-        corresponding documentation for an extended description of the
-        choices. If None, use the estimator's default value (only pca).
-            - for "univariate", choose from:
-                + "f_classif"
-                + "f_regression"
-                + "mutual_info_classif"
-                + "mutual_info_regression"
-                + "chi2"
-                + Any function taking two arrays (X, y), and returning
-                  arrays (scores, p-values).
-            - for "pca", choose from:
-                + if dense data:
-                    * "auto" (default)
-                    * "full"
-                    * "arpack"
-                    * "randomized"
-                + if sparse data:
-                    * "randomized" (default)
-                    * "arpack"
-                + if gpu implementation:
-                    * "full" (default)
-                    * "jacobi"
-                    * "auto"
-            - for the remaining strategies:
-                The base estimator. For sfm, rfe and rfecv, it should
-                have either a `feature_importances_` or `coef_`
-                attribute after fitting. You can use one of ATOM's
-                predefined models. Add `_class` or `_reg` after the
-                model's name to specify a classification or regression
-                task, e.g. `solver="LGB_reg"` (not necessary if called
-                from atom). No default option.
+        - None: Do not perform any feature selection strategy.
+        - "[univariate][selectkbest]": Univariate statistical F-test.
+        - "[pca][]": Principal Component Analysis.
+        - "[sfm][]": Select best features according to a model.
+        - "[sfs][]": Sequential Feature Selection.
+        - "[rfe][]": Recursive Feature Elimination.
+        - "[rfecv][]": RFE with cross-validated selection.
+        - "[pso][]": Particle Swarm Optimization.
+        - "[hho][]": Harris Hawks Optimization.
+        - "[gwo][]": Grey Wolf Optimization.
+        - "[dfo][]": Dragonfly Optimization.
+        - "[go][]": Genetic Optimization.
 
-    n_features: int, float or None, optional (default=None)
-        Number of features to select. Choose from:
-            - if None: Select all features.
-            - if < 1: Fraction of the total features to select.
-            - if >= 1: Number of features to select.
+    solver: str, estimator or None, default=None
+        Solver/estimator to use for the feature selection strategy. See
+        the corresponding documentation for an extended description of
+        the choices. If None, the default value is used (only if
+        strategy="pca"). Choose from:
+
+        - If strategy="univariate":
+            - "[f_classif][]"
+            - "[f_regression][]"
+            - "[mutual_info_classif][]"
+            - "[mutual_info_regression][]"
+            - "[chi2][]"
+            - Any function with signature `func(X, y) -> (scores, p-values)`.
+        - If strategy="pca":
+            - If data is dense:
+                - If engine="sklearn":
+                    - "auto" (default)
+                    - "full"
+                    - "arpack"
+                    - "randomized"
+                - If engine="sklearnex":
+                    - "full" (default)
+                - If engine="cuml":
+                    - "full" (default)
+                    - "jacobi"
+            - If data is sparse:
+                - "randomized" (default)
+                - "arpack"
+
+        - for the remaining strategies:<br>
+          The base estimator. For sfm, rfe and rfecv, it should have
+          either a `feature_importances_` or `coef_` attribute after
+          fitting. You can use one of the [predefined models][]. Add
+          `_class` or `_reg` after the model's  name to specify a
+          classification or regression task, e.g. `solver="LGB_reg"`
+          (not necessary if called from atom). No default option.
+
+    n_features: int, float or None, default=None
+        Number of features to select.
+
+        - If None: Select all features.
+        - If <1: Fraction of the total features to select.
+        - If >=1: Number of features to select.
 
         If strategy="sfm" and the threshold parameter is not specified,
         the threshold is automatically set to `-inf` to select
@@ -584,45 +1086,71 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         features to select.
 
         This parameter is ignored if any of the following strategies
-        is selected: pso, hho, gwo, dfo, genetic.
+        is selected: pso, hho, gwo, dfo, go.
 
-    max_frac_repeated: float or None, optional (default=1.)
-        Remove features with the same value in at least this fraction
-        of the total rows. The default is to keep all features with
+    min_repeated: int, float or None, default=2
+        Remove categorical features if there isn't any repeated value
+        in at least `min_repeated` rows. The default is to keep all
+        features with non-maximum variance, i.e. remove the features
+        which number of unique values is equal to the number of rows
+        (usually the case for names, IDs, etc...).
+
+        - If None: No check for minimum repetition.
+        - If >1: Minimum repetition number.
+        - If <=1: Minimum repetition fraction.
+
+    max_repeated: int, float or None, default=1.0
+        Remove categorical features with the same value in at least
+        `max_repeated` rows. The default is to keep all features with
         non-zero variance, i.e. remove the features that have the same
-        value in all samples. If None, skip this step.
+        value in all samples.
 
-    max_correlation: float or None, optional (default=1.)
-        Minimum absolute Pearson correlation to identify correlated
-        features. For each group, it removes all except the feature
-        with the highest correlation to `y` (if provided, else it
-        removes all but the first). The default value removes equal
+        - If None: No check for maximum repetition.
+        - If >1: Maximum number of repeated occurences.
+        - If <=1: Maximum fraction of repeated occurences.
+
+    max_correlation: float or None, default=1.0
+        Minimum absolute [Pearson correlation][pearson] to identify
+        correlated features. For each group, it removes all except the
+        feature with the highest correlation to `y` (if provided, else
+        it removes all but the first). The default value removes equal
         columns. If None, skip this step.
 
-    n_jobs: int, optional (default=1)
+    n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    gpu: bool or str, optional (default=False)
-        Train strategy on GPU (instead of CPU). Only for strategy="pca".
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    verbose: int, optional (default=0)
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
+
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
-    random_state: int or None, optional (default=None)
+    random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
 
@@ -634,18 +1162,19 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     ----------
     collinear: pd.DataFrame
         Information on the removed collinear features. Columns include:
-            - drop: Name of the dropped feature.
-            - corr_feature: Name of the correlated feature(s).
-            - corr_value: Corresponding correlation coefficient(s).
 
-    feature_importance: list
-        Remaining features ordered by importance. Only if strategy in
-        ["univariate", "sfm", "rfe", "rfecv"]. For rfe and rfecv, the
-        importance is extracted from the external estimator fitted on
-        the reduced set.
+        - **drop:** Name of the dropped feature.
+        - **corr_feature:** Names of the correlated features.
+        - **corr_value:** Corresponding correlation coefficients.
 
-    <strategy>: sklearn transformer
-        Object used to transform the data, e.g. `balancer.pca` for the pca
+    feature_importance: pd.Series
+        Normalized importance scores calculated by the solver for the
+        features kept by the transformer. The scores are extracted from
+        the coef_ or feature_importances_ attribute, checked in that
+        order. Only if strategy is one of univariate, sfm, rfe or rfecv.
+
+    [strategy]: sklearn transformer
+        Object used to transform the data, e.g. `fs.pca` for the pca
         strategy.
 
     feature_names_in_: np.array
@@ -654,25 +1183,116 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     n_features_in_: int
         Number of features seen during fit.
 
+    See Also
+    --------
+    atom.feature_engineering:FeatureExtractor
+    atom.feature_engineering:FeatureGenerator
+    atom.feature_engineering:FeatureGrouper
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> atom.feature_selection(strategy="pca", n_features=12, verbose=2)
+
+        Fitting FeatureSelector...
+        Performing feature selection ...
+         --> Applying Principal Component Analysis...
+           --> Scaling features...
+           --> Keeping 12 components.
+           --> Explained variance ratio: 0.97
+
+        >>> # Note that the column names changed
+        >>> print(atom.dataset)
+
+                 pca0      pca1      pca2  ...     pca10     pca11  target
+        0   -2.493723  3.082653  1.318595  ... -0.182142 -0.591784       1
+        1    4.596102 -0.876940 -0.380685  ...  0.224170  1.155544       0
+        2    0.955979 -2.141057 -1.677736  ...  0.306153  0.099138       0
+        3    3.221488  4.209911 -2.818757  ...  0.808883 -0.531868       0
+        4    1.038000  2.451758 -1.753683  ... -0.312883  0.862319       1
+        ..        ...       ...       ...  ...       ...       ...     ...
+        564  3.414827 -3.757253 -1.012369  ...  0.387175  0.283633       0
+        565 -1.191561 -1.276069 -0.871712  ...  0.106362 -0.449361       1
+        566 -2.757000  0.411997 -1.321697  ...  0.185550 -0.025368       1
+        567 -3.252533  0.074827  0.549622  ...  0.693073 -0.058251       1
+        568  1.607258 -2.076465 -1.025986  ... -0.385542  0.103603       0
+        [569 rows x 13 columns]
+
+        >>> atom.plot_pca()
+        ```
+
+        :: insert:
+            url: /img/plots/plot_pca.html
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.feature_engineering import FeatureSelector
+        >>> from sklearn.datasets import load_breast_cancer
+
+        >>> X, _ = load_breast_cancer(return_X_y=True, as_frame=True)
+
+        >>> fs = FeatureSelector(strategy="pca", n_features=12, verbose=2)
+        >>> X = fs.fit_transform(X)
+
+        Fitting FeatureSelector...
+        Performing feature selection ...
+         --> Applying Principal Component Analysis...
+           --> Scaling features...
+           --> Keeping 12 components.
+           --> Explained variance ratio: 0.97
+
+        >>> # Note that the column names changed
+        >>> print(X)
+
+                  pca0       pca1      pca2  ...      pca9     pca10     pca11
+        0     9.192837   1.948583 -1.123166  ... -0.877402  0.262955 -0.859014
+        1     2.387802  -3.768172 -0.529293  ...  1.106995  0.813120  0.157923
+        2     5.733896  -1.075174 -0.551748  ...  0.454275 -0.605604  0.124387
+        3     7.122953  10.275589 -3.232790  ... -1.116975 -1.151514  1.011316
+        4     3.935302  -1.948072  1.389767  ...  0.377704  0.651360 -0.110515
+        ..         ...        ...       ...  ...       ...       ...       ...
+        564   6.439315  -3.576817  2.459487  ...  0.256989 -0.062651  0.123342
+        565   3.793382  -3.584048  2.088476  ... -0.108632  0.244804  0.222753
+        566   1.256179  -1.902297  0.562731  ...  0.520877 -0.840512  0.096473
+        567  10.374794   1.672010 -1.877029  ... -0.089296 -0.178628 -0.697461
+        568  -5.475243  -0.670637  1.490443  ... -0.047726 -0.144094 -0.179496
+        [569 rows x 12 columns]
+
+        ```
+
     """
+
+    _train_only = False
 
     def __init__(
         self,
         strategy: Optional[str] = None,
+        *,
         solver: Optional[Union[str, callable]] = None,
         n_features: Optional[SCALAR] = None,
-        max_frac_repeated: Optional[SCALAR] = 1.0,
+        min_repeated: Optional[SCALAR] = 2,
+        max_repeated: Optional[SCALAR] = 1.0,
         max_correlation: Optional[FLOAT] = 1.0,
         n_jobs: INT = 1,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[INT] = None,
         **kwargs,
     ):
         super().__init__(
             n_jobs=n_jobs,
-            gpu=gpu,
+            device=device,
+            engine=engine,
             verbose=verbose,
             logger=logger,
             random_state=random_state,
@@ -680,43 +1300,47 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self.strategy = strategy
         self.solver = solver
         self.n_features = n_features
-        self.max_frac_repeated = max_frac_repeated
+        self.min_repeated = min_repeated
+        self.max_repeated = max_repeated
         self.max_correlation = max_correlation
         self.kwargs = kwargs
 
         self.collinear = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
-        self.feature_importance = None
+        self.feature_importance = []
         self.scaler = None
 
         self._n_features = None
         self._kwargs = kwargs.copy()
+        self._high_variance = {}
         self._low_variance = {}
         self._estimator = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> FeatureSelector:
         """Fit the feature selector to the data.
 
-        Note that the univariate, sfm (when model is not fitted), sfs,
-        rfe and rfecv strategies need a target column. Leaving it None
-        will raise an exception.
+        The univariate, sfm (when model is not fitted), sfs, rfe and
+        rfecv strategies need a target column. Leaving it None raises
+        an exception.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, dict, sequence or None, default=None
+            Target column corresponding to X.
+
             - If None: y is ignored.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+            - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
-        FeatureSelector
-            Fitted instance of self.
+        self
+            Estimator instance.
 
         """
 
@@ -741,25 +1365,25 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
-        strats = CustomDict(
-            univariate=SelectKBest,
-            pca=PCA,
-            sfm=SelectFromModel,
-            sfs=SequentialFeatureSelector,
-            rfe=RFE,
-            rfecv=RFECV,
+        strategies = CustomDict(
+            univariate="SelectKBest",
+            pca="PCA",
+            sfm="SelectFromModel",
+            sfs="SequentialFeatureSelector",
+            rfe="RFE",
+            rfecv="RFECV",
             pso=ParticleSwarmOptimization,
             hho=HarrisHawkOptimization,
             gwo=GreyWolfOptimization,
             dfo=DragonFlyOptimization,
-            genetic=GeneticOptimization,
+            go=GeneticOptimization,
         )
 
         if isinstance(self.strategy, str):
-            if self.strategy not in strats:
+            if self.strategy not in strategies:
                 raise ValueError(
                     "Invalid value for the strategy parameter, got "
-                    f"{self.strategy}. Choose from: {', '.join(strats)}"
+                    f"{self.strategy}. Choose from: {', '.join(strategies)}"
                 )
             elif self.strategy.lower() not in ("univariate", "pca"):
                 if self.solver is None:
@@ -786,7 +1410,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                         )
                     else:
                         model = MODELS[solver](self, fast_init=True)
-                        solver = model.get_estimator()
+                        solver = model._get_est()
                 else:
                     solver = self.solver
 
@@ -812,10 +1436,34 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         else:
             self._n_features = self.n_features
 
-        if self.max_frac_repeated is not None and not 0 <= self.max_frac_repeated <= 1:
+        if self.min_repeated is None:
+            min_repeated = 1
+        elif self.min_repeated < 0:
             raise ValueError(
-                "Invalid value for the max_frac_repeated parameter. Value "
-                f"should be between 0 and 1, got {self.max_frac_repeated}."
+                "Invalid value for the min_repeated parameter. Value "
+                f"should be >0, got {self.min_repeated}."
+            )
+        elif self.min_repeated <= 1:
+            min_repeated = self.min_repeated * len(X)
+        else:
+            min_repeated = int(self.min_repeated)
+
+        if self.max_repeated is None:
+            max_repeated = len(X)
+        elif self.max_repeated < 0:
+            raise ValueError(
+                "Invalid value for the max_repeated parameter. Value "
+                f"should be >0, got {self.max_repeated}."
+            )
+        elif self.max_repeated <= 1:
+            max_repeated = self.max_repeated * len(X)
+        else:
+            max_repeated = int(self.max_repeated)
+
+        if min_repeated > max_repeated:
+            raise ValueError(
+                "The min_repeated parameter can't be higher than "
+                f"max_repeated, got {min_repeated} > {max_repeated}. "
             )
 
         if self.max_correlation is not None and not 0 <= self.max_correlation <= 1:
@@ -826,12 +1474,20 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         self.log("Fitting FeatureSelector...", 1)
 
+        # Remove features with too high variance
+        if self.min_repeated is not None:
+            for name, column in X.select_dtypes(exclude="number").items():
+                max_counts = column.value_counts()
+                if min_repeated > max_counts.max():
+                    self._high_variance[name] = [max_counts.idxmax(), max_counts.max()]
+                    X = X.drop(name, axis=1)
+                    break
+
         # Remove features with too low variance
-        if self.max_frac_repeated:
-            for name, column in X.items():
+        if self.max_repeated is not None:
+            for name, column in X.select_dtypes(exclude="number").items():
                 for category, count in column.value_counts().items():
-                    # If count < fraction of total, drop column
-                    if count >= self.max_frac_repeated * len(X):
+                    if count >= max_repeated:
                         self._low_variance[name] = [category, 100 * count / len(X)]
                         X = X.drop(name, axis=1)
                         break
@@ -865,12 +1521,17 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             for col in list(dict.fromkeys(to_drop)):
                 corr_feature = corr[col].drop(col).index
                 corr_value = corr[col].drop(col).round(4).astype(str)
-                self.collinear = self.collinear.append(
-                    {
-                        "drop": col,
-                        "corr_feature": ", ".join(corr_feature),
-                        "corr_value": ", ".join(corr_value),
-                    },
+                self.collinear = pd.concat(
+                    [
+                        self.collinear,
+                        pd.DataFrame(
+                            {
+                                "drop": [col],
+                                "corr_feature": [", ".join(corr_feature)],
+                                "corr_value": [", ".join(corr_value)],
+                            }
+                        )
+                    ],
                     ignore_index=True,
                 )
 
@@ -905,15 +1566,13 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 solver = self.solver
 
             check_y()
-            self._estimator = SelectKBest(
-                score_func=solver,
-                k=self._n_features,
-            ).fit(X, y)
+            self._estimator = SelectKBest(solver, k=self._n_features).fit(X, y)
 
         elif self.strategy.lower() == "pca":
             # The PCA and TruncatedSVD both get all possible components to use
             # for the plots (n_components must be < n_features and <= n_rows)
             if is_sparse(X):
+                # No TruncatedSVD from cuml since it can't handle sparse input
                 self._estimator = TruncatedSVD(
                     n_components=min(len(X), X.shape[1] - 1),
                     algorithm="randomized" if self.solver is None else self.solver,
@@ -925,9 +1584,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     self.scaler = Scaler().fit(X)
                     X = self.scaler.transform(X)
 
-                s = lambda p: signature(estimator).parameters[p].default
+                estimator = self._get_est_class("PCA", "decomposition")
 
-                estimator = self._get_gpu(PCA)
+                s = lambda p: sign(estimator)[p].default
                 self._estimator = estimator(
                     n_components=min(len(X), X.shape[1] - 1),
                     svd_solver=s("svd_solver") if self.solver is None else self.solver,
@@ -951,18 +1610,18 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if not self.kwargs.get("threshold"):
                 self._kwargs["threshold"] = -np.inf
 
-            self._estimator = strats[self.strategy](
+            self._estimator = SelectFromModel(
                 estimator=solver,
                 max_features=self._n_features,
                 prefit=prefit,
                 **self._kwargs,
             )
             if prefit:
-                if len(self._estimator.get_support()) != X.shape[1]:
+                if list(solver.feature_names_in_) != list(X.columns):
                     raise ValueError(
                         "Invalid value for the solver parameter. The "
                         f"{solver.__class__.__name__} estimator "
-                        "is fitted with different columns than X!"
+                        "is fitted using different columns than X!"
                     )
                 self._estimator.estimator_ = solver
             else:
@@ -975,7 +1634,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if self.kwargs.get("scoring"):
                 self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
-            self._estimator = strats[self.strategy](
+            self._estimator = SequentialFeatureSelector(
                 estimator=solver,
                 n_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
@@ -985,7 +1644,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         elif self.strategy.lower() == "rfe":
             check_y()
 
-            self._estimator = strats[self.strategy](
+            self._estimator = RFE(
                 estimator=solver,
                 n_features_to_select=self._n_features,
                 **self._kwargs,
@@ -1001,7 +1660,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             if self._n_features == X.shape[1]:
                 self._n_features = 1
 
-            self._estimator = strats[self.strategy](
+            self._estimator = RFECV(
                 estimator=solver,
                 min_features_to_select=self._n_features,
                 n_jobs=self.n_jobs,
@@ -1039,7 +1698,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                     else:
                         kwargs["scoring"] = get_custom_scorer("r2")
 
-            self._estimator = strats[self.strategy](
+            self._estimator = strategies[self.strategy](
                 objective_function=kwargs.pop("objective_function", objective_function),
                 minimize=kwargs.pop("minimize", False),
                 logger=self.logger,
@@ -1052,17 +1711,38 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 y_train=y,
                 X_valid=X_valid,
                 y_valid=y_valid,
-                verbose=True if self.verbose >= 2 else False,
+                verbose=self.verbose >= 2,
             )
 
         # Add the strategy estimator as attribute to the class
         setattr(self, self.strategy.lower(), self._estimator)
 
+        # Assign feature importance (only for some strategies)
+        if self.strategy.lower() in ("univariate", "sfm", "rfe", "rfecv"):
+            estimator = getattr(self._estimator, "estimator_", self._estimator)
+            scores = get_feature_importance(estimator)
+
+            # Some strategies return scores for all features
+            if len(scores) == X.shape[1]:
+                self.feature_importance = pd.Series(
+                    data=scores / max(scores),
+                    index=X.columns,
+                    name="feature_importance",
+                    dtype="float",
+                ).sort_values(ascending=False)[:self._n_features]
+            else:
+                self.feature_importance = pd.Series(
+                    data=scores / max(scores),
+                    index=X.columns[self._estimator.get_support(indices=True)],
+                    name="feature_importance",
+                    dtype="float",
+                ).sort_values(ascending=False)
+
         self._is_fitted = True
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Transform the data.
 
         Parameters
@@ -1070,8 +1750,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, optional (default=None)
-            Does nothing. Only for continuity of API.
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Only for continuity of the API.
 
         Returns
         -------
@@ -1081,9 +1761,17 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         """
         check_is_fitted(self)
         X, y = self._prepare_input(X, y)
-        columns = X.columns  # Save columns for sfm
 
         self.log("Performing feature selection ...", 1)
+
+        # Remove features with too high variance
+        for key, value in self._high_variance.items():
+            self.log(
+                f" --> Feature {key} was removed due to high variance. "
+                f"Value {value[0]} was the most repeated value with "
+                f"{value[1]} ({value[1] / len(X):.1f}%) occurrences.", 2
+            )
+            X = X.drop(key, axis=1)
 
         # Remove features with too low variance
         for key, value in self._low_variance.items():
@@ -1106,8 +1794,6 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             return X
 
         elif self.strategy.lower() == "univariate":
-            indices = np.argsort(get_feature_importance(self.univariate))
-            best_fxs = [X.columns[idx] for idx in indices][::-1]
             self.log(
                 f" --> The univariate test selected "
                 f"{self._n_features} features from the dataset.", 2
@@ -1115,19 +1801,17 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             for n, column in enumerate(X):
                 if not self.univariate.get_support()[n]:
                     self.log(
-                        f"   >>> Dropping feature {column} "
+                        f"   --> Dropping feature {column} "
                         f"(score: {self.univariate.scores_[n]:.2f}  "
                         f"p-value: {self.univariate.pvalues_[n]:.2f}).", 2
                     )
                     X = X.drop(column, axis=1)
 
-            self.feature_importance = [fx for fx in best_fxs if fx in X.columns]
-
         elif self.strategy.lower() == "pca":
             self.log(" --> Applying Principal Component Analysis...", 2)
 
             if self.scaler:
-                self.log("   >>> Scaling features...", 2)
+                self.log("   --> Scaling features...", 2)
                 X = self.scaler.transform(X)
 
             X = to_df(
@@ -1137,50 +1821,26 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             )
 
             var = np.array(self.pca.explained_variance_ratio_[:self._n_features])
-            self.log(f"   >>> Keeping {self.pca._comps} components.", 2)
-            self.log(f"   >>> Explained variance ratio: {round(var.sum(), 3)}", 2)
+            self.log(f"   --> Keeping {self.pca._comps} components.", 2)
+            self.log(f"   --> Explained variance ratio: {round(var.sum(), 3)}", 2)
 
-        elif self.strategy.lower() == "sfm":
-            # Here we use columns since some cols could be removed before by
-            # variance or correlation checks and there would be cols mismatch
-            indices = np.argsort(get_feature_importance(self.sfm.estimator_))
-            best_fxs = [columns[idx] for idx in indices][::-1]
+        elif self.strategy.lower() in ("sfm", "sfs", "rfe", "rfecv"):
+            mask = self._estimator.get_support()
             self.log(
-                f" --> sfm selected {sum(self.sfm.get_support())} "
-                "features from the dataset.", 2
+                f" --> {self.strategy.lower()} selected "
+                f"{sum(mask)} features from the dataset.", 2
             )
+
             for n, column in enumerate(X):
-                if not self.sfm.get_support()[n]:
-                    self.log(f"   >>> Dropping feature {column}.", 2)
+                if not mask[n]:
+                    if hasattr(self._estimator, "ranking_"):
+                        self.log(
+                            f"   --> Dropping feature {column} "
+                            f"(rank {self._estimator.ranking_[n]}).", 2
+                        )
+                    else:
+                        self.log(f"   --> Dropping feature {column}.", 2)
                     X = X.drop(column, axis=1)
-
-            self.feature_importance = [fx for fx in best_fxs if fx in X.columns]
-
-        elif self.strategy.lower() == "sfs":
-            self.log(
-                f" --> sfs selected {self.sfs.n_features_to_select_}"
-                " features from the dataset.", 2
-            )
-            for n, column in enumerate(X):
-                if not self.sfs.support_[n]:
-                    self.log(f"   >>> Dropping feature {column}.", 2)
-                    X = X.drop(column, axis=1)
-
-        elif self.strategy.lower() in ("rfe", "rfecv"):
-            self.log(
-                f" --> {self.strategy.upper()} selected "
-                f"{self._estimator.n_features_} features from the dataset.", 2
-            )
-            for n, column in enumerate(X):
-                if not self._estimator.support_[n]:
-                    self.log(
-                        f"   >>> Dropping feature {column} "
-                        f"(rank {self._estimator.ranking_[n]}).", 2
-                    )
-                    X = X.drop(column, axis=1)
-
-            idx = np.argsort(get_feature_importance(self._estimator.estimator_))
-            self.feature_importance = list(X.columns[idx][::-1])
 
         else:  # Advanced strategies
             n_features = len(self._estimator.best_feature_list)
@@ -1191,7 +1851,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             for column in X:
                 if column not in self._estimator.best_feature_list:
-                    self.log(f"   >>> Dropping feature {column}.", 2)
+                    self.log(f"   --> Dropping feature {column}.", 2)
                     X = X.drop(column, axis=1)
 
         return X

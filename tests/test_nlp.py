@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """Automated Tool for Optimized Modelling (ATOM)
 
@@ -22,7 +22,7 @@ from .conftest import X_bin, X_text, y10
 
 def test_corpus_is_not_present():
     """Assert that an error is raised when there is no corpus."""
-    with pytest.raises(ValueError, match=r".*not contain a text corpus.*"):
+    with pytest.raises(ValueError, match=".*not contain a text corpus.*"):
         TextCleaner().transform(X_bin)
 
 
@@ -120,6 +120,14 @@ def test_quadgrams():
     assert isinstance(tokenizer.quadgrams, pd.DataFrame)
 
 
+def test_no_ngrams():
+    """Assert that nothing happens when no n-grams are found."""
+    tokenizer = Tokenizer(quadgram_freq=2)
+    X = tokenizer.transform([["a b c d"]])
+    assert X["corpus"][0] == ["a", "b", "c", "d"]
+    assert tokenizer.quadgrams is None
+
+
 # Test TextNormalizer ================================================== >>
 
 def test_normalizer_space_separation():
@@ -159,7 +167,7 @@ def test_vectorizer_space_separation():
 def test_invalid_strategy():
     """Assert that an error is raised when the strategy is invalid."""
     vectorizer = Vectorizer(strategy="invalid")
-    with pytest.raises(ValueError, match=r".*value for the strategy.*"):
+    with pytest.raises(ValueError, match=".*value for the strategy.*"):
         vectorizer.fit(X_text)
 
 
@@ -175,13 +183,14 @@ def test_hashing():
     """Assert that the Hashing strategy works as intended."""
     X = Vectorizer(strategy="Hashing", n_features=10).fit_transform(X_text)
     assert X.shape == (10, 10)
-    assert "hash0" in X
+    assert "hash1" in X
 
 
+@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
 @patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
 def test_gpu():
     """Assert that the gpu feature calls the get method of matrix."""
-    Vectorizer(gpu=True).fit_transform(X_text)
+    Vectorizer(device="gpu", engine="cuml").fit_transform(X_text)
 
 
 def test_return_sparse():
@@ -192,15 +201,25 @@ def test_return_sparse():
 
 def test_error_sparse_with_dense():
     """Assert that an error is raised when dense and sparse are combined."""
+
+    def test_func(df):
+        df["new column"] = 1  # Create dense column
+        return df
+
     atom = ATOMClassifier(X_text, y10, random_state=1)
-    atom.apply(lambda x: 1, columns="new")  # Create dense column
-    with pytest.raises(ValueError, match=r".*value for the return_sparse.*"):
+    atom.apply(test_func)
+    with pytest.raises(ValueError, match=".*value for the return_sparse.*"):
         atom.vectorize(strategy="BOW", return_sparse=True)
 
 
 def test_sparse_with_dense():
     """Assert that the output is dense when return_sparse=False."""
+
+    def test_func(df):
+        df["new column"] = 1  # Create dense column
+        return df
+
     atom = ATOMClassifier(X_text, y10, random_state=1)
-    atom.apply(lambda x: 1, columns="new")  # Create dense column
+    atom.apply(test_func)
     atom.vectorize(strategy="BOW", return_sparse=False)
     assert all(not pd.api.types.is_sparse(atom.X[c]) for c in atom.features)

@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -32,6 +32,16 @@ def pipeline():
         return atom.export_pipeline(model="LR" if model else None, memory=memory)
 
     return get_pipeline
+
+
+def test_getattr(pipeline):
+    """Assert that attributes can be fetched from the final estimator."""
+    pl = pipeline(model=True).fit(X_bin, y_bin)
+    assert isinstance(pl.coef_, np.ndarray)
+
+    # Final estimator has no attribute
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        print(pl.test)
 
 
 def test_fit(pipeline):
@@ -105,7 +115,7 @@ def test_decision_function(pipeline):
 def test_score(pipeline):
     """Assert that the pipeline uses score normally."""
     pl = pipeline(model=True)
-    assert isinstance(pl.score(X_bin, y_bin), np.float64)
+    assert isinstance(pl.score(X_bin, y_bin), float)
 
 
 def test_transform(pipeline):

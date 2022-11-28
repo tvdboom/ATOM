@@ -8,65 +8,51 @@ Description: Module containing the Branch class.
 """
 
 from copy import copy
-from inspect import signature
-from typing import Optional
+from typing import Optional, Tuple, Union
 
 import pandas as pd
 from typeguard import typechecked
 
-from atom.basetransformer import BaseTransformer
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
-    SEQUENCE_TYPES, X_TYPES, CustomDict, composed, crash, custom_transform,
-    flt, is_multidim, merge, method_to_log, to_df, to_series,
+    PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, CustomDict, composed, crash,
+    custom_transform, merge, method_to_log, to_df, to_series,
 )
 
 
 class Branch:
-    """Contains all information corresponding to a branch.
+    """Contains information corresponding to a branch.
+
+    A branch contains a specific pipeline, the dataset transformed
+    through that pipeline, the models fitted on that dataset, and all
+    data and utility attributes that refer to that dataset. Branches
+    can be created and accessed through atom's `branch` attribute.
 
     All properties and attributes of the branch (except the private
-    ones, starting with underscore) can be accessed from the trainer.
+    ones, starting with underscore) can be accessed from the parent.
 
     Parameters
     ----------
     *args
-        Parent class (from which the branch is called) and name.
+        Class from which the branch is created and name of the branch.
 
-    parent: Branch or None, optional (default=None)
+    parent: Branch or None, default=None
         Branch from which to split. If None, create an empty branch.
 
     Attributes
     ----------
-    T: class
-        Trainer from which the branch is initialized.
-
     name: str
         Name of the branch.
-
-    parent: str
-        Name of the parent branch.
-
-    mapping: CustomDict, optional (default={})
-        Encoded values and their respective mapping. The column name is
-        the key to its mapping dictionary. Only for columns mapped to
-        a single column (e.g. Ordinal, Leave-one-out, etc...).
-
-    pipeline: pd.Series or None, optional (default=None)
-        Estimators fitted on the data in the branch.
-
-    feature_importance: list, optional (default=None)
-        Features ordered by most to least important.
 
     """
 
     def __init__(self, *args, parent=None):
         self.T = args[0]
-        self.name = args[1]
-        self.parent = self.T._current
-        self.mapping = CustomDict()
-        self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
-        self.feature_importance = None
+
+        self._name = args[1]
+        self._parent = self.T._current
+        self._pipeline = pd.Series(data=[], name=self.name, dtype="object")
+        self._mapping = CustomDict()
 
         self._data = None
         self._idx = None
@@ -76,25 +62,42 @@ class Branch:
         # _holdout is always reset since it wouldn't recalculate if
         # changes were made to the pipeline
         if parent:
-            self.parent = parent.name
+            self._parent = parent.name
 
             # Copy the branch attrs and point to the rest
-            for attr in ("_data", "_idx", "mapping", "pipeline", "feature_importance"):
+            for attr in ("_data", "_idx", "_pipeline", "_mapping"):
                 setattr(self, attr, copy(getattr(parent, attr)))
             for attr in vars(parent):
                 if not hasattr(self, attr):  # If not already assigned...
                     setattr(self, attr, getattr(parent, attr))
 
-    def __repr__(self):
+    def __delete__(self, instance):
+        if len(self.T._branches.min("og")) == 1:
+            raise PermissionError("Can't delete the last branch!")
+        else:
+            # Delete all depending models
+            if depending_models := instance._get_depending_models():
+                self.T.delete(depending_models)
+
+            # If this is the last og branch, create a new one
+            if self.T._get_og_branches() == [instance]:
+                self.T._branches.insert(0, "og", Branch(self.T, "og", parent=self))
+
+            # Reset the current branch
+            if instance.name == self.T._current:
+                self.T._current = list(self.T._branches.min("og"))[0]
+
+            self.T._branches.pop(instance.name)
+            self.T.log(f"Branch {instance.name} successfully deleted.", 1)
+            self.T.log(f"Switched to branch {self.T._current}.", 1)
+
+    def __repr__(self) -> str:
         out = f"Branch: {self.name}"
 
         # Add the transformers with their parameters
         out += f"\n --> Pipeline: {None if self.pipeline.empty else ''}"
         for est in self.pipeline:
-            out += f"\n   >>> {est.__class__.__name__}"
-            for param in signature(est.__init__).parameters:
-                if param not in BaseTransformer.attrs + ["self"]:
-                    out += f"\n     --> {param}: {str(flt(getattr(est, param)))}"
+            out += f"\n   --> {est.__class__.__name__}"
 
         # Add the models linked to the branch
         dependent = self._get_depending_models()
@@ -102,9 +105,40 @@ class Branch:
 
         return out
 
+    @property
+    def name(self) -> str:
+        """Branch's name."""
+        return self._name
+
+    @name.setter
+    @typechecked
+    def name(self, value: str):
+        if not value:
+            raise ValueError("A branch can't have an empty name!")
+        elif value in self.T._branches:
+            raise ValueError(f"Branch {self.T._branches[value].name} already exists!")
+        else:
+            for model in MODELS_ENSEMBLES.values():
+                if value.lower().startswith(model.acronym.lower()):
+                    raise ValueError(
+                        "Invalid name for the branch. The name of a branch may "
+                        f"not begin with a model's acronym, and {model.acronym} "
+                        f"is the acronym of the {model._fullname} model."
+                    )
+
+        self._name = value
+        self.pipeline.name = value
+        self.T._branches[value] = self.T._branches.pop(self.T._current)
+        self.T.log(f"Branch {self.T._current} is renamed to {value}.", 1)
+        self.T._current = value
+
     # Data properties ============================================== >>
 
-    def _check_setter(self, name, value):
+    def _check_setter(
+        self,
+        name: str,
+        value: Union[SEQUENCE_TYPES, X_TYPES],
+    ) -> PANDAS_TYPES:
         """Check the property setter.
 
         Convert the property to a pandas object and compare with the
@@ -115,8 +149,13 @@ class Branch:
         name: str
             Name of the property to check.
 
-        value: sequence, dict or pd.DataFrame
-            Property to be checked.
+        value: sequence or dataframe-like
+            New values for the property.
+
+        Returns
+        -------
+        pd.Series or pd.DataFrame
+            Data set.
 
         """
 
@@ -201,7 +240,38 @@ class Branch:
         return value
 
     @property
-    def dataset(self):
+    def pipeline(self) -> pd.Series:
+        """Transformers fitted on the data.
+
+        Use this attribute only to access the individual instances. To
+        visualize the pipeline, use the [plot_pipeline][] method.
+
+        """
+        return self._pipeline
+
+    @pipeline.setter
+    @typechecked
+    def pipeline(self, value: pd.Series):
+        self._pipeline = value
+
+    @property
+    def mapping(self) -> CustomDict:
+        """Encoded values and their respective mapped values.
+
+        The column name is the key to its mapping dictionary. Only for
+        columns mapped to a single column (e.g. Ordinal, Leave-one-out,
+        etc...).
+
+        """
+        return self._mapping
+
+    @mapping.setter
+    @typechecked
+    def mapping(self, value: CustomDict):
+        self._mapping = value
+
+    @property
+    def dataset(self) -> pd.DataFrame:
         """Complete data set."""
         return self._data
 
@@ -211,7 +281,7 @@ class Branch:
         self._data = self._check_setter("dataset", value)
 
     @property
-    def train(self):
+    def train(self) -> pd.DataFrame:
         """Training set."""
         return self._data.loc[self._idx[0], :]
 
@@ -223,7 +293,7 @@ class Branch:
         self._idx[0] = self._data.index[:len(df)]
 
     @property
-    def test(self):
+    def test(self) -> pd.DataFrame:
         """Test set."""
         return self._data.loc[self._idx[1], :]
 
@@ -235,7 +305,7 @@ class Branch:
         self._idx[1] = self._data.index[-len(df):]
 
     @property
-    def holdout(self):
+    def holdout(self) -> Optional[pd.DataFrame]:
         """Holdout set."""
         if self.T.holdout is not None and self._holdout is None:
             X, y = self.T.holdout.iloc[:, :-1], self.T.holdout.iloc[:, -1]
@@ -248,7 +318,7 @@ class Branch:
         return self._holdout
 
     @property
-    def X(self):
+    def X(self) -> pd.DataFrame:
         """Feature set."""
         return self._data.drop(self.target, axis=1)
 
@@ -259,7 +329,7 @@ class Branch:
         self._data = merge(df, self.y)
 
     @property
-    def y(self):
+    def y(self) -> pd.Series:
         """Target column."""
         return self._data[self.target]
 
@@ -270,7 +340,7 @@ class Branch:
         self._data = merge(self._data.drop(self.target, axis=1), series)
 
     @property
-    def X_train(self):
+    def X_train(self) -> pd.DataFrame:
         """Features of the training set."""
         return self.train.drop(self.target, axis=1)
 
@@ -281,18 +351,7 @@ class Branch:
         self._data = pd.concat([merge(df, self.train[self.target]), self.test])
 
     @property
-    def X_test(self):
-        """Features of the test set."""
-        return self.test.drop(self.target, axis=1)
-
-    @X_test.setter
-    @typechecked
-    def X_test(self, value: X_TYPES):
-        df = self._check_setter("X_test", value)
-        self._data = pd.concat([self.train, merge(df, self.test[self.target])])
-
-    @property
-    def y_train(self):
+    def y_train(self) -> pd.Series:
         """Target column of the training set."""
         return self.train[self.target]
 
@@ -303,7 +362,18 @@ class Branch:
         self._data = pd.concat([merge(self.X_train, series), self.test])
 
     @property
-    def y_test(self):
+    def X_test(self) -> pd.DataFrame:
+        """Features of the test set."""
+        return self.test.drop(self.target, axis=1)
+
+    @X_test.setter
+    @typechecked
+    def X_test(self, value: X_TYPES):
+        df = self._check_setter("X_test", value)
+        self._data = pd.concat([self.train, merge(df, self.test[self.target])])
+
+    @property
+    def y_test(self) -> pd.Series:
         """Target column of the test set."""
         return self.test[self.target]
 
@@ -314,46 +384,50 @@ class Branch:
         self._data = pd.concat([self.train, merge(self.X_test, series)])
 
     @property
-    def shape(self):
-        """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
-        if not is_multidim(self.X):
-            return self._data.shape
-        else:
-            return len(self._data), self.X.iloc[0, 0].shape, 2
+    def shape(self) -> Tuple[int, int]:
+        """Shape of the dataset (n_rows, n_cols)."""
+        return self._data.shape
 
     @property
-    def columns(self):
+    def columns(self) -> pd.Series:
         """Name of all the columns."""
         return self._data.columns
 
     @property
-    def n_columns(self):
+    def n_columns(self) -> int:
         """Number of columns."""
         return len(self.columns)
 
     @property
-    def features(self):
+    def features(self) -> pd.Series:
         """Name of the features."""
         return self.columns[:-1]
 
     @property
-    def n_features(self):
+    def n_features(self) -> int:
         """Number of features."""
         return len(self.features)
 
     @property
-    def target(self):
+    def target(self) -> str:
         """Name of the target column."""
         return self.columns[-1]
 
     # Utility methods ============================================== >>
 
     def _get_attrs(self):
-        """Get properties and attributes to call from parent."""
+        """Get properties and attributes to call from parent.
+
+        Returns
+        -------
+        list
+            Properties and attributes.
+
+        """
         attrs = []
         for p in dir(self):
             if (
-                p in vars(self) and p not in ("T", "name", "_data", "_idx", "_holdout")
+                p in vars(self) and p not in ("T", "name", "_data", "idx", "_holdout")
                 or isinstance(getattr(Branch, p, None), property)
             ):
                 attrs.append(p)
@@ -361,65 +435,22 @@ class Branch:
         return attrs
 
     def _get_depending_models(self):
-        """Return the models that are dependent on this branch."""
+        """Return the models that are dependent on this branch.
+
+        Returns
+        -------
+        list
+            Depending models.
+
+        """
         return [m.name for m in self.T._models.values() if m.branch is self]
-
-    @composed(crash, method_to_log, typechecked)
-    def delete(self, name: Optional[str] = None):
-        """Delete the branch and all the models in it."""
-        if name is None:
-            name = self.name
-
-        if name == "og":
-            raise PermissionError(
-                "The og branch is an internal branch and can not be deleted!"
-            )
-        elif name not in self.T._branches:
-            raise ValueError(f"Branch {name} not found!")
-        elif len(self.T._branches.min("og")) == 1:
-            raise PermissionError("Can't delete the last branch!")
-        else:
-            branch = self.T._branches[name]
-
-            # Delete all depending models
-            depending_models = branch._get_depending_models()
-            if depending_models:
-                self.T.delete(depending_models)
-
-            # If this is the last og branch, create a new one
-            if self.T._get_og_branches() == [branch]:
-                self.T._branches.insert(0, "og", Branch(self.T, "og", parent=self))
-
-            # Reset the current branch
-            if branch.name == self.T._current:
-                self.T._current = list(self.T._branches.min("og"))[0]
-
-            self.T._branches.pop(branch.name)
-            self.T.log(f"Branch {branch.name} successfully deleted.", 1)
-
-    @composed(crash, method_to_log, typechecked)
-    def rename(self, name: str):
-        """Change the name of the branch."""
-        if not name:
-            raise ValueError("A branch can't have an empty name!")
-        elif name in self.T._branches:
-            raise ValueError(f"Branch {self.T._branches[name].name} already exists!")
-        else:
-            for model in MODELS_ENSEMBLES.values():
-                if name.lower().startswith(model.acronym.lower()):
-                    raise ValueError(
-                        "Invalid name for the branch. The name of a branch may "
-                        f"not begin with a model's acronym, and {model.acronym} "
-                        f"is the acronym of the {model.fullname} model."
-                    )
-
-        self.name = name
-        self.pipeline.name = name
-        self.T._branches[name] = self.T._branches.pop(self.T._current)
-        self.T.log(f"Branch {self.T._current} is renamed to {name}.", 1)
-        self.T._current = name
 
     @composed(crash, method_to_log)
     def status(self):
-        """Get an overview of the pipeline and models in the branch."""
+        """Get an overview of the pipeline and models in the branch.
+
+        This method prints the same information as the \__repr__ and
+        also saves it to the logger.
+
+        """
         self.T.log(str(self))

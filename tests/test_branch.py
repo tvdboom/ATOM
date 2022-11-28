@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -13,18 +13,18 @@ import pytest
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import merge
 
-from .conftest import X_bin, X_bin_array, X_class, mnist, y_bin, y_bin_array
+from .conftest import X_bin, X_bin_array, X_class, y_bin, y_bin_array
 
 
-# Test __init__ ==================================================== >>
+# Test magic methods =============================================== >>
 
-def test_pipeline_to_empty_series():
+def test_init_pipeline_to_empty_series():
     """Assert that when starting atom, the estimators are empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.branch.pipeline.empty
 
 
-def test_attrs_are_passed():
+def test_init_attrs_are_passed():
     """Assert that the attributes from the parent are passed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
@@ -33,7 +33,50 @@ def test_attrs_are_passed():
     assert atom.b2.adasyn is atom.master.adasyn
 
 
-# Test __repr__ ==================================================== >>
+def test_delete_current():
+    """Assert that we can delete the current branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    del atom.branch
+    assert "b2" not in atom._branches
+
+
+def test_delete_last_branch():
+    """Assert that an error is raised when the last branch is deleted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(PermissionError, match=".*last branch.*"):
+        del atom.branch
+
+
+def test_delete_depending_models():
+    """Assert that dependent models are deleted with the branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.run("LR")
+    del atom.branch
+    assert not atom.models
+
+
+def test_delete_last_og_branch():
+    """Assert that an og branch is created if the last one is deleted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    atom.scale()
+    assert "og" not in atom._branches
+    assert len(atom._get_og_branches()) == 1  # master is the last og branch
+    atom.branch = "master"
+    del atom.branch
+    assert "og" in atom._branches
+
+
+def test_delete_not_current():
+    """Assert that we can delete any branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "b2"
+    assert "b2" in atom._branches
+    del atom.branch
+    assert "b2" not in atom._branches
+
 
 def test_repr():
     """Assert that the __repr__  method returns the list of available branches."""
@@ -41,94 +84,34 @@ def test_repr():
     assert str(atom.branch).startswith("Branch: master\n --> Pipeline")
 
 
-# Test delete ====================================================== >>
+# Test name property =============================================== >>
 
-def test_branch_delete_current():
-    """Assert that we can delete the current branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    atom.branch.delete()
-    assert "b2" not in atom._branches
-
-
-def test_branch_delete_og():
-    """Assert that an error is raised when og is deleted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(PermissionError, match=r".*can not be deleted.*"):
-        atom.branch.delete("og")
-
-
-def test_branch_delete_not_existing_branch():
-    """Assert that an error is raised when the branch doesn't exist."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    with pytest.raises(ValueError, match=r".*not found.*"):
-        atom.branch.delete("invalid")
-
-
-def test_branch_delete_last_branch():
-    """Assert that an error is raised when the last branch is deleted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(PermissionError, match=r".*last branch.*"):
-        atom.branch.delete()
-
-
-def test_branch_delete_depending_models():
-    """Assert that dependent models are deleted with the branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    atom.run("LR")
-    atom.delete()
-    assert not atom.models
-
-
-def test_last_og_branch():
-    """Assert that an og branch is created if the last one is deleted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    atom.scale()
-    assert "og" not in atom._branches
-    assert len(atom._get_og_branches()) == 1  # master is the last og branch
-    atom.branch.delete("master")
-    assert "og" in atom._branches
-
-
-def test_branch_delete_not_current():
-    """Assert that we can delete any branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "b2"
-    atom.branch.delete("master")
-    assert "master" not in atom._branches
-
-
-# Test rename ====================================================== >>
-
-def test_rename_empty_name():
+def test_name_empty_name():
     """Assert that an error is raised when name is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*can't have an empty name!.*"):
-        atom.branch.rename("")
+    with pytest.raises(ValueError, match=".*can't have an empty name!.*"):
+        atom.branch.name = ""
 
 
-def test_rename_existing_name():
+def test_name_existing_name():
     """Assert that an error is raised when name already exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "b2"
-    with pytest.raises(ValueError, match=r".*already exists!.*"):
-        atom.branch.rename("master")
+    with pytest.raises(ValueError, match=".*already exists!.*"):
+        atom.branch.name = "master"
 
 
-def test_rename_model_name():
+def test_name_model_name():
     """Assert that an error is raised when name is a model's acronym."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*model's acronym.*"):
-        atom.branch.rename("Lda")
+    with pytest.raises(ValueError, match=".*model's acronym.*"):
+        atom.branch.name = "Lda"
 
 
-def test_rename_method():
+def test_name_method():
     """Assert that the branch name changes correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch.rename("b1")
+    atom.branch.name = "b1"
     assert atom.branch.name == "b1"
     assert atom.branch.pipeline.name == "b1"
 
@@ -140,7 +123,7 @@ def test_status_method():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.impute()
     atom.branch.status()
-    assert str(atom.branch).endswith("max_nan_cols: None\n --> Models: None")
+    assert str(atom.branch).endswith("\n --> Models: None")
 
 
 # Test data properties ============================================= >>
@@ -217,9 +200,6 @@ def test_shape_property():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.branch.shape == (len(X_bin), X_bin.shape[1] + 1)
 
-    atom = ATOMClassifier(*mnist, random_state=1)
-    assert atom.branch.shape == (70000, (28, 28, 1), 2)
-
 
 def test_columns_property():
     """Assert that the columns property returns the columns of the dataset."""
@@ -257,18 +237,18 @@ def test_setter_with_models():
     """Assert that an error is raised when there are models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    with pytest.raises(PermissionError, match=r".*not allowed to change the data.*"):
+    with pytest.raises(PermissionError, match=".*not allowed to change the data.*"):
         atom.X = X_class
 
 
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""
     new_dataset = merge(X_bin, y_bin)
-    new_dataset.iloc[0, 3] = 4  # Change one value
+    new_dataset.iat[0, 3] = 4  # Change one value
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.dataset = new_dataset
-    assert atom.dataset.iloc[0, 3] == 4  # Check the value is changed
+    assert atom.dataset.iat[0, 3] == 4  # Check the value is changed
 
 
 def test_train_setter():
@@ -304,9 +284,9 @@ def test_X_train_setter():
     """Assert that the X_train setter changes the training feature set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X_train = atom.X_train
-    new_X_train.iloc[0, 0] = 999
+    new_X_train.iat[0, 0] = 999
     atom.X_train = new_X_train.to_numpy()  # To numpy to test dtypes are maintained
-    assert atom.X_train.iloc[0, 0] == 999
+    assert atom.X_train.iat[0, 0] == 999
     assert list(atom.X_train.dtypes) == list(atom.X_test.dtypes)
 
 
@@ -314,25 +294,25 @@ def test_X_test_setter():
     """Assert that the X_test setter changes the test feature set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     new_X_test = atom.X_test
-    new_X_test.iloc[0, 0] = 999
+    new_X_test.iat[0, 0] = 999
     atom.X_test = new_X_test
-    assert atom.X_test.iloc[0, 0] == 999
+    assert atom.X_test.iat[0, 0] == 999
 
 
 def test_y_train_setter():
     """Assert that the y_train setter changes the training target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_train.iloc[0] == 0  # First value is 1 in original
+    assert atom.y_train.iat[0] == 0  # First value is 1 in original
     atom.y_train = [1] + list(atom.y_train.values[1:])
-    assert atom.y_train.iloc[0] == 1  # First value changed to 0
+    assert atom.y_train.iat[0] == 1  # First value changed to 0
 
 
 def test_y_test_setter():
     """Assert that the y_test setter changes the training target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_test.iloc[0] == 1  # First value is 0 in original
-    atom.y_test = [0] + list(atom.y_test.values[1:])
-    assert atom.y_test.iloc[0] == 0  # First value changed to 1
+    assert atom.y_test.iat[0] == 1  # First value is 0 in original
+    atom.y_test = [0] + list(atom.y_test[1:])
+    assert atom.y_test.iat[0] == 0  # First value changed to 1
 
 
 def test_data_properties_to_df():
@@ -352,14 +332,14 @@ def test_data_properties_to_series():
 def test_setter_error_unequal_rows():
     """Assert that an error is raised when the setter has unequal rows."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r"number of rows"):
+    with pytest.raises(ValueError, match="number of rows"):
         atom.X_train = X_bin
 
 
 def test_setter_error_unequal_index():
     """Assert that an error is raised when the setter has unequal indices."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r"the same indices"):
+    with pytest.raises(ValueError, match="the same indices"):
         atom.y = pd.Series(y_bin_array, index=range(10, len(y_bin_array) + 10))
 
 

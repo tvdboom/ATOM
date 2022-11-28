@@ -7,53 +7,62 @@ Description: Module containing the BaseTransformer class.
 
 """
 
-import importlib
 import multiprocessing
 import os
 import random
 import warnings
 from copy import deepcopy
-from typing import Optional, Union
+from importlib import import_module
+from importlib.util import find_spec
+from logging import Logger
+from typing import List, Optional, Tuple, Union
 
-import dill
+import dill as pickle
 import mlflow
 import numpy as np
+import optuna
 import pandas as pd
+import sklearnex
 from sklearn.model_selection import train_test_split
 from typeguard import typechecked
 
 from atom.utils import (
-    INT, SCALAR, SEQUENCE, X_TYPES, Y_TYPES, composed, crash, lst, merge,
-    method_to_log, prepare_logger, to_df, to_series,
+    INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, Estimator,
+    composed, crash, lst, merge, method_to_log, prepare_logger, to_df,
+    to_series,
 )
 
 
 class BaseTransformer:
-    """Base class for estimators in the package.
+    """Base class for transformers in the package.
 
-    Contains shared properties and standard methods across transformers.
+    Note that this includes atom and runners. Contains shared
+    properties, data preparation methods and utility methods.
 
     Parameters
     ----------
     **kwargs
         Standard keyword arguments for the classes. Can include:
-            - n_jobs: Number of cores to use for parallel processing.
-            - verbose: Verbosity level of the output.
-            - warnings: Whether to show or suppress encountered warnings.
-            - logger: Name of the log file or Logger object.
-            - experiment: Name of the mlflow experiment used for tracking.
-            - gpu: Whether to train the pipeline on GPU.
-            - random_state: Seed used by the random number generator.
+
+        - n_jobs: Number of cores to use for parallel processing.
+        - device: Device on which to train the estimators.
+        - engine: Execution engine to use for the estimators.
+        - verbose: Verbosity level of the output.
+        - warnings: Whether to show or suppress encountered warnings.
+        - logger: Name of the log file or Logger object.
+        - experiment: Name of the mlflow experiment used for tracking.
+        - random_state: Seed used by the random number generator.
 
     """
 
     attrs = [
         "n_jobs",
+        "device",
+        "engine",
         "verbose",
         "warnings",
         "logger",
         "experiment",
-        "gpu",
         "random_state",
     ]
 
@@ -65,12 +74,13 @@ class BaseTransformer:
     # Properties =================================================== >>
 
     @property
-    def n_jobs(self):
+    def n_jobs(self) -> INT:
+        """Number of cores to use for parallel processing."""
         return self._n_jobs
 
     @n_jobs.setter
     @typechecked
-    def n_jobs(self, value: int):
+    def n_jobs(self, value: INT):
         # Check number of cores for multiprocessing
         n_cores = multiprocessing.cpu_count()
         if value > n_cores:
@@ -87,12 +97,55 @@ class BaseTransformer:
         self._n_jobs = value
 
     @property
-    def verbose(self):
+    def device(self) -> str:
+        """Device on which to train the estimators."""
+        return self._device
+
+    @device.setter
+    @typechecked
+    def device(self, value: str):
+        self._device = value
+        if "gpu" in value.lower():
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(self._device_id)
+
+    @property
+    def engine(self) -> str:
+        """Execution engine to use for the estimators."""
+        return self._engine
+
+    @engine.setter
+    @typechecked
+    def engine(self, value: str):
+        if value.lower() == "sklearnex":
+            target_offload = "auto" if "cpu" in self.device else self.device
+            sklearnex.set_config(target_offload=target_offload)
+        elif value.lower() == "cuml":
+            if "cpu" in self.device:
+                raise ValueError(
+                    f"Invalid value for the engine parameter. device="
+                    f"{self.device} only supports sklearn or sklearnex."
+                )
+            elif not find_spec("cuml"):
+                raise ModuleNotFoundError(
+                    "Failed to import cuml. Package is not installed. Refer "
+                    "to: https://rapids.ai/start.html#rapids-release-selector."
+                )
+        elif value.lower() != "sklearn":
+            raise ValueError(
+                "Invalid value for the engine parameter, got "
+                f"{value}. Choose from : sklearn, sklearnex, cuml."
+            )
+
+        self._engine = value
+
+    @property
+    def verbose(self) -> INT:
+        """Verbosity level of the output."""
         return self._verbose
 
     @verbose.setter
     @typechecked
-    def verbose(self, value: int):
+    def verbose(self, value: INT):
         if value < 0 or value > 2:
             raise ValueError(
                 "Invalid value for the verbose parameter. Value"
@@ -101,7 +154,8 @@ class BaseTransformer:
         self._verbose = value
 
     @property
-    def warnings(self):
+    def warnings(self) -> str:
+        """Whether to show or suppress encountered warnings."""
         return self._warnings
 
     @warnings.setter
@@ -111,51 +165,47 @@ class BaseTransformer:
             self._warnings = "default" if value else "ignore"
         else:
             opts = ["error", "ignore", "always", "default", "module", "once"]
-            if value not in opts:
+            if value.lower() not in opts:
                 raise ValueError(
                     "Invalid value for the warnings parameter, got "
                     f"{value}. Choose from: {', '.join(opts)}."
                 )
-            self._warnings = value
+            self._warnings = value.lower()
+
+        if self._warnings in ("ignore", "module"):
+            optuna.logging.set_verbosity(optuna.logging.CRITICAL)
+        else:
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
 
         warnings.simplefilter(self._warnings)  # Change the filter in this process
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses
 
     @property
-    def logger(self):
+    def logger(self) -> Logger:
+        """Name of the log file or Logger object."""
         return self._logger
 
     @logger.setter
-    def logger(self, value):
+    @typechecked
+    def logger(self, value: Optional[Union[str, Logger]]):
         self._logger = prepare_logger(value, class_name=self.__class__.__name__)
 
     @property
-    def experiment(self):
+    def experiment(self) -> Optional[str]:
+        """Name of the mlflow experiment used for tracking."""
         return self._experiment
 
     @experiment.setter
-    def experiment(self, value):
+    @typechecked
+    def experiment(self, value: Optional[str]):
         self._experiment = value
         if value:
             mlflow.sklearn.autolog(disable=True)
             mlflow.set_experiment(value)
 
     @property
-    def gpu(self):
-        return self._gpu
-
-    @gpu.setter
-    @typechecked
-    def gpu(self, value: Union[bool, str]):
-        if isinstance(value, str) and value.lower() != "force":
-            raise ValueError(
-                "Invalid value for the gpu parameter. Only True, "
-                f"False and 'force' are valid values, got {value}."
-            )
-        self._gpu = value
-
-    @property
-    def random_state(self):
+    def random_state(self) -> INT:
+        """Seed used by the random number generator."""
         return self._random_state
 
     @random_state.setter
@@ -166,49 +216,59 @@ class BaseTransformer:
                 "Invalid value for the random_state parameter. "
                 f"Value should be >0, got {value}."
             )
-        random.seed(value)  # Set random seed
+        random.seed(value)
         np.random.seed(value)
         self._random_state = value
 
+    @property
+    def _device_id(self) -> int:
+        """Which GPU device to use."""
+        if len(value := self.device.split(":")) == 1:
+            return 0  # Default value
+        else:
+            try:
+                return int(value[-1])
+            except (TypeError, ValueError):
+                raise ValueError(
+                    f"Invalid value for the device parameter. GPU device {value[-1]} "
+                    "isn't understood. Use a single integer to denote a specific "
+                    "device. Note that ATOM doesn't support multi-GPU training."
+                )
+
     # Methods ====================================================== >>
 
-    def _get_gpu(self, estimator, module="cuml"):
-        """Get a GPU or CPU estimator depending on availability.
+    def _get_est_class(self, name: str, module: str) -> Estimator:
+        """Import a class from a module.
+
+        When the import fails, for example if atom uses sklearnex and
+        that's passed to a transformer, use sklearn's (default engine).
 
         Parameters
         ----------
-        estimator: estimator
-            Class to get GPU implementation from.
+        name: str
+            Name of the class to get.
 
-        module: str, optional (default="cuml")
-            Module from which to get the GPU estimator.
+        module: str
+            Module from which to get the class.
 
         Returns
         -------
-        estimator
-            Provided estimator or cuml implementation.
+        Estimator
+            Class of the estimator.
 
         """
-        if self.gpu:
-            try:
-                return getattr(importlib.import_module(module), estimator.__name__)
-            except ModuleNotFoundError:
-                if str(self.gpu).lower() == "force":
-                    raise ModuleNotFoundError(
-                        "It looks like cuml is not installed. Refer to the package's "
-                        "documentation to learn how to utilize the machine's GPU."
-                    )
-                else:
-                    self.log(
-                        f" --> Unable to import {module}.{estimator.__name__}. "
-                        "Using CPU implementation instead.", 1
-                    )
-
-        return estimator
+        try:
+            return getattr(import_module(f"{self.engine}.{module}"), name)
+        except (ModuleNotFoundError, AttributeError):
+            return getattr(import_module(f"sklearn.{module}"), name)
 
     @staticmethod
     @typechecked
-    def _prepare_input(X: Optional[X_TYPES] = None, y: Optional[Y_TYPES] = None):
+    def _prepare_input(
+        X: Optional[X_TYPES] = None,
+        /,
+        y: Optional[Y_TYPES] = None,
+    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.Series]]:
         """Prepare the input data.
 
         Convert X and y to pandas (if not already) and perform standard
@@ -216,46 +276,43 @@ class BaseTransformer:
 
         Parameters
         ----------
-        X: dataframe-like or None, optional (default=None)
-            Feature set with shape=(n_samples, n_features).
+        X: dataframe-like or None, default=None
+            Feature set with shape=(n_samples, n_features). If None,
+            X is ignored.
 
-        y: int, str, sequence or None, optional (default=None)
-            - If None: y is ignored.
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+        y: int, str, dict, sequence or None, default=None
+            Target column corresponding to X.
+                - If None: y is ignored.
+                - If int: Position of the target column in X.
+                - If str: Name of the target column in X.
+                - Else: Array with shape=(n_samples,) to use as target.
 
         Returns
         -------
-        pd.DataFrame
-            Feature dataset.
+        pd.DataFrame or None
+            Feature dataset. Only returned if provided.
 
-        pd.Series
-            Target column corresponding to X.
+        pd.Series or None
+            Transformed target column. Only returned if provided.
 
         """
-        if X is not None:
-            # If data has more than 2 dimensions and is not a text corpus,
-            # create a dataframe with one multidimensional column
-            array = np.array(X)
-            if array.ndim > 2 and not isinstance(array[0, 0, 0], str):
-                X = pd.DataFrame({"multidim feature": [row for row in X]})
-            else:
-                X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
+        if X is None and y is None:
+            raise ValueError("X and y can't be both None!")
+        elif X is not None:
+            X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
-                # If text dataset, change the name of the column to corpus
-                if list(X.columns) == ["x0"] and X[X.columns[0]].dtype == "object":
-                    X = X.rename(columns={X.columns[0]: "corpus"})
+            # If text dataset, change the name of the column to corpus
+            if list(X.columns) == ["x0"] and X[X.columns[0]].dtype == "object":
+                X = X.rename(columns={X.columns[0]: "corpus"})
 
-                # Convert all column names to str
-                X.columns = [str(col) for col in X.columns]
+            # Convert all column names to str
+            X.columns = [str(col) for col in X.columns]
 
         # Prepare target column
-        if isinstance(y, SEQUENCE):
+        if isinstance(y, (dict, *SEQUENCE)):
             if not isinstance(y, pd.Series):
                 # Check that y is one-dimensional
-                ndim = np.array(y).ndim
-                if ndim != 1:
+                if ndim := np.array(y).ndim > 1:
                     raise ValueError(f"y should be one-dimensional, got ndim={ndim}.")
 
                 # Check X and y have the same number of rows
@@ -282,14 +339,26 @@ class BaseTransformer:
 
         elif isinstance(y, int):
             if X is None:
-                raise ValueError("X can't be None when y is a int.")
+                raise ValueError("X can't be None when y is an int.")
 
             X, y = X.drop(X.columns[y], axis=1), X[X.columns[y]]
 
         return X, y
 
-    def _set_index(self, df):
-        """Assign an index to the dataframe."""
+    def _set_index(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Assign an index to the dataframe.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Dataset.
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataset with updated indices.
+
+        """
         target = df.columns[-1]
 
         if self.index is True:  # True gets caught by isinstance(int)
@@ -321,10 +390,28 @@ class BaseTransformer:
 
         return df
 
-    def _get_stratify_columns(self, df):
-        """Get columns to stratify by."""
+    def _get_stratify_columns(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
+        """Get columns to stratify by.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Dataset from which to get the columns.
+
+        Returns
+        -------
+        pd.DataFrame or None
+            Dataset with subselection of columns. Returns None if
+            there's no stratification.
+
+        """
         # Stratification is not possible when the data can not change order
-        if self.shuffle is False or self.stratify is False:
+        if self.stratify is False:
+            return None
+        elif self.shuffle is False:
+            self.log(
+                "Stratification is not possible when shuffle=False.", 3, "warning"
+            )
             return None
         elif self.stratify is True:
             return df.iloc[:, -1]
@@ -350,18 +437,26 @@ class BaseTransformer:
 
             return df[inc]
 
-    def _get_data(self, arrays, y=-1, use_n_rows=True):
-        """Get the data sets and indices from a sequence of indexables.
+    def _get_data(
+        self,
+        arrays: SEQUENCE_TYPES,
+        y: Y_TYPES = -1,
+        use_n_rows: bool = True,
+    ) -> Tuple[pd.DataFrame, List[pd.Index], Optional[pd.DataFrame]]:
+        """Get data sets from a sequence of indexables.
+
+        Also assigns an index, (stratified) shuffles and selects a
+        subsample of rows depending on the attributes.
 
         Parameters
         ----------
-        arrays: tuple of indexables
-            Data set(s) provided. Should follow the API's input format.
+        arrays: sequence of indexables
+            Data set(s) provided. Should follow the API input format.
 
-        y: int, str or sequence, optional (default=-1)
-            Target column corresponding to X.
+        y: int, str or sequence, default=-1
+            Transformed target column.
 
-        use_n_rows: bool, optional (default=True)
+        use_n_rows: bool, default=True
             Whether to use the `n_rows` parameter on the dataset.
 
         Returns
@@ -369,16 +464,59 @@ class BaseTransformer:
         pd.DataFrame
             Dataset containing the train and test sets.
 
-        list
-            Sizes of the train and test sets.
+        list of pd.Index
+            Indices of the train and test sets.
 
         pd.DataFrame or None
             Holdout data set. Returns None if not specified.
 
         """
 
-        def _no_data_sets(data):
-            """Path to follow when no data sets are provided."""
+        def _subsample(df: pd.DataFrame) -> pd.DataFrame:
+            """Select a random subset of a dataframe.
+
+            If shuffle=True, the subset is shuffled, else row order
+            is maintained.
+
+            Parameters
+            ----------
+            df: pd.DataFrame
+                Dataset.
+
+            Returns
+            -------
+            pd.DataFrame
+                Subset of df.
+
+            """
+            if self.n_rows <= 1:
+                n_rows = int(len(df) * self.n_rows)
+            else:
+                n_rows = int(self.n_rows)
+
+            if self.shuffle:
+                return df.iloc[random.sample(range(len(df)), k=n_rows)]
+            else:
+                return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
+
+        def _no_data_sets(data: pd.DataFrame) -> tuple:
+            """Generate data sets from one dataframe.
+
+            Additionally, assigns an index, shuffles the data, selects
+            a subsample if `n_rows` is specified and split into sets in
+            a stratified fashion.
+
+            Parameters
+            ----------
+            data: pd.DataFrame
+                Complete dataset containing all data sets.
+
+            Returns
+            -------
+            tuple
+                Data, indices and holdout.
+
+            """
             # If the index is a sequence, assign it before shuffling
             if isinstance(self.index, SEQUENCE):
                 if len(self.index) != len(data):
@@ -395,12 +533,7 @@ class BaseTransformer:
                         "Invalid value for the n_rows parameter. Value "
                         f"should lie between 0 and len(X), got {self.n_rows}."
                     )
-
-                # Select subset of the data
-                if self.n_rows > 1:
-                    data = data.iloc[:int(self.n_rows), :]
-                else:
-                    data = data.iloc[:int(len(data) * self.n_rows), :]
+                data = _subsample(data)
 
             if len(data) < 5:
                 raise ValueError(
@@ -456,8 +589,33 @@ class BaseTransformer:
 
             return data, [data.index[:-test_size], data.index[-test_size:]], holdout
 
-        def _has_data_sets(train, test, holdout=None):
-            """Path to follow when data sets are provided."""
+        def _has_data_sets(
+            train: pd.DataFrame,
+            test: pd.DataFrame,
+            holdout: Optional[pd.DataFrame] = None,
+        ) -> tuple:
+            """Generate data sets from provided sets.
+
+            Additionally, assigns an index, shuffles the data and
+            selects a subsample if `n_rows` is specified.
+
+            Parameters
+            ----------
+            train: pd.DataFrame
+                Training set.
+
+            test: pd.DataFrame
+                Test set.
+
+            holdout: pd.DataFrame or None
+                Holdout set. Is None if not provided by the user.
+
+            Returns
+            -------
+            tuple
+                Data, indices and holdout.
+
+            """
             # If the index is a sequence, assign it before shuffling
             if isinstance(self.index, SEQUENCE):
                 len_data = len(train) + len(test)
@@ -477,31 +635,15 @@ class BaseTransformer:
 
             # Skip the n_rows step if not called from atom
             if hasattr(self, "n_rows") and use_n_rows:
-                # Select same subsample of train and test set
                 if self.n_rows <= 1:
-                    n_train = int(len(train) * self.n_rows)
-                    n_test = int(len(test) * self.n_rows)
-                    if self.shuffle:
-                        train = train.sample(n=n_train, random_state=self.random_state)
-                        test = test.sample(n=n_test, random_state=self.random_state)
-                    else:
-                        train = train.iloc[:n_train, :]
-                        test = test.iloc[:n_test, :]
-
+                    train = _subsample(train)
+                    test = _subsample(test)
                     if holdout is not None:
-                        n_holdout = int(len(holdout) * self.n_rows)
-                        if self.shuffle:
-                            holdout = holdout.sample(
-                                n=n_holdout,
-                                random_state=self.random_state,
-                            )
-                        else:
-                            holdout = holdout.iloc[:n_holdout, :]
-
+                        holdout = _subsample(holdout)
                 else:
                     raise ValueError(
-                        "Invalid value for the n_rows parameter. Value has "
-                        "to be <1 when a train and test set are provided."
+                        "Invalid value for the n_rows parameter. Value must "
+                        "be <1 when the train and test sets are provided."
                     )
 
             if not train.columns.equals(test.columns):
@@ -534,23 +676,23 @@ class BaseTransformer:
         elif len(arrays) == 1:
             # arrays=(X,)
             data = merge(*self._prepare_input(arrays[0], y=y))
-            data, idx, holdout = _no_data_sets(data)
+            sets = _no_data_sets(data)
 
         elif len(arrays) == 2:
             if isinstance(arrays[0], tuple) and len(arrays[0]) == len(arrays[1]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test))
                 train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
                 test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
-                data, idx, holdout = _has_data_sets(train, test)
+                sets = _has_data_sets(train, test)
             elif isinstance(arrays[1], (int, str)) or np.array(arrays[1]).ndim == 1:
                 # arrays=(X, y)
                 data = merge(*self._prepare_input(arrays[0], arrays[1]))
-                data, idx, holdout = _no_data_sets(data)
+                sets = _no_data_sets(data)
             else:
                 # arrays=(train, test)
                 train = merge(*self._prepare_input(arrays[0], y=y))
                 test = merge(*self._prepare_input(arrays[1], y=y))
-                data, idx, holdout = _has_data_sets(train, test)
+                sets = _has_data_sets(train, test)
 
         elif len(arrays) == 3:
             if len(arrays[0]) == len(arrays[1]) == len(arrays[2]) == 2:
@@ -558,54 +700,65 @@ class BaseTransformer:
                 train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
                 test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
                 holdout = merge(*self._prepare_input(arrays[2][0], arrays[2][1]))
-                data, idx, holdout = _has_data_sets(train, test, holdout)
+                sets = _has_data_sets(train, test, holdout)
             else:
                 # arrays=(train, test, holdout)
                 train = merge(*self._prepare_input(arrays[0], y=y))
                 test = merge(*self._prepare_input(arrays[1], y=y))
                 holdout = merge(*self._prepare_input(arrays[2], y=y))
-                data, idx, holdout = _has_data_sets(train, test, holdout)
+                sets = _has_data_sets(train, test, holdout)
 
         elif len(arrays) == 4:
             # arrays=(X_train, X_test, y_train, y_test)
             train = merge(*self._prepare_input(arrays[0], arrays[2]))
             test = merge(*self._prepare_input(arrays[1], arrays[3]))
-            data, idx, holdout = _has_data_sets(train, test)
+            sets = _has_data_sets(train, test)
 
         elif len(arrays) == 6:
             # arrays=(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
             train = merge(*self._prepare_input(arrays[0], arrays[3]))
             test = merge(*self._prepare_input(arrays[1], arrays[4]))
             holdout = merge(*self._prepare_input(arrays[2], arrays[5]))
-            data, idx, holdout = _has_data_sets(train, test, holdout)
+            sets = _has_data_sets(train, test, holdout)
 
         else:
             raise ValueError(
                 "Invalid data arrays. See the documentation for the allowed formats."
             )
 
-        return data, idx, holdout
+        return sets
 
     @composed(crash, typechecked)
-    def log(self, msg: Union[SCALAR, str], level: INT = 0):
-        """Print and save output to log file.
+    def log(self, msg: Union[SCALAR, str], level: INT = 0, severity: str = "info"):
+        """Print message and save to log file.
 
         Parameters
         ----------
         msg: int, float or str
             Message to save to the logger and print to stdout.
 
-        level: int, optional (default=0)
+        level: int, default=0
             Minimum verbosity level to print the message.
-            If 42, don't save to log.
+
+        severity: str, default="info"
+            Severity level of the message. Choose from: debug, info,
+            warning, error, critical.
 
         """
-        if self.verbose >= level:
+        if severity not in ("debug", "info", "warning", "error", "critical"):
+            raise ValueError(
+                "Invalid value for the severity parameter. Choose "
+                "from: debug, info, warning, error, critical."
+            )
+
+        if severity == "warning":
+            warnings.warn(msg)
+        if self.verbose >= level and (severity == "info" or self.warnings == "ignore"):
             print(msg)
 
-        if self.logger is not None and level != 42:
+        if self.logger is not None:
             for text in str(msg).split("\n"):
-                self.logger.info(str(text))
+                getattr(self.logger, severity)(str(text))
 
     @composed(crash, method_to_log, typechecked)
     def save(self, filename: str = "auto", save_data: bool = True):
@@ -613,13 +766,14 @@ class BaseTransformer:
 
         Parameters
         ----------
-        filename: str, optional (default="auto")
+        filename: str, default="auto"
             Name of the file. Use "auto" for automatic naming.
 
-        save_data: bool, optional (default=True)
+        save_data: bool, default=True
             Whether to save the dataset with the instance. This
             parameter is ignored if the method is not called from
-            a trainer.
+            atom. If False, remember to add the data to [ATOMLoader][]
+            when loading the file.
 
         """
         if not save_data and hasattr(self, "dataset"):
@@ -633,8 +787,8 @@ class BaseTransformer:
             filename = filename.replace("auto", self.__class__.__name__)
 
         with open(filename, "wb") as f:
-            dill.settings["recurse"] = True
-            dill.dump(self, f)  # Dill replaces pickle to dump lambdas
+            pickle.settings["recurse"] = True
+            pickle.dump(self, f)  # Dill replaces pickle to dump lambdas
 
         # Restore the data to the attributes
         if not save_data and hasattr(self, "dataset"):

@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -10,11 +10,8 @@ Description: Global fixtures and variables for the tests.
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.datasets import (
-    load_breast_cancer, load_diabetes, load_digits, load_wine,
-)
+from sklearn.datasets import load_breast_cancer, load_diabetes, load_wine
 from sklearn.model_selection import train_test_split
-from tensorflow import keras
 
 from atom.utils import merge
 
@@ -24,15 +21,12 @@ def change_current_dir(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
 
-# Sklearn datasets for all three tasks as np.array
+# Sklearn datasets as np.array
 X_bin_array, y_bin_array = load_breast_cancer(return_X_y=True)
-X_class_array, y_class_array = load_digits(return_X_y=True)
-X_reg_array, y_reg_array = load_diabetes(return_X_y=True)
 
 # Sklearn datasets for all three tasks as pd.DataFrame
 X_bin, y_bin = load_breast_cancer(return_X_y=True, as_frame=True)
 X_class, y_class = load_wine(return_X_y=True, as_frame=True)
-X_class2, y_class2 = load_digits(return_X_y=True, as_frame=True)
 X_reg, y_reg = load_diabetes(return_X_y=True, as_frame=True)
 
 # Train and test sets for all three tasks
@@ -40,12 +34,6 @@ kwargs = dict(test_size=0.3, random_state=1)
 bin_train, bin_test = train_test_split(merge(X_bin, y_bin), **kwargs)
 class_train, class_test = train_test_split(merge(X_class, y_class), **kwargs)
 reg_train, reg_test = train_test_split(merge(X_reg, y_reg), **kwargs)
-
-# Image data
-(X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
-X_train = X_train.reshape(60000, 28, 28, 1)
-X_test = X_test.reshape(10000, 28, 28, 1)
-mnist = (X_train, y_train), (X_test, y_test)
 
 # Sparse data
 X_sparse = pd.DataFrame(
@@ -104,14 +92,14 @@ X10_nan = [
 
 # Dataset with categorical column
 X10_str = [
-    [2, 0, "b", 2],
-    [2, 3, "a", 1],
-    [5, 2, "b", 5],
+    [1, 0, "b", 2],
+    [1, 3, "a", 1],
+    [0, 2, "b", 5],
     [1, 2, "a", 1],
     [1, 2, "c", 7],
-    [2, 0, "d", 5],
-    [2, 3, "d", 1],
-    [5, 2, "d", 2],
+    [0, 0, "d", 5],
+    [1, 3, "d", 1],
+    [0, 2, "d", 2],
     [1, 2, "a", 3],
     [1, 2, "d", 2],
 ]

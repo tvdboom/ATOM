@@ -3,205 +3,64 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
-Description: Module containing the parent class for the trainers.
+Description: Module containing the BaseTrainer class.
 
 """
 
 import traceback
-from datetime import datetime
+from datetime import datetime as dt
 from importlib.util import find_spec
+from typing import Any
 
 import matplotlib.pyplot as plt
 import mlflow
-from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
+from optuna import Study, create_study
 
-from atom.basepredictor import BasePredictor
+from atom.baserunner import BaseRunner
 from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
+from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
-    SEQUENCE, CustomDict, PlotCallback, check_scaling, delete, get_best_score,
-    get_custom_scorer, is_multidim, is_sparse, lst, time_to_str,
+    SEQUENCE, CustomDict, check_scaling, get_best_score, get_custom_scorer,
+    is_sparse, lst, sign, time_to_str,
 )
 
 
-class BaseTrainer(BaseTransformer, BasePredictor):
-    """Base class for the trainers.
+class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot):
+    """Base class for trainers.
 
-    Parameters
-    ----------
-    models: str, estimator or sequence, optional (default=None)
-        Models to fit to the data. Allowed inputs are: an acronym from
-        any of ATOM's predefined models, an ATOMModel or a custom
-        estimator as class or instance. If None, all the predefined
-        models are used.
+    Implements methods to check the validity of the parameters,
+    create models and metrics, run hyperparameter tuning, model
+    training, bootstrap, and display the final output.
 
-    metric: str, func, scorer, sequence or None, optional (default=None)
-        Metric on which to fit the models. Choose from any of sklearn's
-        SCORERS, a function with signature `metric(y_true, y_pred)`, a
-        scorer object or a sequence of these. If multiple metrics are
-        selected, only the first is used to optimize the BO. If None, a
-        default scorer is selected:
-            - "f1" for binary classification
-            - "f1_weighted" for multiclass classification
-            - "r2" for regression
-
-    greater_is_better: bool or sequence, optional (default=True)
-        Whether the metric is a score function or a loss function,
-        i.e. if True, a higher score is better and if False, lower
-        is better. This parameter is ignored if the metric is a
-        string or a scorer. If sequence, the n-th value applies to
-        the n-th metric.
-
-    needs_proba: bool or sequence, optional (default=False)
-        Whether the metric function requires probability estimates out
-        of a classifier. If True, make sure that every selected model
-        has a `predict_proba` method. This parameter is ignored if the
-        metric is a string or a scorer. If sequence, the n-th value
-        applies to the n-th metric.
-
-    needs_threshold: bool or sequence, optional (default=False)
-        Whether the metric function takes a continuous decision
-        certainty. This only works for estimators that have either a
-        `decision_function` or `predict_proba` method. This parameter
-        is ignored if the metric is a string or a scorer. If sequence,
-        the n-th value applies to the n-th metric.
-
-    n_calls: int or sequence, optional (default=15)
-        Maximum number of iterations of the BO. It includes the random
-        points of `n_initial_points`. If 0, skip the BO and fit the
-        model on its default Parameters. If sequence, the n-th value
-        applies to the n-th model.
-
-    n_initial_points: int or sequence, optional (default=5)
-        Initial number of random tests of the BO before fitting the
-        surrogate function. If equal to `n_calls`, the optimizer will
-        technically be performing a random search. If sequence, the
-        n-th value applies to the n-th model.
-
-    est_params: dict or None, optional (default=None)
-        Additional parameters for the estimators. See the corresponding
-        documentation for the available options. For multiple models,
-        use the acronyms as key (or 'all' for all models) and a dict
-        of the parameters as value. Add _fit to the parameter's name
-        to pass it to the fit method instead of the initializer.
-
-    bo_params: dict or None, optional (default=None)
-        Additional parameters to for the BO. These can include:
-            - base_estimator: str, optional (default="GP")
-                Surrogate model to use. Choose from:
-                    - "GP" for Gaussian Process
-                    - "RF" for Random Forest
-                    - "ET" for Extra-Trees
-                    - "GBRT" for Gradient Boosted Regression Trees
-            - max_time: int, optional (default=np.inf)
-                Stop the optimization after `max_time` seconds.
-            - delta_x: int or float, optional (default=0)
-                Stop the optimization when `|x1 - x2| < delta_x`.
-            - delta_y: int or float, optional (default=0)
-                Stop the optimization if the 5 minima are within
-                `delta_y` (skopt always minimizes the function).
-            - early_stopping: int, float or None, optional (default=None)
-                Training will stop if the model didn't improve in
-                last `early_stopping` rounds. If <1, fraction of
-                rounds from the total. If None, no early stopping
-                is performed. Only available for models that allow
-                in-training evaluation.
-            - cv: int, optional (default=5)
-                Number of folds for the cross-validation. If 1, the
-                training set is randomly split in a (sub)train and
-                validation set.
-            - callback: callable or list of callables, optional (default=None)
-                Callbacks for the BO.
-            - dimensions: dict, list or None, optional (default=None)
-                Custom hyperparameter space for the BO. Can be a list
-                to share the same dimensions across models or a dict
-                with the model names as key (or `all` for all models).
-                If None, ATOM's predefined dimensions are used.
-            - plot: bool, optional (default=False)
-                Whether to plot the BO's progress as it runs.
-                Creates a canvas with two plots: the first plot
-                shows the score of every trial and the second shows
-                the distance between the last consecutive steps.
-            - Additional keyword arguments for skopt's optimizer.
-
-    n_bootstrap: int or sequence, optional (default=0)
-        Number of data sets (bootstrapped from the training set) to
-        use in the bootstrap algorithm. If 0, no bootstrap is performed.
-        If sequence, the n-th value will apply to the n-th model.
-
-    n_jobs: int, optional (default=1)
-        Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
-
-    verbose: int, optional (default=0)
-        Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
-
-    warnings: bool or str, optional (default=True)
-        - If True: Default warning action (equal to "default").
-        - If False: Suppress all warnings (equal to "ignore").
-        - If str: One of the actions in python's warnings environment.
-
-        Note that changing this parameter will affect the
-        `PYTHONWARNINGS` environment.
-
-        Note that ATOM can't manage warnings that go directly
-        from C/C++ code to the stdout/stderr.
-
-    logger: str, Logger or None, optional (default=None)
-        - If None: Doesn't save a logging file.
-        - If str: Name of the log file. Use "auto" for automatic name.
-        - Else: Python `logging.Logger` instance.
-
-        Note that warnings will not be saved to the logger.
-
-    experiment: str or None, optional (default=None)
-        Name of the mlflow experiment to use for tracking. If None,
-        no mlflow tracking is performed.
-
-    gpu: bool or str, optional (default=False)
-        Train estimators on GPU (instead of CPU). Refer to the
-        documentation to check which estimators are supported.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
-
-    random_state: int or None, optional (default=None)
-        Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` used by `np.random`.
+    See training.py for a description of the parameters.
 
     """
 
     def __init__(
-        self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
-        verbose, warnings, logger, experiment, gpu, random_state,
+        self, models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
+        device, engine, verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
+            device=device,
+            engine=engine,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
             experiment=experiment,
-            gpu=gpu,
             random_state=random_state,
         )
+
+        super(HTPlot, self).__init__()
 
         # Parameter attributes
         self._models = models
         self._metric = metric
-        self.greater_is_better = greater_is_better
-        self.needs_proba = needs_proba
-        self.needs_threshold = needs_threshold
-        self.n_calls = n_calls
-        self.n_initial_points = n_initial_points
         self.est_params = est_params
-        self.bo_params = bo_params
+        self.n_trials = n_trials
+        self.ht_params = ht_params
         self.n_bootstrap = n_bootstrap
 
         # Branching attributes
@@ -213,96 +72,126 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Training attributes
         self.task = None
         self.scaled = None
-        self._bo = {"base_estimator": "GP", "cv": 1, "callback": [], "kwargs": {}}
+        self._n_trials = {}
+        self._n_bootstrap = {}
+        self._ht_params = {"distributions": {}, "cv": 1, "plot": False, "tags": {}}
         self._errors = CustomDict()
 
-    @staticmethod
-    def _prepare_metric(metric, **kwargs):
-        """Check the validity of the metric."""
-        metric_params = {}
-        for key, value in kwargs.items():
-            if isinstance(value, SEQUENCE):
-                if len(value) != len(metric):
-                    raise ValueError(
-                        f"Invalid value for the {key} parameter. Its length "
-                        "should be equal to the number of metrics, got "
-                        f"len(metric)={len(metric)} and len({key})={len(value)}."
-                    )
-            else:
-                metric_params[key] = [value for _ in metric]
+    def _check_param(self, param: str, value: Any) -> dict:
+        """Check the validity of one parameter.
 
-        metric_dict = CustomDict()
-        for args in zip(metric, *metric_params.values()):
-            scorer = get_custom_scorer(*args)
-            metric_dict[scorer.name] = scorer
+        Parameters accept three formats:
 
-        return metric_dict
+        - dict: Each key is the name of a model, and the value applies
+          only to that model.
+        - sequence: The N-th element applies to the N-th model. Has to
+          have the same length as the models.
+        - value: Same value applies to all models.
+
+        Parameters
+        ----------
+        param: str
+            Name of the parameter to check.
+
+        value: Any
+            Value of the parameter.
+
+        Returns
+        -------
+        dict
+            Parameter with model names as key.
+
+        """
+        if isinstance(value, SEQUENCE):
+            if len(value) != len(self._models):
+                raise ValueError(
+                    f"Invalid value for the {param} parameter. The length "
+                    "should be equal to the number of models, got len"
+                    f"(models)={len(self._models)} and len({param})={len(value)}."
+                )
+            return {k: v for k, v in zip(self._models, value)}
+        elif not isinstance(value, dict):
+            return {k: value for k in self._models}
+
+        return value
 
     def _prepare_parameters(self):
-        """Check the validity of the input parameters."""
-        if self.scaled is None and not is_multidim(self.X) and not is_sparse(self.X):
+        """Check the validity of the input parameters.
+
+        Creates the models, assigns a metric, prepares the estimator's
+        parameters and the parameters for hyperparameter tuning.
+
+        """
+        if self.scaled is None and not is_sparse(self.X):
             self.scaled = check_scaling(self.X)
 
         # Create model subclasses ================================== >>
 
         # If left to default, select all predefined models per task
         if self._models is None:
-            if self.goal == "class":
-                models = [m(self) for m in MODELS.values() if "class" in m.goal]
-            else:
-                models = [m(self) for m in MODELS.values() if "reg" in m.goal]
+            self._models = CustomDict(
+                {k: v(self) for k, v in MODELS.items() if self.goal in v._estimators}
+            )
         else:
-            models = []
-            for m in lst(self._models):
-                if isinstance(m, str):
-                    if is_multidim(self.X):
-                        raise ValueError(
-                            "Multidimensional datasets are not supported by ATOM's "
-                            "predefined models. Refer to the documentation for the "
-                            "use of custom models."
-                        )
+            inc, exc = [], []
+            for model in lst(self._models):
+                if isinstance(model, str):
+                    for m in model.split("+"):
+                        if m.startswith("!"):
+                            exc.append(m[1:])
+                        else:
+                            names = [n for n in MODELS if m.lower().startswith(n.lower())]
+                            if not names:
+                                raise ValueError(
+                                    f"Invalid value for the models parameter, got {m}. "
+                                    f"Choose from: {', '.join(MODELS)}."
+                                )
+                            else:
+                                acronym = names[0]
 
-                    # Get the acronym from the called model
-                    names = [n for n in MODELS if m.lower().startswith(n.lower())]
-                    if not names:
-                        raise ValueError(
-                            f"Unknown model: {m}. Choose from: {', '.join(MODELS)}."
-                        )
-                    else:
-                        acronym = names[0]
+                            # Check if libraries for non-sklearn models are available
+                            libraries = {
+                                "XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"
+                            }
+                            if acronym in libraries and not find_spec(libraries[acronym]):
+                                raise ModuleNotFoundError(
+                                    f"Unable to import the {libraries[acronym]} package. "
+                                    f"Install it using: pip install {libraries[acronym]}"
+                                )
 
-                    # Check if packages for non-sklearn models are available
-                    packages = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
-                    if acronym in packages and not find_spec(packages[acronym]):
-                        raise ModuleNotFoundError(
-                            f"Unable to import the {packages[acronym]} package. "
-                            f"Install it using: pip install {packages[acronym]}"
-                        )
+                            inc.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 
-                    models.append(MODELS[acronym](self, acronym + m[len(acronym):]))
-
-                    # Check for regression/classification-only models
-                    if self.goal == "class" and self.goal not in models[-1].goal:
-                        raise ValueError(
-                            f"The {acronym} model can't perform classification tasks!"
-                        )
-                    elif self.goal == "reg" and self.goal not in models[-1].goal:
-                        raise ValueError(
-                            f"The {acronym} model can't perform regression tasks!"
-                        )
+                            # Check for regression/classification-only models
+                            if self.goal not in inc[-1]._estimators:
+                                raise ValueError(
+                                    f"The {acronym} model is not "
+                                    f"available for {self.task} tasks!"
+                                )
 
                 else:  # Model is a custom estimator
-                    models.append(CustomModel(self, estimator=m))
+                    inc.append(CustomModel(self, estimator=model))
 
-        names = [m.name for m in models]
-        if len(set(names)) != len(names):
-            raise ValueError(
-                "Invalid value for the models parameter. It seems there are "
-                "duplicate models. Add a tag to a model's acronym to train two "
-                "different models with the same estimator, e.g. models=['LR1', 'LR2']."
-            )
-
-        self._models = CustomDict({name: model for name, model in zip(names, models)})
+            if inc and exc:
+                raise ValueError(
+                    "Invalid value for the models parameter. You can either "
+                    "include or exclude models, not combinations of these."
+                )
+            elif inc:
+                names = [m.name for m in inc]
+                if len(set(names)) != len(names):
+                    raise ValueError(
+                        "Invalid value for the models parameter. There are duplicate "
+                        "models. Add a tag to a model's acronym to train two different "
+                        "models with the same estimator, e.g. models=['LR1', 'LR2']."
+                    )
+                self._models = CustomDict({n: m for n, m in zip(names, inc)})
+            elif exc:
+                self._models = CustomDict(
+                    {
+                        k: v(self) for k, v in MODELS.items()
+                        if self.goal in v._estimators and v.acronym not in exc
+                    }
+                )
 
         # Define scorer ============================================ >>
 
@@ -317,47 +206,20 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Ignore if it's the same scorer as previous call
         elif not isinstance(self._metric, CustomDict):
-            self._metric = self._prepare_metric(
-                metric=lst(self._metric),
-                greater_is_better=self.greater_is_better,
-                needs_proba=self.needs_proba,
-                needs_threshold=self.needs_threshold,
+            metrics = []
+            for m in lst(self._metric):
+                if isinstance(m, str):
+                    metrics.extend(m.split("+"))
+                else:
+                    metrics.append(m)
+
+            self._metric = CustomDict(
+                {(s := get_custom_scorer(m)).name: s for m in metrics}
             )
-
-        # Check validity sequential parameters ===================== >>
-
-        for param in ("n_calls", "n_initial_points", "n_bootstrap"):
-            p = lst(getattr(self, param))
-            if len(p) != 1 and len(p) != len(self._models):
-                raise ValueError(
-                    f"Invalid value for the {param} parameter. Length "
-                    "should be equal to the number of models, got len"
-                    f"(models)={len(self._models)} and len({param})={len(p)}."
-                )
-
-            for i, model in enumerate(self._models.values()):
-                value = p[i % len(p)]
-                if param == "n_calls" and (value == 1 or value < 0):
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=2, got {value}."
-                    )
-                elif param == "n_initial_points" and value <= 0:
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=1, got {value}."
-                    )
-                elif param == "n_bootstrap" and value < 0:
-                    raise ValueError(
-                        f"Invalid value for the {param} parameter. "
-                        f"Value should be >=0, got {value}."
-                    )
-
-                setattr(model, "_" + param, value)
 
         # Prepare est_params ======================================= >>
 
-        if self.est_params:
+        if self.est_params is not None:
             for name, model in self._models.items():
                 params = {}
                 for key, value in self.est_params.items():
@@ -374,120 +236,77 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     else:
                         model._est_params[key] = value
 
-        # Prepare bo params ======================================== >>
+        # Prepare ht parameters ==================================== >>
 
-        base_estimators = ["GP", "RF", "ET", "GBRT"]
-        exc = ["max_time", "delta_x", "delta_y", "plot", "early_stopping", "dimensions"]
-
-        if self.bo_params:
-            if self.bo_params.get("base_estimator"):
-                self._bo["base_estimator"] = self.bo_params["base_estimator"]
-                if isinstance(self._bo["base_estimator"], str):
-                    if self._bo["base_estimator"].upper() not in base_estimators:
-                        raise ValueError(
-                            "Invalid value for the base_estimator parameter, "
-                            f"got {self.bo_params['base_estimator']}. Choose "
-                            f"from: {', '.join(base_estimators)}."
-                        )
-
-            if self.bo_params.get("callback"):
-                self._bo["callback"].extend(lst(self.bo_params["callback"]))
-
-            if "max_time" in self.bo_params:
-                if self.bo_params["max_time"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the max_time parameter. Value "
-                        f"should be >0, got {self.bo_params['max_time']}."
-                    )
-                max_time_callback = DeadlineStopper(self.bo_params["max_time"])
-                self._bo["callback"].append(max_time_callback)
-
-            if "delta_x" in self.bo_params:
-                if self.bo_params["delta_x"] < 0:
-                    raise ValueError(
-                        "Invalid value for the delta_x parameter. "
-                        f"Value should be >=0, got {self.bo_params['delta_x']}."
-                    )
-                delta_x_callback = DeltaXStopper(self.bo_params["delta_x"])
-                self._bo["callback"].append(delta_x_callback)
-
-            if "delta_y" in self.bo_params:
-                if self.bo_params["delta_y"] < 0:
-                    raise ValueError(
-                        "Invalid value for the delta_y parameter. Value "
-                        f"should be >=0, got {self.bo_params['delta_y']}."
-                    )
-                delta_y_callback = DeltaYStopper(self.bo_params["delta_y"], n_best=5)
-                self._bo["callback"].append(delta_y_callback)
-
-            if self.bo_params.get("plot"):
-                self._bo["callback"].append(PlotCallback(self))
-
-            if "cv" in self.bo_params:
-                if self.bo_params["cv"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the cv parameter. Value "
-                        f"should be >=0, got {self.bo_params['cv']}."
-                    )
-                self._bo["cv"] = self.bo_params["cv"]
-
-            if "early_stopping" in self.bo_params:
-                if self.bo_params["early_stopping"] <= 0:
-                    raise ValueError(
-                        "Invalid value for the early_stopping parameter. Value "
-                        f"should be >=0, got {self.bo_params['early_stopping']}."
-                    )
-                for model in self._models.values():
-                    if hasattr(model, "custom_fit"):
-                        model._early_stopping = self.bo_params["early_stopping"]
-
-            # Add hyperparameter dimensions to every model subclass
-            if self.bo_params.get("dimensions"):
-                for name, model in self._models.items():
-                    # If not dict, the dimensions are for all models
-                    if not isinstance(self.bo_params["dimensions"], dict):
-                        model._dimensions = lst(self.bo_params["dimensions"])
+        self._n_trials = self._check_param("n_trials", self.n_trials)
+        self._n_bootstrap = self._check_param("n_bootstrap", self.n_bootstrap)
+        self._ht_params.update(self.ht_params or {})
+        for key, value in self._ht_params.items():
+            if key in ("cv", "plot"):
+                self._ht_params[key] = self._check_param(key, value)
+            elif key == "tags":
+                self._ht_params[key] = {name: {} for name in self._models}
+                for name in self._models:
+                    for k, v in self._check_param(key, value).items():
+                        if k.lower() == name.lower() or k.lower() == "all":
+                            self._ht_params[key][name].update(v)
+                        elif k not in self._models:
+                            self._ht_params[key][name][k] = v
+            elif key == "distributions":
+                self._ht_params[key] = {name: {} for name in self._models}
+                for name in self._models:
+                    if not isinstance(value, dict):
+                        # If sequence, it applies to all models
+                        self._ht_params[key][name] = {k: None for k in lst(value)}
                     else:
-                        # Dimensions for every specific model
-                        for key, value in self.bo_params["dimensions"].items():
-                            if key.lower() == name.lower() or key.lower() == "all":
-                                model._dimensions.extend(list(lst(value)))
-
-            # The remaining bo_params are added as kwargs to the optimizer
-            self._bo["kwargs"] = {
-                k: v for k, v in self.bo_params.items()
-                if k not in list(self._bo) + exc
-            }
+                        # Either one distribution for all or per model
+                        for k, v in value.items():
+                            if k.lower() == name.lower() or k.lower() == "all":
+                                if isinstance(v, dict):
+                                    self._ht_params[key][name].update(v)
+                                else:
+                                    self._ht_params[key][name].update(
+                                        {param: None for param in lst(v)}
+                                    )
+                            elif k not in self._models:
+                                self._ht_params[key][name][k] = v
+            elif key in {**sign(create_study), **sign(Study.optimize)}:
+                self._ht_params[key] = {k: value for k in self._models}
+            else:
+                raise ValueError(
+                    f"Invalid value for the ht_params parameter. Key {key} is invalid."
+                )
 
     def _core_iteration(self):
-        """Fit and evaluate the models in the pipeline."""
-        t_init = datetime.now()  # Measure the time the whole pipeline takes
+        """Fit and evaluate the models.
 
-        self.log("\nTraining " + "=" * 25 + " >>", 1)
-        if not self.__class__.__name__.startswith("SuccessiveHalving"):
-            self.log(f"Models: {', '.join(lst(self.models))}", 1)
-        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
+        For every model, runs hyperparameter tuning, fitting and
+        bootstrap wrapped in a try-except block. Also displays final
+        results.
+
+        """
+        t = dt.now()  # Measure the time the whole pipeline takes
 
         to_remove = []
         for i, m in enumerate(self._models.values()):
-            model_time = datetime.now()
-
             try:  # If an error occurs, skip the model
                 if self.experiment:  # Start mlflow run
                     m._run = mlflow.start_run(run_name=m.name)
 
-                # If it has predefined or custom dimensions, run the BO
-                if (m._dimensions or hasattr(m, "get_dimensions")) and m._n_calls > 0:
-                    m.bayesian_optimization()
+                self.log("\n", 1)  # Separate output from header
+
+                # If it has predefined or custom dimensions, run the ht
+                m._ht = {k: v[m._group] for k, v in self._ht_params.items()}
+                if self._n_trials[m._group] > 0:
+                    if m._ht["distributions"] or hasattr(m, "_get_distributions"):
+                        m.hyperparameter_tuning(self._n_trials[m._group])
 
                 m.fit()
 
-                if m._n_bootstrap:
-                    m.bootstrap()
+                if self._n_bootstrap[m._group]:
+                    m.bootstrapping(self._n_bootstrap[m._group])
 
-                # Get the total time spend on this model
-                setattr(m, "time", time_to_str(model_time))
-                self.log("-" * 49 + f"\nTotal time: {m.time}", 1)
+                self.log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
 
             except Exception as ex:
                 self.log(
@@ -495,7 +314,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     f"{m.name} model. Removing model from pipeline. ", 1
                 )
                 self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
-                self.log(f"{type(ex).__name__}: {ex}", 1)
+                self.log(f"{ex.__class__.__name__}: {ex}", 1)
 
                 # Append exception to errors dictionary
                 self._errors[m.name] = ex
@@ -504,14 +323,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 # Cannot remove immediately to maintain the iteration order
                 to_remove.append(m.name)
 
-                if self.bo_params and self.bo_params.get("plot"):
-                    PlotCallback.c += 1  # Next model
+                if self._ht_params["plot"][m._group]:
                     plt.close()  # Close the crashed plot
-            finally:
+
                 if self.experiment:
                     mlflow.end_run()
 
-        delete(self, to_remove)  # Remove faulty models
+        self._delete_models(to_remove)  # Remove faulty models
 
         # If there's only one model and it failed, raise that exception
         # If multiple models and all failed, raise RuntimeError
@@ -525,17 +343,24 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 )
 
         self.log(f"\n\nFinal results {'=' * 20} >>", 1)
-        self.log(f"Duration: {time_to_str(t_init)}\n{'-' * 37}", 1)
+        self.log(f"Total time: {time_to_str((dt.now() - t).total_seconds())}", 1)
+        self.log("-" * 37, 1)
 
-        # Get max length of the model names
-        maxlen = max([len(m.fullname) for m in self._models.values()])
+        maxlen = 0
+        names, scores = [], []
+        for model in self._models.values():
+            # Add the model name for repeated model classes
+            select = filter(lambda x: x.acronym == model.acronym, self._models.values())
+            if len(list(select)) > 1:
+                names.append(f"{model._fullname} ({model.name})")
+            else:
+                names.append(model._fullname)
+            scores.append(get_best_score(model))
+            maxlen = max(maxlen, len(names[-1]))
 
-        # Get best score of all the models
-        best_score = max([get_best_score(m) for m in self._models.values()])
-
-        for m in self._models.values():
-            out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"
-            if get_best_score(m) == best_score and len(self._models) > 1:
+        for i, m in enumerate(self._models.values()):
+            out = f"{names[i]:{maxlen}s} --> {m._final_output()}"
+            if scores[i] == max(scores) and len(self._models) > 1:
                 out += " !"
 
             self.log(out, 1)

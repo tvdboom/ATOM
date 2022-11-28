@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -30,9 +30,11 @@ def classifiers():
     return [
         ("lda", LinearDiscriminantAnalysis().fit(X_bin, y_bin)),
         ("placeholder1", "drop"),
-        ("pl", Pipeline(
-            [("scaler", StandardScaler()), ("et", ExtraTreesClassifier())]
-        ).fit(X_bin, y_bin)),
+        (
+            "pl", Pipeline(
+                [("scaler", StandardScaler()), ("et", ExtraTreesClassifier())]
+            ).fit(X_bin, y_bin)
+        ),
     ]
 
 
@@ -79,21 +81,21 @@ def test_voting_initialized_fitted(classifiers):
 def test_voting_multilabel(classifiers):
     """Assert that an error is raised for multilabel targets."""
     vote = VotingClassifier(estimators=classifiers)
-    with pytest.raises(NotImplementedError, match=r".*Multilabel.*"):
+    with pytest.raises(NotImplementedError, match=".*Multilabel.*"):
         vote.fit(X_bin, np.array([[0, 1], [1, 0]]))
 
 
 def test_voting_invalid_type(classifiers):
     """Assert that an error is raised when voting type is invalid."""
     vote = VotingClassifier(estimators=classifiers, voting="invalid")
-    with pytest.raises(ValueError, match=r".*must be 'soft'.*"):
+    with pytest.raises(ValueError, match=".*must be 'soft'.*"):
         vote.fit(X_bin, y_bin)
 
 
 def test_voting_invalid_weights(classifiers):
     """Assert that an error is raised when weights have invalid length."""
     vote = VotingClassifier(estimators=classifiers, weights=[0, 1])
-    with pytest.raises(ValueError, match=r".*estimators and weights.*"):
+    with pytest.raises(ValueError, match=".*estimators and weights.*"):
         vote.fit(X_bin, y_bin)
 
 

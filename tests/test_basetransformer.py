@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """Automated Tool for Optimized Modelling (ATOM)
 
@@ -9,12 +9,15 @@ Description: Unit tests for basetransformer.py
 
 import glob
 import multiprocessing
+import os
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
+import sklearnex
+from sklearn.naive_bayes import GaussianNB
+from sklearnex.svm import SVC
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.basetransformer import BaseTransformer
@@ -22,8 +25,8 @@ from atom.training import DirectClassifier
 from atom.utils import merge
 
 from .conftest import (
-    X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test, bin_train,
-    mnist, y10, y_bin, y_bin_array, y_idx,
+    X10, X_bin, X_bin_array, X_idx, X_sparse, X_text, bin_test, bin_train, y10,
+    y_bin, y_bin_array, y_idx,
 )
 
 
@@ -38,7 +41,7 @@ def test_n_jobs_maximum_cores():
 @pytest.mark.parametrize("n_jobs", [0, -1000])
 def test_n_jobs_invalid(n_jobs):
     """Assert that an error is raised when n_jobs is invalid."""
-    with pytest.raises(ValueError, match=r".*n_jobs parameter.*"):
+    with pytest.raises(ValueError, match=".*n_jobs parameter.*"):
         BaseTransformer(n_jobs=n_jobs)
 
 
@@ -51,10 +54,40 @@ def test_negative_n_jobs():
     assert base.n_jobs == multiprocessing.cpu_count() - 1
 
 
+def test_device_parameter():
+    """Assert that the device is set correctly."""
+    BaseTransformer(device="gpu")
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
+
+
+def test_engine_parameter_sklearnex():
+    """Assert that sklearnex offloads to the right device."""
+    BaseTransformer(device="gpu", engine="sklearnex")
+    assert sklearnex.get_config()["target_offload"] == "gpu"
+
+
+def test_engine_parameter_cuml_with_cpu():
+    """Assert that an error is raised when device='cpu' and engine='cuml'."""
+    with pytest.raises(ValueError, match=".*only supports sklearn.*"):
+        BaseTransformer(device="cpu", engine="cuml")
+
+
+def test_engine_parameter_no_cuml():
+    """Assert that an error is raised when cuml is not installed."""
+    with pytest.raises(ModuleNotFoundError, match=".*Failed to import cuml.*"):
+        BaseTransformer(device="gpu", engine="cuml")
+
+
+def test_engine_parameter_invalid():
+    """Assert that an error is raised when engine is invalid."""
+    with pytest.raises(ValueError, match=".*Choose from : sklearn.*"):
+        BaseTransformer(engine="invalid")
+
+
 @pytest.mark.parametrize("verbose", [-2, 3])
 def test_verbose_parameter(verbose):
     """Assert that the verbose parameter is in correct range."""
-    with pytest.raises(ValueError, match=r".*verbose parameter.*"):
+    with pytest.raises(ValueError, match=".*verbose parameter.*"):
         BaseTransformer(verbose=verbose)
 
 
@@ -69,7 +102,7 @@ def test_warnings_parameter_bool():
 
 def test_warnings_parameter_invalid_str():
     """Assert that an error is raised for an invalid string for warnings."""
-    with pytest.raises(ValueError, match=r".*warnings parameter.*"):
+    with pytest.raises(ValueError, match=".*warnings parameter.*"):
         BaseTransformer(warnings="test")
 
 
@@ -79,7 +112,7 @@ def test_warnings_parameter_str():
     assert base.warnings == "always"
 
 
-@patch("atom.utils.logging.getLogger")
+@patch("atom.utils.getLogger")
 def test_logger_creator(cls):
     """Assert that the logger is created correctly."""
     BaseTransformer(logger=None)
@@ -89,11 +122,11 @@ def test_logger_creator(cls):
     cls.assert_called_once()
 
 
-@patch("atom.utils.logging.getLogger")
+@patch("atom.utils.getLogger")
 def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
     atom = ATOMClassifier(X_bin, y_bin, logger="log")
-    pytest.raises(ValueError, atom.run, ["LR", "LDA"], n_calls=-1)
+    pytest.raises(ValueError, atom.run, "LR", est_params={"test": 2})
     cls.return_value.exception.assert_called()
 
 
@@ -105,35 +138,51 @@ def test_experiment_creation(mlflow):
     mlflow.assert_called_once()
 
 
-def test_gpu_setter():
-    """Assert that an error is raised for an invalid gpu value."""
-    with pytest.raises(ValueError, match=r".*gpu parameter.*"):
-        BaseTransformer(gpu="invalid")
-
-
 def test_random_state_setter():
     """Assert that an error is raised for a negative random_state."""
-    with pytest.raises(ValueError, match=r".*random_state parameter.*"):
+    with pytest.raises(ValueError, match=".*random_state parameter.*"):
         BaseTransformer(random_state=-1)
 
 
-# Test _get_gpu ==================================================== >>
-
-def test_gpu_force():
-    """Assert that an error is raised when GPU fails."""
-    atom = ATOMClassifier(X10, y10, gpu="force", random_state=1)
-    with pytest.raises(ModuleNotFoundError, match=r".*cuml is not installed.*"):
-        atom.feature_selection("pca")
+def test_device_id_no_value():
+    """Assert that the device id can be left empty."""
+    base = BaseTransformer(device="gpu")
+    assert base._device_id == 0
 
 
-def test_gpu_fails():
-    """Assert that GPU is skipped when fails."""
-    atom = ATOMClassifier(X10, y10, gpu=True, random_state=1)
-    atom.feature_selection("pca")
-    assert atom.pca.__module__.startswith("sklearn")
+def test_device_id_int():
+    """Assert that the device id can be set."""
+    base = BaseTransformer(device="gpu:2")
+    assert base._device_id == 2
+
+
+def test_device_id_invalid():
+    """Assert that an error is raised when the device id is invalid."""
+    with pytest.raises(ValueError, match=".*Use a single integer.*"):
+        BaseTransformer(device="gpu:2,3")
+
+
+# Test _get_est_class ============================================== >>
+
+def test_get_est_class_from_engine():
+    """Assert that the class can be retrieved from an engine."""
+    base = BaseTransformer(device="cpu", engine="sklearnex")
+    assert base._get_est_class("SVC", "svm") == SVC
+
+
+def test_get_est_class_from_default():
+    """Assert that the class is retrieved from sklearn when import fails."""
+    base = BaseTransformer(device="cpu", engine="sklearnex")
+    assert base._get_est_class("GaussianNB", "naive_bayes") == GaussianNB
 
 
 # Test _prepare_input ============================================== >>
+
+def test_input_X_and_y_None():
+    """Assert that an error is raised when both X and y are None."""
+    with pytest.raises(ValueError, match=".*both None.*"):
+        BaseTransformer._prepare_input()
+
 
 def test_input_data_in_atom():
     """Assert that the data does not change once in an atom pipeline."""
@@ -147,15 +196,8 @@ def test_input_data_in_training():
     train = bin_train.copy()
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(train, bin_test)
-    train.iloc[3, 2] = 99  # Change an item of the original variable
+    train.iat[3, 2] = 99  # Change an item of the original variable
     assert 99 not in trainer.dataset  # Is unchanged in the pipeline
-
-
-def test_multidimensional_X():
-    """Assert that more than two-dimensional datasets are handled correctly."""
-    atom = ATOMClassifier(*mnist, random_state=1)
-    assert atom.X.columns == ["multidim feature"]
-    assert atom.X.iloc[0, 0].shape == (28, 28, 1)
 
 
 def test_text_to_corpus():
@@ -197,20 +239,20 @@ def test_to_pandas():
 def test_y_is1dimensional():
     """Assert that an error is raised when y is not 1-dimensional."""
     y = [[0, 0], [1, 1], [0, 1], [1, 0], [0, 0]]
-    with pytest.raises(ValueError, match=r".*should be one-dimensional.*"):
+    with pytest.raises(ValueError, match=".*should be one-dimensional.*"):
         BaseTransformer._prepare_input(X10[:5], y)
 
 
 def test_equal_length():
     """Assert that an error is raised when X and y don't have equal size."""
-    with pytest.raises(ValueError, match=r".*number of rows.*"):
+    with pytest.raises(ValueError, match=".*number of rows.*"):
         BaseTransformer._prepare_input(X10, [0, 1, 1])
 
 
 def test_equal_index():
     """Assert that an error is raised when X and y don't have same indices."""
     y = pd.Series(y_bin_array, index=range(10, len(y_bin_array) + 10))
-    with pytest.raises(ValueError, match=r".*same indices.*"):
+    with pytest.raises(ValueError, match=".*same indices.*"):
         BaseTransformer._prepare_input(X_bin, y)
 
 
@@ -222,13 +264,13 @@ def test_target_is_string():
 
 def test_target_not_in_dataset():
     """Assert that the target column given by y is in X."""
-    with pytest.raises(ValueError, match=r".*not found in X.*"):
+    with pytest.raises(ValueError, match=".*not found in X.*"):
         BaseTransformer._prepare_input(X_bin, "X")
 
 
 def test_X_is_None_with_str():
     """Assert that an error is raised when X is None and y is a string."""
-    with pytest.raises(ValueError, match=r".*can't be None when y is a str.*"):
+    with pytest.raises(ValueError, match=".*can't be None when y is a str.*"):
         BaseTransformer._prepare_input(y="test")
 
 
@@ -240,7 +282,7 @@ def test_target_is_int():
 
 def test_X_is_None_with_int():
     """Assert that an error is raised when X is None and y is an int."""
-    with pytest.raises(ValueError, match=r".*can't be None when y is a int.*"):
+    with pytest.raises(ValueError, match=".*can't be None when y is an int.*"):
         BaseTransformer._prepare_input(y=1)
 
 
@@ -266,7 +308,7 @@ def test_index_is_False():
 
 def test_index_is_int_invalid():
     """Assert that an error is raised when the index is an invalid int."""
-    with pytest.raises(ValueError, match=r".*is out of range.*"):
+    with pytest.raises(ValueError, match=".*is out of range.*"):
         ATOMClassifier(X_bin, y_bin, index=1000, random_state=1)
 
 
@@ -278,7 +320,7 @@ def test_index_is_int():
 
 def test_index_is_str_invalid():
     """Assert that an error is raised when the index is an invalid str."""
-    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+    with pytest.raises(ValueError, match=".*not found in the dataset.*"):
         ATOMClassifier(X_bin, y_bin, index="invalid", random_state=1)
 
 
@@ -290,13 +332,13 @@ def test_index_is_str():
 
 def test_index_is_target():
     """Assert that an error is raised when the index is the target column."""
-    with pytest.raises(ValueError, match=r".*same as the target column.*"):
+    with pytest.raises(ValueError, match=".*same as the target column.*"):
         ATOMRegressor(X_bin, index="worst fractal dimension", random_state=1)
 
 
 def test_index_is_sequence_no_data_sets_invalid_length():
     """Assert that an error is raised when len(index) != len(data)."""
-    with pytest.raises(ValueError, match=r".*Length of index.*"):
+    with pytest.raises(ValueError, match=".*Length of index.*"):
         ATOMClassifier(X_bin, y_bin, index=[1, 2, 3], random_state=1)
 
 
@@ -304,12 +346,12 @@ def test_index_is_sequence_no_data_sets():
     """Assert that a sequence is set as index when provided."""
     index = [f"index_{i}" for i in range(len(X_bin))]
     atom = ATOMClassifier(X_bin, y_bin, index=index, random_state=1)
-    assert atom.dataset.index[0] == "index_190"
+    assert atom.dataset.index[0] == "index_39"
 
 
 def test_index_is_sequence_has_data_sets_invalid_length():
     """Assert that an error is raised when len(index) != len(data)."""
-    with pytest.raises(ValueError, match=r".*Length of index.*"):
+    with pytest.raises(ValueError, match=".*Length of index.*"):
         ATOMClassifier(bin_train, bin_test, index=[1, 2, 3], random_state=1)
 
 
@@ -317,13 +359,13 @@ def test_index_is_sequence_has_data_sets():
     """Assert that a sequence is set as index when provided."""
     index = [f"index_{i}" for i in range(len(bin_train) + 2 * len(bin_test))]
     atom = ATOMClassifier(bin_train, bin_test, bin_test, index=index, random_state=1)
-    assert atom.dataset.index[0] == "index_174"
-    assert atom.holdout.index[0] == "index_661"
+    assert atom.dataset.index[0] == "index_68"
+    assert atom.holdout.index[0] == "index_667"
 
 
 # Test _get_stratify_columns======================================== >>
 
-@pytest.mark.parametrize("stratify", [False, True, -1, "target", [-1]])
+@pytest.mark.parametrize("stratify", [True, -1, "target", [-1]])
 def test_stratify_options(stratify):
     """Assert that the data can be stratified among data sets."""
     atom = ATOMClassifier(X_bin, y_bin, stratify=stratify, random_state=1)
@@ -332,15 +374,23 @@ def test_stratify_options(stratify):
     np.testing.assert_almost_equal(train_balance, test_balance, decimal=2)
 
 
+def test_stratify_is_False():
+    """Assert that the data is not stratified when stratify=False."""
+    atom = ATOMClassifier(X_bin, y_bin, stratify=False, random_state=1)
+    train_balance = atom.classes["train"][0] / atom.classes["train"][1]
+    test_balance = atom.classes["test"][0] / atom.classes["test"][1]
+    assert abs(train_balance - test_balance) > 0.05
+
+
 def test_stratify_invalid_column_int():
     """Assert that an error is raised when the value is invalid."""
-    with pytest.raises(ValueError, match=r".*out of range for a dataset.*"):
+    with pytest.raises(ValueError, match=".*out of range for a dataset.*"):
         ATOMClassifier(X_bin, y_bin, stratify=100, random_state=1)
 
 
 def test_stratify_invalid_column_str():
     """Assert that an error is raised when the value is invalid."""
-    with pytest.raises(ValueError, match=r".*not found in the dataset.*"):
+    with pytest.raises(ValueError, match=".*not found in the dataset.*"):
         ATOMClassifier(X_bin, y_bin, stratify="invalid", random_state=1)
 
 
@@ -348,7 +398,7 @@ def test_stratify_invalid_column_str():
 
 def test_empty_data_arrays():
     """Assert that an error is raised when no data is provided."""
-    with pytest.raises(ValueError, match=r".*data arrays are empty.*"):
+    with pytest.raises(ValueError, match=".*data arrays are empty.*"):
         ATOMClassifier(n_rows=100, random_state=1)
 
 
@@ -376,7 +426,7 @@ def test_input_is_X_with_parameter_y():
 
 def test_input_invalid_holdout():
     """Assert that an error is raised when holdout is invalid."""
-    with pytest.raises(ValueError, match=r".*holdout_size parameter.*"):
+    with pytest.raises(ValueError, match=".*holdout_size parameter.*"):
         ATOMClassifier(X_bin, test_size=0.3, holdout_size=0.8)
 
 
@@ -394,7 +444,7 @@ def test_input_is_train_test_with_holdout(shuffle):
     assert isinstance(atom.holdout, pd.DataFrame)
 
 
-@pytest.mark.parametrize("n_rows", [0.7, 0.8, 1])
+@pytest.mark.parametrize("n_rows", [0.7, 1])
 def test_n_rows_X_y_frac(n_rows):
     """Assert that n_rows<=1 work for input X and X, y."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=n_rows, random_state=1)
@@ -409,26 +459,26 @@ def test_n_rows_X_y_int():
 
 def test_n_rows_too_large():
     """Assert that an error is raised when n_rows>len(data)."""
-    with pytest.raises(ValueError, match=r".*n_rows parameter.*"):
+    with pytest.raises(ValueError, match=".*n_rows parameter.*"):
         ATOMClassifier(X_bin, y_bin, n_rows=1e6, random_state=1)
 
 
 def test_no_shuffle_X_y():
     """Assert that the order is kept when shuffle=False."""
-    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, n_rows=30)
-    assert_frame_equal(atom.X, X_bin.iloc[:30, :])
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False)
+    pd.testing.assert_frame_equal(atom.X, X_bin)
 
 
 def test_length_dataset():
     """Assert that the dataset is always len>=2."""
-    with pytest.raises(ValueError, match=r".*n_rows parameter.*"):
+    with pytest.raises(ValueError, match=".*n_rows parameter.*"):
         ATOMClassifier(X10, y10, n_rows=0.01, random_state=1)
 
 
 @pytest.mark.parametrize("test_size", [-2, 0, 1000])
 def test_test_size_parameter(test_size):
     """Assert that the test_size parameter is in correct range."""
-    with pytest.raises(ValueError, match=r".*test_size parameter.*"):
+    with pytest.raises(ValueError, match=".*test_size parameter.*"):
         ATOMClassifier(X_bin, test_size=test_size, random_state=1)
 
 
@@ -530,7 +580,7 @@ def test_6_data_provided():
 def test_invalid_input():
     """Assert that an error is raised when input arrays are invalid."""
     trainer = DirectClassifier("LR", random_state=1)
-    with pytest.raises(ValueError, match=r".*Invalid data arrays.*"):
+    with pytest.raises(ValueError, match=".*Invalid data arrays.*"):
         trainer.run(X_bin, y_bin, X_bin, y_bin, y_bin, X_bin, X_bin)
 
 
@@ -544,12 +594,16 @@ def test_n_rows_train_test_frac():
 def test_no_shuffle_train_test():
     """Assert that the order is kept when shuffle=False."""
     atom = ATOMClassifier(bin_train, bin_test, shuffle=False)
-    assert_frame_equal(atom.train, bin_train.reset_index(drop=True), check_dtype=False)
+    pd.testing.assert_frame_equal(
+        left=atom.train,
+        right=bin_train.reset_index(drop=True),
+        check_dtype=False,
+    )
 
 
 def test_n_rows_train_test_int():
     """Assert that an error is raised when n_rows>1 for input with train and test."""
-    with pytest.raises(ValueError, match=r".*has to be <1 when a train and test.*"):
+    with pytest.raises(ValueError, match=".*must be <1 when the train and test.*"):
         ATOMClassifier(bin_train, bin_test, n_rows=100, random_state=1)
 
 
@@ -574,13 +628,13 @@ def test_reset_index():
 
 def test_unequal_columns_train_test():
     """Assert that an error is raised when train and test have different columns."""
-    with pytest.raises(ValueError, match=r".*train and test set do not have.*"):
+    with pytest.raises(ValueError, match=".*train and test set do not have.*"):
         ATOMClassifier(X10, bin_test, random_state=1)
 
 
 def test_unequal_columns_holdout():
     """Assert that an error is raised when holdout has different columns."""
-    with pytest.raises(ValueError, match=r".*holdout set does not have.*"):
+    with pytest.raises(ValueError, match=".*holdout set does not have.*"):
         ATOMClassifier(bin_train, bin_test, X10, random_state=1)
 
 
@@ -592,7 +646,7 @@ def test_merger_to_dataset():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     df2 = atom.dataset.sort_values(by=atom.dataset.columns.tolist())
-    assert_frame_equal(
+    pd.testing.assert_frame_equal(
         left=df1.reset_index(drop=True),
         right=df2.reset_index(drop=True),
         check_dtype=False,
@@ -601,7 +655,13 @@ def test_merger_to_dataset():
 
 # Test log ========================================================= >>
 
-@patch("atom.utils.logging.getLogger")
+def test_log_invalid_severity():
+    """Assert that an error is raised when the severity is invalid."""
+    with pytest.raises(ValueError, match=".*severity parameter.*"):
+        BaseTransformer(logger="log").log("test", severity="invalid")
+
+
+@patch("atom.utils.getLogger")
 def test_log(cls):
     """Assert the log method works."""
     base = BaseTransformer(verbose=2, logger="log")
@@ -618,7 +678,7 @@ def test_file_is_saved():
     assert glob.glob("ATOMClassifier")
 
 
-@patch("atom.basetransformer.dill")
+@patch("atom.basetransformer.pickle")
 def test_save_data_false(cls):
     """Assert that the dataset is restored after saving with save_data=False"""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)

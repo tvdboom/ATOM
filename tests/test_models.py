@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -7,232 +7,131 @@ Description: Unit tests for models.py
 
 """
 
-from pickle import PickleError
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+import pandas as pd
 import pytest
-from sklearn.ensemble import RandomForestRegressor
-from skopt.space.space import Categorical, Integer
-from tensorflow.keras.layers import Conv2D, Dense, Flatten
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+from optuna.distributions import IntDistribution
+from optuna.pruners import PatientPruner
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.feature_engineering import FeatureSelector
-from atom.models import MODELS
 from atom.pipeline import Pipeline
 
-from .conftest import X_bin, X_class2, X_reg, mnist, y_bin, y_class2, y_reg
+from .conftest import X_bin, X_class, X_reg, y_bin, y_class, y_reg
 
-
-# Variables ======================================================== >>
-
-binary, multiclass, regression = [], [], []
-for m in MODELS.values():
-    if "class" in m.goal:
-        if m.acronym != "CatNB":
-            binary.append(m.acronym)  # CatNB needs a special dataset
-        if not m.acronym.startswith("Cat"):
-            multiclass.append(m.acronym)  # CatB fails with error on their side
-    if "reg" in m.goal:
-        regression.append(m.acronym)
-
-
-# Functions ======================================================= >>
-
-def neural_network():
-    """Returns a convolutional neural network."""
-
-    def create_model():
-        """Returns a convolutional neural network."""
-        model = Sequential()
-        model.add(Conv2D(64, kernel_size=3, activation="relu", input_shape=(28, 28, 1)))
-        model.add(Conv2D(64, kernel_size=3, activation="relu"))
-        model.add(Flatten())
-        model.add(Dense(10, activation="softmax"))
-        model.compile(optimizer="adam", loss="categorical_crossentropy")
-
-        return model
-
-    return KerasClassifier(create_model, epochs=1, batch_size=512, verbose=0)
-
-
-# Test custom models =============================================== >>
 
 @pytest.mark.parametrize("model", [RandomForestRegressor, RandomForestRegressor()])
 def test_custom_models(model):
     """Assert that ATOM works with custom models."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(models=model, n_calls=2, n_initial_points=1)
-    assert atom.rfr.fullname == "RandomForestRegressor"
-    assert atom.rfr.estimator.get_params()["random_state"] == 1
+    atom.run(models=model, n_trials=1)
+    assert atom.rfr._fullname == "RandomForestRegressor"
 
 
-def test_deep_learning_models():
-    """Assert that ATOM works with deep learning models."""
-    atom = ATOMClassifier(*mnist, n_rows=0.01, random_state=1)
-    pytest.raises(PermissionError, atom.clean)
-    atom.run(models=neural_network())
-    assert atom.models == "KC"  # KerasClassifier
-
-
-def test_error_for_unpickable_models():
-    """Assert that pickle errors raise an explainable exception."""
-    atom = ATOMClassifier(*mnist, n_rows=0.01, n_jobs=2, random_state=1)
-    pytest.raises(
-        PickleError,
-        atom.run,
-        models=neural_network(),
-        n_calls=5,
-        bo_params={
-            "cv": 3,
-            "dimensions": [Categorical([64, 128, 256], name="batch_size")],
-        },
-    )
-
-
-# Test predefined models =========================================== >>
-
-@pytest.mark.parametrize("model", binary)
-def test_models_binary(model):
+def test_all_models_binary():
     """Assert that all models work with binary classification."""
-    atom = ATOMClassifier(X_bin, y_bin, test_size=0.24, random_state=1)
-    atom.run(
-        models=model,
-        metric="auc",
-        n_calls=2,
-        n_initial_points=1,
-        bo_params={"base_estimator": "rf", "cv": 1},
-    )
+    atom = ATOMClassifier(X_bin, y_bin, n_rows=0.5, n_jobs=-1, random_state=1)
+    atom.run(models=["!CatNB", "!RNN"], n_trials=5)
     assert not atom.errors
-    assert hasattr(atom, model)
+    assert "CatNB" not in atom.models
 
 
-@pytest.mark.parametrize("model", multiclass)
-def test_models_multiclass(model):
+def test_all_models_multiclass():
     """Assert that all models work with multiclass classification."""
-    atom = ATOMClassifier(X_class2, y_class2, test_size=0.24, random_state=1)
-    atom.run(
-        models=model,
-        metric="f1_micro",
-        n_calls=2,
-        n_initial_points=1,
-        bo_params={"base_estimator": "rf", "cv": 1},
-    )
+    atom = ATOMClassifier(X_class, y_class, n_rows=0.5, n_jobs=-1, random_state=1)
+    atom.run(models=["!CatNB", "!RNN"], n_trials=5, ht_params={"catch": (ValueError,)})
     assert not atom.errors
-    assert hasattr(atom, model)
+    assert "CatNB" not in atom.models
 
 
-@pytest.mark.parametrize("model", regression)
-def test_models_regression(model):
+def test_all_models_regression():
     """Assert that all models work with regression."""
-    atom = ATOMRegressor(X_reg, y_reg, test_size=0.24, random_state=1)
-    atom.run(
-        models=model,
-        metric="neg_mean_absolute_error",
-        n_calls=2,
-        n_initial_points=1,
-        bo_params={"base_estimator": "gbrt", "cv": 1},
-    )
+    atom = ATOMRegressor(X_reg, y_reg, n_rows=0.5, n_jobs=-1, random_state=1)
+    atom.run(models=None, n_trials=5, ht_params={"catch": (ValueError,)})
     assert not atom.errors
-    assert hasattr(atom, model)
 
 
-def test_models_gpu_classification():
-    """Assert that GPU works for classification models with BO."""
-    atom = ATOMClassifier(X_bin, y_bin, gpu="force", random_state=1)
-    with patch.dict("sys.modules", {"cuml": MagicMock()}):
-        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
-            atom.run(models="lr", n_calls=2, n_initial_points=1)
-
-    with patch.dict("sys.modules", {"cuml.svm": MagicMock()}):
-        with pytest.raises(RuntimeError, match=r".*All models failed to run.*"):
-            atom.run(models=["lsvm", "ksvm"], n_calls=2, n_initial_points=1)
+def test_models_sklearnex_classification():
+    """Assert the sklearnex engine works for classification tasks."""
+    atom = ATOMClassifier(X_bin, y_bin, device="cpu", engine="sklearnex", random_state=1)
+    atom.run(models=["knn", "lr", "rf", "svm"], n_trials=1)
+    assert not atom.errors
 
 
-def test_models_gpu_regression():
-    """Assert that GPU works for regression models with BO."""
-    atom = ATOMRegressor(X_reg, y_reg, gpu="force", random_state=1)
-    with patch.dict("sys.modules", {"cuml": MagicMock()}):
-        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
-            atom.run(models="ridge", n_calls=2, n_initial_points=1)
-
-    with patch.dict("sys.modules", {"cuml.ensemble": MagicMock()}):
-        with pytest.raises(TypeError, match=r".*Expected sequence or array-like.*"):
-            atom.run(models="rf", n_calls=2, n_initial_points=1)
+def test_models_sklearnex_regression():
+    """Assert the sklearnex engine works for regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, device="cpu", engine="sklearnex", random_state=1)
+    atom.run(models=["en", "knn", "lasso", "ols", "rf", "ridge", "svm"], n_trials=1)
+    assert not atom.errors
 
 
-def test_Dummy():
-    """Assert that Dummy doesn't crash when strategy=quantile."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(
-        models="dummy",
-        n_calls=2,
-        n_initial_points=1,
-        est_params={"strategy": "quantile"},
-    )
+@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
+def test_models_cuml_classification():
+    """Assert that all classification models can be called with cuml."""
+    atom = ATOMClassifier(X_bin, y_bin, device="gpu", engine="cuml", random_state=1)
+    atom.run(models=["!CatB", "!LGB", "!XGB"], n_trials=1)
+
+
+@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
+def test_models_cuml_regression():
+    """Assert that all regression models can be called with cuml."""
+    atom = ATOMRegressor(X_reg, y_reg, device="gpu", engine="cuml", random_state=1)
+    atom.run(models=["!CatB", "!LGB", "!XGB"], n_trials=1)
 
 
 def test_CatNB():
-    """Assert that the CatNB model works. Separated because of special dataset."""
+    """Assert that the CatNB model works. Needs special dataset."""
     X = np.random.randint(5, size=(100, 100))
     y = np.random.randint(2, size=100)
 
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.run(models="CatNB", n_calls=2, n_initial_points=1)
+    atom.run(models="CatNB", n_trials=1)
     assert not atom.errors
     assert hasattr(atom, "CatNB")
 
 
-def test_LR():
-    """Assert that elasticnet doesn't crash with default l1_ratio."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(
-        models="LR",
-        n_calls=2,
-        n_initial_points=1,
-        est_params={"penalty": "elasticnet", "solver": "saga"},
-    )
-    assert atom.lr.bo["params"][0]["l1_ratio"] is not None
-
-
 def test_RNN():
-    """Assert that the RNN model works when called just for the estimator."""
-    with pytest.raises(ValueError):
-        # Fails cause RNN has no coef_ nor feature_importances_ attribute
-        FeatureSelector("sfm", solver="RNN_class").fit_transform(X_bin, y_bin)
+    """Assert that the RNN model works. Fails with default parameters."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run("RNN", n_trials=1, est_params={"outlier_label": "most_frequent"})
+    assert not atom.errors
+    assert hasattr(atom, "RNN")
+
+
+@pytest.mark.parametrize("model", ["CatB", "LGB", "XGB"])
+def test_pruning_non_sklearn(model):
+    """Assert that non-sklearn models can be pruned."""
+    atom = ATOMClassifier(X_class, y_class, n_jobs=-1, random_state=1)
+    atom.run(model, n_trials=2, ht_params={"pruner": PatientPruner(None, patience=2)})
+    assert "PRUNED" in atom.winner.trials["state"].values
 
 
 def test_MLP_custom_hidden_layer_sizes():
     """Assert that the MLP model can have custom hidden_layer_sizes."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(
-        models="MLP",
-        n_calls=2,
-        n_initial_points=1,
-        est_params={"hidden_layer_sizes": (31, 2)},
-    )
+    atom = ATOMClassifier(X_bin, y_bin, n_jobs=-1, random_state=1)
+    atom.run("MLP", n_trials=1, est_params={"hidden_layer_sizes": (31, 2)})
+    assert "hidden_layer_1" not in atom.mlp.best_params
     assert atom.mlp.estimator.get_params()["hidden_layer_sizes"] == (31, 2)
 
 
 def test_MLP_custom_n_layers():
     """Assert that the MLP model can have a custom number of hidden layers."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, n_jobs=-1, random_state=1)
     atom.run(
         models="MLP",
-        n_calls=2,
-        n_initial_points=1,
-        bo_params={
-            "dimensions": [
-                Integer(0, 100, name="hidden_layer_1"),
-                Integer(0, 20, name="hidden_layer_2"),
-                Integer(0, 20, name="hidden_layer_3"),
-                Integer(0, 20, name="hidden_layer_4"),
-            ]
+        n_trials=1,
+        ht_params={
+            "distributions": {
+                "hidden_layer_1": IntDistribution(2, 4),
+                "hidden_layer_2": IntDistribution(2, 4),
+                "hidden_layer_3": IntDistribution(2, 4),
+                "hidden_layer_4": IntDistribution(2, 4),
+            }
         },
     )
-    assert atom.mlp.bo["params"][0]["hidden_layer_sizes"] == (100,)
+    assert len(atom.mlp.trials["params"][0]["hidden_layer_sizes"]) == 4
 
 
 # Test ensembles =================================================== >>
@@ -252,17 +151,30 @@ def test_stacking_multiple_branches():
     atom.run("LR")
     atom.branch = "2"
     atom.run("LDA")
-    with pytest.raises(ValueError, match=r".*on the current branch.*"):
+    with pytest.raises(ValueError, match=".*on the current branch.*"):
         atom.stacking(models=["LR", "LDA"])
+
+
+def test_stacking_feature_importance():
+    """Assert that the feature_importance attr can be retrieved."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["Tree", "RF"])
+    atom.stacking()
+    assert isinstance(atom.stack.feature_importance, pd.Series)
 
 
 def test_voting():
     """Assert that the Voting model works."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(models=["OLS", "RF"])
-    atom.voting()
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(models=["SVM", "Tree", "RF"])
+
+    # Not all models have predict_proba
+    with pytest.raises(ValueError, match=".*a predict_proba method.*"):
+        atom.voting(voting="soft")
+
+    atom.voting(models=["SVM", "RF"])
     assert isinstance(atom.vote.estimator.estimators_[0], Pipeline)
-    assert isinstance(atom.vote.estimator.estimators_[1], RandomForestRegressor)
+    assert isinstance(atom.vote.estimator.estimators_[1], RandomForestClassifier)
 
 
 def test_voting_multiple_branches():
@@ -270,5 +182,13 @@ def test_voting_multiple_branches():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA"])
     atom.branch = "2"
-    with pytest.raises(ValueError, match=r".*on the current branch.*"):
+    with pytest.raises(ValueError, match=".*on the current branch.*"):
         atom.voting(models=["LR", "LDA"])
+
+
+def test_voting_feature_importance():
+    """Assert that the feature_importance attr can be retrieved."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LDA", "lSVM"])
+    atom.voting()
+    assert isinstance(atom.vote.feature_importance, pd.Series)

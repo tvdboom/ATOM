@@ -11,111 +11,69 @@ from copy import deepcopy
 from logging import Logger
 from typing import Any, Optional, Union
 
-import dill
+import dill as pickle
 from sklearn.base import clone
 from typeguard import typechecked
 
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
-from atom.utils import INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, custom_transform
+from atom.utils import (
+    INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, Predictor, custom_transform,
+)
 
 
 # Functions ======================================================== >>
 
 @typechecked
-def ATOMModel(
-    estimator: Any,
-    acronym: Optional[str] = None,
-    fullname: Optional[str] = None,
-    needs_scaling: bool = False,
-):
-    """Convert an estimator to a model that can be ingested by ATOM.
-
-    This function adds the relevant attributes to the estimator so
-    that they can be used when initializing the CustomModel class.
-
-    Parameters
-    ----------
-    estimator: sklearn estimator
-        Custom model's estimator.
-
-    acronym: str or None, optional (default=None)
-        Model's acronym. Used to call the model from the trainer.
-        If None, the capital letters in the estimator's __name__
-        are used (only if 2 or more, else it uses the entire name).
-
-    fullname: str or None, optional (default=None)
-        Full model's name. If None, the estimator's __name__ is used.
-
-    needs_scaling: bool, optional (default=False)
-        Whether the model needs scaled features. Can not be True for
-        deep learning datasets.
-
-    Returns
-    -------
-    sklearn estimator
-        Clone of the provided estimator with custom attributes.
-
-    """
-    estimator = clone(estimator)
-
-    if acronym:
-        estimator.acronym = acronym
-    if fullname:
-        estimator.fullname = fullname
-    estimator.needs_scaling = needs_scaling
-
-    return estimator
-
-
-@typechecked
 def ATOMLoader(
     filename: str,
-    data: Optional[tuple] = None,
+    data: Optional[SEQUENCE_TYPES] = None,
+    *,
     transform_data: bool = True,
     verbose: Optional[INT] = None,
-):
+) -> Any:
     """Load a class instance from a pickle file.
 
-    If the file is a trainer that was saved using `save_data=False`,
-    it is possible to load new data into it. For atom pickles, all
-    data transformations in the pipeline can be applied to the loaded
-    data.
+    If the file is an atom instance that was saved using
+    `save_data=False`, it's possible to load new data into it
+    and apply all data transformations.
 
     Parameters
     ----------
     filename: str
         Name of the pickle file to load.
 
-    data: tuple of indexables or None, optional (default=None)
-        Tuple containing the dataset. Only use this parameter if the
-        file is a trainer that was saved using`save_data=False`.
-        Allowed formats are:
-            - X
-            - X, y
-            - train, test
-            - train, test, holdout
-            - X_train, X_test, y_train, y_test
-            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
-            - (X_train, y_train), (X_test, y_test)
-            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
+    data: sequence of indexables or None, default=None
+        Original dataset. Only use this parameter if the file is an
+        atom instance that was saved using `save_data=False`. Allowed
+        formats are:
 
-        X, train, test: dataframe-like
-            Feature set with shape=(n_samples, n_features). If no
-            y is provided, the last column is used as target.
+        - X
+        - X, y
+        - train, test
+        - train, test, holdout
+        - X_train, X_test, y_train, y_test
+        - X_train, X_test, X_holdout, y_train, y_test, y_holdout
+        - (X_train, y_train), (X_test, y_test)
+        - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        y: int, str or sequence
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+        **X, train, test: dataframe-like**<br>
+        Feature set with shape=(n_samples, n_features).
 
-    transform_data: bool, optional (default=True)
+        **y: int, str or sequence**<br>
+        Target column corresponding to X.
+
+        - If int: Position of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Array with shape=(n_samples,) to use as target.
+
+    transform_data: bool, default=True
         If False, the `data` is left as provided. If True, it is
-        transformed through all the steps in the instance's
-        pipeline. This parameter is ignored if the loaded file
-        is not an atom pickle.
+        transformed through all the steps in the instance's pipeline.
+        This parameter is ignored if the loaded pickle is not an atom
+        instance.
 
-    verbose: int or None, optional (default=None)
+    verbose: int or None, default=None
         Verbosity level of the transformations applied on the new
         data. If None, use the verbosity from the loaded instance.
         This parameter is ignored if `transform_data=False`.
@@ -125,15 +83,49 @@ def ATOMLoader(
     class instance
         Unpickled instance.
 
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier, ATOMLoader
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> atom = ATOMClassifier(X, y)
+    >>> atom.scale()
+    >>> atom.run(["LR", "RF", "SGD"], metric="AP")
+    >>> atom.save("atom", save_data=False)  # Save atom to a pickle file
+
+    # Load the class and add the data to the new instance
+    >>> atom_2 = ATOMLoader("atom", data=(X, y), verbose=2)
+
+    Transforming data for branch master:
+    Scaling features...
+    ATOMClassifier successfully loaded.
+
+    >>> print(atom_2.results)
+
+          score_train   score_test time_fit    time
+    LR       0.998179     0.998570   0.016s  0.016s
+    RF       1.000000     0.995568   0.141s  0.141s
+    SGD      0.998773     0.994313   0.016s  0.016s
+
+    ```
+
     """
     with open(filename, "rb") as f:
-        cls = dill.load(f)
+        cls = pickle.load(f)
+
+    # Reassign the transformer attributes (warnings random_state, etc...)
+    if issubclass(cls.__class__, BaseTransformer):
+        BaseTransformer.__init__(
+            cls, **{x: getattr(cls, x) for x in BaseTransformer.attrs if hasattr(cls, x)}
+        )
 
     if data is not None:
         if not hasattr(cls, "_branches"):
             raise TypeError(
-                "Data is provided but the class is not a "
-                f"trainer, got {cls.__class__.__name__}."
+                "Data is provided but the class is not an "
+                f"atom instance, got {cls.__class__.__name__}."
             )
         elif any(branch._data is not None for branch in cls._branches.values()):
             raise ValueError(
@@ -153,7 +145,7 @@ def ATOMLoader(
                 branch._data, branch._idx = data, idx
 
             if transform_data:
-                if not v1.pipeline.empty:
+                if len(cls._branches) > 2 and not v1.pipeline.empty:
                     cls.log(f"Transforming data for branch {b1}:", 1)
 
                 for i, est1 in enumerate(v1.pipeline):
@@ -173,55 +165,157 @@ def ATOMLoader(
     return cls
 
 
+@typechecked
+def ATOMModel(
+    estimator: Predictor,
+    *,
+    acronym: Optional[str] = None,
+    needs_scaling: bool = False,
+    has_validation: Optional[str] = None,
+) -> Predictor:
+    """Convert an estimator to a model that can be ingested by atom.
+
+    This function adds the relevant attributes to the estimator so
+    that they can be used by atom. Note that only estimators that follow
+    [sklearn's API][api] are compatible.
+
+    Read more about using custom models in the [user guide][custom-models].
+
+    Parameters
+    ----------
+    estimator: Predictor
+        Custom estimator. Should implement a `fit` and `predict` method.
+
+    acronym: str or None, default=None
+        Model's acronym. Used to call the model from atom. If None, the
+        capital letters in the estimator's \__name__ are used (only if
+        two or more, else it uses the entire \__name__).
+
+    needs_scaling: bool, default=False
+        Whether the model needs scaled features.
+
+    has_validation: str or None, default=None
+        Whether the model allows [in-training validation][]. If str,
+        name of the estimator's parameter that states the number of
+        iterations. If None, no support for in-training validation.
+
+    Returns
+    -------
+    estimator
+        Clone of the provided estimator with custom attributes.
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor, ATOMModel
+    >>> from sklearn.linear_model import RANSACRegressor
+
+    >>> ransac =  ATOMModel(
+    ...      estimator=RANSACRegressor(),
+    ...      acronym="RANSAC",
+    ...      needs_scaling=False,
+    ...  )
+
+    >>> atom = ATOMRegressor(X, y)
+    >>> atom.run(ransac, verbose=2)
+
+    Training ========================= >>
+    Models: RANSAC
+    Metric: r2
+
+    Results for RANSACRegressor:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: -2.1784
+    Test evaluation --> r2: -9.4592
+    Time elapsed: 0.072s
+    -------------------------------------------------
+    Total time: 0.072s
+
+    Final results ==================== >>
+    Total time: 0.072s
+    -------------------------------------
+    RANSACRegressor --> r2: -9.4592 ~
+
+    ```
+
+    """
+    estimator = clone(estimator)
+
+    if acronym:
+        estimator.acronym = acronym
+    estimator.needs_scaling = needs_scaling
+    estimator.has_validation = has_validation
+
+    return estimator
+
+
 # Classes ========================================================== >>
 
 class ATOMClassifier(BaseTransformer, ATOM):
-    """ATOM class for classification tasks.
+    """Main class for binary and multiclass classification tasks.
+
+    Apply all data transformations and model management provided by
+    the package on a given dataset. Note that, contrary to sklearn's
+    API, the instance contains the dataset on which to perform the
+    analysis. Calling a method will automatically apply it on the
+    dataset it contains.
+
+    All [data cleaning][], [feature engineering][], [model training]
+    [training] and [plotting][plots] functionality can be accessed
+    from an instance of this class.
 
     Parameters
     ----------
     *arrays: sequence of indexables
         Dataset containing features and target. Allowed formats are:
-            - X
-            - X, y
-            - train, test
-            - train, test, holdout
-            - X_train, X_test, y_train, y_test
-            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
-            - (X_train, y_train), (X_test, y_test)
-            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        X, train, test: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        - X
+        - X, y
+        - train, test
+        - train, test, holdout
+        - X_train, X_test, y_train, y_test
+        - X_train, X_test, X_holdout, y_train, y_test, y_holdout
+        - (X_train, y_train), (X_test, y_test)
+        - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        y: int, str or sequence
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+        **X, train, test: dataframe-like**<br>
+        Feature set with shape=(n_samples, n_features).
 
-    y: int, str or sequence, optional (default=-1)
-        - If int: Index of the target column in X.
+        **y: int, str or sequence**<br>
+        Target column corresponding to X.
+
+        - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Target column with shape=(n_samples,).
+        - Else: Array with shape=(n_samples,) to use as target.
+
+    y: int, str or sequence, default=-1
+        Target column corresponding to X.
+
+        - If int: Position of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Array with shape=(n_samples,) to use as target.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
 
-    index: bool, int, str or sequence, optional (default=False)
-        - If False: Reset to RangeIndex.
-        - If True: Use the current index.
-        - If int: Index of the column to use as index.
-        - If str: Name of the column to use as index.
-        - If sequence: Index column with shape=(n_samples,).
+    index: bool, int, str or sequence, default=False
+        Handle the index in the resulting dataframe.
 
-    test_size: int or float, optional (default=0.2)
+        - If False: Reset to [RangeIndex][].
+        - If True: Use the provided index.
+        - If int: Position of the column to use as index.
+        - If str: Name of the column to use as index.
+        - If sequence: Array with shape=(n_samples,) to use as index.
+
+    test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
         This parameter is ignored if the test set is provided
         through `arrays`.
 
-    holdout_size: int, float or None, optional (default=None)
+    holdout_size: int, float or None, default=None
         - If None: No holdout data set is kept apart.
         - If <=1: Fraction of the dataset to include in the holdout set.
         - If >1: Number of rows to include in the holdout set.
@@ -229,68 +323,183 @@ class ATOMClassifier(BaseTransformer, ATOM):
         This parameter is ignored if the holdout set is provided
         through `arrays`.
 
-    shuffle: bool, optional (default=True)
+    shuffle: bool, default=True
         Whether to shuffle the dataset before splitting the train and
         test set. Be aware that not shuffling the dataset can cause
         an unequal distribution of target classes over the sets.
 
-    stratify: bool, int, str or sequence, optional (default=True)
-        - If False: The data sets are split randomly.
-        - If True: The data sets are stratified over the target column.
-        - Else: Indices or names of the columns to stratify by. The
-                columns can not contain `NaN` values.
+    stratify: bool, int, str or sequence, default=True
+        Handle stratification of the target classes over the data sets.
+
+        - If False: The data is split randomly.
+        - If True: The data is stratified over the target column.
+        - Else: Name or position of the columns to stratify by. The
+          columns can't contain `NaN` values.
 
         This parameter is ignored if `shuffle=False` or if the test
-        set is provided through `arrays.
+        set is provided through `arrays`.
 
-    n_rows: int or float, optional (default=1)
-        Random subsample of the provided dataset to use. The default
-        value selects all the rows.
-        - If <=1: Select this fraction of the dataset.
-        - If >1: Select this exact number of rows. Only if the input
-                 doesn't already specify the data sets (i.e. X or X, y).
+    n_rows: int or float, default=1
+        Random subsample of the dataset to use. The default value selects
+        all rows.
 
-    n_jobs: int, optional (default=1)
+        - If <=1: Fraction of the dataset to select.
+        - If >1: Exact number of rows to select. Only if `arrays` is X
+                 or X, y.
+
+    n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    gpu: bool or str, optional (default=False)
-        Train estimators on GPU (instead of CPU). Refer to the
-        documentation to check which estimators are supported.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    verbose: int, optional (default=0)
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
+
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
 
-    warnings: bool or str, optional (default=False)
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    warnings: bool or str, default=False
         - If True: Default warning action (equal to "default").
         - If False: Suppress all warnings (equal to "ignore").
-        - If str: One of the actions in python's warnings environment.
+        - If str: One of python's [warnings filters][warnings].
 
         Changing this parameter affects the `PYTHONWARNINGS` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        Note that warnings are not saved to the logger.
+    experiment: str or None, default=None
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
 
-    experiment: str or None, optional (default=None)
-        Name of the mlflow experiment to use for tracking. If None,
-        no mlflow tracking is performed.
-
-    random_state: int or None, optional (default=None)
+    random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
+
+    See Also
+    --------
+    atom.api:ATOMRegressor
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMClassifier
+    >>> from sklearn.datasets import load_breast_cancer
+
+    >>> X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+    >>> # Initialize atom
+    >>> atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+
+    << ================== ATOM ================== >>
+    Algorithm task: binary classification.
+    Parallel processing with 2 cores.
+
+    Dataset stats ==================== >>
+    Shape: (569, 31)
+    Memory: 138.96 kB
+    Scaled: False
+    Outlier values: 160 (1.1%)
+    -------------------------------------
+    Train set size: 456
+    Test set size: 113
+    -------------------------------------
+    |   |     dataset |       train |        test |
+    | - | ----------- | ----------- | ----------- |
+    | 0 |   212 (1.0) |   170 (1.0) |    42 (1.0) |
+    | 1 |   357 (1.7) |   286 (1.7) |    71 (1.7) |
+
+    >>> # Apply data cleaning and feature engineering methods
+    >>> atom.balance(strategy="smote")
+
+    Oversampling with SMOTE...
+     --> Adding 116 samples to class 0.
+
+    >>> atom.feature_selection(strategy="rfecv", solver="xgb", n_features=22)
+
+    Fitting FeatureSelector...
+    Performing feature selection ...
+     --> RFECV selected 26 features from the dataset.
+       --> Dropping feature mean perimeter (rank 4).
+       --> Dropping feature mean symmetry (rank 3).
+       --> Dropping feature perimeter error (rank 2).
+       --> Dropping feature worst compactness (rank 5).
+
+    >>> # Train models
+    >>> atom.run(
+    ...    models=["LR", "RF", "XGB"],
+    ...    metric="precision",
+    ...    n_bootstrap=4,
+    ... )
+
+    Training ========================= >>
+    Models: LR, RF, XGB
+    Metric: precision
+
+    Results for Logistic Regression:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 0.9895
+    Test evaluation --> precision: 0.9467
+    Time elapsed: 0.028s
+    -------------------------------------------------
+    Total time: 0.028s
+
+    Results for Random Forest:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 1.0
+    Test evaluation --> precision: 0.9221
+    Time elapsed: 0.181s
+    -------------------------------------------------
+    Total time: 0.181s
+
+    Results for XGBoost:
+    Fit ---------------------------------------------
+    Train evaluation --> precision: 1.0
+    Test evaluation --> precision: 0.9091
+    Time elapsed: 0.124s
+    -------------------------------------------------
+    Total time: 0.124s
+
+    Final results ==================== >>
+    Total time: 0.333s
+    -------------------------------------
+    Logistic Regression --> precision: 0.9467 !
+    Random Forest       --> precision: 0.9221
+    XGBoost             --> precision: 0.9091
+
+    >>> # Analyze the results
+    >>> atom.evaluate()
+
+         accuracy  average_precision  ...    recall   roc_auc
+    LR   0.970588           0.995739  ...  0.981308  0.993324
+    RF   0.958824           0.982602  ...  0.962617  0.983459
+    XGB  0.964706           0.996047  ...  0.971963  0.993473
+
+    [3 rows x 9 columns]
+
+    ```
 
     """
 
@@ -306,7 +515,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
         n_jobs: INT = 1,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         warnings: Union[bool, str] = False,
         logger: Optional[Union[str, Logger]] = None,
@@ -315,7 +525,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
     ):
         super().__init__(
             n_jobs=n_jobs,
-            gpu=gpu,
+            device=device,
+            engine=engine,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -338,52 +549,69 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
-    """ATOM class for regression tasks.
+    """Main class for regression tasks.
+
+    Apply all data transformations and model management provided by
+    the package on a given dataset. Note that, contrary to sklearn's
+    API, the instance contains the dataset on which to perform the
+    analysis. Calling a method will automatically apply it on the
+    dataset it contains.
+
+    All [data cleaning][], [feature engineering][], [model training]
+    [training] and [plotting][plots] functionality can be accessed
+    from an instance of this class.
 
     Parameters
     ----------
     *arrays: sequence of indexables
         Dataset containing features and target. Allowed formats are:
-            - X
-            - X, y
-            - train, test
-            - train, test, holdout
-            - X_train, X_test, y_train, y_test
-            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
-            - (X_train, y_train), (X_test, y_test)
-            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        X, train, test: dataframe-like
-            Feature set with shape=(n_samples, n_features).
+        - X
+        - X, y
+        - train, test
+        - train, test, holdout
+        - X_train, X_test, y_train, y_test
+        - X_train, X_test, X_holdout, y_train, y_test, y_holdout
+        - (X_train, y_train), (X_test, y_test)
+        - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        y: int, str or sequence
-            - If int: Index of the target column in X.
-            - If str: Name of the target column in X.
-            - Else: Target column with shape=(n_samples,).
+        **X, train, test: dataframe-like**<br>
+        Feature set with shape=(n_samples, n_features).
 
-    y: int, str or sequence, optional (default=-1)
-        - If int: Index of the target column in X.
+        **y: int, str or sequence**<br>
+        Target column corresponding to X.
+
+        - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Target column with shape=(n_samples,).
+        - Else: Array with shape=(n_samples,) to use as target.
+
+    y: int, str or sequence, default=-1
+        Target column corresponding to X.
+
+        - If int: Position of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Array with shape=(n_samples,) to use as target.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
 
-    index: bool, int, str or sequence, optional (default=False)
-        - If False: Reset to RangeIndex.
-        - If True: Use the current index.
-        - If int: Index of the column to use as index.
-        - If str: Name of the column to use as index.
-        - If sequence: Index column with shape=(n_samples,).
+    index: bool, int, str or sequence, default=False
+        Handle the index in the resulting dataframe.
 
-    test_size: int or float, optional (default=0.2)
+        - If False: Reset to [RangeIndex][].
+        - If True: Use the provided index.
+        - If int: Position of the column to use as index.
+        - If str: Name of the column to use as index.
+        - If sequence: Array with shape=(n_samples,) to use as index.
+
+    test_size: int or float, default=0.2
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
         This parameter is ignored if the test set is provided
         through `arrays`.
 
-    holdout_size: int, float or None, optional (default=None)
+    holdout_size: int, float or None, default=None
         - If None: No holdout data set is kept apart.
         - If <=1: Fraction of the dataset to include in the holdout set.
         - If >1: Number of rows to include in the holdout set.
@@ -391,59 +619,168 @@ class ATOMRegressor(BaseTransformer, ATOM):
         This parameter is ignored if the holdout set is provided
         through `arrays`.
 
-    shuffle: bool, optional (default=True)
+    shuffle: bool, default=True
         Whether to shuffle the dataset before splitting the train and
         test set. Be aware that not shuffling the dataset can cause
-        an unequal distribution of the target classes over the sets.
+        an unequal distribution of target classes over the sets.
 
-    n_rows: int or float, optional (default=1)
-        Random subsample of the provided dataset to use. The default
-        value selects all the rows.
-        - If <=1: Select this fraction of the dataset.
-        - If >1: Select this exact number of rows. Only if the input
-                 doesn't already specify the data sets (i.e. X or X, y).
+    n_rows: int or float, default=1
+        Random subsample of the dataset to use. The default value selects
+        all rows.
 
-    n_jobs: int, optional (default=1)
+        - If <=1: Fraction of the dataset to select.
+        - If >1: Exact number of rows to select. Only if `arrays` is X
+                 or X, y.
+
+    n_jobs: int, default=1
         Number of cores to use for parallel processing.
-            - If >0: Number of cores to use.
-            - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    gpu: bool or str, optional (default=False)
-        Train estimators on GPU (instead of CPU). Refer to the
-        documentation to check which estimators are supported.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
 
-    verbose: int, optional (default=0)
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
+
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
 
-    warnings: bool or str, optional (default=False)
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    warnings: bool or str, default=False
         - If True: Default warning action (equal to "default").
         - If False: Suppress all warnings (equal to "ignore").
-        - If str: One of the actions in python's warnings environment.
+        - If str: One of python's [warnings filters][warnings].
 
         Changing this parameter affects the `PYTHONWARNINGS` environment.
         ATOM can't manage warnings that go from C/C++ code to stdout.
 
-    logger: str, Logger or None, optional (default=None)
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        Note that warnings are not saved to the logger.
+    experiment: str or None, default=None
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
 
-    experiment: str or None, optional (default=None)
-        Name of the mlflow experiment to use for tracking. If None,
-        no mlflow tracking is performed.
-
-    random_state: int or None, optional (default=None)
+    random_state: int or None, default=None
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` used by `np.random`.
+
+    See Also
+    --------
+    atom.api:ATOMClassifier
+
+    Examples
+    --------
+
+    ```pycon
+    >>> from atom import ATOMRegressor
+    >>> from sklearn.datasets import load_diabetes
+
+    >>> X, y = load_diabetes(return_X_y=True, as_frame=True)
+
+    >>> # Initialize atom
+    >>> atom = ATOMRegressor(X, y, logger="auto", n_jobs=2, verbose=2)
+
+    << ================== ATOM ================== >>
+    Algorithm task: regression.
+    Parallel processing with 2 cores.
+
+    Dataset stats ==================== >>
+    Shape: (442, 11)
+    Memory: 39.02 kB
+    Scaled: False
+    Outlier values: 10 (0.3%)
+    -------------------------------------
+    Train set size: 310
+    Test set size: 132
+
+    >>> # Apply data cleaning and feature engineering methods
+    >>> atom.scale()
+
+    Fitting Scaler...
+    Scaling features...
+
+    >>> atom.feature_selection(strategy="rfecv", solver="xgb", n_features=12)
+
+    Fitting FeatureSelector...
+    Performing feature selection ...
+     --> rfecv selected 6 features from the dataset.
+       --> Dropping feature age (rank 5).
+       --> Dropping feature sex (rank 4).
+       --> Dropping feature s1 (rank 2).
+       --> Dropping feature s3 (rank 3).
+
+    >>> # Train models
+    >>> atom.run(
+    ...    models=["LR", "RF", "XGB"],
+    ...    metric="precision",
+    ...    n_bootstrap=4,
+    ... )
+
+    Training ========================= >>
+    Models: OLS, BR, RF
+    Metric: r2
+
+    Results for Ordinary Least Squares:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.5223
+    Test evaluation --> r2: 0.4012
+    Time elapsed: 0.010s
+    -------------------------------------------------
+    Total time: 0.010s
+
+    Results for Bayesian Ridge:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.522
+    Test evaluation --> r2: 0.4037
+    Time elapsed: 0.010s
+    -------------------------------------------------
+    Total time: 0.010s
+
+    Results for Random Forest:
+    Fit ---------------------------------------------
+    Train evaluation --> r2: 0.9271
+    Test evaluation --> r2: 0.259
+    Time elapsed: 0.175s
+    -------------------------------------------------
+    Total time: 0.175s
+
+
+    Final results ==================== >>
+    Total time: 0.195s
+    -------------------------------------
+    Ordinary Least Squares --> r2: 0.4012 ~
+    Bayesian Ridge         --> r2: 0.4037 ~ !
+    Random Forest          --> r2: 0.259 ~
+
+    >>> # Analyze the results
+    >>> atom.evaluate()
+
+         neg_mean_absolute_error  ...  neg_root_mean_squared_error
+    OLS               -43.756992  ...                   -54.984345
+    BR                -43.734975  ...                   -54.869543
+    RF                -48.327879  ...                   -61.167760
+
+    [3 rows x 7 columns]
+
+    ```
 
     """
 
@@ -458,7 +795,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
         n_jobs: INT = 1,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
         warnings: Union[bool, str] = False,
         logger: Optional[Union[str, Logger]] = None,
@@ -467,7 +805,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
     ):
         super().__init__(
             n_jobs=n_jobs,
-            gpu=gpu,
+            device=device,
+            engine=engine,
             verbose=verbose,
             warnings=warnings,
             logger=logger,

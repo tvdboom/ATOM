@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -7,8 +7,9 @@ Description: Unit tests for api.py
 
 """
 
+import numpy as np
+import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
 from sklearn.linear_model import HuberRegressor
 
 from atom import ATOMClassifier, ATOMLoader, ATOMModel, ATOMRegressor
@@ -25,12 +26,6 @@ def test_name():
     """Assert that the name is attached to the estimator."""
     model = ATOMModel(HuberRegressor(), acronym="huber")
     assert model.acronym == "huber"
-
-
-def test_fullname():
-    """Assert that the fullname is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="huber", fullname="Hubber Regression")
-    assert model.fullname == "Hubber Regression"
 
 
 def test_needs_scaling():
@@ -50,17 +45,19 @@ def test_load():
     assert trainer2.__class__.__name__ == "DirectClassifier"
 
 
-def test_load_data_with_no_trainer():
-    """Assert that an error is raised when data is provided without a trainer."""
+def test_load_data_when_no_atom():
+    """Assert that an error is raised when data is provided without atom."""
     Imputer().save("imputer")
-    pytest.raises(TypeError, ATOMLoader, "imputer", data=(X_bin,))
+    with pytest.raises(TypeError, match=".*Data is provided but.*"):
+        ATOMLoader("imputer", data=(X_bin,))
 
 
 def test_load_already_contains_data():
     """Assert that an error is raised when data is provided without needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save("atom", save_data=True)
-    pytest.raises(ValueError, ATOMLoader, "atom", data=(X_bin,))
+    with pytest.raises(ValueError, match=".*already contains data.*"):
+        ATOMLoader("atom", data=(X_bin,))
 
 
 def test_data():
@@ -69,7 +66,7 @@ def test_data():
     atom.save("atom", save_data=False)
 
     atom2 = ATOMLoader("atom", data=(X_bin, y_bin))
-    assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
+    pd.testing.assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
 
 
 def test_load_ignores_n_rows_parameter():
@@ -85,7 +82,7 @@ def test_transform_data():
     """Assert that the data is transformed correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale(columns=slice(3, 10))
-    atom.apply(lambda df: df["mean radius"] + 2, columns="mean radius")
+    atom.apply(np.exp, columns=2)
     atom.feature_generation(strategy="dfs", n_features=5)
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
     atom.save("atom", save_data=False)
@@ -110,7 +107,7 @@ def test_transform_data_multiple_branches():
 
     atom2 = ATOMLoader("atom_2", data=(X_bin, y_bin), transform_data=True)
     for branch in atom._branches:
-        assert_frame_equal(
+        pd.testing.assert_frame_equal(
             left=atom2._branches[branch]._data,
             right=atom._branches[branch]._data,
             check_dtype=False,

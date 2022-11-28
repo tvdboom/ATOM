@@ -7,7 +7,10 @@ Description: Module containing the ensemble estimators.
 
 """
 
+from __future__ import annotations
+
 from copy import deepcopy
+from typing import List, Optional, Tuple
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -23,14 +26,14 @@ from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 
-from atom.utils import check_is_fitted
+from atom.utils import INT, SEQUENCE_TYPES, X_TYPES, Predictor, check_is_fitted
 
 
 class BaseEnsemble:
-    """Base class for all ensemble estimators."""
+    """Base class for all ensembles."""
 
     def _get_fitted_attrs(self):
-        """Update the fitted attributes (end with underscore)"""
+        """Update the fit attributes (end with underscore)."""
         self.named_estimators_ = Bunch()
 
         # Uses 'drop' as placeholder for dropped estimators
@@ -48,7 +51,36 @@ class BaseEnsemble:
 class BaseVoting(BaseEnsemble):
     """Base class for the voting estimators."""
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(
+        self,
+        X: X_TYPES,
+        y: SEQUENCE_TYPES,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> BaseVoting:
+        """Fit the estimators in the ensemble.
+
+        Largely same code as sklearn;s implementation with one major
+        difference: estimators that are already fitted are skipped.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape (n_samples, n_features)
+
+        y: sequence
+            Target column.
+
+        sample_weight: sequence or None, default=None
+            Sample weights. If None, then samples are equally weighted.
+            Note that this is supported only if all underlying estimators
+            support sample weights.
+
+        Returns
+        -------
+        self
+            Estimator instance.
+
+        """
         names, all_estimators = self._validate_estimators()
 
         # Difference with sklearn's implementation, skip fitted estimators
@@ -82,7 +114,36 @@ class BaseVoting(BaseEnsemble):
 class BaseStacking(BaseEnsemble):
     """Base class for the stacking estimators."""
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(
+        self,
+        X: X_TYPES,
+        y: SEQUENCE_TYPES,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> BaseStacking:
+        """Fit the estimators in the ensemble.
+
+        Largely same code as sklearn;s implementation with one major
+        difference: estimators that are already fitted are skipped.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape (n_samples, n_features)
+
+        y: sequence
+            Target column.
+
+        sample_weight: sequence or None, default=None
+            Sample weights. If None, then samples are equally weighted.
+            Note that this is supported only if all underlying estimators
+            support sample weights.
+
+        Returns
+        -------
+        self
+            Estimator instance.
+
+        """
         names, all_estimators = self._validate_estimators()
         self._validate_final_estimator()
 
@@ -158,21 +219,25 @@ class VotingClassifier(BaseVoting, VC):
     """Soft Voting/Majority Rule classifier.
 
     Modified version of sklearn's VotingClassifier. Differences are:
-        - Doesn't fit estimators if they're already fitted.
-        - Is considered fitted when all estimators are at initialization.
-        - Doesn't implement a LabelEncoder to encode the target column.
+
+    - Doesn't fit estimators if they're already fitted.
+    - Is considered fitted when all estimators are.
+    - Doesn't implement a LabelEncoder to encode the target column.
+
+    See sklearn's [VotingClassifier][] for a description of the
+    parameters and attributes.
 
     """
 
     def __init__(
-            self,
-            estimators,
-            *,
-            voting="hard",
-            weights=None,
-            n_jobs=None,
-            flatten_transform=True,
-            verbose=False,
+        self,
+        estimators: List[Tuple[str, Predictor]],
+        *,
+        voting: str = "hard",
+        weights: Optional[SEQUENCE_TYPES] = None,
+        n_jobs: Optional[INT] = None,
+        flatten_transform: bool = True,
+        verbose: bool = False,
     ):
         super().__init__(
             estimators,
@@ -188,7 +253,12 @@ class VotingClassifier(BaseVoting, VC):
             self.estimators_ = [e[1] for e in self.estimators if e[1] != "drop"]
             self._get_fitted_attrs()
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(
+        self,
+        X: X_TYPES,
+        y: SEQUENCE_TYPES,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> VotingClassifier:
         """Fit the estimators, skipping prefit ones.
 
         Parameters
@@ -199,15 +269,15 @@ class VotingClassifier(BaseVoting, VC):
         y: sequence
             Target column.
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.
 
         Returns
         -------
-        VotingClassifier
-            Fitted instance of self.
+        self
+            Estimator instance.
 
         """
         check_classification_targets(y)
@@ -229,7 +299,7 @@ class VotingClassifier(BaseVoting, VC):
 
         return super().fit(X, y, sample_weight)
 
-    def predict(self, X):
+    def predict(self, X: X_TYPES) -> np.ndarray:
         """Predict class labels for X.
 
         Parameters
@@ -258,8 +328,12 @@ class VotingRegressor(BaseVoting, VR):
     """Soft Voting/Majority Rule regressor.
 
     Modified version of sklearn's VotingRegressor. Differences are:
-        - Doesn't fit estimators if they're already fitted.
-        - Is considered fitted when all estimators are at initialization.
+
+    - Doesn't fit estimators if they're already fitted.
+    - Is considered fitted when all estimators are.
+
+    See sklearn's [VotingRegressor][] for a description of the
+    parameters and attributes.
 
     """
 
@@ -281,11 +355,20 @@ class StackingClassifier(BaseStacking, SC):
     """Stack of estimators with a final classifier.
 
     Modified version of sklearn's StackingClassifier. Difference is:
-        - Doesn't fit estimators if they're already fitted.
+
+    - Doesn't fit estimators if they're already fitted.
+
+    See sklearn's [StackingClassifier][] for a description of the
+    parameters and attributes.
 
     """
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(
+        self,
+        X: X_TYPES,
+        y: SEQUENCE_TYPES,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> VotingRegressor:
         """Fit the estimators, skipping prefit ones.
 
         Parameters
@@ -296,15 +379,15 @@ class StackingClassifier(BaseStacking, SC):
         y: sequence
             Target column.
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.
 
         Returns
         -------
-        StackingClassifier
-            Fitted instance of self.
+        self
+            Estimator instance.
 
         """
         check_classification_targets(y)
@@ -317,11 +400,20 @@ class StackingRegressor(BaseStacking, SR):
     """Stack of estimators with a final regressor.
 
     Modified version of sklearn's StackingRegressor. Difference is:
-        - Doesn't fit estimators if they're already fitted.
+
+    - Doesn't fit estimators if they're already fitted.
+
+    See sklearn's [StackingRegressor][] for a description of the
+    parameters and attributes.
 
     """
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(
+        self,
+        X: X_TYPES,
+        y: SEQUENCE_TYPES,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
+    ) -> StackingRegressor:
         """Fit the estimators, skipping prefit ones.
 
         Parameters
@@ -332,15 +424,15 @@ class StackingRegressor(BaseStacking, SR):
         y: sequence
             Target column.
 
-        sample_weight: sequence or None, optional (default=None)
+        sample_weight: sequence or None, default=None
             Sample weights. If None, then samples are equally weighted.
             Note that this is supported only if all underlying estimators
             support sample weights.
 
         Returns
         -------
-        StackingRegressor
-            Fitted instance of self.
+        self
+            Estimator instance.
 
         """
         y = column_or_1d(y, warn=True)

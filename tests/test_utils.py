@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 Automated Tool for Optimized Modelling (ATOM)
@@ -7,8 +7,7 @@ Description: Unit tests for utils.py
 
 """
 
-import sys
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pandas as pd
 import pytest
@@ -21,9 +20,9 @@ from atom.utils import (
 
 def test_time_to_string():
     """Assert that the time strings are formatted properly."""
-    assert time_to_str(datetime.now() - timedelta(seconds=17)).startswith("17.00")
-    assert time_to_str(datetime.now() - timedelta(minutes=1, seconds=2)) == "1m:02s"
-    assert time_to_str(datetime.now() - timedelta(hours=3, minutes=8)) == "3h:08m:00s"
+    assert time_to_str(timedelta(seconds=17).total_seconds()).startswith("17.00")
+    assert time_to_str(timedelta(minutes=1, seconds=2).total_seconds()) == "01m:02s"
+    assert time_to_str(timedelta(hours=3, minutes=8).total_seconds()) == "03h:08m:00s"
 
 
 def test_check_is_fitted_with_pandas():
@@ -55,11 +54,11 @@ def test_custom_dict_key_request():
     assert cd["a"] == cd["A"] == cd[0] == 0
     assert cd[["a", "b"]] == CustomDict({"A": 0, "B": 1})
     assert cd[[1, 2]] == CustomDict({"B": 1, "C": 2})
+    assert cd[1:3] == CustomDict({"B": 1, "C": 2})
     with pytest.raises(KeyError):
         print(cd[1.2])
 
 
-@pytest.mark.skipif(sys.version_info[1] < 8, reason="Requires Python 3.8 or higher.")
 def test_custom_dict_manipulations():
     """Assert that the custom dictionary accepts inserts and pops."""
     cd = CustomDict({"a": 0, "b": 1})
@@ -88,3 +87,5 @@ def test_custom_dict_manipulations():
     assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'f': 6, 'e': 4}"
     del cd[2]
     assert "c" not in cd
+    new_cd = cd.copy()
+    assert new_cd is not cd

@@ -7,10 +7,13 @@ Description: Module containing the NLP transformers.
 
 """
 
+from __future__ import annotations
+
 import re
 import unicodedata
+from logging import Logger
 from string import punctuation
-from typing import Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import nltk
 import pandas as pd
@@ -21,9 +24,6 @@ from nltk.collocations import (
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from sklearn.base import BaseEstimator
-from sklearn.feature_extraction.text import (
-    CountVectorizer, HashingVectorizer, TfidfVectorizer,
-)
 from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
@@ -43,63 +43,68 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     the same order the parameters are presented. If there is no
     column with that name, an exception is raised.
 
+    This class can be accessed from atom through the [textclean]
+    [atomclassifier-textclean] method. Read more in the [user guide]
+    [text-cleaning].
+
     Parameters
     ----------
-    decode: bool, optional (default=True)
+    decode: bool, default=True
         Whether to decode unicode characters to their ascii
         representations.
 
-    lower_case: bool, optional (default=True)
+    lower_case: bool, default=True
         Whether to convert all characters to lower case.
 
-    drop_email: bool, optional (default=True)
+    drop_email: bool, default=True
         Whether to drop email addresses from the text.
 
-    regex_email: str, optional (default=None)
+    regex_email: str, default=None
         Regex used to search for email addresses. If None, it uses
         `r"[\w.-]+@[\w-]+\.[\w.-]+"`.
 
-    drop_url: bool, optional (default=True)
+    drop_url: bool, default=True
         Whether to drop URL links from the text.
 
-    regex_url: str, optional (default=None)
+    regex_url: str, default=None
         Regex used to search for URLs. If None, it uses
         `r"https?://\S+|www\.\S+"`.
 
-    drop_html: bool, optional (default=True)
+    drop_html: bool, default=True
         Whether to drop HTML tags from the text. This option is
         particularly useful if the data was scraped from a website.
 
-    regex_html: str, optional (default=None)
+    regex_html: str, default=None
         Regex used to search for html tags. If None, it uses
         `r"<.*?>"`.
 
-    drop_emoji: bool, optional (default=True)
+    drop_emoji: bool, default=True
         Whether to drop emojis from the text.
 
-    regex_emoji: str, optional (default=None)
+    regex_emoji: str, default=None
         Regex used to search for emojis. If None, it uses
         `r":[a-z_]+:"`.
 
-    drop_number: bool, optional (default=False)
+    drop_number: bool, default=True
         Whether to drop numbers from the text.
 
-    regex_number: str, optional (default=None)
+    regex_number: str, default=None
         Regex used to search for numbers. If None, it uses
         `r"\b\d+\b".` Note that numbers adjacent to letters are
         not removed.
 
-    drop_punctuation: bool, optional (default=True)
+    drop_punctuation: bool, default=True
         Whether to drop punctuations from the text. Characters
         considered punctuation are `!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~`.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -110,11 +115,138 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Encountered regex matches. The row indices correspond to
         the document index from which the occurrence was dropped.
 
+    See Also
+    --------
+    atom.nlp:TextNormalizer
+    atom.nlp:Tokenizer
+    atom.nlp:Vectorizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+        >>> from sklearn.datasets import fetch_20newsgroups
+
+        >>> X, y = fetch_20newsgroups(
+        ...     return_X_y=True,
+        ...     categories=[
+        ...         'alt.atheism',
+        ...         'sci.med',
+        ...         'comp.windows.x',
+        ...     ],
+        ...     shuffle=True,
+        ...     random_state=1,
+        ... )
+        >>> X = np.array(X).reshape(-1, 1)
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+        0     From: thssjxy@iitmax.iit.edu (Smile) Subject:...       2
+        1     From: nancyo@fraser.sfu.ca (Nancy Patricia O'C...       0
+        2     From: beck@irzr17.inf.tu-dresden.de (Andre Bec...       1
+        3     From: keith@cco.caltech.edu (Keith Allan Schne...       0
+        4     From: strom@Watson.Ibm.Com (Rob Strom) Subjec...       0
+                                                         ...     ...
+        2841  From: dreitman@oregon.uoregon.edu (Daniel R. R...       3
+        2842  From: ethan@cs.columbia.edu (Ethan Solomita) ...       1
+        2843  From: r0506048@cml3 (Chun-Hung Lin) Subject: ...       1
+        2844  From: eshneken@ux4.cso.uiuc.edu (Edward A Shne...       2
+        2845  From: ibeshir@nyx.cs.du.edu (Ibrahim) Subject...       2
+
+        [2846 rows x 2 columns]
+
+        >>> atom.textclean(verbose=2)
+
+        Fitting TextCleaner...
+        Cleaning the corpus...
+         --> Decoding unicode characters to ascii.
+         --> Converting text to lower case.
+         --> Dropping 10012 emails from 2830 documents.
+         --> Dropping 0 URL links from 0 documents.
+         --> Dropping 2214 HTML tags from 1304 documents.
+         --> Dropping 2 emojis from 1 documents.
+         --> Dropping 31222 numbers from 2843 documents.
+         --> Dropping punctuation from the text.
+
+        >>> print(atom.dataset)
+
+                                                        corpus  target
+        0     from  smile subject forsale   used guitar amp...       2
+        1     from  nancy patricia oconnor subject re amusi...       0
+        2     from  andre beck subject re animation with xp...       1
+        3     from  keith allan schneider subject re moralt...       0
+        4     from  rob strom subject re socmotss et al pri...       0
+                                                         ...     ...
+        2841  from  daniel r reitman attorney to be subject...       3
+        2842  from  ethan solomita subject forcing a window...       1
+        2843  from r0506048cml3 chunhung lin subject re xma...       1
+        2844  from  edward a shnekendorf subject airline ti...       2
+        2845  from  ibrahim subject terminal for sale orga...       2
+
+        [2846 rows x 2 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.nlp import TextCleaner
+        >>> from sklearn.datasets import fetch_20newsgroups
+
+        >>> X, y = fetch_20newsgroups(
+        ...     return_X_y=True,
+        ...     categories=[
+        ...         'alt.atheism',
+        ...         'sci.med',
+        ...         'comp.windows.x',
+        ...     ],
+        ...     shuffle=True,
+        ...     random_state=1,
+        ... )
+        >>> X = np.array(X).reshape(-1, 1)
+
+        >>> textcleaner = TextCleaner(verbose=2)
+        >>> X = textcleaner.transform(X)
+
+        Cleaning the corpus...
+         --> Decoding unicode characters to ascii.
+         --> Converting text to lower case.
+         --> Dropping 10012 emails from 2830 documents.
+         --> Dropping 0 URL links from 0 documents.
+         --> Dropping 2214 HTML tags from 1304 documents.
+         --> Dropping 2 emojis from 1 documents.
+         --> Dropping 31222 numbers from 2843 documents.
+         --> Dropping punctuation from the text.
+
+        >>> print(X)
+
+                                                         corpus
+        0     from donald mackie  subject re barbecued food...
+        1     from  david stockton subject re krillean phot...
+        2     from  julia miller subject posix message cata...
+        3     from   subject re yet more rushdie re islamic...
+        4     from  joseph a muller subject jfk autograph f...
+                                                         ...
+        2841  from  joel reymont subject motif maling list\...
+        2842  from  daniel paul checkman subject re is msg ...
+        2843  from  ad absurdum per aspera subject re its a...
+        2844  from  ralf subject items for sale organizati...
+        2845  from  walter g seefeld subject klipsch kg1 sp...
+
+        [2846 rows x 1 columns]
+
+        ```
+
     """
+
+    _train_only = False
 
     @typechecked
     def __init__(
         self,
+        *,
         decode: bool = True,
         lower_case: bool = True,
         drop_email: bool = True,
@@ -129,7 +261,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         regex_number: Optional[str] = None,
         drop_punctuation: bool = True,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.decode = decode
@@ -150,7 +282,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drops = pd.DataFrame()
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -160,7 +292,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -210,14 +342,14 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Cleaning the corpus...", 1)
 
         if self.decode:
-            if isinstance(X[corpus].iloc[0], str):
+            if isinstance(X[corpus].iat[0], str):
                 X[corpus] = X[corpus].apply(lambda row: to_ascii(row))
             else:
                 X[corpus] = X[corpus].apply(lambda row: [to_ascii(str(w)) for w in row])
         self.log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
-            if isinstance(X[corpus].iloc[0], str):
+            if isinstance(X[corpus].iat[0], str):
                 X[corpus] = X[corpus].str.lower()
             else:
                 X[corpus] = X[corpus].apply(lambda row: [str(w).lower() for w in row])
@@ -260,7 +392,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.drop_punctuation:
             trans_table = str.maketrans("", "", punctuation)  # Translation table
-            if isinstance(X[corpus].iloc[0], str):
+            if isinstance(X[corpus].iat[0], str):
                 func = lambda row: row.translate(trans_table)
             else:
                 func = lambda row: [str(w).translate(trans_table) for w in row]
@@ -271,153 +403,8 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drops = pd.concat(drops.values(), axis=1)
 
         # Drop empty tokens from every row
-        if not isinstance(X[corpus][0], str):
+        if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: [w for w in row if w])
-
-        return X
-
-
-class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Tokenize the corpus.
-
-    Convert documents into sequences of words. Additionally,
-    create n-grams (represented by words united with underscores,
-    e.g. "New_York") based on their frequency in the corpus. The
-    transformations are applied on the column named `corpus`. If
-    there is no column with that name, an exception is raised.
-
-    Parameters
-    ----------
-    bigram_freq: int, float or None, optional (default=None)
-        Frequency threshold for bigram creation.
-            - If None: Don't create any bigrams.
-            - If int: Minimum number of occurrences to make a bigram.
-            - If float: Minimum frequency fraction to make a bigram.
-
-    trigram_freq: int, float or None, optional (default=None)
-        Frequency threshold for trigram creation.
-            - If None: Don't create any trigrams.
-            - If int: Minimum number of occurrences to make a trigram.
-            - If float: Minimum frequency fraction to make a trigram.
-
-    quadgram_freq: int, float or None, optional (default=None)
-        Frequency threshold for quadgram creation.
-            - If None: Don't create any quadgrams.
-            - If int: Minimum number of occurrences to make a quadgram.
-            - If float: Minimum frequency fraction to make a quadgram.
-
-    verbose: int, optional (default=0)
-        Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
-
-    logger: str, Logger or None, optional (default=None)
-        - If None: Doesn't save a logging file.
-        - If str: Name of the log file. Use "auto" for automatic naming.
-        - Else: Python `logging.Logger` instance.
-
-    Attributes
-    ----------
-    bigrams: pd.DataFrame
-        Created bigrams and their frequencies.
-
-    trigrams: pd.DataFrame
-        Created trigrams and their frequencies.
-
-    quadgrams: pd.DataFrame
-        Created quadgrams and their frequencies.
-
-    """
-
-    @typechecked
-    def __init__(
-        self,
-        bigram_freq: Optional[SCALAR] = None,
-        trigram_freq: Optional[SCALAR] = None,
-        quadgram_freq: Optional[SCALAR] = None,
-        verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
-    ):
-        super().__init__(verbose=verbose, logger=logger)
-        self.bigram_freq = bigram_freq
-        self.trigram_freq = trigram_freq
-        self.quadgram_freq = quadgram_freq
-
-        self.bigrams = None
-        self.trigrams = None
-        self.quadgrams = None
-
-    def transform(self, X, y=None):
-        """Tokenize the text.
-
-        Parameters
-        ----------
-        X: dataframe-like
-            Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
-
-        y: int, str, sequence or None, optional (default=None)
-            Does nothing. Implemented for continuity of the API.
-
-        Returns
-        -------
-        pd.DataFrame
-            Transformed corpus.
-
-        """
-
-        def replace_ngrams(row, ngram, sep="<&&>"):
-            """Replace a ngram with one word unified by underscores."""
-            row = "&>" + sep.join(row) + "<&"  # Indicate words with separator
-            row = row.replace(  # Replace ngrams' separator with underscore
-                "&>" + sep.join(ngram) + "<&",
-                "&>" + "_".join(ngram) + "<&",
-            )
-            return row[2:-2].split(sep)
-
-        X, y = self._prepare_input(X, y)
-        corpus = get_corpus(X)
-
-        self.log("Tokenizing the corpus...", 1)
-
-        if isinstance(X[corpus].iloc[0], str):
-            try:  # Download tokenizer if not already on machine
-                nltk.data.find("tokenizers/punkt")
-            except LookupError:
-                nltk.download("punkt")
-            X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
-
-        ngrams = {
-            "bigrams": BigramCollocationFinder,
-            "trigrams": TrigramCollocationFinder,
-            "quadgrams": QuadgramCollocationFinder,
-        }
-
-        for attr, finder in ngrams.items():
-            frequency = getattr(self, f"{attr[:-1]}_freq")
-            if frequency:
-                # Search for all n-grams in the corpus
-                ngram_fd = finder.from_documents(X[corpus]).ngram_fd
-
-                if frequency < 1:
-                    frequency = int(frequency * len(ngram_fd))
-
-                rows = []
-                occur, counts = 0, 0
-                for ngram, freq in ngram_fd.items():
-                    if freq >= frequency:
-                        occur += 1
-                        counts += freq
-                        X[corpus] = X[corpus].apply(replace_ngrams, args=(ngram,))
-                        rows.append({attr[:-1]: "_".join(ngram), "frequency": freq})
-
-                # Sort ngrams by frequency and add the dataframe as attribute
-                df = pd.DataFrame(rows).sort_values("frequency", ascending=False)
-                setattr(self, attr, df.reset_index(drop=True))
-
-                self.log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
 
         return X
 
@@ -431,48 +418,159 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     an exception is raised. If the provided documents are strings,
     words are separated by spaces.
 
+    This class can be accessed from atom through the [textnormalize]
+    [atomclassifier-textnormalize] method. Read more in the [user guide]
+    [text-normalization].
+
     Parameters
     ----------
-    stopwords: bool or str, optional (default=True)
+    stopwords: bool or str, default=True
         Whether to remove a predefined dictionary of stopwords.
-            - If False: Don't remove any predefined stopwords.
-            - If True: Drop predefined english stopwords from the text.
-            - If str: Language from `nltk.corpus.stopwords.words`.
 
-    custom_stopwords: sequence or None, optional (default=None)
+        - If False: Don't remove any predefined stopwords.
+        - If True: Drop predefined english stopwords from the text.
+        - If str: Language from `nltk.corpus.stopwords.words`.
+
+    custom_stopwords: sequence or None, default=None
         Custom stopwords to remove from the text.
 
-    stem: bool or str, optional (default=False)
-        Whether to apply stemming using SnowballStemmer.
-            - If False: Don't apply stemming.
-            - If True: Apply stemmer based on the english language.
-            - If str: Language from `SnowballStemmer.languages`.
+    stem: bool or str, default=False
+        Whether to apply stemming using [SnowballStemmer][].
 
-    lemmatize: bool, optional (default=True)
+        - If False: Don't apply stemming.
+        - If True: Apply stemmer based on the english language.
+        - If str: Language from `SnowballStemmer.languages`.
+
+    lemmatize: bool, default=True
         Whether to apply lemmatization using WordNetLemmatizer.
 
-    verbose: int, optional (default=0)
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
+    See Also
+    --------
+    atom.nlp:TextCleaner
+    atom.nlp:Tokenizer
+    atom.nlp:Vectorizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+                                       corpus  target
+        0                    running the test       0
+        1            hi there this is a test!       1
+        2                      this is a test       0
+        3  new york is larger than washington       1
+        4                    New york is nice       0
+        5                   I àm in ne'w york       1
+        6                     another line...       1
+        7                            new york       0
+
+        >>> atom.textnormalize(stopwords="english", lemmatize=True, verbose=2)
+
+        Fitting TextNormalizer...
+        Normalizing the corpus...
+         --> Dropping stopwords.
+         --> Applying lemmatization.
+
+        >>> print(atom.dataset)
+
+                                   corpus  target
+        0                     [run, test]       0
+        1                     [hi, test!]       1
+        2                          [test]       0
+        3  [new, york, large, washington]       1
+        4               [New, york, nice]       0
+        5             [I, àm, ne'w, york]       1
+        6              [another, line...]       1
+        7                     [new, york]       0
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.nlp import TextNormalizer
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> textnormalizer = TextNormalizer(
+        ...     stopwords="english",
+        ...     lemmatize=True,
+        ...     verbose=2,
+        ... )
+        >>> X = textnormalizer.transform(X)
+
+        Fitting TextNormalizer...
+        Normalizing the corpus...
+         --> Dropping stopwords.
+         --> Applying lemmatization.
+
+        >>> print(X)
+
+                                   corpus
+        0             [I, àm, ne'w, york]
+        1               [New, york, nice]
+        2                     [new, york]
+        3                     [hi, test!]
+        4              [another, line...]
+        5  [new, york, large, washington]
+        6                     [run, test]
+        7                          [test]
+
+        ```
+
     """
+
+    _train_only = False
 
     @typechecked
     def __init__(
         self,
+        *,
         stopwords: Union[bool, str] = True,
         custom_stopwords: Optional[SEQUENCE_TYPES] = None,
         stem: Union[bool, str] = False,
         lemmatize: bool = True,
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.stopwords = stopwords
@@ -480,7 +578,8 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.stem = stem
         self.lemmatize = lemmatize
 
-    def transform(self, X, y=None):
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Normalize the text.
 
         Parameters
@@ -490,7 +589,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -517,7 +616,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Normalizing the corpus...", 1)
 
         # If the corpus is not tokenized, separate by space
-        if isinstance(X[corpus].iloc[0], str):
+        if isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: row.split())
 
         stopwords = []
@@ -526,10 +625,6 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 self.stopwords = "english"
 
             # Get stopwords from the NLTK library
-            try:  # Download resource if not already on machine
-                nltk.data.find("corpora/stopwords")
-            except LookupError:
-                nltk.download("stopwords")
             stopwords = list(set(nltk.corpus.stopwords.words(self.stopwords.lower())))
 
         # Join predefined with customs stopwords
@@ -550,23 +645,278 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             X[corpus] = X[corpus].apply(lambda row: [ss.stem(word) for word in row])
 
         if self.lemmatize:
-            try:  # Download resource if not already on machine
-                nltk.data.find("corpora/wordnet")
-            except LookupError:
-                nltk.download("wordnet")
-            try:
-                nltk.data.find("taggers/averaged_perceptron_tagger")
-            except LookupError:
-                nltk.download("averaged_perceptron_tagger")
-            try:
-                nltk.data.find("corpora/omw-1.4")
-            except LookupError:
-                nltk.download("omw-1.4")
-
             self.log(" --> Applying lemmatization.", 2)
             wnl = WordNetLemmatizer()
             f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
             X[corpus] = X[corpus].apply(f)
+
+        return X
+
+
+class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Tokenize the corpus.
+
+    Convert documents into sequences of words. Additionally,
+    create n-grams (represented by words united with underscores,
+    e.g. "New_York") based on their frequency in the corpus. The
+    transformations are applied on the column named `corpus`. If
+    there is no column with that name, an exception is raised.
+
+    This class can be accessed from atom through the [tokenize]
+    [atomclassifier-tokenize] method. Read more in the [user guide]
+    [tokenization].
+
+    Parameters
+    ----------
+    bigram_freq: int, float or None, default=None
+        Frequency threshold for bigram creation.
+
+        - If None: Don't create any bigrams.
+        - If int: Minimum number of occurrences to make a bigram.
+        - If float: Minimum frequency fraction to make a bigram.
+
+    trigram_freq: int, float or None, default=None
+        Frequency threshold for trigram creation.
+
+        - If None: Don't create any trigrams.
+        - If int: Minimum number of occurrences to make a trigram.
+        - If float: Minimum frequency fraction to make a trigram.
+
+    quadgram_freq: int, float or None, default=None
+        Frequency threshold for quadgram creation.
+
+        - If None: Don't create any quadgrams.
+        - If int: Minimum number of occurrences to make a quadgram.
+        - If float: Minimum frequency fraction to make a quadgram.
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    Attributes
+    ----------
+    bigrams: pd.DataFrame
+        Created bigrams and their frequencies.
+
+    trigrams: pd.DataFrame
+        Created trigrams and their frequencies.
+
+    quadgrams: pd.DataFrame
+        Created quadgrams and their frequencies.
+
+    See Also
+    --------
+    atom.nlp:TextCleaner
+    atom.nlp:TextNormalizer
+    atom.nlp:Vectorizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+                                       corpus  target
+        0                            new york       0
+        1  new york is larger than washington       1
+        2                    New york is nice       0
+        3                   I àm in ne'w york       1
+        4                      this is a test       0
+        5                     another line...       1
+        6                    running the test       0
+        7            hi there this is a test!       1
+
+        >>> atom.tokenize(verbose=2)
+
+        Fitting Tokenizer...
+        Tokenizing the corpus...
+
+        >>> print(atom.dataset)
+
+                                              corpus  target
+        0                                [new, york]       0
+        1  [new, york, is, larger, than, washington]       1
+        2                      [New, york, is, nice]       0
+        3                [I, àm, in, ne, ', w, york]       1
+        4                        [this, is, a, test]       0
+        5                       [another, line, ...]       1
+        6                       [running, the, test]       0
+        7          [hi, there, this, is, a, test, !]       1
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.nlp import Tokenizer
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> tokenizer = Tokenizer(bigram_freq=2, verbose=2)
+        >>> X = tokenizer.transform(X)
+
+        Fitting Tokenizer...
+        Tokenizing the corpus...
+         --> Creating 5 bigrams on 10 locations.
+
+        >>> print(X)
+
+                                             corpus
+        0               [I, àm, in, ne, ', w, york]
+        1                      [New, york_is, nice]
+        2                                [new_york]
+        3           [hi, there, this_is, a_test, !]
+        4                      [another, line, ...]
+        5  [new, york_is, larger, than, washington]
+        6                      [running, the, test]
+        7                         [this_is, a_test]
+
+        ```
+
+    """
+
+    _train_only = False
+
+    @typechecked
+    def __init__(
+        self,
+        bigram_freq: Optional[SCALAR] = None,
+        trigram_freq: Optional[SCALAR] = None,
+        quadgram_freq: Optional[SCALAR] = None,
+        *,
+        verbose: INT = 0,
+        logger: Optional[Union[str, Logger]] = None,
+    ):
+        super().__init__(verbose=verbose, logger=logger)
+        self.bigram_freq = bigram_freq
+        self.trigram_freq = trigram_freq
+        self.quadgram_freq = quadgram_freq
+
+        self.bigrams = None
+        self.trigrams = None
+        self.quadgrams = None
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+        """Tokenize the text.
+
+        Parameters
+        ----------
+        X: dataframe-like
+            Feature set with shape=(n_samples, n_features). If X is
+            not a pd.DataFrame, it should be composed of a single
+            feature containing the text documents.
+
+        y: int, str, dict, sequence or None, default=None
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        pd.DataFrame
+            Transformed corpus.
+
+        """
+
+        def replace_ngrams(row: List[str], ngram: Tuple[str]) -> List[str]:
+            """Replace a ngram with one word unified by underscores.
+
+            Parameters
+            ----------
+            row: list of str
+                Document in the corpus.
+
+            ngram: tuple of str
+                Words in the ngram.
+
+            Returns
+            -------
+            str
+               Document in the corpus with unified ngrams.
+
+            """
+            sep = "<&&>"  # Separator between words in a ngram.
+
+            row = "&>" + sep.join(row) + "<&"  # Indicate words with separator
+            row = row.replace(  # Replace ngrams separator with underscore
+                "&>" + sep.join(ngram) + "<&",
+                "&>" + "_".join(ngram) + "<&",
+            )
+
+            return row[2:-2].split(sep)
+
+        X, y = self._prepare_input(X, y)
+        corpus = get_corpus(X)
+
+        self.log("Tokenizing the corpus...", 1)
+
+        if isinstance(X[corpus].iat[0], str):
+            X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
+
+        ngrams = {
+            "bigrams": BigramCollocationFinder,
+            "trigrams": TrigramCollocationFinder,
+            "quadgrams": QuadgramCollocationFinder,
+        }
+
+        for attr, finder in ngrams.items():
+            frequency = getattr(self, f"{attr[:-1]}_freq")
+            if frequency:
+                # Search for all n-grams in the corpus
+                ngram_fd = finder.from_documents(X[corpus]).ngram_fd
+
+                if frequency < 1:
+                    frequency = int(frequency * len(ngram_fd))
+
+                rows = []
+                occur, counts = 0, 0
+                for ngram, freq in ngram_fd.items():
+                    if freq >= frequency:
+                        occur += 1
+                        counts += freq
+                        X[corpus] = X[corpus].apply(replace_ngrams, args=(ngram,))
+                        rows.append({attr[:-1]: "_".join(ngram), "frequency": freq})
+
+                if rows:
+                    # Sort ngrams by frequency and add the dataframe as attribute
+                    df = pd.DataFrame(rows).sort_values("frequency", ascending=False)
+                    setattr(self, attr, df.reset_index(drop=True))
+
+                    self.log(f" --> Creating {occur} {attr} on {counts} locations.", 2)
+                else:
+                    self.log(f" --> No {attr} found in the corpus.")
 
         return X
 
@@ -576,37 +926,53 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Transform the corpus into meaningful vectors of numbers. The
     transformation is applied on the column named `corpus`. If
-    there is no column with that name, an exception is raised. The
-    transformed columns are named after the word they are embedding
-    with the prefix `corpus_`.
+    there is no column with that name, an exception is raised.
+
+    If strategy="bow" or "tfidf", the transformed columns are named
+    after the word they are embedding with the prefix `corpus_`. If
+    strategy="hashing", the columns are named hash[N], where N stands
+    for the n-th hashed column.
+
+    This class can be accessed from atom through the [vectorize]
+    [atomclassifier-vectorize] method. Read more in the [user guide]
+    [vectorization].
 
     Parameters
     ----------
-    strategy: str, optional (default="bow")
+    strategy: str, default="bow"
         Strategy with which to vectorize the text. Choose from:
-            - "bow": Bag of Words.
-            - "tfidf": Term Frequency - Inverse Document Frequency.
-            - "hashing": Vectorize to a matrix of token occurrences.
 
-    return_sparse: bool, optional (default=True)
+        - "[bow][]": Bag of Words.
+        - "[tfidf][]": Term Frequency - Inverse Document Frequency.
+        - "[hashing][]": Vectorize to a matrix of token occurrences.
+
+    return_sparse: bool, default=True
         Whether to return the transformation output as a dataframe
         of sparse arrays. Must be False when there are other columns
         in X (besides `corpus`) that are non-sparse.
 
-    gpu: bool or str, optional (default=False)
-        Train LabelEncoder on GPU (instead of CPU). Only for
-        `encode_target=True`.
-            - If False: Always use CPU implementation.
-            - If True: Use GPU implementation if possible.
-            - If "force": Force GPU implementation.
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
 
-    verbose: int, optional (default=0)
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "cuml" (only if device="gpu")
+
+    verbose: int, default=0
         Verbosity level of the class. Choose from:
-            - 0 to not print anything.
-            - 1 to print basic information.
-            - 2 to print detailed information.
 
-    logger: str, Logger or None, optional (default=None)
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    logger: str, Logger or None, default=None
         - If None: Doesn't save a logging file.
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
@@ -616,9 +982,9 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <strategy>: sklearn transformer
+    [strategy]: sklearn transformer
         Estimator instance (lowercase strategy) used to vectorize the
-        corpus, e.g. `vectorizer.tfidf` for the TF-IDF strategy.
+        corpus, e.g. `vectorizer.tfidf` for the tfidf strategy.
 
     feature_names_in_: np.array
         Names of features seen during fit.
@@ -626,19 +992,120 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     n_features_in_: int
         Number of features seen during fit.
 
+
+    See Also
+    --------
+    atom.nlp:TextCleaner
+    atom.nlp:TextNormalizer
+    atom.nlp:Tokenizer
+
+    Examples
+    --------
+
+    === "atom"
+        ```pycon
+        >>> from atom import ATOMClassifier
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> atom = ATOMClassifier(X, y)
+        >>> print(atom.dataset)
+
+                                       corpus  target
+        0                            new york       0
+        1                   I àm in ne'w york       1
+        2                      this is a test       0
+        3                    running the test       0
+        4                     another line...       1
+        5            hi there this is a test!       1
+        6                    New york is nice       0
+        7  new york is larger than washington       1
+
+        >>> atom.vectorize(strategy="tfidf", verbose=2)
+
+        Fitting Vectorizer...
+        Vectorizing the corpus...
+
+        >>> print(atom.dataset)
+
+           corpus_another  corpus_in  corpus_is  ...  corpus_york  corpus_àm  target
+        0        0.000000   0.000000   0.000000  ...     0.627914   0.000000       0
+        1        0.000000   0.523358   0.000000  ...     0.422242   0.523358       1
+        2        0.000000   0.000000   0.614189  ...     0.000000   0.000000       0
+        3        0.000000   0.000000   0.000000  ...     0.000000   0.000000       0
+        4        0.707107   0.000000   0.000000  ...     0.000000   0.000000       1
+        5        0.000000   0.000000   0.614189  ...     0.000000   0.000000       1
+        6        0.000000   0.000000   0.614189  ...     0.495524   0.000000       0
+        7        0.000000   0.000000   0.614189  ...     0.495524   0.000000       1
+        [8 rows x 13 columns]
+
+        ```
+
+    === "stand-alone"
+        ```pycon
+        >>> from atom.nlp import Vectorizer
+
+        >>> X = [
+        ...    ["I àm in ne'w york"],
+        ...    ["New york is nice"],
+        ...    ["new york"],
+        ...    ["hi there this is a test!"],
+        ...    ["another line..."],
+        ...    ["new york is larger than washington"],
+        ...    ["running the test"],
+        ...    ["this is a test"],
+        ... ]
+        >>> y = [1, 0, 0, 1, 1, 1, 0, 0]
+
+        >>> vectorizer = Vectorizer(strategy="tfidf", verbose=2)
+        >>> X = vectorizer.fit_transform(X)
+
+        Fitting Vectorizer...
+        Vectorizing the corpus...
+
+        >>> print(X)
+
+           corpus_another  corpus_hi  ...  corpus_york  corpus_àm
+        0        0.000000   0.000000  ...     0.343774   0.542162
+        1        0.000000   0.000000  ...     0.415657   0.000000
+        2        0.000000   0.000000  ...     0.659262   0.000000
+        3        0.000000   0.525049  ...     0.000000   0.000000
+        4        0.707107   0.000000  ...     0.000000   0.000000
+        5        0.000000   0.000000  ...     0.304821   0.000000
+        6        0.000000   0.000000  ...     0.000000   0.000000
+        7        0.000000   0.000000  ...     0.000000   0.000000
+
+        [8 rows x 18 columns]
+
+        ```
+
     """
+
+    _train_only = False
 
     @typechecked
     def __init__(
         self,
         strategy: str = "bow",
+        *,
         return_sparse: bool = True,
-        gpu: Union[bool, str] = False,
+        device: str = "cpu",
+        engine: str = "sklearn",
         verbose: INT = 0,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         **kwargs,
     ):
-        super().__init__(gpu=gpu, verbose=verbose, logger=logger)
+        super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.strategy = strategy
         self.return_sparse = return_sparse
         self.kwargs = kwargs
@@ -647,7 +1114,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> Vectorizer:
         """Fit to data.
 
         Parameters
@@ -657,13 +1124,13 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
         Vectorizer
-            Fitted instance of self.
+            Estimator instance.
 
         """
         X, y = self._prepare_input(X, y)
@@ -672,17 +1139,21 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         corpus = get_corpus(X)
 
         # Convert sequence of tokens to space separated string
-        if not isinstance(X[corpus][0], str):
+        if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         strategies = CustomDict(
-            bow=self._get_gpu(CountVectorizer, "cuml.feature_extraction.text"),
-            tfidf=self._get_gpu(TfidfVectorizer, "cuml.feature_extraction.text"),
-            hashing=self._get_gpu(HashingVectorizer, "cuml.feature_extraction.text"),
+            bow="CountVectorizer",
+            tfidf="TfidfVectorizer",
+            hashing="HashingVectorizer",
         )
 
         if self.strategy in strategies:
-            self._estimator = strategies[self.strategy](**self.kwargs)
+            estimator = self._get_est_class(
+                name=strategies[self.strategy],
+                module="feature_extraction.text",
+            )
+            self._estimator = estimator(**self.kwargs)
         else:
             raise ValueError(
                 "Invalid value for the strategy parameter, got "
@@ -699,7 +1170,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
         """Vectorize the text.
 
         Parameters
@@ -709,7 +1180,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, sequence or None, optional (default=None)
+        y: int, str, dict, sequence or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -725,19 +1196,19 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Vectorizing the corpus...", 1)
 
         # Convert sequence of tokens to space separated string
-        if not isinstance(X[corpus].iloc[0], str):
+        if not isinstance(X[corpus].iat[0], str):
             X[corpus] = X[corpus].apply(lambda row: " ".join(row))
 
         matrix = self._estimator.transform(X[corpus])
         if hasattr(self._estimator, "get_feature_names_out"):
-            columns = [f"{corpus}_{w}" for w in self._estimator.get_feature_names_out()]
+            columns = [f"corpus_{w}" for w in self._estimator.get_feature_names_out()]
         else:
             # Hashing has no words to put as column names
-            columns = [f"hash{i}" for i in range(matrix.shape[1])]
+            columns = [f"hash{i}" for i in range(1, matrix.shape[1] + 1)]
 
         X = X.drop(corpus, axis=1)  # Drop original corpus column
 
-        if self.gpu:
+        if "sklearn" not in self._estimator.__class__.__module__:
             matrix = matrix.get()  # Convert cupy sparse array back to scipy
 
             # cuML estimators have a slightly different method name

@@ -13,22 +13,25 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/nlp/textcleaner/">
       
       <link rel="icon" href="../../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
   <title>TextCleaner - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.e8d9bf0c.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.472b142f.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.08040f6c.min.css">
         
       
+      
+
     
     
     
       
+        
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
@@ -38,7 +41,7 @@
     
       <link rel="stylesheet" href="../../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -48,7 +51,11 @@
   
 
 
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
 
+    
     
     
   </head>
@@ -83,8 +90,8 @@
     </div>
     
       <div data-md-component="outdated" hidden>
-        <aside class="md-banner md-banner--warning">
-          
+        
+          <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
   You're not viewing the latest version.
@@ -94,8 +101,8 @@
 
             </div>
             <script>var el=document.querySelector("[data-md-component=outdated]"),outdated=__md_get("__outdated",sessionStorage);!0===outdated&&el&&(el.hidden=!1)</script>
-          
-        </aside>
+          </aside>
+        
       </div>
     
     
@@ -111,7 +118,7 @@
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -134,19 +141,21 @@
         
           
           
+          
           <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
           
             <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
             </label>
           
         
           
           
+          
           <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
           
             <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
             </label>
           
         
@@ -155,7 +164,7 @@
     
     
       <label class="md-header__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
       </label>
       <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
@@ -163,15 +172,17 @@
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
       <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -192,7 +203,7 @@
         <a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     tvdboom/ATOM
@@ -228,18 +239,6 @@
   <li class="md-tabs__item">
     <a href="../../../getting_started/" class="md-tabs__link">
       Getting started
-    </a>
-  </li>
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="../../../release_history/" class="md-tabs__link">
-      Release history
     </a>
   </li>
 
@@ -294,8 +293,24 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../examples/automl/" class="md-tabs__link">
+      <a href="../../../examples/accelerating_pipelines/" class="md-tabs__link">
         Examples
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/v5.x.x/" class="md-tabs__link">
+        Changelog
       </a>
     </li>
   
@@ -388,7 +403,7 @@
       <a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     tvdboom/ATOM
@@ -435,37 +450,22 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../../release_history/" class="md-nav__link">
-        Release history
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_4">
+        <label class="md-nav__link" for="__nav_3">
           User guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="User guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_4">
+        <label class="md-nav__title" for="__nav_3">
           <span class="md-nav__icon md-icon"></span>
           User guide
         </label>
@@ -533,8 +533,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/gpu/" class="md-nav__link">
-        GPU
+      <a href="../../../user_guide/accelerating/" class="md-nav__link">
+        Accelerating pipelines
       </a>
     </li>
   
@@ -561,8 +561,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/nlp/" class="md-nav__link">
-        NLP
+      <a href="../../../user_guide/feature_engineering/" class="md-nav__link">
+        Feature engineering
       </a>
     </li>
   
@@ -575,8 +575,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../user_guide/feature_engineering/" class="md-nav__link">
-        Feature engineering
+      <a href="../../../user_guide/nlp/" class="md-nav__link">
+        NLP
       </a>
     </li>
   
@@ -658,18 +658,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_5">
+        <label class="md-nav__link" for="__nav_4">
           API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="API" data-md-level="1">
-        <label class="md-nav__title" for="__nav_5">
+        <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           API
         </label>
@@ -684,18 +684,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_1" type="checkbox" id="__nav_5_1" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1" type="checkbox" id="__nav_4_1" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_5_1">
+        <label class="md-nav__link" for="__nav_4_1">
           ATOM
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="ATOM" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_1">
+        <label class="md-nav__title" for="__nav_4_1">
           <span class="md-nav__icon md-icon"></span>
           ATOM
         </label>
@@ -709,20 +709,6 @@
     <li class="md-nav__item">
       <a href="../../ATOM/atomclassifier/" class="md-nav__link">
         ATOMClassifier
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ATOM/atomregressor/" class="md-nav__link">
-        ATOMRegressor
       </a>
     </li>
   
@@ -757,6 +743,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ATOM/atomregressor/" class="md-nav__link">
+        ATOMRegressor
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -773,18 +773,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_2" type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_2" type="checkbox" id="__nav_4_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_5_2">
+        <label class="md-nav__link" for="__nav_4_2">
           Data cleaning
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Data cleaning" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_2">
+        <label class="md-nav__title" for="__nav_4_2">
           <span class="md-nav__icon md-icon"></span>
           Data cleaning
         </label>
@@ -796,22 +796,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_cleaning/scaler/" class="md-nav__link">
-        Scaler
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../data_cleaning/normalizer/" class="md-nav__link">
-        Normalizer
+      <a href="../../data_cleaning/balancer/" class="md-nav__link">
+        Balancer
       </a>
     </li>
   
@@ -826,20 +812,6 @@
     <li class="md-nav__item">
       <a href="../../data_cleaning/cleaner/" class="md-nav__link">
         Cleaner
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../data_cleaning/imputer/" class="md-nav__link">
-        Imputer
       </a>
     </li>
   
@@ -880,6 +852,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../data_cleaning/imputer/" class="md-nav__link">
+        Imputer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_cleaning/normalizer/" class="md-nav__link">
+        Normalizer
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../data_cleaning/pruner/" class="md-nav__link">
         Pruner
       </a>
@@ -894,8 +894,97 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_cleaning/balancer/" class="md-nav__link">
-        Balancer
+      <a href="../../data_cleaning/scaler/" class="md-nav__link">
+        Scaler
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_3" type="checkbox" id="__nav_4_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_3">
+          Feature engineering
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Feature engineering" data-md-level="2">
+        <label class="md-nav__title" for="__nav_4_3">
+          <span class="md-nav__icon md-icon"></span>
+          Feature engineering
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featureextractor/" class="md-nav__link">
+        FeatureExtractor
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featuregenerator/" class="md-nav__link">
+        FeatureGenerator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featuregrouper/" class="md-nav__link">
+        FeatureGrouper
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature_engineering/featureselector/" class="md-nav__link">
+        FeatureSelector
       </a>
     </li>
   
@@ -920,18 +1009,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_3" type="checkbox" id="__nav_5_3" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_4" type="checkbox" id="__nav_4_4" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_5_3">
+        <label class="md-nav__link" for="__nav_4_4">
           NLP
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="NLP" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_3">
+        <label class="md-nav__title" for="__nav_4_4">
           <span class="md-nav__icon md-icon"></span>
           NLP
         </label>
@@ -977,8 +1066,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#attributes" class="md-nav__link">
-    Attributes
+  <a href="#example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -986,13 +1075,6 @@
         <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
   </a>
   
 </li>
@@ -1012,8 +1094,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../tokenizer/" class="md-nav__link">
-        Tokenizer
+      <a href="../textnormalizer/" class="md-nav__link">
+        TextNormalizer
       </a>
     </li>
   
@@ -1026,8 +1108,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../textnormalizer/" class="md-nav__link">
-        TextNormalizer
+      <a href="../tokenizer/" class="md-nav__link">
+        Tokenizer
       </a>
     </li>
   
@@ -1064,93 +1146,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_4" type="checkbox" id="__nav_5_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_5" type="checkbox" id="__nav_4_5" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_5_4">
-          Feature engineering
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Feature engineering" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_4">
-          <span class="md-nav__icon md-icon"></span>
-          Feature engineering
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../feature_engineering/feature_extractor/" class="md-nav__link">
-        FeatureExtractor
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../feature_engineering/feature_generator/" class="md-nav__link">
-        FeatureGenerator
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../feature_engineering/feature_selector/" class="md-nav__link">
-        FeatureSelector
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_5" type="checkbox" id="__nav_5_5" >
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_5_5">
+        <label class="md-nav__link" for="__nav_4_5">
           Training
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Training" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_5">
+        <label class="md-nav__title" for="__nav_4_5">
           <span class="md-nav__icon md-icon"></span>
           Training
         </label>
@@ -1256,18 +1263,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_6" type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_6" type="checkbox" id="__nav_4_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_5_6">
+        <label class="md-nav__link" for="__nav_4_6">
           Models
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Models" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_6">
+        <label class="md-nav__title" for="__nav_4_6">
           <span class="md-nav__icon md-icon"></span>
           Models
         </label>
@@ -1279,176 +1286,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/dummy/" class="md-nav__link">
-        Dummy Estimator
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/gp/" class="md-nav__link">
-        Gaussian Process
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/gnb/" class="md-nav__link">
-        Gaussian Naive Bayes
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/mnb/" class="md-nav__link">
-        Multinomial Naive Bayes
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/bnb/" class="md-nav__link">
-        Bernoulli Naive Bayes
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/catnb/" class="md-nav__link">
-        Categorical Naive Bayes
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/cnb/" class="md-nav__link">
-        Complement Naive Bayes
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/ols/" class="md-nav__link">
-        Ordinary Least Squares
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/ridge/" class="md-nav__link">
-        Ridge Estimator
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/lasso/" class="md-nav__link">
-        Lasso Regression
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/en/" class="md-nav__link">
-        ElasticNet Regression
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/lars/" class="md-nav__link">
-        Least Angle Regression
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/br/" class="md-nav__link">
-        Bayesian Ridge
+      <a href="../../models/adab/" class="md-nav__link">
+        AdaBoost
       </a>
     </li>
   
@@ -1462,119 +1301,7 @@
   
     <li class="md-nav__item">
       <a href="../../models/ard/" class="md-nav__link">
-        Automated Relevance Determination
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/huber/" class="md-nav__link">
-        Huber Regression
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/perc/" class="md-nav__link">
-        Perceptron
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/lr/" class="md-nav__link">
-        Logistic Regression
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/lda/" class="md-nav__link">
-        Linear Discriminant Analysis
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/qda/" class="md-nav__link">
-        Quadratic Discriminant Analysis
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/knn/" class="md-nav__link">
-        K-Nearest Neighbors
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/rnn/" class="md-nav__link">
-        Radius Nearest Neighbors
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/tree/" class="md-nav__link">
-        Decision Tree
+        AutomaticRelevanceDetermination
       </a>
     </li>
   
@@ -1601,8 +1328,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/et/" class="md-nav__link">
-        Extra-Trees
+      <a href="../../models/br/" class="md-nav__link">
+        BayesianRidge
       </a>
     </li>
   
@@ -1615,78 +1342,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/rf/" class="md-nav__link">
-        Random Forest
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/adab/" class="md-nav__link">
-        AdaBoost
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/gbm/" class="md-nav__link">
-        Gradient Boosting Machine
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/hgbm/" class="md-nav__link">
-        HistGBM
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/xgb/" class="md-nav__link">
-        XGBoost
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/lgb/" class="md-nav__link">
-        LightGBM
+      <a href="../../models/bnb/" class="md-nav__link">
+        BernoulliNB
       </a>
     </li>
   
@@ -1713,8 +1370,246 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/catnb/" class="md-nav__link">
+        CategoricalNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/cnb/" class="md-nav__link">
+        ComplementNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/tree/" class="md-nav__link">
+        DecisionTree
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/dummy/" class="md-nav__link">
+        Dummy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/en/" class="md-nav__link">
+        ElasticNet
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/etree/" class="md-nav__link">
+        ExtraTree
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/et/" class="md-nav__link">
+        ExtraTrees
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gnb/" class="md-nav__link">
+        GaussianNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gp/" class="md-nav__link">
+        GaussianProcess
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gbm/" class="md-nav__link">
+        GradientBoostingMachine
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/huber/" class="md-nav__link">
+        HuberRegression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/hgbm/" class="md-nav__link">
+        HistGradientBoosting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/knn/" class="md-nav__link">
+        KNearestNeighbors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lasso/" class="md-nav__link">
+        Lasso
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lars/" class="md-nav__link">
+        LeastAngleRegression
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lgb/" class="md-nav__link">
+        LightGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/lda/" class="md-nav__link">
+        LinearDiscriminantAnalysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/lsvm/" class="md-nav__link">
-        Linear SVM
+        LinearSVM
       </a>
     </li>
   
@@ -1727,36 +1622,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/ksvm/" class="md-nav__link">
-        Kernel SVM
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/pa/" class="md-nav__link">
-        Passive Aggressive
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/sgd/" class="md-nav__link">
-        Stochastic Gradient Descent
+      <a href="../../models/lr/" class="md-nav__link">
+        LogisticRegression
       </a>
     </li>
   
@@ -1770,7 +1637,175 @@
   
     <li class="md-nav__item">
       <a href="../../models/mlp/" class="md-nav__link">
-        Multi-layer Perceptron
+        MultiLayerPerceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/mnb/" class="md-nav__link">
+        MultinomialNB
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ols/" class="md-nav__link">
+        OrdinaryLeastSquares
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/omp/" class="md-nav__link">
+        OrthogonalMatchingPursuit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/pa/" class="md-nav__link">
+        PassiveAggressive
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/perc/" class="md-nav__link">
+        Perceptron
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/qda/" class="md-nav__link">
+        QuadraticDiscriminantAnalysis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/rnn/" class="md-nav__link">
+        RadiusNearestNeighbors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/rf/" class="md-nav__link">
+        RandomForest
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ridge/" class="md-nav__link">
+        Ridge
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/sgd/" class="md-nav__link">
+        StochasticGradientDescent
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/svm/" class="md-nav__link">
+        SupportVectorMachine
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/xgb/" class="md-nav__link">
+        XGBoost
       </a>
     </li>
   
@@ -1793,18 +1828,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_7" type="checkbox" id="__nav_5_7" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_7" type="checkbox" id="__nav_4_7" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_5_7">
+        <label class="md-nav__link" for="__nav_4_7">
           Predicting
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Predicting" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_7">
+        <label class="md-nav__title" for="__nav_4_7">
           <span class="md-nav__icon md-icon"></span>
           Predicting
         </label>
@@ -1816,8 +1851,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../predicting/transform/" class="md-nav__link">
-        transform
+      <a href="../../predicting/decision_function/" class="md-nav__link">
+        decision_function
       </a>
     </li>
   
@@ -1844,20 +1879,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../predicting/predict_proba/" class="md-nav__link">
-        predict_proba
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../predicting/predict_log_proba/" class="md-nav__link">
         predict_log_proba
       </a>
@@ -1872,8 +1893,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../predicting/decision_function/" class="md-nav__link">
-        decision_function
+      <a href="../../predicting/predict_proba/" class="md-nav__link">
+        predict_proba
       </a>
     </li>
   
@@ -1910,18 +1931,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_8" type="checkbox" id="__nav_5_8" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_8" type="checkbox" id="__nav_4_8" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_5_8">
+        <label class="md-nav__link" for="__nav_4_8">
           Plots
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Plots" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_8">
+        <label class="md-nav__title" for="__nav_4_8">
           <span class="md-nav__icon md-icon"></span>
           Plots
         </label>
@@ -1933,92 +1954,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_correlation/" class="md-nav__link">
-        plot_correlation
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_scatter_matrix/" class="md-nav__link">
-        plot_scatter_matrix
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_distribution/" class="md-nav__link">
-        plot_distribution
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_qq/" class="md-nav__link">
-        plot_qq
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_wordcloud/" class="md-nav__link">
-        plot_wordcloud
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_ngrams/" class="md-nav__link">
-        plot_ngrams
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_pca/" class="md-nav__link">
-        plot_pca
+      <a href="../../plots/plot_calibration/" class="md-nav__link">
+        plot_calibration
       </a>
     </li>
   
@@ -2045,8 +1982,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_rfecv/" class="md-nav__link">
-        plot_rfecv
+      <a href="../../plots/plot_confusion_matrix/" class="md-nav__link">
+        plot_confusion_matrix
       </a>
     </li>
   
@@ -2059,106 +1996,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_pipeline/" class="md-nav__link">
-        plot_pipeline
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_successive_halving/" class="md-nav__link">
-        plot_successive_halving
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_learning_curve/" class="md-nav__link">
-        plot_learning_curve
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_results/" class="md-nav__link">
-        plot_results
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_bo/" class="md-nav__link">
-        plot_bo
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_evals/" class="md-nav__link">
-        plot_evals
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_roc/" class="md-nav__link">
-        plot_roc
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../plots/plot_prc/" class="md-nav__link">
-        plot_prc
+      <a href="../../plots/plot_correlation/" class="md-nav__link">
+        plot_correlation
       </a>
     </li>
   
@@ -2185,8 +2024,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_gains/" class="md-nav__link">
-        plot_gains
+      <a href="../../plots/plot_distribution/" class="md-nav__link">
+        plot_distribution
       </a>
     </li>
   
@@ -2199,8 +2038,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_lift/" class="md-nav__link">
-        plot_lift
+      <a href="../../plots/plot_edf/" class="md-nav__link">
+        plot_edf
       </a>
     </li>
   
@@ -2227,8 +2066,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_residuals/" class="md-nav__link">
-        plot_residuals
+      <a href="../../plots/plot_evals/" class="md-nav__link">
+        plot_evals
       </a>
     </li>
   
@@ -2255,8 +2094,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_permutation_importance/" class="md-nav__link">
-        plot_permutation_importance
+      <a href="../../plots/plot_gains/" class="md-nav__link">
+        plot_gains
       </a>
     </li>
   
@@ -2269,8 +2108,92 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_partial_dependence/" class="md-nav__link">
-        plot_partial_dependence
+      <a href="../../plots/plot_hyperparameter_importance/" class="md-nav__link">
+        plot_hyperparameter_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_hyperparameters/" class="md-nav__link">
+        plot_hyperparameters
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_learning_curve/" class="md-nav__link">
+        plot_learning_curve
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_lift/" class="md-nav__link">
+        plot_lift
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_parallel_coordinate/" class="md-nav__link">
+        plot_parallel_coordinate
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pareto_front/" class="md-nav__link">
+        plot_pareto_front
       </a>
     </li>
   
@@ -2297,8 +2220,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_confusion_matrix/" class="md-nav__link">
-        plot_confusion_matrix
+      <a href="../../plots/plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
       </a>
     </li>
   
@@ -2311,8 +2234,50 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_threshold/" class="md-nav__link">
-        plot_threshold
+      <a href="../../plots/plot_pca/" class="md-nav__link">
+        plot_pca
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_prc/" class="md-nav__link">
+        plot_prc
       </a>
     </li>
   
@@ -2339,8 +2304,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/plot_calibration/" class="md-nav__link">
-        plot_calibration
+      <a href="../../plots/plot_qq/" class="md-nav__link">
+        plot_qq
       </a>
     </li>
   
@@ -2353,8 +2318,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/bar_plot/" class="md-nav__link">
-        bar_plot
+      <a href="../../plots/plot_relationships/" class="md-nav__link">
+        plot_relationships
       </a>
     </li>
   
@@ -2367,8 +2332,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/beeswarm_plot/" class="md-nav__link">
-        beeswarm_plot
+      <a href="../../plots/plot_residuals/" class="md-nav__link">
+        plot_residuals
       </a>
     </li>
   
@@ -2381,8 +2346,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/decision_plot/" class="md-nav__link">
-        decision_plot
+      <a href="../../plots/plot_results/" class="md-nav__link">
+        plot_results
       </a>
     </li>
   
@@ -2395,8 +2360,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/force_plot/" class="md-nav__link">
-        force_plot
+      <a href="../../plots/plot_rfecv/" class="md-nav__link">
+        plot_rfecv
       </a>
     </li>
   
@@ -2409,8 +2374,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/heatmap_plot/" class="md-nav__link">
-        heatmap_plot
+      <a href="../../plots/plot_roc/" class="md-nav__link">
+        plot_roc
       </a>
     </li>
   
@@ -2423,8 +2388,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/scatter_plot/" class="md-nav__link">
-        scatter_plot
+      <a href="../../plots/plot_shap_bar/" class="md-nav__link">
+        plot_shap_bar
       </a>
     </li>
   
@@ -2437,8 +2402,148 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plots/waterfall_plot/" class="md-nav__link">
-        waterfall_plot
+      <a href="../../plots/plot_shap_beeswarm/" class="md-nav__link">
+        plot_shap_beeswarm
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_decision/" class="md-nav__link">
+        plot_shap_decision
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_force/" class="md-nav__link">
+        plot_shap_force
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_heatmap/" class="md-nav__link">
+        plot_shap_heatmap
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_scatter/" class="md-nav__link">
+        plot_shap_scatter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_shap_waterfall/" class="md-nav__link">
+        plot_shap_waterfall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_slice/" class="md-nav__link">
+        plot_slice
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_successive_halving/" class="md-nav__link">
+        plot_successive_halving
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_threshold/" class="md-nav__link">
+        plot_threshold
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_trials/" class="md-nav__link">
+        plot_trials
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plots/plot_wordcloud/" class="md-nav__link">
+        plot_wordcloud
       </a>
     </li>
   
@@ -2469,22 +2574,64 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_6">
+        <label class="md-nav__link" for="__nav_5">
           Examples
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Examples" data-md-level="1">
-        <label class="md-nav__title" for="__nav_6">
+        <label class="md-nav__title" for="__nav_5">
           <span class="md-nav__icon md-icon"></span>
           Examples
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/accelerating_pipelines/" class="md-nav__link">
+        Accelerating pipelines
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/advanced_plotting/" class="md-nav__link">
+        Advanced plotting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/automated_feature_scaling/" class="md-nav__link">
+        Automated feature scaling
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -2548,20 +2695,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../examples/early_stopping/" class="md-nav__link">
-        Early stopping
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../examples/ensembles/" class="md-nav__link">
         Ensembles
       </a>
@@ -2604,8 +2737,36 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/hyperparameter_tuning/" class="md-nav__link">
+        Hyperparameter tuning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/imbalanced_datasets/" class="md-nav__link">
         Imbalanced datasets
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/in_training_validation/" class="md-nav__link">
+        In-training validation
       </a>
     </li>
   
@@ -2647,7 +2808,21 @@
   
     <li class="md-nav__item">
       <a href="../../../examples/nlp/" class="md-nav__link">
-        Natural Language Processing
+        NLP
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/pruning/" class="md-nav__link">
+        Pruning
       </a>
     </li>
   
@@ -2704,6 +2879,68 @@
     <li class="md-nav__item">
       <a href="../../../examples/utilities/" class="md-nav__link">
         Utilities
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6">
+          Changelog
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Changelog" data-md-level="1">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Changelog
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/v5.x.x/" class="md-nav__link">
+        v5.x.x
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/v4.x.x/" class="md-nav__link">
+        v4.x.x
       </a>
     </li>
   
@@ -2803,8 +3040,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#attributes" class="md-nav__link">
-    Attributes
+  <a href="#example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -2812,13 +3049,6 @@
         <li class="md-nav__item">
   <a href="#methods" class="md-nav__link">
     Methods
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
   </a>
   
 </li>
@@ -2831,343 +3061,347 @@
               </div>
             
           
-          <div class="md-content" data-md-component="content">
-            <article class="md-content__inner md-typeset">
-              
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
                 
+
+<script src="https://cdn.plot.ly/plotly-2.14.0.min.js"></script>
+
+                  
 
 
 <h1 id="textcleaner">TextCleaner</h1>
 <hr />
-<div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">TextCleaner</strong>(decode=True,
-lower_case=True, drop_email=True, regex_email=None, drop_url=True,
-regex_url=None, drop_html=True, regex_html=None, drop_emoji,
-regex_emoji=None, drop_number=True, regex_number=None,
-drop_punctuation=True, verbose=0, logger=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L37">[source]</a>
-</span>
-</div>
-
-<p>Applies standard text cleaning to the corpus. Transformations include
-normalizing characters and dropping noise from the text (emails, HTML
-tags, URLs, etc...). The transformations are applied on the column
-named <code>corpus</code>, in the same order the parameters are presented. If
-there is no column with that name, an exception is raised. This class
-can be accessed from atom through the <a href="../../ATOM/atomclassifier/#textclean">textclean</a>
-method. Read more in the <a href="../../../user_guide/nlp/#text-cleaning">user guide</a>.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>decode: bool, optional (default=True)</strong><br>
-Whether to decode unicode characters to their ascii representations.
-</p>
-<p>
-<strong>lower_case: bool, optional (default=True)</strong><br>
-Whether to convert all characters to lower case.
-</p>
-<p>
-<strong>drop_email: bool, optional (default=True)</strong><br>
-Whether to drop email addresses from the text.
-</p>
-<p>
-<strong>regex_email: str, optional (default=None)</strong><br>
+<p><a id='TextCleaner'></a><div class='sign'><em>class</em> atom.nlp.<strong style='color:#008AB8'>TextCleaner</strong>(decode=True, lower_case=True, drop_email=True, regex_email=None, drop_url=True, regex_url=None, drop_html=True, regex_html=None, drop_emoji=True, regex_emoji=None, drop_number=True, regex_number=None, drop_punctuation=True, verbose=0, logger=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L37>[source]</a></span></div>Applies standard text cleaning to the corpus.</p>
+<p>Transformations include normalizing characters and dropping
+noise from the text (emails, HTML tags, URLs, etc...). The
+transformations are applied on the column named <code>corpus</code>, in
+the same order the parameters are presented. If there is no
+column with that name, an exception is raised.</p>
+<p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-textclean">textclean</a> method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/nlp/#text-cleaning">user guide</a>.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='textcleaner-decode'></a><strong>decode: bool, default=True</strong><br><div markdown class='param'>
+Whether to decode unicode characters to their ascii
+representations.</p>
+<p></div><a id='textcleaner-lower_case'></a><strong>lower_case: bool, default=True</strong><br><div markdown class='param'>
+Whether to convert all characters to lower case.</p>
+<p></div><a id='textcleaner-drop_email'></a><strong>drop_email: bool, default=True</strong><br><div markdown class='param'>
+Whether to drop email addresses from the text.</p>
+<p></div><a id='textcleaner-regex_email'></a><strong>regex_email: str, default=None</strong><br><div markdown class='param'>
 Regex used to search for email addresses. If None, it uses
-<code>r"[\w.-]+@[\w-]+\.[\w.-]+"</code>.
-</p>
-<p>
-<strong>drop_url: bool, optional (default=True)</strong><br>
-Whether to drop URL links from the text.
-</p>
-<p>
-<strong>regex_url: str, optional (default=None)</strong><br>
+<code>r"[\w.-]+@[\w-]+\.[\w.-]+"</code>.</p>
+<p></div><a id='textcleaner-drop_url'></a><strong>drop_url: bool, default=True</strong><br><div markdown class='param'>
+Whether to drop URL links from the text.</p>
+<p></div><a id='textcleaner-regex_url'></a><strong>regex_url: str, default=None</strong><br><div markdown class='param'>
 Regex used to search for URLs. If None, it uses
-<code>r"https?://\S+|www\.\S+"</code>.
-</p>
-<p>
-<strong>drop_html: bool, optional (default=True)</strong><br>
+<code>r"https?://\S+|www\.\S+"</code>.</p>
+<p></div><a id='textcleaner-drop_html'></a><strong>drop_html: bool, default=True</strong><br><div markdown class='param'>
 Whether to drop HTML tags from the text. This option is
-particularly useful if the data was scraped from a website.
-</p>
-<p>
-<strong>regex_html: str, optional (default=None)</strong><br>
+particularly useful if the data was scraped from a website.</p>
+<p></div><a id='textcleaner-regex_html'></a><strong>regex_html: str, default=None</strong><br><div markdown class='param'>
 Regex used to search for html tags. If None, it uses
-<code>r"<.*?>"</code>.
-</p>
-<p>
-<strong>drop_emoji: bool, optional (default=True)</strong><br>
-Whether to drop emojis from the text.
-</p>
-<p>
-<strong>regex_emoji: str, optional (default=None)</strong><br>
+<code>r"&lt;.*?&gt;"</code>.</p>
+<p></div><a id='textcleaner-drop_emoji'></a><strong>drop_emoji: bool, default=True</strong><br><div markdown class='param'>
+Whether to drop emojis from the text.</p>
+<p></div><a id='textcleaner-regex_emoji'></a><strong>regex_emoji: str, default=None</strong><br><div markdown class='param'>
 Regex used to search for emojis. If None, it uses
-<code>r":[a-z_]+:"</code>.
-</p>
-<p>
-<strong>drop_number: bool, optional (default=False)</strong><br>
-Whether to drop numbers from the text.
-</p>
-<p>
-<strong>regex_number: str, optional (default=None)</strong><br>
-Regex used to search for numbers. If None, it uses <code>r"\b\d+\b"</code>.
-Note that numbers adjacent to letters are not removed.
-</p>
-<p>
-<strong>drop_punctuation: bool, optional (default=True)</strong><br>
-Whether to drop punctuations from the text. Characters considered
-punctuation are <code>!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~</code>.
-</p>
-<strong>verbose: int, optional (default=0)</strong><br>
-Verbosity level of the class. Choose from:
-<ul style="line-height:1.2em;margin-top:5px">
+<code>r":[a-z_]+:"</code>.</p>
+<p></div><a id='textcleaner-drop_number'></a><strong>drop_number: bool, default=True</strong><br><div markdown class='param'>
+Whether to drop numbers from the text.</p>
+<p></div><a id='textcleaner-regex_number'></a><strong>regex_number: str, default=None</strong><br><div markdown class='param'>
+Regex used to search for numbers. If None, it uses
+<code>r"\d+".</code> Note that numbers adjacent to letters are
+not removed.</p>
+<p></div><a id='textcleaner-drop_punctuation'></a><strong>drop_punctuation: bool, default=True</strong><br><div markdown class='param'>
+Whether to drop punctuations from the text. Characters
+considered punctuation are <code _="|">!"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_</code>~`.</p>
+<p></div><a id='textcleaner-verbose'></a><strong>verbose: int, default=0</strong><br><div markdown class='param'>
+Verbosity level of the class. Choose from:</p>
+<ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-<strong>logger: str, Logger or None, optional (default=None)</strong><br>
-<ul style="line-height:1.2em;margin-top:5px">
+<p></div><a id='textcleaner-logger'></a><strong>logger: str, Logger or None, default=None</strong><br><div markdown class='param'></p>
+<ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
-</td>
-</tr>
-</table>
-
-<p><br></p>
-<h2 id="attributes">Attributes</h2>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
-<td width="80%" class="td_params">
-<strong>drops: pd.DataFrame</strong><br>
+<p></div></td></tr><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='textcleaner-drops'></a><strong>drops: pd.DataFrame</strong><br><div markdown class='param'>
 Encountered regex matches. The row indices correspond to
-the document index from which the occurrence was dropped.
-</td>
-</tr>
+the document index from which the occurrence was dropped.</p>
+<p></div></td></tr></p>
 </table>
 <p><br></p>
-<h2 id="methods">Methods</h2>
-<table style="font-size:16px">
-<tr>
-<td><a href="#fit-transform">fit_transform</a></td>
-<td>Same as transform.</td>
-</tr>
-
-<tr>
-<td><a href="#get-params">get_params</a></td>
-<td>Get parameters for this estimator.</td>
-</tr>
-
-<tr>
-<td><a href="#log">log</a></td>
-<td>Write information to the logger and print to stdout.</td>
-</tr>
-
-<tr>
-<td><a href="#save">save</a></td>
-<td>Save the instance to a pickle file.</td>
-</tr>
-
-<tr>
-<td><a href="#set-params">set_params</a></td>
-<td>Set the parameters of this estimator.</td>
-</tr>
-
-<tr>
-<td><a href="#transform">transform</a></td>
-<td>Transform the text.</td>
-</tr>
-</table>
+<div class="admonition info">
+<p class="admonition-title">See Also</p>
+<p><a class="autorefs autorefs-internal" href="../textnormalizer/#textnormalizer">TextNormalizer</a><br>    <div style='margin: -1em 0 0 1.2em'>Normalize the corpus.</div></p>
+<p><a class="autorefs autorefs-internal" href="../tokenizer/#tokenizer">Tokenizer</a><br>    <div style='margin: -1em 0 0 1.2em'>Tokenize the corpus.</div></p>
+<p><a class="autorefs autorefs-internal" href="../vectorizer/#vectorizer">Vectorizer</a><br>    <div style='margin: -1em 0 0 1.2em'>Vectorize text data.</div></p>
+</div>
 <p><br></p>
-<p><a name="fit-transform"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L109">[source]</a>
-</span>
-</div>
-<p>Apply text cleaning.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>X: dataframe-like</strong><br>
-Feature set with shape=(n_samples, n_features). If X is
-not a pd.DataFrame, it should be composed of a single
-feature containing the text documents.
-</p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
-Does nothing. Implemented for continuity of the API.
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>X: pd.DataFrame</strong><br>
-Transformed corpus.
-</p>
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="get-params"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True)
-<span style="float:right">
-<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a>
-</span>
-</div>
-<p>Get parameters for this estimator.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>deep: bool, optional (default=True)</strong><br>
-If True, will return the parameters for this estimator and contained
-subobjects that are estimators.
-</p>
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>dict</strong><br>
-Parameter names mapped to their values.
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="log"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L590">[source]</a>
-</span>
-</div>
-<p>Write a message to the logger and print it to stdout.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>msg: str</strong><br>
-Message to write to the logger and print to stdout.
-</p>
-<p>
-<strong>level: int, optional (default=0)</strong><br>
-Minimum verbosity level to print the message.
-</p>
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="save"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L611">[source]</a>
-</span>
-</div>
-<p>Save the instance to a pickle file.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>filename: str, optional (default="auto")</strong><br>
-Name of the file. Use "auto" for automatic naming.
-</td>
-</tr>
-</table>
-<p><br></p>
-<p><a name="set-params"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">set_params</strong>(**params)
-<span style="float:right">
-<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a>
-</span>
-</div>
-<p>Set the parameters of this estimator.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**params: dict</strong><br>
-Estimator parameters.
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>TextCleaner</strong><br>
-Estimator instance.
-</td>
-</tr>
-</table>
-<p><br /></p>
-<p><a name="transform"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L153">[source]</a>
-</span>
-</div>
-<p>Apply text cleaning.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>X: dataframe-like</strong><br>
-Feature set with shape=(n_samples, n_features). If X is
-not a pd.DataFrame, it should be composed of a single
-feature containing the text documents.
-</p>
-<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
-Does nothing. Implemented for continuity of the API.
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<p>
-<strong>X: pd.DataFrame</strong><br>
-Transformed corpus.
-</p>
-</td>
-</tr>
-</table>
-<p><br /></p>
 <h2 id="example">Example</h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">atom</label><label for="__tabbed_1_2">stand-alone</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">fetch_20newsgroups</span>
 
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">textclean</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">categories</span><span class="o">=</span><span class="p">[</span>
+<span class="gp">... </span>        <span class="s1">&#39;alt.atheism&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s1">&#39;sci.med&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s1">&#39;comp.windows.x&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="p">],</span>
+<span class="gp">... </span>    <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+
+<span class="go">0     From: thssjxy@iitmax.iit.edu (Smile) Subject:...       2</span>
+<span class="go">1     From: nancyo@fraser.sfu.ca (Nancy Patricia O&#39;C...       0</span>
+<span class="go">2     From: beck@irzr17.inf.tu-dresden.de (Andre Bec...       1</span>
+<span class="go">3     From: keith@cco.caltech.edu (Keith Allan Schne...       0</span>
+<span class="go">4     From: strom@Watson.Ibm.Com (Rob Strom) Subjec...       0</span>
+<span class="go">                                                 ...     ...</span>
+<span class="go">2841  From: dreitman@oregon.uoregon.edu (Daniel R. R...       3</span>
+<span class="go">2842  From: ethan@cs.columbia.edu (Ethan Solomita) ...       1</span>
+<span class="go">2843  From: r0506048@cml3 (Chun-Hung Lin) Subject: ...       1</span>
+<span class="go">2844  From: eshneken@ux4.cso.uiuc.edu (Edward A Shne...       2</span>
+<span class="go">2845  From: ibeshir@nyx.cs.du.edu (Ibrahim) Subject...       2</span>
+
+<span class="go">[2846 rows x 2 columns]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">textclean</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="go">Fitting TextCleaner...</span>
+<span class="go">Cleaning the corpus...</span>
+<span class="go"> --&gt; Decoding unicode characters to ascii.</span>
+<span class="go"> --&gt; Converting text to lower case.</span>
+<span class="go"> --&gt; Dropping 10012 emails from 2830 documents.</span>
+<span class="go"> --&gt; Dropping 0 URL links from 0 documents.</span>
+<span class="go"> --&gt; Dropping 2214 HTML tags from 1304 documents.</span>
+<span class="go"> --&gt; Dropping 2 emojis from 1 documents.</span>
+<span class="go"> --&gt; Dropping 31222 numbers from 2843 documents.</span>
+<span class="go"> --&gt; Dropping punctuation from the text.</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+
+<span class="go">                                                corpus  target</span>
+<span class="go">0     from  smile subject forsale   used guitar amp...       2</span>
+<span class="go">1     from  nancy patricia oconnor subject re amusi...       0</span>
+<span class="go">2     from  andre beck subject re animation with xp...       1</span>
+<span class="go">3     from  keith allan schneider subject re moralt...       0</span>
+<span class="go">4     from  rob strom subject re socmotss et al pri...       0</span>
+<span class="go">                                                 ...     ...</span>
+<span class="go">2841  from  daniel r reitman attorney to be subject...       3</span>
+<span class="go">2842  from  ethan solomita subject forcing a window...       1</span>
+<span class="go">2843  from r0506048cml3 chunhung lin subject re xma...       1</span>
+<span class="go">2844  from  edward a shnekendorf subject airline ti...       2</span>
+<span class="go">2845  from  ibrahim subject terminal for sale orga...       2</span>
+
+<span class="go">[2846 rows x 2 columns]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">TextCleaner</span>
+<div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">atom.nlp</span> <span class="kn">import</span> <span class="n">TextCleaner</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">fetch_20newsgroups</span>
 
-<span class="n">cleaner</span> <span class="o">=</span> <span class="n">TextCleaner</span><span class="p">()</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">cleaner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">categories</span><span class="o">=</span><span class="p">[</span>
+<span class="gp">... </span>        <span class="s1">&#39;alt.atheism&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s1">&#39;sci.med&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s1">&#39;comp.windows.x&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="p">],</span>
+<span class="gp">... </span>    <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">textcleaner</span> <span class="o">=</span> <span class="n">TextCleaner</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">textcleaner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+<span class="go">Cleaning the corpus...</span>
+<span class="go"> --&gt; Decoding unicode characters to ascii.</span>
+<span class="go"> --&gt; Converting text to lower case.</span>
+<span class="go"> --&gt; Dropping 10012 emails from 2830 documents.</span>
+<span class="go"> --&gt; Dropping 0 URL links from 0 documents.</span>
+<span class="go"> --&gt; Dropping 2214 HTML tags from 1304 documents.</span>
+<span class="go"> --&gt; Dropping 2 emojis from 1 documents.</span>
+<span class="go"> --&gt; Dropping 31222 numbers from 2843 documents.</span>
+<span class="go"> --&gt; Dropping punctuation from the text.</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+<span class="go">                                                 corpus</span>
+<span class="go">0     from donald mackie  subject re barbecued food...</span>
+<span class="go">1     from  david stockton subject re krillean phot...</span>
+<span class="go">2     from  julia miller subject posix message cata...</span>
+<span class="go">3     from   subject re yet more rushdie re islamic...</span>
+<span class="go">4     from  joseph a muller subject jfk autograph f...</span>
+<span class="go">                                                 ...</span>
+<span class="go">2841  from  joel reymont subject motif maling list\...</span>
+<span class="go">2842  from  daniel paul checkman subject re is msg ...</span>
+<span class="go">2843  from  ad absurdum per aspera subject re its a...</span>
+<span class="go">2844  from  ralf subject items for sale organizati...</span>
+<span class="go">2845  from  walter g seefeld subject klipsch kg1 sp...</span>
+
+<span class="go">[2846 rows x 1 columns]</span>
 </code></pre></div>
 </div>
 </div>
 </div>
+<p><br></p>
+<h2 id="methods">Methods</h2>
+<table style="font-size: 0.9em">
+<p><tr><td><a class="autorefs autorefs-internal" href="#textcleaner-fit">fit</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#textcleaner-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#textcleaner-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#textcleaner-inverse_transform">inverse_transform</a></td><td>Does nothing.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#textcleaner-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#textcleaner-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#textcleaner-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#textcleaner-transform">transform</a></td><td>Apply the transformations to the data.</td></tr></p>
+</table>
+<p><br></p>
+<p><a id='textcleaner-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L65>[source]</a></span></div>Does nothing.</p>
+<p>Implemented for continuity of the API.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Feature set with shape=(n_samples, n_features). If None,
+X is ignored.</p>
+<p></div><a id='fit-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+Target column corresponding to X.</p>
+<ul>
+<li>If None: y is ignored.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
+</ul>
+<p></div><a id='fit-\*\*fit_params'></a><strong>**fit_params</strong><br><div markdown class='param'>
+Additional keyword arguments for the fit method.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='fit-self'></a><strong>self</strong><br><div markdown class='param'>
+Estimator instance.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='textcleaner-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L107>[source]</a></span></div>Fit to data, then transform it.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Feature set with shape=(n_samples, n_features). If None,
+X is ignored.</p>
+<p></div><a id='fit_transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+Target column corresponding to X.</p>
+<ul>
+<li>If None: y is ignored.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
+</ul>
+<p></div><a id='fit_transform-\*\*fit_params'></a><strong>**fit_params</strong><br><div markdown class='param'>
+Additional keyword arguments for the fit method.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='fit_transform-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Transformed feature set. Only returned if provided.</p>
+<p></div><a id='fit_transform-pd.Series'></a><strong>pd.Series</strong><br><div markdown class='param'>
+Transformed target column. Only returned if provided.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='textcleaner-get_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_params</strong>(deep=True)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L194>[source]</a></span></div>Get parameters for this estimator.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_params-deep '></a><strong>deep : bool, default=True</strong><br><div markdown class='param'>
+If True, will return the parameters for this estimator and
+contained subobjects that are estimators.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_params-params '></a><strong>params : dict</strong><br><div markdown class='param'>
+Parameter names mapped to their values.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='textcleaner-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L145>[source]</a></span></div>Does nothing.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Feature set with shape=(n_samples, n_features). If None,
+X is ignored.</p>
+<p></div><a id='inverse_transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+Target column corresponding to X.</p>
+<ul>
+<li>If None: y is ignored.</li>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Array with shape=(n_samples,) to use as target.</li>
+</ul>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='inverse_transform-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Transformed feature set. Only returned if provided.</p>
+<p></div><a id='inverse_transform-pd.Series'></a><strong>pd.Series</strong><br><div markdown class='param'>
+Transformed target column. Only returned if provided.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='textcleaner-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L731>[source]</a></span></div>Print message and save to log file.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
+Message to save to the logger and print to stdout.</p>
+<p></div><a id='log-level'></a><strong>level: int, default=0</strong><br><div markdown class='param'>
+Minimum verbosity level to print the message.</p>
+<p></div><a id='log-severity'></a><strong>severity: str, default="info"</strong><br><div markdown class='param'>
+Severity level of the message. Choose from: debug, info,
+warning, error, critical.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='textcleaner-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L763>[source]</a></span></div>Save the instance to a pickle file.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
+Name of the file. Use "auto" for automatic naming.</p>
+<p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
+Whether to save the dataset with the instance. This
+parameter is ignored if the method is not called from
+atom. If False, remember to add the data to <a class="autorefs autorefs-internal" href="../../ATOM/atomloader/#atomloader">ATOMLoader</a>
+when loading the file.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='textcleaner-set_params'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>set_params</strong>(**params)<span style='float:right'><a href=https://github.com/scikit-learn/scikit-learn/blob/baf0ea25d/sklearn/base.py#L218>[source]</a></span></div>Set the parameters of this estimator.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='set_params-\*\*params '></a><strong>**params : dict</strong><br><div markdown class='param'>
+Estimator parameters.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='set_params-self '></a><strong>self : estimator instance</strong><br><div markdown class='param'>
+Estimator instance.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='textcleaner-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L284>[source]</a></span></div>Apply the transformations to the data.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
+Feature set with shape=(n_samples, n_features). If X is
+not a pd.DataFrame, it should be composed of a single
+feature containing the text documents.</p>
+<p></div><a id='transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+Does nothing. Implemented for continuity of the API.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='transform-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
+Transformed corpus.
+</div></td></tr></p>
+</table>
+<p><br></p>
 
-              
-            </article>
-          </div>
+
+  
+
+
+
+
+                
+
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
         </div>
         
-          <a href="#" class="md-top md-icon" data-md-component="top" data-md-state="hidden">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"/></svg>
+          <a href="#" class="md-top md-icon" data-md-component="top" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
             Back to top
           </a>
         
@@ -3175,36 +3409,37 @@ Transformed corpus.
       
         <footer class="md-footer">
   
-    <nav class="md-footer__inner md-grid" aria-label="Footer">
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../../data_cleaning/balancer/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Balancer" rel="prev">
+        <a href="../../feature_engineering/featureselector/" class="md-footer__link md-footer__link--prev" aria-label="Previous: FeatureSelector" rel="prev">
           <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Previous
               </span>
-              Balancer
+              FeatureSelector
             </div>
           </div>
         </a>
       
       
         
-        <a href="../tokenizer/" class="md-footer__link md-footer__link--next" aria-label="Next: Tokenizer" rel="next">
+        <a href="../textnormalizer/" class="md-footer__link md-footer__link--next" aria-label="Next: TextNormalizer" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Tokenizer
+              TextNormalizer
             </div>
           </div>
           <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
           </div>
         </a>
       
@@ -3231,31 +3466,37 @@ Transformed corpus.
     
     
     <a href="https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3" target="_blank" rel="noopener" title="Slack" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
     </a>
   
     
     
     <a href="https://github.com/tvdboom/ATOM" target="_blank" rel="noopener" title="GitHub" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    <a href="https://stackoverflow.com/questions/tagged/atom-ml" target="_blank" rel="noopener" title="StackOverflow" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M290.7 311 95 269.7 86.8 309l195.7 41zm51-87L188.2 95.7l-25.5 30.8 153.5 128.3zm-31.2 39.7L129.2 179l-16.7 36.5L293.7 300zM262 32l-32 24 119.3 160.3 32-24zm20.5 328h-200v39.7h200zm39.7 80H42.7V320h-40v160h359.5V320h-40z"/></svg>
     </a>
   
     
     
     <a href="https://pypi.org/project/atom-ml/" target="_blank" rel="noopener" title="Pypi" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6zM286.2 404c11.1 0 20.1 9.1 20.1 20.3 0 11.3-9 20.4-20.1 20.4-11 0-20.1-9.2-20.1-20.4.1-11.3 9.1-20.3 20.1-20.3zM167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4zm-6.7-142.6c-11.1 0-20.1-9.1-20.1-20.3.1-11.3 9-20.4 20.1-20.4 11 0 20.1 9.2 20.1 20.4s-9 20.3-20.1 20.3z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6zM286.2 404c11.1 0 20.1 9.1 20.1 20.3 0 11.3-9 20.4-20.1 20.4-11 0-20.1-9.2-20.1-20.4.1-11.3 9.1-20.3 20.1-20.3zM167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4zm-6.7-142.6c-11.1 0-20.1-9.1-20.1-20.3.1-11.3 9-20.4 20.1-20.4 11 0 20.1 9.2 20.1 20.4s-9 20.3-20.1 20.3z"/></svg>
     </a>
   
     
     
     <a href="https://tvdboom.medium.com/" target="_blank" rel="noopener" title="Medium" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M180.5 74.262C80.813 74.262 0 155.633 0 256s80.819 181.738 180.5 181.738S361 356.373 361 256 280.191 74.262 180.5 74.262zm288.25 10.646c-49.845 0-90.245 76.619-90.245 171.095s40.406 171.1 90.251 171.1 90.251-76.619 90.251-171.1H559c0-94.503-40.4-171.095-90.248-171.095zm139.506 17.821c-17.526 0-31.735 68.628-31.735 153.274s14.2 153.274 31.735 153.274S640 340.631 640 256c0-84.649-14.215-153.271-31.742-153.271z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M180.5 74.262C80.813 74.262 0 155.633 0 256s80.819 181.738 180.5 181.738S361 356.373 361 256 280.191 74.262 180.5 74.262Zm288.25 10.646c-49.845 0-90.245 76.619-90.245 171.095s40.406 171.1 90.251 171.1 90.251-76.619 90.251-171.1H559c0-94.503-40.4-171.095-90.248-171.095Zm139.506 17.821c-17.526 0-31.735 68.628-31.735 153.274s14.2 153.274 31.735 153.274S640 340.631 640 256c0-84.649-14.215-153.271-31.742-153.271Z"/></svg>
     </a>
   
     
     
     <a href="mailto:m.524687@gmail.com" target="_blank" rel="noopener" title="Email" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M256 352c-16.53 0-33.06-5.422-47.16-16.41L0 173.2V400c0 26.5 21.49 48 48 48h416c26.51 0 48-21.49 48-48V173.2L303.2 335.7C289.1 346.6 272.5 352 256 352zM16.29 145.3l212.2 165.1c16.19 12.6 38.87 12.6 55.06 0l212.2-165.1C505.1 137.3 512 125 512 112c0-26.51-21.5-48-48-48H48C21.49 64 0 85.49 0 112c0 13 6.01 25.3 16.29 33.3z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0L0 176z"/></svg>
     </a>
   
 </div>
@@ -3268,10 +3509,11 @@ Transformed corpus.
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "content.tabs.link", "announce.dismiss", "toc.follow", "search.suggest"], "search": "../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.b88e97c5.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d6c3db9e.min.js"></script>
       
         <script src="../../../stylesheets/extra.js"></script>
       
