@@ -10,6 +10,7 @@ Description: Module containing the documentation rendering.
 from __future__ import annotations
 
 import importlib
+import json
 import os
 import warnings
 from inspect import (
@@ -20,6 +21,7 @@ from typing import Any, Callable, Optional
 
 import regex as re
 import yaml
+from mkdocs.config.defaults import MkDocsConfig
 
 
 # Variables ======================================================== >>
@@ -878,14 +880,40 @@ def convert_plotly(html: str, **kwargs) -> str:
     html = re.sub('<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text\/html">\s*?<script type="text\/javascript">.*?<\/script>\s*?<\/div>', "", html, flags=re.S)
 
     # Fix plots in jupyter notebook
-    html = re.sub('<script type="text\/javascript">\s*?require\(\["plotly"\], function\(Plotly\) {\s*?window\.PLOTLYENV', '<script type="text/javascript">window.PLOTLYENV', html)
-    html = re.sub('\).then\(function\(\){.*?<\/script>', ')};</script>', html, flags=re.S)
+    html = re.sub('(?<=<script type="text\/javascript">)\s*?require\(\["plotly"\], function\(Plotly\) {\s*?(?=window\.PLOTLYENV)', "", html)
+    html = re.sub('\).then\(function\(\){.*?(?=<\/script>)', ')}', html, flags=re.S)
 
     # Correct sizes of the plot to adjust to frame
-    html = re.sub('style="height:(\d+?)px; width:\d+?px;"', r'style="height:\1px; width:100%;"', html)
-    html = re.sub('"showlegend":(\w+?),"width":\d+?,"height":\d+?}', r'"showlegend":\1}', html)
+    html = re.sub('(?<=style="height:\d+?px; width:)\d+?px(?=;")', "100%", html)
+    html = re.sub('(?<="showlegend":\w+?),"width":\d+?,"height":\d+?(?=[},])', "", html)
 
     return html
+
+
+def clean_search(config: MkDocsConfig):
+    """Clean the search index.
+
+    Remove unnecessary plotly and css blocks (from mkdocs-jupyter) to
+    keep the search index small.
+
+    Parameters
+    ----------
+    config: MkdocsConfig
+        Object containing the search index.
+
+    """
+    with open(f"{config.data['site_dir']}/search/search_index.json", "r") as f:
+        search = json.load(f)
+
+    for elem in search["docs"]:
+        # Remove plotly graphs
+        elem["text"] = re.sub("window\.PLOTLYENV.*?\)\s*?}\s*?", "", elem["text"], flags=re.S)
+
+        # Remove mkdocs-jupyter css
+        elem["text"] = re.sub("\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S)
+
+    with open(f"{config.data['site_dir']}/search/search_index.json", "w") as f:
+        json.dump(search, f)
 
 
 def custom_autorefs(markdown: str, autodocs: Optional[AutoDocs] = None) -> str:

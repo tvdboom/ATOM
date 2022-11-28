@@ -21,12 +21,12 @@ from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from typing import Any, Callable, List, Optional, Protocol, Tuple, Union
 
 import mlflow
-import nltk
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from IPython.display import display
 from matplotlib.colors import to_rgba
+from mlflow.models.signature import infer_signature
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from scipy import sparse
@@ -504,7 +504,15 @@ class TrialsCallback:
                     mlflow.log_metric(f"{name}_validation", score[i])
 
                 if estimator and self.T.log_model:
-                    mlflow.sklearn.log_model(estimator, estimator.__class__.__name__)
+                    mlflow.sklearn.log_model(
+                        sk_model=estimator,
+                        artifact_path=estimator.__class__.__name__,
+                        signature=infer_signature(
+                            model_input=self.model.X,
+                            model_output=estimator.predict(self.model.X.iloc[[0], :]),
+                        ),
+                        input_example=self.model.X.iloc[[0], :],
+                    )
 
         if self.n_jobs == 1:
             sequence = {"trial": trial.number, **trial.user_attrs["params"]}

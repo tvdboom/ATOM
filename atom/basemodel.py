@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from joblib.memory import Memory
+from mlflow.models.signature import infer_signature
 from mlflow.tracking import MlflowClient
 from optuna import TrialPruned, create_study
 from optuna.samplers import NSGAIISampler, TPESampler
@@ -811,6 +812,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             validation=(self.X_test, self.y_test),
         )
 
+        for ds in ("train", "test"):
+            out = [
+                f"{metric.name}: {self._get_score(metric, ds)}"
+                for metric in self.T._metric.values()
+            ]
+            self.T.log(f"T{ds[1:]} evaluation --> {'   '.join(out)}", 1)
+
         # Track results to mlflow ================================== >>
 
         # Log parameters, metrics, model and data to mlflow
@@ -837,7 +845,12 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             mlflow.log_metric("time_fit", self.time_fit)
 
             if self.T.log_model:
-                mlflow.sklearn.log_model(self.estimator, self._est_class.__name__)
+                mlflow.sklearn.log_model(
+                    sk_model=self.estimator,
+                    artifact_path=self._est_class.__name__,
+                    signature=infer_signature(self.X, self.predict_test.to_numpy()),
+                    input_example=self.X.iloc[[0], :],
+                )
 
             if self.T.log_data:
                 for ds in ("train", "test"):
@@ -846,18 +859,14 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     os.remove(f"{ds}.csv")
 
             if self.T.log_pipeline:
-                mlflow.sklearn.log_model(self.export_pipeline(), f"pl_{self.name}")
+                mlflow.sklearn.log_model(
+                    sk_model=self.export_pipeline(),
+                    artifact_path=f"pl_{self.name}",
+                    signature=infer_signature(self.X, self.predict_test.to_numpy()),
+                    input_example=self.X.iloc[[0], :],
+                )
 
             mlflow.end_run()
-
-        # Print and log results ==================================== >>
-
-        for ds in ("train", "test"):
-            out = [
-                f"{metric.name}: {self._get_score(metric, ds)}"
-                for metric in self.T._metric.values()
-            ]
-            self.T.log(f"T{ds[1:]} evaluation --> {'   '.join(out)}", 1)
 
         # Get duration and print to log
         self._time_fit += (dt.now() - t_init).total_seconds()

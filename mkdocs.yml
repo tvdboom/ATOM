@@ -70,10 +70,6 @@ extra:
 
 plugins:
     - search
-    - exclude-search:
-        exclude:  # Exclude to avoid a large search index
-            - API/plots/*
-            - examples/*
     - autorefs
     - mkdocs-jupyter:
           include: ["*.ipynb"]
@@ -83,6 +79,7 @@ plugins:
         hooks:
             on_page_markdown: "docs_sources.autodocs:render"
             on_page_content: "docs_sources.autodocs:convert_plotly"
+            on_post_build: "docs_sources.autodocs:clean_search"
 
 markdown_extensions:
     - admonition
