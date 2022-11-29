@@ -84,7 +84,6 @@ source = "file"
 path = "atom/utils.py"
 
 [tool.pdm.build]
-package-dir = "atom"
 source-includes = ["tests/*.py"]
 
 [tool.pytest]
