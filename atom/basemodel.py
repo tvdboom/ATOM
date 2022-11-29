@@ -1109,7 +1109,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         Returns None for estimators without any of those attributes.
 
         """
-        if data := get_feature_importance(self.estimator):
+        if (data := get_feature_importance(self.estimator)) is not None:
             return pd.Series(
                 data=data / data.sum(),
                 index=self.features,
