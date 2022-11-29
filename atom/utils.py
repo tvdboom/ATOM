@@ -44,7 +44,7 @@ from sklearn.utils import _print_elapsed_time, _safe_indexing
 # Constants ======================================================== >>
 
 # Current library version
-__version__ = "5.0.0"
+__version__ = "5.0.1"
 
 # Group of variable types for isinstance
 SEQUENCE = (list, tuple, np.ndarray, pd.Series)
