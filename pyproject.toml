@@ -85,9 +85,7 @@ path = "atom/utils.py"
 
 [tool.pdm.build]
 package-dir = "atom"
-includes = ["atom/", "README.md", "LICENSE", "images/"]
-excludes = ["tests/mlruns"]
-source-includes = ["tests/"]
+source-includes = ["tests/*.py"]
 
 [tool.pytest]
 testpaths = "tests/"
