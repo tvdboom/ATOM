@@ -866,6 +866,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 else:
                     y = to_series(output, y.index, y.name)
 
+                print(output, type(output))
+                print(y, type(y))
+        print(variable_return(X, y), type(variable_return(X, y)))
         return variable_return(X, y)
 
     @composed(crash, method_to_log, typechecked)
