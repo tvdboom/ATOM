@@ -9,7 +9,6 @@ Description: Unit tests for basetrainer.py
 
 from unittest.mock import patch
 
-import matplotlib.pyplot as plt
 import mlflow
 import pytest
 from mlflow.tracking.fluent import ActiveRun
