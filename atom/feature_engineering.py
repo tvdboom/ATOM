@@ -1720,19 +1720,18 @@ class FeatureSelector(
         # Assign feature importance (only for some strategies)
         if self.strategy.lower() in ("univariate", "sfm", "rfe", "rfecv"):
             estimator = getattr(self._estimator, "estimator_", self._estimator)
-            scores = get_feature_importance(estimator)
 
             # Some strategies return scores for all features
-            if len(scores) == X.shape[1]:
+            if len(scores := get_feature_importance(estimator)) == X.shape[1]:
                 self.feature_importance = pd.Series(
-                    data=scores / max(scores),
+                    data=scores / scores.max(),
                     index=X.columns,
                     name="feature_importance",
                     dtype="float",
                 ).sort_values(ascending=False)[:self._n_features]
             else:
                 self.feature_importance = pd.Series(
-                    data=scores / max(scores),
+                    data=scores / scores.max(),
                     index=X.columns[self._estimator.get_support(indices=True)],
                     name="feature_importance",
                     dtype="float",

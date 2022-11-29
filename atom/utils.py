@@ -1925,7 +1925,7 @@ def partial_dependence(
 
 def get_feature_importance(
     est: Predictor, attributes: Optional[SEQUENCE_TYPES] = None
-) -> list:
+) -> Optional[np.ndarray]:
     """Return the feature importance from an estimator.
 
     Gets the feature importance from the provided attribute. For
@@ -1943,8 +1943,8 @@ def get_feature_importance(
 
     Returns
     -------
-    list
-        Estimator's feature importance.
+    np.array or None
+        Estimator's feature importances.
 
     """
     data = None
@@ -1970,7 +1970,8 @@ def get_feature_importance(
         else:
             data = np.linalg.norm(data, axis=0, ord=1)
 
-        return list(data)
+        print(data)
+        return data
 
 
 # Pipeline functions =============================================== >>

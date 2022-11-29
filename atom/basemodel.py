@@ -1111,7 +1111,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """
         if data := get_feature_importance(self.estimator):
             return pd.Series(
-                data=data.flatten() / data.sum(),
+                data=data / data.sum(),
                 index=self.features,
                 name="feature_importance",
                 dtype="float",
