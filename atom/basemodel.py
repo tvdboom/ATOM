@@ -1111,7 +1111,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """
         if data := get_feature_importance(self.estimator):
             return pd.Series(
-                data=data / sum(data),
+                data=data.flatten() / sum(data),
                 index=self.features,
                 name="feature_importance",
                 dtype="float",
@@ -1246,7 +1246,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             data = self.estimator.decision_function(self.X_train)
             if data.ndim == 1 or data.shape[0] == 1:
                 self._pred[0] = pd.Series(
-                    data=data,
+                    data=data.flatten(),
                     index=self.X_train.index,
                     name="decision_function_train",
                 )
@@ -1264,10 +1264,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """Confidence scores on the test set."""
         if self._pred[1] is None:
             data = self.estimator.decision_function(self.X_test)
-            print(data, type(data), data.ndim, data.shape)
             if data.ndim == 1 or data.shape[0] == 1:
                 self._pred[1] = pd.Series(
-                    data=data,
+                    data=data.flatten(),
                     index=self.X_test.index,
                     name="decision_function_test",
                 )
@@ -1287,7 +1286,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             data = self.estimator.decision_function(self.X_holdout)
             if data.ndim == 1 or data.shape[0] == 1:
                 self._pred[2] = pd.Series(
-                    data=data,
+                    data=data.flatten(),
                     index=self.X_holdout.index,
                     name="decision_function_holdout",
                 )
