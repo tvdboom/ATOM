@@ -1968,9 +1968,8 @@ def get_feature_importance(
         if data.ndim == 1:
             data = np.abs(data)
         else:
-            data = np.linalg.norm(data, axis=0, ord=1)
+            data = np.linalg.norm(data, axis=np.argmin(data.shape), ord=1)
 
-        print(data)
         return data
 
 
