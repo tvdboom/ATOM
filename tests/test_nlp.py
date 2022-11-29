@@ -189,7 +189,7 @@ def test_hashing():
 @patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
 @patch.dict("sys.modules", {"cuml.feature_extraction.text": MagicMock()})
 def test_gpu():
-    """Assert that the gpu feature calls the get method of matrix."""
+    """Assert that the gpu implementation calls the get method of matrix."""
     Vectorizer(device="gpu", engine="cuml").fit_transform(X_text)
 
 

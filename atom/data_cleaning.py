@@ -861,7 +861,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             if self.encode_target and self._estimator:
                 self.log(" --> Label-encoding the target column.", 2)
-                y = to_series(self._estimator.transform(y), y.index, y.name)
+                if hasattr(output := self._estimator.transform(y), "to_pandas"):
+                    y = output.to_pandas()
+                else:
+                    y = to_series(output, y.index, y.name)
 
         return variable_return(X, y)
 

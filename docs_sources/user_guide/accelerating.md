@@ -82,7 +82,7 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
       one to use, the first one is used by default.
 
 !!! example
-    [![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://d743w1pyd5hcqas.studio.us-east-2.sagemaker.aws/studiolab/default/jupyter/lab/tree/atom-gpu/cuml.ipynb)<br><br>
+    [![SageMaker Studio Lab](https://studiolab.sagemaker.aws/studiolab.svg)](https://d743w1pyd5hcqas.studio.us-east-2.sagemaker.aws/studiolab/default/jupyter/lab/tree/atom-examples/gpu-cuml.ipynb)<br><br>
     Train a model on a GPU yourself using SageMaker Studio Lab. Just click on
     the badge above and run the notebook! Make sure to choose the GPU compute
     type.

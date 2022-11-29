@@ -53,8 +53,6 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
             random_state=random_state,
         )
 
-        super(HTPlot, self).__init__()
-
         # Parameter attributes
         self._models = models
         self._metric = metric

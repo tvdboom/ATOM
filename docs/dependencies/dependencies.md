@@ -40,7 +40,7 @@ packages are necessary for its correct functioning.
 * **[numpy](https://numpy.org/)** (>=1.22)
 * **[optuna](https://optuna.org/)** (>=3.0.0)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
-* **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.2.0)
+* **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.5.0)
 * **[plotly](https://plotly.com/python/)** (>=5.10.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.41)
 * **[schemdraw](https://schemdraw.readthedocs.io/en/latest/index.html)** (>=0.14)

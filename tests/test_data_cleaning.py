@@ -7,6 +7,8 @@ Description: Unit tests for data_cleaning.py
 
 """
 
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -180,6 +182,14 @@ def test_cleaner_label_encoder_target_column():
     """Assert that the label-encoder for the target column works."""
     X, y = Cleaner().fit_transform(X10, y10_str)
     assert np.all((y == 0) | (y == 1))
+
+
+@patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
+@patch.dict("sys.modules", {"cuml.preprocessing": MagicMock()})
+def test_cleaner_label_encoder_cuml():
+    """Assert that the gpu implementation calls the to_pandas method."""
+    cleaner = Cleaner(device="gpu", engine="cuml")
+    cleaner.fit_transform(y=MagicMock(spec=["__len__", "replace", "to_pandas"]))
 
 
 def test_cleaner_inverse_transform():

@@ -1528,9 +1528,6 @@ def to_df(
 ) -> Optional[pd.DataFrame]:
     """Convert a dataset to pd.Dataframe.
 
-    If the data is None, a pd.Dataframe or cudf.Dataframe, returns
-    as is.
-
     Parameters
     ----------
     data: dataframe-like or None
@@ -1556,13 +1553,13 @@ def to_df(
     # Get number of columns (list/tuple have no shape and sp.matrix has no index)
     n_cols = lambda data: data.shape[1] if hasattr(data, "shape") else len(data[0])
 
-    if data is not None and not data.__class__.__name__ == "DataFrame":
+    if data is not None and not isinstance(data, pd.DataFrame):
         # Assign default column names (dict already has column names)
         if not isinstance(data, dict) and columns is None:
             columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
-        # Create dataframe from sparse matrix or directly from data
         if sparse.issparse(data):
+            # Create dataframe from sparse matrix
             data = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
         else:
             data = pd.DataFrame(data, index, columns)
@@ -1580,8 +1577,6 @@ def to_series(
     dtype: Optional[Union[str, np.dtype]] = None,
 ) -> Optional[pd.Series]:
     """Convert a sequence to pd.Series.
-
-    If the data is None, a pd.Series or cudf.Series, returns as is.
 
     Parameters
     ----------
@@ -1604,7 +1599,7 @@ def to_series(
         Transformed series.
 
     """
-    if data is not None and not data.__class__.__name__ == "Series":
+    if data is not None and not isinstance(data, pd.Series):
         data = pd.Series(data, index=index, name=name, dtype=dtype)
 
     return data
