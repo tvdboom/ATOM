@@ -1264,6 +1264,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """Confidence scores on the test set."""
         if self._pred[1] is None:
             data = self.estimator.decision_function(self.X_test)
+            print(data, type(data), data.ndim, data.shape)
             if data.ndim == 1 or data.shape[0] == 1:
                 self._pred[1] = pd.Series(
                     data=data,
