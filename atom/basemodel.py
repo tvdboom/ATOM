@@ -15,7 +15,6 @@ from typing import Any, List, Optional, Tuple, Union
 from unittest.mock import patch
 
 import dill as pickle
-import matplotlib.pyplot as plt
 import mlflow
 import numpy as np
 import pandas as pd
@@ -737,9 +736,6 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             show_progress_bar=kw.pop("show_progress_bar", self.T.verbose == 1),
             **kw,
         )
-
-        if self._ht.get("plot", False) and n_jobs == 1:
-            plt.close()
 
         if len(self.study.get_trials(states=[TrialState.COMPLETE])) == 0:
             self.T.log(

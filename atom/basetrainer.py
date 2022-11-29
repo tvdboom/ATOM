@@ -12,7 +12,6 @@ from datetime import datetime as dt
 from importlib.util import find_spec
 from typing import Any
 
-import matplotlib.pyplot as plt
 import mlflow
 from optuna import Study, create_study
 
@@ -52,6 +51,9 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
             experiment=experiment,
             random_state=random_state,
         )
+
+        # Initialize BasePlot for trainers
+        super(HTPlot, self).__init__()
 
         # Parameter attributes
         self._models = models
@@ -320,9 +322,6 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                 # Add model to "garbage collector"
                 # Cannot remove immediately to maintain the iteration order
                 to_remove.append(m.name)
-
-                if self._ht_params["plot"][m._group]:
-                    plt.close()  # Close the crashed plot
 
                 if self.experiment:
                     mlflow.end_run()

@@ -335,7 +335,6 @@ def test_error_handling():
     assert trainer.errors.get("LDA")
     assert "LDA" not in trainer.models
     assert "LDA" not in trainer.results.index
-    assert len(plt.gcf().axes) == 0  # New figure -> plot has been closed
     assert mlflow.active_run() is None  # Run has been ended
 
 
