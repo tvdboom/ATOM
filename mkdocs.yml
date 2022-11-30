@@ -248,7 +248,8 @@ nav:
             - plot_trials: API/plots/plot_trials.md
             - plot_wordcloud: API/plots/plot_wordcloud.md
     - Examples:
-        - Accelerating pipelines: examples/accelerating_pipelines.ipynb
+        - Accelerating cuml: examples/accelerating_cuml.ipynb
+        - Accelerating sklearnex: examples/accelerating_sklearnex.ipynb
         - Advanced plotting: examples/advanced_plotting.ipynb
         - Automated feature scaling: examples/automated_feature_scaling.ipynb
         - AutoML: examples/automl.ipynb
@@ -257,6 +258,7 @@ nav:
         - Deep learning: examples/deep_learning.ipynb
         - Ensembles: examples/ensembles.ipynb
         - Feature engineering: examples/feature_engineering.ipynb
+        - Getting started: examples/getting_started.ipynb
         - Holdout set: examples/holdout_set.ipynb
         - Hyperparameter tuning: examples/hyperparameter_tuning.ipynb
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
