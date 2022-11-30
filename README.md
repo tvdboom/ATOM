@@ -139,7 +139,7 @@ to sklearn's API, they are initialized providing the data you want to
 manipulate.
 
 ```python
-atom = ATOMClassifier(X, y="RainTomorrow", test_size=0.3, verbose=2)
+atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1000, verbose=2)
 ```
 
 Data transformations are applied through atom's methods. For example,
@@ -156,19 +156,18 @@ atom.encode(strategy="LeaveOneOut", max_onehot=8)
 
 Similarly, models are [trained and evaluated](https://tvdboom.github.io/ATOM/latest/user_guide/training)
 using the [run](https://tvdboom.github.io/ATOM/latest/API/ATOM/atomclassifier/#run)
-method. Here, we fit both a [Random Forest](https://tvdboom.github.io/ATOM/latest/API/models/rf)
+method. Here, we fit both a [LinearDiscriminantAnalysis](https://tvdboom.github.io/ATOM/latest/API/models/lda)
 and [AdaBoost](https://tvdboom.github.io/ATOM/latest/API/models/adab) model,
 and apply [hyperparameter tuning](https://tvdboom.github.io/ATOM/latest/user_guide/training/#hyperparameter-tuning).
 
 ```python
-atom.run(models=["RF", "AdaB"], metric="auc", n_trials=10)
+atom.run(models=["LDA", "AdaB"], metric="auc", n_trials=10)
 ```
 
-Lastly, visualize the result using the integrated [plots](https://tvdboom.github.io/ATOM/latest/user_guide/plots).
+And lastly, analyze the results.
 
 ```python
-atom.plot_roc()
-atom.rf.plot_confusion_matrix(normalize=True)
+atom.evaluate()
 ```
 
 <br><br>

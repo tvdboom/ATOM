@@ -99,8 +99,7 @@ Make the necessary imports and load the data.
 Initialize the ATOMClassifier or ATOMRegressor class. These two classes
 are convenient wrappers for the whole machine learning pipeline. Contrary
 to sklearn's API, they are initialized providing the data you want to
-manipulate. You can either let atom split the dataset into a train and
-test set or provide the sets yourself.
+manipulate.
 
 ```pycon
 >>> atom = ATOMClassifier(X, y="RainTomorrow", n_rows=1000, verbose=2)
