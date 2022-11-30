@@ -10,13 +10,13 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.0/examples/accelerating_pipelines/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.0/examples/accelerating_cuml/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
-  <title>Accelerating pipelines - ATOM</title>
+  <title>Accelerating cuml - ATOM</title>
 
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.472b142f.min.css">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#example-accelerating-pipelines" class="md-skip">
+        <a href="#example-accelerating-pipelines-on-gpu" class="md-skip">
           Skip to content
         </a>
       
@@ -130,7 +130,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Accelerating pipelines
+              Accelerating cuml
             
           </span>
         </div>
@@ -2556,55 +2556,24 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Accelerating pipelines
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
-        Accelerating pipelines
+        Accelerating cuml
       </a>
       
-        
+    </li>
+  
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+            
+          
+            
+              
   
   
   
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#load-the-data" class="md-nav__link">
-    Load the data
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#run-the-pipeline" class="md-nav__link">
-    Run the pipeline
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#analyze-the-results" class="md-nav__link">
-    Analyze the results
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
+    <li class="md-nav__item">
+      <a href="../accelerating_sklearnex/" class="md-nav__link">
+        Accelerating sklearnex
+      </a>
     </li>
   
 
@@ -2716,6 +2685,20 @@
     <li class="md-nav__item">
       <a href="../feature_engineering/" class="md-nav__link">
         Feature engineering
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/" class="md-nav__link">
+        Getting started
       </a>
     </li>
   
@@ -3038,35 +3021,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#load-the-data" class="md-nav__link">
-    Load the data
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#run-the-pipeline" class="md-nav__link">
-    Run the pipeline
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#analyze-the-results" class="md-nav__link">
-    Analyze the results
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -3078,7 +3032,7 @@
               <article class="md-content__inner md-typeset">
                 
 
-    <a href="/ATOM/v5.0/examples/accelerating_pipelines/accelerating_pipelines.ipynb" title="Download Notebook" class="md-content__button md-icon">
+    <a href="/ATOM/v5.0/examples/accelerating_cuml/accelerating_cuml.ipynb" title="Download Notebook" class="md-content__button md-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7Z"/></svg>
     </a>
 
@@ -4123,21 +4077,10 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="example-accelerating-pipelines">Example: Accelerating pipelines<a class="anchor-link" href="#example-accelerating-pipelines">&#182;</a></h1><hr>
-<p>This example shows how to accelerate your sklearn models on cpu.</p>
-<p>The data used is a variation on the <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">Australian weather dataset</a> from Kaggle. You can download it from <a href="https://github.com/tvdboom/ATOM/blob/master/examples/datasets/weatherAUS.csv">here</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binary classifier on target <code>RainTomorrow</code>.</p>
+<h1 id="example-accelerating-pipelines-on-gpu">Example: Accelerating pipelines on GPU<a class="anchor-link" href="#example-accelerating-pipelines-on-gpu">&#182;</a></h1><hr>
+<p>This example shows how to accelerate a pipeline on GPU using <a href="https://docs.rapids.ai/api/cuml/stable/">cuML</a>.</p>
+<p>Import the breast cancer dataset from <a href="https://scikit-learn.org/stable/datasets/index.html#wine-dataset">sklearn.datasets</a>. This is a small and easy to train dataset whose goal is to predict whether a patient has breast cancer or not.</p>
 
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="load-the-data">Load the data<a class="anchor-link" href="#load-the-data">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4162,13 +4105,11 @@ Licensed under the Apache License, Version 2.0.
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Import packages</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_breast_cancer</span>
 </pre></div>
-<div id="cell-1" class="clipboard-copy-txt"># Import packages
-import pandas as pd
-from atom import ATOMClassifier</div>
+<div id="cell-1" class="clipboard-copy-txt">from atom import ATOMClassifier
+from sklearn.datasets import load_breast_cancer</div>
     
         </div>
     </div>
@@ -4177,8 +4118,8 @@ from atom import ATOMClassifier</div>
 </div>
 
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -4198,17 +4139,9 @@ from atom import ATOMClassifier</div>
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Load data</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;./datasets/weatherAUS.csv&quot;</span><span class="p">)</span>
-
-<span class="c1"># Let&#39;s have a look</span>
-<span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_breast_cancer</span><span class="p">(</span><span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
-<div id="cell-2" class="clipboard-copy-txt"># Load data
-X = pd.read_csv("./datasets/weatherAUS.csv")
-
-# Let's have a look
-X.head()</div>
+<div id="cell-2" class="clipboard-copy-txt">X, y = load_breast_cancer(return_X_y=True, as_frame=True)</div>
     
         </div>
     </div>
@@ -4216,206 +4149,6 @@ X.head()</div>
 </div>
 </div>
 
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
-
-
-
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html">
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Location</th>
-      <th>MinTemp</th>
-      <th>MaxTemp</th>
-      <th>Rainfall</th>
-      <th>Evaporation</th>
-      <th>Sunshine</th>
-      <th>WindGustDir</th>
-      <th>WindGustSpeed</th>
-      <th>WindDir9am</th>
-      <th>WindDir3pm</th>
-      <th>...</th>
-      <th>Humidity9am</th>
-      <th>Humidity3pm</th>
-      <th>Pressure9am</th>
-      <th>Pressure3pm</th>
-      <th>Cloud9am</th>
-      <th>Cloud3pm</th>
-      <th>Temp9am</th>
-      <th>Temp3pm</th>
-      <th>RainToday</th>
-      <th>RainTomorrow</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>MelbourneAirport</td>
-      <td>18.0</td>
-      <td>26.9</td>
-      <td>21.4</td>
-      <td>7.0</td>
-      <td>8.9</td>
-      <td>SSE</td>
-      <td>41.0</td>
-      <td>W</td>
-      <td>SSE</td>
-      <td>...</td>
-      <td>95.0</td>
-      <td>54.0</td>
-      <td>1019.5</td>
-      <td>1017.0</td>
-      <td>8.0</td>
-      <td>5.0</td>
-      <td>18.5</td>
-      <td>26.0</td>
-      <td>Yes</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Adelaide</td>
-      <td>17.2</td>
-      <td>23.4</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>S</td>
-      <td>41.0</td>
-      <td>S</td>
-      <td>WSW</td>
-      <td>...</td>
-      <td>59.0</td>
-      <td>36.0</td>
-      <td>1015.7</td>
-      <td>1015.7</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>17.7</td>
-      <td>21.9</td>
-      <td>No</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Cairns</td>
-      <td>18.6</td>
-      <td>24.6</td>
-      <td>7.4</td>
-      <td>3.0</td>
-      <td>6.1</td>
-      <td>SSE</td>
-      <td>54.0</td>
-      <td>SSE</td>
-      <td>SE</td>
-      <td>...</td>
-      <td>78.0</td>
-      <td>57.0</td>
-      <td>1018.7</td>
-      <td>1016.6</td>
-      <td>3.0</td>
-      <td>3.0</td>
-      <td>20.8</td>
-      <td>24.1</td>
-      <td>Yes</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>Portland</td>
-      <td>13.6</td>
-      <td>16.8</td>
-      <td>4.2</td>
-      <td>1.2</td>
-      <td>0.0</td>
-      <td>ESE</td>
-      <td>39.0</td>
-      <td>ESE</td>
-      <td>ESE</td>
-      <td>...</td>
-      <td>76.0</td>
-      <td>74.0</td>
-      <td>1021.4</td>
-      <td>1020.5</td>
-      <td>7.0</td>
-      <td>8.0</td>
-      <td>15.6</td>
-      <td>16.0</td>
-      <td>Yes</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>Walpole</td>
-      <td>16.4</td>
-      <td>19.9</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>SE</td>
-      <td>44.0</td>
-      <td>SE</td>
-      <td>SE</td>
-      <td>...</td>
-      <td>78.0</td>
-      <td>70.0</td>
-      <td>1019.4</td>
-      <td>1018.9</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>17.4</td>
-      <td>18.1</td>
-      <td>No</td>
-      <td>0</td>
-    </tr>
-  </tbody>
-</table>
-<p>5 rows × 22 columns</p>
-</div>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="run-the-pipeline">Run the pipeline<a class="anchor-link" href="#run-the-pipeline">&#182;</a></h2>
-</div>
-</div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
@@ -4438,9 +4171,9 @@ X.head()</div>
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;cuml&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
-<div id="cell-3" class="clipboard-copy-txt">atom = ATOMClassifier(X, "RainTomorrow", verbose=2)</div>
+<div id="cell-3" class="clipboard-copy-txt">atom = ATOMClassifier(X, y, device="gpu", engine="cuml", verbose=2)</div>
     
         </div>
     </div>
@@ -4464,22 +4197,22 @@ X.head()</div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>&lt;&lt; ================== ATOM ================== &gt;&gt;
 Algorithm task: binary classification.
+GPU training enabled.
+Backend engine: cuml.
 
 Dataset stats ==================== &gt;&gt;
-Shape: (142193, 22)
-Memory: 61.69 MB
+Shape: (569, 31)
+Memory: 141.24 kB
 Scaled: False
-Missing values: 316559 (10.1%)
-Categorical features: 5 (23.8%)
-Duplicate samples: 45 (0.0%)
+Outlier values: 171 (1.2%)
 -------------------------------------
-Train set size: 113755
-Test set size: 28438
+Train set size: 456
+Test set size: 113
 -------------------------------------
-|   |        dataset |          train |           test |
-| - | -------------- | -------------- | -------------- |
-| 0 |   110316 (3.5) |    88253 (3.5) |    22063 (3.5) |
-| 1 |    31877 (1.0) |    25502 (1.0) |     6375 (1.0) |
+|   |     dataset |       train |        test |
+| - | ----------- | ----------- | ----------- |
+| 0 |   212 (1.0) |   170 (1.0) |    42 (1.0) |
+| 1 |   357 (1.7) |   286 (1.7) |    71 (1.7) |
 
 </pre>
 </div>
@@ -4511,13 +4244,9 @@ Test set size: 28438
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Impute missing values and encode categorical columns</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">()</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">atom</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
 </pre></div>
-<div id="cell-4" class="clipboard-copy-txt"># Impute missing values and encode categorical columns
-atom.impute()
-atom.encode()</div>
+<div id="cell-4" class="clipboard-copy-txt">atom.clean()</div>
     
         </div>
     </div>
@@ -4539,35 +4268,9 @@ atom.encode()</div>
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>Fitting Imputer...
-Imputing missing values...
- --&gt; Dropping 637 samples due to missing values in feature MinTemp.
- --&gt; Dropping 322 samples due to missing values in feature MaxTemp.
- --&gt; Dropping 1406 samples due to missing values in feature Rainfall.
- --&gt; Dropping 60843 samples due to missing values in feature Evaporation.
- --&gt; Dropping 67816 samples due to missing values in feature Sunshine.
- --&gt; Dropping 9330 samples due to missing values in feature WindGustDir.
- --&gt; Dropping 9270 samples due to missing values in feature WindGustSpeed.
- --&gt; Dropping 10013 samples due to missing values in feature WindDir9am.
- --&gt; Dropping 3778 samples due to missing values in feature WindDir3pm.
- --&gt; Dropping 1348 samples due to missing values in feature WindSpeed9am.
- --&gt; Dropping 2630 samples due to missing values in feature WindSpeed3pm.
- --&gt; Dropping 1774 samples due to missing values in feature Humidity9am.
- --&gt; Dropping 3610 samples due to missing values in feature Humidity3pm.
- --&gt; Dropping 14014 samples due to missing values in feature Pressure9am.
- --&gt; Dropping 13981 samples due to missing values in feature Pressure3pm.
- --&gt; Dropping 53657 samples due to missing values in feature Cloud9am.
- --&gt; Dropping 57094 samples due to missing values in feature Cloud3pm.
- --&gt; Dropping 904 samples due to missing values in feature Temp9am.
- --&gt; Dropping 2726 samples due to missing values in feature Temp3pm.
- --&gt; Dropping 1406 samples due to missing values in feature RainToday.
-Fitting Encoder...
-Encoding categorical columns...
- --&gt; LeaveOneOut-encoding feature Location. Contains 26 classes.
- --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 classes.
- --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 classes.
- --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 classes.
- --&gt; Ordinal-encoding feature RainToday. Contains 2 classes.
+<pre>Fitting Cleaner...
+Cleaning the data...
+ --&gt; Label-encoding the target column.
 </pre>
 </div>
 </div>
@@ -4598,11 +4301,9 @@ Encoding categorical columns...
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Train a K-Nearest Neighbors model (using default sklearn)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;KNN&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;f1&quot;</span><span class="p">)</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="s2">&quot;rf&quot;</span><span class="p">],</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
-<div id="cell-5" class="clipboard-copy-txt"># Train a K-Nearest Neighbors model (using default sklearn)
-atom.run(models="KNN", metric="f1")</div>
+<div id="cell-5" class="clipboard-copy-txt">atom.run(["lr", "rf"], n_trials=10)</div>
     
         </div>
     </div>
@@ -4626,23 +4327,76 @@ atom.run(models="KNN", metric="f1")</div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>
 Training ========================= &gt;&gt;
-Models: KNN
+Models: LR, RF
 Metric: f1
 
 
-Results for KNearestNeighbors:
+Running hyperparameter tuning for LogisticRegression...
+| trial |       C | max_iter | l1_ratio |      f1 | best_f1 | time_trial | time_ht |    state |
+| ----- | ------- | -------- | -------- | ------- | ------- | ---------- | ------- | -------- |
+| 0     | 76.5012 |      970 |      --- |  0.9821 |  0.9821 |     0.932s |  0.932s | COMPLETE |
+| 1     | 42.1177 |      740 |      --- |  0.9739 |  0.9821 |     0.093s |  1.025s | COMPLETE |
+| 2     |  0.0059 |      690 |      --- |  0.9661 |  0.9821 |     0.054s |  1.080s | COMPLETE |
+| 3     |  3.3535 |      680 |      --- |  0.9913 |  0.9913 |     0.069s |  1.149s | COMPLETE |
+| 4     |  5.1898 |      770 |      --- |  0.9739 |  0.9913 |     0.078s |  1.227s | COMPLETE |
+| 5     |  0.0902 |      840 |      --- |  0.9739 |  0.9913 |     0.055s |  1.282s | COMPLETE |
+| 6     |  0.0225 |      810 |      --- |   0.958 |  0.9913 |     0.054s |  1.336s | COMPLETE |
+| 7     |  0.0557 |      150 |      --- |  0.9661 |  0.9913 |     0.058s |  1.395s | COMPLETE |
+| 8     | 10.9765 |      920 |      --- |  0.9735 |  0.9913 |     0.072s |  1.467s | COMPLETE |
+| 9     |  1.8506 |      170 |      --- |  0.9825 |  0.9913 |     0.065s |  1.532s | COMPLETE |
+Hyperparameter tuning ---------------------------
+Best trial --&gt; 3
+Best parameters:
+ --&gt; C: 3.3535
+ --&gt; max_iter: 680
+Best evaluation --&gt; f1: 0.9913
+Time elapsed: 1.532s
 Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.7127
-Test evaluation --&gt; f1: 0.5994
-Time elapsed: 1.697s
+Train evaluation --&gt; f1: 0.9913
+Test evaluation --&gt; f1: 0.9793
+Time elapsed: 0.060s
 -------------------------------------------------
-Total time: 1.697s
+Total time: 1.592s
+
+
+Running hyperparameter tuning for RandomForest...
+| trial | n_estimators | split_criterion | max_depth | min_samples_split | min_samples_leaf | max_features | bootstrap | max_samples |      f1 | best_f1 | time_trial | time_ht |    state |
+| ----- | ------------ | --------------- | --------- | ----------------- | ---------------- | ------------ | --------- | ----------- | ------- | ------- | ---------- | ------- | -------- |
+| 0     |          380 |            gini |         3 |                14 |                5 |          0.8 |     False |         --- |  0.9455 |  0.9455 |     0.845s |  0.845s | COMPLETE |
+| 1     |          170 |            gini |         9 |                 6 |               13 |          0.9 |     False |         --- |  0.9558 |  0.9558 |     0.424s |  1.269s | COMPLETE |
+| 2     |          270 |         entropy |         4 |                10 |               12 |          0.8 |     False |         --- |  0.9739 |  0.9739 |     0.607s |  1.876s | COMPLETE |
+| 3     |           20 |         entropy |         7 |                 9 |               17 |          0.9 |     False |         --- |  0.9636 |  0.9739 |     0.147s |  2.023s | COMPLETE |
+| 4     |          350 |         entropy |        13 |                 8 |               16 |          0.9 |     False |         --- |  0.9009 |  0.9739 |     0.801s |  2.824s | COMPLETE |
+| 5     |          430 |            gini |        13 |                 4 |               10 |          0.8 |     False |         --- |  0.9402 |  0.9739 |     0.837s |  3.662s | COMPLETE |
+| 6     |          250 |            gini |         9 |                 9 |               14 |         log2 |     False |         --- |   0.958 |  0.9739 |     0.562s |  4.224s | COMPLETE |
+| 7     |          410 |         entropy |         3 |                 8 |               11 |          0.7 |      True |         0.6 |  0.9333 |  0.9739 |     0.831s |  5.055s | COMPLETE |
+| 8     |          100 |            gini |         3 |                10 |               18 |          0.8 |     False |         --- |  0.9381 |  0.9739 |     0.279s |  5.334s | COMPLETE |
+| 9     |          330 |         entropy |         7 |                 6 |               17 |          0.7 |     False |         --- |  0.9558 |  0.9739 |     0.731s |  6.065s | COMPLETE |
+Hyperparameter tuning ---------------------------
+Best trial --&gt; 2
+Best parameters:
+ --&gt; n_estimators: 270
+ --&gt; split_criterion: entropy
+ --&gt; max_depth: 4
+ --&gt; min_samples_split: 10
+ --&gt; min_samples_leaf: 12
+ --&gt; max_features: 0.8
+ --&gt; bootstrap: False
+Best evaluation --&gt; f1: 0.9739
+Time elapsed: 6.065s
+Fit ---------------------------------------------
+Train evaluation --&gt; f1: 0.9809
+Test evaluation --&gt; f1: 0.9655
+Time elapsed: 0.573s
+-------------------------------------------------
+Total time: 6.638s
 
 
 Final results ==================== &gt;&gt;
-Total time: 1.699s
+Total time: 8.389s
 -------------------------------------
-KNearestNeighbors --&gt; f1: 0.5994
+LogisticRegression --&gt; f1: 0.9793 !
+RandomForest       --&gt; f1: 0.9655
 </pre>
 </div>
 </div>
@@ -4673,13 +4427,9 @@ KNearestNeighbors --&gt; f1: 0.5994
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Now, we train an accelerated KNN using engine=&quot;sklearnex&quot;</span>
-<span class="c1"># Note the diffrence in training speed!!</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;KNN_acc&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;f1&quot;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;sklearnex&quot;</span><span class="p">)</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">atom</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
 </pre></div>
-<div id="cell-6" class="clipboard-copy-txt"># Now, we train an accelerated KNN using engine="sklearnex"
-# Note the diffrence in training speed!!
-atom.run(models="KNN_acc", metric="f1", engine="sklearnex")</div>
+<div id="cell-6" class="clipboard-copy-txt">atom.evaluate()</div>
     
         </div>
     </div>
@@ -4697,91 +4447,7 @@ atom.run(models="KNN_acc", metric="f1", engine="sklearnex")</div>
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-
-
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>
-Training ========================= &gt;&gt;
-Models: KNN_acc
-Metric: f1
-
-
-Results for KNearestNeighbors:
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.7127
-Test evaluation --&gt; f1: 0.5994
-Time elapsed: 1.119s
--------------------------------------------------
-Total time: 1.119s
-
-
-Final results ==================== &gt;&gt;
-Total time: 1.120s
--------------------------------------
-KNearestNeighbors --&gt; f1: 0.5994
-</pre>
-</div>
-</div>
-
-</div>
-
-</div>
-
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="analyze-the-results">Analyze the results<a class="anchor-link" href="#analyze-the-results">&#182;</a></h2>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-        
-        
-        <div class="CodeMirror cm-s-jupyter">
-        <div class="zeroclipboard-container">
-            <clipboard-copy for="cell-7">
-            <div>
-                <span class="notice" hidden>Copied!</span>
-                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 16 16" version="1.1"  data-view-component="true" class="clipboard-copy-icon">
-                    <path fill="currentColor" fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path>
-                    <path fill="currentColor" fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path>
-                </svg>
-                </div>
-            </clipboard-copy>
-        </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">atom</span><span class="o">.</span><span class="n">results</span>
-</pre></div>
-<div id="cell-7" class="clipboard-copy-txt">atom.results</div>
-    
-        </div>
-    </div>
-
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
 
 
 
@@ -4804,26 +4470,41 @@ KNearestNeighbors --&gt; f1: 0.5994
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>score_train</th>
-      <th>score_test</th>
-      <th>time_fit</th>
-      <th>time</th>
+      <th>accuracy</th>
+      <th>average_precision</th>
+      <th>balanced_accuracy</th>
+      <th>f1</th>
+      <th>jaccard</th>
+      <th>matthews_corrcoef</th>
+      <th>precision</th>
+      <th>recall</th>
+      <th>roc_auc</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>KNN</th>
-      <td>0.7127</td>
-      <td>0.5994</td>
-      <td>1.697075</td>
-      <td>1.697075</td>
+      <th>LR</th>
+      <td>0.9735</td>
+      <td>0.9817</td>
+      <td>0.9643</td>
+      <td>0.9793</td>
+      <td>0.9595</td>
+      <td>0.9439</td>
+      <td>0.9595</td>
+      <td>1.0000</td>
+      <td>0.9762</td>
     </tr>
     <tr>
-      <th>KNN_acc</th>
-      <td>0.7127</td>
-      <td>0.5994</td>
-      <td>1.119191</td>
-      <td>1.119191</td>
+      <th>RF</th>
+      <td>0.9558</td>
+      <td>0.9919</td>
+      <td>0.9453</td>
+      <td>0.9655</td>
+      <td>0.9333</td>
+      <td>0.9054</td>
+      <td>0.9459</td>
+      <td>0.9859</td>
+      <td>0.9866</td>
     </tr>
   </tbody>
 </table>
@@ -4843,12 +4524,12 @@ KNearestNeighbors --&gt; f1: 0.5994
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
         <div class="zeroclipboard-container">
-            <clipboard-copy for="cell-8">
+            <clipboard-copy for="cell-7">
             <div>
                 <span class="notice" hidden>Copied!</span>
                 <svg aria-hidden="true" width="20" height="20" viewBox="0 0 16 16" version="1.1"  data-view-component="true" class="clipboard-copy-icon">
@@ -4858,21 +4539,12 @@ KNearestNeighbors --&gt; f1: 0.5994
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Note how the underlying estimators might look the same...</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">knn</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">knn_acc</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span>
-
-<span class="c1"># ... but are using different implementations</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">knn</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">knn_acc</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
 </pre></div>
-<div id="cell-8" class="clipboard-copy-txt"># Note how the underlying estimators might look the same...
-print(atom.knn.estimator)
-print(atom.knn_acc.estimator)
-
-# ... but are using different implementations
-print(atom.knn.estimator.__module__)
-print(atom.knn_acc.estimator.__module__)</div>
+<div id="cell-7" class="clipboard-copy-txt">print(atom.lr.estimator.__module__)
+print(atom.rf.estimator.__module__)
+</div>
     
         </div>
     </div>
@@ -4894,83 +4566,10 @@ print(atom.knn_acc.estimator.__module__)</div>
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>KNeighborsClassifier(n_jobs=1)
-KNeighborsClassifier(n_jobs=1)
-sklearn.neighbors._classification
-sklearnex.neighbors.knn_classification
+<pre>cuml.linear_model.logistic_regression
+cuml.ensemble.randomforestclassifier
 </pre>
 </div>
-</div>
-
-</div>
-
-</div>
-
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-        
-        
-        <div class="CodeMirror cm-s-jupyter">
-        <div class="zeroclipboard-container">
-            <clipboard-copy for="cell-9">
-            <div>
-                <span class="notice" hidden>Copied!</span>
-                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 16 16" version="1.1"  data-view-component="true" class="clipboard-copy-icon">
-                    <path fill="currentColor" fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path>
-                    <path fill="currentColor" fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path>
-                </svg>
-                </div>
-            </clipboard-copy>
-        </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="k">with</span> <span class="n">atom</span><span class="o">.</span><span class="n">canvas</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Timing engines: sklearn vs sklearnex&quot;</span><span class="p">):</span>
-    <span class="n">atom</span><span class="o">.</span><span class="n">plot_results</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s2">&quot;time_fit&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Training&quot;</span><span class="p">)</span>
-    <span class="n">atom</span><span class="o">.</span><span class="n">plot_results</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Total&quot;</span><span class="p">)</span>
-</pre></div>
-<div id="cell-9" class="clipboard-copy-txt">with atom.canvas(1, 2, title="Timing engines: sklearn vs sklearnex"):
-    atom.plot_results(metric="time_fit", title="Training")
-    atom.plot_results(metric="time", title="Total")</div>
-    
-        </div>
-    </div>
-
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-
-
-
-
-
-</div>
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-
-
-
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
-<div>                            <div id="a5e08f7d-10b5-4713-8648-ed03e091f0e6" class="plotly-graph-div" style="height:600px; width:100%;"></div>            <script type="text/javascript">window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("a5e08f7d-10b5-4713-8648-ed03e091f0e6")) {                    Plotly.newPlot(                        "a5e08f7d-10b5-4713-8648-ed03e091f0e6",                        [{"hovertemplate":"%{x}<extra>time_fit</extra>","legendgroup":"time_fit","marker":{"color":"rgba(0, 98, 98, 0.2)","line":{"color":"rgb(0, 98, 98)","width":2}},"name":"time_fit","orientation":"h","showlegend":true,"x":[1.697075,1.119191],"xaxis":"x","y":["KNN","KNN_acc"],"yaxis":"y","type":"bar"},{"hovertemplate":"%{x}<extra>time</extra>","legendgroup":"time","marker":{"color":"rgba(56, 166, 165, 0.2)","line":{"color":"rgb(56, 166, 165)","width":2}},"name":"time","orientation":"h","showlegend":true,"x":[1.697075,1.119191],"xaxis":"x2","y":["KNN","KNN_acc"],"yaxis":"y2","type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"domain":[0.0,0.45],"anchor":"y","title":{"font":{"size":16},"text":"time (s)"},"automargin":true},"yaxis":{"domain":[0.0,1.0],"anchor":"x","categoryorder":"total ascending","title":{"font":{"size":16}},"automargin":true},"bargroupgap":0.05,"boxmode":"group","annotations":[{"font":{"size":20},"showarrow":false,"text":"Training","x":0.225,"xanchor":"center","xref":"paper","y":1.005,"yanchor":"bottom","yref":"paper"},{"showarrow":false,"text":"Total","x":0.775,"xanchor":"center","xref":"paper","y":1.005,"yanchor":"bottom","yref":"paper","font":{"size":20}}],"xaxis2":{"domain":[0.55,1.0],"anchor":"y2","title":{"font":{"size":16},"text":"time (s)"},"automargin":true},"yaxis2":{"domain":[0.0,1.0],"anchor":"x2","categoryorder":"total ascending","title":{"font":{"size":16}},"automargin":true},"title":{"pad":{"t":15,"b":15},"font":{"size":24},"text":"Timing engines: sklearn vs sklearnex","x":0.5,"y":1,"xanchor":"center","yanchor":"top","xref":"paper"},"legend":{"font":{"size":16},"traceorder":"grouped","groupclick":"togglegroup","bgcolor":"rgba(255, 255, 255, 0.5)"},"hoverlabel":{"font":{"size":16}},"font":{"size":12},"margin":{"l":50,"b":50,"r":0,"t":73,"pad":0},"showlegend":true},                        {"responsive": true}                    )}</script>        </div>
-</div>
-
 </div>
 
 </div>
@@ -5028,13 +4627,13 @@ sklearnex.neighbors.knn_classification
       
       
         
-        <a href="../advanced_plotting/" class="md-footer__link md-footer__link--next" aria-label="Next: Advanced plotting" rel="next">
+        <a href="../accelerating_sklearnex/" class="md-footer__link md-footer__link--next" aria-label="Next: Accelerating sklearnex" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Advanced plotting
+              Accelerating sklearnex
             </div>
           </div>
           <div class="md-footer__button md-icon">

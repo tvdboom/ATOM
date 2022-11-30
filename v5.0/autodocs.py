@@ -14,8 +14,8 @@ import json
 import os
 import warnings
 from inspect import (
-    Parameter, getattr_static, getdoc, getmembers, getsourcelines, isclass,
-    isfunction, isroutine, signature,
+    Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
+    isroutine, signature,
 )
 from typing import Any, Callable, Optional
 
@@ -681,7 +681,7 @@ class AutoDocs:
                 text += f"{anchor}<strong>{name}</strong><br>"
                 text += f"<div markdown class='param'>{dist}</div>"
 
-            table = f"<tr><td class='td_title'><strong>Parameters</strong></td>"
+            table = "<tr><td class='td_title'><strong>Parameters</strong></td>"
             table += f"<td class='td_params'>{text}</td></tr>"
 
             return f"<table markdown class='table_params'>{table}</table>"
@@ -691,9 +691,9 @@ class AutoDocs:
             if len(self.obj._estimators) > 1:
                 indent = " " * 4
                 if goal == "class":
-                    content += f'\n=== "classification"\n'
+                    content += '\n=== "classification"\n'
                 elif goal == "reg":
-                    content += f'\n=== "regression"\n'
+                    content += '\n=== "regression"\n'
 
             for engine in self.obj.supports_engines:
                 sub_indent = indent

@@ -293,7 +293,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../examples/accelerating_pipelines/" class="md-tabs__link">
+      <a href="../../../examples/accelerating_cuml/" class="md-tabs__link">
         Examples
       </a>
     </li>
@@ -2597,8 +2597,22 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../examples/accelerating_pipelines/" class="md-nav__link">
-        Accelerating pipelines
+      <a href="../../../examples/accelerating_cuml/" class="md-nav__link">
+        Accelerating cuml
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/accelerating_sklearnex/" class="md-nav__link">
+        Accelerating sklearnex
       </a>
     </li>
   
@@ -2711,6 +2725,20 @@
     <li class="md-nav__item">
       <a href="../../../examples/feature_engineering/" class="md-nav__link">
         Feature engineering
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/getting_started/" class="md-nav__link">
+        Getting started
       </a>
     </li>
   
@@ -3073,7 +3101,7 @@
 
 <h1 id="pruner">Pruner</h1>
 <hr />
-<p><a id='Pruner'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Pruner</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2578>[source]</a></span></div>Prune outliers from the data.</p>
+<p><a id='Pruner'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Pruner</strong>(strategy="zscore", method="drop", max_sigma=3, include_target=False, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2581>[source]</a></span></div>Prune outliers from the data.</p>
 <p>Replace or remove outliers. The definition of outlier depends
 on the selected strategy and can greatly differ from one another.
 Ignores categorical columns.</p>
@@ -3372,7 +3400,7 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='pruner-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2803>[source]</a></span></div>Apply the outlier strategy on the data.</p>
+<p><a id='pruner-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L2806>[source]</a></span></div>Apply the outlier strategy on the data.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='transform-X'></a><strong>X: dataframe-like</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features).</p>
