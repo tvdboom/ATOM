@@ -27,9 +27,9 @@ from sklearn.model_selection import train_test_split
 from typeguard import typechecked
 
 from atom.utils import (
-    INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, Estimator,
-    composed, crash, lst, merge, method_to_log, prepare_logger, to_df,
-    to_series,
+    INT, PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
+    Estimator, composed, crash, get_cols, is_1_dim, lst, merge, method_to_log,
+    prepare_logger, to_df, to_series,
 )
 
 
@@ -268,7 +268,7 @@ class BaseTransformer:
         X: Optional[X_TYPES] = None,
         /,
         y: Optional[Y_TYPES] = None,
-    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.Series]]:
+    ) -> Tuple[Optional[pd.DataFrame], Optional[PANDAS_TYPES]]:
         """Prepare the input data.
 
         Convert X and y to pandas (if not already) and perform standard
@@ -280,20 +280,24 @@ class BaseTransformer:
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, pd.DataFrame or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
         pd.DataFrame or None
             Feature dataset. Only returned if provided.
 
-        pd.Series or None
-            Transformed target column. Only returned if provided.
+        pd.Series, pd.DataFrame or None
+            Target column(s) corresponding to X.
 
         """
         if X is None and y is None:
@@ -306,25 +310,51 @@ class BaseTransformer:
                 X = X.rename(columns={X.columns[0]: "corpus"})
 
             # Convert all column names to str
-            X.columns = [str(col) for col in X.columns]
+            X.columns = map(str, X.columns)
+
+            # No duplicate column names are allowed
+            if len(set(X.columns)) != len(X.columns):
+                raise ValueError("Duplicate column names found in X.")
 
         # Prepare target column
-        if isinstance(y, (dict, *SEQUENCE)):
-            if not isinstance(y, pd.Series):
-                # Check that y is one-dimensional
-                if ndim := np.array(y).ndim > 1:
-                    raise ValueError(f"y should be one-dimensional, got ndim={ndim}.")
+        if isinstance(y, (dict, *SEQUENCE, pd.DataFrame)):
+            if isinstance(y, dict):
+                if is_1_dim(y := to_df(y, index=getattr(X, "index", None))):
+                    y = y[y.columns[0]]  # If y is one-dimensional, get series
 
-                # Check X and y have the same number of rows
+            elif isinstance(y, (SEQUENCE, pd.DataFrame)):
+                # If X and y have different number of rows, try multioutput
                 if X is not None and len(X) != len(y):
-                    raise ValueError(
-                        "X and y don't have the same number of rows,"
-                        f" got len(X)={len(X)} and len(y)={len(y)}."
+                    try:
+                        targets = []
+                        for col in y:
+                            if col in X.columns:
+                                targets.append(col)
+                            else:
+                                targets.append(X.columns[col])
+
+                        X, y = X.drop(targets, axis=1), X[targets]
+
+                    except IndexError:
+                        raise ValueError(
+                            "X and y don't have the same number of rows,"
+                            f" got len(X)={len(X)} and len(y)={len(y)}."
+                        )
+
+                if is_1_dim(y):
+                    y = to_series(y, index=getattr(X, "index", None))
+                else:
+                    y = to_df(
+                        data=y,
+                        index=getattr(X, "index", None),
+                        columns=[f"y{i}" for i in range(y.shape[1])],
                     )
 
-                y = to_series(y, index=getattr(X, "index", None))
+                    if len(set(y.columns)) != len(y.columns):
+                        raise ValueError("Duplicate column names found in y.")
 
-            elif X is not None and not X.index.equals(y.index):
+            # Check X and y have the same indices
+            if X is not None and not X.index.equals(y.index):
                 raise ValueError("X and y don't have the same indices!")
 
         elif isinstance(y, str):
@@ -405,7 +435,7 @@ class BaseTransformer:
             there's no stratification.
 
         """
-        # Stratification is not possible when the data can not change order
+        # Stratification is not possible when the data cannot change order
         if self.stratify is False:
             return None
         elif self.shuffle is False:
@@ -499,8 +529,10 @@ class BaseTransformer:
             else:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
-        def _no_data_sets(data: pd.DataFrame) -> tuple:
-            """Generate data sets from one dataframe.
+        def _no_data_sets(
+            X: pd.DataFrame, y: PANDAS_TYPES
+        ) -> Tuple[pd.DataFrame, list, Optional[pd.DataFrame]]:
+            """Generate data sets from one dataset.
 
             Additionally, assigns an index, shuffles the data, selects
             a subsample if `n_rows` is specified and split into sets in
@@ -508,8 +540,11 @@ class BaseTransformer:
 
             Parameters
             ----------
-            data: pd.DataFrame
-                Complete dataset containing all data sets.
+            X: pd.DataFrame
+                Feature set with shape=(n_samples, n_features).
+
+            y: pd.Series or pd.DataFrame
+                Target column(s) corresponding to X.
 
             Returns
             -------
@@ -517,6 +552,8 @@ class BaseTransformer:
                 Data, indices and holdout.
 
             """
+            data = merge(X, y)
+
             # If the index is a sequence, assign it before shuffling
             if isinstance(self.index, SEQUENCE):
                 if len(self.index) != len(data):
@@ -587,13 +624,19 @@ class BaseTransformer:
             )
             data = self._set_index(pd.concat([train, test]))
 
-            return data, [data.index[:-test_size], data.index[-test_size:]], holdout
+            # [number of target columns, train indices, test indices]
+            idx = [len(get_cols(y)), data.index[:-test_size], data.index[-test_size:]]
+
+            return data, idx, holdout
 
         def _has_data_sets(
-            train: pd.DataFrame,
-            test: pd.DataFrame,
-            holdout: Optional[pd.DataFrame] = None,
-        ) -> tuple:
+            X_train: pd.DataFrame,
+            y_train: PANDAS_TYPES,
+            X_test: pd.DataFrame,
+            y_test: PANDAS_TYPES,
+            X_holdout: Optional[pd.DataFrame] = None,
+            y_holdout: Optional[PANDAS_TYPES] = None,
+        ) -> Tuple[pd.DataFrame, list, Optional[pd.DataFrame]]:
             """Generate data sets from provided sets.
 
             Additionally, assigns an index, shuffles the data and
@@ -601,14 +644,23 @@ class BaseTransformer:
 
             Parameters
             ----------
-            train: pd.DataFrame
+            X_train: pd.DataFrame
                 Training set.
 
-            test: pd.DataFrame
+            y_train: pd Series or pd.DataFrame
+                Target column(s) corresponding to X_train.
+
+            X_test: pd.DataFrame
                 Test set.
 
-            holdout: pd.DataFrame or None
+            y_test: pd Series or pd.DataFrame
+                Target column(s) corresponding to X_test.
+
+            X_holdout: pd.DataFrame or None
                 Holdout set. Is None if not provided by the user.
+
+            y_holdout: pd.Series, pd.DataFrame or None
+                Target column(s) corresponding to X_holdout.
 
             Returns
             -------
@@ -616,6 +668,10 @@ class BaseTransformer:
                 Data, indices and holdout.
 
             """
+            train = merge(X_train, y_train)
+            test = merge(X_test, y_test)
+            holdout = merge(X_holdout, y_holdout) if X_holdout is not None else None
+
             # If the index is a sequence, assign it before shuffling
             if isinstance(self.index, SEQUENCE):
                 len_data = len(train) + len(test)
@@ -658,7 +714,13 @@ class BaseTransformer:
                 holdout = self._set_index(holdout)
 
             data = self._set_index(pd.concat([train, test]))
-            idx = [data.index[:len(train)], data.index[-len(test):]]
+
+            # [number of target columns, train indices, test indices]
+            idx = [
+                len(get_cols(y_train)),
+                data.index[:len(train)],
+                data.index[-len(test):],
+            ]
 
             return data, idx, holdout
 
@@ -675,51 +737,49 @@ class BaseTransformer:
 
         elif len(arrays) == 1:
             # arrays=(X,)
-            data = merge(*self._prepare_input(arrays[0], y=y))
-            sets = _no_data_sets(data)
+            sets = _no_data_sets(*self._prepare_input(arrays[0], y=y))
 
         elif len(arrays) == 2:
             if isinstance(arrays[0], tuple) and len(arrays[0]) == len(arrays[1]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test))
-                train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
-                test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
-                sets = _has_data_sets(train, test)
-            elif isinstance(arrays[1], (int, str)) or np.array(arrays[1]).ndim == 1:
+                X_train, y_train = self._prepare_input(arrays[0][0], arrays[0][1])
+                X_test, y_test = self._prepare_input(arrays[1][0], arrays[1][1])
+                sets = _has_data_sets(X_train, y_train, X_test, y_test)
+            elif isinstance(arrays[1], (int, str)) or is_1_dim(arrays[1]):
                 # arrays=(X, y)
-                data = merge(*self._prepare_input(arrays[0], arrays[1]))
-                sets = _no_data_sets(data)
+                sets = _no_data_sets(*self._prepare_input(arrays[0], arrays[1]))
             else:
                 # arrays=(train, test)
-                train = merge(*self._prepare_input(arrays[0], y=y))
-                test = merge(*self._prepare_input(arrays[1], y=y))
-                sets = _has_data_sets(train, test)
+                X_train, y_train = self._prepare_input(arrays[0], y=y)
+                X_test, y_test = self._prepare_input(arrays[1], y=y)
+                sets = _has_data_sets(X_train, y_train, X_test, y_test)
 
         elif len(arrays) == 3:
             if len(arrays[0]) == len(arrays[1]) == len(arrays[2]) == 2:
                 # arrays=((X_train, y_train), (X_test, y_test), (X_holdout, y_holdout))
-                train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
-                test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
-                holdout = merge(*self._prepare_input(arrays[2][0], arrays[2][1]))
-                sets = _has_data_sets(train, test, holdout)
+                X_train, y_train = self._prepare_input(arrays[0][0], arrays[0][1])
+                X_test, y_test = self._prepare_input(arrays[1][0], arrays[1][1])
+                X_hold, y_hold = self._prepare_input(arrays[2][0], arrays[2][1])
+                sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
             else:
                 # arrays=(train, test, holdout)
-                train = merge(*self._prepare_input(arrays[0], y=y))
-                test = merge(*self._prepare_input(arrays[1], y=y))
-                holdout = merge(*self._prepare_input(arrays[2], y=y))
-                sets = _has_data_sets(train, test, holdout)
+                X_train, y_train = self._prepare_input(arrays[0], y=y)
+                X_test, y_test = self._prepare_input(arrays[1], y=y)
+                X_hold, y_hold = self._prepare_input(arrays[2], y=y)
+                sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
 
         elif len(arrays) == 4:
             # arrays=(X_train, X_test, y_train, y_test)
-            train = merge(*self._prepare_input(arrays[0], arrays[2]))
-            test = merge(*self._prepare_input(arrays[1], arrays[3]))
-            sets = _has_data_sets(train, test)
+            X_train, y_train = self._prepare_input(arrays[0], arrays[2])
+            X_test, y_test = self._prepare_input(arrays[1], arrays[3])
+            sets = _has_data_sets(X_train, y_train, X_test, y_test)
 
         elif len(arrays) == 6:
             # arrays=(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
-            train = merge(*self._prepare_input(arrays[0], arrays[3]))
-            test = merge(*self._prepare_input(arrays[1], arrays[4]))
-            holdout = merge(*self._prepare_input(arrays[2], arrays[5]))
-            sets = _has_data_sets(train, test, holdout)
+            X_train, y_train = self._prepare_input(arrays[0], arrays[3])
+            X_test, y_test = self._prepare_input(arrays[1], arrays[4])
+            X_hold, y_hold = self._prepare_input(arrays[2], arrays[5])
+            sets = _has_data_sets(X_train, y_train, X_test, y_test, X_hold, y_hold)
 
         else:
             raise ValueError(

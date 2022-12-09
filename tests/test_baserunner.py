@@ -20,8 +20,8 @@ from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
 
 from .conftest import (
-    X10, X10_str, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, y10,
-    y_bin, y_class, y_idx, y_reg,
+    X10, X10_str, X_bin, X_class, X_idx, X_multi, X_reg, bin_test, bin_train,
+    y10, y_bin, y_class, y_idx, y_multi, y_reg,
 )
 
 
@@ -651,24 +651,32 @@ def test_export_pipeline_memory(func):
     func.assert_called_once()
 
 
-def test_class_weights_invalid_dataset():
-    """Assert that an error is raised if invalid value for dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.get_class_weight, "invalid")
-
-
 def test_get_class_weights_regression():
     """Assert that an error is raised when called from regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(PermissionError, atom.get_class_weight)
+    with pytest.raises(PermissionError, match=".*get_class_weight method is only.*"):
+        atom.get_class_weight()
+
+
+def test_class_weights_invalid_dataset():
+    """Assert that an error is raised if invalid value for dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=".*the dataset parameter.*"):
+        atom.get_class_weight("invalid")
 
 
 @pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
 def test_get_class_weights(dataset):
     """Assert that the get_class_weight method returns a dict of the classes."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    class_weight = atom.get_class_weight(dataset)
-    assert list(class_weight) == [0, 1, 2]
+    assert list(atom.get_class_weight(dataset)) == [0, 1, 2]
+
+
+@pytest.mark.parametrize("target", [0, -1, "y1"])
+def test_get_class_weight_multioutput(target):
+    """Assert that the get_class_weight method works for multioutput."""
+    atom = ATOMClassifier(X_multi, y=y_multi, random_state=1)
+    assert list(atom.get_class_weight(target=target)) == [0, 1]
 
 
 def test_merge_invalid_class():

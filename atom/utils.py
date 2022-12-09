@@ -56,7 +56,7 @@ SCALAR = Union[INT, FLOAT]
 SEQUENCE_TYPES = Union[SEQUENCE]
 PANDAS_TYPES = Union[pd.Series, pd.DataFrame]
 X_TYPES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
-Y_TYPES = Union[INT, str, dict, SEQUENCE_TYPES]
+Y_TYPES = Union[INT, str, dict, SEQUENCE_TYPES, pd.DataFrame]
 
 # Attributes shared between atom and pd.DataFrame
 DF_ATTRS = (
@@ -1201,6 +1201,24 @@ def divide(a: SCALAR, b: SCALAR) -> SCALAR:
     return np.divide(a, b) if b != 0 else 0
 
 
+def is_1_dim(elem: Union[X_TYPES, Y_TYPES]) -> bool:
+    """Check whether an array-like is 1 dimensional.
+
+    Parameters
+    ----------
+    elem: array-like
+        Object to check.
+
+    Returns
+    -------
+    bool
+        Whether elem has 1 dimension.
+
+    """
+    array = np.array(elem, dtype="object")
+    return array.ndim == 1 or array.shape[1] == 1
+
+
 def to_rgb(c: str) -> str:
     """Convert a color name or hex to rgb.
 
@@ -1239,24 +1257,46 @@ def sign(obj: Callable) -> OrderedDict:
     return signature(obj).parameters
 
 
-def merge(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
-    """Add a target column to the feature set.
+def merge(*args) -> pd.DataFrame:
+    """Concatenate pandas objects column-wise.
+
+    Empty objects are ignored.
 
     Parameters
     ----------
-    X: pd.DataFrame
-        Feature set.
-
-    y: pd.Series
-        Target column.
+    *args
+        Objects to concatenate.
 
     Returns
     -------
     pd.DataFrame
-        Complete dataset.
+        Concatenated dataframe.
 
     """
-    return X.merge(y.to_frame(), left_index=True, right_index=True)
+    if len(args := [elem for elem in args if not elem.empty]) == 1:
+        return args[0]
+    else:
+        return pd.concat([*args], axis=1)
+
+
+def get_cols(elem: PANDAS_TYPES) -> List[pd.Series]:
+    """Get a list of the columns in dataframe / series.
+
+    Parameters
+    ----------
+    elem: pd.Series or pd.DataFrame
+        Element to get the columns from.
+
+    Returns
+    -------
+    list of pd.Series
+        Columns in elem.
+
+    """
+    if isinstance(elem, pd.Series):
+        return [elem]
+    else:
+        return [elem[col] for col in elem]
 
 
 def variable_return(
@@ -1264,7 +1304,7 @@ def variable_return(
 ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
     """Return one or two arguments depending on which is None.
 
-    This utility is used to mnake methods return only the provided
+    This utility is used to make methods return only the provided
     data set.
 
     Parameters
@@ -1558,7 +1598,9 @@ def to_df(
         if not isinstance(data, dict) and columns is None:
             columns = [f"x{str(i)}" for i in range(n_cols(data))]
 
-        if sparse.issparse(data):
+        if hasattr(data, "to_pandas"):
+            data = data.to_pandas()  # Convert cuML to pandas
+        elif sparse.issparse(data):
             # Create dataframe from sparse matrix
             data = pd.DataFrame.sparse.from_spmatrix(data, index, columns)
         else:
@@ -1600,7 +1642,10 @@ def to_series(
 
     """
     if data is not None and not isinstance(data, pd.Series):
-        data = pd.Series(data, index=index, name=name, dtype=dtype)
+        if hasattr(data, "to_pandas"):
+            data = data.to_pandas()  # Convert cuML to pandas
+        else:
+            data = pd.Series(data, index=index, name=name, dtype=dtype)
 
     return data
 
@@ -1842,7 +1887,7 @@ def get_custom_scorer(metric: Union[str, Callable, Scorer]) -> Scorer:
     return scorer
 
 
-def infer_task(y: pd.Series, goal: str = "class") -> str:
+def infer_task(y: PANDAS_TYPES, goal: str = "class") -> str:
     """Infer the task corresponding to a target column.
 
     If goal is provided, only look at number of unique values to
@@ -1850,8 +1895,8 @@ def infer_task(y: pd.Series, goal: str = "class") -> str:
 
     Parameters
     ----------
-    y: pd.Series
-        Target column from which to infer the task.
+    y: pd.Series or pd.DataFrame
+        Target column(s).
 
     goal: str, default="class"
         Classification or regression goal.
@@ -1863,14 +1908,20 @@ def infer_task(y: pd.Series, goal: str = "class") -> str:
 
     """
     if goal == "reg":
-        return "regression"
+        if y.ndim == 1:
+            return "regression"
+        else:
+            return "multioutput regression"
 
-    if y.nunique() == 1:
-        raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
-    elif y.nunique() == 2:
-        return "binary classification"
+    if y.ndim > 1 or isinstance(y.iloc[0], SEQUENCE):
+        return "multioutput classification"
     else:
-        return "multiclass classification"
+        if y.nunique() == 1:
+            raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
+        elif y.nunique() == 2:
+            return "binary classification"
+        else:
+            return "multiclass classification"
 
 
 def partial_dependence(
@@ -2244,7 +2295,7 @@ def transform_one(
     args = []
     if "X" in (params := sign(getattr(transformer, method))):
         if X is not None:
-            inc, exc = getattr(transformer, "_cols", (list(X.columns), None))
+            inc, exc = getattr(transformer, "_cols", (list(X.columns), []))
             if inc or exc:  # Skip if inc=[] (happens when columns=-1)
                 args.append(X[inc or [c for c in X.columns if c not in exc]])
 
@@ -2261,19 +2312,24 @@ def transform_one(
         elif "X" not in params:
             return X, y  # If y is None and no X in transformer, skip the transformer
 
-    output = getattr(transformer, method)(*args)
-
     # Transform can return X, y or both
-    if isinstance(output, tuple):
-        new_X = prepare_df(output[0])
-        new_y = to_series(output[1], index=new_X.index, name=y.name)
-    else:
-        if output.ndim > 1:
-            new_X = prepare_df(output)
-            new_y = y if y is None else y.set_axis(new_X.index)
+    if isinstance(out := getattr(transformer, method)(*args), tuple):
+        new_X = prepare_df(out[0])
+        if is_1_dim(out[1]):
+            new_y = to_series(out[1], index=new_X.index, name=getattr(y, "name", None))
         else:
-            new_y = to_series(output, index=y.index, name=y.name)
-            new_X = X if X is None else X.set_index(new_y.index)
+            new_y = to_df(out[1], index=new_X.index, columns=getattr(y, "columns", None))
+    elif "X" in params and X is not None and (inc != [] or exc != []):
+        # X in -> X out
+        new_X = prepare_df(out)
+        new_y = y if y is None else y.set_axis(new_X.index)
+    else:
+        # X not in -> output must be y
+        if is_1_dim(out):
+            new_y = to_series(out, index=y.index, name=getattr(y, "name", None))
+        else:
+            new_y = to_df(out, index=y.index, columns=getattr(y, "columns", None))
+        new_X = X if X is None else X.set_index(new_y.index)
 
     return new_X, new_y
 
@@ -2399,15 +2455,19 @@ def custom_transform(
         else:
             branch._data = merge(X, branch.y if y is None else y)
 
+            # Since y can change number of columns, reassign index
+            branch._idx[0] = len(get_cols(y))
+
             # Since rows can be removed from train and test, reassign indices
-            branch._idx[0] = [idx for idx in branch._idx[0] if idx in X.index]
             branch._idx[1] = [idx for idx in branch._idx[1] if idx in X.index]
+            branch._idx[2] = [idx for idx in branch._idx[2] if idx in X.index]
 
         if branch.T.index is False:
             branch._data = branch.dataset.reset_index(drop=True)
             branch._idx = [
-                branch._data.index[:len(branch._idx[0])],
-                branch._data.index[-len(branch._idx[1]):],
+                branch._idx[0],
+                branch._data.index[:len(branch._idx[1])],
+                branch._data.index[-len(branch._idx[2]):],
             ]
 
     # Back to the original verbosity

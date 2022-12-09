@@ -289,12 +289,15 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If str: Name of the target column in X.
         - Else: Array with shape=(n_samples,) to use as target.
 
-    y: int, str or sequence, default=-1
+    y: int, str, dict, sequence or pd.DataFrame, default=-1
         Target column corresponding to X.
 
+        - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
         This parameter is ignored if the target column is provided
         through `arrays`.
@@ -585,12 +588,15 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If str: Name of the target column in X.
         - Else: Array with shape=(n_samples,) to use as target.
 
-    y: int, str or sequence, default=-1
+    y: int, str, dict, sequence or pd.DataFrame, default=-1
         Target column corresponding to X.
 
+        - If None: y is ignored.
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
         This parameter is ignored if the target column is provided
         through `arrays`.

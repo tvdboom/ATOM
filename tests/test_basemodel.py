@@ -905,6 +905,25 @@ def test_save_estimator():
     assert glob.glob("MultinomialNB")
 
 
+def test_register_no_experiment():
+    """Assert that an error is raised when there is no experiment."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    with pytest.raises(PermissionError, match=".*mlflow experiment.*"):
+        atom.mnb.register()
+
+
+@patch("mlflow.register_model")
+@patch("mlflow.MlflowClient.transition_model_version_stage")
+def test_register(mlflow, client):
+    """Assert that the register saves the model to a stage."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("MNB")
+    atom.mnb.register()
+    mlflow.assert_called_once()
+    client.assert_called_once()
+
+
 def test_transform():
     """Assert that new data can be transformed by the model's pipeline."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)

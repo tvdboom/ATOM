@@ -97,7 +97,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         # Skip this (slower) part if not called for the estimator
         if not fast_init:
             self.branch = self.T.branch
-            self._train_idx = len(self.branch._idx[0])  # Can change for sh and ts
+            self._train_idx = len(self.branch._idx[1])  # Can change for sh and ts
             if getattr(self, "needs_scaling", None) and self.T.scaled is False:
                 self.scaler = Scaler().fit(self.X_train)
 
@@ -2226,6 +2226,42 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 )
 
         return variable_return(X, y)
+
+    @composed(crash, method_to_log, typechecked)
+    def register(self, name: Optional[str] = None, stage: str = "Staging"):
+        """Register the model in [mlflow's model registry][registry].
+
+        Parameters
+        ----------
+        name: str or None, default=None
+            Name for the registered model. If None, the model's full name
+            is used.
+
+        stage: str, default="staging"
+            New desired stage for the model.
+
+        """
+        if not self._run:
+            raise PermissionError(
+                "The register method is only available when "
+                "there is a mlflow experiment active."
+            )
+
+        model = mlflow.register_model(
+            model_uri=f"runs:/{self._run.info.run_id}/sklearn-model",
+            name=name or self._fullname,
+        )
+
+        MlflowClient().transition_model_version_stage(
+            name=model.name,
+            version=model.version,
+            stage=stage,
+        )
+
+        self.T.log(
+            f"Model {self.name} with version {model.version} "
+            f"successfully registered in stage {stage}.", 1
+        )
 
     @composed(crash, method_to_log, typechecked)
     def save_estimator(self, filename: str = "auto"):

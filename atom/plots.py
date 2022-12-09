@@ -7015,7 +7015,7 @@ class PredictionPlot(BasePlot):
         for met in metric:
             x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
             for m in models:
-                x[m._group].append(len(m.branch._idx[0]) // m._train_idx)
+                x[m._group].append(len(m.branch._idx[1]) // m._train_idx)
                 y[m._group].append(get_best_score(m, met))
                 if m.bootstrap is not None:
                     std[m._group].append(m.bootstrap.iloc[:, met].std())

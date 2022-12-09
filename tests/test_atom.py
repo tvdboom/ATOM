@@ -21,16 +21,18 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel
 from sklearn.metrics import get_scorer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from sklearn.preprocessing import (
+    LabelEncoder, MultiLabelBinarizer, OneHotEncoder, StandardScaler,
+)
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.data_cleaning import Pruner
+from atom.data_cleaning import Cleaner, Pruner
 from atom.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_reg, X_sparse, X_text, y10, y10_sn, y10_str, y_bin, y_class,
-    y_reg,
+    X_class, X_multi, X_reg, X_sparse, X_text, y10, y10_label, y10_sn, y10_str,
+    y_bin, y_class, y_multi, y_reg,
 )
 
 
@@ -44,8 +46,14 @@ def test_task_assignment():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     assert atom.task == "multiclass classification"
 
+    atom = ATOMClassifier(X10, y=y10_label, stratify=False, random_state=1)
+    assert atom.task == "multioutput classification"
+
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     assert atom.task == "regression"
+
+    atom = ATOMRegressor(X_multi, y=y_multi, random_state=1)
+    assert atom.task == "multioutput regression"
 
 
 def test_raise_one_target_value():
@@ -532,6 +540,17 @@ def test_add_derivative_columns_keep_position():
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(columns="x2")
     assert list(atom.columns[2:5]) == ["x2_a", "x2_b", "x2_d"]
+
+
+def test_multioutput_y_return():
+    """Assert that y returns a dataframe when multioutput."""
+    atom = ATOMClassifier(X10, y10_label, stratify=False, random_state=1)
+    atom.add(Cleaner())
+    assert isinstance(atom.y, pd.DataFrame)
+
+    atom = ATOMClassifier(X10, y10_label, stratify=False, random_state=1)
+    atom.add(MultiLabelBinarizer())
+    assert isinstance(atom.y, pd.DataFrame)
 
 
 def test_add_sets_are_kept_equal():

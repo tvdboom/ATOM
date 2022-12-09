@@ -38,10 +38,9 @@ from atom.training import (
 )
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
-    Runner, Scorer, Table, Transformer, __version__, check_is_fitted,
-    check_scaling, composed, crash, custom_transform, divide, fit_one, flt,
-    get_custom_scorer, has_task, infer_task, is_sparse, lst, method_to_log,
-    sign, variable_return,
+    Runner, Scorer, Transformer, __version__, check_is_fitted, check_scaling,
+    composed, crash, custom_transform, fit_one, flt, get_custom_scorer,
+    has_task, infer_task, is_sparse, lst, method_to_log, sign, variable_return,
 )
 
 
@@ -274,19 +273,34 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @property
     def classes(self) -> pd.DataFrame:
         """Distribution of target classes per data set."""
-        return pd.DataFrame(
-            {
-                "dataset": self.y.value_counts(sort=False, dropna=False),
-                "train": self.y_train.value_counts(sort=False, dropna=False),
-                "test": self.y_test.value_counts(sort=False, dropna=False),
-            },
-            index=self.mapping.get(self.target, self.y.sort_values().unique()),
-        ).fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
+        if self.goal.startswith("class"):
+            # Mapped class values given a target column
+            values = lambda col: self.mapping.get(col, np.unique(self.dataset[col]))
+
+            # Number of occurrences of a class given a column and data set
+            counts = lambda ds, c, i: getattr(self, ds)[c].value_counts(dropna=False)[i]
+
+            df = pd.DataFrame(
+                data={
+                    ds: [counts(ds, c, i) for c in lst(self.target) for i in values(c)]
+                    for ds in ("dataset", "train", "test")
+                },
+                index=pd.MultiIndex.from_tuples(
+                    [(col, cls) for col in lst(self.target) for cls in values(col)]
+                ),
+            )
+
+            # Non-multioutput has single level index for simplicity
+            if not self.task.startswith("multioutput"):
+                df.index = df.index.droplevel(0)
+
+            return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
     def n_classes(self) -> int:
         """Number of classes in the target column."""
-        return self.y.nunique(dropna=False)
+        if self.goal.startswith("class"):
+            return self.y.nunique(dropna=False)
 
     # Utility methods =============================================== >>
 
@@ -733,7 +747,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """
         self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
+        self.log(f"Train set size: {len(self.train)}", _vb)
+        self.log(f"Test set size: {len(self.test)}", _vb)
+        if self.holdout is not None:
+            self.log(f"Holdout set size: {len(self.holdout)}", _vb)
 
+        self.log("-" * 37, _vb)
         if (memory := self.dataset.memory_usage(deep=True).sum()) < 1e6:
             self.log(f"Memory: {memory / 1e3:.2f} kB", _vb)
         else:
@@ -754,7 +773,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             nans = self.nans.sum()
             n_categorical = self.n_categorical
             outliers = self.outliers.sum()
-            duplicates = self.dataset.duplicated().sum()
+            try:
+                # Can fail for unhashable columns (e.g. multilabel with lists)
+                duplicates = self.dataset.duplicated().sum()
+            except TypeError:
+                duplicates = None
+                self.log(
+                    "Unable to calculate the number of duplicate "
+                    "rows because a column is unhashable.", 3
+                )
 
             self.log(f"Scaled: {self.scaled}", _vb)
             if nans:
@@ -769,32 +796,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             if duplicates:
                 p_dup = round(100 * duplicates / len(self.dataset), 1)
                 self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
-
-        self.log("-" * 37, _vb)
-        self.log(f"Train set size: {len(self.train)}", _vb)
-        self.log(f"Test set size: {len(self.test)}", _vb)
-        if self.holdout is not None:
-            self.log(f"Holdout set size: {len(self.holdout)}", _vb)
-
-        # Print count and balance of classes
-        if self.task != "regression":
-            self.log("-" * 37, _vb)
-            cls = self.classes
-            func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
-
-            # Create custom Table object and print the content
-            table = Table(
-                headers=[("", "left"), *cls.columns],
-                spaces=(
-                    max(cls.index.astype(str).str.len()),
-                    *[len(str(max(cls["dataset"]))) + 8] * len(cls.columns),
-                )
-            )
-            self.log(table.print_header(), _vb + 1)
-            self.log(table.print_line(), _vb + 1)
-            for i, row in cls.iterrows():
-                sequence = {"": i, **{c: func(row[c], c) for c in cls.columns}}
-                self.log(table.print(sequence), _vb + 1)
 
     @composed(crash, method_to_log)
     def status(self):
@@ -1147,7 +1148,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         - Strip categorical features from white spaces.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
-        - Encode the target column (can't be True for regression tasks).
+        - Encode the target column (ignored for regression tasks).
 
         See the [Cleaner][] class for a description of the parameters.
 
@@ -1166,9 +1167,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         cleaner.missing = self.missing
 
         self._add_transformer(cleaner, columns=columns)
-
-        if cleaner.mapping:
-            self.mapping.insert(-1, self.target, cleaner.mapping)
+        self.mapping.update(cleaner.mapping)
 
     @composed(crash, method_to_log, typechecked)
     def discretize(

@@ -303,7 +303,7 @@ class BaseRunner:
         if any(m._train_idx != len(m.branch.train) for m in self._models.values()):
             df = df.set_index(
                 pd.MultiIndex.from_arrays(
-                    [[frac(m) for m in self._models.values()], self.models],
+                    arrays=[[frac(m) for m in self._models.values()], self.models],
                     names=["frac", "model"],
                 )
             ).sort_index(level=0, ascending=True)
@@ -387,7 +387,7 @@ class BaseRunner:
 
         inc, exc = [], []
         if index is None:
-            inc = list(branch._idx[1]) if return_test else list(branch.X.index)
+            inc = list(branch._idx[2]) if return_test else list(branch.X.index)
         elif isinstance(index, slice):
             inc = indices[index]
         else:
@@ -911,7 +911,11 @@ class BaseRunner:
         return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
 
     @composed(crash, typechecked)
-    def get_class_weight(self, dataset: str = "train") -> dict:
+    def get_class_weight(
+        self,
+        dataset: str = "train",
+        target: Union[int, str] = 0,
+    ) -> dict:
         """Return class weights for a balanced dataset.
 
         Statistically, the class weights re-balance the data set so
@@ -925,6 +929,10 @@ class BaseRunner:
             Data set from which to get the weights. Choose from:
             "train", "test" or "dataset".
 
+        target: int or str, default=0
+            Target column to get the class weights from. Only for
+            [multioutput tasks][].
+
         Returns
         -------
         dict
@@ -933,7 +941,7 @@ class BaseRunner:
         """
         if self.goal != "class":
             raise PermissionError(
-                "The balance method is only available for classification tasks!"
+                "The get_class_weight method is only available for classification tasks!"
             )
 
         if dataset not in ("train", "test", "dataset"):
@@ -943,6 +951,9 @@ class BaseRunner:
             )
 
         y = self.classes[dataset]
+        if self.task.startswith("multioutput"):
+            y = y.loc[target if isinstance(target, str) else self.y.columns[target]]
+
         return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
 
     @composed(crash, method_to_log, typechecked)

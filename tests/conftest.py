@@ -10,7 +10,10 @@ Description: Global fixtures and variables for the tests.
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.datasets import load_breast_cancer, load_diabetes, load_wine
+from sklearn.datasets import (
+    load_breast_cancer, load_diabetes, load_wine,
+    make_multilabel_classification,
+)
 from sklearn.model_selection import train_test_split
 
 from atom.utils import merge
@@ -43,6 +46,21 @@ X_sparse = pd.DataFrame(
         "feature 3": pd.arrays.SparseArray([1, 1, 1, 0, 0, 0, 1, 0, 0, 0]),
     }
 )
+
+# Multioutput data
+y10_label = [
+    ["politics"],
+    ["finance", "religion"],
+    ["education", "finance", "politics"],
+    [],
+    ["finance"],
+    ["finance", "religion"],
+    ["finance"],
+    ["finance", "religion"],
+    ["education"],
+    ["finance", "politics", "religion"],
+]
+X_multi, y_multi = make_multilabel_classification(n_classes=3)
 
 # Text data
 X_text = [

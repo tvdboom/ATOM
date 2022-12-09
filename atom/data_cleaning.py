@@ -43,14 +43,14 @@ from imblearn.under_sampling import (
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import KNNImputer
-from sklearn.preprocessing import FunctionTransformer
+from sklearn.preprocessing import FunctionTransformer, MultiLabelBinarizer
 from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
 from atom.utils import (
-    FLOAT, INT, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
-    check_is_fitted, composed, crash, it, lst, merge, method_to_log, sign,
-    to_df, to_series, variable_return,
+    FLOAT, INT, PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES,
+    Y_TYPES, CustomDict, check_is_fitted, composed, crash, get_cols, is_1_dim,
+    it, lst, merge, method_to_log, sign, to_df, to_series, variable_return,
 )
 
 
@@ -580,8 +580,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         This transformation is ignored if `y` is not provided.
 
     encode_target: bool, default=True
-        Whether to Label-encode the target column. This transformation
-        is ignored if `y` is not provided.
+        Whether to encode the target column(s). This includes
+        converting categorical columns to numerical, and binarizing
+        [multilabel][multilabel-multioutput] columns. This
+        transformation is ignored if `y` is not provided.
 
     device: str, default="cpu"
         Device on which to train the estimators. Use any string
@@ -738,7 +740,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.mapping = {}
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
-        self._estimator = None
+        self._estimators = {}
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -751,13 +753,16 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, pd.DataFrame or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
@@ -771,13 +776,23 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Fitting Cleaner...", 1)
 
+        self.mapping = {}  # In case the class is refitted
         if y is not None and self.encode_target:
             if self.drop_missing_target:
-                y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
+                y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna(axis=0)
 
-            estimator = self._get_est_class("LabelEncoder", "preprocessing")
-            self._estimator = estimator().fit(y)
-            self.mapping = {str(it(v)): i for i, v in enumerate(np.unique(y))}
+            for col in get_cols(y):
+                if isinstance(col.iloc[0], SEQUENCE):  # Multilabel multioutput
+                    self._estimators[col.name] = MultiLabelBinarizer().fit(col)
+                elif list(uq := np.unique(col)) != list(range(col.nunique())):
+                    estimator = self._get_est_class("LabelEncoder", "preprocessing")
+                    self._estimators[col.name] = estimator().fit(col)
+                    self.mapping.update(
+                        {col.name: {str(it(v)): i for i, v in enumerate(uq)}}
+                    )
+                else:
+                    # Add a dummy key/value used to maintain column order
+                    self._estimators[col.name] = None
 
         self._is_fitted = True
         return self
@@ -787,7 +802,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         X: Optional[X_TYPES] = None,
         y: Optional[Y_TYPES] = None,
-    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, PANDAS_TYPES]]:
         """Apply the data cleaning steps to the data.
 
         Parameters
@@ -852,19 +867,30 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 if X is not None:
                     X = X[X.index.isin(y.index)]  # Select only indices that remain
 
-                diff = length - len(y)  # Difference in size
-                if diff > 0:
-                    self.log(
-                        f" --> Dropping {diff} samples with "
-                        "missing values in target column.", 2
-                    )
+                if (d := length - len(y)) > 0:
+                    self.log(f" --> Dropping {d} rows with missing values in target.", 2)
 
-            if self.encode_target and self._estimator:
-                self.log(" --> Label-encoding the target column.", 2)
-                if hasattr(output := self._estimator.transform(y), "to_pandas"):
-                    y = output.to_pandas()
-                else:
-                    y = to_series(output, y.index, y.name)
+            y_transformed = y.__class__()
+            for col, est in self._estimators.items():
+                if est:
+                    if is_1_dim(out := est.transform(pd.DataFrame(y)[col])):
+                        self.log(f" --> Label-encoding column {col}.", 2)
+                        out = to_series(out, y.index, col)
+
+                    else:
+                        self.log(f" --> Label-binarizing column {col}.", 2)
+                        out = to_df(out, y.index, [f"{col}_{c}" for c in est.classes_])
+
+                    # Replace target with encoded column(s)
+                    if isinstance(y, pd.Series):
+                        y_transformed = out
+                    else:
+                        y_transformed = merge(y_transformed, out)
+
+                else:  # Add unchanged column
+                    y_transformed = merge(y_transformed, pd.DataFrame(y)[col])
+
+            y = y_transformed
 
         return variable_return(X, y)
 
@@ -876,7 +902,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     ):
         """Inversely transform the label encoding.
 
-        This method only inversely transforms the label encoding.
+        This method only inversely transforms the target encoding.
         The rest of the transformations can't be inverted. If
         `encode_target=False`, the data is returned as is.
 
@@ -885,13 +911,16 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, pd.DataFrame or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
@@ -906,9 +935,30 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Inversely cleaning the data...", 1)
 
-        if y is not None and self.encode_target:
-            self.log(" --> Inversely label-encoding the target column.", 2)
-            y = to_series(self._estimator.inverse_transform(y), y.index, y.name)
+        if y is not None:
+            y_transformed = y.__class__(index=y.index)
+            for col, est in self._estimators.items():
+                if est:
+                    if est.__class__.__name__ == "LabelEncoder":
+                        self.log(f" --> Inversely label-encoding column {col}.", 2)
+                        out = est.inverse_transform(pd.DataFrame(y)[col])
+
+                    else:
+                        self.log(f" --> Inversely label-binarizing column {col}.", 2)
+                        out = est.inverse_transform(
+                            y.iloc[:, y.columns.str.startswith(f"{col}_")].values
+                        )
+
+                    # Replace encoded columns with target column
+                    if isinstance(y, pd.Series):
+                        y_transformed = to_series(out, y.index, col)
+                    else:
+                        y_transformed = merge(y_transformed, to_series(out, y.index, col))
+
+                else:  # Add unchanged column
+                    y_transformed = merge(y_transformed, pd.DataFrame(y)[col])
+
+            y = y_transformed
 
         return variable_return(X, y)
 

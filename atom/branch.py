@@ -8,15 +8,15 @@ Description: Module containing the Branch class.
 """
 
 from copy import copy
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 from typeguard import typechecked
 
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
-    PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, CustomDict, composed, crash,
-    custom_transform, merge, method_to_log, to_df, to_series,
+    PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, composed,
+    crash, custom_transform, flt, merge, method_to_log, to_df, to_series,
 )
 
 
@@ -182,27 +182,25 @@ class Branch:
             )
 
         # Define the data attrs side and under
-        side_name = counter(name, "side")
-        if side_name:
+        if side_name := counter(name, "side"):
             side = getattr(self, side_name)
-        under_name = counter(name, "under")
-        if under_name:
+        if under_name := counter(name, "under"):
             under = getattr(self, under_name)
 
-            # Convert (if necessary) to pandas
-        if "y" in name:
-            value = to_series(
-                data=value,
-                index=side.index if side_name else None,
-                name=under.name if under_name else "target",
-                dtype=under.dtype if under_name else None,
-            )
-        else:
+        # Convert (if necessary) to pandas
+        try:
             value = to_df(
                 data=value,
                 index=side.index if side_name else None,
                 columns=under.columns if under_name else None,
                 dtypes=under.dtypes if under_name else None,
+            )
+        except (TypeError, AttributeError, IndexError):
+            value = to_series(
+                data=value,
+                index=side.index if side_name else None,
+                name=under.name if under_name else None,
+                dtype=under.dtype if under_name else None,
             )
 
         if side_name:  # Check for equal rows
@@ -218,7 +216,7 @@ class Branch:
                 )
 
         if under_name:  # Check for equal columns
-            if "y" in name:
+            if isinstance(value, pd.Series):
                 if value.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
@@ -283,26 +281,26 @@ class Branch:
     @property
     def train(self) -> pd.DataFrame:
         """Training set."""
-        return self._data.loc[self._idx[0], :]
+        return self._data.loc[self._idx[1], :]
 
     @train.setter
     @typechecked
     def train(self, value: X_TYPES):
         df = self._check_setter("train", value)
         self._data = self.T._set_index(pd.concat([df, self.test]))
-        self._idx[0] = self._data.index[:len(df)]
+        self._idx[1] = self._data.index[:len(df)]
 
     @property
     def test(self) -> pd.DataFrame:
         """Test set."""
-        return self._data.loc[self._idx[1], :]
+        return self._data.loc[self._idx[2], :]
 
     @test.setter
     @typechecked
     def test(self, value: X_TYPES):
         df = self._check_setter("test", value)
         self._data = self.T._set_index(pd.concat([self.train, df]))
-        self._idx[1] = self._data.index[-len(df):]
+        self._idx[2] = self._data.index[-len(df):]
 
     @property
     def holdout(self) -> Optional[pd.DataFrame]:
@@ -329,13 +327,13 @@ class Branch:
         self._data = merge(df, self.y)
 
     @property
-    def y(self) -> pd.Series:
-        """Target column."""
+    def y(self) -> PANDAS_TYPES:
+        """Target column(s)."""
         return self._data[self.target]
 
     @y.setter
     @typechecked
-    def y(self, value: SEQUENCE_TYPES):
+    def y(self, value: Y_TYPES):
         series = self._check_setter("y", value)
         self._data = merge(self._data.drop(self.target, axis=1), series)
 
@@ -351,13 +349,13 @@ class Branch:
         self._data = pd.concat([merge(df, self.train[self.target]), self.test])
 
     @property
-    def y_train(self) -> pd.Series:
-        """Target column of the training set."""
+    def y_train(self) -> PANDAS_TYPES:
+        """Target column(s) of the training set."""
         return self.train[self.target]
 
     @y_train.setter
     @typechecked
-    def y_train(self, value: SEQUENCE_TYPES):
+    def y_train(self, value: Y_TYPES):
         series = self._check_setter("y_train", value)
         self._data = pd.concat([merge(self.X_train, series), self.test])
 
@@ -373,19 +371,19 @@ class Branch:
         self._data = pd.concat([self.train, merge(df, self.test[self.target])])
 
     @property
-    def y_test(self) -> pd.Series:
-        """Target column of the test set."""
+    def y_test(self) -> PANDAS_TYPES:
+        """Target column(s) of the test set."""
         return self.test[self.target]
 
     @y_test.setter
     @typechecked
-    def y_test(self, value: SEQUENCE_TYPES):
+    def y_test(self, value: Y_TYPES):
         series = self._check_setter("y_test", value)
         self._data = pd.concat([self.train, merge(self.X_test, series)])
 
     @property
     def shape(self) -> Tuple[int, int]:
-        """Shape of the dataset (n_rows, n_cols)."""
+        """Shape of the dataset (n_rows, n_columns)."""
         return self._data.shape
 
     @property
@@ -401,7 +399,7 @@ class Branch:
     @property
     def features(self) -> pd.Series:
         """Name of the features."""
-        return self.columns[:-1]
+        return self.columns[:-self._idx[0]]
 
     @property
     def n_features(self) -> int:
@@ -409,9 +407,9 @@ class Branch:
         return len(self.features)
 
     @property
-    def target(self) -> str:
-        """Name of the target column."""
-        return self.columns[-1]
+    def target(self) -> Union[str, List[str]]:
+        """Name of the target column(s)."""
+        return flt(list(self.columns[-self._idx[0]:]))
 
     # Utility methods ============================================== >>
 

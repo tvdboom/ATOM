@@ -124,4 +124,5 @@ from the model. The remaining utility methods can be found hereunder.
         - hyperparameter_tuning
         - inverse_transform
         - save_estimator
+        - register
         - transform

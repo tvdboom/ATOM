@@ -50,6 +50,7 @@ CUSTOM_URLS = dict(
     launch="https://gradio.app/docs/#launch-header",
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
     explainerdashboard="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation",
+    registry="https://www.mlflow.org/docs/latest/model-registry.html",
     # Data cleaning
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
@@ -229,8 +230,8 @@ TYPES_CONVERSION = {
     "pandas.core.frame.DataFrame": "pd.DataFrame",
     "pandas.core.series.Series": "pd.Series",
     "Union[str, List[str]]": "str or list",
-    "Union[float, List[float]]": "float or list",
-    "Union[float, List[float], NoneType]": "float, list or None",
+    "Union[float, numpy.floating, List[Union[float, numpy.floating]]]": "float or list",
+    "Union[float, numpy.floating, List[Union[float, numpy.floating]], NoneType]": "float, list or None",
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame]": "pd.Series or pd.DataFrame",
     "Optional[Union[pandas.core.series.Series, pandas.core.frame.DataFrame]]": "pd.Series, pd.DataFrame or None",
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame, NoneType]": "pd.Series, pd.DataFrame or None",

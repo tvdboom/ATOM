@@ -80,6 +80,69 @@ To avoid this, specify the `index` parameter. If the dataset has an
 
 <br>
 
+## Multioutput tasks
+
+Multioutput is a task where there are more than one target columns, i.e.
+the goal is to predict multiple targets at the same time. Note that,
+when providing a dataframe as target, use the [y][atomclassifier-y]
+parameter. Providing `y` without keyword makes ATOM think you are
+providing `train, test` (see the [data sets][] section).
+
+### Multilabel multioutput
+
+Multilabel multioutput is a classification task, labeling each sample
+with `m` labels from `n_classes` possible classes, where `m` can be 0
+to `n_classes` inclusive. This can be thought of as predicting properties
+of a sample that are not mutually exclusive.
+
+For example, prediction of the topics relevant to a text document. The
+document may be about one of religion, politics, finance or education,
+several of the topic classes or all of the topic classes. The target
+column (`atom.y`) would look like this:
+
+```pycon
+0                        [politics]
+1               [religion, finance]
+2    [politics, finance, education]
+3                                []
+4                         [finance]
+5               [finance, religion]
+6                         [finance]
+7               [religion, finance]
+8                       [education]
+9     [finance, religion, politics]
+
+Name: target, dtype: object
+```
+
+A model can not directly ingest a variable amount of target classes. Use
+the [clean][atomclassifier-clean] method to assign a binary output to
+each class, for every sample. Positive classes are indicated with 1 and
+negative classes with 0. It is thus comparable to running n_classes
+binary classification tasks. The target (`atom.y`) is converted to this:
+
+```pycon
+   education  finance  politics  religion
+0          0        0         1         0
+1          0        1         0         1
+2          1        1         1         0
+3          0        0         0         0
+4          0        1         0         0
+5          0        1         0         1
+6          0        1         0         0
+7          0        1         0         1
+8          1        0         0         0
+9          0        1         1         1
+```
+
+### Multiclass multioutput
+
+### Regression multioutput
+
+
+
+<br>
+
 ## Sparse datasets
 
 If atom is initialized using a scipy sparse matrix, it is converted

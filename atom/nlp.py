@@ -30,7 +30,7 @@ from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
-    composed, crash, get_corpus, is_sparse, method_to_log, to_df,
+    composed, crash, get_corpus, is_sparse, merge, method_to_log, to_df,
 )
 
 
@@ -1226,4 +1226,4 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "must be False when X contains non-sparse columns (besides corpus)."
             )
 
-        return pd.concat([X, to_df(matrix, X.index, columns)], axis=1)
+        return merge(X, to_df(matrix, X.index, columns))
