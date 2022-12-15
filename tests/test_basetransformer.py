@@ -243,6 +243,12 @@ def test_to_pandas():
     assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
 
 
+def test_target_is_dict():
+    """Assert that the target column is assigned correctly for a dict."""
+    _, y = BaseTransformer._prepare_input(X10, {"a": [0] * 10})
+    assert isinstance(y, pd.Series)
+
+
 def test_multioutput_str():
     """Assert that multioutput can be assigned by column name."""
     X, y = BaseTransformer._prepare_input(X_bin, ["mean radius", "worst perimeter"])
@@ -255,15 +261,8 @@ def test_multioutput_int():
     assert list(y.columns) == ["mean radius", "mean perimeter"]
 
 
-def test_duplicate_column_names_in_y():
-    """Assert that an error is raised when y has duplicate column names."""
-    y = merge(y_bin.copy(), pd.Series(1, name="target"))
-    with pytest.raises(ValueError, match=".*column names found in y.*"):
-        ATOMClassifier(X_bin, y=y, random_state=1)
-
-
 def test_equal_length():
-    """Assert that an error is raised when X and y don't have equal size."""
+    """Assert that an error is raised when X and y have unequal length."""
     with pytest.raises(ValueError, match=".*number of rows.*"):
         BaseTransformer._prepare_input(X10, [312, 22])
 
@@ -273,12 +272,6 @@ def test_equal_index():
     y = pd.Series(y_bin_array, index=range(10, len(y_bin_array) + 10))
     with pytest.raises(ValueError, match=".*same indices.*"):
         BaseTransformer._prepare_input(X_bin, y)
-
-
-def test_target_is_dict():
-    """Assert that the target column is assigned correctly for a dict."""
-    _, y = BaseTransformer._prepare_input(X10, {"a": [0] * 10})
-    assert isinstance(y, pd.Series)
 
 
 def test_target_is_string():

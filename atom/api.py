@@ -171,6 +171,7 @@ def ATOMModel(
     *,
     acronym: Optional[str] = None,
     needs_scaling: bool = False,
+    native_multioutput: bool = False,
     has_validation: Optional[str] = None,
 ) -> Predictor:
     """Convert an estimator to a model that can be ingested by atom.
@@ -192,7 +193,11 @@ def ATOMModel(
         two or more, else it uses the entire \__name__).
 
     needs_scaling: bool, default=False
-        Whether the model needs scaled features.
+        Whether the model should use [automated feature scaling][].
+
+    native_multioutput: bool, default=False
+        Whether the model has native support for [multioutput tasks][].
+        If True, the model won't use the `multioutput` meta-estimator.
 
     has_validation: str or None, default=None
         Whether the model allows [in-training validation][]. If str,
@@ -245,6 +250,7 @@ def ATOMModel(
     if acronym:
         estimator.acronym = acronym
     estimator.needs_scaling = needs_scaling
+    estimator.native_multioutput = native_multioutput
     estimator.has_validation = has_validation
 
     return estimator

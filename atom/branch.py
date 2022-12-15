@@ -16,7 +16,7 @@ from typeguard import typechecked
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
     PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, composed,
-    crash, custom_transform, flt, merge, method_to_log, to_df, to_series,
+    crash, custom_transform, flt, merge, method_to_log, to_pandas,
 )
 
 
@@ -187,21 +187,13 @@ class Branch:
         if under_name := counter(name, "under"):
             under = getattr(self, under_name)
 
-        # Convert (if necessary) to pandas
-        try:
-            value = to_df(
-                data=value,
-                index=side.index if side_name else None,
-                columns=under.columns if under_name else None,
-                dtypes=under.dtypes if under_name else None,
-            )
-        except (TypeError, AttributeError, IndexError):
-            value = to_series(
-                data=value,
-                index=side.index if side_name else None,
-                name=under.name if under_name else None,
-                dtype=under.dtype if under_name else None,
-            )
+        value = to_pandas(
+            data=value,
+            index=side.index if side_name else None,
+            name=getattr(under, "name", None) if under_name else None,
+            columns=getattr(under, "columns", None) if under_name else None,
+            dtype=under.dtypes if under_name else None,
+        )
 
         if side_name:  # Check for equal rows
             if len(value) != len(side):

@@ -31,8 +31,8 @@ from atom.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_multi, X_reg, X_sparse, X_text, y10, y10_label, y10_sn, y10_str,
-    y_bin, y_class, y_multi, y_reg,
+    X_class, X_reg, X_sparse, X_text, y10, y10_label, y10_sn, y10_str, y_bin,
+    y_class, y_multiclass, y_reg,
 )
 
 
@@ -47,12 +47,15 @@ def test_task_assignment():
     assert atom.task == "multiclass classification"
 
     atom = ATOMClassifier(X10, y=y10_label, stratify=False, random_state=1)
-    assert atom.task == "multioutput classification"
+    assert atom.task == "multilabel classification"
+
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    assert atom.task == "multiclass-multioutput classification"
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     assert atom.task == "regression"
 
-    atom = ATOMRegressor(X_multi, y=y_multi, random_state=1)
+    atom = ATOMRegressor(X_class, y=y_multiclass, random_state=1)
     assert atom.task == "multioutput regression"
 
 
@@ -603,6 +606,13 @@ def test_balance_wrong_task():
     """Assert that an error is raised for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        atom.balance()
+
+
+def test_balance_multioutput_task():
+    """Assert that an error is raised for multioutput tasks."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    with pytest.raises(ValueError, match=".*not support multioutput.*"):
         atom.balance()
 
 

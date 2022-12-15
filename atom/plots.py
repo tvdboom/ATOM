@@ -4173,7 +4173,7 @@ class PredictionPlot(BasePlot):
                 fig.add_trace(
                     go.Bar(
                         x=cm.ravel(),
-                        y=labels.flatten(),
+                        y=labels.ravel(),
                         orientation="h",
                         marker=dict(
                             color=f"rgba({color[4:-1]}, 0.2)",
@@ -5788,8 +5788,8 @@ class PredictionPlot(BasePlot):
 
             fig.add_trace(
                 go.Box(
-                    x=m.permutations["importances"].flatten(),
-                    y=list(np.array([[fx] * n_repeats for fx in m.features]).flatten()),
+                    x=m.permutations["importances"].ravel(),
+                    y=list(np.array([[fx] * n_repeats for fx in m.features]).ravel()),
                     marker_color=self._fig.get_color(m.name),
                     boxpoints="outliers",
                     name=m.name,
@@ -6731,8 +6731,8 @@ class PredictionPlot(BasePlot):
                 color = self._fig.get_color()
 
                 if all(m.score_bootstrap for m in models):
-                    x = np.array([m.bootstrap.iloc[:, met] for m in models]).flatten()
-                    y = np.array([[m.name] * len(m.bootstrap) for m in models]).flatten()
+                    x = np.array([m.bootstrap.iloc[:, met] for m in models]).ravel()
+                    y = np.array([[m.name] * len(m.bootstrap) for m in models]).ravel()
                     fig.add_trace(
                         go.Box(
                             x=x,

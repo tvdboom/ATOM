@@ -261,8 +261,9 @@ class DirectClassifier(Direct):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass classification, multilabel
+          classification or multiclass-multioutput classificartion
+        - "r2" for regression or multioutput regression
 
     n_trials: int or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
@@ -473,8 +474,9 @@ class DirectRegressor(Direct):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass classification, multilabel
+          classification or multiclass-multioutput classificartion
+        - "r2" for regression or multioutput regression
 
     n_trials: int or sequence, default=0
         Maximum number of iterations for the [hyperparameter tuning][].
@@ -684,8 +686,9 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass classification, multilabel
+          classification or multiclass-multioutput classificartion
+        - "r2" for regression or multioutput regression
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
@@ -926,8 +929,9 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass classification, multilabel
+          classification or multiclass-multioutput classificartion
+        - "r2" for regression or multioutput regression
 
     skip_runs: int, default=0
         Skip last `skip_runs` runs of the successive halving.
@@ -1169,8 +1173,9 @@ class TrainSizingClassifier(TrainSizing):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass classification, multilabel
+          classification or multiclass-multioutput classificartion
+        - "r2" for regression or multioutput regression
 
     train_sizes: int or sequence, default=5
         Sequence of training set sizes used to run the trainings.
@@ -1472,8 +1477,9 @@ class TrainSizingRegressor(TrainSizing):
         default metric is selected for every task:
 
         - "f1" for binary classification
-        - "f1_weighted" for multiclass classification
-        - "r2" for regression
+        - "f1_weighted" for multiclass classification, multilabel
+          classification or multiclass-multioutput classificartion
+        - "r2" for regression or multioutput regression
 
     train_sizes: int or sequence, default=5
         Sequence of training set sizes used to run the trainings.

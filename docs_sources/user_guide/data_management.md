@@ -80,15 +80,36 @@ To avoid this, specify the `index` parameter. If the dataset has an
 
 <br>
 
+## Sparse datasets
+
+If atom is initialized using a scipy sparse matrix, it is converted
+internally to a dataframe of sparse columns. Read more about pandas'
+sparse data structures [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html).
+The same conversion takes place when a transformer returns a sparse
+matrix, like for example, the [Vectorizer][].
+
+Note that ATOM considers a dataset to be sparse if any of the columns
+is sparse. A dataset can only benefit from sparsity when all its
+columns are sparse, hence mixing sparse and non-sparse columns is
+not recommended and can cause estimators to decrease their training
+speed or even crash. Use the [shrink][atomclassifier-shrink] method
+to convert dense features to sparse and the [available_models]
+[atomclassifier-available_models] method to check which models have
+native support for sparse matrices.
+
+Click [here][example-nlp] to see an example that uses sparse data.
+
+<br>
+
 ## Multioutput tasks
 
-Multioutput is a task where there are more than one target columns, i.e.
-the goal is to predict multiple targets at the same time. Note that,
-when providing a dataframe as target, use the [y][atomclassifier-y]
-parameter. Providing `y` without keyword makes ATOM think you are
-providing `train, test` (see the [data sets][] section).
+Multioutput is a task where there are more than one target column, i.e.
+the goal is to predict multiple targets at the same time. When providing
+a dataframe as target, use the [y][atomclassifier-y] parameter. Providing
+`y` without keyword makes ATOM think you are providing `train, test` (see
+the [data sets][] section). ATOM recognizes three multioutput tasks.
 
-### Multilabel multioutput
+### Multilabel
 
 Multilabel multioutput is a classification task, labeling each sample
 with `m` labels from `n_classes` possible classes, where `m` can be 0
@@ -98,7 +119,7 @@ of a sample that are not mutually exclusive.
 For example, prediction of the topics relevant to a text document. The
 document may be about one of religion, politics, finance or education,
 several of the topic classes or all of the topic classes. The target
-column (`atom.y`) would look like this:
+column (`atom.y`) could look like this:[autodocs.py](..%2Fautodocs.py)
 
 ```pycon
 0                        [politics]
@@ -119,7 +140,8 @@ A model can not directly ingest a variable amount of target classes. Use
 the [clean][atomclassifier-clean] method to assign a binary output to
 each class, for every sample. Positive classes are indicated with 1 and
 negative classes with 0. It is thus comparable to running n_classes
-binary classification tasks. The target (`atom.y`) is converted to this:
+binary classification tasks. In our example, target (`atom.y`) is
+converted to:
 
 ```pycon
    education  finance  politics  religion
@@ -135,32 +157,40 @@ binary classification tasks. The target (`atom.y`) is converted to this:
 9          0        1         1         1
 ```
 
-### Multiclass multioutput
+### Multiclass-multioutput
 
-### Regression multioutput
+Multiclass-multioutput (also known as multitask classification) is a
+classification task which labels each sample with a set of non-binary
+properties. Both the number of properties and the number of classes per
+property is greater than 2. A single estimator thus handles several joint
+classification tasks. This is both a generalization of the multilabel
+classification task, which only considers binary attributes, as well as
+a generalization of the multiclass classification task, where only one
+property is considered.
+
+For example, classification of the properties "type of fruit" and "colour"
+for a set of images of fruit. The property "type of fruit" has the possible
+classes: "apple", "pear" and "orange". The property "colour" has the possible
+classes: "green", "red", "yellow" and "orange". Each sample is an image of
+a fruit, a label is output for both properties and each label is one of the
+possible classes of the corresponding property.
+
+### Multioutput regression
+
+Multioutput regression predicts multiple numerical properties for each
+sample. Each property is a numerical variable and the number of properties
+to be predicted for each sample is greater than or equal to 2. Some
+estimators that support multioutput regression are faster than just running
+n_output estimators.
+
+For example, prediction of both wind speed and wind direction, in degrees,
+using data obtained at a certain location. Each sample would be data
+obtained at one location and both wind speed and direction would be output
+for each sample.
+
+### Non-native multioutput models
 
 
-
-<br>
-
-## Sparse datasets
-
-If atom is initialized using a scipy sparse matrix, it is converted
-internally to a dataframe of sparse columns. Read more about pandas'
-sparse data structures [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/sparse.html).
-The same conversion takes place when a transformer returns a sparse
-matrix, like for example, the [Vectorizer][].
-
-Note that ATOM considers a dataset to be sparse if any of the columns
-is sparse. A dataset can only benefit from sparsity when all its
-columns are sparse, hence mixing sparse and non-sparse columns is
-not recommended and can cause estimators to decrease their training
-speed or even crash. Use the [shrink][atomclassifier-shrink] method
-to convert dense features to sparse and the [available_models]
-[atomclassifier-available_models] method to check which models have
-native support for sparse matrices.
-
-Click [here][example-nlp] to see an example that uses sparse data.
 
 
 <br>

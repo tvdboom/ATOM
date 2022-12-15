@@ -292,7 +292,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -589,7 +589,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -840,7 +840,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1124,7 +1124,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1180,7 +1180,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns

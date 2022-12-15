@@ -28,8 +28,8 @@ from typeguard import typechecked
 
 from atom.utils import (
     INT, PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
-    Estimator, composed, crash, get_cols, is_1_dim, lst, merge, method_to_log,
-    prepare_logger, to_df, to_series,
+    Estimator, composed, crash, get_cols, lst, merge, method_to_log, n_cols,
+    prepare_logger, to_df, to_pandas,
 )
 
 
@@ -266,7 +266,6 @@ class BaseTransformer:
     @typechecked
     def _prepare_input(
         X: Optional[X_TYPES] = None,
-        /,
         y: Optional[Y_TYPES] = None,
     ) -> Tuple[Optional[pd.DataFrame], Optional[PANDAS_TYPES]]:
         """Prepare the input data.
@@ -319,8 +318,8 @@ class BaseTransformer:
         # Prepare target column
         if isinstance(y, (dict, *SEQUENCE, pd.DataFrame)):
             if isinstance(y, dict):
-                if is_1_dim(y := to_df(y, index=getattr(X, "index", None))):
-                    y = y[y.columns[0]]  # If y is one-dimensional, get series
+                if n_cols(y := to_df(y, index=getattr(X, "index", None))) == 1:
+                    y = y.iloc[:, 0]  # If y is one-dimensional, get series
 
             elif isinstance(y, (SEQUENCE, pd.DataFrame)):
                 # If X and y have different number of rows, try multioutput
@@ -335,23 +334,17 @@ class BaseTransformer:
 
                         X, y = X.drop(targets, axis=1), X[targets]
 
-                    except IndexError:
+                    except (TypeError, IndexError, KeyError):
                         raise ValueError(
                             "X and y don't have the same number of rows,"
                             f" got len(X)={len(X)} and len(y)={len(y)}."
                         )
 
-                if is_1_dim(y):
-                    y = to_series(y, index=getattr(X, "index", None))
-                else:
-                    y = to_df(
-                        data=y,
-                        index=getattr(X, "index", None),
-                        columns=[f"y{i}" for i in range(y.shape[1])],
-                    )
-
-                    if len(set(y.columns)) != len(y.columns):
-                        raise ValueError("Duplicate column names found in y.")
+                y = to_pandas(
+                    data=y,
+                    index=getattr(X, "index", None),
+                    columns=[f"y{i}" for i in range(n_cols(y))],
+                )
 
             # Check X and y have the same indices
             if X is not None and not X.index.equals(y.index):
@@ -745,7 +738,7 @@ class BaseTransformer:
                 X_train, y_train = self._prepare_input(arrays[0][0], arrays[0][1])
                 X_test, y_test = self._prepare_input(arrays[1][0], arrays[1][1])
                 sets = _has_data_sets(X_train, y_train, X_test, y_test)
-            elif isinstance(arrays[1], (int, str)) or is_1_dim(arrays[1]):
+            elif isinstance(arrays[1], (int, str)) or n_cols(arrays[1]) == 1:
                 # arrays=(X, y)
                 sets = _no_data_sets(*self._prepare_input(arrays[0], arrays[1]))
             else:

@@ -32,6 +32,7 @@ from sklearn.model_selection import (
 )
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.utils import resample
+from sklearn.base import clone
 from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 
@@ -43,7 +44,8 @@ from atom.utils import (
     CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
     TrialsCallback, composed, crash, custom_transform, estimator_has_attr, flt,
     get_best_score, get_custom_scorer, get_feature_importance, has_task, it,
-    lst, merge, method_to_log, rnd, score, sign, time_to_str, variable_return,
+    lst, merge, method_to_log, n_cols, rnd, score, sign, time_to_str,
+    to_pandas, variable_return,
 )
 
 
@@ -276,7 +278,22 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             if param in sign(self._est_class):
                 params[param] = params.pop(param, getattr(self.T, param))
 
-        return self._est_class(**params)
+        if self.T._is_multioutput and not self.native_multioutput and self.T.multioutput:
+            if callable(self.T.multioutput):
+                kwargs = {}
+                for param in ("n_jobs", "random_state"):
+                    if param in sign(self.T.multioutput):
+                        kwargs[param] = getattr(self.T, param)
+
+                return self.T.multioutput(self._est_class(**params), **kwargs)
+            else:
+                # Assign estimator to first parameter of meta-estimator
+                est = clone(self.T.multioutput)
+                return est.set_params(
+                    **{list(sign(est.__init__))[0]: self._est_class(**params)}
+                )
+        else:
+            return self._est_class(**params)
 
     def _fit_estimator(
         self,
@@ -327,7 +344,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             for step in range(steps := estimator.get_params()[self.has_validation]):
                 kwargs = {}
                 if self.T.goal.startswith("class"):
-                    kwargs["classes"] = sorted(self.y.unique())
+                    if n_cols(self.y_train) == 1:
+                        kwargs["classes"] = np.unique(self.y_train)
+                    else:
+                        kwargs["classes"] = list(range(self.y_train.shape[1]))
 
                 estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
@@ -1181,14 +1201,14 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @property
     def holdout(self) -> Optional[pd.DataFrame]:
         """Holdout set."""
-        if self.branch.holdout is not None:
+        if (holdout := self.branch.holdout) is not None:
             if self.scaler:
                 return merge(
-                    self.scaler.transform(self.branch.holdout.iloc[:, :-1]),
-                    self.branch.holdout.iloc[:, -1],
+                    self.scaler.transform(holdout.iloc[:, :-self.branch._idx[0]]),
+                    holdout.iloc[:, -self.branch._idx[0]:],
                 )
             else:
-                return self.branch.holdout
+                return holdout
 
     @property
     def X(self) -> pd.DataFrame:
@@ -1196,7 +1216,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         return pd.concat([self.X_train, self.X_test])
 
     @property
-    def y(self) -> pd.Series:
+    def y(self) -> PANDAS_TYPES:
         """Target column."""
         return pd.concat([self.y_train, self.y_test])
 
@@ -1209,7 +1229,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             return self.branch.X_train[:self._train_idx]
 
     @property
-    def y_train(self) -> pd.Series:
+    def y_train(self) -> PANDAS_TYPES:
         """Target column of the training set."""
         return self.branch.y_train[:self._train_idx]
 
@@ -1225,33 +1245,40 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def X_holdout(self) -> Optional[pd.DataFrame]:
         """Features of the holdout set."""
         if self.branch.holdout is not None:
-            return self.holdout.iloc[:, :-1]
+            return self.holdout.iloc[:, :-self.branch._idx[0]]
 
     @property
-    def y_holdout(self) -> Optional[pd.Series]:
+    def y_holdout(self) -> Optional[PANDAS_TYPES]:
         """Target column of the holdout set."""
         if self.branch.holdout is not None:
-            return self.holdout.iloc[:, -1]
+            return self.holdout[self.branch.target]
 
     # Prediction properties ======================================== >>
+
+    def _assign_prediction_columns(self) -> List[str]:
+        """Assign column names for the prediction methods.
+
+        Returns
+        -------
+        list of str
+            Names of the columns.
+
+        """
+        if self.T._is_multioutput:
+            return self.target
+        else:
+            return self.mapping.get(self.target, list(np.unique(self.y)))
 
     @property
     def decision_function_train(self) -> PANDAS_TYPES:
         """Confidence scores on the training set."""
         if self._pred[0] is None:
-            data = self.estimator.decision_function(self.X_train)
-            if data.ndim == 1 or data.shape[0] == 1:
-                self._pred[0] = pd.Series(
-                    data=data.flatten(),
-                    index=self.X_train.index,
-                    name="decision_function_train",
-                )
-            else:
-                self._pred[0] = pd.DataFrame(
-                    data=data,
-                    index=self.X_train.index,
-                    columns=self.mapping.get(self.target),
-                )
+            self._pred[0] = to_pandas(
+                data=self.estimator.decision_function(self.X_train),
+                index=self.X_train.index,
+                name="decision_function_train",
+                columns=self._assign_prediction_columns(),
+            )
 
         return self._pred[0]
 
@@ -1259,19 +1286,12 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def decision_function_test(self) -> PANDAS_TYPES:
         """Confidence scores on the test set."""
         if self._pred[1] is None:
-            data = self.estimator.decision_function(self.X_test)
-            if data.ndim == 1 or data.shape[0] == 1:
-                self._pred[1] = pd.Series(
-                    data=data.flatten(),
-                    index=self.X_test.index,
-                    name="decision_function_test",
-                )
-            else:
-                self._pred[1] = pd.DataFrame(
-                    data=data,
-                    index=self.X_test.index,
-                    columns=self.mapping.get(self.target),
-                )
+            self._pred[1] = to_pandas(
+                data=self.estimator.decision_function(self.X_test),
+                index=self.X_test.index,
+                name="decision_function_test",
+                columns=self._assign_prediction_columns(),
+            )
 
         return self._pred[1]
 
@@ -1279,54 +1299,50 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def decision_function_holdout(self) -> Optional[PANDAS_TYPES]:
         """Confidence scores on the holdout set."""
         if self.T.holdout is not None and self._pred[2] is None:
-            data = self.estimator.decision_function(self.X_holdout)
-            if data.ndim == 1 or data.shape[0] == 1:
-                self._pred[2] = pd.Series(
-                    data=data.flatten(),
-                    index=self.X_holdout.index,
-                    name="decision_function_holdout",
-                )
-            else:
-                self._pred[2] = pd.DataFrame(
-                    data=data,
-                    index=self.X_holdout.index,
-                    columns=self.mapping.get(self.target),
-                )
+            self._pred[2] = to_pandas(
+                data=self.estimator.decision_function(self.X_holdout),
+                index=self.X_holdout.index,
+                name="decision_function_holdout",
+                columns=self._assign_prediction_columns(),
+            )
 
         return self._pred[2]
 
     @property
-    def predict_train(self) -> pd.Series:
+    def predict_train(self) -> PANDAS_TYPES:
         """Class predictions on the training set."""
         if self._pred[3] is None:
-            self._pred[3] = pd.Series(
-                data=self.estimator.predict(self.X_train).flatten(),
+            self._pred[3] = to_pandas(
+                data=self.estimator.predict(self.X_train),
                 index=self.X_train.index,
                 name="predict_train",
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[3]
 
     @property
-    def predict_test(self) -> pd.Series:
+    def predict_test(self) -> PANDAS_TYPES:
         """Class predictions on the test set."""
         if self._pred[4] is None:
-            self._pred[4] = pd.Series(
-                data=self.estimator.predict(self.X_test).flatten(),
+            self._pred[4] = to_pandas(
+                data=self.estimator.predict(self.X_test),
                 index=self.X_test.index,
                 name="predict_test",
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[4]
 
     @property
-    def predict_holdout(self) -> Optional[pd.Series]:
+    def predict_holdout(self) -> Optional[PANDAS_TYPES]:
         """Class predictions on the holdout set."""
         if self.T.holdout is not None and self._pred[5] is None:
-            self._pred[5] = pd.Series(
-                data=self.estimator.predict(self.X_holdout).flatten(),
+            self._pred[5] = to_pandas(
+                data=self.estimator.predict(self.X_holdout),
                 index=self.X_holdout.index,
                 name="predict_holdout",
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[5]
@@ -1338,7 +1354,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             self._pred[6] = pd.DataFrame(
                 data=self.estimator.predict_log_proba(self.X_train),
                 index=self.X_train.index,
-                columns=self.mapping.get(self.target),
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[6]
@@ -1350,7 +1366,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             self._pred[7] = pd.DataFrame(
                 data=self.estimator.predict_log_proba(self.X_test),
                 index=self.X_test.index,
-                columns=self.mapping.get(self.target),
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[7]
@@ -1362,7 +1378,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             self._pred[8] = pd.DataFrame(
                 data=self.estimator.predict_log_proba(self.X_holdout),
                 index=self.X_holdout.index,
-                columns=self.mapping.get(self.target),
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[8]
@@ -1374,7 +1390,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             self._pred[9] = pd.DataFrame(
                 data=self.estimator.predict_proba(self.X_train),
                 index=self.X_train.index,
-                columns=self.mapping.get(self.target),
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[9]
@@ -1386,7 +1402,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             self._pred[10] = pd.DataFrame(
                 data=self.estimator.predict_proba(self.X_test),
                 index=self.X_test.index,
-                columns=self.mapping.get(self.target),
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[10]
@@ -1398,7 +1414,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             self._pred[11] = pd.DataFrame(
                 data=self.estimator.predict_proba(self.X_holdout),
                 index=self.X_holdout.index,
-                columns=self.mapping.get(self.target),
+                columns=self._assign_prediction_columns(),
             )
 
         return self._pred[11]
@@ -1486,16 +1502,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 )
                 return predictions.loc[rows]
             else:
-                predictions = getattr(self.estimator, method)(X)
+                return to_pandas(
+                    data=getattr(self.estimator, method)(X),
+                    index=X.index,
+                    name=method,
+                    columns=self._assign_prediction_columns(),
+                )
 
-                if predictions.ndim == 1:
-                    return pd.Series(data=predictions, index=X.index, name=method)
-                else:
-                    return pd.DataFrame(
-                        data=predictions,
-                        index=X.index,
-                        columns=self.mapping.get(self.target),
-                    )
         else:
             if metric is None:
                 metric = self.T._metric[0]
@@ -2173,7 +2186,6 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def inverse_transform(
         self,
         X: Optional[X_TYPES] = None,
-        /,
         y: Optional[Y_TYPES] = None,
         *,
         verbose: Optional[INT] = None,
@@ -2231,6 +2243,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def register(self, name: Optional[str] = None, stage: str = "Staging"):
         """Register the model in [mlflow's model registry][registry].
 
+        This method is only available when model [tracking][] is
+        enabled.
+
         Parameters
         ----------
         name: str or None, default=None
@@ -2285,7 +2300,6 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def transform(
         self,
         X: Optional[X_TYPES] = None,
-        /,
         y: Optional[Y_TYPES] = None,
         *,
         verbose: Optional[INT] = None,

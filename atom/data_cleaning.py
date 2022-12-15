@@ -49,8 +49,8 @@ from typeguard import typechecked
 from atom.basetransformer import BaseTransformer
 from atom.utils import (
     FLOAT, INT, PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES,
-    Y_TYPES, CustomDict, check_is_fitted, composed, crash, get_cols, is_1_dim,
-    it, lst, merge, method_to_log, sign, to_df, to_series, variable_return,
+    Y_TYPES, CustomDict, check_is_fitted, composed, crash, get_cols, it, lst,
+    merge, method_to_log, n_cols, sign, to_df, to_series, variable_return,
 )
 
 
@@ -65,7 +65,6 @@ class TransformerMixin:
     def fit(
         self,
         X: Optional[X_TYPES] = None,
-        /,
         y: Optional[Y_TYPES] = None,
         **fit_params,
     ):
@@ -79,13 +78,17 @@ class TransformerMixin:
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, dict, sequence or None, default=None
-            Target column corresponding to X.
+        y: int, str, sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe-like: Target columns with shape=(n_samples,
+              n_targets) for multioutput tasks.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -108,10 +111,9 @@ class TransformerMixin:
     def fit_transform(
         self,
         X: Optional[X_TYPES] = None,
-        /,
         y: Optional[Y_TYPES] = None,
         **fit_params,
-    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
+    ) -> Union[PANDAS_TYPES, Tuple[pd.DataFrame, PANDAS_TYPES]]:
         """Fit to data, then transform it.
 
         Parameters
@@ -120,13 +122,17 @@ class TransformerMixin:
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, dict, sequence or None, default=None
-            Target column corresponding to X.
+        y: int, str, sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe-like: Target columns with shape=(n_samples,
+              n_targets) for multioutput tasks.
 
         **fit_params
             Additional keyword arguments for the fit method.
@@ -146,9 +152,8 @@ class TransformerMixin:
     def inverse_transform(
         self,
         X: Optional[X_TYPES] = None,
-        /,
         y: Optional[Y_TYPES] = None,
-    ) -> Union[pd.DataFrame, pd.Series, Tuple[pd.DataFrame, pd.Series]]:
+    ) -> Union[PANDAS_TYPES, Tuple[pd.DataFrame, PANDAS_TYPES]]:
         """Does nothing.
 
         Returns the input unchanged. Implemented for continuity of the
@@ -160,13 +165,17 @@ class TransformerMixin:
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, dict, sequence or None, default=None
-            Target column corresponding to X.
+        y: int, str, sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe-like: Target columns with shape=(n_samples,
+              n_targets) for multioutput tasks.
 
         Returns
         -------
@@ -193,8 +202,9 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     [balancing-the-data].
 
     !!! warning
-        The [clustercentroids][] estimator is unavailable because of
-        incompatibilities of the APIs.
+         * The [clustercentroids][] estimator is unavailable because of
+           incompatibilities of the APIs.
+         * The Balancer class does not support [multioutput tasks][].
 
     Parameters
     ----------
@@ -374,7 +384,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = True
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES = -1) -> Tuple[pd.DataFrame, pd.Series]:
+    def transform(self, X: X_TYPES, y: Y_TYPES = -1) -> Tuple[pd.DataFrame, PANDAS_TYPES]:
         """Balance the data.
 
         Parameters
@@ -409,6 +419,9 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
                     self.log(f" --> Adding {-diff} samples to class {key}.", 2)
 
         X, y = self._prepare_input(X, y)
+
+        if isinstance(y, pd.DataFrame):
+            raise ValueError("The Balancer class does not support multioutput tasks.")
 
         strategies = CustomDict(
             # clustercentroids=ClusterCentroids,  # Has no sample_indices_
@@ -782,7 +795,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna(axis=0)
 
             for col in get_cols(y):
-                if isinstance(col.iloc[0], SEQUENCE):  # Multilabel multioutput
+                if isinstance(col.iloc[0], SEQUENCE):  # Multilabel classification
                     self._estimators[col.name] = MultiLabelBinarizer().fit(col)
                 elif list(uq := np.unique(col)) != list(range(col.nunique())):
                     estimator = self._get_est_class("LabelEncoder", "preprocessing")
@@ -811,13 +824,16 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             Feature set with shape=(n_samples, n_features). If None,
             X is ignored.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, pd.DataFrame or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
@@ -870,27 +886,32 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 if (d := length - len(y)) > 0:
                     self.log(f" --> Dropping {d} rows with missing values in target.", 2)
 
-            y_transformed = y.__class__()
-            for col, est in self._estimators.items():
-                if est:
-                    if is_1_dim(out := est.transform(pd.DataFrame(y)[col])):
-                        self.log(f" --> Label-encoding column {col}.", 2)
-                        out = to_series(out, y.index, col)
+            if self.encode_target:
+                y_transformed = y.__class__(dtype="object")
+                for col, est in self._estimators.items():
+                    if est:
+                        if n_cols(out := est.transform(pd.DataFrame(y)[col])) == 1:
+                            self.log(f" --> Label-encoding column {col}.", 2)
+                            out = to_series(out, y.index, col)
 
-                    else:
-                        self.log(f" --> Label-binarizing column {col}.", 2)
-                        out = to_df(out, y.index, [f"{col}_{c}" for c in est.classes_])
+                        else:
+                            self.log(f" --> Label-binarizing column {col}.", 2)
+                            out = to_df(
+                                data=out,
+                                index=y.index,
+                                columns=[f"{col}_{c}" for c in est.classes_],
+                            )
 
-                    # Replace target with encoded column(s)
-                    if isinstance(y, pd.Series):
-                        y_transformed = out
-                    else:
-                        y_transformed = merge(y_transformed, out)
+                        # Replace target with encoded column(s)
+                        if isinstance(y, pd.Series):
+                            y_transformed = out
+                        else:
+                            y_transformed = merge(y_transformed, out)
 
-                else:  # Add unchanged column
-                    y_transformed = merge(y_transformed, pd.DataFrame(y)[col])
+                    else:  # Add unchanged column
+                        y_transformed = merge(y_transformed, pd.DataFrame(y)[col])
 
-            y = y_transformed
+                y = y_transformed
 
         return variable_return(X, y)
 
@@ -936,7 +957,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Inversely cleaning the data...", 1)
 
         if y is not None:
-            y_transformed = y.__class__(index=y.index)
+            y_transformed = y.__class__(dtype="object")
             for col, est in self._estimators.items():
                 if est:
                     if est.__class__.__name__ == "LabelEncoder":
@@ -1211,7 +1232,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1324,7 +1345,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1595,20 +1616,24 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         """Fit to data.
 
         Note that leaving y=None can lead to errors if the `strategy`
-        encoder requires target values.
+        encoder requires target values. For multioutput tasks, only
+        the first target column is used to fit the encoder.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str or sequence
+        y: int, str, dict, sequence or pd.DataFrame
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
@@ -1735,7 +1760,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             else:
                 args = [X[[name]]]
                 if "y" in sign(estimator.fit):
-                    args.append(y)
+                    args.append(pd.DataFrame(y).iloc[:, 0])
                 self._encoders[name] = clone(estimator).fit(*args)
 
                 # Create encoding of unique values for mapping
@@ -1766,7 +1791,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2043,7 +2068,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2150,7 +2175,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         X: X_TYPES,
         y: Optional[Y_TYPES] = None,
-    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, PANDAS_TYPES]]:
         """Impute the missing values.
 
         Note that leaving y=None can lead to inconsistencies in
@@ -2162,13 +2187,16 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence or None, default=None
+        y: int, str, dict, sequence, pd.DataFrame or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
@@ -2508,7 +2536,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2566,7 +2594,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2602,7 +2630,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -2855,8 +2883,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     @composed(crash, method_to_log, typechecked)
     def transform(
-        self, X: X_TYPES, y: Optional[Y_TYPES] = None
-    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+        self,
+        X: X_TYPES,
+        y: Optional[Y_TYPES] = None,
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, PANDAS_TYPES]]:
         """Apply the outlier strategy on the data.
 
         Parameters
@@ -2864,13 +2894,16 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, pd.DataFrame or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         Returns
         -------
@@ -2998,22 +3031,19 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             self.log(f" --> Dropping {len(mask) - sum(mask)} outliers.", 2)
 
             # Keep only the non-outliers from the data
-            X, objective = X[mask], objective[mask]
+            X = X[mask]
             if y is not None:
                 y = y[mask]
 
-        else:  # Replace the columns in X with the new values from objective
-            for col in objective:
-                if y is None or col != y.name:
-                    X[col] = objective[col]
+        else:  # Replace the columns in X and y with the new values from objective
+            X = merge(*[objective.get(col.name, col) for col in get_cols(X)])
+            if y is not None:
+                y = merge(*[objective.get(col.name, col) for col in get_cols(y)])
 
-        if y is not None:
-            if self.include_target:
-                return X, objective[y.name]
-            else:
-                return X, y
-        else:
+        if y is None:
             return X
+        else:
+            return X, y
 
 
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
@@ -3219,7 +3249,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -3272,7 +3302,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -3308,7 +3338,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns

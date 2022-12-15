@@ -13,15 +13,14 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-
+from sklearn.multioutput import MultiOutputRegressor, RegressorChain
 from atom import ATOMClassifier, ATOMLoader, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
-
 from .conftest import (
-    X10, X10_str, X_bin, X_class, X_idx, X_multi, X_reg, bin_test, bin_train,
-    y10, y_bin, y_class, y_idx, y_multi, y_reg,
+    X10, X10_str, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, y10,
+    y_bin, y_class, y_idx, y_multiclass, y_reg, X_label, y_label, y_multireg
 )
 
 
@@ -198,6 +197,39 @@ def test_branch_deleter():
     atom.branch = "b2"
     del atom.branch
     assert list(atom._branches) == ["master"]
+
+
+def test_multioutput_str():
+    """Assert that the multioutput estimator can be set."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.multioutput = "chain"
+    assert atom.multioutput.__name__ == "ClassifierChain"
+
+
+def test_multioutput_str_invalid():
+    """Assert that an error is raised when multioutput is invalid."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    with pytest.raises(ValueError, match=".*multioutput meta-estimator.*"):
+        atom.multioutput = "invalid"
+
+
+def test_multioutput_None():
+    """Assert that the multioutput estimator is ignored when None."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.multioutput = None
+    atom.run("MLP")  # MLP has native support for multilabel
+    assert atom.mlp.estimator.__class__.__name__ == "MLPClassifier"
+
+
+@pytest.mark.parametrize(
+    "multioutput", ["multioutput", "chain", MultiOutputRegressor, RegressorChain(None)]
+)
+def test_multioutput_regression(multioutput):
+    """Assert that the multioutput estimator works for regression tasks."""
+    atom = ATOMRegressor(X_reg, y=y_multireg, random_state=1)
+    atom.multioutput = multioutput
+    atom.run("OLS")
+    assert not atom.errors
 
 
 def test_models_property():
@@ -672,11 +704,11 @@ def test_get_class_weights(dataset):
     assert list(atom.get_class_weight(dataset)) == [0, 1, 2]
 
 
-@pytest.mark.parametrize("target", [0, -1, "y1"])
+@pytest.mark.parametrize("target", [0, -1, "a"])
 def test_get_class_weight_multioutput(target):
     """Assert that the get_class_weight method works for multioutput."""
-    atom = ATOMClassifier(X_multi, y=y_multi, random_state=1)
-    assert list(atom.get_class_weight(target=target)) == [0, 1]
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    assert list(atom.get_class_weight(target=target)) == [0, 1, 2]
 
 
 def test_merge_invalid_class():

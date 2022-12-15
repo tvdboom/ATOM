@@ -413,6 +413,8 @@ class AutoDocs:
             text += "[needs scaling](../../../user_guide/training/#automated-feature-scaling){ .md-tag }"
         if self.obj.accepts_sparse:
             text += "[accept sparse](../../../user_guide/data_management/#sparse-datasets){ .md-tag }"
+        if self.obj.native_multioutput:
+            text += "[native multioutput](../../../user_guide/data_management/#multioutput-tasks){ .md-tag }"
         if self.obj.has_validation:
             text += "[allows validation](../../../user_guide/training/#in-training-validation){ .md-tag }"
         if any(engine != "sklearn" for engine in self.obj.supports_engines):

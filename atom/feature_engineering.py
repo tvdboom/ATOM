@@ -219,7 +219,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -530,12 +530,17 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str or sequence
-            Target column corresponding to X.
+        y: int, str, sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to X.
 
+            - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe-like: Target columns with shape=(n_samples,
+              n_targets) for multioutput tasks.
 
         Returns
         -------
@@ -636,7 +641,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -880,7 +885,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -1316,6 +1321,11 @@ class FeatureSelector(
         self._estimator = None
         self._is_fitted = False
 
+    @property
+    def _is_multioutput(self) -> bool:
+        """Return whether the task is multilabel or multioutput."""
+        return any(task in self.task for task in ("multilabel", "multioutput"))
+
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> FeatureSelector:
         """Fit the feature selector to the data.
@@ -1329,13 +1339,17 @@ class FeatureSelector(
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
-            Target column corresponding to X.
+        y: int, str, sequence, dataframe-like or None, default=None
+            Target column(s) corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target column with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe-like: Target columns with shape=(n_samples,
+              n_targets) for multioutput tasks.
 
         Returns
         -------
@@ -1409,8 +1423,8 @@ class FeatureSelector(
                             f"model: {solver}. Choose from: {', '.join(MODELS)}."
                         )
                     else:
-                        model = MODELS[solver](self, fast_init=True)
-                        solver = model._get_est()
+                        self.task = infer_task(y, self.goal)
+                        solver = MODELS[solver](self, fast_init=True)._get_est()
                 else:
                     solver = self.solver
 
@@ -1693,7 +1707,7 @@ class FeatureSelector(
                     task = infer_task(y, goal=self.goal)
                     if task.startswith("bin"):
                         kwargs["scoring"] = get_custom_scorer("f1")
-                    elif task.startswith("multi"):
+                    elif task.startswith("multi") and self.goal.startswith("class"):
                         kwargs["scoring"] = get_custom_scorer("f1_weighted")
                     else:
                         kwargs["scoring"] = get_custom_scorer("r2")
@@ -1749,8 +1763,8 @@ class FeatureSelector(
         X: dataframe-like
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
-            Does nothing. Only for continuity of the API.
+        y: int, str, sequence, dataframe-like or None, default=None
+            Does nothing. Implemented for continuity of the API.
 
         Returns
         -------

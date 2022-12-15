@@ -1201,24 +1201,6 @@ def divide(a: SCALAR, b: SCALAR) -> SCALAR:
     return np.divide(a, b) if b != 0 else 0
 
 
-def is_1_dim(elem: Union[X_TYPES, Y_TYPES]) -> bool:
-    """Check whether an array-like is 1 dimensional.
-
-    Parameters
-    ----------
-    elem: array-like
-        Object to check.
-
-    Returns
-    -------
-    bool
-        Whether elem has 1 dimension.
-
-    """
-    array = np.array(elem, dtype="object")
-    return array.ndim == 1 or array.shape[1] == 1
-
-
 def to_rgb(c: str) -> str:
     """Convert a color name or hex to rgb.
 
@@ -1280,7 +1262,7 @@ def merge(*args) -> pd.DataFrame:
 
 
 def get_cols(elem: PANDAS_TYPES) -> List[pd.Series]:
-    """Get a list of the columns in dataframe / series.
+    """Get a list of columns in dataframe / series.
 
     Parameters
     ----------
@@ -1560,11 +1542,32 @@ def time_to_str(t: int):
         return f"{h:02.0f}h:{m:02.0f}m:{s:02.0f}s"
 
 
+def n_cols(data: Optional[Union[X_TYPES, Y_TYPES]]) -> int:
+    """Get the number of columns in a dataset.
+
+    Parameters
+    ----------
+    data: sequence or dataframe-like
+        Dataset to check.
+
+    Returns
+    -------
+    int or None
+        Number of columns.
+
+    """
+    if data is not None:
+        if (array := np.array(data, dtype="object")).ndim > 1:
+            return array.shape[1]
+        else:
+            return array.ndim  # Can be 0 when input is a dict
+
+
 def to_df(
     data: Optional[X_TYPES],
     index: Optional[Union[SEQUENCE_TYPES, pd.Index, pd.MultiIndex]] = None,
     columns: Optional[SEQUENCE_TYPES] = None,
-    dtypes: Optional[Union[str, dict, np.dtype]] = None,
+    dtype: Optional[Union[str, dict, np.dtype]] = None,
 ) -> Optional[pd.DataFrame]:
     """Convert a dataset to pd.Dataframe.
 
@@ -1580,19 +1583,16 @@ def to_df(
     columns: sequence or None, default=None
         Name of the columns. Use None for automatic naming.
 
-    dtypes: str, dict, np.dtype or None, default=None
+    dtype: str, dict, np.dtype or None, default=None
         Data types for the output columns. If None, the types are
         inferred from the data.
 
     Returns
     -------
     pd.DataFrame or None
-        Transformed dataframe.
+        Dataset as pandas dataframe.
 
     """
-    # Get number of columns (list/tuple have no shape and sp.matrix has no index)
-    n_cols = lambda data: data.shape[1] if hasattr(data, "shape") else len(data[0])
-
     if data is not None and not isinstance(data, pd.DataFrame):
         # Assign default column names (dict already has column names)
         if not isinstance(data, dict) and columns is None:
@@ -1606,8 +1606,8 @@ def to_df(
         else:
             data = pd.DataFrame(data, index, columns)
 
-        if dtypes is not None:
-            data = data.astype(dtypes)
+        if dtype is not None:
+            data = data.astype(dtype)
 
     return data
 
@@ -1638,16 +1638,64 @@ def to_series(
     Returns
     -------
     pd.Series or None
-        Transformed series.
+        Sequence as pandas series.
 
     """
     if data is not None and not isinstance(data, pd.Series):
         if hasattr(data, "to_pandas"):
             data = data.to_pandas()  # Convert cuML to pandas
         else:
-            data = pd.Series(data, index=index, name=name, dtype=dtype)
+            # Flatten for arrays with shape (n_samples, 1), sometimes returned by cuML
+            data = pd.Series(
+                data=np.array(data, dtype="object").ravel().tolist(),
+                index=index,
+                name=name,
+                dtype=dtype,
+            )
 
     return data
+
+
+def to_pandas(
+    data: Optional[SEQUENCE_TYPES],
+    index: Optional[Union[SEQUENCE_TYPES, pd.Index, pd.MultiIndex]] = None,
+    columns: Optional[SEQUENCE_TYPES] = None,
+    name: str = "target",
+    dtype: Optional[Union[str, dict, np.dtype]] = None,
+) -> Optional[PANDAS_TYPES]:
+    """Convert a sequence or dataset to a pandas object.
+
+    If the data is 1-dimensional, convert to pd.Series, else to
+    pd.DataFrame.
+
+    Parameters
+    ----------
+    data: sequence or None
+        Data to convert. If None, return unchanged.
+
+    index: sequence, pd.Index, pd.Multiindex or None, default=None
+        Values for the index.
+
+    columns: sequence or None, default=None
+        Name of the columns. Use None for automatic naming.
+
+    name: str, default="target"
+        Name of the series.
+
+    dtype: str, dict, np.dtype or None, default=None
+        Data type for the output series. If None, the type is
+        inferred from the data.
+
+    Returns
+    -------
+    pd.Series, pd.DataFrame or None
+        Data as pandas object.
+
+    """
+    if n_cols(data) == 1:
+        return to_series(data, index=index, name=name, dtype=dtype)
+    else:
+        return to_df(data, index=index, columns=columns, dtype=dtype)
 
 
 def prepare_logger(
@@ -1913,15 +1961,19 @@ def infer_task(y: PANDAS_TYPES, goal: str = "class") -> str:
         else:
             return "multioutput regression"
 
-    if y.ndim > 1 or isinstance(y.iloc[0], SEQUENCE):
-        return "multioutput classification"
-    else:
-        if y.nunique() == 1:
-            raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
-        elif y.nunique() == 2:
-            return "binary classification"
+    if y.ndim > 1:
+        if y.isin([0, 1]).all().all():
+            return "multilabel classification"
         else:
-            return "multiclass classification"
+            return "multiclass-multioutput classification"
+    elif isinstance(y.iloc[0], SEQUENCE):
+        return "multilabel classification"
+    elif y.nunique() == 1:
+        raise ValueError(f"Only found 1 target value: {y.unique()[0]}")
+    elif y.nunique() == 2:
+        return "binary classification"
+    else:
+        return "multiclass classification"
 
 
 def partial_dependence(
@@ -2190,7 +2242,7 @@ def fit_one(
 
     """
     X = to_df(X, index=getattr(y, "index", None))
-    y = to_series(y, index=getattr(X, "index", None))
+    y = to_pandas(y, index=getattr(X, "index", None))
 
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
@@ -2290,7 +2342,7 @@ def transform_one(
             return out
 
     X = to_df(X, index=getattr(y, "index", None))
-    y = to_series(y, index=getattr(X, "index", None))
+    y = to_pandas(y, index=getattr(X, "index", None))
 
     args = []
     if "X" in (params := sign(getattr(transformer, method))):
@@ -2315,20 +2367,24 @@ def transform_one(
     # Transform can return X, y or both
     if isinstance(out := getattr(transformer, method)(*args), tuple):
         new_X = prepare_df(out[0])
-        if is_1_dim(out[1]):
-            new_y = to_series(out[1], index=new_X.index, name=getattr(y, "name", None))
-        else:
-            new_y = to_df(out[1], index=new_X.index, columns=getattr(y, "columns", None))
+        new_y = to_pandas(
+            data=out[1],
+            index=new_X.index,
+            name=getattr(y, "name", None),
+            columns=getattr(y, "columns", None),
+        )
     elif "X" in params and X is not None and (inc != [] or exc != []):
         # X in -> X out
         new_X = prepare_df(out)
         new_y = y if y is None else y.set_axis(new_X.index)
     else:
         # X not in -> output must be y
-        if is_1_dim(out):
-            new_y = to_series(out, index=y.index, name=getattr(y, "name", None))
-        else:
-            new_y = to_df(out, index=y.index, columns=getattr(y, "columns", None))
+        new_y = to_pandas(
+            data=out,
+            index=y.index,
+            name=getattr(y, "name", None),
+            columns=getattr(y, "columns", None),
+        )
         new_X = X if X is None else X.set_index(new_y.index)
 
     return new_X, new_y

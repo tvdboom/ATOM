@@ -39,8 +39,9 @@ from atom.training import (
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
     Runner, Scorer, Transformer, __version__, check_is_fitted, check_scaling,
-    composed, crash, custom_transform, fit_one, flt, get_custom_scorer,
-    has_task, infer_task, is_sparse, lst, method_to_log, sign, variable_return,
+    composed, crash, custom_transform, fit_one, flt, get_cols,
+    get_custom_scorer, has_task, infer_task, is_sparse, lst, method_to_log,
+    sign, variable_return,
 )
 
 
@@ -71,7 +72,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         test_size: SCALAR = 0.2,
         holdout_size: Optional[SCALAR] = None,
     ):
-        super().__init__()
+        BaseRunner.__init__(self)
+        DataPlot.__init__(self)
 
         self.index = index
         self.shuffle = shuffle
@@ -291,7 +293,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             )
 
             # Non-multioutput has single level index for simplicity
-            if not self.task.startswith("multioutput"):
+            if not self._is_multioutput:
                 df.index = df.index.droplevel(0)
 
             return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
@@ -473,7 +475,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def inverse_transform(
         self,
         X: Optional[X_TYPES] = None,
-        /,
         y: Optional[Y_TYPES] = None,
         *,
         verbose: Optional[INT] = None,
@@ -811,7 +812,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def transform(
         self,
         X: Optional[X_TYPES] = None,
-        /,
         y: Optional[Y_TYPES] = None,
         *,
         verbose: Optional[INT] = None,
@@ -1105,15 +1105,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         See the [Balancer][] class for a description of the parameters.
 
         !!! note
-            This transformation is only applied to the training set in
-            order to maintain the original distribution of target
-            classes in the test set.
+            * The balance method does not support [multioutput tasks][].
+            * This transformation is only applied to the training set
+              in order to maintain the original distribution of target
+              classes in the test set.
 
         !!! tip
             Use atom's [classes][self-classes] attribute for an overview
             of the target class distribution per data set.
 
         """
+        if self._is_multioutput:
+            raise ValueError("The balance method does not support multioutput tasks.")
+
         columns = kwargs.pop("columns", None)
         balancer = Balancer(
             strategy=strategy,
@@ -1756,7 +1760,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Instance that does the actual model training.
 
         """
-        if self.y.dtype.kind not in "ifu":
+        if any(col.dtype.kind not in "ifu" for col in get_cols(self.y)):
             raise ValueError(
                 "The target column is not numerical. Use atom.clean() "
                 "to encode the target column to numerical values."
@@ -1767,6 +1771,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             trainer._tracking_params = self._tracking_params
             trainer._current = self._current
             trainer._branches = self._branches
+            trainer._multioutput = self._multioutput
             trainer.scaled = self.scaled
             trainer.run()
         finally:

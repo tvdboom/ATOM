@@ -18,8 +18,10 @@ Description: Module containing all available models. The models are
         accepts_sparse: bool
             Whether the model has native support for sparse matrices.
 
-        accepts_multioutput: bool
-            Whether the model has native support for multi-output tasks.
+        native_multioutput: bool
+            Whether the model has native support for multioutput tasks.
+            Note that non-native models also work with multioutput
+            datasets making use of the `multioutput` meta-estimator.
 
         has_validation: str or None
             Whether the model allows in-training validation. If str,
@@ -147,6 +149,7 @@ class CustomModel(BaseModel):
         self.acronym = getattr(self.est, "acronym", create_acronym(self._fullname))
 
         self.needs_scaling = getattr(self.est, "needs_scaling", False)
+        self.native_multioutput = getattr(self.est, "native_multioutput", False)
         self.has_validation = getattr(self.est, "has_validation", None)
         super().__init__(*args)
 
@@ -238,6 +241,7 @@ class AdaBoost(BaseModel):
     acronym = "AdaB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -324,6 +328,7 @@ class AutomaticRelevanceDetermination(BaseModel):
     acronym = "ARD"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -411,6 +416,7 @@ class Bagging(BaseModel):
     acronym = "Bag"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -493,6 +499,7 @@ class BayesianRidge(BaseModel):
     acronym = "BR"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -575,6 +582,7 @@ class BernoulliNB(BaseModel):
     acronym = "BNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -667,6 +675,7 @@ class CatBoost(BaseModel):
     acronym = "CatB"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["catboost"]
 
@@ -867,6 +876,7 @@ class CategoricalNB(BaseModel):
     acronym = "CatNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -946,6 +956,7 @@ class ComplementNB(BaseModel):
     acronym = "CNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -1025,6 +1036,7 @@ class DecisionTree(BaseModel):
     acronym = "Tree"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1118,6 +1130,7 @@ class Dummy(BaseModel):
     acronym = "Dummy"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1221,6 +1234,7 @@ class ElasticNet(BaseModel):
     acronym = "EN"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -1305,6 +1319,7 @@ class ExtraTree(BaseModel):
     acronym = "ETree"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1418,6 +1433,7 @@ class ExtraTrees(BaseModel):
     acronym = "ET"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1531,6 +1547,7 @@ class GaussianNB(BaseModel):
     acronym = "GNB"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -1609,6 +1626,7 @@ class GaussianProcess(BaseModel):
     acronym = "GP"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1683,6 +1701,7 @@ class GradientBoosting(BaseModel):
     acronym = "GBM"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1802,6 +1821,7 @@ class HuberRegression(BaseModel):
     acronym = "Huber"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1887,6 +1907,7 @@ class HistGradientBoosting(BaseModel):
     acronym = "hGBM"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -1982,6 +2003,7 @@ class KNearestNeighbors(BaseModel):
     acronym = "KNN"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -2072,6 +2094,7 @@ class Lasso(BaseModel):
     acronym = "Lasso"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -2154,6 +2177,7 @@ class LeastAngleRegression(BaseModel):
     acronym = "Lars"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -2228,6 +2252,7 @@ class LightGBM(BaseModel):
     acronym = "LGB"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["lightgbm"]
 
@@ -2406,6 +2431,7 @@ class LinearDiscriminantAnalysis(BaseModel):
     acronym = "LDA"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -2508,6 +2534,7 @@ class LinearSVM(BaseModel):
     acronym = "lSVM"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -2651,6 +2678,7 @@ class LogisticRegression(BaseModel):
     acronym = "LR"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -2734,6 +2762,11 @@ class MultiLayerPerceptron(BaseModel):
 
     Read more in sklearn's [documentation][mlpdocs].
 
+    !!! tip
+        MultiLayerPerceptron does support [multilabel][] tasks
+        natively. Set the `multioutput` attribute to None to avoid
+        the meta-estimator.
+
     See Also
     --------
     atom.models:PassiveAggressive
@@ -2778,6 +2811,7 @@ class MultiLayerPerceptron(BaseModel):
     acronym = "MLP"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
@@ -2922,6 +2956,7 @@ class MultinomialNB(BaseModel):
     acronym = "MNB"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "cuml"]
 
@@ -3003,6 +3038,8 @@ class OrdinaryLeastSquares(BaseModel):
     acronym = "OLS"
     needs_scaling = True
     accepts_sparse = True
+    native_multilabel = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -3065,6 +3102,7 @@ class OrthogonalMatchingPursuit(BaseModel):
     acronym = "OMP"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -3131,6 +3169,7 @@ class PassiveAggressive(BaseModel):
     acronym = "PA"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
@@ -3224,6 +3263,7 @@ class Perceptron(BaseModel):
     acronym = "Perc"
     needs_scaling = True
     accepts_sparse = False
+    native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
@@ -3329,6 +3369,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     acronym = "QDA"
     needs_scaling = False
     accepts_sparse = False
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -3418,6 +3459,7 @@ class RadiusNearestNeighbors(BaseModel):
     acronym = "RNN"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn"]
 
@@ -3512,6 +3554,7 @@ class RandomForest(BaseModel):
     acronym = "RF"
     needs_scaling = False
     accepts_sparse = True
+    native_multioutput = True
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -3600,6 +3643,10 @@ class Ridge(BaseModel):
         Engines `sklearnex` and `cuml` are only available for regression
         tasks.
 
+    !!! tip
+        Ridge does support [multilabel][] tasks natively. Set the
+        `multioutput` attribute to None to avoid the meta-estimator.
+
     See Also
     --------
     atom.models:BayesianRidge
@@ -3644,6 +3691,7 @@ class Ridge(BaseModel):
     acronym = "Ridge"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -3734,6 +3782,7 @@ class StochasticGradientDescent(BaseModel):
     acronym = "SGD"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "max_iter"
     supports_engines = ["sklearn"]
 
@@ -3859,6 +3908,7 @@ class SupportVectorMachine(BaseModel):
     acronym = "SVM"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = None
     supports_engines = ["sklearn", "sklearnex", "cuml"]
 
@@ -4000,6 +4050,7 @@ class XGBoost(BaseModel):
     acronym = "XGB"
     needs_scaling = True
     accepts_sparse = True
+    native_multioutput = False
     has_validation = "n_estimators"
     supports_engines = ["xgboost"]
 
@@ -4128,6 +4179,7 @@ class Stacking(BaseModel):
     acronym = "Stack"
     needs_scaling = False
     has_validation = None
+    native_multioutput = False
     supports_engines = []
 
     _module = "atom.ensembles"
@@ -4177,6 +4229,7 @@ class Voting(BaseModel):
     acronym = "Vote"
     needs_scaling = False
     has_validation = None
+    native_multioutput = False
     supports_engines = []
 
     _module = "atom.ensembles"

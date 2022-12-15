@@ -115,13 +115,14 @@ an estimator's fit method.
 
 <div id="task"><strong>task</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-One of the five supervised machine learning approaches that ATOM supports:
+One of the six supervised machine learning approaches that ATOM supports:
 <ul style="line-height:1.2em;margin-top:-10px">
 <li><a href="https://en.wikipedia.org/wiki/Binary_classification">binary classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Multiclass_classification">multiclass classification</a></li>
-<li><a href="https://en.wikipedia.org/wiki/label_classification">multioutput classification</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multilabel-classification">multilabel classification</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multiclass-multioutput-classification">multiclass-multioutput classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Regression_analysis">multioutput regression</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/multiclass.html#multioutput-regression">multioutput regression</a></li>
 </ul>
 </div>
 

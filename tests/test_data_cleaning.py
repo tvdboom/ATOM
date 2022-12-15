@@ -23,7 +23,7 @@ from atom.utils import NotFittedError, check_scaling, merge, to_df
 
 from .conftest import (
     X10, X10_nan, X10_sn, X10_str, X10_str2, X_bin, X_class, X_idx, y10,
-    y10_label, y10_nan, y10_str, y_bin, y_class, y_idx,
+    y10_label, y10_nan, y10_str, y_bin, y_class, y_idx, y_multiclass,
 )
 
 
@@ -49,6 +49,13 @@ def test_inverse_transform():
 
 
 # Test Balancer ==================================================== >>
+
+
+def test_balance_multioutput_task():
+    """Assert that an error is raised for multioutput tasks."""
+    with pytest.raises(ValueError, match=".*not support multioutput.*"):
+        Balancer().transform(X_class, y_multiclass)
+
 
 def test_balancer_strategy_unknown_str():
     """Assert that an error is raised when strategy is unknown."""
@@ -198,7 +205,7 @@ def test_cleaner_multiclass_multioutput():
     )
     y_transformed = Cleaner().fit_transform(y=y)
     assert list(y_transformed.columns) == ["a", "b", "c"]
-    assert all(v in [0, 1] for v in y_transformed.values.flatten())
+    assert all(v in [0, 1] for v in y_transformed.values.ravel())
 
 
 def test_cleaner_inverse_transform():

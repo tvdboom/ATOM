@@ -20,23 +20,7 @@ from atom.utils import merge
 from .conftest import X_bin, X_reg, y_bin, y_reg
 
 
-# Test ATOMModel =================================================== >>
-
-def test_name():
-    """Assert that the name is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="huber")
-    assert model.acronym == "huber"
-
-
-def test_needs_scaling():
-    """Assert that the needs_scaling is attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="huber", needs_scaling=True)
-    assert model.needs_scaling is True
-
-
-# Test ATOMLoader ================================================== >>
-
-def test_load():
+def test_atomloader_load():
     """Assert that a trainer is loaded correctly."""
     trainer = DirectClassifier("LR", random_state=1)
     trainer.save("trainer")
@@ -45,14 +29,14 @@ def test_load():
     assert trainer2.__class__.__name__ == "DirectClassifier"
 
 
-def test_load_data_when_no_atom():
+def test_atomloader_load_data_when_no_atom():
     """Assert that an error is raised when data is provided without atom."""
     Imputer().save("imputer")
     with pytest.raises(TypeError, match=".*Data is provided but.*"):
         ATOMLoader("imputer", data=(X_bin,))
 
 
-def test_load_already_contains_data():
+def test_atomloader_load_already_contains_data():
     """Assert that an error is raised when data is provided without needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save("atom", save_data=True)
@@ -60,7 +44,7 @@ def test_load_already_contains_data():
         ATOMLoader("atom", data=(X_bin,))
 
 
-def test_data():
+def test_atomloader_data():
     """Assert that data can be loaded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save("atom", save_data=False)
@@ -69,7 +53,7 @@ def test_data():
     pd.testing.assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
 
 
-def test_load_ignores_n_rows_parameter():
+def test_atomloader_load_ignores_n_rows_parameter():
     """Assert that n_rows is not used when transform_data=False."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.6, random_state=1)
     atom.save("atom", save_data=False)
@@ -78,7 +62,7 @@ def test_load_ignores_n_rows_parameter():
     assert len(atom2.dataset) == len(X_bin)
 
 
-def test_transform_data():
+def test_atomloader_transform_data():
     """Assert that the data is transformed correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale(columns=slice(3, 10))
@@ -94,7 +78,7 @@ def test_transform_data():
     assert atom3.dataset.shape == merge(X_bin, y_bin).shape
 
 
-def test_transform_data_multiple_branches():
+def test_atomloader_transform_data_multiple_branches():
     """Assert that the data is transformed with multiple branches."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.prune()
@@ -114,17 +98,20 @@ def test_transform_data_multiple_branches():
         )
 
 
-# Test ATOMClassifier ============================================== >>
+def test_atommodel():
+    """Assert that the attributes are attached to the estimator."""
+    model = ATOMModel(HuberRegressor(), acronym="huber", needs_scaling=True)
+    assert model.acronym == "huber"
+    assert model.needs_scaling is True
 
-def test_goal_ATOMClassifier():
+
+def test_atomclassifier():
     """Assert that the goal is set correctly for ATOMClassifier."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.goal == "class"
 
 
-# Test ATOMRegressor =============================================== >>
-
-def test_goal_ATOMRegressor():
+def test_atomregressor():
     """Assert that the goal is set correctly for ATOMRegressor."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     assert atom.goal == "reg"

@@ -16,7 +16,7 @@ import mlflow
 import pandas as pd
 from joblib.memory import Memory
 from typeguard import typechecked
-
+from sklearn.multioutput import ClassifierChain, RegressorChain, MultiOutputRegressor, MultiOutputClassifier
 from atom.basemodel import BaseModel
 from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
@@ -24,7 +24,7 @@ from atom.pipeline import Pipeline
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, CustomDict, Model, check_is_fitted,
     composed, crash, divide, flt, get_best_score, get_pl_name, get_versions,
-    lst, method_to_log,
+    lst, method_to_log, Predictor
 )
 
 
@@ -45,6 +45,9 @@ class BaseRunner:
         log_data=False,
         log_pipeline=False,
     )
+
+    def __init__(self):
+        self.multioutput = "multioutput"
 
     def __getstate__(self) -> dict:
         # Store an extra attribute with the package versions
@@ -187,6 +190,11 @@ class BaseRunner:
     # Utility properties =========================================== >>
 
     @property
+    def _is_multioutput(self) -> bool:
+        """Return whether the task is multilabel or multioutput."""
+        return any(task in self.task for task in ("multilabel", "multioutput"))
+
+    @property
     def branch(self) -> Branch:
         """Current active branch.
 
@@ -204,6 +212,47 @@ class BaseRunner:
     def branch(self):
         """Delete the current active branch."""
         self.branch.__delete__(self.branch)
+
+    @property
+    def multioutput(self) -> Optional[Predictor]:
+        """Meta-estimator for [multioutput tasks][].
+
+        This multioutput estimator is only used when the model has no
+        native support for the current task.
+
+        """
+        return self._multioutput
+
+    @multioutput.setter
+    @typechecked
+    def multioutput(self, value: Optional[Union[str, Predictor]]):
+        """Meta-estimator for [multioutput tasks][].
+
+        This estimator is only used when the model has no native
+        support for the current multioutput task. Set to None to
+        avoid this wrapper. Use the `@setter` to set any other
+        meta-estimator (the underlying estimator should be the first
+        parameter in the constructor).
+
+        """
+        if isinstance(value, str):
+            if value.lower().startswith("multioutput"):
+                if self.goal.startswith("class"):
+                    self._multioutput = MultiOutputClassifier
+                else:
+                    self._multioutput = MultiOutputRegressor
+            elif value.lower().endswith("chain"):
+                if self.goal.startswith("class"):
+                    self._multioutput = ClassifierChain
+                else:
+                    self._multioutput = RegressorChain
+            else:
+                raise ValueError(
+                    "Invalid value for the multioutput meta-estimator."
+                    "Choose from: multioutput or chain."
+                )
+        else:
+            self._multioutput = value
 
     @property
     def models(self) -> Union[str, List[str]]:
@@ -711,6 +760,8 @@ class BaseRunner:
             - **module:** The estimator's module.
             - **needs_scaling:** Whether the model requires feature scaling.
             - **accepts_sparse:** Whether the model accepts sparse matrices.
+            - **native_multioutput:** Whether the model has native support
+              for [multioutput tasks][].
             - **has_validation:** Whether the model has [in-training validation][].
             - **supports_engines:** List of engines supported by the model.
 
@@ -727,6 +778,7 @@ class BaseRunner:
                         "module": m._est_class.__module__.split(".")[0] + m._module,
                         "needs_scaling": m.needs_scaling,
                         "accepts_sparse": m.accepts_sparse,
+                        "native_multioutput": m.native_multioutput,
                         "has_validation": bool(m.has_validation),
                         "supports_engines": ", ". join(m.supports_engines),
                     }
@@ -951,7 +1003,7 @@ class BaseRunner:
             )
 
         y = self.classes[dataset]
-        if self.task.startswith("multioutput"):
+        if self._is_multioutput:
             y = y.loc[target if isinstance(target, str) else self.y.columns[target]]
 
         return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}

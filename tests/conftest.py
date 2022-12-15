@@ -10,11 +10,9 @@ Description: Global fixtures and variables for the tests.
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.datasets import (
-    load_breast_cancer, load_diabetes, load_wine,
-    make_multilabel_classification,
-)
+from sklearn.datasets import load_breast_cancer, load_diabetes, load_wine, make_multilabel_classification
 from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 
 from atom.utils import merge
 
@@ -47,7 +45,8 @@ X_sparse = pd.DataFrame(
     }
 )
 
-# Multioutput data
+# Multilabel classification data
+X_label, y_label = make_multilabel_classification(n_samples=100, n_classes=3)
 y10_label = [
     ["politics"],
     ["finance", "religion"],
@@ -60,7 +59,20 @@ y10_label = [
     ["education"],
     ["finance", "politics", "religion"],
 ]
-X_multi, y_multi = make_multilabel_classification(n_classes=3)
+
+# Multiclass-multioutput classification data
+y_multiclass = merge(
+    pd.Series(shuffle(y_class.values, random_state=1), name="a"),
+    pd.Series(shuffle(y_class.values, random_state=2), name="b"),
+    pd.Series(shuffle(y_class.values, random_state=3), name="c"),
+)
+
+# Multioutput regression data
+y_multireg = merge(
+    pd.Series(shuffle(y_reg.values, random_state=1), name="a"),
+    pd.Series(shuffle(y_reg.values, random_state=2), name="b"),
+    pd.Series(shuffle(y_reg.values, random_state=3), name="c"),
+)
 
 # Text data
 X_text = [

@@ -52,8 +52,8 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
             random_state=random_state,
         )
 
-        # Initialize BasePlot for trainers
-        super(HTPlot, self).__init__()
+        BaseRunner.__init__(self)
+        HTPlot.__init__(self)
 
         # Parameter attributes
         self._models = models
@@ -198,10 +198,13 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         # Assign default scorer
         if self._metric is None:
             if self.task.startswith("bin"):
+                # Binary classification
                 self._metric = CustomDict(f1=get_custom_scorer("f1"))
-            elif self.task.startswith("multi"):
+            elif self.task.startswith("multi") and self.goal.startswith("class"):
+                # Multiclass, multilabel, multiclass-multioutput classification
                 self._metric = CustomDict(f1_weighted=get_custom_scorer("f1_weighted"))
             else:
+                # Regression or multioutput regression
                 self._metric = CustomDict(r2=get_custom_scorer("r2"))
 
         # Ignore if it's the same scorer as previous call
