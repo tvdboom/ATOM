@@ -2484,7 +2484,7 @@ def custom_transform(
     """
     # Select provided data or from the branch
     if data:
-        X_og, y_og = to_df(data[0]), to_series(data[1])
+        X_og, y_og = to_df(data[0]), to_pandas(data[1])
     else:
         if transformer._train_only:
             X_og, y_og = branch.X_train, branch.y_train

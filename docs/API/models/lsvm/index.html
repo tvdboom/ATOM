@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.0/API/models/lsvm/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/models/lsvm/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
@@ -3265,7 +3265,7 @@ should scale better to large numbers of samples.</p>
 <h2 id="attributes">Attributes</h2>
 <h3 id="data-attributes">Data attributes</h3>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='linearsvm-pipeline'></a><strong>pipeline: (self)</strong><br><div markdown class='param'>Transformers fitted on the data.</p>
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='linearsvm-pipeline'></a><strong>pipeline: pd.Series</strong><br><div markdown class='param'>Transformers fitted on the data.</p>
 <p>Models that used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a> have the scaler
 added. Use this attribute only to access the individual
 instances. To visualize the pipeline, use the <a class="autorefs autorefs-internal" href="../../plots/plot_pipeline/#plot_pipeline">plot_pipeline</a>
@@ -3273,7 +3273,7 @@ method.</p>
 <p></div><a id='linearsvm-mapping'></a><strong>mapping: dict</strong><br><div markdown class='param'>Encoded values and their respective mapped values.</p>
 <p>The column name is the key to its mapping dictionary. Only for
 columns mapped to a single column (e.g. Ordinal, Leave-one-out,
-etc...).</div><a id='linearsvm-dataset'></a><strong>dataset: pd.DataFrame</strong><br><div markdown class='param'>Complete data set.</div><a id='linearsvm-train'></a><strong>train: pd.DataFrame</strong><br><div markdown class='param'>Training set.</div><a id='linearsvm-test'></a><strong>test: pd.DataFrame</strong><br><div markdown class='param'>Test set.</div><a id='linearsvm-X'></a><strong>X: pd.DataFrame</strong><br><div markdown class='param'>Feature set.</div><a id='linearsvm-y'></a><strong>y: pd.Series</strong><br><div markdown class='param'>Target column.</div><a id='linearsvm-X_train'></a><strong>X_train: pd.DataFrame</strong><br><div markdown class='param'>Features of the training set.</div><a id='linearsvm-y_train'></a><strong>y_train: pd.Series</strong><br><div markdown class='param'>Target column of the training set.</div><a id='linearsvm-X_test'></a><strong>X_test: pd.DataFrame</strong><br><div markdown class='param'>Features of the test set.</div><a id='linearsvm-y_test'></a><strong>y_test: pd.Series</strong><br><div markdown class='param'>Target column of the test set.</div><a id='linearsvm-shape'></a><strong>shape: tuple</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_cols).</div><a id='linearsvm-columns'></a><strong>columns: pd.Series</strong><br><div markdown class='param'>Name of all the columns.</div><a id='linearsvm-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='linearsvm-features'></a><strong>features: pd.Series</strong><br><div markdown class='param'>Name of the features.</div><a id='linearsvm-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='linearsvm-target'></a><strong>target: str</strong><br><div markdown class='param'>Name of the target column.</div></td></tr></p>
+etc...).</div><a id='linearsvm-dataset'></a><strong>dataset: pd.DataFrame</strong><br><div markdown class='param'>Complete data set.</div><a id='linearsvm-train'></a><strong>train: pd.DataFrame</strong><br><div markdown class='param'>Training set.</div><a id='linearsvm-test'></a><strong>test: pd.DataFrame</strong><br><div markdown class='param'>Test set.</div><a id='linearsvm-X'></a><strong>X: pd.DataFrame</strong><br><div markdown class='param'>Feature set.</div><a id='linearsvm-y'></a><strong>y: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Target column(s).</div><a id='linearsvm-X_train'></a><strong>X_train: pd.DataFrame</strong><br><div markdown class='param'>Features of the training set.</div><a id='linearsvm-y_train'></a><strong>y_train: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Target column(s) of the training set.</div><a id='linearsvm-X_test'></a><strong>X_test: pd.DataFrame</strong><br><div markdown class='param'>Features of the test set.</div><a id='linearsvm-y_test'></a><strong>y_test: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Target column(s) of the test set.</div><a id='linearsvm-shape'></a><strong>shape: tuple</strong><br><div markdown class='param'>Shape of the dataset (n_rows, n_columns).</div><a id='linearsvm-columns'></a><strong>columns: pd.Series</strong><br><div markdown class='param'>Name of all the columns.</div><a id='linearsvm-n_columns'></a><strong>n_columns: int</strong><br><div markdown class='param'>Number of columns.</div><a id='linearsvm-features'></a><strong>features: pd.Series</strong><br><div markdown class='param'>Name of the features.</div><a id='linearsvm-n_features'></a><strong>n_features: int</strong><br><div markdown class='param'>Number of features.</div><a id='linearsvm-target'></a><strong>target: str or list</strong><br><div markdown class='param'>Name of the target column(s).</div></td></tr></p>
 </table>
 <p><br></p>
 <h3 id="utility-attributes">Utility attributes</h3>
@@ -3295,11 +3295,11 @@ the corresponding run also changes.</div><a id='linearsvm-study'></a><strong>stu
 <p>For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, the best trial is the trial that
 performed best on the main metric. Use the property's <code>@setter</code>
 to change the best trial. See <a class="autorefs autorefs-internal" href="../../../examples/hyperparameter_tuning/#example-hyperparameter-tuning">here</a>
-an example.</div><a id='linearsvm-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#linearsvm-best_trial">best trial</a>.</div><a id='linearsvm-score_ht'></a><strong>score_ht: Union[float, numpy.floating, List[Union[float, numpy.floating]], NoneType]</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#linearsvm-best_trial">best trial</a>.</div><a id='linearsvm-time_ht'></a><strong>time_ht: int or None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='linearsvm-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='linearsvm-score_train'></a><strong>score_train: Union[float, numpy.floating, List[Union[float, numpy.floating]]]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='linearsvm-score_test'></a><strong>score_test: Union[float, numpy.floating, List[Union[float, numpy.floating]]]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='linearsvm-score_holdout'></a><strong>score_holdout: Union[float, numpy.floating, List[Union[float, numpy.floating]]]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='linearsvm-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='linearsvm-bootstrap'></a><strong>bootstrap: pd.DataFrame or None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
+an example.</div><a id='linearsvm-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#linearsvm-best_trial">best trial</a>.</div><a id='linearsvm-score_ht'></a><strong>score_ht: float, list or None</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#linearsvm-best_trial">best trial</a>.</div><a id='linearsvm-time_ht'></a><strong>time_ht: int or None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='linearsvm-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='linearsvm-score_train'></a><strong>score_train: float or list</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='linearsvm-score_test'></a><strong>score_test: float or list</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='linearsvm-score_holdout'></a><strong>score_holdout: float or list</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='linearsvm-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='linearsvm-bootstrap'></a><strong>bootstrap: pd.DataFrame or None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
 <p>The dataframe has shape=(n_bootstrap, metric) and shows the
 score obtained by every bootstrapped sample for every metric.
 Using <code>atom.bootstrap.mean()</code> yields the same values as
-<a class="autorefs autorefs-internal" href="#linearsvm-score_bootstrap">score_bootstrap</a>.</div><a id='linearsvm-score_bootstrap'></a><strong>score_bootstrap: Union[float, numpy.floating, List[Union[float, numpy.floating]], NoneType]</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='linearsvm-time_bootstrap'></a><strong>time_bootstrap: int or None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='linearsvm-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='linearsvm-feature_importance'></a><strong>feature_importance: pd.Series or None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
+<a class="autorefs autorefs-internal" href="#linearsvm-score_bootstrap">score_bootstrap</a>.</div><a id='linearsvm-score_bootstrap'></a><strong>score_bootstrap: float, list or None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='linearsvm-time_bootstrap'></a><strong>time_bootstrap: int or None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='linearsvm-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='linearsvm-feature_importance'></a><strong>feature_importance: pd.Series or None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
 <p>The sum of importances for all features is 1. The scores are
 extracted from the estimator's <code>scores_</code>, <code>coef_</code> or
 <code>feature_importances_</code> attribute, checked in that order.
@@ -3322,17 +3322,29 @@ Returns None for estimators without any of those attributes.</div><a id='linears
 is called for the first time. This mechanism avoids having to calculate
 attributes that are never used, saving time and memory.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='linearsvm-decision_function_train'></a><strong>decision_function_train: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Confidence scores on the training set.</div><a id='linearsvm-decision_function_test'></a><strong>decision_function_test: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Confidence scores on the test set.</div><a id='linearsvm-decision_function_holdout'></a><strong>decision_function_holdout: pd.Series, pd.DataFrame or None</strong><br><div markdown class='param'>Confidence scores on the holdout set.</div><a id='linearsvm-predict_train'></a><strong>predict_train: pd.Series</strong><br><div markdown class='param'>Class predictions on the training set.</div><a id='linearsvm-predict_test'></a><strong>predict_test: pd.Series</strong><br><div markdown class='param'>Class predictions on the test set.</div><a id='linearsvm-predict_holdout'></a><strong>predict_holdout: pd.Series or None</strong><br><div markdown class='param'>Class predictions on the holdout set.</div></td></tr></p>
+<p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='linearsvm-decision_function_train'></a><strong>decision_function_train: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Confidence scores on the training set.</p>
+<p>Output of shape=(n_samples,) or shape=(n_samples, n_classes)
+depending on the task.</div><a id='linearsvm-decision_function_test'></a><strong>decision_function_test: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Confidence scores on the test set.</p>
+<p>Output of shape=(n_samples,) or shape=(n_samples, n_classes)
+depending on the task.</div><a id='linearsvm-decision_function_holdout'></a><strong>decision_function_holdout: pd.Series, pd.DataFrame or None</strong><br><div markdown class='param'>Confidence scores on the holdout set.</p>
+<p>Output of shape=(n_samples,) or shape=(n_samples, n_classes)
+depending on the task.</div><a id='linearsvm-predict_train'></a><strong>predict_train: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Class predictions on the training set.</p>
+<p>Output of shape=(n_samples,) or shape=(n_samples, n_targets)
+for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div><a id='linearsvm-predict_test'></a><strong>predict_test: pd.Series or pd.DataFrame</strong><br><div markdown class='param'>Class predictions on the test set.</p>
+<p>Output of shape=(n_samples,) or shape=(n_samples, n_targets)
+for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div><a id='linearsvm-predict_holdout'></a><strong>predict_holdout: pd.Series, pd.DataFrame or None</strong><br><div markdown class='param'>Class predictions on the holdout set.</p>
+<p>Output of shape=(n_samples,) or shape=(n_samples, n_targets)
+for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div></td></tr></p>
 </table>
 <p><br><br></p>
 <h2 id="methods">Methods</h2>
 <p>The <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#available-plots">plots</a> and <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-methods">prediction methods</a> can be called directly
 from the model. The remaining utility methods can be found hereunder.</p>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-clear">clear</a></td><td>Clear attributes from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-delete">delete</a></td><td>Delete the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-delete">delete</a></td><td>Delete the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#linearsvm-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='linearsvm-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L871>[source]</a></span></div>Apply a bootstrap algorithm.</p>
+<p><a id='linearsvm-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L906>[source]</a></span></div>Apply a bootstrap algorithm.</p>
 <p>Take bootstrapped samples from the training set and test them
 on the test set to get a distribution of the model's results.</p>
 <table class="table_params">
@@ -3343,7 +3355,7 @@ Whether to start a new run or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1733>[source]</a></span></div>Calibrate the model.</p>
+<p><a id='linearsvm-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1827>[source]</a></span></div>Calibrate the model.</p>
 <p>Applies probability calibration on the model. The estimator
 is trained via cross-validation on a subset of the training
 data, using the rest to fit the calibrator. The new classifier
@@ -3360,20 +3372,22 @@ another, independent set for testing.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1767>[source]</a></span></div>Clear attributes from the model.</p>
-<p>Reset the model attributes to their initial state, deleting
+<p><a id='linearsvm-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1861>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
+<p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
-memory before saving the instance. The cleared attributes are:</p>
+memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
+affected attributes are:</p>
 <ul>
-<li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">In-training validation</a> scores.</li>
-<li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">Metric scores</a></li>
-<li><a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-attributes">Prediction attributes</a></li>
+<li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">In-training validation</a> scores</li>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">Shap values</a></li>
 <li><a class="autorefs autorefs-internal" href="#linearsvm-create_app">App instance</a></li>
 <li><a class="autorefs autorefs-internal" href="#linearsvm-create_dashboard">Dashboard instance</a></li>
+<li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-attributes">prediction attributes</a></li>
+<li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">metric scores</a></li>
+<li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='linearsvm-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1790>[source]</a></span></div>Create an interactive app to test model predictions.</p>
+<p><a id='linearsvm-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1891>[source]</a></span></div>Create an interactive app to test model predictions.</p>
 <p>Demo your machine learning model with a friendly web interface.
 This app launches directly in the notebook or on an external
 browser page. The created <a href="https://gradio.app/docs/#interface">Interface</a> instance can be accessed
@@ -3385,7 +3399,7 @@ or the <a href="https://gradio.app/docs/#launch-header">Interface.launch</a> met
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1833>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
+<p><a id='linearsvm-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1934>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
 <p>ATOM uses the <a href="https://github.com/oegedijk/explainerdashboard">explainerdashboard</a>
 package to provide a quick and easy way to analyze and explain
 the predictions and workings of the model. The dashboard allows
@@ -3415,7 +3429,7 @@ instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1927>[source]</a></span></div>Evaluate the model using cross-validation.</p>
+<p><a id='linearsvm-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2028>[source]</a></span></div>Evaluate the model using cross-validation.</p>
 <p>This method cross-validates the whole pipeline on the complete
 dataset. Use it to assess the robustness of the solution's
 performance.</p>
@@ -3429,13 +3443,13 @@ Overview of the results.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1984>[source]</a></span></div>Delete the model.</p>
+<p><a id='linearsvm-delete'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>delete</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2085>[source]</a></span></div>Delete the model.</p>
 <p>If it's the last model in atom, the metric is reset. Use this
 method to drop unwanted models from the pipeline or to free
 some memory before saving. The model is not removed from any
 active mlflow experiment.</p>
 <p><br><br></p>
-<p><a id='linearsvm-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1996>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
+<p><a id='linearsvm-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2097>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metrics to calculate. If None, a selection of the most
@@ -3458,7 +3472,7 @@ Scores of the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2084>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
+<p><a id='linearsvm-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2185>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
 <p>The returned pipeline is already fitted on the training set.
 Note that, if the model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
 the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to the pipeline.</p>
@@ -3493,7 +3507,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L766>[source]</a></span></div>Fit and validate the model.</p>
+<p><a id='linearsvm-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L801>[source]</a></span></div>Fit and validate the model.</p>
 <p>The estimator is fitted using the best hyperparameters found
 during hyperparameter tuning. Afterwards, the estimator is
 evaluated on the test set. Only use this method to re-fit the
@@ -3508,7 +3522,7 @@ is used.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2131>[source]</a></span></div>Train the estimator on the complete dataset.</p>
+<p><a id='linearsvm-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2232>[source]</a></span></div>Train the estimator on the complete dataset.</p>
 <p>In some cases it might be desirable to use all available data
 to train a final model. Note that doing this means that the
 estimator can no longer be evaluated on the test set. The newly
@@ -3531,7 +3545,7 @@ on any set.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L488>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
+<p><a id='linearsvm-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L523>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
 <p>Search for the best combination of hyperparameters. The function
 to optimize is evaluated either with a K-fold cross-validation
 on the training set or using a random train and validation split
@@ -3544,7 +3558,7 @@ Whether to start a new study or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2172>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='linearsvm-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2273>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement a <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -3573,14 +3587,27 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2230>[source]</a></span></div>Save the estimator to a pickle file.</p>
+<p><a id='linearsvm-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2370>[source]</a></span></div>Save the estimator to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_estimator-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='linearsvm-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2248>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='linearsvm-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="Staging")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2330>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
+<p>This method is only available when model <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">tracking</a> is
+enabled using one of the following URI schemes: databricks,
+http, https, postgresql, mysql, sqlite, mssql.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='register-name'></a><strong>name: str or None, default=None</strong><br><div markdown class='param'>
+Name for the registered model. If None, the model's full name
+is used.</p>
+<p></div><a id='register-stage'></a><strong>stage: str, default="staging"</strong><br><div markdown class='param'>
+New desired stage for the model.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='linearsvm-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2388>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be

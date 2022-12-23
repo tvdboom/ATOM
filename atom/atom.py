@@ -7,6 +7,7 @@ Description: Module containing the ATOM class.
 
 """
 
+from collections import defaultdict
 from platform import machine, platform, python_build, python_version
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -276,31 +277,26 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def classes(self) -> pd.DataFrame:
         """Distribution of target classes per data set."""
         if self.goal.startswith("class"):
-            # Mapped class values given a target column
-            values = lambda col: self.mapping.get(col, np.unique(self.dataset[col]))
+            index = []
+            data = defaultdict(list)
 
-            # Number of occurrences of a class given a column and data set
-            counts = lambda ds, c, i: getattr(self, ds)[c].value_counts(dropna=False)[i]
+            for col in lst(self.target):
+                for ds in ("dataset", "train", "test"):
+                    values, counts = np.unique(getattr(self, ds)[col], return_counts=True)
+                    data[ds].extend(list(counts))
+                index.extend([(col, i) for i in values])
 
-            df = pd.DataFrame(
-                data={
-                    ds: [counts(ds, c, i) for c in lst(self.target) for i in values(c)]
-                    for ds in ("dataset", "train", "test")
-                },
-                index=pd.MultiIndex.from_tuples(
-                    [(col, cls) for col in lst(self.target) for cls in values(col)]
-                ),
-            )
+            df = pd.DataFrame(data, index=pd.MultiIndex.from_tuples(index))
 
-            # Non-multioutput has single level index for simplicity
+            # Non-multioutput has single level index (for simplicity)
             if not self._is_multioutput:
                 df.index = df.index.droplevel(0)
 
             return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
-    def n_classes(self) -> int:
-        """Number of classes in the target column."""
+    def n_classes(self) -> Union[int, pd.Series]:
+        """Number of classes in the target column(s)."""
         if self.goal.startswith("class"):
             return self.y.nunique(dropna=False)
 
@@ -950,6 +946,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             self._branches.insert(0, "og", Branch(self, "og", parent=self.branch))
 
         custom_transform(transformer, self.branch)
+
+        # Clear cached holdout
+        self.branch.__dict__.pop("holdout", None)
 
         # Add the estimator to the pipeline
         self.branch.pipeline = pd.concat(

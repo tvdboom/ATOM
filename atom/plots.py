@@ -3832,12 +3832,12 @@ class PredictionPlot(BasePlot):
 
     """
 
-    @available_if(has_task("binary"))
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
         models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
         n_bins: INT = 10,
+        target: Union[INT, str] = 0,
         *,
         title: Optional[Union[str, dict]] = None,
         legend: Optional[Union[str, dict]] = "upper left",
@@ -3873,6 +3873,9 @@ class PredictionPlot(BasePlot):
 
         n_bins: int, default=10
             Number of bins used for calibration. Minimum of 5 required.
+
+        target: int, str or sequence, default=0
+            Target column(s) to look at. Only for [multilabel][] tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3932,6 +3935,12 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_calibration.html
 
         """
+        if not any(self.task.startswith(task) for task in ("binary", "multilabel")):
+            raise PermissionError(
+                "The plot_calibration method is only available for binary "
+                f"and multilabel classification tasks, got {self.task}."
+            )
+
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models, max_one=False)
 

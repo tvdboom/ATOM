@@ -15,16 +15,21 @@ from typing import Any, List, Optional, Tuple, Union
 import mlflow
 import pandas as pd
 from joblib.memory import Memory
+from sklearn.base import clone
+from sklearn.multioutput import (
+    ClassifierChain, MultiOutputClassifier, MultiOutputRegressor,
+    RegressorChain,
+)
 from typeguard import typechecked
-from sklearn.multioutput import ClassifierChain, RegressorChain, MultiOutputRegressor, MultiOutputClassifier
+
 from atom.basemodel import BaseModel
 from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, CustomDict, Model, check_is_fitted,
-    composed, crash, divide, flt, get_best_score, get_pl_name, get_versions,
-    lst, method_to_log, Predictor
+    DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, CustomDict, Model, Predictor,
+    check_is_fitted, composed, crash, divide, flt, get_best_score, get_pl_name,
+    get_versions, lst, method_to_log,
 )
 
 
@@ -47,7 +52,7 @@ class BaseRunner:
     )
 
     def __init__(self):
-        self.multioutput = "multioutput"
+        self._multioutput = "auto"
 
     def __getstate__(self) -> dict:
         # Store an extra attribute with the package versions
@@ -217,42 +222,45 @@ class BaseRunner:
     def multioutput(self) -> Optional[Predictor]:
         """Meta-estimator for [multioutput tasks][].
 
-        This multioutput estimator is only used when the model has no
-        native support for the current task.
+        This estimator is only used when the model has no native
+        support for multioutput tasks. Use the `@setter` to set any
+        other meta-estimator (the underlying estimator should be the
+        first parameter in the constructor) or set equal to None to
+        avoid this wrapper.
 
         """
-        return self._multioutput
+        if self._multioutput == "auto":
+            if self.task.startswith("multilabel"):
+                if self.goal.startswith("class"):
+                    return ClassifierChain
+                else:
+                    return RegressorChain
+            else:
+                if self.goal.startswith("class"):
+                    return MultiOutputClassifier
+                else:
+                    return MultiOutputRegressor
+        else:
+            return self._multioutput
 
     @multioutput.setter
     @typechecked
     def multioutput(self, value: Optional[Union[str, Predictor]]):
-        """Meta-estimator for [multioutput tasks][].
-
-        This estimator is only used when the model has no native
-        support for the current multioutput task. Set to None to
-        avoid this wrapper. Use the `@setter` to set any other
-        meta-estimator (the underlying estimator should be the first
-        parameter in the constructor).
-
-        """
-        if isinstance(value, str):
-            if value.lower().startswith("multioutput"):
-                if self.goal.startswith("class"):
-                    self._multioutput = MultiOutputClassifier
-                else:
-                    self._multioutput = MultiOutputRegressor
-            elif value.lower().endswith("chain"):
-                if self.goal.startswith("class"):
-                    self._multioutput = ClassifierChain
-                else:
-                    self._multioutput = RegressorChain
-            else:
-                raise ValueError(
-                    "Invalid value for the multioutput meta-estimator."
-                    "Choose from: multioutput or chain."
-                )
-        else:
+        """Assign a new multioutput meta-estimator."""
+        if value is None:
             self._multioutput = value
+        elif isinstance(value, str):
+            if value.lower() != "auto":
+                raise ValueError(
+                    "Invalid value for the multioutput attribute. Use 'auto' "
+                    "for the default meta-estimator, None to ignore it, or "
+                    "provide a custom meta-estimator class or instance."
+                )
+            self._multioutput = "auto"
+        elif callable(value):
+            self._multioutput = value
+        else:
+            self._multioutput = clone(value)
 
     @property
     def models(self) -> Union[str, List[str]]:
@@ -788,18 +796,20 @@ class BaseRunner:
 
     @composed(crash, method_to_log)
     def clear(self):
-        """Clear attributes from all models.
+        """Reset attributes and clear cache from all models.
 
-        Reset all model attributes to their initial state, deleting
+        Reset certain model attributes to their initial state, deleting
         potentially large data arrays. Use this method to free some
-        memory before [saving][self-save] the instance. The cleared
-        attributes per model are:
+        memory before [saving][self-save] the instance. The affected
+        attributes are:
 
-        - [Prediction attributes][]
-        - [Metric scores][metric]
+        - [In-training validation][] scores
         - [Shap values][shap]
         - [App instance][adaboost-create_app]
         - [Dashboard instance][adaboost-create_dashboard]
+        - Cached [prediction attributes][]
+        - Cached [metric scores][metric]
+        - Cached [holdout data sets][data-sets]
 
         """
         for model in self._models.values():

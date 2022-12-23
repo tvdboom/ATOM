@@ -338,7 +338,7 @@ class BaseTransformer:
                         raise ValueError(
                             "X and y don't have the same number of rows,"
                             f" got len(X)={len(X)} and len(y)={len(y)}."
-                        )
+                        ) from None
 
                 y = to_pandas(
                     data=y,
@@ -368,7 +368,7 @@ class BaseTransformer:
 
         return X, y
 
-    def _set_index(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _set_index(self, df: pd.DataFrame, y: Optional[PANDAS_TYPES]) -> pd.DataFrame:
         """Assign an index to the dataframe.
 
         Parameters
@@ -376,14 +376,15 @@ class BaseTransformer:
         df: pd.DataFrame
             Dataset.
 
+        y: pd.Series or pd.DataFrame
+            Target column(s).
+
         Returns
         -------
         pd.DataFrame
             Dataset with updated indices.
 
         """
-        target = df.columns[-1]
-
         if self.index is True:  # True gets caught by isinstance(int)
             return df
         elif self.index is False:
@@ -405,10 +406,10 @@ class BaseTransformer:
                     f"Column {self.index} not found in the dataset."
                 )
 
-        if df.index.name == target:
+        if y is not None and df.index.name in (c.name for c in get_cols(y)):
             raise ValueError(
                 "Invalid value for the index parameter. The index column "
-                f"can not be the same as the target column, got {target}."
+                f"can not be the same as a target column, got {df.index.name}."
             )
 
         return df
@@ -604,7 +605,7 @@ class BaseTransformer:
                     shuffle=self.shuffle,
                     stratify=self._get_stratify_columns(data),
                 )
-                holdout = self._set_index(holdout)
+                holdout = self._set_index(holdout, y)
             else:
                 holdout = None
 
@@ -615,7 +616,7 @@ class BaseTransformer:
                 shuffle=self.shuffle,
                 stratify=self._get_stratify_columns(data),
             )
-            data = self._set_index(pd.concat([train, test]))
+            data = self._set_index(pd.concat([train, test]), y)
 
             # [number of target columns, train indices, test indices]
             idx = [len(get_cols(y)), data.index[:-test_size], data.index[-test_size:]]
@@ -704,9 +705,9 @@ class BaseTransformer:
                         "The holdout set does not have the "
                         "same columns as the train and test set."
                     )
-                holdout = self._set_index(holdout)
+                holdout = self._set_index(holdout, y_train)
 
-            data = self._set_index(pd.concat([train, test]))
+            data = self._set_index(pd.concat([train, test]), y_train)
 
             # [number of target columns, train indices, test indices]
             idx = [
@@ -825,8 +826,8 @@ class BaseTransformer:
         save_data: bool, default=True
             Whether to save the dataset with the instance. This
             parameter is ignored if the method is not called from
-            atom. If False, remember to add the data to [ATOMLoader][]
-            when loading the file.
+            atom. If False, add the data to [ATOMLoader][] when
+            loading the file.
 
         """
         if not save_data and hasattr(self, "dataset"):
@@ -835,13 +836,14 @@ class BaseTransformer:
             for key, value in self._branches.items():
                 data[key] = deepcopy(value._data)
                 value._data = None
+                value.__dict__.pop("holdout", None)  # Clear cached holdout
 
         if filename.endswith("auto"):
             filename = filename.replace("auto", self.__class__.__name__)
 
         with open(filename, "wb") as f:
             pickle.settings["recurse"] = True
-            pickle.dump(self, f)  # Dill replaces pickle to dump lambdas
+            pickle.dump(self, f)
 
         # Restore the data to the attributes
         if not save_data and hasattr(self, "dataset"):

@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.0/API/nlp/textcleaner/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/nlp/textcleaner/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
@@ -3298,13 +3298,17 @@ the document index from which the occurrence was dropped.</p>
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='fit-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
-Target column corresponding to X.</p>
+<p></div><a id='fit-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Target column(s) corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Array with shape=(n_samples,) to use as target.</li>
+<li>If sequence: Target column with shape=(n_samples,) or
+  sequence of column names or positions for multioutput
+  tasks.</li>
+<li>If dataframe-like: Target columns with shape=(n_samples,
+  n_targets) for multioutput tasks.</li>
 </ul>
 <p></div><a id='fit-\*\*fit_params'></a><strong>**fit_params</strong><br><div markdown class='param'>
 Additional keyword arguments for the fit method.</p>
@@ -3313,18 +3317,22 @@ Estimator instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='textcleaner-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L107>[source]</a></span></div>Fit to data, then transform it.</p>
+<p><a id='textcleaner-fit_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit_transform</strong>(X=None, y=None, **fit_params)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L110>[source]</a></span></div>Fit to data, then transform it.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='fit_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='fit_transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
-Target column corresponding to X.</p>
+<p></div><a id='fit_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Target column(s) corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Array with shape=(n_samples,) to use as target.</li>
+<li>If sequence: Target column with shape=(n_samples,) or
+  sequence of column names or positions for multioutput
+  tasks.</li>
+<li>If dataframe-like: Target columns with shape=(n_samples,
+  n_targets) for multioutput tasks.</li>
 </ul>
 <p></div><a id='fit_transform-\*\*fit_params'></a><strong>**fit_params</strong><br><div markdown class='param'>
 Additional keyword arguments for the fit method.</p>
@@ -3345,18 +3353,22 @@ Parameter names mapped to their values.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='textcleaner-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L145>[source]</a></span></div>Does nothing.</p>
+<p><a id='textcleaner-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L151>[source]</a></span></div>Does nothing.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='inverse_transform-X'></a><strong>X: dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Feature set with shape=(n_samples, n_features). If None,
 X is ignored.</p>
-<p></div><a id='inverse_transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
-Target column corresponding to X.</p>
+<p></div><a id='inverse_transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
+Target column(s) corresponding to X.</p>
 <ul>
 <li>If None: y is ignored.</li>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Array with shape=(n_samples,) to use as target.</li>
+<li>If sequence: Target column with shape=(n_samples,) or
+  sequence of column names or positions for multioutput
+  tasks.</li>
+<li>If dataframe-like: Target columns with shape=(n_samples,
+  n_targets) for multioutput tasks.</li>
 </ul>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='inverse_transform-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
 Transformed feature set. Only returned if provided.</p>
@@ -3365,7 +3377,7 @@ Transformed target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='textcleaner-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L731>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='textcleaner-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L785>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3377,15 +3389,15 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='textcleaner-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L763>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='textcleaner-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L817>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
 <p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
 Whether to save the dataset with the instance. This
 parameter is ignored if the method is not called from
-atom. If False, remember to add the data to <a class="autorefs autorefs-internal" href="../../ATOM/atomloader/#atomloader">ATOMLoader</a>
-when loading the file.
+atom. If False, add the data to <a class="autorefs autorefs-internal" href="../../ATOM/atomloader/#atomloader">ATOMLoader</a> when
+loading the file.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
@@ -3404,7 +3416,7 @@ Estimator instance.
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.</p>
-<p></div><a id='transform-y'></a><strong>y: int, str, dict, sequence or None, default=None</strong><br><div markdown class='param'>
+<p></div><a id='transform-y'></a><strong>y: int, str, sequence, dataframe-like or None, default=None</strong><br><div markdown class='param'>
 Does nothing. Implemented for continuity of the API.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='transform-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
 Transformed corpus.

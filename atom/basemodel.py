@@ -10,6 +10,7 @@ Description: Module containing the BaseModel class.
 import os
 from copy import deepcopy
 from datetime import datetime as dt
+from functools import cached_property, lru_cache
 from importlib import import_module
 from typing import Any, List, Optional, Tuple, Union
 from unittest.mock import patch
@@ -32,7 +33,6 @@ from sklearn.model_selection import (
 )
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.utils import resample
-from sklearn.base import clone
 from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 
@@ -43,9 +43,9 @@ from atom.utils import (
     DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
     CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
     TrialsCallback, composed, crash, custom_transform, estimator_has_attr, flt,
-    get_best_score, get_custom_scorer, get_feature_importance, has_task, it,
-    lst, merge, method_to_log, n_cols, rnd, score, sign, time_to_str,
-    to_pandas, variable_return,
+    get_cols, get_custom_scorer, get_feature_importance, has_task, it, lst,
+    merge, method_to_log, rnd, score, sign, time_to_str, to_pandas,
+    variable_return,
 )
 
 
@@ -62,6 +62,21 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
     """
 
+    _prediction_attributes = (
+        "decision_function_train",
+        "decision_function_test",
+        "decision_function_holdout",
+        "predict_train",
+        "predict_test",
+        "predict_holdout",
+        "predict_log_proba_train",
+        "predict_log_proba_test",
+        "predict_log_proba_holdout",
+        "predict_proba_train",
+        "predict_proba_test",
+        "predict_proba_holdout",
+    )
+
     def __init__(self, *args, fast_init=False):
         super().__init__()
 
@@ -76,8 +91,6 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self._group = self.name  # sh and ts models belong to the same group
 
         self._evals = CustomDict()
-        self._pred = [None] * 12
-        self._scores = CustomDict()
         self._shap = ShapExplanation(self)
 
         # Parameter attributes
@@ -104,13 +117,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 self.scaler = Scaler().fit(self.X_train)
 
     def __repr__(self) -> str:
-        out_1 = f"{self._fullname}"
-        out_2 = f" --> Estimator: {self.estimator.__class__.__name__}"
-        out_3 = [
-            f"{m.name}: {rnd(get_best_score(self, i))}"
-            for i, m in enumerate(self.T._metric.values())
-        ]
-        return f"{out_1}\n{out_2}\n --> Evaluation: {'   '.join(out_3)}"
+        return self.estimator.__repr__()
 
     def __getattr__(self, item: str) -> Any:
         if item in self.__dict__.get("branch")._get_attrs():
@@ -288,10 +295,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 return self.T.multioutput(self._est_class(**params), **kwargs)
             else:
                 # Assign estimator to first parameter of meta-estimator
-                est = clone(self.T.multioutput)
-                return est.set_params(
-                    **{list(sign(est.__init__))[0]: self._est_class(**params)}
-                )
+                key = list(sign(self.T.multioutput.__init__))[0]
+                return self.T.multioutput.set_params(**{key: self._est_class(**params)})
         else:
             return self._est_class(**params)
 
@@ -341,13 +346,23 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 self._evals = CustomDict({f"{m}_train": [], f"{m}_test": []})
 
             # Loop over first parameter in estimator
-            for step in range(steps := estimator.get_params()[self.has_validation]):
+            try:
+                steps = estimator.get_params()[self.has_validation]
+            except KeyError:
+                # For meta-estimators like multioutput
+                steps = estimator.get_params()[f"estimator__{self.has_validation}"]
+
+            for step in range(steps):
                 kwargs = {}
                 if self.T.goal.startswith("class"):
-                    if n_cols(self.y_train) == 1:
-                        kwargs["classes"] = np.unique(self.y_train)
+                    if self.T._is_multioutput:
+                        if self.T.multioutput is None:
+                            # Native multioutput models (e.g., MLP, Ridge, ...)
+                            kwargs["classes"] = list(range(self.y.shape[1]))
+                        else:
+                            kwargs["classes"] = [np.unique(y) for y in get_cols(self.y)]
                     else:
-                        kwargs["classes"] = list(range(self.y_train.shape[1]))
+                        kwargs["classes"] = np.unique(self.y)
 
                 estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
@@ -409,19 +424,18 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         return out
 
+    @lru_cache
     def _get_score(
         self,
         scorer: Scorer,
         dataset: str,
         threshold: FLOAT = 0.5,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        sample_weight: Optional[tuple] = None,
     ) -> FLOAT:
         """Calculate a metric score using the prediction attributes.
 
-        Instead of using the scorer to make new predictions and
-        recalculate the same metrics, use the model's prediction
-        attributes and store calculated metrics in the `_scores`
-        attribute. Return directly if already calculated.
+        The method results are cached to avoid recalculation of the
+        same metrics. The cache can be cleared using the clear method.
 
         Parameters
         ----------
@@ -441,7 +455,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             - The model has a `predict_proba` method.
             - The metric evaluates predicted target values.
 
-        sample_weight: sequence or None, default=None
+        sample_weight: tuple or None, default=None
             Sample weights corresponding to y in `dataset`.
 
         Returns
@@ -453,57 +467,58 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         if dataset == "holdout" and self.T.holdout is None:
             raise ValueError("No holdout data set available.")
 
-        # Convert to tuple for hashing
-        if sample_weight is not None:
-            sample_weight = tuple(sample_weight)
+        has_pred_proba = hasattr(self.estimator, "predict_proba")
+        has_dec_func = hasattr(self.estimator, "decision_function")
 
-        # The _scores attr contains the result per combination of parameters
-        key = hash((scorer.name, dataset, threshold, sample_weight))
-        if key not in self._scores:
-            has_pred_proba = hasattr(self.estimator, "predict_proba")
-            has_dec_func = hasattr(self.estimator, "decision_function")
+        # Select method to use for predictions
+        attr = "predict"
+        if scorer.__class__.__name__ == "_ThresholdScorer":
+            if has_dec_func:
+                attr = "decision_function"
+            elif has_pred_proba:
+                attr = "predict_proba"
+        elif scorer.__class__.__name__ == "_ProbaScorer":
+            if has_pred_proba:
+                attr = "predict_proba"
+            elif has_dec_func:
+                attr = "decision_function"
+        elif self.T.task.startswith("bin") and has_pred_proba:
+            attr = "predict_proba"  # Needed to use threshold parameter
 
-            # Select method to use for predictions
-            attr = "predict"
-            if scorer.__class__.__name__ == "_ThresholdScorer":
-                if has_dec_func:
-                    attr = "decision_function"
-                elif has_pred_proba:
-                    attr = "predict_proba"
-            elif scorer.__class__.__name__ == "_ProbaScorer":
-                if has_pred_proba:
-                    attr = "predict_proba"
-                elif has_dec_func:
-                    attr = "decision_function"
-            elif self.T.task.startswith("bin") and has_pred_proba:
-                attr = "predict_proba"  # Needed to use threshold parameter
+        y_pred = getattr(self, f"{attr}_{dataset}")
+        if self.T.task.startswith("bin") and attr == "predict_proba":
+            y_pred = y_pred.iloc[:, 1]
 
-            y_pred = getattr(self, f"{attr}_{dataset}")
-            if self.T.task.startswith("bin") and attr == "predict_proba":
-                y_pred = y_pred.iloc[:, 1]
+            # Exclude metrics that use probability estimates (e.g. ap, auc)
+            if scorer.__class__.__name__ == "_PredictScorer":
+                y_pred = (y_pred > threshold).astype("int")
 
-                # Exclude metrics that use probability estimates (e.g. ap, auc)
-                if scorer.__class__.__name__ == "_PredictScorer":
-                    y_pred = (y_pred > threshold).astype("int")
+        kwargs = {}
+        if "sample_weight" in sign(scorer._score_func):
+            kwargs["sample_weight"] = sample_weight
 
-            kwargs = {}
-            if "sample_weight" in sign(scorer._score_func):
-                kwargs["sample_weight"] = sample_weight
-
-            score = scorer._score_func(
-                getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs, **kwargs
+        y_true = getattr(self, f"y_{dataset}")
+        try:  # Can fail for multilabel or multioutput
+            score = scorer._score_func(y_true, y_pred, **scorer._kwargs, **kwargs)
+        except ValueError:
+            # Get mean of scores over targets
+            score = np.mean(
+                [
+                    scorer._score_func(y_true[c.name], c, **scorer._kwargs, **kwargs)
+                    for c in get_cols(y_pred)
+                ]
             )
 
-            self._scores[key] = rnd(scorer._sign * float(score))
+        result = rnd(scorer._sign * float(score))
 
-            if self._run:  # Log metric to mlflow run
-                MlflowClient().log_metric(
-                    run_id=self._run.info.run_id,
-                    key=f"{scorer.name}_{dataset}",
-                    value=it(self._scores[key]),
-                )
+        if self._run:  # Log metric to mlflow run
+            MlflowClient().log_metric(
+                run_id=self._run.info.run_id,
+                key=f"{scorer.name}_{dataset}",
+                value=it(result),
+            )
 
-        return self._scores[key]
+        return result
 
     @composed(crash, method_to_log, typechecked)
     def hyperparameter_tuning(self, n_trials: int, reset: bool = False):
@@ -1166,7 +1181,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     # Data Properties ============================================== >>
 
     @property
-    def pipeline(self):
+    def pipeline(self) -> pd.Series:
         """Transformers fitted on the data.
 
         Models that used [automated feature scaling][] have the scaler
@@ -1265,159 +1280,210 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         """
         if self.T._is_multioutput:
-            return self.target
+            return self.target  # When multioutput, target is list of str
         else:
             return self.mapping.get(self.target, list(np.unique(self.y)))
 
-    @property
+    @cached_property
     def decision_function_train(self) -> PANDAS_TYPES:
-        """Confidence scores on the training set."""
-        if self._pred[0] is None:
-            self._pred[0] = to_pandas(
-                data=self.estimator.decision_function(self.X_train),
-                index=self.X_train.index,
-                name="decision_function_train",
-                columns=self._assign_prediction_columns(),
-            )
+        """Confidence scores on the training set.
 
-        return self._pred[0]
+        Output of shape=(n_samples,) or shape=(n_samples, n_classes)
+        depending on the task.
 
-    @property
+        """
+        return to_pandas(
+            data=self.estimator.decision_function(self.X_train),
+            index=self.X_train.index,
+            name="decision_function_train",
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
     def decision_function_test(self) -> PANDAS_TYPES:
-        """Confidence scores on the test set."""
-        if self._pred[1] is None:
-            self._pred[1] = to_pandas(
-                data=self.estimator.decision_function(self.X_test),
-                index=self.X_test.index,
-                name="decision_function_test",
-                columns=self._assign_prediction_columns(),
-            )
+        """Confidence scores on the test set.
 
-        return self._pred[1]
+        Output of shape=(n_samples,) or shape=(n_samples, n_classes)
+        depending on the task.
 
-    @property
+        """
+        return to_pandas(
+            data=self.estimator.decision_function(self.X_test),
+            index=self.X_test.index,
+            name="decision_function_test",
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
     def decision_function_holdout(self) -> Optional[PANDAS_TYPES]:
-        """Confidence scores on the holdout set."""
-        if self.T.holdout is not None and self._pred[2] is None:
-            self._pred[2] = to_pandas(
+        """Confidence scores on the holdout set.
+
+        Output of shape=(n_samples,) or shape=(n_samples, n_classes)
+        depending on the task.
+
+        """
+        if self.T.holdout is not None:
+            return to_pandas(
                 data=self.estimator.decision_function(self.X_holdout),
                 index=self.X_holdout.index,
                 name="decision_function_holdout",
                 columns=self._assign_prediction_columns(),
             )
 
-        return self._pred[2]
-
-    @property
+    @cached_property
     def predict_train(self) -> PANDAS_TYPES:
-        """Class predictions on the training set."""
-        if self._pred[3] is None:
-            self._pred[3] = to_pandas(
-                data=self.estimator.predict(self.X_train),
-                index=self.X_train.index,
-                name="predict_train",
-                columns=self._assign_prediction_columns(),
-            )
+        """Class predictions on the training set.
 
-        return self._pred[3]
+        Output of shape=(n_samples,) or shape=(n_samples, n_targets)
+        for [multioutput tasks][].
 
-    @property
+        """
+        return to_pandas(
+            data=self.estimator.predict(self.X_train),
+            index=self.X_train.index,
+            name="predict_train",
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
     def predict_test(self) -> PANDAS_TYPES:
-        """Class predictions on the test set."""
-        if self._pred[4] is None:
-            self._pred[4] = to_pandas(
-                data=self.estimator.predict(self.X_test),
-                index=self.X_test.index,
-                name="predict_test",
-                columns=self._assign_prediction_columns(),
-            )
+        """Class predictions on the test set.
 
-        return self._pred[4]
+        Output of shape=(n_samples,) or shape=(n_samples, n_targets)
+        for [multioutput tasks][].
 
-    @property
+        """
+        return to_pandas(
+            data=self.estimator.predict(self.X_test),
+            index=self.X_test.index,
+            name="predict_test",
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
     def predict_holdout(self) -> Optional[PANDAS_TYPES]:
-        """Class predictions on the holdout set."""
-        if self.T.holdout is not None and self._pred[5] is None:
-            self._pred[5] = to_pandas(
+        """Class predictions on the holdout set.
+
+        Output of shape=(n_samples,) or shape=(n_samples, n_targets)
+        for [multioutput tasks][].
+
+        """
+        if self.T.holdout is not None:
+            return to_pandas(
                 data=self.estimator.predict(self.X_holdout),
                 index=self.X_holdout.index,
                 name="predict_holdout",
                 columns=self._assign_prediction_columns(),
             )
 
-        return self._pred[5]
-
-    @property
+    @cached_property
     def predict_log_proba_train(self) -> pd.DataFrame:
-        """Class log-probabilities predictions on the training set."""
-        if self._pred[6] is None:
-            self._pred[6] = pd.DataFrame(
-                data=self.estimator.predict_log_proba(self.X_train),
-                index=self.X_train.index,
-                columns=self._assign_prediction_columns(),
-            )
+        """Class log-probabilities predictions on the training set.
 
-        return self._pred[6]
+        Output of shape=(n_samples, n_classes).
 
-    @property
+        """
+        return pd.DataFrame(
+            data=self.estimator.predict_log_proba(self.X_train),
+            index=self.X_train.index,
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
     def predict_log_proba_test(self) -> pd.DataFrame:
-        """Class log-probabilities predictions on the test set."""
-        if self._pred[7] is None:
-            self._pred[7] = pd.DataFrame(
-                data=self.estimator.predict_log_proba(self.X_test),
-                index=self.X_test.index,
-                columns=self._assign_prediction_columns(),
-            )
+        """Class log-probabilities predictions on the test set.
 
-        return self._pred[7]
+        Output of shape=(n_samples, n_classes).
 
-    @property
+        """
+        return pd.DataFrame(
+            data=self.estimator.predict_log_proba(self.X_test),
+            index=self.X_test.index,
+            columns=self._assign_prediction_columns(),
+        )
+
+    @cached_property
     def predict_log_proba_holdout(self) -> Optional[pd.DataFrame]:
-        """Class log-probabilities predictions on the holdout set."""
-        if self.T.holdout is not None and self._pred[8] is None:
-            self._pred[8] = pd.DataFrame(
+        """Class log-probabilities predictions on the holdout set.
+
+        Output of shape=(n_samples, n_classes).
+
+        """
+        if self.T.holdout is not None:
+            return pd.DataFrame(
                 data=self.estimator.predict_log_proba(self.X_holdout),
                 index=self.X_holdout.index,
                 columns=self._assign_prediction_columns(),
             )
 
-        return self._pred[8]
-
-    @property
+    @cached_property
     def predict_proba_train(self) -> pd.DataFrame:
-        """Class probabilities predictions on the training set."""
-        if self._pred[9] is None:
-            self._pred[9] = pd.DataFrame(
-                data=self.estimator.predict_proba(self.X_train),
+        """Class probabilities predictions on the training set.
+
+        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
+        n_classes) with a multiindex format for [multioutput tasks][].
+
+        """
+        if (data := np.array(self.estimator.predict_proba(self.X_train))).ndim < 3:
+            return pd.DataFrame(
+                data=data,
                 index=self.X_train.index,
                 columns=self._assign_prediction_columns(),
             )
+        else:
+            return pd.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=pd.MultiIndex.from_tuples(
+                    [(col, i) for col in self.target for i in self.X_train.index]
+                ),
+                columns=np.unique(self.y),
+            )
 
-        return self._pred[9]
-
-    @property
+    @cached_property
     def predict_proba_test(self) -> pd.DataFrame:
-        """Class probabilities predictions on the test set."""
-        if self._pred[10] is None:
-            self._pred[10] = pd.DataFrame(
-                data=self.estimator.predict_proba(self.X_test),
+        """Class probabilities predictions on the test set.
+
+        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
+        n_classes) with a multiindex format for [multioutput tasks][].
+
+        """
+        if (data := np.array(self.estimator.predict_proba(self.X_test))).ndim < 3:
+            return pd.DataFrame(
+                data=data,
                 index=self.X_test.index,
                 columns=self._assign_prediction_columns(),
             )
+        else:
+            return pd.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=pd.MultiIndex.from_tuples(
+                    [(col, i) for col in self.target for i in self.X_test.index]
+                ),
+                columns=np.unique(self.y),
+            )
 
-        return self._pred[10]
-
-    @property
+    @cached_property
     def predict_proba_holdout(self) -> Optional[pd.DataFrame]:
-        """Class probabilities predictions on the holdout set."""
-        if self.T.holdout is not None and self._pred[11] is None:
-            self._pred[11] = pd.DataFrame(
-                data=self.estimator.predict_proba(self.X_holdout),
+        """Class probabilities predictions on the holdout set.
+
+        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
+        n_classes) with a multiindex format for [multioutput tasks][].
+
+        """
+        if (data := np.array(self.estimator.predict_proba(self.X_holdout))).ndim < 3:
+            return pd.DataFrame(
+                data=data,
                 index=self.X_holdout.index,
                 columns=self._assign_prediction_columns(),
             )
-
-        return self._pred[11]
+        else:
+            return pd.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=pd.MultiIndex.from_tuples(
+                    [(col, i) for col in self.target for i in self.X_holdout.index]
+                ),
+                columns=np.unique(self.y),
+            )
 
     # Prediction methods =========================================== >>
 
@@ -1442,13 +1508,16 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Index names or positions of rows in the dataset, or new
             feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, pd.DataFrame or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's scorers,
@@ -1478,12 +1547,12 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         try:
             # Raises ValueError if X can't select indices
             rows = self.T._get_rows(X, branch=self.branch)
-        except TypeError:
+        except (TypeError, IndexError, KeyError):
             rows = None
 
             # When there is a pipeline, apply transformations first
             X, y = self.T._prepare_input(X, y)
-            X = self.T._set_index(X)
+            X = self.T._set_index(X, y)
             if y is not None:
                 y.index = X.index
 
@@ -1502,13 +1571,21 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 )
                 return predictions.loc[rows]
             else:
-                return to_pandas(
-                    data=getattr(self.estimator, method)(X),
-                    index=X.index,
-                    name=method,
-                    columns=self._assign_prediction_columns(),
-                )
-
+                if (data := np.array(getattr(self.estimator, method)(X))).ndim < 3:
+                    return to_pandas(
+                        data=data,
+                        index=X.index,
+                        name=method,
+                        columns=self._assign_prediction_columns(),
+                    )
+                else:
+                    return pd.DataFrame(
+                        data=data.reshape(-1, data.shape[2]),
+                        index=pd.MultiIndex.from_tuples(
+                            [(col, i) for col in self.target for i in X.index]
+                        ),
+                        columns=np.unique(self.y),
+                    )
         else:
             if metric is None:
                 metric = self.T._metric[0]
@@ -1700,11 +1777,15 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Names or indices of rows in the dataset, or new feature
             set with shape=(n_samples, n_features).
 
-        y: int, str or sequence
+        y: int, str, dict, sequence, pd.DataFrame or None, default=None
             Target column corresponding to X.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         metric: str, func, scorer or None, default=None
             Metric to calculate. Choose from any of sklearn's scorers,
@@ -1779,26 +1860,33 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
     @composed(crash, method_to_log)
     def clear(self):
-        """Clear attributes from the model.
+        """Reset attributes and clear cache from the model.
 
-        Reset the model attributes to their initial state, deleting
+        Reset certain model attributes to their initial state, deleting
         potentially large data arrays. Use this method to free some
-        memory before saving the instance. The cleared attributes are:
+        memory before [saving][atomclassifier-save] the instance. The
+        affected attributes are:
 
-        - [In-training validation][] scores.
-        - [Metric scores][metric]
-        - [Prediction attributes][]
+        - [In-training validation][] scores
         - [Shap values][shap]
         - [App instance][self-create_app]
         - [Dashboard instance][self-create_dashboard]
+        - Cached [prediction attributes][]
+        - Cached [metric scores][metric]
+        - Cached [holdout data sets][data-sets]
 
         """
+        # Reset attributes
         self._evals = CustomDict()
-        self._scores = CustomDict()
-        self._pred = [None] * 12
         self._shap = ShapExplanation(self)
         self.app = None
         self.dashboard = None
+
+        # Clear caching
+        for prop in self._prediction_attributes:
+            self.__dict__.pop(prop, None)
+        self._get_score.cache_clear()
+        self.branch.__dict__.pop("holdout", None)
 
     @composed(crash, method_to_log)
     def create_app(self, **kwargs):
@@ -2089,7 +2177,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 scorer=scorer,
                 dataset=dataset.lower(),
                 threshold=threshold,
-                sample_weight=sample_weight,
+                sample_weight=None if sample_weight is None else tuple(sample_weight),
             )
 
         return scores
@@ -2244,7 +2332,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """Register the model in [mlflow's model registry][registry].
 
         This method is only available when model [tracking][] is
-        enabled.
+        enabled using one of the following URI schemes: databricks,
+        http, https, postgresql, mysql, sqlite, mssql.
 
         Parameters
         ----------

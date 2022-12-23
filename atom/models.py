@@ -143,14 +143,19 @@ class CustomModel(BaseModel):
     """Custom model. Estimator provided by user."""
 
     def __init__(self, *args, **kwargs):
-        self.est = kwargs["estimator"]  # Estimator provided by the user
+        if callable(est := kwargs["estimator"]):  # Estimator provided by the user
+            self._est = est
+            self._params = {}
+        else:
+            self._est = est.__class__
+            self._params = est.get_params()  # Store the provided parameters
 
         # If no acronym is provided, use capital letters in the class' name
-        self.acronym = getattr(self.est, "acronym", create_acronym(self._fullname))
+        self.acronym = getattr(self._est, "acronym", create_acronym(self._fullname))
 
-        self.needs_scaling = getattr(self.est, "needs_scaling", False)
-        self.native_multioutput = getattr(self.est, "native_multioutput", False)
-        self.has_validation = getattr(self.est, "has_validation", None)
+        self.needs_scaling = getattr(self._est, "needs_scaling", False)
+        self.native_multioutput = getattr(self._est, "native_multioutput", False)
+        self.has_validation = getattr(self._est, "has_validation", None)
         super().__init__(*args)
 
     @property
@@ -161,10 +166,7 @@ class CustomModel(BaseModel):
     @property
     def _est_class(self):
         """Return the estimator's class."""
-        if callable(self.est):
-            return self.est
-        else:
-            return self.est.__class__
+        return self._est
 
     def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -175,10 +177,7 @@ class CustomModel(BaseModel):
             Estimator instance.
 
         """
-        if callable(self.est):
-            return super()._get_est(**params)
-        else:
-            return self.est.set_params(**params)
+        return super()._get_est(**{**self._params, **params})
 
 
 class AdaBoost(BaseModel):

@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.0/API/ATOM/atommodel/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/ATOM/atommodel/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
@@ -3087,7 +3087,7 @@
 
 <h1 id="atommodel">ATOMModel</h1>
 <hr />
-<p><a id='ATOMModel'></a><div class='sign'><em>function</em> atom.api.<strong style='color:#008AB8'>ATOMModel</strong>(estimator, acronym=None, needs_scaling=False, has_validation=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L168>[source]</a></span></div>Convert an estimator to a model that can be ingested by atom.</p>
+<p><a id='ATOMModel'></a><div class='sign'><em>function</em> atom.api.<strong style='color:#008AB8'>ATOMModel</strong>(estimator, acronym=None, needs_scaling=False, native_multioutput=False, has_validation=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L168>[source]</a></span></div>Convert an estimator to a model that can be ingested by atom.</p>
 <p>This function adds the relevant attributes to the estimator so
 that they can be used by atom. Note that only estimators that follow
 <a href="https://scikit-learn.org/stable/developers/develop.html">sklearn's API</a> are compatible.</p>
@@ -3100,7 +3100,10 @@ Model's acronym. Used to call the model from atom. If None, the
 capital letters in the estimator's __name__ are used (only if
 two or more, else it uses the entire __name__).</p>
 <p></div><a id='atommodel-needs_scaling'></a><strong>needs_scaling: bool, default=False</strong><br><div markdown class='param'>
-Whether the model needs scaled features.</p>
+Whether the model should use <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>.</p>
+<p></div><a id='atommodel-native_multioutput'></a><strong>native_multioutput: bool, default=False</strong><br><div markdown class='param'>
+Whether the model has native support for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.
+If True, the model won't use the <code>multioutput</code> meta-estimator.</p>
 <p></div><a id='atommodel-has_validation'></a><strong>has_validation: str or None, default=None</strong><br><div markdown class='param'>
 Whether the model allows <a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">in-training validation</a>. If str,
 name of the estimator's parameter that states the number of

@@ -25,7 +25,7 @@ from atom.utils import check_is_fitted, check_scaling, rnd
 
 from .conftest import (
     X10_str, X_bin, X_class, X_idx, X_reg, y10, y10_str, y_bin, y_class, y_idx,
-    y_reg,
+    y_multiclass, y_reg,
 )
 
 
@@ -581,6 +581,14 @@ def test_prediction_decision_function_type(dataset):
     assert isinstance(getattr(atom.lr, f"decision_function_{dataset}"), pd.DataFrame)
 
 
+@pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
+def test_prediction_predict_proba_multioutput(dataset):
+    """Assert that the predict_proba predictions change for multioutput."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, holdout_size=0.1, random_state=1)
+    atom.run("LR")
+    assert isinstance(getattr(atom.lr, f"predict_proba_{dataset}").index, pd.MultiIndex)
+
+
 # Test prediction methods ========================================== >>
 
 def test_predictions_from_index():
@@ -679,9 +687,8 @@ def test_calibrate_clear():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     print(atom.tree.predict_log_proba_test)
-    assert atom.tree._pred[7] is not None
     atom.tree.calibrate()
-    assert atom.tree._pred[7] is None
+    assert "predict_log_proba_test" not in atom.tree.__dict__
 
 
 def test_calibrate_new_mlflow_run():
@@ -698,12 +705,10 @@ def test_clear():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
     atom.plot_shap_beeswarm(display=False)
-    assert atom.lr._pred[9] is not None
-    assert atom.lr._scores
+    assert "predict_proba_train" in atom.lr.__dict__
     assert not atom.lr._shap._shap_values.empty
     atom.clear()
-    assert atom.lr._pred == [None] * 12
-    assert not atom.lr._scores
+    assert "predict_proba_train" not in atom.lr.__dict__
     assert atom.lr._shap._shap_values.empty
 
 
@@ -875,9 +880,8 @@ def test_full_train_clear():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     print(atom.tree.predict_log_proba_test)
-    assert atom.tree._pred[7] is not None
     atom.tree.full_train()
-    assert atom.tree._pred[7] is None
+    assert "predict_log_proba_test" not in atom.tree.__dict__
 
 
 def test_full_train_new_mlflow_run():

@@ -14,13 +14,15 @@ import pandas as pd
 import pytest
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.multioutput import MultiOutputRegressor, RegressorChain
+
 from atom import ATOMClassifier, ATOMLoader, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
+
 from .conftest import (
-    X10, X10_str, X_bin, X_class, X_idx, X_reg, bin_test, bin_train, y10,
-    y_bin, y_class, y_idx, y_multiclass, y_reg, X_label, y_label, y_multireg
+    X10, X10_str, X_bin, X_class, X_idx, X_label, X_reg, bin_test, bin_train,
+    y10, y_bin, y_class, y_idx, y_label, y_multiclass, y_multireg, y_reg,
 )
 
 
@@ -199,20 +201,6 @@ def test_branch_deleter():
     assert list(atom._branches) == ["master"]
 
 
-def test_multioutput_str():
-    """Assert that the multioutput estimator can be set."""
-    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
-    atom.multioutput = "chain"
-    assert atom.multioutput.__name__ == "ClassifierChain"
-
-
-def test_multioutput_str_invalid():
-    """Assert that an error is raised when multioutput is invalid."""
-    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
-    with pytest.raises(ValueError, match=".*multioutput meta-estimator.*"):
-        atom.multioutput = "invalid"
-
-
 def test_multioutput_None():
     """Assert that the multioutput estimator is ignored when None."""
     atom = ATOMClassifier(X_label, y=y_label, random_state=1)
@@ -221,9 +209,7 @@ def test_multioutput_None():
     assert atom.mlp.estimator.__class__.__name__ == "MLPClassifier"
 
 
-@pytest.mark.parametrize(
-    "multioutput", ["multioutput", "chain", MultiOutputRegressor, RegressorChain(None)]
-)
+@pytest.mark.parametrize("multioutput", [MultiOutputRegressor, RegressorChain(None)])
 def test_multioutput_regression(multioutput):
     """Assert that the multioutput estimator works for regression tasks."""
     atom = ATOMRegressor(X_reg, y=y_multireg, random_state=1)
@@ -591,12 +577,10 @@ def test_clear():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"])
     atom.lgb.plot_shap_beeswarm(display=False)
-    assert atom.lr._pred[9] is not None
-    assert atom.lr._scores
+    assert "predict_proba_train" in atom.lr.__dict__
     assert not atom.lgb._shap._shap_values.empty
     atom.clear()
-    assert atom.lr._pred == [None] * 12
-    assert not atom.lr._scores
+    assert "predict_proba_train" not in atom.lr.__dict__
     assert atom.lgb._shap._shap_values.empty
 
 

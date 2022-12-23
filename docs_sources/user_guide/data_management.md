@@ -75,8 +75,8 @@ To avoid this, specify the `index` parameter. If the dataset has an
   their index.
 
 !!! warning
-    Avoid duplicate indices in the dataframe. Having them may potentially
-    lead to unexpected behavior.
+Avoid duplicate indices in the dataframe. Having them may potentially
+lead to unexpected behavior.
 
 <br>
 
@@ -107,9 +107,18 @@ Multioutput is a task where there are more than one target column, i.e.
 the goal is to predict multiple targets at the same time. When providing
 a dataframe as target, use the [y][atomclassifier-y] parameter. Providing
 `y` without keyword makes ATOM think you are providing `train, test` (see
-the [data sets][] section). ATOM recognizes three multioutput tasks.
+the [data sets][] section).
 
-### Multilabel
+### Task types
+
+ATOM recognizes three multioutput tasks.
+
+!!! note
+Combinations of binary and multiclass target columns are treated as
+[multiclass-multioutput][] tasks.
+
+
+#### Multilabel
 
 Multilabel multioutput is a classification task, labeling each sample
 with `m` labels from `n_classes` possible classes, where `m` can be 0
@@ -119,7 +128,7 @@ of a sample that are not mutually exclusive.
 For example, prediction of the topics relevant to a text document. The
 document may be about one of religion, politics, finance or education,
 several of the topic classes or all of the topic classes. The target
-column (`atom.y`) could look like this:[autodocs.py](..%2Fautodocs.py)
+column (`atom.y`) could look like this:
 
 ```pycon
 0                        [politics]
@@ -157,7 +166,7 @@ converted to:
 9          0        1         1         1
 ```
 
-### Multiclass-multioutput
+#### Multiclass-multioutput
 
 Multiclass-multioutput (also known as multitask classification) is a
 classification task which labels each sample with a set of non-binary
@@ -175,23 +184,60 @@ classes: "green", "red", "yellow" and "orange". Each sample is an image of
 a fruit, a label is output for both properties and each label is one of the
 possible classes of the corresponding property.
 
-### Multioutput regression
+#### Multioutput regression
 
 Multioutput regression predicts multiple numerical properties for each
 sample. Each property is a numerical variable and the number of properties
-to be predicted for each sample is greater than or equal to 2. Some
-estimators that support multioutput regression are faster than just running
-n_output estimators.
+to be predicted for each sample is >= 2. Some estimators that support
+multioutput regression are faster than just running n_output estimators.
 
 For example, prediction of both wind speed and wind direction, in degrees,
 using data obtained at a certain location. Each sample would be data
 obtained at one location and both wind speed and direction would be output
 for each sample.
 
+### Native multioutput models
+
+Some models have native support for multioutput tasks. This means that
+the original estimator is used to make predictions directly on all the
+target columns. Examples of such models are [KNearestNeighbors][],
+[RandomForest][] and [ExtraTrees][].
+
+
 ### Non-native multioutput models
 
+The majority of the models don't have integrated support for multioutput
+tasks. However, it's possible to still use them for such tasks, wrapping
+them in a meta-estimator capable of handling multiple target columns. For
+non-native multioutput models, ATOM does so automatically. For [multilabel][]
+tasks, the meta-estimator is:
 
+* [ClassifierChain][]
+* [RegressorChain][]
 
+And for [multiclass-multioutput][] and [multioutput regression][], the
+meta-estimator is:
+
+* [MultioutputClassifier][]
+* [MultioutputRegressor][]
+
+The `multioutput` attribute contains the meta-estimator object. Change the
+attribute's value to use a custom object. Both classes or instances where the
+underlying estimator is the first parameter are accepted. Set the attribute to
+`None` to ignore the meta-estimator for multioutput tasks.
+
+!!! note
+    Currently, scikit-learn metrics do not support multiple target variables.
+    If the [prediction method][prediction-methods] needed to calculate a metric
+    returns multiple columns, ATOM calculates the mean of the selected metric
+    over every individual target.
+
+!!! tip
+    * Some models like [MultiLayerPerceptron][] have native support for
+    multilabel tasks, but not for multioutput. Use `atom.multioutput = None`
+    to disable the meta-estimator wrapper.
+    * Set the `native_multioutput` parameter in [ATOMModel][] equal to True
+    to ignore the meta-estimator for [custom models][].
 
 <br>
 
@@ -231,8 +277,8 @@ See the [Imbalanced datasets][example-imbalanced-datasets] or
 branching use cases.
 
 !!! warning
-    Always create a new branch if you want to change the dataset after fitting
-    a model!
+Always create a new branch if you want to change the dataset after fitting
+a model!
 
 <br>
 

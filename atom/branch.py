@@ -8,6 +8,7 @@ Description: Module containing the Branch class.
 """
 
 from copy import copy
+from functools import cached_property
 from typing import List, Optional, Tuple, Union
 
 import pandas as pd
@@ -56,11 +57,8 @@ class Branch:
 
         self._data = None
         self._idx = None
-        self._holdout = None
 
         # If a parent branch is provided, copy its attrs to this one
-        # _holdout is always reset since it wouldn't recalculate if
-        # changes were made to the pipeline
         if parent:
             self._parent = parent.name
 
@@ -279,7 +277,7 @@ class Branch:
     @typechecked
     def train(self, value: X_TYPES):
         df = self._check_setter("train", value)
-        self._data = self.T._set_index(pd.concat([df, self.test]))
+        self._data = self.T._set_index(pd.concat([df, self.test]), self.y_test)
         self._idx[1] = self._data.index[:len(df)]
 
     @property
@@ -291,21 +289,19 @@ class Branch:
     @typechecked
     def test(self, value: X_TYPES):
         df = self._check_setter("test", value)
-        self._data = self.T._set_index(pd.concat([self.train, df]))
+        self._data = self.T._set_index(pd.concat([self.train, df]), self.y_train)
         self._idx[2] = self._data.index[-len(df):]
 
-    @property
+    @cached_property
     def holdout(self) -> Optional[pd.DataFrame]:
         """Holdout set."""
-        if self.T.holdout is not None and self._holdout is None:
-            X, y = self.T.holdout.iloc[:, :-1], self.T.holdout.iloc[:, -1]
+        if self.T.holdout is not None:
+            X, y = self.T.holdout.iloc[:, :-self._idx[0]], self.T.holdout[self.target]
             for transformer in self.pipeline:
                 if not transformer._train_only:
                     X, y = custom_transform(transformer, self, (X, y), verbose=0)
 
-            self._holdout = merge(X, y)
-
-        return self._holdout
+            return merge(X, y)
 
     @property
     def X(self) -> pd.DataFrame:
@@ -417,7 +413,7 @@ class Branch:
         attrs = []
         for p in dir(self):
             if (
-                p in vars(self) and p not in ("T", "name", "_data", "idx", "_holdout")
+                p in vars(self) and p not in ("T", "name", "_data", "_idx")
                 or isinstance(getattr(Branch, p, None), property)
             ):
                 attrs.append(p)

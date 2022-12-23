@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.0/user_guide/data_management/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/data_management/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
@@ -558,6 +558,67 @@
   <a href="#sparse-datasets" class="md-nav__link">
     Sparse datasets
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multioutput-tasks" class="md-nav__link">
+    Multioutput tasks
+  </a>
+  
+    <nav class="md-nav" aria-label="Multioutput tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-types" class="md-nav__link">
+    Task types
+  </a>
+  
+    <nav class="md-nav" aria-label="Task types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multilabel" class="md-nav__link">
+    Multilabel
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiclass-multioutput" class="md-nav__link">
+    Multiclass-multioutput
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multioutput-regression" class="md-nav__link">
+    Multioutput regression
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#native-multioutput-models" class="md-nav__link">
+    Native multioutput models
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#non-native-multioutput-models" class="md-nav__link">
+    Non-native multioutput models
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3115,6 +3176,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#multioutput-tasks" class="md-nav__link">
+    Multioutput tasks
+  </a>
+  
+    <nav class="md-nav" aria-label="Multioutput tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-types" class="md-nav__link">
+    Task types
+  </a>
+  
+    <nav class="md-nav" aria-label="Task types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multilabel" class="md-nav__link">
+    Multilabel
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiclass-multioutput" class="md-nav__link">
+    Multiclass-multioutput
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multioutput-regression" class="md-nav__link">
+    Multioutput regression
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#native-multioutput-models" class="md-nav__link">
+    Native multioutput models
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#non-native-multioutput-models" class="md-nav__link">
+    Non-native multioutput models
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#branches" class="md-nav__link">
     Branches
   </a>
@@ -3225,9 +3347,9 @@ To avoid this, specify the <code>index</code> parameter. If the dataset has an
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
+</div>
 <p>Avoid duplicate indices in the dataframe. Having them may potentially
 lead to unexpected behavior.</p>
-</div>
 <p><br></p>
 <h2 id="sparse-datasets">Sparse datasets</h2>
 <p>If atom is initialized using a scipy sparse matrix, it is converted
@@ -3243,6 +3365,126 @@ speed or even crash. Use the <a class="autorefs autorefs-internal" href="../../A
 to convert dense features to sparse and the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-available_models">available_models</a> method to check which models have
 native support for sparse matrices.</p>
 <p>Click <a class="autorefs autorefs-internal" href="../../examples/nlp/#example-nlp">here</a> to see an example that uses sparse data.</p>
+<p><br></p>
+<h2 id="multioutput-tasks">Multioutput tasks</h2>
+<p>Multioutput is a task where there are more than one target column, i.e.
+the goal is to predict multiple targets at the same time. When providing
+a dataframe as target, use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-y">y</a> parameter. Providing
+<code>y</code> without keyword makes ATOM think you are providing <code>train, test</code> (see
+the <a class="autorefs autorefs-internal" href="#data-sets">data sets</a> section).</p>
+<h3 id="task-types">Task types</h3>
+<p>ATOM recognizes three multioutput tasks.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+</div>
+<p>Combinations of binary and multiclass target columns are treated as
+<a class="autorefs autorefs-internal" href="#multiclass-multioutput">multiclass-multioutput</a> tasks.</p>
+<h4 id="multilabel">Multilabel</h4>
+<p>Multilabel multioutput is a classification task, labeling each sample
+with <code>m</code> labels from <code>n_classes</code> possible classes, where <code>m</code> can be 0
+to <code>n_classes</code> inclusive. This can be thought of as predicting properties
+of a sample that are not mutually exclusive.</p>
+<p>For example, prediction of the topics relevant to a text document. The
+document may be about one of religion, politics, finance or education,
+several of the topic classes or all of the topic classes. The target
+column (<code>atom.y</code>) could look like this:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">0                        [politics]</span>
+<span class="go">1               [religion, finance]</span>
+<span class="go">2    [politics, finance, education]</span>
+<span class="go">3                                []</span>
+<span class="go">4                         [finance]</span>
+<span class="go">5               [finance, religion]</span>
+<span class="go">6                         [finance]</span>
+<span class="go">7               [religion, finance]</span>
+<span class="go">8                       [education]</span>
+<span class="go">9     [finance, religion, politics]</span>
+
+<span class="go">Name: target, dtype: object</span>
+</code></pre></div>
+<p>A model can not directly ingest a variable amount of target classes. Use
+the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clean">clean</a> method to assign a binary output to
+each class, for every sample. Positive classes are indicated with 1 and
+negative classes with 0. It is thus comparable to running n_classes
+binary classification tasks. In our example, target (<code>atom.y</code>) is
+converted to:</p>
+<div class="language-pycon highlight"><pre><span></span><code><span class="go">   education  finance  politics  religion</span>
+<span class="go">0          0        0         1         0</span>
+<span class="go">1          0        1         0         1</span>
+<span class="go">2          1        1         1         0</span>
+<span class="go">3          0        0         0         0</span>
+<span class="go">4          0        1         0         0</span>
+<span class="go">5          0        1         0         1</span>
+<span class="go">6          0        1         0         0</span>
+<span class="go">7          0        1         0         1</span>
+<span class="go">8          1        0         0         0</span>
+<span class="go">9          0        1         1         1</span>
+</code></pre></div>
+<h4 id="multiclass-multioutput">Multiclass-multioutput</h4>
+<p>Multiclass-multioutput (also known as multitask classification) is a
+classification task which labels each sample with a set of non-binary
+properties. Both the number of properties and the number of classes per
+property is greater than 2. A single estimator thus handles several joint
+classification tasks. This is both a generalization of the multilabel
+classification task, which only considers binary attributes, as well as
+a generalization of the multiclass classification task, where only one
+property is considered.</p>
+<p>For example, classification of the properties "type of fruit" and "colour"
+for a set of images of fruit. The property "type of fruit" has the possible
+classes: "apple", "pear" and "orange". The property "colour" has the possible
+classes: "green", "red", "yellow" and "orange". Each sample is an image of
+a fruit, a label is output for both properties and each label is one of the
+possible classes of the corresponding property.</p>
+<h4 id="multioutput-regression">Multioutput regression</h4>
+<p>Multioutput regression predicts multiple numerical properties for each
+sample. Each property is a numerical variable and the number of properties
+to be predicted for each sample is &gt;= 2. Some estimators that support
+multioutput regression are faster than just running n_output estimators.</p>
+<p>For example, prediction of both wind speed and wind direction, in degrees,
+using data obtained at a certain location. Each sample would be data
+obtained at one location and both wind speed and direction would be output
+for each sample.</p>
+<h3 id="native-multioutput-models">Native multioutput models</h3>
+<p>Some models have native support for multioutput tasks. This means that
+the original estimator is used to make predictions directly on all the
+target columns. Examples of such models are <a class="autorefs autorefs-internal" href="../../API/models/knn/#knearestneighbors">KNearestNeighbors</a>,
+<a class="autorefs autorefs-internal" href="../../API/models/rf/#randomforest">RandomForest</a> and <a class="autorefs autorefs-internal" href="../../API/models/et/#extratrees">ExtraTrees</a>.</p>
+<h3 id="non-native-multioutput-models">Non-native multioutput models</h3>
+<p>The majority of the models don't have integrated support for multioutput
+tasks. However, it's possible to still use them for such tasks, wrapping
+them in a meta-estimator capable of handling multiple target columns. For
+non-native multioutput models, ATOM does so automatically. For <a class="autorefs autorefs-internal" href="#multilabel">multilabel</a>
+tasks, the meta-estimator is:</p>
+<ul>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.ClassifierChain.html">ClassifierChain</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.RegressorChain.html">RegressorChain</a></li>
+</ul>
+<p>And for <a class="autorefs autorefs-internal" href="#multiclass-multioutput">multiclass-multioutput</a> and <a class="autorefs autorefs-internal" href="#multioutput-regression">multioutput regression</a>, the
+meta-estimator is:</p>
+<ul>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html">MultioutputClassifier</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputRegressor.html">MultioutputRegressor</a></li>
+</ul>
+<p>The <code>multioutput</code> attribute contains the meta-estimator object. Change the
+attribute's value to use a custom object. Both classes or instances where the
+underlying estimator is the first parameter are accepted. Set the attribute to
+<code>None</code> to ignore the meta-estimator for multioutput tasks.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Currently, scikit-learn metrics do not support multiple target variables.
+If the <a class="autorefs autorefs-internal" href="../predicting/#prediction-methods">prediction method</a> needed to calculate a metric
+returns multiple columns, ATOM calculates the mean of the selected metric
+over every individual target.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul>
+<li>Some models like <a class="autorefs autorefs-internal" href="../../API/models/mlp/#multilayerperceptron">MultiLayerPerceptron</a> have native support for
+multilabel tasks, but not for multioutput. Use <code>atom.multioutput = None</code>
+to disable the meta-estimator wrapper.</li>
+<li>Set the <code>native_multioutput</code> parameter in <a class="autorefs autorefs-internal" href="../../API/ATOM/atommodel/#atommodel">ATOMModel</a> equal to True
+to ignore the meta-estimator for <a class="autorefs autorefs-internal" href="../models/#custom-models">custom models</a>.</li>
+</ul>
+</div>
 <p><br></p>
 <h2 id="branches">Branches</h2>
 <p>You might want to compare how a model performs on a dataset transformed
@@ -3276,9 +3518,9 @@ whole dataset! Creating many branches can cause memory issues for large datasets
 branching use cases.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
+</div>
 <p>Always create a new branch if you want to change the dataset after fitting
 a model!</p>
-</div>
 <p><br></p>
 <div align="center">
 <p><img alt="diagram_branch" src="../../img/diagram_branch.png" />

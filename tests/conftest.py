@@ -10,7 +10,10 @@ Description: Global fixtures and variables for the tests.
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.datasets import load_breast_cancer, load_diabetes, load_wine, make_multilabel_classification
+from sklearn.datasets import (
+    load_breast_cancer, load_diabetes, load_wine,
+    make_multilabel_classification,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 

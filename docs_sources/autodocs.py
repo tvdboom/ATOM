@@ -96,6 +96,10 @@ CUSTOM_URLS = dict(
     mutual_info_regression="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_regression.html",
     chi2="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.chi2.html",
     # Models
+    classifierchain="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.ClassifierChain.html",
+    regressorchain="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.RegressorChain.html",
+    multioutputclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html",
+    multioutputregressor="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputRegressor.html",
     adaboostclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html",
     adaboostregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html",
     adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
@@ -238,6 +242,7 @@ TYPES_CONVERSION = {
     "Optional[optuna.study.study.Study]": "[Study][] or None",
     "Optional[optuna.trial._trial.Trial]": "[Trial][] or None",
     "Union[str, list, tuple, numpy.ndarray, pandas.core.series.Series]": "str or sequence",
+    "Union[int, pandas.core.series.Series]": "int or pd.Series",
 }
 
 
@@ -595,6 +600,8 @@ class AutoDocs:
 
                     if isinstance(obj, property):
                         obj = obj.fget
+                    elif obj.__class__.__name__ == "cached_property":
+                        obj = obj.func
 
                     output = str(signature(obj)).split(" -> ")[-1]
                     header = f"{obj.__name__}: {TYPES_CONVERSION.get(output, output)}"

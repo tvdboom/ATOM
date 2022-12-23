@@ -50,6 +50,7 @@ CUSTOM_URLS = dict(
     launch="https://gradio.app/docs/#launch-header",
     explainerdashboard_package="https://github.com/oegedijk/explainerdashboard",
     explainerdashboard="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation",
+    registry="https://www.mlflow.org/docs/latest/model-registry.html",
     # Data cleaning
     clustercentroids="https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.ClusterCentroids.html",
     onehotencoder="https://contrib.scikit-learn.org/category_encoders/onehot.html",
@@ -95,6 +96,10 @@ CUSTOM_URLS = dict(
     mutual_info_regression="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.mutual_info_regression.html",
     chi2="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.chi2.html",
     # Models
+    classifierchain="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.ClassifierChain.html",
+    regressorchain="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.RegressorChain.html",
+    multioutputclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html",
+    multioutputregressor="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputRegressor.html",
     adaboostclassifier="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html",
     adaboostregressor="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html",
     adabdocs="https://scikit-learn.org/stable/modules/ensemble.html#adaboost",
@@ -229,14 +234,15 @@ TYPES_CONVERSION = {
     "pandas.core.frame.DataFrame": "pd.DataFrame",
     "pandas.core.series.Series": "pd.Series",
     "Union[str, List[str]]": "str or list",
-    "Union[float, List[float]]": "float or list",
-    "Union[float, List[float], NoneType]": "float, list or None",
+    "Union[float, numpy.floating, List[Union[float, numpy.floating]]]": "float or list",
+    "Union[float, numpy.floating, List[Union[float, numpy.floating]], NoneType]": "float, list or None",
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame]": "pd.Series or pd.DataFrame",
     "Optional[Union[pandas.core.series.Series, pandas.core.frame.DataFrame]]": "pd.Series, pd.DataFrame or None",
     "Union[pandas.core.series.Series, pandas.core.frame.DataFrame, NoneType]": "pd.Series, pd.DataFrame or None",
     "Optional[optuna.study.study.Study]": "[Study][] or None",
     "Optional[optuna.trial._trial.Trial]": "[Trial][] or None",
     "Union[str, list, tuple, numpy.ndarray, pandas.core.series.Series]": "str or sequence",
+    "Union[int, pandas.core.series.Series]": "int or pd.Series",
 }
 
 
@@ -412,6 +418,8 @@ class AutoDocs:
             text += "[needs scaling](../../../user_guide/training/#automated-feature-scaling){ .md-tag }"
         if self.obj.accepts_sparse:
             text += "[accept sparse](../../../user_guide/data_management/#sparse-datasets){ .md-tag }"
+        if self.obj.native_multioutput:
+            text += "[native multioutput](../../../user_guide/data_management/#multioutput-tasks){ .md-tag }"
         if self.obj.has_validation:
             text += "[allows validation](../../../user_guide/training/#in-training-validation){ .md-tag }"
         if any(engine != "sklearn" for engine in self.obj.supports_engines):
@@ -592,6 +600,8 @@ class AutoDocs:
 
                     if isinstance(obj, property):
                         obj = obj.fget
+                    elif obj.__class__.__name__ == "cached_property":
+                        obj = obj.func
 
                     output = str(signature(obj)).split(" -> ")[-1]
                     header = f"{obj.__name__}: {TYPES_CONVERSION.get(output, output)}"

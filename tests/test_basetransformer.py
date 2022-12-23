@@ -350,7 +350,7 @@ def test_index_is_str():
 
 def test_index_is_target():
     """Assert that an error is raised when the index is the target column."""
-    with pytest.raises(ValueError, match=".*same as the target column.*"):
+    with pytest.raises(ValueError, match=".*same as a target column.*"):
         ATOMRegressor(X_bin, index="worst fractal dimension", random_state=1)
 
 

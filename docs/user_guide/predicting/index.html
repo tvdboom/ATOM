@@ -10,7 +10,7 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/v5.0/user_guide/predicting/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/predicting/">
       
       <link rel="icon" href="../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
@@ -3130,10 +3130,11 @@ in sklearn's API:</p>
 <p>The prediction methods can be calculated on the train, test and
 holdout set. You can access them through attributes of the form
 [method]_[data_set], e.g. <code>atom.mnb.predict_train</code>, <code>atom.mnb.predict_test</code>
-or <code>atom.mnb.predict_holdout</code>. The predictions for these attributes
-are not calculated until the attribute is called for the first time.
-This mechanism avoids having to make (perhaps) expensive calculations
-that are never used, saving time and memory.</p>
+or <code>atom.mnb.predict_holdout</code>. The results are cached after the
+first call to avoid consequent expensive calculations. This
+mechanism can increase the size of the instance for large datasets.
+Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clear">clear</a> method if you need to free
+the memory.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The prediction attributes for the <a class="autorefs autorefs-internal" href="../../API/predicting/score/#score">score</a> method return atom's
@@ -3143,16 +3144,19 @@ parameter to calculate a different metric.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Many of the <a class="autorefs autorefs-internal" href="../plots/#plots">plots</a> use the prediction attributes. This can
-considerably increase the size of the instance for large datasets.
-Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-clear">clear</a> method if you need to free
-some memory.</p>
+<p>The <code>predict_proba</code> method of some meta-estimators for <a class="autorefs autorefs-internal" href="../data_management/#multioutput-tasks">multioutput tasks</a>
+(such as <a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html">MultioutputClassifier</a>) return 3 dimensions, namely, a list of
+arrays with shape=(n_samples, n_classes). One array per target column. Since
+ATOM's prediction methods return pandas objects, such 3-dimensional arrays
+are converted to a multiindex pd.DataFrame, where the first level of the row
+indices are the target columns, and the second level are the classes. Use
+<code>.loc[[name_of_target_column]]</code> to only select the predictions for one target.</p>
 </div>
 <h2 id="predictions-on-rows-in-the-dataset">Predictions on rows in the dataset</h2>
 <p>It's also possible to get the prediction for a specific row or rows in
-the dataset, providing the names or positions of their indices, e.g.
-<code>atom.rf.predict(10)</code> returns the random forest's prediction on the 10th
-row in the dataset, or <code>atom.rf.predict_proba(["index1", "index2"])</code>
+the dataset, providing the names or positions of the rows to the <a class="autorefs autorefs-internal" href="#prediction-methods">prediction methods</a>,
+e.g. <code>atom.rf.predict(10)</code> returns the random forest's prediction on the
+10th row in the dataset, or <code>atom.rf.predict_proba(["index1", "index2"])</code>
 returns the class probabilities for the rows in the dataset with indices
 <code>index1</code> and <code>index2</code>.</p>
 
