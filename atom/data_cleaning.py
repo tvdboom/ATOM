@@ -9,6 +9,7 @@ Description: Module containing the data cleaning transformers.
 
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from logging import Logger
 from typing import Any, Dict, Optional, Tuple, Union
@@ -567,6 +568,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     The available steps are:
 
     - Drop columns with specific data types.
+    - Remove characters from column names.
     - Strip categorical features from white spaces.
     - Drop duplicate rows.
     - Drop rows with missing values in the target column.
@@ -581,8 +583,12 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     drop_types: str, sequence or None, default=None
         Columns with these data types are dropped from the dataset.
 
+    drop_chars: str or None, default=None
+        Remove the specified regex pattern from column names, e.g.
+        `[^A-Za-z0-9]+` to remove all non-alphanumerical characters.
+
     strip_categorical: bool, default=True
-        Whether to strip spaces from the categorical columns.
+        Whether to strip spaces from categorical columns.
 
     drop_duplicates: bool, default=False
         Whether to drop duplicate rows. Only the first occurrence of
@@ -735,6 +741,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         *,
         drop_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        drop_chars: Optional[str] = None,
         strip_categorical: bool = True,
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
@@ -746,6 +753,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
         self.drop_types = drop_types
+        self.drop_chars = drop_chars
         self.strip_categorical = strip_categorical
         self.drop_duplicates = drop_duplicates
         self.drop_missing_target = drop_missing_target
@@ -791,6 +799,12 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.mapping = {}  # In case the class is refitted
         if y is not None and self.encode_target:
+            if self.drop_chars:
+                if isinstance(y, pd.Series):
+                    y.name = re.sub(self.drop_chars, "", y.name)
+                else:
+                    y = y.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
+
             if self.drop_missing_target:
                 y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna(axis=0)
 
@@ -870,11 +884,21 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                             lambda val: val.strip() if isinstance(val, str) else val
                         )
 
+            # Drop prohibited chars from column names
+            if self.drop_chars:
+                X = X.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
+
             # Drop duplicate samples
             if self.drop_duplicates:
                 X = X.drop_duplicates(ignore_index=True)
 
         if y is not None:
+            if self.drop_chars:
+                if isinstance(y, pd.Series):
+                    y.name = re.sub(self.drop_chars, "", y.name)
+                else:
+                    y = y.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
+
             # Delete samples with NaN in target
             if self.drop_missing_target:
                 length = len(y)  # Save original length to count deleted rows later

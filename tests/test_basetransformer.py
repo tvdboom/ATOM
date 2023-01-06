@@ -10,6 +10,7 @@ Description: Unit tests for basetransformer.py
 import glob
 import multiprocessing
 import os
+from logging import Logger
 from unittest.mock import patch
 
 import numpy as np
@@ -112,17 +113,15 @@ def test_warnings_parameter_str():
     assert base.warnings == "always"
 
 
-@patch("atom.utils.getLogger")
-def test_logger_creator(cls):
+@patch("atom.basetransformer.getLogger")
+@pytest.mark.parametrize("logger", [None, "auto", Logger("test")])
+def test_logger_creator(cls, logger):
     """Assert that the logger is created correctly."""
-    BaseTransformer(logger=None)
-    cls.assert_not_called()
-
     BaseTransformer(logger="auto")
-    cls.assert_called_once()
+    cls.assert_called()
 
 
-@patch("atom.utils.getLogger")
+@patch("atom.basetransformer.getLogger")
 def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
     atom = ATOMClassifier(X_bin, y_bin, logger="log")
@@ -679,7 +678,13 @@ def test_log_invalid_severity():
         BaseTransformer(logger="log").log("test", severity="invalid")
 
 
-@patch("atom.utils.getLogger")
+def test_log_severity_error():
+    """Assert that an error is raised when the severity is error."""
+    with pytest.raises(UserWarning, match=".*user error.*"):
+        BaseTransformer(logger="log").log("this is a user error", severity="error")
+
+
+@patch("atom.basetransformer.getLogger")
 def test_log(cls):
     """Assert the log method works."""
     base = BaseTransformer(verbose=2, logger="log")

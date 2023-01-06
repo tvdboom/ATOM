@@ -15,7 +15,7 @@ import pytest
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.multioutput import MultiOutputRegressor, RegressorChain
 
-from atom import ATOMClassifier, ATOMLoader, ATOMRegressor
+from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError, merge
@@ -36,7 +36,7 @@ def test_getstate_and_setstate():
 
     sys.modules["sklearn"].__version__ = "1.0.0"  # Fake version
     with pytest.warns(Warning, match=".*while the version in this environment.*"):
-        ATOMLoader("atom")
+        ATOMClassifier.load("atom")
 
 
 def test_getattr_branch():

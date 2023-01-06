@@ -3835,7 +3835,7 @@ class StochasticGradientDescent(BaseModel):
 
         return CustomDict(
             loss=Categorical(loss if self.T.goal == "class" else loss[-4:]),
-            penalty=Categorical(["none", "l1", "l2", "elasticnet"]),
+            penalty=Categorical([None, "l1", "l2", "elasticnet"]),
             alpha=Float(1e-4, 1.0, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
             max_iter=Int(500, 1500, step=50),

@@ -42,10 +42,10 @@ from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
     CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
-    TrialsCallback, composed, crash, custom_transform, estimator_has_attr, flt,
-    get_cols, get_custom_scorer, get_feature_importance, has_task, it, lst,
-    merge, method_to_log, rnd, score, sign, time_to_str, to_pandas,
-    variable_return,
+    TrialsCallback, check_dependency, composed, crash, custom_transform,
+    estimator_has_attr, flt, get_cols, get_custom_scorer,
+    get_feature_importance, has_task, it, lst, merge, method_to_log, rnd,
+    score, sign, time_to_str, to_pandas, variable_return,
 )
 
 
@@ -825,7 +825,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         if y is None:
             y = self.y_train
 
-        self.clear()
+        self.clear()  # Reset model's state
 
         if self.trials is None:
             self.T.log(f"Results for {self._fullname}:", 1)
@@ -1904,6 +1904,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             or the [Interface.launch][launch] method.
 
         """
+        check_dependency("gradio")
         from gradio import Interface
         from gradio.components import Dropdown, Textbox
 
@@ -1972,6 +1973,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             instance.
 
         """
+        check_dependency("explainerdashboard")
         from explainerdashboard import (
             ClassifierExplainer, ExplainerDashboard, RegressionExplainer,
         )
@@ -2341,7 +2343,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Name for the registered model. If None, the model's full name
             is used.
 
-        stage: str, default="staging"
+        stage: str, default="Staging"
             New desired stage for the model.
 
         """

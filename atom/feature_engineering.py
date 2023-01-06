@@ -522,7 +522,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES) -> FeatureGenerator:
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> FeatureGenerator:
         """Fit to data.
 
         Parameters

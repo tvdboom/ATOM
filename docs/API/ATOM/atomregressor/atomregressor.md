@@ -141,14 +141,15 @@ of utility methods to handle the data and manage the pipeline.
         - clear
         - delete
         - distribution
+        - eda
         - evaluate
         - export_pipeline
         - get_class_weight
         - inverse_transform
+        - load
         - log
         - merge
         - update_layout
-        - report
         - reset
         - reset_aesthetics
         - save
@@ -170,7 +171,7 @@ cleaning classes are attached to atom after running. Read more in the
 [user guide][data-cleaning].
 
 !!! tip
-    Use the [report][atomclassifier-report] method to examine the data and
+    Use the [eda][atomclassifier-eda] method to examine the data and
     help you determine suitable parameters for the data cleaning methods.
 
 :: methods:

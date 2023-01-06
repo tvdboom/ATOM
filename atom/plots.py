@@ -31,26 +31,22 @@ from optuna.visualization._parallel_coordinate import (
     _get_dims_from_info, _get_parallel_coordinate_info,
 )
 from plotly.colors import unconvert_from_RGB_255, unlabel_rgb
-from schemdraw import Drawing
-from schemdraw.flow import Data, RoundBox, Subroutine, Wire
-from schemdraw.util import Point
 from scipy import stats
 from scipy.stats.mstats import mquantiles
 from sklearn.calibration import calibration_curve
-from sklearn.inspection import permutation_importance
+from sklearn.inspection import partial_dependence, permutation_importance
 from sklearn.metrics import (
     confusion_matrix, det_curve, precision_recall_curve, roc_curve,
 )
 from sklearn.utils import _safe_indexing
 from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
-from wordcloud import WordCloud
 
 from atom.utils import (
     FLOAT, INT, PALETTE, SCALAR, SEQUENCE_TYPES, Model, check_canvas,
-    check_is_fitted, check_predict_proba, composed, crash, divide, get_attr,
-    get_best_score, get_corpus, get_custom_scorer, has_attr, has_task, it, lst,
-    partial_dependence, plot_from_model, rnd, to_rgb,
+    check_dependency, check_is_fitted, check_predict_proba, composed, crash,
+    divide, get_attr, get_best_score, get_corpus, get_custom_scorer, has_attr,
+    has_task, it, lst, plot_from_model, rnd, to_rgb,
 )
 
 
@@ -2588,6 +2584,9 @@ class DataPlot(BasePlot):
                 return " ".join(column)
             else:
                 return " ".join([" ".join(row) for row in column])
+
+        check_dependency("wordcloud")
+        from wordcloud import WordCloud
 
         corpus = get_corpus(self.X)
         rows = self.dataset.loc[self._get_rows(index, return_test=False)]
@@ -5562,11 +5561,12 @@ class PredictionPlot(BasePlot):
                     axes.append((xaxis, yaxis))
 
             # Compute averaged predictions
-            preds = Parallel(n_jobs=self.n_jobs)(
+            predictions = Parallel(n_jobs=self.n_jobs)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
                     X=m.X_test,
-                    features=[list(m.features).index(c) for c in col],
+                    features=col,
+                    kind="both",
                 ) for col in cols
             )
 
@@ -5578,9 +5578,9 @@ class PredictionPlot(BasePlot):
                         X_col = _safe_indexing(m.X_test, fx, axis=1)
                         deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
-            for i, (ax, fx, (avg_pred, pred, val)) in enumerate(zip(axes, cols, preds)):
+            for i, (ax, fx, pred) in enumerate(zip(axes, cols, predictions)):
                 # Draw line or contour plot
-                if len(val) == 1:
+                if len(pred["values"]) == 1:
                     # For both average and individual: draw ticks on the horizontal axis
                     for line in deciles[fx[0]]:
                         fig.add_shape(
@@ -5600,8 +5600,8 @@ class PredictionPlot(BasePlot):
                     if "average" in kind.lower():
                         fig.add_trace(
                             go.Scatter(
-                                x=val[0],
-                                y=avg_pred[target].ravel(),
+                                x=pred["values"][0],
+                                y=pred["average"][target].ravel(),
                                 mode="lines",
                                 line=dict(width=2, color=color),
                                 name=m.name,
@@ -5616,14 +5616,14 @@ class PredictionPlot(BasePlot):
                     if "individual" in kind.lower():
                         # Select up to 50 random samples to plot
                         idx = np.random.choice(
-                            list(range(len(pred[target]))),
-                            size=min(len(pred[target]), 50),
+                            list(range(len(pred["individual"][target]))),
+                            size=min(len(pred["individual"][target]), 50),
                             replace=False,
                         )
-                        for sample in pred[target, idx, :]:
+                        for sample in pred["individual"][target, idx, :]:
                             fig.add_trace(
                                 go.Scatter(
-                                    x=val[0],
+                                    x=pred["values"][0],
                                     y=sample,
                                     mode="lines",
                                     line=dict(width=0.5, color=color),
@@ -5638,9 +5638,9 @@ class PredictionPlot(BasePlot):
                 else:
                     fig.add_trace(
                         go.Contour(
-                            x=val[0],
-                            y=val[1],
-                            z=avg_pred[target],
+                            x=pred["values"][0],
+                            y=pred["values"][1],
+                            z=pred["average"][target],
                             contours=dict(
                                 showlabels=True,
                                 labelfont=dict(size=self.tick_fontsize, color="white")
@@ -5970,6 +5970,11 @@ class PredictionPlot(BasePlot):
             # Update arrowhead manually
             d.elements[-1].segments[-1].arrowwidth = 0.3
             d.elements[-1].segments[-1].arrowlength = 0.5
+
+        check_dependency("schemdraw")
+        from schemdraw import Drawing
+        from schemdraw.flow import Data, RoundBox, Subroutine, Wire
+        from schemdraw.util import Point
 
         models = self._get_subclass(models, max_one=False)
 

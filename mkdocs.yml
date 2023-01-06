@@ -129,7 +129,6 @@ nav:
     - API:
         - ATOM:
             - ATOMClassifier: API/ATOM/atomclassifier.md
-            - ATOMLoader: API/ATOM/atomloader.md
             - ATOMModel: API/ATOM/atommodel.md
             - ATOMRegressor: API/ATOM/atomregressor.md
         - Data cleaning:

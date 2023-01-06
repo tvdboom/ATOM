@@ -9,7 +9,6 @@ Description: Module containing the BaseTrainer class.
 
 import traceback
 from datetime import datetime as dt
-from importlib.util import find_spec
 from typing import Any
 
 import mlflow
@@ -21,8 +20,8 @@ from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
-    SEQUENCE, CustomDict, check_scaling, get_best_score, get_custom_scorer,
-    is_sparse, lst, sign, time_to_str,
+    SEQUENCE, CustomDict, check_dependency, check_scaling, get_best_score,
+    get_custom_scorer, is_sparse, lst, sign, time_to_str,
 )
 
 
@@ -150,14 +149,9 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                                 acronym = names[0]
 
                             # Check if libraries for non-sklearn models are available
-                            libraries = {
-                                "XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"
-                            }
-                            if acronym in libraries and not find_spec(libraries[acronym]):
-                                raise ModuleNotFoundError(
-                                    f"Unable to import the {libraries[acronym]} package. "
-                                    f"Install it using: pip install {libraries[acronym]}"
-                                )
+                            lb = {"XGB": "xgboost", "LGB": "lightgbm", "CatB": "catboost"}
+                            if acronym in lb:
+                                check_dependency(lb[acronym])
 
                             inc.append(MODELS[acronym](self, acronym + m[len(acronym):]))
 

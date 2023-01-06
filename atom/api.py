@@ -7,162 +7,15 @@ Description: Module containing the API classes.
 
 """
 
-from copy import deepcopy
 from logging import Logger
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
-import dill as pickle
 from sklearn.base import clone
 from typeguard import typechecked
 
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
-from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, Predictor, custom_transform,
-)
-
-
-# Functions ======================================================== >>
-
-@typechecked
-def ATOMLoader(
-    filename: str,
-    data: Optional[SEQUENCE_TYPES] = None,
-    *,
-    transform_data: bool = True,
-    verbose: Optional[INT] = None,
-) -> Any:
-    """Load a class instance from a pickle file.
-
-    If the file is an atom instance that was saved using
-    `save_data=False`, it's possible to load new data into it
-    and apply all data transformations.
-
-    Parameters
-    ----------
-    filename: str
-        Name of the pickle file to load.
-
-    data: sequence of indexables or None, default=None
-        Original dataset. Only use this parameter if the file is an
-        atom instance that was saved using `save_data=False`. Allowed
-        formats are:
-
-        - X
-        - X, y
-        - train, test
-        - train, test, holdout
-        - X_train, X_test, y_train, y_test
-        - X_train, X_test, X_holdout, y_train, y_test, y_holdout
-        - (X_train, y_train), (X_test, y_test)
-        - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
-
-        **X, train, test: dataframe-like**<br>
-        Feature set with shape=(n_samples, n_features).
-
-        **y: int, str or sequence**<br>
-        Target column corresponding to X.
-
-        - If int: Position of the target column in X.
-        - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
-
-    transform_data: bool, default=True
-        If False, the `data` is left as provided. If True, it is
-        transformed through all the steps in the instance's pipeline.
-        This parameter is ignored if the loaded pickle is not an atom
-        instance.
-
-    verbose: int or None, default=None
-        Verbosity level of the transformations applied on the new
-        data. If None, use the verbosity from the loaded instance.
-        This parameter is ignored if `transform_data=False`.
-
-    Returns
-    -------
-    class instance
-        Unpickled instance.
-
-    Examples
-    --------
-
-    ```pycon
-    >>> from atom import ATOMClassifier, ATOMLoader
-    >>> from sklearn.datasets import load_breast_cancer
-
-    >>> atom = ATOMClassifier(X, y)
-    >>> atom.scale()
-    >>> atom.run(["LR", "RF", "SGD"], metric="AP")
-    >>> atom.save("atom", save_data=False)  # Save atom to a pickle file
-
-    # Load the class and add the data to the new instance
-    >>> atom_2 = ATOMLoader("atom", data=(X, y), verbose=2)
-
-    Transforming data for branch master:
-    Scaling features...
-    ATOMClassifier successfully loaded.
-
-    >>> print(atom_2.results)
-
-          score_train   score_test time_fit    time
-    LR       0.998179     0.998570   0.016s  0.016s
-    RF       1.000000     0.995568   0.141s  0.141s
-    SGD      0.998773     0.994313   0.016s  0.016s
-
-    ```
-
-    """
-    with open(filename, "rb") as f:
-        cls = pickle.load(f)
-
-    # Reassign the transformer attributes (warnings random_state, etc...)
-    if issubclass(cls.__class__, BaseTransformer):
-        BaseTransformer.__init__(
-            cls, **{x: getattr(cls, x) for x in BaseTransformer.attrs if hasattr(cls, x)}
-        )
-
-    if data is not None:
-        if not hasattr(cls, "_branches"):
-            raise TypeError(
-                "Data is provided but the class is not an "
-                f"atom instance, got {cls.__class__.__name__}."
-            )
-        elif any(branch._data is not None for branch in cls._branches.values()):
-            raise ValueError(
-                f"The loaded {cls.__class__.__name__} instance already contains data!"
-            )
-
-        # Prepare the provided data
-        data, idx, cls.holdout = cls._get_data(data, use_n_rows=transform_data)
-
-        # Apply transformations per branch
-        step = {}  # Current step in the pipeline per branch
-        for b1, v1 in cls._branches.items():
-            branch = cls._branches[b1]
-
-            # Provide the input data if not already filled from another branch
-            if branch._data is None:
-                branch._data, branch._idx = data, idx
-
-            if transform_data:
-                if len(cls._branches) > 2 and not v1.pipeline.empty:
-                    cls.log(f"Transforming data for branch {b1}:", 1)
-
-                for i, est1 in enumerate(v1.pipeline):
-                    # Skip if the transformation was already applied
-                    if step.get(b1, -1) < i:
-                        custom_transform(est1, branch, verbose=verbose)
-
-                        for b2, v2 in cls._branches.items():
-                            if b1 != b2 and v2.pipeline.get(i) is est1:
-                                # Update the data and step for the other branch
-                                cls._branches[b2]._data = deepcopy(branch._data)
-                                cls._branches[b2]._idx = deepcopy(branch._idx)
-                                step[b2] = i
-
-    cls.log(f"{cls.__class__.__name__} successfully loaded.", 1)
-
-    return cls
+from atom.utils import INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, Predictor
 
 
 @typechecked
@@ -256,8 +109,6 @@ def ATOMModel(
     return estimator
 
 
-# Classes ========================================================== >>
-
 class ATOMClassifier(BaseTransformer, ATOM):
     """Main class for binary and multiclass classification tasks.
 
@@ -293,7 +144,9 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
     y: int, str, dict, sequence or pd.DataFrame, default=-1
         Target column corresponding to X.
@@ -592,7 +445,9 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
         - If int: Position of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Array with shape=(n_samples,) to use as target.
+        - If sequence: Target array with shape=(n_samples,) or
+          sequence of column names or positions for multioutput tasks.
+        - If dataframe: Target columns for multioutput tasks.
 
     y: int, str, dict, sequence or pd.DataFrame, default=-1
         Target column corresponding to X.

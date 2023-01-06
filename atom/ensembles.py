@@ -391,9 +391,9 @@ class StackingClassifier(BaseStacking, SC):
 
         """
         check_classification_targets(y)
-        self._le = LabelEncoder().fit(y)
-        self.classes_ = self._le.classes_
-        return super().fit(X, self._le.transform(y), sample_weight)
+        self._label_encoder = LabelEncoder().fit(y)
+        self.classes_ = self._label_encoder.classes_
+        return super().fit(X, self._label_encoder.transform(y), sample_weight)
 
 
 class StackingRegressor(BaseStacking, SR):

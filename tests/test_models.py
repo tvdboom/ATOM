@@ -56,14 +56,14 @@ def test_all_models_regression():
 def test_models_sklearnex_classification():
     """Assert the sklearnex engine works for classification tasks."""
     atom = ATOMClassifier(X_bin, y_bin, device="cpu", engine="sklearnex", random_state=1)
-    atom.run(models=["knn", "lr", "rf", "svm"], n_trials=1)
+    atom.run(models=["knn", "lr", "rf", "svm"], n_trials=2)
     assert not atom.errors
 
 
 def test_models_sklearnex_regression():
     """Assert the sklearnex engine works for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, device="cpu", engine="sklearnex", random_state=1)
-    atom.run(models=["en", "knn", "lasso", "ols", "rf", "ridge", "svm"], n_trials=1)
+    atom.run(models=["en", "knn", "lasso", "ols", "rf", "ridge", "svm"], n_trials=2)
     assert not atom.errors
 
 

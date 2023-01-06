@@ -12,15 +12,15 @@ import os
 import random
 import warnings
 from copy import deepcopy
+from datetime import datetime as dt
 from importlib import import_module
 from importlib.util import find_spec
-from logging import Logger
+from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from typing import List, Optional, Tuple, Union
 
 import dill as pickle
 import mlflow
 import numpy as np
-import optuna
 import pandas as pd
 import sklearnex
 from sklearn.model_selection import train_test_split
@@ -29,7 +29,7 @@ from typeguard import typechecked
 from atom.utils import (
     INT, PANDAS_TYPES, SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
     Estimator, composed, crash, get_cols, lst, merge, method_to_log, n_cols,
-    prepare_logger, to_df, to_pandas,
+    to_df, to_pandas,
 )
 
 
@@ -172,11 +172,6 @@ class BaseTransformer:
                 )
             self._warnings = value.lower()
 
-        if self._warnings in ("ignore", "module"):
-            optuna.logging.set_verbosity(optuna.logging.CRITICAL)
-        else:
-            optuna.logging.set_verbosity(optuna.logging.WARNING)
-
         warnings.simplefilter(self._warnings)  # Change the filter in this process
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses
 
@@ -188,7 +183,33 @@ class BaseTransformer:
     @logger.setter
     @typechecked
     def logger(self, value: Optional[Union[str, Logger]]):
-        self._logger = prepare_logger(value, class_name=self.__class__.__name__)
+        if not value:
+            self._logger = None
+
+            for logger in ("mlflow", "optuna"):
+                getLogger(logger).handlers.clear()
+
+        elif isinstance(value, str):
+            # Prepare the FileHandler
+            if not value.endswith(".log"):
+                value += ".log"
+            if value.endswith("auto.log"):
+                current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
+                value = value.replace("auto", self.__class__.__name__ + "_" + current)
+
+            handler = FileHandler(value)
+            handler.setFormatter(Formatter("%(asctime)s - %(levelname)s: %(message)s"))
+
+            self._logger = getLogger(self.__class__.__name__)
+            self._logger.setLevel(DEBUG)
+
+            # Redirect loggers to file handler
+            for logger in (self._logger.name, "mlflow", "optuna"):
+                getLogger(logger).handlers.clear()
+                getLogger(logger).addHandler(handler)
+
+        else:
+            self._logger = value
 
     @property
     def experiment(self) -> Optional[str]:
@@ -805,11 +826,14 @@ class BaseTransformer:
                 "from: debug, info, warning, error, critical."
             )
 
-        if severity == "warning":
+        if severity == "error":
+            raise UserWarning(msg)
+        elif severity == "warning":
             warnings.warn(msg)
-        if self.verbose >= level and (severity == "info" or self.warnings == "ignore"):
+        elif self.verbose >= level and (severity == "info" or self.warnings == "ignore"):
             print(msg)
 
+        # Store in file
         if self.logger is not None:
             for text in str(msg).split("\n"):
                 getattr(self.logger, severity)(str(text))
@@ -824,10 +848,9 @@ class BaseTransformer:
             Name of the file. Use "auto" for automatic naming.
 
         save_data: bool, default=True
-            Whether to save the dataset with the instance. This
-            parameter is ignored if the method is not called from
-            atom. If False, add the data to [ATOMLoader][] when
-            loading the file.
+            Whether to save the dataset with the instance. This parameter
+            is ignored if the method is not called from atom. If False,
+            add the data to the [load][atomclassifier-load] method.
 
         """
         if not save_data and hasattr(self, "dataset"):

@@ -157,6 +157,23 @@ def test_cleaner_drop_invalid_column_list_types():
     assert "string_col" not in X.columns
 
 
+def test_cleaner_remove_characters_from_column_names():
+    """Assert that specified chars are removed from column names."""
+    X, y = X_bin.copy(), y_bin.copy()
+    X.columns = ["test##"] + list(X.columns[1:])
+    y.name = "::test"
+    X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
+    assert X.columns[0] == "test"
+    assert y.name == "test"
+
+    X, y = X_class.copy(), y_multiclass.copy()
+    X.columns = ["test##"] + list(X.columns[1:])
+    y.columns = ["::test"] + list(y.columns[1:])
+    X, y = Cleaner(drop_chars="[^A-Za-z0-9]+").fit_transform(X, y)
+    assert X.columns[0] == "test"
+    assert y.columns[0] == "test"
+
+
 def test_cleaner_strip_categorical_features():
     """Assert that categorical features are stripped from blank spaces."""
     X = X_bin.copy()

@@ -27,12 +27,13 @@ from sklearn.preprocessing import (
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.data_cleaning import Cleaner, Pruner
+from atom.training import DirectClassifier
 from atom.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_reg, X_sparse, X_text, y10, y10_label, y10_sn, y10_str, y_bin,
-    y_class, y_multiclass, y_reg,
+    X_class, X_reg, X_sparse, X_text, merge, y10, y10_label, y10_sn, y10_str,
+    y_bin, y_class, y_multiclass, y_reg,
 )
 
 
@@ -268,20 +269,90 @@ def test_distribution(distributions, columns):
     assert isinstance(df, pd.DataFrame)
 
 
+@patch("pandas_profiling.ProfileReport")
+def test_eda(cls):
+    """Assert that the eda method creates a report."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.eda(filename="report")
+    cls.return_value.to_file.assert_called_once_with("report.html")
+
+
+def test_load_no_atom():
+    """Assert that an error is raised when the instance is not atom."""
+    trainer = DirectClassifier("LR", random_state=1)
+    trainer.save("trainer")
+    with pytest.raises(ValueError, match=".*ATOMClassifier nor ATOMRegressor.*"):
+        ATOMClassifier.load("trainer")
+
+
+def test_load_already_contains_data():
+    """Assert that an error is raised when data is provided without needed."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.save("atom", save_data=True)
+    with pytest.raises(ValueError, match=".*already contains data.*"):
+        ATOMClassifier.load("atom", data=(X_bin,))
+
+
+def test_load_with_data():
+    """Assert that data can be loaded."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.save("atom", save_data=False)
+
+    atom2 = ATOMClassifier.load("atom", data=(X_bin, y_bin))
+    pd.testing.assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
+
+
+def test_load_ignores_n_rows_parameter():
+    """Assert that n_rows is not used when transform_data=False."""
+    atom = ATOMClassifier(X_bin, y_bin, n_rows=0.6, random_state=1)
+    atom.save("atom", save_data=False)
+
+    atom2 = ATOMClassifier.load("atom", data=(X_bin, y_bin), transform_data=False)
+    assert len(atom2.dataset) == len(X_bin)
+
+
+def test_load_transform_data():
+    """Assert that the data is transformed correctly."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.scale(columns=slice(3, 10))
+    atom.apply(np.exp, columns=2)
+    atom.feature_generation(strategy="dfs", n_features=5)
+    atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
+    atom.save("atom", save_data=False)
+
+    atom2 = ATOMClassifier.load("atom", data=(X_bin, y_bin), transform_data=True)
+    assert atom2.dataset.shape == atom.dataset.shape
+
+    atom3 = ATOMClassifier.load("atom", data=(X_bin, y_bin), transform_data=False)
+    assert atom3.dataset.shape == merge(X_bin, y_bin).shape
+
+
+def test_load_transform_data_multiple_branches():
+    """Assert that the data is transformed with multiple branches."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.prune()
+    atom.branch = "b2"
+    atom.balance()
+    atom.feature_generation(strategy="dfs", n_features=5)
+    atom.branch = "b3"
+    atom.feature_selection(strategy="sfm", solver="lgb", n_features=20)
+    atom.save("atom_2", save_data=False)
+
+    atom2 = ATOMClassifier.load("atom_2", data=(X_bin, y_bin), transform_data=True)
+    for branch in atom._branches:
+        pd.testing.assert_frame_equal(
+            left=atom2._branches[branch]._data,
+            right=atom._branches[branch]._data,
+            check_dtype=False,
+        )
+
+
 def test_inverse_transform():
     """ Assert that the inverse_transform method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.scale()
     atom.impute()  # Does nothing, but doesn't crash either
     pd.testing.assert_frame_equal(atom.inverse_transform(atom.X), X_bin)
-
-
-@patch("pandas_profiling.ProfileReport")
-def test_report(cls):
-    """Assert that the report method and file are created."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.report(filename="report")
-    cls.return_value.to_file.assert_called_once_with("report.html")
 
 
 def test_reset():

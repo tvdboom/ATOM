@@ -8,9 +8,11 @@ Description: Module containing the ATOM class.
 """
 
 from collections import defaultdict
+from copy import deepcopy
 from platform import machine, platform, python_build, python_version
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
+import dill as pickle
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -39,10 +41,10 @@ from atom.training import (
 )
 from atom.utils import (
     INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
-    Runner, Scorer, Transformer, __version__, check_is_fitted, check_scaling,
-    composed, crash, custom_transform, fit_one, flt, get_cols,
-    get_custom_scorer, has_task, infer_task, is_sparse, lst, method_to_log,
-    sign, variable_return,
+    Runner, Scorer, Transformer, __version__, check_dependency,
+    check_is_fitted, check_scaling, composed, crash, custom_transform, fit_one,
+    flt, get_cols, get_custom_scorer, has_task, infer_task, is_sparse, lst,
+    method_to_log, sign, variable_return,
 )
 
 
@@ -133,7 +135,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 out += f"\n   --> {branch}{' !' if branch == self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
-        out += f"\n --> Errors: {len(self.errors)}"
+        if self.errors:
+            out += f"\n --> Errors: {len(self.errors)}"
 
         return out
 
@@ -327,6 +330,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Additional keyword arguments for the AutoMLSearch instance.
 
         """
+        check_dependency("evalml")
         from evalml import AutoMLSearch
 
         self.log("Searching for optimal pipeline...", 1)
@@ -467,6 +471,59 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         return df
 
+    @composed(crash, typechecked)
+    def eda(
+        self,
+        dataset: str = "dataset",
+        *,
+        n_rows: Optional[SCALAR] = None,
+        filename: Optional[str] = None,
+        **kwargs,
+    ):
+        """Create an Exploratory Data Analysis report.
+
+        ATOM uses the [pandas-profiling][profiling] package for the EDA.
+        The report is rendered directly in the notebook. The created
+        [ProfileReport][] instance can be accessed through the `report`
+        attribute.
+
+        !!! warning
+            This method can be slow for large datasets.
+
+        Parameters
+        ----------
+        dataset: str, default="dataset"
+            Data set to get the report from.
+
+        n_rows: int or None, default=None
+            Number of (randomly picked) rows to process. None to use
+            all rows.
+
+        filename: str or None, default=None
+            Name to save the file with (as .html). None to not save
+            anything.
+
+        **kwargs
+            Additional keyword arguments for the [ProfileReport][]
+            instance.
+
+        """
+        check_dependency("pandas-profiling")
+        from pandas_profiling import ProfileReport
+
+        self.log("Creating profile report...", 1)
+
+        n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
+        self.report = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
+
+        if filename:
+            if not filename.endswith(".html"):
+                filename += ".html"
+            self.report.to_file(filename)
+            self.log("Report successfully saved.", 1)
+
+        self.report.to_notebook_iframe()
+
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(
         self,
@@ -523,57 +580,121 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         return variable_return(X, y)
 
-    @composed(crash, typechecked)
-    def report(
-        self,
-        dataset: str = "dataset",
+    @classmethod
+    @typechecked
+    def load(
+        cls,
+        filename: str,
+        data: Optional[SEQUENCE_TYPES] = None,
         *,
-        n_rows: Optional[SCALAR] = None,
-        filename: Optional[str] = None,
-        **kwargs,
+        transform_data: bool = True,
+        verbose: Optional[INT] = None,
     ):
-        """Create an extensive profile analysis report of the data.
+        """Loads an atom instance from a pickle file.
 
-        ATOM uses the [pandas-profiling][profiling] package for the
-        analysis. The report is rendered directly in the notebook. The
-        created [ProfileReport][] instance can be accessed through the
-        `profile` attribute.
-
-        !!! warning
-            This method can be slow for large datasets.
+        If the instance was saved using `save_data=False`, it's possible
+        to load new data into it and apply all data transformations.
 
         Parameters
         ----------
-        dataset: str, default="dataset"
-            Data set to get the report from.
+        filename: str
+            Name of the pickle file.
 
-        n_rows: int or None, default=None
-            Number of (randomly picked) rows to process. None to use
-            all rows.
+        data: sequence of indexables or None, default=None
+            Original dataset. Only use this parameter if the loaded file
+            was saved using `save_data=False`. Allowed formats are:
 
-        filename: str or None, default=None
-            Name to save the file with (as .html). None to not save
-            anything.
+            - X
+            - X, y
+            - train, test
+            - train, test, holdout
+            - X_train, X_test, y_train, y_test
+            - X_train, X_test, X_holdout, y_train, y_test, y_holdout
+            - (X_train, y_train), (X_test, y_test)
+            - (X_train, y_train), (X_test, y_test), (X_holdout, y_holdout)
 
-        **kwargs
-            Additional keyword arguments for the [ProfileReport][]
-            instance.
+            **X, train, test: dataframe-like**<br>
+            Feature set with shape=(n_samples, n_features).
+
+            **y: int, str or sequence**<br>
+            Target column corresponding to X.
+
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput
+              tasks.
+            - If dataframe: Target columns for multioutput tasks.
+
+        transform_data: bool, default=True
+            If False, the `data` is left as provided. If True, it's
+            transformed through all the steps in the loaded instance's
+            pipeline.
+
+        verbose: int or None, default=None
+            Verbosity level of the transformations applied on the new
+            data. If None, use the verbosity from the loaded instance.
+            This parameter is ignored if `transform_data=False`.
+
+        Returns
+        -------
+        atom instance
+            Unpickled atom instance.
 
         """
-        from pandas_profiling import ProfileReport
+        with open(filename, "rb") as f:
+            atom = pickle.load(f)
 
-        self.log("Creating profile report...", 1)
+        # Check if atom instance
+        if atom.__class__.__name__ not in ("ATOMClassifier", "ATOMRegressor"):
+            raise ValueError(
+                "The loaded class is not a ATOMClassifier nor "
+                f"ATOMRegressor instance, got {atom.__class__.__name__}."
+            )
 
-        n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
-        self.profile = ProfileReport(getattr(self, dataset).sample(n_rows), **kwargs)
+        # Reassign the transformer attributes (warnings random_state, etc...)
+        BaseTransformer.__init__(
+            atom, **{x: getattr(atom, x) for x in BaseTransformer.attrs},
+        )
 
-        if filename:
-            if not filename.endswith(".html"):
-                filename += ".html"
-            self.profile.to_file(filename)
-            self.log("Report successfully saved.", 1)
+        if data is not None:
+            if any(branch._data is not None for branch in atom._branches.values()):
+                raise ValueError(
+                    f"The loaded {atom.__class__.__name__} "
+                    "instance already contains data."
+                )
 
-        self.profile.to_notebook_iframe()
+            # Prepare the provided data
+            data, idx, atom.holdout = atom._get_data(data, use_n_rows=transform_data)
+
+            # Apply transformations per branch
+            step = {}  # Current step in the pipeline per branch
+            for b1, v1 in atom._branches.items():
+                branch = atom._branches[b1]
+
+                # Provide the input data if not already filled from another branch
+                if branch._data is None:
+                    branch._data, branch._idx = data, idx
+
+                if transform_data:
+                    if len(atom._branches) > 2 and not v1.pipeline.empty:
+                        atom.log(f"Transforming data for branch {b1}:", 1)
+
+                    for i, est1 in enumerate(v1.pipeline):
+                        # Skip if the transformation was already applied
+                        if step.get(b1, -1) < i:
+                            custom_transform(est1, branch, verbose=verbose)
+
+                            for b2, v2 in atom._branches.items():
+                                if b1 != b2 and v2.pipeline.get(i) is est1:
+                                    # Update the data and step for the other branch
+                                    atom._branches[b2]._data = deepcopy(branch._data)
+                                    atom._branches[b2]._idx = deepcopy(branch._idx)
+                                    step[b2] = i
+
+        atom.log(f"{atom.__class__.__name__} successfully loaded.", 1)
+
+        return atom
 
     @composed(crash, method_to_log)
     def reset(self):

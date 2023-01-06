@@ -15,9 +15,9 @@ from copy import copy
 from datetime import datetime as dt
 from functools import wraps
 from importlib import import_module
+from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
-from logging import DEBUG, FileHandler, Formatter, Logger, getLogger
 from typing import Any, Callable, List, Optional, Protocol, Tuple, Union
 
 import mlflow
@@ -31,20 +31,17 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from scipy import sparse
 from shap import Explainer, Explanation
-from sklearn.inspection._partial_dependence import (
-    _grid_from_X, _partial_dependence_brute,
-)
 from sklearn.metrics import (
     confusion_matrix, get_scorer, get_scorer_names, make_scorer,
     matthews_corrcoef,
 )
-from sklearn.utils import _print_elapsed_time, _safe_indexing
+from sklearn.utils import _print_elapsed_time
 
 
 # Constants ======================================================== >>
 
 # Current library version
-__version__ = "5.0.1"
+__version__ = "5.1.0"
 
 # Group of variable types for isinstance
 SEQUENCE = (list, tuple, np.ndarray, pd.Series)
@@ -1330,6 +1327,23 @@ def is_sparse(df: pd.DataFrame) -> bool:
     return any(pd.api.types.is_sparse(df[col]) for col in df)
 
 
+def check_dependency(name: str):
+    """Raise an error if a package is not installed.
+
+    Parameters
+    ----------
+    name: str
+        Name of the package to check.
+
+    """
+    if not find_spec(name.replace("-", "_")):
+        raise ModuleNotFoundError(
+            f"Unable to import the {name} package. Install it using "
+            f"`pip install {name}` or install all of atom's optional "
+            "dependencies with `pip install atom-ml[full]`."
+        )
+
+
 def check_canvas(is_canvas: bool, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
@@ -1698,54 +1712,6 @@ def to_pandas(
         return to_df(data, index=index, columns=columns, dtype=dtype)
 
 
-def prepare_logger(
-    logger: Optional[Union[str, Logger]], class_name: str,
-) -> Optional[Logger]:
-    """Create a new logger and corresponding `.log` file.
-
-    Parameters
-    ----------
-    logger: str, Logger or None
-        - If None: Doesn't create a logging file.
-        - If str: Name of the log file. Use "auto" for automatic name.
-        - Else: Python `logging.Logger` instance.
-
-    class_name: str
-        Name of the class from which the function is called.
-        Used for default name creation when log="auto".
-
-    Returns
-    -------
-    Logger or None
-        Logger object.
-
-    """
-    if not logger:  # Empty string or None
-        return None
-    elif isinstance(logger, str):
-        # Prepare the FileHandler's name
-        if not logger.endswith(".log"):
-            logger += ".log"
-        if logger == "auto.log" or logger.endswith("/auto.log"):
-            current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
-            logger = logger.replace("auto", class_name + "_" + current)
-
-        # Define file handler and set formatter
-        file_handler = FileHandler(logger)
-        formatter = Formatter("%(asctime)s - %(levelname)s: %(message)s")
-        file_handler.setFormatter(formatter)
-
-        # Define logger
-        logger = getLogger(class_name + "_logger")
-        logger.setLevel(DEBUG)
-        logger.propagate = False
-        if logger.hasHandlers():  # Remove existing handlers
-            logger.handlers.clear()
-        logger.addHandler(file_handler)  # Add file handler to logger
-
-    return logger
-
-
 def check_is_fitted(
     estimator: Estimator,
     exception: bool = True,
@@ -1974,56 +1940,6 @@ def infer_task(y: PANDAS_TYPES, goal: str = "class") -> str:
         return "binary classification"
     else:
         return "multiclass classification"
-
-
-def partial_dependence(
-    estimator: Predictor, X: pd.DataFrame, features: Union[int, SEQUENCE_TYPES]
-) -> Tuple[np.ndarray, np.ndarray, list]:
-    """Calculate the partial dependence of features.
-
-    Partial dependence of a feature (or a set of features) corresponds
-    to the average response of an estimator for each possible value of
-    the feature. Code from sklearn's _partial_dependence.py. Note that
-    this implementation always uses method="brute", grid_resolution=100
-    and percentiles=(0.05, 0.95).
-
-    Parameters
-    ----------
-    estimator: Predictor
-        Model estimator to use.
-
-    X: pd.DataFrame
-        Feature set used to generate a grid of values for the target
-        features (where the partial dependence is evaluated), and
-        also to generate values for the complement features.
-
-    features: int or sequence
-        The feature or pair of interacting features for which the
-        partial dependency should be computed.
-
-    Returns
-    -------
-    np.array
-        Average of the predictions.
-
-    np.array
-        All predictions.
-
-    list
-        Values used for the predictions.
-
-    """
-    grid, values = _grid_from_X(_safe_indexing(X, features, axis=1), (0.05, 0.95), 100)
-
-    avg_pred, pred = _partial_dependence_brute(estimator, grid, features, X, "auto")
-
-    # Reshape to (n_targets, n_values_feature,)
-    avg_pred = avg_pred.reshape(-1, *[val.shape[0] for val in values])
-
-    # Reshape to (n_targets, n_rows, n_values_feature)
-    pred = pred.reshape(-1, X.shape[0], *[val.shape[0] for val in values])
-
-    return avg_pred, pred, values
 
 
 def get_feature_importance(
