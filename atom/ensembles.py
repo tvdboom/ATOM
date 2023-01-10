@@ -10,7 +10,6 @@ Description: Module containing the ensemble estimators.
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Optional, Tuple
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -26,7 +25,9 @@ from sklearn.utils import Bunch
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import column_or_1d
 
-from atom.utils import INT, SEQUENCE_TYPES, X_TYPES, Predictor, check_is_fitted
+from atom.utils import (
+    INT_TYPES, SEQUENCE_TYPES, X_TYPES, Predictor, check_is_fitted,
+)
 
 
 class BaseEnsemble:
@@ -55,7 +56,7 @@ class BaseVoting(BaseEnsemble):
         self,
         X: X_TYPES,
         y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        sample_weight: SEQUENCE_TYPES | None = None,
     ) -> BaseVoting:
         """Fit the estimators in the ensemble.
 
@@ -84,7 +85,7 @@ class BaseVoting(BaseEnsemble):
         names, all_estimators = self._validate_estimators()
 
         # Difference with sklearn's implementation, skip fitted estimators
-        estimators = Parallel(n_jobs=self.n_jobs)(
+        estimators = Parallel(n_jobs=self.n_jobs, prefer=self.backend)(
             delayed(_fit_single_estimator)(
                 clone(clf),
                 X,
@@ -118,7 +119,7 @@ class BaseStacking(BaseEnsemble):
         self,
         X: X_TYPES,
         y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        sample_weight: SEQUENCE_TYPES | None = None,
     ) -> BaseStacking:
         """Fit the estimators in the ensemble.
 
@@ -150,7 +151,7 @@ class BaseStacking(BaseEnsemble):
         stack_method = [self.stack_method] * len(all_estimators)
 
         # Difference with sklearn's implementation, skip fitted estimators
-        estimators = Parallel(n_jobs=self.n_jobs)(
+        estimators = Parallel(n_jobs=self.n_jobs, prefer=self.backend)(
             delayed(_fit_single_estimator)(clone(clf), X, y, sample_weight)
             for idx, clf in enumerate(all_estimators)
             if clf != "drop" and not check_is_fitted(clf, False)
@@ -185,7 +186,7 @@ class BaseStacking(BaseEnsemble):
             {"sample_weight": sample_weight} if sample_weight is not None else None
         )
 
-        predictions = Parallel(n_jobs=self.n_jobs)(
+        predictions = Parallel(n_jobs=self.n_jobs, prefer=self.backend)(
             delayed(cross_val_predict)(
                 clone(est),
                 X,
@@ -231,11 +232,11 @@ class VotingClassifier(BaseVoting, VC):
 
     def __init__(
         self,
-        estimators: List[Tuple[str, Predictor]],
+        estimators: list[tuple[str, Predictor]],
         *,
         voting: str = "hard",
-        weights: Optional[SEQUENCE_TYPES] = None,
-        n_jobs: Optional[INT] = None,
+        weights: SEQUENCE_TYPES | None = None,
+        n_jobs: INT_TYPES | None = None,
         flatten_transform: bool = True,
         verbose: bool = False,
     ):
@@ -257,7 +258,7 @@ class VotingClassifier(BaseVoting, VC):
         self,
         X: X_TYPES,
         y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        sample_weight: SEQUENCE_TYPES | None = None,
     ) -> VotingClassifier:
         """Fit the estimators, skipping prefit ones.
 
@@ -337,7 +338,14 @@ class VotingRegressor(BaseVoting, VR):
 
     """
 
-    def __init__(self, estimators, *, weights=None, n_jobs=None, verbose=False):
+    def __init__(
+        self,
+        estimators: list[tuple[str, Predictor]],
+        *,
+        weights: SEQUENCE_TYPES | None = None,
+        n_jobs: INT_TYPES | None = None,
+        verbose: bool = False,
+    ):
         super().__init__(
             estimators,
             weights=weights,
@@ -367,7 +375,7 @@ class StackingClassifier(BaseStacking, SC):
         self,
         X: X_TYPES,
         y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        sample_weight: SEQUENCE_TYPES | None = None,
     ) -> VotingRegressor:
         """Fit the estimators, skipping prefit ones.
 
@@ -412,7 +420,7 @@ class StackingRegressor(BaseStacking, SR):
         self,
         X: X_TYPES,
         y: SEQUENCE_TYPES,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        sample_weight: SEQUENCE_TYPES | None = None,
     ) -> StackingRegressor:
         """Fit the estimators, skipping prefit ones.
 

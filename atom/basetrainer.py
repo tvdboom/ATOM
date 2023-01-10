@@ -12,6 +12,7 @@ from datetime import datetime as dt
 from typing import Any
 
 import mlflow
+import ray
 from optuna import Study, create_study
 
 from atom.baserunner import BaseRunner
@@ -37,8 +38,8 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
     """
 
     def __init__(
-        self, models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-        device, engine, verbose, warnings, logger, experiment, random_state,
+        self, models, metric, est_params, n_trials, ht_params, n_bootstrap, parallel,
+        n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -61,6 +62,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         self.n_trials = n_trials
         self.ht_params = ht_params
         self.n_bootstrap = n_bootstrap
+        self.parallel = parallel
 
         # Branching attributes
         self.index = True
@@ -282,28 +284,33 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         results.
 
         """
+
+        @ray.remote
+        def execute_model():
+            if self.experiment:  # Start mlflow run
+                m._run = mlflow.start_run(run_name=m.name)
+
+            self.log("\n", 1)  # Separate output from header
+
+            # If it has predefined or custom dimensions, run the ht
+            m._ht = {k: v[m._group] for k, v in self._ht_params.items()}
+            if self._n_trials[m._group] > 0:
+                if m._ht["distributions"] or hasattr(m, "_get_distributions"):
+                    m.hyperparameter_tuning(self._n_trials[m._group])
+
+            m.fit()
+
+            if self._n_bootstrap[m._group]:
+                m.bootstrapping(self._n_bootstrap[m._group])
+
+            self.log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
+
         t = dt.now()  # Measure the time the whole pipeline takes
 
         to_remove = []
         for i, m in enumerate(self._models.values()):
             try:  # If an error occurs, skip the model
-                if self.experiment:  # Start mlflow run
-                    m._run = mlflow.start_run(run_name=m.name)
-
-                self.log("\n", 1)  # Separate output from header
-
-                # If it has predefined or custom dimensions, run the ht
-                m._ht = {k: v[m._group] for k, v in self._ht_params.items()}
-                if self._n_trials[m._group] > 0:
-                    if m._ht["distributions"] or hasattr(m, "_get_distributions"):
-                        m.hyperparameter_tuning(self._n_trials[m._group])
-
-                m.fit()
-
-                if self._n_bootstrap[m._group]:
-                    m.bootstrapping(self._n_bootstrap[m._group])
-
-                self.log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
+                execute_model(m)
 
             except Exception as ex:
                 self.log(

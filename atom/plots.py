@@ -7,12 +7,13 @@ Description: Module containing the plotting classes.
 
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
-from typing import List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,10 +44,11 @@ from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 
 from atom.utils import (
-    FLOAT, INT, PALETTE, SCALAR, SEQUENCE_TYPES, Model, check_canvas,
-    check_dependency, check_is_fitted, check_predict_proba, composed, crash,
-    divide, get_attr, get_best_score, get_corpus, get_custom_scorer, has_attr,
-    has_task, it, lst, plot_from_model, rnd, to_rgb,
+    FLOAT_TYPES, INT, INT_TYPES, PALETTE, SCALAR_TYPES, SEQUENCE_TYPES, Model,
+    bk, check_canvas, check_dependency, check_is_fitted, check_predict_proba,
+    composed, crash, divide, get_attr, get_best_score, get_corpus,
+    get_custom_scorer, has_attr, has_task, it, lst, plot_from_model, rnd,
+    to_rgb,
 )
 
 
@@ -88,11 +90,11 @@ class BaseFigure:
 
     def __init__(
         self,
-        rows: INT = 1,
-        cols: INT = 1,
-        horizontal_spacing: FLOAT = 0.05,
-        vertical_spacing: FLOAT = 0.07,
-        palette: Union[str, SEQUENCE_TYPES] = "Prism",
+        rows: INT_TYPES = 1,
+        cols: INT_TYPES = 1,
+        horizontal_spacing: FLOAT_TYPES = 0.05,
+        vertical_spacing: FLOAT_TYPES = 0.07,
+        palette: str | SEQUENCE_TYPES = "Prism",
         is_canvas: bool = False,
         backend: str = "plotly",
         create_figure: bool = True,
@@ -142,7 +144,7 @@ class BaseFigure:
             )
 
     @property
-    def grid(self) -> Tuple[int, int]:
+    def grid(self) -> tuple[INT_TYPES, INT_TYPES]:
         """Position of the current axes on the grid.
 
         Returns
@@ -157,7 +159,7 @@ class BaseFigure:
         return (self.idx - 1) // self.cols + 1, self.idx % self.cols or self.cols
 
     @property
-    def next_subplot(self) -> Optional[Union[go.Figure, plt.Figure]]:
+    def next_subplot(self) -> go.Figure | plt.Figure | None:
         """Increase the subplot index.
 
         Returns
@@ -178,7 +180,7 @@ class BaseFigure:
         if self.create_figure:
             return self.figure
 
-    def get_color(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
+    def get_color(self, elem: SCALAR_TYPES | str | None = None) -> str:
         """Get the next color.
 
         This method is used to assign the same color to the same
@@ -202,7 +204,7 @@ class BaseFigure:
         else:
             return self.style["colors"].setdefault(elem, next(self.palette))
 
-    def get_marker(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
+    def get_marker(self, elem: SCALAR_TYPES | str | None = None) -> str:
         """Get the next marker.
 
         This method is used to assign the same marker to the same
@@ -226,7 +228,7 @@ class BaseFigure:
         else:
             return self.style["markers"].setdefault(elem, next(self.markers))
 
-    def get_dashes(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
+    def get_dashes(self, elem: SCALAR_TYPES | str | None = None) -> str:
         """Get the next dash style.
 
         This method is used to assign the same dash style to the same
@@ -250,7 +252,7 @@ class BaseFigure:
         else:
             return self.style["dashes"].setdefault(elem, next(self.dashes))
 
-    def get_shapes(self, elem: Optional[Union[SCALAR, str]] = None) -> str:
+    def get_shapes(self, elem: SCALAR_TYPES | str | None = None) -> str:
         """Get the next shape pattern.
 
         This method is used to assign the same shape pattern to the
@@ -274,7 +276,7 @@ class BaseFigure:
         else:
             return self.style["shapes"].setdefault(elem, next(self.shapes))
 
-    def showlegend(self, name: str, legend: Optional[Union[str, dict]]) -> bool:
+    def showlegend(self, name: str, legend: str | dict | None) -> bool:
         """Get whether the trace should be showed in the legend.
 
         If there's already a trace with the same name, it's not
@@ -302,10 +304,10 @@ class BaseFigure:
 
     def get_axes(
         self,
-        x: Tuple[int, int] = (0, 1),
-        y: Tuple[int, int] = (0, 1),
-        coloraxis: Optional[dict] = None,
-    ) -> Tuple[str, str]:
+        x: tuple[INT_TYPES, INT_TYPES] = (0, 1),
+        y: tuple[INT_TYPES, INT_TYPES] = (0, 1),
+        coloraxis: dict | None = None,
+    ) -> tuple[str, str]:
         """Create and update the plot's axes.
 
         Parameters
@@ -420,7 +422,7 @@ class BasePlot:
         self.tick_fontsize = value.get("tick_fontsize", self.tick_fontsize)
 
     @property
-    def palette(self) -> Union[str, SEQUENCE_TYPES]:
+    def palette(self) -> str | SEQUENCE_TYPES:
         """Color palette.
 
         Specify one of plotly's [built-in palettes][palette] or create
@@ -431,7 +433,7 @@ class BasePlot:
 
     @palette.setter
     @typechecked
-    def palette(self, value: Union[str, SEQUENCE_TYPES]):
+    def palette(self, value: str | SEQUENCE_TYPES):
         if isinstance(value, str) and not hasattr(px.colors.qualitative, value):
             raise ValueError(
                 f"Invalid value for the palette parameter, got {value}. Choose "
@@ -442,13 +444,13 @@ class BasePlot:
         self._aesthetics["palette"] = value
 
     @property
-    def title_fontsize(self) -> int:
+    def title_fontsize(self) -> INT_TYPES:
         """Fontsize for the plot's title."""
         return self._aesthetics["title_fontsize"]
 
     @title_fontsize.setter
     @typechecked
-    def title_fontsize(self, value: INT):
+    def title_fontsize(self, value: INT_TYPES):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the title_fontsize parameter. "
@@ -457,13 +459,13 @@ class BasePlot:
         self._aesthetics["title_fontsize"] = value
 
     @property
-    def label_fontsize(self) -> int:
+    def label_fontsize(self) -> INT_TYPES:
         """Fontsize for the labels, legend and hover information."""
         return self._aesthetics["label_fontsize"]
 
     @label_fontsize.setter
     @typechecked
-    def label_fontsize(self, value: INT):
+    def label_fontsize(self, value: INT_TYPES):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the label_fontsize parameter. "
@@ -472,13 +474,13 @@ class BasePlot:
         self._aesthetics["label_fontsize"] = value
 
     @property
-    def tick_fontsize(self) -> int:
+    def tick_fontsize(self) -> INT_TYPES:
         """Fontsize for the ticks along the plot's axes."""
         return self._aesthetics["tick_fontsize"]
 
     @tick_fontsize.setter
     @typechecked
-    def tick_fontsize(self, value: INT):
+    def tick_fontsize(self, value: INT_TYPES):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the tick_fontsize parameter. "
@@ -489,7 +491,7 @@ class BasePlot:
     # Methods ====================================================== >>
 
     @staticmethod
-    def _get_show(show: Optional[int], model: Union[Model, List[Model]]) -> int:
+    def _get_show(show: INT_TYPES | None, model: Model | list[Model]) -> INT_TYPES:
         """Check and return the number of features to show.
 
         Parameters
@@ -519,9 +521,9 @@ class BasePlot:
 
     @staticmethod
     def _get_hyperparams(
-        params: Optional[Union[str, slice, SEQUENCE_TYPES]],
+        params: str | slice | SEQUENCE_TYPES | None,
         model: Model,
-    ) -> List[str]:
+    ) -> list[str]:
         """Check and return a model's hyperparameters.
 
         Parameters
@@ -547,7 +549,7 @@ class BasePlot:
         else:
             hyperparameters = []
             for param in lst(params):
-                if isinstance(param, int):
+                if isinstance(param, INT):
                     hyperparameters.append(list(model._ht["distributions"])[param])
                 elif isinstance(param, str):
                     for p in param.split("+"):
@@ -567,10 +569,10 @@ class BasePlot:
 
     def _get_subclass(
         self,
-        models: Union[str, Model, SEQUENCE_TYPES],
+        models: str | Model | SEQUENCE_TYPES,
         max_one: bool,
         ensembles: bool = True,
-    ) -> Union[Model, List[Model]]:
+    ) -> Model | list[Model]:
         """Get model subclasses.
 
         Optionally, restrict the number of models to one and filter
@@ -603,9 +605,9 @@ class BasePlot:
 
     def _get_metric(
         self,
-        metric: Optional[Union[int, str, SEQUENCE_TYPES]],
+        metric: INT_TYPES | str | SEQUENCE_TYPES,
         max_one: bool,
-    ) -> Union[int, str, List[int]]:
+    ) -> INT_TYPES | str | list[INT_TYPES]:
         """Check and return the provided metric index.
 
         Parameters
@@ -628,7 +630,7 @@ class BasePlot:
         else:
             inc = []
             for met in lst(metric):
-                if isinstance(met, int):
+                if isinstance(met, INT):
                     if 0 <= met < len(self._metric):
                         inc.append(met)
                     else:
@@ -659,10 +661,10 @@ class BasePlot:
 
     def _get_set(
         self,
-        dataset: Union[str, SEQUENCE_TYPES],
+        dataset: str | SEQUENCE_TYPES,
         max_one: bool,
         allow_holdout: bool = True,
-    ) -> Union[str, List[str]]:
+    ) -> str | list[str]:
         """Check and return the provided data set.
 
         Parameters
@@ -710,7 +712,7 @@ class BasePlot:
 
         return dataset[0] if max_one else dataset
 
-    def _get_target(self, target: Union[int, str]) -> int:
+    def _get_target(self, target: INT_TYPES | str) -> INT_TYPES:
         """Check and return the provided target's index.
 
         Parameters
@@ -740,7 +742,7 @@ class BasePlot:
 
         return target
 
-    def _get_figure(self, **kwargs) -> Union[go.Figure, plt.Figure]:
+    def _get_figure(self, **kwargs) -> go.Figure | plt.Figure:
         """Return existing figure if in canvas, else a new figure.
 
         Every time this method is called from a canvas, the plot
@@ -767,10 +769,10 @@ class BasePlot:
     def _draw_line(
         self,
         parent: str,
-        child: Optional[str] = None,
-        legend: Optional[Union[dict, str]] = None,
+        child: str | None = None,
+        legend: str | dict = None,
         **kwargs,
-    ):
+    ) -> go.Scatter:
         """Draw a line.
 
         Unify the style to draw a line, where parent and child
@@ -820,7 +822,7 @@ class BasePlot:
             **kwargs,
         )
 
-    def _draw_straight_line(self, y: Union[SCALAR, str], xaxis: str, yaxis: str):
+    def _draw_straight_line(self, y: SCALAR_TYPES | str, xaxis: str, yaxis: str):
         """Draw a line across the axis.
 
         The line can be either horizontal or diagonal. The line should
@@ -855,10 +857,10 @@ class BasePlot:
 
     def _plot(
         self,
-        fig: Optional[Union[go.Figure, plt.Figure]] = None,
-        ax: Optional[Union[plt.Axes, Tuple[str, str]]] = None,
+        fig: go.Figure | plt.Figure | None = None,
+        ax: plt.Axes | tuple[str, str] | None = None,
         **kwargs,
-    ) -> Optional[Union[go.Figure, plt.Figure]]:
+    ) -> go.Figure | plt.Figure | None:
         """Make the plot.
 
         Customize the axes to the default layout and plot the figure
@@ -1065,15 +1067,15 @@ class BasePlot:
     @composed(contextmanager, crash, typechecked)
     def canvas(
         self,
-        rows: INT = 1,
-        cols: INT = 2,
+        rows: INT_TYPES = 1,
+        cols: INT_TYPES = 2,
         *,
-        horizontal_spacing: FLOAT = 0.05,
-        vertical_spacing: FLOAT = 0.07,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "out",
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
+        horizontal_spacing: FLOAT_TYPES = 0.05,
+        vertical_spacing: FLOAT_TYPES = 0.07,
+        title: str | dict | None = None,
+        legend: str | dict | None = "out",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
         display: bool = True,
     ):
         """Create a figure with multiple plots.
@@ -1167,7 +1169,7 @@ class BasePlot:
 
     def update_layout(
         self,
-        dict1: Optional[dict] = None,
+        dict1: dict | None = None,
         overwrite: bool = False,
         **kwargs,
     ):
@@ -1206,14 +1208,14 @@ class FeatureSelectorPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_components(
         self,
-        show: Optional[INT] = None,
+        show: INT_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the explained variance ratio per component.
 
         Kept components are colored and discarted components are
@@ -1338,12 +1340,12 @@ class FeatureSelectorPlot(BasePlot):
     def plot_pca(
         self,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the explained variance ratio vs number of components.
 
         If the underlying estimator is [PCA][] (for dense datasets),
@@ -1460,12 +1462,12 @@ class FeatureSelectorPlot(BasePlot):
     def plot_rfecv(
         self,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the rfecv results.
 
         Plot the scores obtained by the estimator fitted on every
@@ -1629,15 +1631,15 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_correlation(
         self,
-        columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
+        columns: slice | SEQUENCE_TYPES | None = None,
         method: str = "pearson",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (800, 700),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (800, 700),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot a correlation matrix.
 
         Displays a heatmap showing the correlation between columns in
@@ -1768,16 +1770,16 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_distribution(
         self,
-        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
-        distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES = 0,
+        distributions: str | SEQUENCE_TYPES | None = None,
+        show: INT_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper right",
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot column distributions.
 
         - For numerical columns, plot the probability density
@@ -2006,16 +2008,16 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_ngrams(
         self,
-        ngram: Union[INT, str] = "bigram",
-        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
-        show: INT = 10,
+        ngram: INT_TYPES | str = "bigram",
+        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        show: INT_TYPES = 10,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot n-gram frequencies.
 
         The text for the plot is extracted from the column named
@@ -2111,17 +2113,17 @@ class DataPlot(BasePlot):
 
         """
 
-        def get_text(column: pd.Series) -> pd.Series:
+        def get_text(column: bk.Series) -> bk.Series:
             """Get the complete corpus as sequence of tokens.
 
             Parameters
             ----------
-            column: pd.Series
+            column: series
                 Column containing the corpus.
 
             Returns
             -------
-            pd.Series
+            series
                 Corpus of tokens.
 
             """
@@ -2192,15 +2194,15 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_qq(
         self,
-        columns: Union[INT, str, slice, SEQUENCE_TYPES] = 0,
-        distributions: Union[str, SEQUENCE_TYPES] = "norm",
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES = 0,
+        distributions: str | SEQUENCE_TYPES = "norm",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot a quantile-quantile plot.
 
         Columns are distinguished by color and the distributions are
@@ -2323,14 +2325,14 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_relationships(
         self,
-        columns: Union[slice, SEQUENCE_TYPES] = [0, 1, 2],
+        columns: slice | SEQUENCE_TYPES = (0, 1, 2),
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (900, 900),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 900),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot pairwise relationships in a dataset.
 
         Creates a grid of axes such that each numerical column appears
@@ -2341,7 +2343,7 @@ class DataPlot(BasePlot):
 
         Parameters
         ----------
-        columns: slice or sequence, default=[0, 1, 2]
+        columns: slice or sequence, default=(0, 1, 2)
             Columns to plot. Selected categorical columns are ignored.
 
         title: str, dict or None, default=None
@@ -2491,15 +2493,15 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_wordcloud(
         self,
-        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
         **kwargs,
-    ):
+    ) -> go.Figure | None:
         """Plot a wordcloud from the corpus.
 
         The text for the plot is extracted from the column named
@@ -2643,15 +2645,15 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_edf(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper left",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper left",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the Empirical Distribution Function of a study.
 
         Use this plot to analyze and improve hyperparameter search
@@ -2804,16 +2806,16 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_hyperparameter_importance(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        metric: Union[int, str] = 0,
-        show: Optional[INT] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        metric: int | str = 0,
+        show: INT_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot a model's hyperparameter importance.
 
         The hyperparameter importance are calculated using the
@@ -2962,16 +2964,16 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_hyperparameters(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        params: Union[str, slice, SEQUENCE_TYPES] = (0, 1),
-        metric: Union[int, str] = 0,
+        models: INT_TYPES | str | Model | None = None,
+        params: str | slice | SEQUENCE_TYPES = (0, 1),
+        metric: int | str = 0,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot hyperparameter relationships in a study.
 
         A model's hyperparameters are plotted against each other. The
@@ -3167,16 +3169,16 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_parallel_coordinate(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        params: Optional[Union[str, slice, SEQUENCE_TYPES]] = None,
-        metric: Union[INT, str] = 0,
+        models: INT_TYPES | str | Model | None = None,
+        params: str | slice | SEQUENCE_TYPES | None = None,
+        metric: INT_TYPES | str = 0,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot high-dimensional parameter relationships in a study.
 
         Every line of the plot represents one trial. This plot is only
@@ -3252,7 +3254,7 @@ class HTPlot(BasePlot):
 
         """
 
-        def sort_mixed_types(values: List[str]) -> List[str]:
+        def sort_mixed_types(values: list[str]) -> list[str]:
             """Sort a sequence of numbers and strings.
 
             Numbers are converted and take precedence over strings.
@@ -3295,7 +3297,7 @@ class HTPlot(BasePlot):
         for d in [dims[0]] + sorted(dims[1:], key=lambda x: params.index(x["label"])):
             if "ticktext" in d:
                 # Skip processing for logarithmic params
-                if all(isinstance(i, int) for i in d["values"]):
+                if all(isinstance(i, INT) for i in d["values"]):
                     # Order categorical values
                     mapping = [d["ticktext"][i] for i in d["values"]]
                     d["ticktext"] = sort_mixed_types(d["ticktext"])
@@ -3344,15 +3346,15 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_pareto_front(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        metric: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | None = None,
+        metric: str | SEQUENCE_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the Pareto front of a study.
 
         Shows the trial scores plotted against each other. The marker's
@@ -3498,16 +3500,16 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_slice(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        params: Optional[Union[str, slice, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | None = None,
+        params: str | slice | SEQUENCE_TYPES | None = None,
+        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the parameter relationship in a study.
 
         The color of the markers indicate the trial. This plot is only
@@ -3652,15 +3654,15 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_trials(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper left",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 800),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper left",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 800),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the hyperparameter tuning trials.
 
         Creates a figure with two plots: the first plot shows the score
@@ -3834,16 +3836,16 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        n_bins: INT = 10,
-        target: Union[INT, str] = 0,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        n_bins: INT_TYPES = 10,
+        target: INT_TYPES | str = 0,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper left",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 900),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper left",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 900),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the calibration curve for a binary classifier.
 
         Well calibrated classifiers are probabilistic classifiers for
@@ -4020,15 +4022,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper right",
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot a model's confusion matrix.
 
         For one model, the plot shows a heatmap. For multiple models,
@@ -4215,14 +4217,14 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_det(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        dataset: Union[str, SEQUENCE_TYPES] = "test",
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        dataset: str | SEQUENCE_TYPES = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
     ):
         """Plot the Detection Error Tradeoff curve.
 
@@ -4343,15 +4345,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot a model's prediction errors.
 
         Plot the actual targets from a set against the predicted values
@@ -4485,15 +4487,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_evals(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        dataset: Union[str, SEQUENCE_TYPES] = "test",
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        dataset: str | SEQUENCE_TYPES = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot evaluation curves.
 
         The evaluation curves are the main metric scores achieved by the
@@ -4609,15 +4611,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_feature_importance(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        show: INT_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot a model's feature importance.
 
         The sum of importances for all features (per model) is 1.
@@ -4750,15 +4752,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        dataset: Union[str, SEQUENCE_TYPES] = "test",
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        dataset: str | SEQUENCE_TYPES = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the cumulative gains curve.
 
         Only available for binary classification tasks.
@@ -4878,15 +4880,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_learning_curve(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the learning curve: score vs number of training samples.
 
         Only use with models fitted using [train sizing][]. [Ensembles][]
@@ -5038,15 +5040,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        dataset: Union[str, SEQUENCE_TYPES] = "test",
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        dataset: str | SEQUENCE_TYPES = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the lift curve.
 
         Only available for binary classification tasks.
@@ -5167,16 +5169,16 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_parshap(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
-        target: Union[INT, str] = 1,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper left",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper left",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the partial correlation of shap values.
 
         Plots the train and test correlation between the shap value of
@@ -5291,7 +5293,7 @@ class PredictionPlot(BasePlot):
 
             for ds in ("train", "test"):
                 X, y = getattr(m, f"X_{ds}"), getattr(m, f"y_{ds}")
-                data = pd.concat([X, y], axis=1)
+                data = bk.concat([X, y], axis=1)
 
                 # Calculating shap values is computationally expensive,
                 # therefore select a random subsample for large data sets
@@ -5379,18 +5381,18 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_partial_dependence(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
         kind: str = "average",
-        pair: Optional[Union[int, str]] = None,
-        target: Union[INT, str] = 1,
+        pair: int | str | None = None,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the partial dependence of features.
 
         The partial dependence of a feature (or a set of features)
@@ -5561,12 +5563,12 @@ class PredictionPlot(BasePlot):
                     axes.append((xaxis, yaxis))
 
             # Compute averaged predictions
-            predictions = Parallel(n_jobs=self.n_jobs)(
+            predictions = Parallel(n_jobs=self.n_jobs, prefer=self.backend)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
                     X=m.X_test,
                     features=col,
-                    kind="both",
+                    kind="both" if "individual" in kind.lower() else "average",
                 ) for col in cols
             )
 
@@ -5675,16 +5677,16 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_permutation_importance(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
-        n_repeats: INT = 10,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        show: INT_TYPES | None = None,
+        n_repeats: INT_TYPES = 10,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the feature permutation importance of models.
 
         Calculating permutations can be time-consuming, especially
@@ -5836,16 +5838,16 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_pipeline(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
         draw_hyperparameter_tuning: bool = True,
-        color_branches: Optional[bool] = None,
+        color_branches: bool | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> plt.Figure | None:
         """Plot a diagram of the pipeline.
 
         !!! warning
@@ -6164,15 +6166,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        dataset: Union[str, SEQUENCE_TYPES] = "test",
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        dataset: str | SEQUENCE_TYPES = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower left",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower left",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the precision-recall curve.
 
         Read more about [PRC][] in sklearn's documentation. Only
@@ -6294,16 +6296,16 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
-        target: Union[INT, str] = 1,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the probability distribution of the target classes.
 
         Only available for classification tasks.
@@ -6435,15 +6437,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "upper left",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "upper left",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot a model's residuals.
 
         The plot shows the residuals (difference between the predicted
@@ -6585,15 +6587,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_results(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the model results.
 
         If all models applied bootstrap, the plot is a boxplot. If
@@ -6691,7 +6693,7 @@ class PredictionPlot(BasePlot):
 
         """
 
-        def get_std(model: Model, metric: int) -> SCALAR:
+        def get_std(model: Model, metric: int) -> SCALAR_TYPES:
             """Get the standard deviation of the bootstrap scores.
 
             Parameters
@@ -6795,7 +6797,7 @@ class PredictionPlot(BasePlot):
         self._fig.used_models.extend(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
-            xlabel=self._metric[metric].name if isinstance(metric, int) else "time (s)",
+            xlabel=self._metric[metric].name if isinstance(metric, INT) else "time (s)",
             title=title,
             legend=legend,
             figsize=figsize or (900, 400 + len(models) * 50),
@@ -6808,15 +6810,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        dataset: Union[str, SEQUENCE_TYPES] = "test",
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        dataset: str | SEQUENCE_TYPES = "test",
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot the Receiver Operating Characteristics curve.
 
         Read more about [ROC][] in sklearn's documentation. Only
@@ -6939,15 +6941,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[INT, str, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower right",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower right",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot scores per iteration of the successive halving.
 
         Only use with models fitted using [successive halving][].
@@ -7101,17 +7103,17 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
-        steps: INT = 100,
+        steps: INT_TYPES = 100,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = "lower left",
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = "lower left",
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> go.Figure | None:
         """Plot metric performances against threshold values.
 
         Only available for binary classification tasks.
@@ -7261,17 +7263,17 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_bar(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
-        target: Union[INT, str] = 1,
+        models: INT_TYPES | str | Model | None = None,
+        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        show: INT_TYPES | None = None,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> plt.Figure | None:
         """Plot SHAP's bar plot.
 
         Create a bar plot of a set of SHAP values. If a single sample
@@ -7379,17 +7381,17 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_beeswarm(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
-        target: Union[INT, str] = 1,
+        models: INT_TYPES | str | Model | None = None,
+        index: slice | SEQUENCE_TYPES | None = None,
+        show: INT_TYPES | None = None,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> plt.Figure | None:
         """Plot SHAP's beeswarm plot.
 
         The plot is colored by feature values. Read more about SHAP
@@ -7494,17 +7496,17 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_decision(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
-        target: Union[INT, str] = 1,
+        models: INT_TYPES | str | Model | None = None,
+        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        show: INT_TYPES | None = None,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> plt.Figure | None:
         """Plot SHAP's decision plot.
 
         Visualize model decisions using cumulative SHAP values. Each
@@ -7627,17 +7629,17 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_force(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
-        target: Union[INT, str] = 1,
+        models: INT_TYPES | str | Model | None = None,
+        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (900, 300),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 300),
+        filename: str | None = None,
+        display: bool | None = True,
         **kwargs,
-    ):
+    ) -> plt.Figure | None:
         """Plot SHAP's force plot.
 
         Visualize the given SHAP values with an additive force layout.
@@ -7758,17 +7760,17 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_heatmap(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        show: Optional[INT] = None,
-        target: Union[INT, str] = 1,
+        models: INT_TYPES | str | Model | None = None,
+        index: slice | SEQUENCE_TYPES | None = None,
+        show: INT_TYPES | None = None,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> plt.Figure | None:
         """Plot SHAP's heatmap plot.
 
         This plot is designed to show the population substructure of a
@@ -7877,17 +7879,17 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_scatter(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[slice, SEQUENCE_TYPES]] = None,
-        columns: Union[INT, str] = 0,
-        target: Union[INT, str] = 1,
+        models: INT_TYPES | str | Model | None = None,
+        index: slice | SEQUENCE_TYPES | None = None,
+        columns: INT_TYPES | str = 0,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (900, 600),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> plt.Figure | None:
         """Plot SHAP's scatter plot.
 
         Plots the value of the feature on the x-axis and the SHAP value
@@ -7996,17 +7998,17 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_waterfall(
         self,
-        models: Optional[Union[INT, str, Model]] = None,
-        index: Optional[Union[INT, str]] = None,
-        show: Optional[INT] = None,
-        target: Union[INT, str] = 1,
+        models: INT_TYPES | str | Model | None = None,
+        index: INT_TYPES | str | None = None,
+        show: INT_TYPES | None = None,
+        target: INT_TYPES | str = 1,
         *,
-        title: Optional[Union[str, dict]] = None,
-        legend: Optional[Union[str, dict]] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
+        title: str | dict | None = None,
+        legend: str | dict | None = None,
+        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        filename: str | None = None,
+        display: bool | None = True,
+    ) -> plt.Figure | None:
         """Plot SHAP's waterfall plot.
 
         The SHAP value of a feature represents the impact of the

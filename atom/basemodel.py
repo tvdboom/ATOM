@@ -7,15 +7,18 @@ Description: Module containing the BaseModel class.
 
 """
 
+from __future__ import annotations
+
 import os
 from copy import deepcopy
 from datetime import datetime as dt
 from functools import cached_property, lru_cache
 from importlib import import_module
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 from unittest.mock import patch
 
 import dill as pickle
+import joblib
 import mlflow
 import numpy as np
 import pandas as pd
@@ -40,12 +43,12 @@ from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
-    CustomDict, PlotCallback, Predictor, Scorer, ShapExplanation,
-    TrialsCallback, check_dependency, composed, crash, custom_transform,
-    estimator_has_attr, flt, get_cols, get_custom_scorer,
-    get_feature_importance, has_task, it, lst, merge, method_to_log, rnd,
-    score, sign, time_to_str, to_pandas, variable_return,
+    DATAFRAME_TYPES, DF_ATTRS, FLOAT_TYPES, INT, INT_TYPES, PANDAS_TYPES,
+    SEQUENCE_TYPES, SERIES_TYPES, X_TYPES, Y_TYPES, CustomDict, PlotCallback,
+    Predictor, Scorer, ShapExplanation, TrialsCallback, bk, check_dependency,
+    composed, crash, custom_transform, estimator_has_attr, flt, get_cols,
+    get_custom_scorer, get_feature_importance, has_task, it, lst, merge,
+    method_to_log, rnd, score, sign, time_to_str, to_pandas, variable_return,
 )
 
 
@@ -77,7 +80,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         "predict_proba_holdout",
     )
 
-    def __init__(self, *args, fast_init=False):
+    def __init__(self, *args, fast_init: bool = False):
         super().__init__()
 
         self.T = args[0]  # Parent class
@@ -134,8 +137,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def __contains__(self, item: str) -> bool:
         return item in self.dataset
 
-    def __getitem__(self, item: Union[INT, str, list]) -> PANDAS_TYPES:
-        if isinstance(item, int):
+    def __getitem__(self, item: INT_TYPES | str | list) -> PANDAS_TYPES:
+        if isinstance(item, INT):
             return self.dataset[self.columns[item]]
         elif isinstance(item, (str, list)):
             return self.dataset[item]  # Get a subset of the dataset
@@ -303,11 +306,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: Tuple[pd.DataFrame, pd.Series],
+        data: tuple[DATAFRAME_TYPES, SERIES_TYPES],
         est_params_fit: dict,
-        validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
-        trial: Optional[Trial] = None,
-    ):
+        validation: tuple[DATAFRAME_TYPES, SERIES_TYPES] = None,
+        trial: Trial | None = None,
+    ) -> Predictor:
         """Fit the estimator and perform in-training validation.
 
         In-training evaluation is performed on models with the
@@ -339,7 +342,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Fitted instance.
 
         """
-        if self.has_validation and hasattr(estimator, "partial_fit"):
+        if self.has_validation and hasattr(estimator, "partial_fit") and validation:
             if not trial:
                 # In-training validation is skipped during hyperparameter tuning
                 m = self.T._metric[0].name
@@ -364,7 +367,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     else:
                         kwargs["classes"] = np.unique(self.y)
 
-                estimator.partial_fit(*data, **est_params_fit, **kwargs)
+                with joblib.parallel_backend(backend=self.T.backend):
+                    estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
                 val_score = self.T._metric[0](estimator, *validation)
                 if not trial:
@@ -385,7 +389,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                         raise TrialPruned()
 
         else:
-            estimator.fit(*data, **est_params_fit)
+            with joblib.parallel_backend(backend=self.T.backend):
+                estimator.fit(*data, **est_params_fit)
 
         return estimator
 
@@ -429,9 +434,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self,
         scorer: Scorer,
         dataset: str,
-        threshold: FLOAT = 0.5,
-        sample_weight: Optional[tuple] = None,
-    ) -> FLOAT:
+        threshold: FLOAT_TYPES = 0.5,
+        sample_weight: tuple | None = None,
+    ) -> FLOAT_TYPES:
         """Calculate a metric score using the prediction attributes.
 
         The method results are cached to avoid recalculation of the
@@ -521,7 +526,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         return result
 
     @composed(crash, method_to_log, typechecked)
-    def hyperparameter_tuning(self, n_trials: int, reset: bool = False):
+    def hyperparameter_tuning(self, n_trials: INT_TYPES, reset: bool = False):
         """Run the hyperparameter tuning algorithm.
 
         Search for the best combination of hyperparameters. The function
@@ -539,7 +544,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         """
 
-        def objective(trial: Trial) -> FLOAT:
+        def objective(trial: Trial) -> FLOAT_TYPES:
             """Objective function for hyperparameter tuning.
 
             Parameters
@@ -554,7 +559,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
             """
 
-            def fit_model(train_idx: list, val_idx: list) -> FLOAT:
+            def fit_model(train_idx: list, val_idx: list) -> FLOAT_TYPES:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation
@@ -656,9 +661,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                         random_state=trial.number + (self.T.random_state or 0),
                     )
 
-                    # Parallel loop over fit_model (threading fixes PickleError)
-                    parallel = Parallel(n_jobs=self.T.n_jobs, backend="threading")
-                    scores = parallel(
+                    # Force threading backend to prevent PickleError
+                    scores = Parallel(n_jobs=self.T.n_jobs, backend="threading")(
                         delayed(fit_model)(i, j)
                         for i, j in fold.split(og.X_train, og.y_train)
                     )
@@ -799,7 +803,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self.T.log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: Optional[pd.DataFrame] = None, y: Optional[pd.Series] = None):
+    def fit(self, X: DATAFRAME_TYPES | None = None, y: SERIES_TYPES | None = None):
         """Fit and validate the model.
 
         The estimator is fitted using the best hyperparameters found
@@ -809,11 +813,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         Parameters
         ----------
-        X: pd.DataFrame or None
+        X: dataframe or None
             Feature set with shape=(n_samples, n_features). If None,
             `self.X_train` is used.
 
-        y: pd.Series or None
+        y: series or None
             Target column corresponding to X. If None, `self.y_train`
             is used.
 
@@ -904,7 +908,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self.T.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
 
     @composed(crash, method_to_log, typechecked)
-    def bootstrapping(self, n_bootstrap: int, reset: bool = False):
+    def bootstrapping(self, n_bootstrap: INT_TYPES, reset: bool = False):
         """Apply a bootstrap algorithm.
 
         Take bootstrapped samples from the training set and test them
@@ -1001,12 +1005,12 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
 
     @property
-    def study(self) -> Optional[Study]:
+    def study(self) -> Study | None:
         """Optuna study used for [hyperparameter tuning][]."""
         return self._study
 
     @property
-    def trials(self) -> Optional[pd.DataFrame]:
+    def trials(self) -> pd.DataFrame | None:
         """Overview of the trials' results.
 
         All durations are in seconds. Columns include:
@@ -1023,7 +1027,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             return self._trials.sort_index()  # Can be in disorder for n_jobs>1
 
     @property
-    def best_trial(self) -> Optional[Trial]:
+    def best_trial(self) -> Trial | None:
         """Trial that returned the highest score.
 
         For [multi-metric runs][], the best trial is the trial that
@@ -1036,7 +1040,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
     @best_trial.setter
     @typechecked
-    def best_trial(self, value: int):
+    def best_trial(self, value: INT_TYPES):
         """Change the selected best trial."""
         if value not in self.trials.index:
             raise ValueError(
@@ -1054,13 +1058,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             return {}
 
     @property
-    def score_ht(self) -> Optional[Union[FLOAT, List[FLOAT]]]:
+    def score_ht(self) -> FLOAT_TYPES | list[FLOAT_TYPES] | None:
         """Metric score obtained by the [best trial][self-best_trial]."""
         if self.best_trial:
             return self.trials.at[self.best_trial.number, "score"]
 
     @property
-    def time_ht(self) -> Optional[int]:
+    def time_ht(self) -> INT_TYPES | None:
         """Duration of the hyperparameter tuning (in seconds)."""
         if self.trials is not None:
             return self.trials.iat[-1, -2]
@@ -1082,27 +1086,27 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         return self._evals
 
     @property
-    def score_train(self) -> Union[FLOAT, List[FLOAT]]:
+    def score_train(self) -> FLOAT_TYPES | list[FLOAT_TYPES]:
         """Metric score on the training set."""
         return flt([self._get_score(m, "train") for m in self.T._metric.values()])
 
     @property
-    def score_test(self) -> Union[FLOAT, List[FLOAT]]:
+    def score_test(self) -> FLOAT_TYPES | list[FLOAT_TYPES]:
         """Metric score on the test set."""
         return flt([self._get_score(m, "test") for m in self.T._metric.values()])
 
     @property
-    def score_holdout(self) -> Union[FLOAT, List[FLOAT]]:
+    def score_holdout(self) -> FLOAT_TYPES | list[FLOAT_TYPES]:
         """Metric score on the holdout set."""
         return flt([self._get_score(m, "holdout") for m in self.T._metric.values()])
 
     @property
-    def time_fit(self) -> int:
+    def time_fit(self) -> INT_TYPES:
         """Duration of the model fitting on the train set (in seconds)."""
         return self._time_fit
 
     @property
-    def bootstrap(self) -> Optional[pd.DataFrame]:
+    def bootstrap(self) -> pd.DataFrame | None:
         """Overview of the bootstrapping scores.
 
         The dataframe has shape=(n_bootstrap, metric) and shows the
@@ -1114,24 +1118,24 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         return self._bootstrap
 
     @property
-    def score_bootstrap(self) -> Optional[Union[FLOAT, List[FLOAT]]]:
+    def score_bootstrap(self) -> FLOAT_TYPES | list[FLOAT_TYPES] | None:
         """Mean metric score on the bootstrapped samples."""
         if self.bootstrap is not None:
             return flt(self.bootstrap.mean().tolist())
 
     @property
-    def time_bootstrap(self) -> Optional[int]:
+    def time_bootstrap(self) -> INT_TYPES | None:
         """Duration of the bootstrapping (in seconds)."""
         if self._time_bootstrap:
             return self._time_bootstrap
 
     @property
-    def time(self) -> int:
+    def time(self) -> INT_TYPES:
         """Total duration of the run (in seconds)."""
         return (self.time_ht or 0) + self._time_fit + self._time_bootstrap
 
     @property
-    def feature_importance(self) -> Optional[pd.Series]:
+    def feature_importance(self) -> pd.Series | None:
         """Normalized feature importance scores.
 
         The sum of importances for all features is 1. The scores are
@@ -1199,22 +1203,22 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             return self.branch.pipeline
 
     @property
-    def dataset(self) -> pd.DataFrame:
+    def dataset(self) -> DATAFRAME_TYPES:
         """Complete data set."""
         return merge(self.X, self.y)
 
     @property
-    def train(self) -> pd.DataFrame:
+    def train(self) -> DATAFRAME_TYPES:
         """Training set."""
         return merge(self.X_train, self.y_train)
 
     @property
-    def test(self) -> pd.DataFrame:
+    def test(self) -> DATAFRAME_TYPES:
         """Test set."""
         return merge(self.X_test, self.y_test)
 
     @property
-    def holdout(self) -> Optional[pd.DataFrame]:
+    def holdout(self) -> DATAFRAME_TYPES | None:
         """Holdout set."""
         if (holdout := self.branch.holdout) is not None:
             if self.scaler:
@@ -1226,7 +1230,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 return holdout
 
     @property
-    def X(self) -> pd.DataFrame:
+    def X(self) -> DATAFRAME_TYPES:
         """Feature set."""
         return pd.concat([self.X_train, self.X_test])
 
@@ -1236,7 +1240,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         return pd.concat([self.y_train, self.y_test])
 
     @property
-    def X_train(self) -> pd.DataFrame:
+    def X_train(self) -> DATAFRAME_TYPES:
         """Features of the training set."""
         if self.scaler:
             return self.scaler.transform(self.branch.X_train[:self._train_idx])
@@ -1249,7 +1253,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         return self.branch.y_train[:self._train_idx]
 
     @property
-    def X_test(self) -> pd.DataFrame:
+    def X_test(self) -> DATAFRAME_TYPES:
         """Features of the test set."""
         if self.scaler:
             return self.scaler.transform(self.branch.X_test)
@@ -1257,20 +1261,20 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             return self.branch.X_test
 
     @property
-    def X_holdout(self) -> Optional[pd.DataFrame]:
+    def X_holdout(self) -> DATAFRAME_TYPES | None:
         """Features of the holdout set."""
         if self.branch.holdout is not None:
             return self.holdout.iloc[:, :-self.branch._idx[0]]
 
     @property
-    def y_holdout(self) -> Optional[PANDAS_TYPES]:
+    def y_holdout(self) -> PANDAS_TYPES | None:
         """Target column of the holdout set."""
         if self.branch.holdout is not None:
             return self.holdout[self.branch.target]
 
     # Prediction properties ======================================== >>
 
-    def _assign_prediction_columns(self) -> List[str]:
+    def _assign_prediction_columns(self) -> list[str]:
         """Assign column names for the prediction methods.
 
         Returns
@@ -1286,10 +1290,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
     @cached_property
     def decision_function_train(self) -> PANDAS_TYPES:
-        """Confidence scores on the training set.
+        """Predicted confidence scores on the training set.
 
-        Output of shape=(n_samples,) or shape=(n_samples, n_classes)
-        depending on the task.
+        Output of shape=(n_samples,) for binary classification tasks
+        or shape=(n_samples, n_classes) for multiclass classification
+        tasks.
 
         """
         return to_pandas(
@@ -1301,10 +1306,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
     @cached_property
     def decision_function_test(self) -> PANDAS_TYPES:
-        """Confidence scores on the test set.
+        """Predicted confidence scores on the test set.
 
-        Output of shape=(n_samples,) or shape=(n_samples, n_classes)
-        depending on the task.
+        Output of shape=(n_samples,) for binary classification tasks
+        or shape=(n_samples, n_classes) for multiclass classification
+        tasks.
 
         """
         return to_pandas(
@@ -1315,11 +1321,12 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         )
 
     @cached_property
-    def decision_function_holdout(self) -> Optional[PANDAS_TYPES]:
-        """Confidence scores on the holdout set.
+    def decision_function_holdout(self) -> PANDAS_TYPES | None:
+        """Predicted confidence scores on the holdout set.
 
-        Output of shape=(n_samples,) or shape=(n_samples, n_classes)
-        depending on the task.
+        Output of shape=(n_samples,) for binary classification tasks
+        or shape=(n_samples, n_classes) for multiclass classification
+        tasks.
 
         """
         if self.T.holdout is not None:
@@ -1361,7 +1368,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         )
 
     @cached_property
-    def predict_holdout(self) -> Optional[PANDAS_TYPES]:
+    def predict_holdout(self) -> PANDAS_TYPES | None:
         """Class predictions on the holdout set.
 
         Output of shape=(n_samples,) or shape=(n_samples, n_targets)
@@ -1377,61 +1384,61 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             )
 
     @cached_property
-    def predict_log_proba_train(self) -> pd.DataFrame:
-        """Class log-probabilities predictions on the training set.
+    def predict_log_proba_train(self) -> DATAFRAME_TYPES:
+        """Class log-probability predictions on the training set.
 
         Output of shape=(n_samples, n_classes).
 
         """
-        return pd.DataFrame(
+        return bk.DataFrame(
             data=self.estimator.predict_log_proba(self.X_train),
             index=self.X_train.index,
             columns=self._assign_prediction_columns(),
         )
 
     @cached_property
-    def predict_log_proba_test(self) -> pd.DataFrame:
-        """Class log-probabilities predictions on the test set.
+    def predict_log_proba_test(self) -> DATAFRAME_TYPES:
+        """Class log-probability predictions on the test set.
 
         Output of shape=(n_samples, n_classes).
 
         """
-        return pd.DataFrame(
+        return bk.DataFrame(
             data=self.estimator.predict_log_proba(self.X_test),
             index=self.X_test.index,
             columns=self._assign_prediction_columns(),
         )
 
     @cached_property
-    def predict_log_proba_holdout(self) -> Optional[pd.DataFrame]:
-        """Class log-probabilities predictions on the holdout set.
+    def predict_log_proba_holdout(self) -> DATAFRAME_TYPES | None:
+        """Class log-probability predictions on the holdout set.
 
         Output of shape=(n_samples, n_classes).
 
         """
         if self.T.holdout is not None:
-            return pd.DataFrame(
+            return bk.DataFrame(
                 data=self.estimator.predict_log_proba(self.X_holdout),
                 index=self.X_holdout.index,
                 columns=self._assign_prediction_columns(),
             )
 
     @cached_property
-    def predict_proba_train(self) -> pd.DataFrame:
-        """Class probabilities predictions on the training set.
+    def predict_proba_train(self) -> DATAFRAME_TYPES:
+        """Class probability predictions on the training set.
 
         Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
         n_classes) with a multiindex format for [multioutput tasks][].
 
         """
         if (data := np.array(self.estimator.predict_proba(self.X_train))).ndim < 3:
-            return pd.DataFrame(
+            return bk.DataFrame(
                 data=data,
                 index=self.X_train.index,
                 columns=self._assign_prediction_columns(),
             )
         else:
-            return pd.DataFrame(
+            return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
                 index=pd.MultiIndex.from_tuples(
                     [(col, i) for col in self.target for i in self.X_train.index]
@@ -1440,21 +1447,21 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             )
 
     @cached_property
-    def predict_proba_test(self) -> pd.DataFrame:
-        """Class probabilities predictions on the test set.
+    def predict_proba_test(self) -> DATAFRAME_TYPES:
+        """Class probability predictions on the test set.
 
         Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
         n_classes) with a multiindex format for [multioutput tasks][].
 
         """
         if (data := np.array(self.estimator.predict_proba(self.X_test))).ndim < 3:
-            return pd.DataFrame(
+            return bk.DataFrame(
                 data=data,
                 index=self.X_test.index,
                 columns=self._assign_prediction_columns(),
             )
         else:
-            return pd.DataFrame(
+            return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
                 index=pd.MultiIndex.from_tuples(
                     [(col, i) for col in self.target for i in self.X_test.index]
@@ -1463,21 +1470,21 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             )
 
     @cached_property
-    def predict_proba_holdout(self) -> Optional[pd.DataFrame]:
-        """Class probabilities predictions on the holdout set.
+    def predict_proba_holdout(self) -> DATAFRAME_TYPES | None:
+        """Class probability predictions on the holdout set.
 
         Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
         n_classes) with a multiindex format for [multioutput tasks][].
 
         """
         if (data := np.array(self.estimator.predict_proba(self.X_holdout))).ndim < 3:
-            return pd.DataFrame(
+            return bk.DataFrame(
                 data=data,
                 index=self.X_holdout.index,
                 columns=self._assign_prediction_columns(),
             )
         else:
-            return pd.DataFrame(
+            return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
                 index=pd.MultiIndex.from_tuples(
                     [(col, i) for col in self.target for i in self.X_holdout.index]
@@ -1489,13 +1496,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
     def _prediction(
         self,
-        X: Union[slice, Y_TYPES, X_TYPES],
-        y: Optional[Y_TYPES] = None,
-        metric: Optional[Union[str, callable]] = None,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
-        verbose: Optional[INT] = None,
+        X: slice | Y_TYPES | X_TYPES,
+        y: Y_TYPES | None = None,
+        metric: str | callable | None = None,
+        sample_weight: SEQUENCE_TYPES | None = None,
+        verbose: INT_TYPES | None = None,
         method: str = "predict",
-    ) -> Union[FLOAT, PANDAS_TYPES]:
+    ) -> FLOAT_TYPES | PANDAS_TYPES:
         """Get predictions on new data or rows in the dataset.
 
         New data is first transformed through the model's pipeline.
@@ -1508,7 +1515,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Index names or positions of rows in the dataset, or new
             feature set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, pd.DataFrame or None, default=None
+        y: int, str, dict, sequence, dataframe or None, default=None
             Target column corresponding to X.
 
             - If None: y is ignored.
@@ -1537,7 +1544,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        float, pd.Series or pd.DataFrame
+        float, series or dataframe
             Calculated predictions. The return type depends on the method
             called.
 
@@ -1579,9 +1586,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                         columns=self._assign_prediction_columns(),
                     )
                 else:
-                    return pd.DataFrame(
+                    return bk.DataFrame(
                         data=data.reshape(-1, data.shape[2]),
-                        index=pd.MultiIndex.from_tuples(
+                        index=bk.MultiIndex.from_tuples(
                             [(col, i) for col in self.target for i in X.index]
                         ),
                         columns=np.unique(self.y),
@@ -1606,10 +1613,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, method_to_log, typechecked)
     def decision_function(
         self,
-        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
-        /,
+        X: INT_TYPES | str | slice | SEQUENCE_TYPES | X_TYPES,
         *,
-        verbose: Optional[INT] = None,
+        verbose: INT_TYPES | None = None,
     ) -> PANDAS_TYPES:
         """Get confidence scores on new data or rows in the dataset.
 
@@ -1631,10 +1637,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        pd.Series or pd.DataFrame
-            Predicted confidence scores, with shape=(n_samples,) for
-            binary classification tasks and (n_samples, n_classes) for
-            multiclass classification tasks.
+        series or dataframe
+            Predicted confidence scores with shape=(n_samples,) for
+            binary classification tasks or shape=(n_samples, n_classes)
+            for multiclass classification tasks.
 
         """
         return self._prediction(X, verbose=verbose, method="decision_function")
@@ -1642,11 +1648,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, method_to_log, typechecked)
     def predict(
         self,
-        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
-        /,
+        X: INT_TYPES | str | slice | SEQUENCE_TYPES | X_TYPES,
         *,
-        verbose: Optional[INT] = None,
-    ) -> pd.Series:
+        verbose: INT_TYPES | None = None,
+    ) -> PANDAS_TYPES:
         """Get class predictions on new data or rows in the dataset.
 
         New data is first transformed through the model's pipeline.
@@ -1667,8 +1672,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        pd.Series
-            Predicted classes with shape=(n_samples,).
+        series or dataframe
+            Class predictions with shape=(n_samples,) or
+            shape=(n_samples, n_targets) for [multioutput tasks][].
 
         """
         return self._prediction(X, verbose=verbose, method="predict")
@@ -1677,11 +1683,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, method_to_log, typechecked)
     def predict_log_proba(
         self,
-        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
-        /,
+        X: INT_TYPES | str | slice | SEQUENCE_TYPES | X_TYPES,
         *,
-        verbose: Optional[INT] = None,
-    ) -> pd.DataFrame:
+        verbose: INT_TYPES | None = None,
+    ) -> DATAFRAME_TYPES:
         """Get class log-probabilities on new data or rows in the dataset.
 
         New data is first transformed through the model's pipeline.
@@ -1702,8 +1707,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        pd.DataFrame
-            Predicted class log-probabilities with shape=(n_samples,
+        dataframe
+            Class log-probability predictions with shape=(n_samples,
             n_classes).
 
         """
@@ -1713,11 +1718,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, method_to_log, typechecked)
     def predict_proba(
         self,
-        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
-        /,
+        X: INT_TYPES | str | slice | SEQUENCE_TYPES | X_TYPES,
         *,
-        verbose: Optional[INT] = None,
-    ) -> pd.DataFrame:
+        verbose: INT_TYPES | None = None,
+    ) -> DATAFRAME_TYPES:
         """Get class probabilities on new data or rows in the dataset.
 
         New data is first transformed through the model's pipeline.
@@ -1738,9 +1742,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        pd.DataFrame
-            Predicted class probabilities with shape=(n_samples,
-            n_classes).
+        dataframe
+            Class probability predictions with shape=(n_samples, n_classes)
+            or (n_targets * n_samples, n_classes) with a multiindex format
+            for [multioutput tasks][].
 
         """
         return self._prediction(X, verbose=verbose, method="predict_proba")
@@ -1749,14 +1754,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, method_to_log, typechecked)
     def score(
         self,
-        X: Union[INT, str, slice, SEQUENCE_TYPES, X_TYPES],
-        /,
-        y: Optional[Y_TYPES] = None,
-        metric: Optional[Union[str, callable]] = None,
+        X: INT_TYPES | str | slice | SEQUENCE_TYPES | X_TYPES,
+        y: Y_TYPES | None = None,
+        metric: str | callable | None = None,
         *,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
-        verbose: Optional[INT] = None,
-    ) -> FLOAT:
+        sample_weight: SEQUENCE_TYPES | None = None,
+        verbose: INT_TYPES | None = None,
+    ) -> FLOAT_TYPES:
         """Get a metric score on new data.
 
         New data is first transformed through the model's pipeline.
@@ -1777,7 +1781,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Names or indices of rows in the dataset, or new feature
             set with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, pd.DataFrame or None, default=None
+        y: int, str, dict, sequence, dataframe or None, default=None
             Target column corresponding to X.
 
             - If int: Position of the target column in X.
@@ -1817,7 +1821,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
     # Utility methods ============================================== >>
 
-    def _new_copy(self):
+    def _new_copy(self) -> BaseModel:
         """Return a new model instance with the same estimator."""
         obj = self.__class__(self.T, self.name)
         obj._est_params = self._est_params
@@ -1911,8 +1915,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self.T.log("Launching app...", 1)
 
         inputs = []
-        og_branch = self.T._get_og_branches()[0].name
-        for name, column in self.T._branches[og_branch].X.items():
+        for name, column in self.T._get_og_branches()[0].X.items():
             if column.dtype.kind in "ifu":
                 inputs.append(Textbox(label=name))
             else:
@@ -1936,7 +1939,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def create_dashboard(
         self,
         dataset: str = "test",
-        filename: Optional[str] = None,
+        *,
+        filename: str | None = None,
         **kwargs,
     ):
         """Create an interactive dashboard to analyze the model.
@@ -2099,10 +2103,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, typechecked)
     def evaluate(
         self,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
-        threshold: FLOAT = 0.5,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        *,
+        threshold: FLOAT_TYPES = 0.5,
+        sample_weight: SEQUENCE_TYPES | None = None,
     ) -> pd.Series:
         """Get the model's scores for the provided metrics.
 
@@ -2187,8 +2192,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, typechecked)
     def export_pipeline(
         self,
-        memory: Optional[Union[bool, str, Memory]] = None,
-        verbose: Optional[INT] = None,
+        *,
+        memory: bool | str | Memory | None = None,
+        verbose: INT_TYPES | None = None,
     ) -> Pipeline:
         """Export the model's pipeline to a sklearn-like object.
 
@@ -2232,7 +2238,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         return self.T.export_pipeline(self.name, memory=memory, verbose=verbose)
 
     @composed(crash, method_to_log, typechecked)
-    def full_train(self, include_holdout: bool = False):
+    def full_train(self, *, include_holdout: bool = False):
         """Train the estimator on the complete dataset.
 
         In some cases it might be desirable to use all available data
@@ -2275,11 +2281,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
+        X: X_TYPES | None = None,
+        y: Y_TYPES | None = None,
         *,
-        verbose: Optional[INT] = None,
-    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+        verbose: INT_TYPES | None = None,
+    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, SERIES_TYPES]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2288,7 +2294,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         transformers that require the other parameter. This can be
         of use to, for example, inversely transform only the target
         column. If called from a model that used automated feature
-        scaling, the scaling is inversed as well.
+        scaling, the scaling is inverted as well.
 
         Parameters
         ----------
@@ -2308,10 +2314,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Original feature set. Only returned if provided.
 
-        y: pd.Series
+        series
             Original target column. Only returned if provided.
 
         """
@@ -2330,7 +2336,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         return variable_return(X, y)
 
     @composed(crash, method_to_log, typechecked)
-    def register(self, name: Optional[str] = None, stage: str = "Staging"):
+    def register(self, name: str | None = None, stage: str = "Staging"):
         """Register the model in [mlflow's model registry][registry].
 
         This method is only available when model [tracking][] is
@@ -2390,11 +2396,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, method_to_log, typechecked)
     def transform(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
+        X: X_TYPES | None = None,
+        y: Y_TYPES | None = None,
         *,
-        verbose: Optional[INT] = None,
-    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+        verbose: INT_TYPES | None = None,
+    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, SERIES_TYPES]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -2423,10 +2429,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed feature set. Only returned if provided.
 
-        y: pd.Series
+        series
             Transformed target column. Only returned if provided.
 
         """

@@ -7,17 +7,19 @@ Description: Module containing the Branch class.
 
 """
 
+from __future__ import annotations
+
 from copy import copy
 from functools import cached_property
-from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 from typeguard import typechecked
 
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
-    PANDAS_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, composed,
-    crash, custom_transform, flt, merge, method_to_log, to_pandas,
+    DATAFRAME_TYPES, PANDAS_TYPES, SEQUENCE_TYPES, SERIES, SERIES_TYPES,
+    X_TYPES, Y_TYPES, CustomDict, bk, composed, crash, custom_transform, flt,
+    merge, method_to_log, to_pandas,
 )
 
 
@@ -47,7 +49,7 @@ class Branch:
 
     """
 
-    def __init__(self, *args, parent=None):
+    def __init__(self, *args, parent: Branch | None = None):
         self.T = args[0]
 
         self._name = args[1]
@@ -69,7 +71,7 @@ class Branch:
                 if not hasattr(self, attr):  # If not already assigned...
                     setattr(self, attr, getattr(parent, attr))
 
-    def __delete__(self, instance):
+    def __delete__(self, instance: Branch):
         if len(self.T._branches.min("og")) == 1:
             raise PermissionError("Can't delete the last branch!")
         else:
@@ -132,11 +134,7 @@ class Branch:
 
     # Data properties ============================================== >>
 
-    def _check_setter(
-        self,
-        name: str,
-        value: Union[SEQUENCE_TYPES, X_TYPES],
-    ) -> PANDAS_TYPES:
+    def _check_setter(self, name: str, value: SEQUENCE_TYPES | X_TYPES) -> PANDAS_TYPES:
         """Check the property setter.
 
         Convert the property to a pandas object and compare with the
@@ -152,13 +150,28 @@ class Branch:
 
         Returns
         -------
-        pd.Series or pd.DataFrame
+        series or dataframe
             Data set.
 
         """
 
-        def counter(name, dim):
-            """Return the counter dimension of the provided data set."""
+        def counter(name: str, dim: str) -> str:
+            """Return the opposite dimension of the provided data set.
+
+            Parameters
+            ----------
+            name: str
+                Name of the data set.
+
+            dim: str
+                Dimension to look at. Either side or under.
+
+            Returns
+            -------
+            str
+                Name of the opposite dimension.
+
+            """
             if name == "dataset":
                 return name
             if dim == "side":
@@ -206,7 +219,7 @@ class Branch:
                 )
 
         if under_name:  # Check for equal columns
-            if isinstance(value, pd.Series):
+            if isinstance(value, SERIES):
                 if value.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
@@ -259,7 +272,7 @@ class Branch:
         self._mapping = value
 
     @property
-    def dataset(self) -> pd.DataFrame:
+    def dataset(self) -> DATAFRAME_TYPES:
         """Complete data set."""
         return self._data
 
@@ -269,7 +282,7 @@ class Branch:
         self._data = self._check_setter("dataset", value)
 
     @property
-    def train(self) -> pd.DataFrame:
+    def train(self) -> DATAFRAME_TYPES:
         """Training set."""
         return self._data.loc[self._idx[1], :]
 
@@ -277,11 +290,11 @@ class Branch:
     @typechecked
     def train(self, value: X_TYPES):
         df = self._check_setter("train", value)
-        self._data = self.T._set_index(pd.concat([df, self.test]), self.y_test)
+        self._data = self.T._set_index(bk.concat([df, self.test]), self.y_test)
         self._idx[1] = self._data.index[:len(df)]
 
     @property
-    def test(self) -> pd.DataFrame:
+    def test(self) -> DATAFRAME_TYPES:
         """Test set."""
         return self._data.loc[self._idx[2], :]
 
@@ -289,11 +302,11 @@ class Branch:
     @typechecked
     def test(self, value: X_TYPES):
         df = self._check_setter("test", value)
-        self._data = self.T._set_index(pd.concat([self.train, df]), self.y_train)
+        self._data = self.T._set_index(bk.concat([self.train, df]), self.y_train)
         self._idx[2] = self._data.index[-len(df):]
 
     @cached_property
-    def holdout(self) -> Optional[pd.DataFrame]:
+    def holdout(self) -> DATAFRAME_TYPES | None:
         """Holdout set."""
         if self.T.holdout is not None:
             X, y = self.T.holdout.iloc[:, :-self._idx[0]], self.T.holdout[self.target]
@@ -304,7 +317,7 @@ class Branch:
             return merge(X, y)
 
     @property
-    def X(self) -> pd.DataFrame:
+    def X(self) -> DATAFRAME_TYPES:
         """Feature set."""
         return self._data.drop(self.target, axis=1)
 
@@ -326,7 +339,7 @@ class Branch:
         self._data = merge(self._data.drop(self.target, axis=1), series)
 
     @property
-    def X_train(self) -> pd.DataFrame:
+    def X_train(self) -> DATAFRAME_TYPES:
         """Features of the training set."""
         return self.train.drop(self.target, axis=1)
 
@@ -334,7 +347,7 @@ class Branch:
     @typechecked
     def X_train(self, value: X_TYPES):
         df = self._check_setter("X_train", value)
-        self._data = pd.concat([merge(df, self.train[self.target]), self.test])
+        self._data = bk.concat([merge(df, self.train[self.target]), self.test])
 
     @property
     def y_train(self) -> PANDAS_TYPES:
@@ -345,10 +358,10 @@ class Branch:
     @typechecked
     def y_train(self, value: Y_TYPES):
         series = self._check_setter("y_train", value)
-        self._data = pd.concat([merge(self.X_train, series), self.test])
+        self._data = bk.concat([merge(self.X_train, series), self.test])
 
     @property
-    def X_test(self) -> pd.DataFrame:
+    def X_test(self) -> DATAFRAME_TYPES:
         """Features of the test set."""
         return self.test.drop(self.target, axis=1)
 
@@ -356,7 +369,7 @@ class Branch:
     @typechecked
     def X_test(self, value: X_TYPES):
         df = self._check_setter("X_test", value)
-        self._data = pd.concat([self.train, merge(df, self.test[self.target])])
+        self._data = bk.concat([self.train, merge(df, self.test[self.target])])
 
     @property
     def y_test(self) -> PANDAS_TYPES:
@@ -367,15 +380,15 @@ class Branch:
     @typechecked
     def y_test(self, value: Y_TYPES):
         series = self._check_setter("y_test", value)
-        self._data = pd.concat([self.train, merge(self.X_test, series)])
+        self._data = bk.concat([self.train, merge(self.X_test, series)])
 
     @property
-    def shape(self) -> Tuple[int, int]:
+    def shape(self) -> tuple[int, int]:
         """Shape of the dataset (n_rows, n_columns)."""
         return self._data.shape
 
     @property
-    def columns(self) -> pd.Series:
+    def columns(self) -> SERIES_TYPES:
         """Name of all the columns."""
         return self._data.columns
 
@@ -385,7 +398,7 @@ class Branch:
         return len(self.columns)
 
     @property
-    def features(self) -> pd.Series:
+    def features(self) -> SERIES_TYPES:
         """Name of the features."""
         return self.columns[:-self._idx[0]]
 
@@ -395,18 +408,18 @@ class Branch:
         return len(self.features)
 
     @property
-    def target(self) -> Union[str, List[str]]:
+    def target(self) -> str | list[str]:
         """Name of the target column(s)."""
         return flt(list(self.columns[-self._idx[0]:]))
 
     # Utility methods ============================================== >>
 
-    def _get_attrs(self):
+    def _get_attrs(self) -> list[str]:
         """Get properties and attributes to call from parent.
 
         Returns
         -------
-        list
+        list of str
             Properties and attributes.
 
         """
@@ -420,12 +433,12 @@ class Branch:
 
         return attrs
 
-    def _get_depending_models(self):
+    def _get_depending_models(self) -> list[Branch]:
         """Return the models that are dependent on this branch.
 
         Returns
         -------
-        list
+        list of Branch
             Depending models.
 
         """

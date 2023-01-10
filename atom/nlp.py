@@ -13,10 +13,8 @@ import re
 import unicodedata
 from logging import Logger
 from string import punctuation
-from typing import List, Optional, Tuple, Union
 
 import nltk
-import pandas as pd
 from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
@@ -29,8 +27,9 @@ from typeguard import typechecked
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
-    composed, crash, get_corpus, is_sparse, merge, method_to_log, to_df,
+    INT_TYPES, SCALAR_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
+    check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
+    method_to_log, pd, to_df,
 )
 
 
@@ -250,18 +249,18 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         decode: bool = True,
         lower_case: bool = True,
         drop_email: bool = True,
-        regex_email: Optional[str] = None,
+        regex_email: str | None = None,
         drop_url: bool = True,
-        regex_url: Optional[str] = None,
+        regex_url: str | None = None,
         drop_html: bool = True,
-        regex_html: Optional[str] = None,
+        regex_html: str | None = None,
         drop_emoji: bool = True,
-        regex_emoji: Optional[str] = None,
+        regex_emoji: str | None = None,
         drop_number: bool = True,
-        regex_number: Optional[str] = None,
+        regex_number: str | None = None,
         drop_punctuation: bool = True,
-        verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
+        verbose: INT_TYPES = 0,
+        logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.decode = decode
@@ -282,7 +281,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drops = pd.DataFrame()
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> pd.DataFrame:
         """Apply the transformations to the data.
 
         Parameters
@@ -565,12 +564,12 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         *,
-        stopwords: Union[bool, str] = True,
-        custom_stopwords: Optional[SEQUENCE_TYPES] = None,
-        stem: Union[bool, str] = False,
+        stopwords: bool | str = True,
+        custom_stopwords: SEQUENCE_TYPES | None = None,
+        stem: bool | str = False,
         lemmatize: bool = True,
-        verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
+        verbose: INT_TYPES = 0,
+        logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.stopwords = stopwords
@@ -579,7 +578,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.lemmatize = lemmatize
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> pd.DataFrame:
         """Normalize the text.
 
         Parameters
@@ -813,12 +812,12 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        bigram_freq: Optional[SCALAR] = None,
-        trigram_freq: Optional[SCALAR] = None,
-        quadgram_freq: Optional[SCALAR] = None,
+        bigram_freq: SCALAR_TYPES | None = None,
+        trigram_freq: SCALAR_TYPES | None = None,
+        quadgram_freq: SCALAR_TYPES | None = None,
         *,
-        verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
+        verbose: INT_TYPES = 0,
+        logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.bigram_freq = bigram_freq
@@ -830,7 +829,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.quadgrams = None
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> pd.DataFrame:
         """Tokenize the text.
 
         Parameters
@@ -850,7 +849,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
 
-        def replace_ngrams(row: List[str], ngram: Tuple[str]) -> List[str]:
+        def replace_ngrams(row: list[str], ngram: tuple[str]) -> list[str]:
             """Replace a ngram with one word unified by underscores.
 
             Parameters
@@ -1101,8 +1100,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return_sparse: bool = True,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        logger: Optional[Union[str, Logger]] = None,
+        verbose: INT_TYPES = 0,
+        logger: str | Logger | None = None,
         **kwargs,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -1114,7 +1113,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> Vectorizer:
+    def fit(self, X: X_TYPES, y: Y_TYPES | None = None) -> Vectorizer:
         """Fit to data.
 
         Parameters
@@ -1170,7 +1169,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None) -> pd.DataFrame:
+    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> pd.DataFrame:
         """Vectorize the text.
 
         Parameters

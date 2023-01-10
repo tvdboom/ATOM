@@ -9,8 +9,8 @@ naming is used, the file is saved using the \__name__ of the class
 followed by the timestamp of the logger's creation, e.g.
 `ATOMClassifier_11May21_20h11m03s`. The logging file contains method
 calls, all printed messages to stdout with maximum verbosity, and any
-exception raised during running. Additionally, the logging entries for the
-`mlflow` and `optuna` libraries are redirected to the same file handler.
+exception raised during running. Additionally, the logging entries of
+external libraries are redirected to the same file handler.
 
 <br>
 

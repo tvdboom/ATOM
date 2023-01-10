@@ -7,13 +7,14 @@ Description: Module containing the BaseRunner class.
 
 """
 
+from __future__ import annotations
+
 import re
 import tempfile
 from copy import deepcopy
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 import mlflow
-import pandas as pd
 from joblib.memory import Memory
 from sklearn.base import clone
 from sklearn.multioutput import (
@@ -27,9 +28,9 @@ from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, SEQUENCE_TYPES, CustomDict, Model, Predictor,
-    check_is_fitted, composed, crash, divide, flt, get_best_score, get_pl_name,
-    get_versions, lst, method_to_log,
+    DF_ATTRS, FLOAT_TYPES, INT, INT_TYPES, SEQUENCE_TYPES, CustomDict, Model,
+    Predictor, check_is_fitted, composed, crash, divide, flt, get_best_score,
+    get_pl_name, get_versions, lst, method_to_log, pd,
 )
 
 
@@ -112,13 +113,13 @@ class BaseRunner:
         else:
             return item in self.dataset
 
-    def __getitem__(self, item: Union[INT, str, list]) -> Any:
+    def __getitem__(self, item: INT_TYPES | str | list) -> Any:
         if self.dataset is None:
             raise RuntimeError(
                 "This instance has no dataset annexed to it. "
                 "Use the run method before calling __getitem__."
             )
-        elif isinstance(item, int):
+        elif isinstance(item, INT):
             return self.dataset[self.columns[item]]
         elif isinstance(item, str):
             if item in self._branches.min("og"):
@@ -219,7 +220,7 @@ class BaseRunner:
         self.branch.__delete__(self.branch)
 
     @property
-    def multioutput(self) -> Optional[Predictor]:
+    def multioutput(self) -> Predictor | None:
         """Meta-estimator for [multioutput tasks][].
 
         This estimator is only used when the model has no native
@@ -245,7 +246,7 @@ class BaseRunner:
 
     @multioutput.setter
     @typechecked
-    def multioutput(self, value: Optional[Union[str, Predictor]]):
+    def multioutput(self, value: str | Predictor | None):
         """Assign a new multioutput meta-estimator."""
         if value is None:
             self._multioutput = value
@@ -263,7 +264,7 @@ class BaseRunner:
             self._multioutput = clone(value)
 
     @property
-    def models(self) -> Union[str, List[str]]:
+    def models(self) -> str | list[str]:
         """Name of the model(s)."""
         if isinstance(self._models, CustomDict):
             return flt([model.name for model in self._models.values()])
@@ -271,7 +272,7 @@ class BaseRunner:
             return self._models
 
     @property
-    def metric(self) -> Union[str, List[str]]:
+    def metric(self) -> str | list[str]:
         """Name of the metric(s)."""
         if isinstance(self._metric, CustomDict):
             return flt([metric.name for metric in self._metric.values()])
@@ -290,7 +291,7 @@ class BaseRunner:
         return self._errors
 
     @property
-    def winners(self) -> List[Model]:
+    def winners(self) -> list[Model]:
         """Models ordered by performance.
 
         Performance is measured as the highest score on the model's
@@ -342,10 +343,9 @@ class BaseRunner:
 
         """
 
-        def frac(m: Model) -> float:
+        def frac(m: Model) -> FLOAT_TYPES:
             """Return the fraction of the train set used for the model."""
-            n_models = len(m.branch.train) / m._train_idx
-            if n_models == int(n_models):
+            if (n_models := len(m.branch.train) / m._train_idx) == int(n_models):
                 return round(1.0 / n_models, 2)
             else:
                 return round(m._train_idx / len(m.branch.train), 2)
@@ -369,15 +369,15 @@ class BaseRunner:
 
     # Utility methods ============================================== >>
 
-    def _get_og_branches(self):
+    def _get_og_branches(self) -> list[Branch]:
         """Return branches containing the original dataset."""
         return [branch for branch in self._branches.values() if branch.pipeline.empty]
 
     def _get_rows(
         self,
-        index: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
         return_test: bool = True,
-        branch: Optional[Branch] = None,
+        branch: Branch | None = None,
     ) -> list:
         """Get a subset of the rows in the dataset.
 
@@ -407,7 +407,7 @@ class BaseRunner:
 
         """
 
-        def get_match(idx: str, ex: Optional[ValueError] = None):
+        def get_match(idx: str, ex: ValueError | None = None):
             """Try to find a match by regex.
 
             Parameters
@@ -449,9 +449,9 @@ class BaseRunner:
             inc = indices[index]
         else:
             for idx in lst(index):
-                if isinstance(idx, (int, float, str)) and idx in indices:
+                if isinstance(idx, (*INT, str)) and idx in indices:
                     inc.append(idx)
-                elif isinstance(idx, int):
+                elif isinstance(idx, INT):
                     if -len(indices) <= idx <= len(indices):
                         inc.append(indices[idx])
                     else:
@@ -490,12 +490,12 @@ class BaseRunner:
 
     def _get_columns(
         self,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
         include_target: bool = True,
         return_inc_exc: bool = False,
         only_numerical: bool = False,
-        branch: Optional[Branch] = None,
-    ) -> Union[List[str], Tuple[List[str], List[str]]]:
+        branch: Branch | None = None,
+    ) -> list[str] | tuple[list[str] | list[str]]:
         """Get a subset of the columns.
 
         Columns can be selected by name, index or regex pattern. If a
@@ -535,7 +535,7 @@ class BaseRunner:
 
         """
 
-        def get_match(col: str, ex: Optional[ValueError] = None):
+        def get_match(col: str, ex: ValueError | None = None):
             """Try to find a match by regex.
 
             Parameters
@@ -583,7 +583,7 @@ class BaseRunner:
             inc = list(df.columns[columns])
         else:
             for col in lst(columns):
-                if isinstance(col, int):
+                if isinstance(col, INT):
                     try:
                         inc.append(df.columns[col])
                     except IndexError:
@@ -624,9 +624,9 @@ class BaseRunner:
 
     def _get_models(
         self,
-        models: Optional[Union[INT, str, Model, slice, SEQUENCE_TYPES]] = None,
+        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
         ensembles: bool = True,
-    ) -> List[str]:
+    ) -> list[str]:
         """Get names of models.
 
         Models can be selected by name, index or regex pattern. If a
@@ -651,7 +651,7 @@ class BaseRunner:
 
         """
 
-        def get_match(model: str, ex: Optional[ValueError] = None):
+        def get_match(model: str, ex: ValueError | None = None):
             """Try to find a match by regex.
 
             Parameters
@@ -691,7 +691,7 @@ class BaseRunner:
             inc.extend(options[models])
         else:
             for model in lst(models):
-                if isinstance(model, int):
+                if isinstance(model, INT):
                     try:
                         inc.append(options[model].name)
                     except KeyError:
@@ -817,7 +817,8 @@ class BaseRunner:
 
     @composed(crash, method_to_log, typechecked)
     def delete(
-        self, models: Optional[Union[INT, str, slice, Model, SEQUENCE_TYPES]] = None
+        self,
+        models: INT_TYPES | str | slice | Model | SEQUENCE_TYPES | None = None
     ):
         """Delete models.
 
@@ -847,10 +848,11 @@ class BaseRunner:
     @composed(crash, typechecked)
     def evaluate(
         self,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
-        threshold: FLOAT = 0.5,
-        sample_weight: Optional[SEQUENCE_TYPES] = None,
+        *,
+        threshold: FLOAT_TYPES = 0.5,
+        sample_weight: SEQUENCE_TYPES | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
@@ -893,10 +895,10 @@ class BaseRunner:
     @composed(crash, typechecked)
     def export_pipeline(
         self,
-        model: Optional[Union[str, Model]] = None,
+        model: str | Model | None = None,
         *,
-        memory: Optional[Union[bool, str, Memory]] = None,
-        verbose: Optional[INT] = None,
+        memory: bool | str | Memory | None = None,
+        verbose: INT_TYPES | None = None,
     ) -> Pipeline:
         """Export the pipeline to a sklearn-like object.
 
@@ -976,7 +978,7 @@ class BaseRunner:
     def get_class_weight(
         self,
         dataset: str = "train",
-        target: Union[int, str] = 0,
+        target: int | str = 0,
     ) -> dict:
         """Return class weights for a balanced dataset.
 
@@ -1092,7 +1094,7 @@ class BaseRunner:
     def stacking(
         self,
         name: str = "Stack",
-        models: Optional[Union[slice, SEQUENCE_TYPES]] = None,
+        models: slice | SEQUENCE_TYPES | None = None,
         **kwargs,
     ):
         """Add a [Stacking][] model to the pipeline.
@@ -1162,7 +1164,7 @@ class BaseRunner:
     def voting(
         self,
         name: str = "Vote",
-        models: Optional[Union[slice, SEQUENCE_TYPES]] = None,
+        models: slice | SEQUENCE_TYPES | None = None,
         **kwargs,
     ):
         """Add a [Voting][] model to the pipeline.

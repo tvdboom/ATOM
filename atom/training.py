@@ -7,8 +7,9 @@ Description: Module containing the training classes.
 
 """
 
+from __future__ import annotations
+
 from logging import Logger
-from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
 from atom.utils import (
-    INT, SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score,
+    INT_TYPES, SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score,
     infer_task, lst, method_to_log,
 )
 
@@ -34,12 +35,14 @@ class Direct(BaseEstimator, BaseTrainer):
     """
 
     def __init__(
-        self, models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-        device, engine, verbose, warnings, logger, experiment, random_state,
+        self, models, metric, est_params, n_trials, ht_params, n_bootstrap,
+        parallel, n_jobs, device, engine, backend, verbose, warnings, logger,
+        experiment, random_state,
     ):
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, n_jobs, device, engine, backend, verbose, warnings,
+            logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -78,13 +81,15 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
     """
 
     def __init__(
-        self, models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
-        n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+        self, models, metric, skip_runs, est_params, n_trials, ht_params,
+        n_bootstrap, parallel, n_jobs, device, engine, backend, verbose,
+        warnings, logger, experiment, random_state,
     ):
         self.skip_runs = skip_runs
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, n_jobs, device, engine, backend, verbose, warnings,
+            logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -166,13 +171,15 @@ class TrainSizing(BaseEstimator, BaseTrainer):
     """
 
     def __init__(
-        self, models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
-        n_jobs, device, engine, verbose, warnings, logger, experiment, random_state
+        self, models, metric, train_sizes, est_params, n_trials, ht_params,
+        n_bootstrap, parallel, n_jobs, device, engine, backend, verbose,
+        warnings, logger, experiment, random_state
     ):
         self.train_sizes = train_sizes
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, n_jobs, device, engine, backend, verbose, warnings,
+            logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -306,6 +313,9 @@ class DirectClassifier(Direct):
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
 
+    parallel: bool, default=False
+        Whether to train the models in parallel.
+
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
 
@@ -327,6 +337,14 @@ class DirectClassifier(Direct):
         - "sklearn" (only if device="cpu")
         - "sklearnex"
         - "cuml" (only if device="gpu")
+
+    backend: str, default="loky"
+        Parallelization backend. Choose from:
+
+        - "loky"
+        - "multiprocessing"
+        - "threading"
+        - "ray"
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -423,26 +441,29 @@ class DirectClassifier(Direct):
     @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         *,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        n_jobs: INT = 1,
+        est_params: dict | SEQUENCE_TYPES | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
+        n_jobs: INT_TYPES = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        backend: str = "loky",
+        verbose: INT_TYPES = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT_TYPES | None = None,
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, n_jobs, device, engine, backend, verbose, warnings,
+            logger, experiment, random_state,
         )
 
 
@@ -635,26 +656,29 @@ class DirectRegressor(Direct):
     @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         *,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        n_jobs: INT = 1,
+        est_params: dict | SEQUENCE_TYPES | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
+        n_jobs: INT_TYPES = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        backend: str = "loky",
+        verbose: INT_TYPES = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT_TYPES | None = None,
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, est_params, n_trials, ht_params, n_bootstrap, n_jobs,
-            device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, est_params, n_trials, ht_params, n_bootstrap,
+            parallel, n_jobs, device, engine, backend, verbose, warnings,
+            logger, experiment, random_state,
         )
 
 
@@ -877,27 +901,30 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         *,
-        skip_runs: INT = 0,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        n_jobs: INT = 1,
+        skip_runs: INT_TYPES = 0,
+        est_params: dict | SEQUENCE_TYPES | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
+        n_jobs: INT_TYPES = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        backend: str = "loky",
+        verbose: INT_TYPES = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT_TYPES | None = None,
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
-            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, skip_runs, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1121,27 +1148,30 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         *,
-        skip_runs: INT = 0,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        n_jobs: INT = 1,
+        skip_runs: INT_TYPES = 0,
+        est_params: dict | SEQUENCE_TYPES | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
+        n_jobs: INT_TYPES = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        backend: str = "loky",
+        verbose: INT_TYPES = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT_TYPES | None = None,
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, skip_runs, est_params, n_trials, ht_params, n_bootstrap,
-            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, skip_runs, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1425,27 +1455,30 @@ class TrainSizingClassifier(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         *,
-        train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        n_jobs: INT = 1,
+        train_sizes: INT_TYPES | SEQUENCE_TYPES = 5,
+        est_params: dict | SEQUENCE_TYPES | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
+        n_jobs: INT_TYPES = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        backend: str = "loky",
+        verbose: INT_TYPES = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT_TYPES | None = None,
     ):
         self.goal = "class"
         super().__init__(
-            models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
-            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, train_sizes, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -1729,25 +1762,28 @@ class TrainSizingRegressor(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        models: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | callable | SEQUENCE_TYPES | None = None,
         *,
-        train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        n_jobs: INT = 1,
+        train_sizes: INT_TYPES | SEQUENCE_TYPES = 5,
+        est_params: dict | SEQUENCE_TYPES | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
+        n_jobs: INT_TYPES = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        backend: str = "loky",
+        verbose: INT_TYPES = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT_TYPES | None = None,
     ):
         self.goal = "reg"
         super().__init__(
-            models, metric, train_sizes, est_params, n_trials, ht_params, n_bootstrap,
-            n_jobs, device, engine, verbose, warnings, logger, experiment, random_state,
+            models, metric, train_sizes, est_params, n_trials, ht_params,
+            n_bootstrap, parallel, n_jobs, device, engine, backend,
+            verbose, warnings, logger, experiment, random_state,
         )

@@ -122,7 +122,6 @@ Additionally, ATOM implements two ensemble models:
 from typing import Optional, Tuple, Union
 
 import numpy as np
-import pandas as pd
 from optuna.distributions import CategoricalDistribution as Categorical
 from optuna.distributions import FloatDistribution as Float
 from optuna.distributions import IntDistribution as Int
@@ -136,6 +135,7 @@ from atom.basemodel import BaseModel
 from atom.pipeline import Pipeline
 from atom.utils import (
     CatBMetric, CustomDict, LGBMetric, Predictor, XGBMetric, create_acronym,
+    pd,
 )
 
 

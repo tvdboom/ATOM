@@ -39,6 +39,7 @@ packages are necessary for its correct functioning.
 * **[optuna](https://optuna.org/)** (>=3.0.0)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
 * **[plotly](https://plotly.com/python/)** (>=5.10.0)
+* **[ray](https://docs.ray.io/en/latest/)** (>=2.2.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.41)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.2.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2021.6.3)

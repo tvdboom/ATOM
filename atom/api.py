@@ -7,25 +7,28 @@ Description: Module containing the API classes.
 
 """
 
+from __future__ import annotations
+
 from logging import Logger
-from typing import Optional, Union
 
 from sklearn.base import clone
 from typeguard import typechecked
 
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
-from atom.utils import INT, SCALAR, SEQUENCE_TYPES, Y_TYPES, Predictor
+from atom.utils import (
+    INT_TYPES, SCALAR_TYPES, SEQUENCE_TYPES, Y_TYPES, Predictor,
+)
 
 
 @typechecked
 def ATOMModel(
     estimator: Predictor,
     *,
-    acronym: Optional[str] = None,
+    acronym: str | None = None,
     needs_scaling: bool = False,
     native_multioutput: bool = False,
-    has_validation: Optional[str] = None,
+    has_validation: str | None = None,
 ) -> Predictor:
     """Convert an estimator to a model that can be ingested by atom.
 
@@ -148,7 +151,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
-    y: int, str, dict, sequence or pd.DataFrame, default=-1
+    y: int, str, dict, sequence or dataframe, default=-1
         Target column corresponding to X.
 
         - If None: y is ignored.
@@ -230,6 +233,18 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - "sklearn" (only if device="cpu")
         - "sklearnex"
         - "cuml" (only if device="gpu")
+
+    backend: str, default="loky"
+        Parallelization backend. Choose from:
+
+        - "loky"
+        - "multiprocessing"
+        - "threading"
+        - "ray"
+
+        Selecting the ray backend also parallelizes the data using
+        [modin][]. Only the ray backend is capable of parallelization
+        across multi-node systems.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -370,25 +385,27 @@ class ATOMClassifier(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
-        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
+        index: bool | INT_TYPES | str | SEQUENCE_TYPES = False,
         shuffle: bool = True,
-        stratify: Union[bool, INT, str, SEQUENCE_TYPES] = True,
-        n_rows: SCALAR = 1,
-        test_size: SCALAR = 0.2,
-        holdout_size: Optional[SCALAR] = None,
-        n_jobs: INT = 1,
+        stratify: bool | INT_TYPES | str | SEQUENCE_TYPES = True,
+        n_rows: SCALAR_TYPES = 1,
+        test_size: SCALAR_TYPES = 0.2,
+        holdout_size: SCALAR_TYPES | None = None,
+        n_jobs: INT_TYPES = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        backend: str = "loky",
+        verbose: INT_TYPES = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT_TYPES | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
             device=device,
             engine=engine,
+            backend=backend,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
@@ -449,7 +466,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
           sequence of column names or positions for multioutput tasks.
         - If dataframe: Target columns for multioutput tasks.
 
-    y: int, str, dict, sequence or pd.DataFrame, default=-1
+    y: int, str, dict, sequence or dataframe, default=-1
         Target column corresponding to X.
 
         - If None: y is ignored.
@@ -656,24 +673,26 @@ class ATOMRegressor(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
-        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
+        index: bool | INT_TYPES | str | SEQUENCE_TYPES = False,
         shuffle: bool = True,
-        n_rows: SCALAR = 1,
-        test_size: SCALAR = 0.2,
-        holdout_size: Optional[SCALAR] = None,
-        n_jobs: INT = 1,
+        n_rows: SCALAR_TYPES = 1,
+        test_size: SCALAR_TYPES = 0.2,
+        holdout_size: SCALAR_TYPES | None = None,
+        n_jobs: INT_TYPES = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT = 0,
-        warnings: Union[bool, str] = False,
-        logger: Optional[Union[str, Logger]] = None,
-        experiment: Optional[str] = None,
-        random_state: Optional[INT] = None,
+        backend: str = "loky",
+        verbose: INT_TYPES = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT_TYPES | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
             device=device,
             engine=engine,
+            backend=backend,
             verbose=verbose,
             warnings=warnings,
             logger=logger,

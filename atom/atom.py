@@ -7,10 +7,11 @@ Description: Module containing the ATOM class.
 
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from copy import deepcopy
 from platform import machine, platform, python_build, python_version
-from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import dill as pickle
 import numpy as np
@@ -40,11 +41,12 @@ from atom.training import (
     SuccessiveHalvingRegressor, TrainSizingClassifier, TrainSizingRegressor,
 )
 from atom.utils import (
-    INT, SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor,
-    Runner, Scorer, Transformer, __version__, check_dependency,
-    check_is_fitted, check_scaling, composed, crash, custom_transform, fit_one,
-    flt, get_cols, get_custom_scorer, has_task, infer_task, is_sparse, lst,
-    method_to_log, sign, variable_return,
+    DATAFRAME_TYPES, INT_TYPES, PANDAS_TYPES, SCALAR_TYPES, SEQUENCE_TYPES,
+    SERIES_TYPES, X_TYPES, Y_TYPES, CustomDict, Predictor, Runner, Scorer,
+    Transformer, __version__, bk, check_dependency, check_is_fitted,
+    check_scaling, composed, crash, custom_transform, fit_one, flt, get_cols,
+    get_custom_scorer, has_task, infer_task, is_sparse, lst, method_to_log,
+    sign, variable_return,
 )
 
 
@@ -68,12 +70,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         arrays,
         *,
         y: Y_TYPES = -1,
-        index: Union[bool, INT, str, SEQUENCE_TYPES] = False,
+        index: bool | INT_TYPES | str | SEQUENCE_TYPES = False,
         shuffle: bool = True,
-        stratify: Union[bool, INT, str, SEQUENCE_TYPES] = True,
-        n_rows: SCALAR = 1,
-        test_size: SCALAR = 0.2,
-        holdout_size: Optional[SCALAR] = None,
+        stratify: bool | INT_TYPES | str | SEQUENCE_TYPES = True,
+        n_rows: SCALAR_TYPES = 1,
+        test_size: SCALAR_TYPES = 0.2,
+        holdout_size: SCALAR_TYPES | None = None,
     ):
         BaseRunner.__init__(self)
         DataPlot.__init__(self)
@@ -109,7 +111,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         if "gpu" in self.device.lower():
             self.log("GPU training enabled.", 1)
         if self.engine != "sklearn":
-            self.log(f"Backend engine: {self.engine}.", 1)
+            self.log(f"Execution engine: {self.engine}.", 1)
+        if self.backend != "loky":
+            self.log(f"Parallelization backend: {self.backend}", 1)
         if self.experiment:
             self.log(f"Mlflow experiment: {self.experiment}.", 1)
 
@@ -219,12 +223,12 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return check_scaling(self.X) or any("scaler" in name for name in est_names)
 
     @property
-    def duplicates(self) -> pd.Series:
+    def duplicates(self) -> SERIES_TYPES:
         """Number of duplicate rows in the dataset."""
         return self.dataset.duplicated().sum()
 
     @property
-    def nans(self) -> pd.Series:
+    def nans(self) -> SERIES_TYPES:
         """Columns with the number of missing values in them."""
         if not is_sparse(self.X):
             nans = self.dataset.replace(self.missing, np.NaN)
@@ -240,7 +244,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return len(nans[nans > 0])
 
     @property
-    def numerical(self) -> pd.Series:
+    def numerical(self) -> SERIES_TYPES:
         """Names of the numerical features in the dataset."""
         return self.X.select_dtypes(include=["number"]).columns
 
@@ -250,7 +254,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return len(self.numerical)
 
     @property
-    def categorical(self) -> pd.Series:
+    def categorical(self) -> SERIES_TYPES:
         """Names of the categorical features in the dataset."""
         return self.X.select_dtypes(include=["object", "category"]).columns
 
@@ -260,20 +264,18 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return len(self.categorical)
 
     @property
-    def outliers(self) -> pd.Series:
+    def outliers(self) -> pd.series:
         """Columns in training set with amount of outlier values."""
         if not is_sparse(self.X):
-            num_and_target = self.dataset.select_dtypes(include=["number"]).columns
-            z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
-            srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=num_and_target)
+            z_scores = stats.zscore(self.train.select_dtypes(include=["number"]))
+            srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=self.train.index)
             return srs[srs > 0]
 
     @property
     def n_outliers(self) -> int:
         """Number of samples in the training set containing outliers."""
         if not is_sparse(self.X):
-            num_and_target = self.dataset.select_dtypes(include=["number"]).columns
-            z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
+            z_scores = stats.zscore(self.train.select_dtypes(include=["number"]))
             return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
 
     @property
@@ -298,7 +300,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
-    def n_classes(self) -> Union[int, pd.Series]:
+    def n_classes(self) -> int | SERIES_TYPES:
         """Number of classes in the target column(s)."""
         if self.goal.startswith("class"):
             return self.y.nunique(dropna=False)
@@ -393,9 +395,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, typechecked)
     def distribution(
         self,
-        distributions: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        distributions: str | SEQUENCE_TYPES | None = None,
         *,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
     ) -> pd.DataFrame:
         """Get statistics on column distributions.
 
@@ -476,8 +478,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         dataset: str = "dataset",
         *,
-        n_rows: Optional[SCALAR] = None,
-        filename: Optional[str] = None,
+        n_rows: SCALAR_TYPES | None = None,
+        filename: str | None = None,
         **kwargs,
     ):
         """Create an Exploratory Data Analysis report.
@@ -527,11 +529,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
+        X: X_TYPES | None = None,
+        y: Y_TYPES | None = None,
         *,
-        verbose: Optional[INT] = None,
-    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+        verbose: INT_TYPES | None = None,
+    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, SERIES_TYPES]:
         """Inversely transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -559,10 +561,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Original feature set. Only returned if provided.
 
-        y: pd.Series
+        series
             Original target column. Only returned if provided.
 
         """
@@ -585,10 +587,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def load(
         cls,
         filename: str,
-        data: Optional[SEQUENCE_TYPES] = None,
+        data: SEQUENCE_TYPES | None = None,
         *,
         transform_data: bool = True,
-        verbose: Optional[INT] = None,
+        verbose: INT_TYPES | None = None,
     ):
         """Loads an atom instance from a pickle file.
 
@@ -741,7 +743,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         obj2cat: bool = True,
         int2uint: bool = False,
         dense2sparse: bool = False,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
     ):
         """Converts the columns to the smallest possible matching dtype.
 
@@ -778,19 +780,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         columns = self._get_columns(columns)
         exclude_types = ["category", "datetime64[ns]", "bool"]
 
-        # Build column filter and type_map
+        # Build column filter and types
         types_1 = (np.int8, np.int16, np.int32, np.int64)
         types_2 = (np.uint8, np.uint16, np.uint32, np.uint64)
         types_3 = (np.float32, np.float64, np.longdouble)
 
-        type_map = {
+        types = {
             "int": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_1],
             "uint": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_2],
             "float": [(np.dtype(x), np.finfo(x).min, np.finfo(x).max) for x in types_3],
         }
 
         if obj2cat:
-            type_map["object"] = "category"
+            types["object"] = "category"
         else:
             exclude_types += ["object"]
 
@@ -801,18 +803,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 continue
 
             if pd.api.types.is_sparse(column):
-                t = next(
-                    v for k, v in type_map.items() if old_t.subtype.name.startswith(k)
-                )
+                t = next(v for k, v in types.items() if old_t.subtype.name.startswith(k))
             else:
-                t = next(
-                    v for k, v in type_map.items() if old_t.name.startswith(k)
-                )
+                t = next(v for k, v in types.items() if old_t.name.startswith(k))
 
             if isinstance(t, list):
                 # Use uint if values are strictly positive
-                if int2uint and t == type_map["int"] and column.min() >= 0:
-                    t = type_map["uint"]
+                if int2uint and t == types["int"] and column.min() >= 0:
+                    t = types["uint"]
 
                 # Find the smallest type that fits
                 new_t = next(
@@ -841,21 +839,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                     dtype=column.dtype,
                 )
 
-            self.branch.X = pd.DataFrame(new_cols, index=self.y.index)
+            self.branch.X = bk.DataFrame(new_cols, index=self.y.index)
 
         self.log("The column dtypes are successfully converted.", 1)
 
     @composed(crash, method_to_log)
-    def stats(self, _vb: INT = -2, /):
+    def stats(self, _vb: INT_TYPES = -2, /):
         """Print basic information about the dataset.
-
-        !!! tip
-            For classification tasks, the count and balance of classes
-            is shown, followed by the ratio (between parentheses) of
-            the class with respect to the rest of the classes in the
-            same data set, i.e. the class with the fewest samples is
-            followed by `(1.0)`. This information can be used to quickly
-            assess if the data set is unbalanced.
 
         Parameters
         ----------
@@ -928,11 +918,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def transform(
         self,
-        X: Optional[X_TYPES] = None,
-        y: Optional[Y_TYPES] = None,
+        X: X_TYPES | None = None,
+        y: Y_TYPES | None = None,
         *,
-        verbose: Optional[INT] = None,
-    ) -> Union[pd.Series, pd.DataFrame, Tuple[pd.DataFrame, pd.Series]]:
+        verbose: INT_TYPES | None = None,
+    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, SERIES_TYPES]:
         """Transform new data through the pipeline.
 
         Transformers that are only applied on the training set are
@@ -960,10 +950,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed feature set. Only returned if provided.
 
-        pd.Series
+        series
             Transformed target column. Only returned if provided.
 
         """
@@ -977,7 +967,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # Base transformers ============================================ >>
 
-    def _prepare_kwargs(self, kwargs: dict, params: Optional[List[str]] = None) -> dict:
+    def _prepare_kwargs(self, kwargs: dict, params: list[str] | None = None) -> dict:
         """Return kwargs with atom's values if not specified.
 
         This method is used for all transformers and runners to pass
@@ -1001,7 +991,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def _add_transformer(
         self,
         transformer: Transformer,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -1082,7 +1072,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         transformer: Transformer,
         *,
-        columns: Optional[Union[INT, str, slice, SEQUENCE_TYPES]] = None,
+        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
         train_only: bool = False,
         **fit_params,
     ):
@@ -1162,11 +1152,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def apply(
         self,
-        func: Callable,
-        inverse_func: Optional[Callable] = None,
+        func: callable,
+        inverse_func: callable | None = None,
         *,
-        kw_args: Optional[dict] = None,
-        inv_kw_args: Optional[dict] = None,
+        kw_args: dict | None = None,
+        inv_kw_args: dict | None = None,
         **kwargs,
     ):
         """Apply a function to the dataset.
@@ -1256,7 +1246,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def clean(
         self,
         *,
-        drop_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        drop_types: str | SEQUENCE_TYPES | None = None,
+        drop_chars: str | None = None,
         strip_categorical: bool = True,
         drop_duplicates: bool = False,
         drop_missing_target: bool = True,
@@ -1269,6 +1260,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         The available steps are:
 
         - Drop columns with specific data types.
+        - Remove characters from column names.
         - Strip categorical features from white spaces.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
@@ -1280,6 +1272,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         columns = kwargs.pop("columns", None)
         cleaner = Cleaner(
             drop_types=drop_types,
+            drop_chars=drop_chars,
             strip_categorical=strip_categorical,
             drop_duplicates=drop_duplicates,
             drop_missing_target=drop_missing_target,
@@ -1298,8 +1291,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         strategy: str = "quantile",
         *,
-        bins: Union[INT, SEQUENCE_TYPES, dict] = 5,
-        labels: Optional[Union[SEQUENCE_TYPES, dict]] = None,
+        bins: INT_TYPES | SEQUENCE_TYPES | dict = 5,
+        labels: SEQUENCE_TYPES | dict | None = None,
         **kwargs,
     ):
         """Bin continuous data into intervals.
@@ -1330,9 +1323,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         strategy: str = "LeaveOneOut",
         *,
-        max_onehot: Optional[INT] = 10,
-        ordinal: Optional[Dict[Union[INT, str], SEQUENCE_TYPES]] = None,
-        rare_to_value: Optional[SCALAR] = None,
+        max_onehot: INT_TYPES | None = 10,
+        ordinal: dict[INT_TYPES | str, SEQUENCE_TYPES] | None = None,
+        rare_to_value: SCALAR_TYPES | None = None,
         value: str = "rare",
         **kwargs,
     ):
@@ -1381,11 +1374,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def impute(
         self,
-        strat_num: Union[SCALAR, str] = "drop",
+        strat_num: SCALAR_TYPES | str = "drop",
         strat_cat: str = "drop",
         *,
-        max_nan_rows: Optional[SCALAR] = None,
-        max_nan_cols: Optional[SCALAR] = None,
+        max_nan_rows: SCALAR_TYPES | None = None,
+        max_nan_cols: SCALAR_TYPES | None = None,
         **kwargs,
     ):
         """Handle missing values in the dataset.
@@ -1449,10 +1442,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def prune(
         self,
-        strategy: Union[str, SEQUENCE_TYPES] = "zscore",
+        strategy: str | SEQUENCE_TYPES = "zscore",
         *,
-        method: Union[SCALAR, str] = "drop",
-        max_sigma: SCALAR = 3,
+        method: SCALAR_TYPES | str = "drop",
+        max_sigma: SCALAR_TYPES = 3,
         include_target: bool = False,
         **kwargs,
     ):
@@ -1524,15 +1517,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         decode: bool = True,
         lower_case: bool = True,
         drop_email: bool = True,
-        regex_email: Optional[str] = None,
+        regex_email: str | None = None,
         drop_url: bool = True,
-        regex_url: Optional[str] = None,
+        regex_url: str | None = None,
         drop_html: bool = True,
-        regex_html: Optional[str] = None,
+        regex_html: str | None = None,
         drop_emoji: bool = True,
-        regex_emoji: Optional[str] = None,
+        regex_emoji: str | None = None,
         drop_number: bool = True,
-        regex_number: Optional[str] = None,
+        regex_number: str | None = None,
         drop_punctuation: bool = True,
         **kwargs,
     ):
@@ -1574,9 +1567,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def textnormalize(
         self,
         *,
-        stopwords: Union[bool, str] = True,
-        custom_stopwords: Optional[SEQUENCE_TYPES] = None,
-        stem: Union[bool, str] = False,
+        stopwords: bool | str = True,
+        custom_stopwords: SEQUENCE_TYPES | None = None,
+        stem: bool | str = False,
         lemmatize: bool = True,
         **kwargs,
     ):
@@ -1606,9 +1599,9 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def tokenize(
         self,
-        bigram_freq: Optional[SCALAR] = None,
-        trigram_freq: Optional[SCALAR] = None,
-        quadgram_freq: Optional[SCALAR] = None,
+        bigram_freq: SCALAR_TYPES | None = None,
+        trigram_freq: SCALAR_TYPES | None = None,
+        quadgram_freq: SCALAR_TYPES | None = None,
         **kwargs,
     ):
         """Tokenize the corpus.
@@ -1672,8 +1665,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def feature_extraction(
         self,
-        features: Union[str, SEQUENCE_TYPES] = ["day", "month", "year"],
-        fmt: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        features: str | SEQUENCE_TYPES = ["day", "month", "year"],
+        fmt: str | SEQUENCE_TYPES | None = None,
         *,
         encoding_type: str = "ordinal",
         drop_columns: bool = True,
@@ -1707,8 +1700,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         strategy: str = "dfs",
         *,
-        n_features: Optional[INT] = None,
-        operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        n_features: INT_TYPES | None = None,
+        operators: str | SEQUENCE_TYPES | None = None,
         **kwargs,
     ):
         """Generate new features.
@@ -1738,10 +1731,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def feature_grouping(
         self,
-        group: Union[str, SEQUENCE_TYPES],
-        name: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        group: str | SEQUENCE_TYPES,
+        name: str | SEQUENCE_TYPES | None = None,
         *,
-        operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        operators: str | SEQUENCE_TYPES | None = None,
         drop_columns: bool = True,
         **kwargs,
     ):
@@ -1772,13 +1765,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def feature_selection(
         self,
-        strategy: Optional[str] = None,
+        strategy: str | None = None,
         *,
-        solver: Optional[Union[str, callable]] = None,
-        n_features: Optional[SCALAR] = None,
-        min_repeated: Optional[SCALAR] = 2,
-        max_repeated: Optional[SCALAR] = 1.0,
-        max_correlation: Optional[float] = 1.0,
+        solver: str | callable | None = None,
+        n_features: SCALAR_TYPES | None = None,
+        min_repeated: SCALAR_TYPES | None = 2,
+        max_repeated: SCALAR_TYPES | None = 1.0,
+        max_correlation: SCALAR_TYPES | None = 1.0,
         **kwargs,
     ):
         """Reduce the number of features in the data.
@@ -1834,7 +1827,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # Training methods ============================================= >>
 
-    def _check(self, metric: Union[str, callable, Scorer, SEQUENCE_TYPES]) -> CustomDict:
+    def _check(self, metric: str | callable | Scorer | SEQUENCE_TYPES) -> CustomDict:
         """Check whether the provided metric is valid.
 
         Parameters
@@ -1919,13 +1912,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def run(
         self,
-        models: Optional[Union[str, callable, Predictor, SEQUENCE_TYPES]] = None,
-        metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        models: str | callable | Predictor | SEQUENCE_TYPES | None = None,
+        metric: str | callable | Scorer | SEQUENCE_TYPES | None = None,
         *,
-        est_params: Optional[dict] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, SEQUENCE_TYPES] = 0,
+        est_params: dict | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
         **kwargs,
     ):
         """Train and evaluate the models in a direct fashion.
@@ -1961,6 +1955,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 n_trials=n_trials,
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
+                parallel=parallel,
                 **self._prepare_kwargs(kwargs),
             )
         )
@@ -1968,14 +1963,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def successive_halving(
         self,
-        models: Union[str, Predictor, SEQUENCE_TYPES],
-        metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE_TYPES,
+        metric: str | callable | Scorer | SEQUENCE_TYPES | None = None,
         *,
-        skip_runs: INT = 0,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        skip_runs: INT_TYPES = 0,
+        est_params: dict | SEQUENCE_TYPES | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
         **kwargs,
     ):
         """Fit the models in a successive halving fashion.
@@ -2018,6 +2014,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 n_trials=n_trials,
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
+                parallel=parallel,
                 **self._prepare_kwargs(kwargs),
             )
         )
@@ -2025,14 +2022,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def train_sizing(
         self,
-        models: Union[str, Predictor, SEQUENCE_TYPES],
-        metric: Optional[Union[str, callable, Scorer, SEQUENCE_TYPES]] = None,
+        models: str | Predictor | SEQUENCE_TYPES,
+        metric: str | callable | Scorer | SEQUENCE_TYPES | None = None,
         *,
-        train_sizes: Union[INT, SEQUENCE_TYPES] = 5,
-        est_params: Optional[Union[dict, SEQUENCE_TYPES]] = None,
-        n_trials: Union[INT, dict, SEQUENCE_TYPES] = 0,
-        ht_params: Optional[dict] = None,
-        n_bootstrap: Union[INT, dict, SEQUENCE_TYPES] = 0,
+        train_sizes: INT_TYPES | SEQUENCE_TYPES = 5,
+        est_params: dict | SEQUENCE_TYPES | None = None,
+        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        ht_params: dict | None = None,
+        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        parallel: bool = False,
         **kwargs,
     ):
         """Train and evaluate the models in a train sizing fashion.
@@ -2073,6 +2071,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 n_trials=n_trials,
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
+                parallel=parallel,
                 **self._prepare_kwargs(kwargs),
             )
         )

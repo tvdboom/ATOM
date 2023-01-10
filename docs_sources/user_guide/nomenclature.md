@@ -34,15 +34,22 @@ Unique value in a column, e.g. a binary classifier has 2 classes in
 the target column.
 </div>
 
+<div id="class"><strong>dataframe</strong></div>
+<div markdown style="margin: -1em 0 0 1.2em">
+Two-dimensional, size-mutable, potentially heterogeneous tabular data of type
+[pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html)
+or its [modin][] counterpart.
+</div>
+
 <div id="dataframe-like"><strong>dataframe-like</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
-Any type object from which a [pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html)
-can be created. This includes an [iterable](https://docs.python.org/3/glossary.html#term-iterable),
-a [dict](https://docs.python.org/3/library/functions.html#func-dict)
-whose values are 1d-arrays, a two-dimensional [list](https://docs.python.org/3/library/functions.html#func-list),
+Any type object from which a [dataframe][] can be created. This includes an
+[iterable](https://docs.python.org/3/glossary.html#term-iterable), a
+[dict](https://docs.python.org/3/library/functions.html#func-dict) whose
+values are 1d-arrays, a two-dimensional [list](https://docs.python.org/3/library/functions.html#func-list),
 [tuple](https://docs.python.org/3/library/functions.html#func-tuple), [np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html) or
 [sps.csr_matrix](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html),
-and most commonly, a dataframe. This is the standard input format
+and most commonly, a [dataframe][]. This is the standard input format
 for any dataset.
 </div>
 
@@ -53,6 +60,13 @@ The algorithm is estimated as a deterministic function of a set of
 parameters, a dataset and a random state. Should implement a `fit`
 method. Often used interchangeably with [predictor][] because of user
 preference.
+</div>
+
+<div id="sequence"><strong>index</strong></div>
+<div markdown style="margin: -1em 0 0 1.2em">
+Immutable sequence used for indexing and alignment of type [pd.Index](https://pandas.pydata.org/docs/reference/api/pandas.Index.html),
+[pd.MultiIndex](https://pandas.pydata.org/docs/reference/api/pandas.MultiIndex.html)
+or their [modin][] counterparts.
 </div>
 
 <div id="missing values"><strong>missing values</strong></div>
@@ -103,8 +117,14 @@ returned number must correspond with a better score. See sklearn's
 A one-dimensional array of type [list](https://docs.python.org/3/library/functions.html#func-list),
 [tuple](https://docs.python.org/3/library/functions.html#func-tuple),
 [np.ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html)
-or [pd.Series](https://pandas.pydata.org/docs/reference/api/pandas.Series.html).
-This is the standard input format for a dataset's target column.
+or [series][]. This is the standard input format for a dataset's target column.
+</div>
+
+<div id="class"><strong>series</strong></div>
+<div markdown style="margin: -1em 0 0 1.2em">
+One-dimensional ndarray with axis labels of type
+[pd.Series](https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series)
+or its [modin][] counterpart.
 </div>
 
 <div id="target"><strong>target</strong></div>
