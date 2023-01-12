@@ -9,7 +9,8 @@ Description: Unit tests for basemodel.py
 
 import glob
 from unittest.mock import patch
-
+import requests
+from ray import serve
 import pandas as pd
 import pytest
 from optuna.distributions import IntDistribution
@@ -907,6 +908,15 @@ def test_save_estimator():
     atom.run("MNB")
     atom.mnb.save_estimator("auto")
     assert glob.glob("MultinomialNB")
+
+
+def test_serve():
+    """Assert that the serve methods deploys a reachable endpoint."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    atom.mnb.serve()
+    assert "200" in str(requests.get("http://127.0.0.1:8000/", json=X_bin.to_json()))
+    serve.shutdown()
 
 
 def test_register_no_experiment():

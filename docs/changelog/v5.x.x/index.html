@@ -3104,7 +3104,10 @@
 <p><strong><img alt="⭐" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/2b50.svg" title=":star:" /> New features</strong></p>
 <ul>
 <li>Support for multilabel classification, multiclass-multilabel classification
-  and multioutput regression tasks. Read more in the [user guide][multioutput tasks].</li>
+  and multioutput regression tasks. Read more in the <a class="autorefs autorefs-internal" href="../../user_guide/data_management/#multioutput-tasks">user guide</a>.</li>
+<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-backend">backend</a> parameter to choose a <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#parallel-execution">parallel execution</a>
+  backend.</li>
+<li>New <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-serve">serve</a> method to deploy models to a rest API endpoint.</li>
 </ul>
 <p><strong><img alt="📝" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
@@ -3115,6 +3118,16 @@
 <ul>
 <li>Added the <code>drop_chars</code> parameter to the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a> class.</li>
 <li>Rework of the dependencies, making a lightweight base package.</li>
+<li>The logging entries for external libraries are redirected to atom's
+  file handler.</li>
+</ul>
+<p><strong><img alt="🐛" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
+<ul>
+<li>Fixed multiple bugs related to sklearn's 1.2 update.</li>
+<li>Fixed a bug where hyperparameter tuning could fail for multi-metric runs.</li>
+<li>Fixed a bug where trials would try to report multiple times the same step.</li>
+<li>Fixed an issue where the bootstrapping estimators were trained using
+  <code>partial_fit</code>.</li>
 </ul>
 <p><a name="v501"></a></p>
 <h2 id="version-501">Version 5.0.1</h2>

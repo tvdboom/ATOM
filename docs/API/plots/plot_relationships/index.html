@@ -3073,14 +3073,14 @@
 
 <h1 id="plot_relationships">plot_relationships</h1>
 <hr />
-<p><a id='plot_relationships'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_relationships</strong>(columns=[0, 1, 2], title=None, legend=None, figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2327>[source]</a></span></div>Plot pairwise relationships in a dataset.</p>
+<p><a id='plot_relationships'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_relationships</strong>(columns=(0, 1, 2), title=None, legend=None, figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2326>[source]</a></span></div>Plot pairwise relationships in a dataset.</p>
 <p>Creates a grid of axes such that each numerical column appears
 once on the x-axes and once on the y-axes. The bottom triangle
 contains scatter plots (max 250 random samples), the diagonal
 plots contain column distributions, and the upper triangle
 contains contour histograms for all samples in the columns.</p>
 <table class="table_params">
-<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_relationships-columns'></a><strong>columns: slice or sequence, default=[0, 1, 2]</strong><br><div markdown class='param'>
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_relationships-columns'></a><strong>columns: slice or sequence, default=(0, 1, 2)</strong><br><div markdown class='param'>
 Columns to plot. Selected categorical columns are ignored.</p>
 <p></div><a id='plot_relationships-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>

@@ -20,7 +20,7 @@ from importlib import import_module
 from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
-from typing import Any, Protocol, Union
+from typing import Any, Callable, Protocol, Union
 
 import mlflow
 import modin.pandas as md
@@ -1841,7 +1841,7 @@ def create_acronym(fullname: str) -> str:
         return acronym
 
 
-def get_custom_scorer(metric: str | callable | Scorer) -> Scorer:
+def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
     """Get a scorer from a str, func or scorer.
 
     Scorers used by ATOM have a name attribute.

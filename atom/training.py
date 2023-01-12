@@ -10,6 +10,7 @@ Description: Module containing the training classes.
 from __future__ import annotations
 
 from logging import Logger
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -441,8 +442,8 @@ class DirectClassifier(Direct):
     @typechecked
     def __init__(
         self,
-        models: str | callable | SEQUENCE_TYPES | None = None,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        models: str | Callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         *,
         est_params: dict | SEQUENCE_TYPES | None = None,
         n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
@@ -656,8 +657,8 @@ class DirectRegressor(Direct):
     @typechecked
     def __init__(
         self,
-        models: str | callable | SEQUENCE_TYPES | None = None,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        models: str | Callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         *,
         est_params: dict | SEQUENCE_TYPES | None = None,
         n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
@@ -901,8 +902,8 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: str | callable | SEQUENCE_TYPES | None = None,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        models: str | Callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         *,
         skip_runs: INT_TYPES = 0,
         est_params: dict | SEQUENCE_TYPES | None = None,
@@ -1148,8 +1149,8 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: str | callable | SEQUENCE_TYPES | None = None,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        models: str | Callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         *,
         skip_runs: INT_TYPES = 0,
         est_params: dict | SEQUENCE_TYPES | None = None,
@@ -1455,8 +1456,8 @@ class TrainSizingClassifier(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: str | callable | SEQUENCE_TYPES | None = None,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        models: str | Callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         *,
         train_sizes: INT_TYPES | SEQUENCE_TYPES = 5,
         est_params: dict | SEQUENCE_TYPES | None = None,
@@ -1762,8 +1763,8 @@ class TrainSizingRegressor(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: str | callable | SEQUENCE_TYPES | None = None,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        models: str | Callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         *,
         train_sizes: INT_TYPES | SEQUENCE_TYPES = 5,
         est_params: dict | SEQUENCE_TYPES | None = None,

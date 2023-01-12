@@ -39,8 +39,9 @@ packages are necessary for its correct functioning.
 * **[optuna](https://optuna.org/)** (>=3.0.0)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
 * **[plotly](https://plotly.com/python/)** (>=5.10.0)
+* **[ray](https://docs.ray.io/en/latest/)** (>=2.2.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.41)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.1.0)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.2.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2021.6.3)
 * **[scipy](https://www.scipy.org/)** (>=1.8.1)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.13)
@@ -51,7 +52,7 @@ packages are necessary for its correct functioning.
 
 Some specific models, utility methods or plots require the installation of
 additional libraries. You can install all the optional dependencies using
-`pip install atom-ml[full]`. The following libraries are installed:
+`pip install atom-ml[full]`. Doing so also installs the following libraries:
 
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.0.4)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.0)

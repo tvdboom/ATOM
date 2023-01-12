@@ -3092,7 +3092,8 @@ naming is used, the file is saved using the __name__ of the class
 followed by the timestamp of the logger's creation, e.g.
 <code>ATOMClassifier_11May21_20h11m03s</code>. The logging file contains method
 calls, all printed messages to stdout with maximum verbosity, and any
-exception raised during running.</p>
+exception raised during running. Additionally, the logging entries of
+external libraries are redirected to the same file handler.</p>
 <p><br></p>
 <h2 id="tracking">Tracking</h2>
 <p>ATOM uses <a href="https://www.mlflow.org/docs/latest/tracking.html">mlflow tracking</a>

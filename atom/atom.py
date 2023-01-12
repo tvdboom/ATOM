@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy
 from platform import machine, platform, python_build, python_version
+from typing import Callable
 
 import dill as pickle
 import numpy as np
@@ -1767,7 +1768,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self,
         strategy: str | None = None,
         *,
-        solver: str | callable | None = None,
+        solver: str | Callable | None = None,
         n_features: SCALAR_TYPES | None = None,
         min_repeated: SCALAR_TYPES | None = 2,
         max_repeated: SCALAR_TYPES | None = 1.0,
@@ -1827,7 +1828,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
     # Training methods ============================================= >>
 
-    def _check(self, metric: str | callable | Scorer | SEQUENCE_TYPES) -> CustomDict:
+    def _check(self, metric: str | Callable | Scorer | SEQUENCE_TYPES) -> CustomDict:
         """Check whether the provided metric is valid.
 
         Parameters
@@ -1912,8 +1913,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def run(
         self,
-        models: str | callable | Predictor | SEQUENCE_TYPES | None = None,
-        metric: str | callable | Scorer | SEQUENCE_TYPES | None = None,
+        models: str | Callable | Predictor | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | Scorer | SEQUENCE_TYPES | None = None,
         *,
         est_params: dict | None = None,
         n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
@@ -1964,7 +1965,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     def successive_halving(
         self,
         models: str | Predictor | SEQUENCE_TYPES,
-        metric: str | callable | Scorer | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | Scorer | SEQUENCE_TYPES | None = None,
         *,
         skip_runs: INT_TYPES = 0,
         est_params: dict | SEQUENCE_TYPES | None = None,
@@ -2022,8 +2023,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @composed(crash, method_to_log, typechecked)
     def train_sizing(
         self,
-        models: str | Predictor | SEQUENCE_TYPES,
-        metric: str | callable | Scorer | SEQUENCE_TYPES | None = None,
+        models: str | Callable | Predictor | SEQUENCE_TYPES,
+        metric: str | Callable | Scorer | SEQUENCE_TYPES | None = None,
         *,
         train_sizes: INT_TYPES | SEQUENCE_TYPES = 5,
         est_params: dict | SEQUENCE_TYPES | None = None,

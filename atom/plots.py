@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
+from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7104,7 +7105,7 @@ class PredictionPlot(BasePlot):
     def plot_threshold(
         self,
         models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
         steps: INT_TYPES = 100,
         *,

@@ -13,6 +13,7 @@ import re
 from collections import defaultdict
 from logging import Logger
 from random import sample
+from typing import Callable
 
 import featuretools as ft
 import numpy as np
@@ -37,7 +38,7 @@ from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
 from atom.plots import FeatureSelectorPlot
 from atom.utils import (
-    DATAFRAME_TYPES, FLOAT_TYPES, INT_TYPES, SCALAR_TYPES, SEQUENCE,
+    DATAFRAME_TYPES, FLOAT_TYPES, INT, INT_TYPES, SCALAR_TYPES, SEQUENCE,
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
     check_scaling, composed, crash, get_custom_scorer, get_feature_importance,
     infer_task, is_sparse, lst, merge, method_to_log, sign, to_df,
@@ -905,7 +906,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         for group in lst(self.group):
             groups.append([])
             for col in lst(group):
-                if isinstance(col, int):
+                if isinstance(col, INT):
                     try:
                         groups[-1].append(X.columns[col])
                     except IndexError:
@@ -1280,7 +1281,7 @@ class FeatureSelector(
         self,
         strategy: str | None = None,
         *,
-        solver: str | callable | None = None,
+        solver: str | Callable | None = None,
         n_features: SCALAR_TYPES | None = None,
         min_repeated: SCALAR_TYPES | None = 2,
         max_repeated: SCALAR_TYPES | None = 1.0,

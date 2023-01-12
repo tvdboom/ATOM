@@ -135,3 +135,7 @@ is sufficient to accelerate them with GPU, regardless of the engine parameter.
 * [Ridge][] (only for regression tasks)
 * [SupportVectorMachine][]
 * [XGBoost][]
+
+
+## Parallel execution
+

@@ -9,14 +9,18 @@ Description: Module containing the BaseModel class.
 
 from __future__ import annotations
 
+import warnings
+
+from starlette.requests import Request
 import os
+import ray
 from copy import deepcopy
 from datetime import datetime as dt
 from functools import cached_property, lru_cache
 from importlib import import_module
-from typing import Any
+from typing import Any, Callable
 from unittest.mock import patch
-
+from ray import serve
 import dill as pickle
 import joblib
 import mlflow
@@ -544,7 +548,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         """
 
-        def objective(trial: Trial) -> FLOAT_TYPES:
+        def objective(trial: Trial) -> list[FLOAT_TYPES]:
             """Objective function for hyperparameter tuning.
 
             Parameters
@@ -554,12 +558,16 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
             Returns
             -------
-            float
-                Score of the model in this trial.
+            list of float
+                Scores of the model in this trial.
 
             """
 
-            def fit_model(train_idx: list, val_idx: list) -> FLOAT_TYPES:
+            def fit_model(
+                train_idx: np.ndarray,
+                val_idx: np.ndarray,
+                in_training_validation: bool = True,
+            ) -> FLOAT_TYPES:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation
@@ -571,11 +579,16 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
                 Parameters
                 ----------
-                train_idx: list
+                train_idx: np.array
                     Indices for the subtrain set.
 
-                val_idx: list
+                val_idx: np.array
                     Indices for the validation set.
+
+                in_training_validation: bool, default=True
+                    Whether to apply in training validation. This is
+                    False for cross-validated runs since the trial
+                    can't share intermediate values.
 
                 Returns
                 -------
@@ -607,7 +620,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     estimator=estimator,
                     data=(X_subtrain, y_subtrain),
                     est_params_fit=est_copy,
-                    validation=(X_val, y_val),
+                    validation=(X_val, y_val) if in_training_validation else None,
                     trial=trial,
                 )
 
@@ -661,17 +674,17 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                         random_state=trial.number + (self.T.random_state or 0),
                     )
 
-                    # Force threading backend to prevent PickleError
-                    scores = Parallel(n_jobs=self.T.n_jobs, backend="threading")(
-                        delayed(fit_model)(i, j)
-                        for i, j in fold.split(og.X_train, og.y_train)
-                    )
+                    # Can't parallelize because of shared memory class
+                    scores = []
+                    for train_idx, val_idx in fold.split(og.X_train, og.y_train):
+                        scores.append(fit_model(train_idx, val_idx, False))
+
                     score = list(np.mean(scores, axis=0))
             else:
                 # Get same estimator and score as previous evaluation
                 idx = self.trials.index[self.trials["params"] == params][0]
                 estimator = self.trials.at[idx, "estimator"]
-                score = lst(self.trials.at[idx, "score"])[0]
+                score = lst(self.trials.at[idx, "score"])
 
             trial.set_user_attr("estimator", estimator)
 
@@ -1293,8 +1306,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """Predicted confidence scores on the training set.
 
         Output of shape=(n_samples,) for binary classification tasks
-        or shape=(n_samples, n_classes) for multiclass classification
-        tasks.
+        or shape=(n_samples, n_classes) for multiclass and multilabel
+        classification tasks.
 
         """
         return to_pandas(
@@ -1309,8 +1322,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """Predicted confidence scores on the test set.
 
         Output of shape=(n_samples,) for binary classification tasks
-        or shape=(n_samples, n_classes) for multiclass classification
-        tasks.
+        or shape=(n_samples, n_classes) for multiclass and multilabel
+        classification tasks.
 
         """
         return to_pandas(
@@ -1325,8 +1338,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """Predicted confidence scores on the holdout set.
 
         Output of shape=(n_samples,) for binary classification tasks
-        or shape=(n_samples, n_classes) for multiclass classification
-        tasks.
+        or shape=(n_samples, n_classes) for multiclass and multilabel
+        classification tasks.
 
         """
         if self.T.holdout is not None:
@@ -1387,41 +1400,74 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def predict_log_proba_train(self) -> DATAFRAME_TYPES:
         """Class log-probability predictions on the training set.
 
-        Output of shape=(n_samples, n_classes).
+        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
+        n_classes) with a multiindex format for [multioutput tasks][].
 
         """
-        return bk.DataFrame(
-            data=self.estimator.predict_log_proba(self.X_train),
-            index=self.X_train.index,
-            columns=self._assign_prediction_columns(),
-        )
+        data = np.array(self.estimator.predict_proba(self.X_train))
+        if data.ndim < 3:
+            return bk.DataFrame(
+                data=data,
+                index=self.X_train.index,
+                columns=self._assign_prediction_columns(),
+            )
+        else:
+            return bk.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=pd.MultiIndex.from_tuples(
+                    [(col, i) for col in self.target for i in self.X_train.index]
+                ),
+                columns=np.unique(self.y),
+            )
 
     @cached_property
     def predict_log_proba_test(self) -> DATAFRAME_TYPES:
         """Class log-probability predictions on the test set.
 
-        Output of shape=(n_samples, n_classes).
+        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
+        n_classes) with a multiindex format for [multioutput tasks][].
 
         """
-        return bk.DataFrame(
-            data=self.estimator.predict_log_proba(self.X_test),
-            index=self.X_test.index,
-            columns=self._assign_prediction_columns(),
-        )
+        data = np.array(self.estimator.predict_log_proba(self.X_test))
+        if data.ndim < 3:
+            return bk.DataFrame(
+                data=data,
+                index=self.X_test.index,
+                columns=self._assign_prediction_columns(),
+            )
+        else:
+            return bk.DataFrame(
+                data=data.reshape(-1, data.shape[2]),
+                index=pd.MultiIndex.from_tuples(
+                    [(col, i) for col in self.target for i in self.X_test.index]
+                ),
+                columns=np.unique(self.y),
+            )
 
     @cached_property
     def predict_log_proba_holdout(self) -> DATAFRAME_TYPES | None:
         """Class log-probability predictions on the holdout set.
 
-        Output of shape=(n_samples, n_classes).
+        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
+        n_classes) with a multiindex format for [multioutput tasks][].
 
         """
         if self.T.holdout is not None:
-            return bk.DataFrame(
-                data=self.estimator.predict_log_proba(self.X_holdout),
-                index=self.X_holdout.index,
-                columns=self._assign_prediction_columns(),
-            )
+            data = np.array(self.estimator.predict_log_proba(self.X_holdout))
+            if data.ndim < 3:
+                return bk.DataFrame(
+                    data=data,
+                    index=self.X_holdout.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            else:
+                return bk.DataFrame(
+                    data=data.reshape(-1, data.shape[2]),
+                    index=pd.MultiIndex.from_tuples(
+                        [(col, i) for col in self.target for i in self.X_holdout.index]
+                    ),
+                    columns=np.unique(self.y),
+                )
 
     @cached_property
     def predict_proba_train(self) -> DATAFRAME_TYPES:
@@ -1431,7 +1477,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         n_classes) with a multiindex format for [multioutput tasks][].
 
         """
-        if (data := np.array(self.estimator.predict_proba(self.X_train))).ndim < 3:
+        data = np.array(self.estimator.predict_proba(self.X_train))
+        if data.ndim < 3:
             return bk.DataFrame(
                 data=data,
                 index=self.X_train.index,
@@ -1454,7 +1501,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         n_classes) with a multiindex format for [multioutput tasks][].
 
         """
-        if (data := np.array(self.estimator.predict_proba(self.X_test))).ndim < 3:
+        data = np.array(self.estimator.predict_proba(self.X_test))
+        if data.ndim < 3:
             return bk.DataFrame(
                 data=data,
                 index=self.X_test.index,
@@ -1477,20 +1525,22 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         n_classes) with a multiindex format for [multioutput tasks][].
 
         """
-        if (data := np.array(self.estimator.predict_proba(self.X_holdout))).ndim < 3:
-            return bk.DataFrame(
-                data=data,
-                index=self.X_holdout.index,
-                columns=self._assign_prediction_columns(),
-            )
-        else:
-            return bk.DataFrame(
-                data=data.reshape(-1, data.shape[2]),
-                index=pd.MultiIndex.from_tuples(
-                    [(col, i) for col in self.target for i in self.X_holdout.index]
-                ),
-                columns=np.unique(self.y),
-            )
+        if self.T.holdout is not None:
+            data = np.array(self.estimator.predict_proba(self.X_holdout))
+            if data.ndim < 3:
+                return bk.DataFrame(
+                    data=data,
+                    index=self.X_holdout.index,
+                    columns=self._assign_prediction_columns(),
+                )
+            else:
+                return bk.DataFrame(
+                    data=data.reshape(-1, data.shape[2]),
+                    index=pd.MultiIndex.from_tuples(
+                        [(col, i) for col in self.target for i in self.X_holdout.index]
+                    ),
+                    columns=np.unique(self.y),
+                )
 
     # Prediction methods =========================================== >>
 
@@ -1498,7 +1548,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self,
         X: slice | Y_TYPES | X_TYPES,
         y: Y_TYPES | None = None,
-        metric: str | callable | None = None,
+        metric: str | Callable | None = None,
         sample_weight: SEQUENCE_TYPES | None = None,
         verbose: INT_TYPES | None = None,
         method: str = "predict",
@@ -1756,7 +1806,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self,
         X: INT_TYPES | str | slice | SEQUENCE_TYPES | X_TYPES,
         y: Y_TYPES | None = None,
-        metric: str | callable | None = None,
+        metric: str | Callable | None = None,
         *,
         sample_weight: SEQUENCE_TYPES | None = None,
         verbose: INT_TYPES | None = None,
@@ -2103,7 +2153,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @composed(crash, typechecked)
     def evaluate(
         self,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
         *,
         threshold: FLOAT_TYPES = 0.5,
@@ -2392,6 +2442,55 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             pickle.dump(self.estimator, f)
 
         self.T.log(f"{self._fullname} estimator successfully saved.", 1)
+
+    @composed(crash, method_to_log, typechecked)
+    def serve(
+        self,
+        method: str = "predict",
+        host: str = "127.0.0.1",
+        port: INT_TYPES = 8000,
+    ):
+        """Serve the model as rest API endpoint for inference.
+
+        The complete pipeline is served with the model. The inference
+        data must be supplied as json of the HTTP request, e.g.
+        `requests.get("http://127.0.0.1:8000/", json=X.to_json())`.
+        The deployment is done on a ray cluster. The default `host`
+        and `port` parameters deploy to localhost.
+
+        !!! tip
+            Use `import ray; ray.serve.shutdown()` to close the
+            endpoint after finishing.
+
+        Parameters
+        ----------
+        method: str, default="predict"
+            Estimator's method to do inference on.
+
+        host: str, default="127.0.0.1"
+            Host for HTTP servers to listen on. To expose serve
+            publicly, you probably want to set this to "0.0.0.0".
+
+        port: int, default=8000
+            Port for HTTP server.
+
+        """
+
+        @serve.deployment
+        class ServeModel:
+            def __init__(self, model: Pipeline):
+                self.model = model
+
+            async def __call__(self, request: Request) -> np.ndarray:
+                payload = await request.json()
+                return getattr(self.model, method)(pd.read_json(payload))
+
+        if not ray.is_initialized():
+            ray.init(log_to_driver=False)
+
+        serve.run(ServeModel.bind(self.export_pipeline(verbose=0)), host=host, port=port)
+
+        self.T.log(f"Serving model {self._fullname} on {host}:{port}...", 1)
 
     @composed(crash, method_to_log, typechecked)
     def transform(

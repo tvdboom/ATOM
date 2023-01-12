@@ -3051,15 +3051,21 @@ See the <a class="autorefs autorefs-internal" href="../data_management/#branches
 <p>Unique value in a column, e.g. a binary classifier has 2 classes in
 the target column.</p>
 </div>
+<div id="dataframe"><strong>dataframe</strong></div>
+<div style="margin: -1em 0 0 1.2em">
+<p>Two-dimensional, size-mutable, potentially heterogeneous tabular data of type
+<a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html">pd.DataFrame</a>
+or its <a href="https://modin.readthedocs.io/en/stable/">modin</a> counterpart.</p>
+</div>
 <div id="dataframe-like"><strong>dataframe-like</strong></div>
 <div style="margin: -1em 0 0 1.2em">
-<p>Any type object from which a <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html">pd.DataFrame</a>
-can be created. This includes an <a href="https://docs.python.org/3/glossary.html#term-iterable">iterable</a>,
-a <a href="https://docs.python.org/3/library/functions.html#func-dict">dict</a>
-whose values are 1d-arrays, a two-dimensional <a href="https://docs.python.org/3/library/functions.html#func-list">list</a>,
+<p>Any type object from which a <a class="autorefs autorefs-internal" href="#dataframe">dataframe</a> can be created. This includes an
+<a href="https://docs.python.org/3/glossary.html#term-iterable">iterable</a>, a
+<a href="https://docs.python.org/3/library/functions.html#func-dict">dict</a> whose
+values are 1d-arrays, a two-dimensional <a href="https://docs.python.org/3/library/functions.html#func-list">list</a>,
 <a href="https://docs.python.org/3/library/functions.html#func-tuple">tuple</a>, <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html">np.ndarray</a> or
 <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html">sps.csr_matrix</a>,
-and most commonly, a dataframe. This is the standard input format
+and most commonly, a <a class="autorefs autorefs-internal" href="#dataframe">dataframe</a>. This is the standard input format
 for any dataset.</p>
 </div>
 <div id="estimator"><strong>estimator</strong></div>
@@ -3069,6 +3075,12 @@ The algorithm is estimated as a deterministic function of a set of
 parameters, a dataset and a random state. Should implement a <code>fit</code>
 method. Often used interchangeably with <a class="autorefs autorefs-internal" href="#predictor">predictor</a> because of user
 preference.</p>
+</div>
+<div id="sequence"><strong>index</strong></div>
+<div style="margin: -1em 0 0 1.2em">
+<p>Immutable sequence used for indexing and alignment of type <a href="https://pandas.pydata.org/docs/reference/api/pandas.Index.html">pd.Index</a>,
+<a href="https://pandas.pydata.org/docs/reference/api/pandas.MultiIndex.html">pd.MultiIndex</a>
+or their <a href="https://modin.readthedocs.io/en/stable/">modin</a> counterparts.</p>
 </div>
 <div id="missing values"><strong>missing values</strong></div>
 <div style="margin: -1em 0 0 1.2em">
@@ -3111,8 +3123,13 @@ returned number must correspond with a better score. See sklearn's
 <p>A one-dimensional array of type <a href="https://docs.python.org/3/library/functions.html#func-list">list</a>,
 <a href="https://docs.python.org/3/library/functions.html#func-tuple">tuple</a>,
 <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html">np.ndarray</a>
-or <a href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html">pd.Series</a>.
-This is the standard input format for a dataset's target column.</p>
+or <a class="autorefs autorefs-internal" href="#series">series</a>. This is the standard input format for a dataset's target column.</p>
+</div>
+<div id="series"><strong>series</strong></div>
+<div style="margin: -1em 0 0 1.2em">
+<p>One-dimensional ndarray with axis labels of type
+<a href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series">pd.Series</a>
+or its <a href="https://modin.readthedocs.io/en/stable/">modin</a> counterpart.</p>
 </div>
 <div id="target"><strong>target</strong></div>
 <div style="margin: -1em 0 0 1.2em">

@@ -119,7 +119,7 @@ Additionally, ATOM implements two ensemble models:
 
 """
 
-from typing import Optional, Tuple, Union
+from __future__ import annotations
 
 import numpy as np
 from optuna.distributions import CategoricalDistribution as Categorical
@@ -134,8 +134,8 @@ from optuna.trial import Trial
 from atom.basemodel import BaseModel
 from atom.pipeline import Pipeline
 from atom.utils import (
-    CatBMetric, CustomDict, LGBMetric, Predictor, XGBMetric, create_acronym,
-    pd,
+    DATAFRAME_TYPES, SERIES_TYPES, CatBMetric, CustomDict, LGBMetric,
+    Predictor, XGBMetric, create_acronym,
 )
 
 
@@ -737,10 +737,10 @@ class CatBoost(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: Tuple[pd.DataFrame, pd.Series],
+        data: tuple[DATAFRAME_TYPES, SERIES_TYPES],
         est_params_fit: dict,
-        validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
-        trial: Optional[Trial] = None,
+        validation: tuple[DATAFRAME_TYPES, SERIES_TYPES] | None = None,
+        trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
 
@@ -2278,10 +2278,10 @@ class LightGBM(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: Tuple[pd.DataFrame, pd.Series],
+        data: tuple[DATAFRAME_TYPES, SERIES_TYPES],
         est_params_fit: dict,
-        validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
-        trial: Optional[Trial] = None,
+        validation: tuple[DATAFRAME_TYPES, SERIES_TYPES] | None = None,
+        trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
 
@@ -2703,7 +2703,7 @@ class LogisticRegression(BaseModel):
         # Limitations on penalty + solver combinations
         penalty = self._get_param("penalty", params)
         solver = self._get_param("solver", params)
-        cond_1 = penalty == "none" and solver == "liblinear"
+        cond_1 = penalty is None and solver == "liblinear"
         cond_2 = penalty == "l1" and solver not in ("liblinear", "saga")
         cond_3 = penalty == "elasticnet" and solver != "saga"
 
@@ -2713,7 +2713,7 @@ class LogisticRegression(BaseModel):
         if self._get_param("penalty", params) != "elasticnet":
             params.pop("l1_ratio", None)
 
-        if self._get_param("penalty", params) == "none":
+        if self._get_param("penalty", params) is None:
             params.pop("C", None)
 
         return params
@@ -2728,7 +2728,7 @@ class LogisticRegression(BaseModel):
 
         """
         dist = CustomDict(
-            penalty=Categorical(["l1", "l2", "elasticnet", "none"]),
+            penalty=Categorical([None, "l1", "l2", "elasticnet"]),
             C=Float(1e-3, 100, log=True),
             solver=Categorical(["lbfgs", "newton-cg", "liblinear", "sag", "saga"]),
             max_iter=Int(100, 1000, step=10),
@@ -4082,10 +4082,10 @@ class XGBoost(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: Tuple[pd.DataFrame, pd.Series],
+        data: tuple[DATAFRAME_TYPES, SERIES_TYPES],
         est_params_fit: dict,
-        validation: Optional[Tuple[pd.DataFrame, pd.Series]] = None,
-        trial: Optional[Trial] = None,
+        validation: tuple[DATAFRAME_TYPES, SERIES_TYPES] | None = None,
+        trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
 
@@ -4330,6 +4330,3 @@ ENSEMBLES = CustomDict(Stack=Stacking, Vote=Voting)
 
 # List of all models + ensembles
 MODELS_ENSEMBLES = CustomDict(**MODELS, **ENSEMBLES)
-
-# Model types as list of all model classes
-MODEL_TYPES = Union[tuple(MODELS_ENSEMBLES.values())]

@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 import tempfile
 from copy import deepcopy
-from typing import Any
+from typing import Any, Callable
 
 import mlflow
 from joblib.memory import Memory
@@ -848,7 +848,7 @@ class BaseRunner:
     @composed(crash, typechecked)
     def evaluate(
         self,
-        metric: str | callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE_TYPES | None = None,
         dataset: str = "test",
         *,
         threshold: FLOAT_TYPES = 0.5,

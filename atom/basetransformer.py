@@ -206,7 +206,7 @@ class BaseTransformer:
         if isinstance(value, bool):
             self._warnings = "default" if value else "ignore"
         else:
-            options = ("error", "ignore", "always", "default", "module", "once")
+            options = ("default", "error", "ignore", "always", "module", "once")
             if value.lower() not in options:
                 raise ValueError(
                     "Invalid value for the warnings parameter, got "
@@ -216,7 +216,7 @@ class BaseTransformer:
 
         warnings.filterwarnings(self._warnings)  # Change the filter in this process
         warnings.filterwarnings("ignore", category=UserWarning, module=".*modin.*")
-        os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses
+        os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses (joblib)
 
     @property
     def logger(self) -> Logger:
@@ -258,8 +258,10 @@ class BaseTransformer:
 
             # Redirect loggers to file handler
             for logger in [self._logger.name] + external_loggers:
-                getLogger(logger).handlers.clear()
-                getLogger(logger).addHandler(handler)
+                for h in (log := getLogger(logger)).handlers:
+                    h.close()  # Close existing handlers
+                log.handlers.clear()
+                log.addHandler(handler)
 
         else:
             self._logger = value
@@ -434,7 +436,7 @@ class BaseTransformer:
             else:
                 raise ValueError("X can't be None when y is a string.")
 
-        elif isinstance(y, int):
+        elif isinstance(y, INT):
             if X is None:
                 raise ValueError("X can't be None when y is an int.")
 
@@ -516,7 +518,7 @@ class BaseTransformer:
         else:
             inc = []
             for col in lst(self.stratify):
-                if isinstance(col, int):
+                if isinstance(col, INT):
                     if -df.shape[1] <= col <= df.shape[1]:
                         inc.append(df.columns[col])
                     else:

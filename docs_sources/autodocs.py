@@ -221,32 +221,6 @@ CUSTOM_URLS = dict(
 )
 
 
-TYPES_CONVERSION = {
-    # "atom.branch.Branch": "[Branch][branches]",
-    # "atom.utils.CustomDict": "dict",
-    # "atom.utils.Model": "[model][models]",
-    # "List[atom.utils.Model]": "list",
-    # "atom.utils.Predictor": "Predictor",
-    # "Tuple[int, int]": "tuple",
-    # "Optional[int]": "int or None",
-    # "Optional[float]": "float or None",
-    # "Optional[pandas.core.frame.DataFrame]": "pd.DataFrame or None",
-    # "Optional[pandas.core.series.Series]": "pd.Series or None",
-    # "pandas.core.frame.DataFrame": "pd.DataFrame",
-    # "pandas.core.series.Series": "pd.Series",
-    # "Union[str, List[str]]": "str or list",
-    # "Union[float, numpy.floating, List[Union[float, numpy.floating]]]": "float or list",
-    # "Union[float, numpy.floating, List[Union[float, numpy.floating]], NoneType]": "float, list or None",
-    # "Union[pandas.core.series.Series, pandas.core.frame.DataFrame]": "pd.Series or pd.DataFrame",
-    # "Optional[Union[pandas.core.series.Series, pandas.core.frame.DataFrame]]": "pd.Series, pd.DataFrame or None",
-    # "Union[pandas.core.series.Series, pandas.core.frame.DataFrame, NoneType]": "pd.Series, pd.DataFrame or None",
-    # "Optional[optuna.study.study.Study]": "[Study][] or None",
-    # "Optional[optuna.trial._trial.Trial]": "[Trial][] or None",
-    # "Union[str, list, tuple, numpy.ndarray, pandas.core.series.Series]": "str or sequence",
-    # "Union[int, pandas.core.series.Series]": "int or pd.Series",
-}
-
-
 # Classes ========================================================== >>
 
 class DummyTrainer:
@@ -604,8 +578,8 @@ class AutoDocs:
                     elif obj.__class__.__name__ == "cached_property":
                         obj = obj.func
 
-                    output = str(signature(obj)).split(" -> ")[-1]
-                    header = f"{obj.__name__}: {TYPES_CONVERSION.get(output, output)}"
+                    output = str(signature(obj)).split(" -> ")[-1][1:-1]
+                    header = f"{obj.__name__}: {types_conversion(output)}"
                     text = f"<div markdown class='param'>{getdoc(obj)}</div>"
 
                     anchor = f"<a id='{self.obj.__name__.lower()}-{obj.__name__}'></a>"
@@ -861,6 +835,39 @@ def render(markdown: str, **kwargs) -> str:
         markdown = custom_autorefs(markdown, autodocs)
 
     return custom_autorefs(markdown)
+
+
+def types_conversion(dtype: str) -> str:
+    """Convert data types to a clean representation.
+
+    Parameters
+    ----------
+    dtype: str
+        Type to convert.
+
+    Returns
+    -------
+    str
+        Converted type.
+
+    """
+    types = {
+        "CustomDict": "dict",
+        "INT_TYPES": "int",
+        "FLOAT_TYPES": "float",
+        "SERIES_TYPES": "series",
+        "DATAFRAME_TYPES": "dataframe",
+        "PANDAS_TYPES": "series | dataframe",
+        "Branch": "[Branch][branches]",
+        "Model": "[model][models]",
+        "Study | None": "[Study][] | None",
+        "Trial | None": "[Trial][] | None",
+    }
+
+    for k, v in types.items():
+        dtype = dtype.replace(k, v)
+
+    return dtype
 
 
 def convert_plotly(html: str, **kwargs) -> str:

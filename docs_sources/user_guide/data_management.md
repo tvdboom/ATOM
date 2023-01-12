@@ -114,8 +114,8 @@ the [data sets][] section).
 ATOM recognizes three multioutput tasks.
 
 !!! note
-Combinations of binary and multiclass target columns are treated as
-[multiclass-multioutput][] tasks.
+    Combinations of binary and multiclass target columns are treated as
+    [multiclass-multioutput][] tasks.
 
 
 #### Multilabel

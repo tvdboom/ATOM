@@ -3073,7 +3073,7 @@
 
 <h1 id="predict_proba">predict_proba</h1>
 <hr />
-<p><a id='predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1712>[source]</a></span></div>Get class probabilities on new data or rows in the dataset.</p>
+<p><a id='predict_proba'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict_proba</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1767>[source]</a></span></div>Get class probabilities on new data or rows in the dataset.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict_proba</code> method.</p>
@@ -3085,9 +3085,10 @@ feature set with shape=(n_samples, n_features).</p>
 <p></div><a id='predict_proba-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
 Verbosity level of the output. If None, it uses the
 transformer's own verbosity.</p>
-<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='predict_proba-pd.DataFrame'></a><strong>pd.DataFrame</strong><br><div markdown class='param'>
-Predicted class probabilities with shape=(n_samples,
-n_classes).
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='predict_proba-dataframe'></a><strong>dataframe</strong><br><div markdown class='param'>
+Class probability predictions with shape=(n_samples, n_classes)
+or (n_targets * n_samples, n_classes) with a multiindex format
+for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.
 </div></td></tr></p>
 </table>
 <h2 id="example">Example</h2>

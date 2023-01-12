@@ -3073,7 +3073,7 @@
 
 <h1 id="predict">predict</h1>
 <hr />
-<p><a id='predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1642>[source]</a></span></div>Get class predictions on new data or rows in the dataset.</p>
+<p><a id='predict'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>predict</strong>(X, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1698>[source]</a></span></div>Get class predictions on new data or rows in the dataset.</p>
 <p>New data is first transformed through the model's pipeline.
 Transformers that are only applied on the training set are
 skipped. The estimator must have a <code>predict</code> method.</p>
@@ -3085,8 +3085,9 @@ feature set with shape=(n_samples, n_features).</p>
 <p></div><a id='predict-verbose'></a><strong>verbose: int or None, default=None</strong><br><div markdown class='param'>
 Verbosity level of the output. If None, it uses the
 transformer's own verbosity.</p>
-<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='predict-pd.Series'></a><strong>pd.Series</strong><br><div markdown class='param'>
-Predicted classes with shape=(n_samples,).
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='predict-series or dataframe'></a><strong>series or dataframe</strong><br><div markdown class='param'>
+Class predictions with shape=(n_samples,) or
+shape=(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.
 </div></td></tr></p>
 </table>
 <h2 id="example">Example</h2>

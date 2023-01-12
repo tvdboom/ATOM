@@ -15,6 +15,7 @@ from logging import Logger
 from string import punctuation
 
 import nltk
+import pandas as pd
 from nltk.collocations import (
     BigramCollocationFinder, QuadgramCollocationFinder,
     TrigramCollocationFinder,
@@ -27,9 +28,9 @@ from typeguard import typechecked
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils import (
-    INT_TYPES, SCALAR_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict,
-    check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
-    method_to_log, pd, to_df,
+    DATAFRAME_TYPES, INT_TYPES, SCALAR_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
+    CustomDict, check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
+    method_to_log, to_df,
 )
 
 
@@ -281,38 +282,65 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drops = pd.DataFrame()
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> pd.DataFrame:
+    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
         """Apply the transformations to the data.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed corpus.
 
         """
 
-        def to_ascii(row):
-            """Convert unicode string to ascii."""
+        def to_ascii(elem: str) -> str:
+            """Convert unicode string to ascii.
+
+            Parameters
+            ----------
+            elem: str
+                Elements of the corpus.
+
+            Returns
+            -------
+            str
+                ASCII string.
+
+            """
             try:
-                row.encode("ASCII", errors="strict")  # Returns bytes object
+                elem.encode("ASCII", errors="strict")  # Returns bytes object
             except UnicodeEncodeError:
-                norm = unicodedata.normalize("NFKD", row)
+                norm = unicodedata.normalize("NFKD", elem)
                 return "".join([c for c in norm if not unicodedata.combining(c)])
             else:
-                return row  # Return unchanged if encoding was successful
+                return elem  # Return unchanged if encoding was successful
 
-        def drop_regex(search):
-            """Find and remove a regex expression from the text."""
+        def drop_regex(search: str) -> tuple[int, int]:
+            """Find and remove a regex expression from the text.
+
+            Parameters
+            ----------
+            search: str
+                Regex pattern to search for.
+
+            Returns
+            -------
+            int
+                Number of occurrences.
+
+            int
+                Number of documents (rows) with occurrences.
+
+            """
             counts, docs = 0, 0
             for i, row in X[corpus].items():
                 for j, elem in enumerate([row] if isinstance(row, str) else row):
@@ -342,16 +370,16 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if self.decode:
             if isinstance(X[corpus].iat[0], str):
-                X[corpus] = X[corpus].apply(lambda row: to_ascii(row))
+                X[corpus] = X[corpus].apply(lambda elem: to_ascii(elem))
             else:
-                X[corpus] = X[corpus].apply(lambda row: [to_ascii(str(w)) for w in row])
+                X[corpus] = X[corpus].apply(lambda elem: [to_ascii(str(w)) for w in elem])
         self.log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
             if isinstance(X[corpus].iat[0], str):
                 X[corpus] = X[corpus].str.lower()
             else:
-                X[corpus] = X[corpus].apply(lambda row: [str(w).lower() for w in row])
+                X[corpus] = X[corpus].apply(lambda elem: [str(w).lower() for w in elem])
         self.log(" --> Converting text to lower case.", 2)
 
         if self.drop_email:
@@ -578,28 +606,40 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.lemmatize = lemmatize
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> pd.DataFrame:
+    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
         """Normalize the text.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed corpus.
 
         """
 
-        def pos(tag):
-            """Get part of speech from a tag."""
+        def pos(tag: str) -> wordnet.ADJ | wordnet.ADV | wordnet.VERB | wordnet.NOUN:
+            """Get part of speech from a tag.
+
+            Parameters
+            ----------
+            tag: str
+                Wordnet tag corresponding to a word.
+
+            Returns
+            -------
+            ADJ, ADV, VERB or NOUN
+                Part of speech of word.
+
+            """
             if tag in ("JJ", "JJR", "JJS"):
                 return wordnet.ADJ
             elif tag in ("RB", "RBR", "RBS"):
@@ -829,22 +869,22 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.quadgrams = None
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> pd.DataFrame:
+    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
         """Tokenize the text.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed corpus.
 
         """
@@ -1120,8 +1160,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
@@ -1169,22 +1209,22 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> pd.DataFrame:
+    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
         """Vectorize the text.
 
         Parameters
         ----------
         X: dataframe-like
             Feature set with shape=(n_samples, n_features). If X is
-            not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            not a dataframe, it should be composed of a single feature
+            containing the text documents.
 
         y: int, str, sequence, dataframe-like or None, default=None
             Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
-        pd.DataFrame
+        dataframe
             Transformed corpus.
 
         """

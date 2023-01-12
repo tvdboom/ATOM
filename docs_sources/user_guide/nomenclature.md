@@ -34,7 +34,7 @@ Unique value in a column, e.g. a binary classifier has 2 classes in
 the target column.
 </div>
 
-<div id="class"><strong>dataframe</strong></div>
+<div id="dataframe"><strong>dataframe</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 Two-dimensional, size-mutable, potentially heterogeneous tabular data of type
 [pd.DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html)
@@ -120,7 +120,7 @@ A one-dimensional array of type [list](https://docs.python.org/3/library/functio
 or [series][]. This is the standard input format for a dataset's target column.
 </div>
 
-<div id="class"><strong>series</strong></div>
+<div id="series"><strong>series</strong></div>
 <div markdown style="margin: -1em 0 0 1.2em">
 One-dimensional ndarray with axis labels of type
 [pd.Series](https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series)

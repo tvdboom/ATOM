@@ -237,14 +237,14 @@ class ATOMClassifier(BaseTransformer, ATOM):
     backend: str, default="loky"
         Parallelization backend. Choose from:
 
-        - "loky"
-        - "multiprocessing"
-        - "threading"
-        - "ray"
+        - "loky": Single-node, process-based parallelism.
+        - "multiprocessing": Legacy single-node, process-based
+          parallelism. Less robust than 'loky'.
+        - "threading": Single-node, thread-based parallelism.
+        - "ray": Multi-node, process-based parallelism.
 
         Selecting the ray backend also parallelizes the data using
-        [modin][]. Only the ray backend is capable of parallelization
-        across multi-node systems.
+        [modin][].
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
