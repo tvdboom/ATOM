@@ -9,23 +9,20 @@ Description: Module containing the BaseModel class.
 
 from __future__ import annotations
 
-import warnings
-
 import os
-import ray
 from copy import deepcopy
 from datetime import datetime as dt
 from functools import cached_property, lru_cache
 from importlib import import_module
 from typing import Any, Callable
 from unittest.mock import patch
-from ray import serve
+
 import dill as pickle
 import joblib
 import mlflow
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
+import ray
 from joblib.memory import Memory
 from mlflow.models.signature import infer_signature
 from mlflow.tracking import MlflowClient
@@ -33,6 +30,7 @@ from optuna import TrialPruned, create_study
 from optuna.samplers import NSGAIISampler, TPESampler
 from optuna.study import Study
 from optuna.trial import Trial, TrialState
+from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import (
     KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
@@ -48,10 +46,11 @@ from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     DATAFRAME_TYPES, DF_ATTRS, FLOAT_TYPES, INT, INT_TYPES, PANDAS_TYPES,
     SEQUENCE_TYPES, SERIES_TYPES, X_TYPES, Y_TYPES, CustomDict, PlotCallback,
-    Predictor, Scorer, ShapExplanation, TrialsCallback, bk, check_dependency,
-    composed, crash, custom_transform, estimator_has_attr, flt, get_cols,
-    get_custom_scorer, get_feature_importance, has_task, it, lst, merge,
-    method_to_log, rnd, score, sign, time_to_str, to_pandas, variable_return, ServeModel
+    Predictor, Scorer, ServeModel, ShapExplanation, TrialsCallback, bk,
+    check_dependency, composed, crash, custom_transform, estimator_has_attr,
+    flt, get_cols, get_custom_scorer, get_feature_importance, has_task, it,
+    lst, merge, method_to_log, rnd, score, sign, time_to_str, to_pandas,
+    variable_return,
 )
 
 

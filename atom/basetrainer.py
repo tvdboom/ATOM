@@ -13,9 +13,7 @@ import traceback
 from datetime import datetime as dt
 from typing import Any
 
-from joblib import Parallel, delayed
 import mlflow
-import ray
 from optuna import Study, create_study
 
 from atom.baserunner import BaseRunner
@@ -312,7 +310,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
             except Exception as ex:
                 self.log(
-                    "\nException encountered while running the "
+                    f"\nException encountered while running the "
                     f"{m.name} model. Removing model from pipeline. ", 1
                 )
                 self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
