@@ -8,7 +8,7 @@ Description: Module containing utility constants, classes and functions.
 """
 
 from __future__ import annotations
-
+from starlette.requests import Request
 import pprint
 import sys
 from collections import OrderedDict, deque
@@ -21,7 +21,7 @@ from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
 from typing import Any, Callable, Protocol, Union
-
+from ray import serve
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -143,6 +143,43 @@ class Transformer(Protocol):
     """Protocol for all predictors."""
     def fit(self, **params): ...
     def transform(self, **params): ...
+
+
+@serve.deployment
+class ServeModel:
+    """Model deployment class.
+
+    Parameters
+    ----------
+    model: Pipeline
+        Transformers + estimator to make inference on.
+
+    method: str, default="predict"
+        Estimator's method to do inference on.
+
+    """
+
+    def __init__(self, model: Pipeline, method: str = "predict"):
+        self.model = model
+        self.method = method
+
+    async def __call__(self, request: Request) -> str:
+        """Inference call.
+
+        Parameters
+        ----------
+        request: Request.
+            HTTP request. Should contain the rows to predict
+            in a json body.
+
+        Returns
+        -------
+        str
+            Model predictions as string.
+
+        """
+        payload = await request.json()
+        return getattr(self.model, self.method)(pd.read_json(payload))
 
 
 class CatBMetric:

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import warnings
 
-from starlette.requests import Request
 import os
 import ray
 from copy import deepcopy
@@ -52,7 +51,7 @@ from atom.utils import (
     Predictor, Scorer, ShapExplanation, TrialsCallback, bk, check_dependency,
     composed, crash, custom_transform, estimator_has_attr, flt, get_cols,
     get_custom_scorer, get_feature_importance, has_task, it, lst, merge,
-    method_to_log, rnd, score, sign, time_to_str, to_pandas, variable_return,
+    method_to_log, rnd, score, sign, time_to_str, to_pandas, variable_return, ServeModel
 )
 
 
@@ -2453,7 +2452,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """Serve the model as rest API endpoint for inference.
 
         The complete pipeline is served with the model. The inference
-        data must be supplied as json of the HTTP request, e.g.
+        data must be supplied as json to the HTTP request, e.g.
         `requests.get("http://127.0.0.1:8000/", json=X.to_json())`.
         The deployment is done on a ray cluster. The default `host`
         and `port` parameters deploy to localhost.
@@ -2475,20 +2474,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Port for HTTP server.
 
         """
-
-        @serve.deployment
-        class ServeModel:
-            def __init__(self, model: Pipeline):
-                self.model = model
-
-            async def __call__(self, request: Request) -> np.ndarray:
-                payload = await request.json()
-                return getattr(self.model, method)(pd.read_json(payload))
-
         if not ray.is_initialized():
             ray.init(log_to_driver=False)
 
-        serve.run(ServeModel.bind(self.export_pipeline(verbose=0)), host=host, port=port)
+        server = ServeModel.bind(model=self.export_pipeline(verbose=0), method=method)
+        serve.run(server, host=host, port=port)
 
         self.T.log(f"Serving model {self._fullname} on {host}:{port}...", 1)
 
