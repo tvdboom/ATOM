@@ -33,7 +33,6 @@ from matplotlib.colors import to_rgba
 from mlflow.models.signature import infer_signature
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from ray import serve
 from scipy import sparse
 from shap import Explainer, Explanation
 from sklearn.metrics import (
@@ -41,9 +40,6 @@ from sklearn.metrics import (
     matthews_corrcoef,
 )
 from sklearn.utils import _print_elapsed_time
-from starlette.requests import Request
-
-from atom.pipeline import Pipeline
 
 
 # Constants ======================================================== >>
@@ -53,26 +49,26 @@ __version__ = "5.1.0"
 
 # Group of variable types for isinstance
 # TODO: From Python 3.10, isinstance accepts union operator (change by then)
-INT = (int, np.integer)
-FLOAT = (float, np.floating)
-SCALAR = (*INT, *FLOAT)
-INDEX = (pd.Index, md.Index, pd.MultiIndex, md.MultiIndex)
-SERIES = (pd.Series, md.Series)
-DATAFRAME = (pd.DataFrame, md.DataFrame)
-PANDAS = (*SERIES, *DATAFRAME)
-SEQUENCE = (list, tuple, np.ndarray, pd.Series, md.Series)
+INT_TYPES = (int, np.integer)
+FLOAT_TYPES = (float, np.floating)
+SCALAR_TYPES = (*INT_TYPES, *FLOAT_TYPES)
+INDEX_TYPES = (pd.Index, md.Index, pd.MultiIndex, md.MultiIndex)
+SERIES_TYPES = (pd.Series, md.Series)
+DATAFRAME_TYPES = (pd.DataFrame, md.DataFrame)
+PANDAS_TYPES = (*SERIES_TYPES, *DATAFRAME_TYPES)
+SEQUENCE_TYPES = (list, tuple, np.ndarray, *SERIES_TYPES)
 
 # Groups of variable types for type hinting
-INT_TYPES = Union[INT]
-FLOAT_TYPES = Union[FLOAT]
-SCALAR_TYPES = Union[SCALAR]
-INDEX_TYPES = Union[INDEX]
-SERIES_TYPES = Union[SERIES]
-DATAFRAME_TYPES = Union[DATAFRAME]
-PANDAS_TYPES = Union[PANDAS]
-SEQUENCE_TYPES = Union[SEQUENCE]
-X_TYPES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, DATAFRAME_TYPES]
-Y_TYPES = Union[INT_TYPES, str, dict, SEQUENCE_TYPES, DATAFRAME_TYPES]
+INT = Union[INT_TYPES]
+FLOAT = Union[FLOAT_TYPES]
+SCALAR = Union[SCALAR_TYPES]
+INDEX = Union[INDEX_TYPES]
+SERIES = Union[SERIES_TYPES]
+DATAFRAME = Union[DATAFRAME_TYPES]
+PANDAS = Union[PANDAS_TYPES]
+SEQUENCE = Union[SEQUENCE_TYPES]
+FEATURES = Union[iter, dict, list, tuple, np.ndarray, sparse.spmatrix, DATAFRAME]
+TARGET = Union[INT, str, dict, SEQUENCE, DATAFRAME]
 
 # Attributes shared between atom and pd.DataFrame
 DF_ATTRS = (
@@ -149,43 +145,6 @@ class Transformer(Protocol):
     def transform(self, **params): ...
 
 
-@serve.deployment
-class ServeModel:
-    """Model deployment class.
-
-    Parameters
-    ----------
-    model: Pipeline
-        Transformers + estimator to make inference on.
-
-    method: str, default="predict"
-        Estimator's method to do inference on.
-
-    """
-
-    def __init__(self, model: Pipeline, method: str = "predict"):
-        self.model = model
-        self.method = method
-
-    async def __call__(self, request: Request) -> str:
-        """Inference call.
-
-        Parameters
-        ----------
-        request: Request.
-            HTTP request. Should contain the rows to predict
-            in a json body.
-
-        Returns
-        -------
-        str
-            Model predictions as string.
-
-        """
-        payload = await request.json()
-        return getattr(self.model, self.method)(pd.read_json(payload))
-
-
 class CatBMetric:
     """Custom evaluation metric for the CatBoost model.
 
@@ -203,7 +162,7 @@ class CatBMetric:
         self.task = task
 
     @staticmethod
-    def get_final_error(error: FLOAT_TYPES, weight: FLOAT_TYPES) -> FLOAT_TYPES:
+    def get_final_error(error: FLOAT, weight: FLOAT) -> FLOAT:
         """Returns final value of metric based on error and weight.
 
         Parameters
@@ -227,7 +186,7 @@ class CatBMetric:
         """Returns whether great values of metric are better."""
         return True
 
-    def evaluate(self, approxes: list, targets: list, weight: list) -> FLOAT_TYPES:
+    def evaluate(self, approxes: list, targets: list, weight: list) -> FLOAT:
         """Evaluates metric value.
 
         Parameters
@@ -295,7 +254,7 @@ class LGBMetric:
         y_true: np.ndarray,
         y_pred: np.ndarray,
         weight: np.ndarray,
-    ) -> tuple[str, FLOAT_TYPES, bool]:
+    ) -> tuple[str, FLOAT, bool]:
         """Evaluates metric value.
 
         Parameters
@@ -357,7 +316,7 @@ class XGBMetric:
     def __name__(self):
         return self.scorer.name
 
-    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> FLOAT_TYPES:
+    def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> FLOAT:
         if self.scorer.__class__.__name__ == "_PredictScorer":
             if self.task.startswith("bin"):
                 y_pred = (y_pred > 0.5).astype(int)
@@ -388,8 +347,8 @@ class Table:
 
     def __init__(
         self,
-        headers: SEQUENCE_TYPES,
-        spaces: SEQUENCE_TYPES,
+        headers: SEQUENCE,
+        spaces: SEQUENCE,
         default_pos: str = "right",
     ):
         assert len(headers) == len(spaces)
@@ -407,7 +366,7 @@ class Table:
         self.spaces = spaces
 
     @staticmethod
-    def to_cell(text: SCALAR_TYPES | str, position: str, space: INT_TYPES) -> str:
+    def to_cell(text: SCALAR | str, position: str, space: INT) -> str:
         """Get the string format for one cell.
 
         Parameters
@@ -500,7 +459,7 @@ class TrialsCallback:
 
     """
 
-    def __init__(self, model: Model, n_jobs: INT_TYPES):
+    def __init__(self, model: Model, n_jobs: INT):
         self.model = model
         self.n_jobs = n_jobs
         self.T = self.model.T  # Parent runner
@@ -810,8 +769,8 @@ class ShapExplanation:
 
     def get_explanation(
         self,
-        df: DATAFRAME_TYPES,
-        target: INT_TYPES = 1,
+        df: DATAFRAME,
+        target: INT = 1,
         column: str | None = None,
         only_one: bool = False,
     ) -> Explanation:
@@ -884,10 +843,10 @@ class ShapExplanation:
 
     def get_shap_values(
         self,
-        df: DATAFRAME_TYPES,
-        target: INT_TYPES = 1,
+        df: DATAFRAME,
+        target: INT = 1,
         return_all_classes: bool = False,
-    ) -> FLOAT_TYPES | SEQUENCE_TYPES:
+    ) -> FLOAT | SEQUENCE:
         """Get shap values from the Explanation object.
 
         Parameters
@@ -915,7 +874,7 @@ class ShapExplanation:
 
         return values
 
-    def get_interaction_values(self, df: DATAFRAME_TYPES) -> np.ndarray:
+    def get_interaction_values(self, df: DATAFRAME) -> np.ndarray:
         """Get shap interaction values from the Explanation object.
 
         Parameters
@@ -933,9 +892,9 @@ class ShapExplanation:
 
     def get_expected_value(
         self,
-        target: INT_TYPES = 1,
+        target: INT = 1,
         return_all_classes: bool = False,
-    ) -> FLOAT_TYPES | SEQUENCE_TYPES:
+    ) -> FLOAT | SEQUENCE:
         """Get the expected value of the training set.
 
         The expected value is either retrieved from the explainer's
@@ -1169,7 +1128,7 @@ def flt(item: Any) -> Any:
     return item[0] if isinstance(item, SEQUENCE) and len(item) == 1 else item
 
 
-def lst(item: Any) -> SEQUENCE_TYPES:
+def lst(item: Any) -> SEQUENCE:
     """Make a sequence from an item if not a sequence already.
 
     Parameters
@@ -1183,7 +1142,7 @@ def lst(item: Any) -> SEQUENCE_TYPES:
         Item as sequence with length 1 or provided sequence.
 
     """
-    return item if isinstance(item, (dict, CustomDict, *SEQUENCE)) else [item]
+    return item if isinstance(item, (dict, CustomDict, *SEQUENCE_TYPES)) else [item]
 
 
 def it(item: Any) -> Any:
@@ -1210,7 +1169,7 @@ def it(item: Any) -> Any:
     return int(item) if is_equal else float(item)
 
 
-def rnd(item: Any, decimals: INT_TYPES = 4) -> Any:
+def rnd(item: Any, decimals: INT = 4) -> Any:
     """Round a float to the `decimals` position.
 
     If the value is not a float, return as is.
@@ -1232,7 +1191,7 @@ def rnd(item: Any, decimals: INT_TYPES = 4) -> Any:
     return round(item, decimals) if np.issubdtype(type(item), np.floating) else item
 
 
-def divide(a: SCALAR_TYPES, b: SCALAR_TYPES) -> SCALAR_TYPES:
+def divide(a: SCALAR, b: SCALAR) -> SCALAR:
     """Divide two numbers and return 0 if division by zero.
 
     If the value is not a float, return as is.
@@ -1292,7 +1251,7 @@ def sign(obj: callable) -> OrderedDict:
     return signature(obj).parameters
 
 
-def merge(*args) -> DATAFRAME_TYPES:
+def merge(*args) -> DATAFRAME:
     """Concatenate pandas objects column-wise.
 
     Empty objects are ignored.
@@ -1314,7 +1273,7 @@ def merge(*args) -> DATAFRAME_TYPES:
         return bk.concat([*args], axis=1)
 
 
-def get_cols(elem: PANDAS_TYPES) -> list[SERIES]:
+def get_cols(elem: PANDAS) -> list[SERIES]:
     """Get a list of columns in dataframe / series.
 
     Parameters
@@ -1335,9 +1294,9 @@ def get_cols(elem: PANDAS_TYPES) -> list[SERIES]:
 
 
 def variable_return(
-    X: DATAFRAME_TYPES | None,
-    y: SERIES_TYPES | None,
-) -> DATAFRAME_TYPES | SERIES_TYPES | tuple[DATAFRAME_TYPES, SERIES_TYPES]:
+    X: DATAFRAME | None,
+    y: SERIES | None,
+) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
     """Return one or two arguments depending on which is None.
 
     This utility is used to make methods return only the provided
@@ -1365,7 +1324,7 @@ def variable_return(
         return X, y
 
 
-def is_sparse(df: DATAFRAME_TYPES) -> bool:
+def is_sparse(df: DATAFRAME) -> bool:
     """Check if the dataframe is sparse.
 
     A data set is considered sparse if any of its columns is sparse.
@@ -1420,7 +1379,7 @@ def check_canvas(is_canvas: bool, method: str):
         )
 
 
-def check_predict_proba(models: SEQUENCE_TYPES, method: str):
+def check_predict_proba(models: SEQUENCE, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
     Parameters
@@ -1440,7 +1399,7 @@ def check_predict_proba(models: SEQUENCE_TYPES, method: str):
             )
 
 
-def check_scaling(df: DATAFRAME_TYPES) -> bool:
+def check_scaling(df: DATAFRAME) -> bool:
     """Check if the data is scaled.
 
     A data set is considered scaled when the mean of the mean of
@@ -1506,7 +1465,7 @@ def get_versions(models: CustomDict) -> dict:
     return versions
 
 
-def get_corpus(df: DATAFRAME_TYPES) -> SERIES_TYPES:
+def get_corpus(df: DATAFRAME) -> SERIES:
     """Get text column from a dataframe.
 
     The text column should be called `corpus` (case insensitive).
@@ -1559,7 +1518,7 @@ def get_pl_name(name: str, steps: tuple[str, Estimator], counter: int = 1) -> st
     return name.lower()
 
 
-def get_best_score(item: Model | SERIES_TYPES, metric: int = 0) -> FLOAT_TYPES:
+def get_best_score(item: Model | SERIES, metric: int = 0) -> FLOAT:
     """Returns the best score for a model.
 
     The best score is the `score_bootstrap` or `score_test`, checked
@@ -1613,7 +1572,7 @@ def time_to_str(t: int):
         return f"{h:02.0f}h:{m:02.0f}m:{s:02.0f}s"
 
 
-def n_cols(data: X_TYPES | Y_TYPES | None) -> int:
+def n_cols(data: FEATURES | TARGET | None) -> int:
     """Get the number of columns in a dataset.
 
     Parameters
@@ -1635,11 +1594,11 @@ def n_cols(data: X_TYPES | Y_TYPES | None) -> int:
 
 
 def to_df(
-    data: X_TYPES | None,
-    index: SEQUENCE_TYPES | INDEX_TYPES = None,
-    columns: SEQUENCE_TYPES | None = None,
+    data: FEATURES | None,
+    index: SEQUENCE | INDEX = None,
+    columns: SEQUENCE | None = None,
     dtype: str | dict | np.dtype | None = None,
-) -> DATAFRAME_TYPES | None:
+) -> DATAFRAME | None:
     """Convert a dataset to a dataframe.
 
     Parameters
@@ -1673,18 +1632,9 @@ def to_df(
             data = data.to_pandas()  # Convert cuML to pandas
         elif sparse.issparse(data):
             # Create dataframe from sparse matrix
-            data = bk.DataFrame.sparse.from_spmatrix(
-                data=data,
-                index=getattr(data, "index", index),
-                columns=getattr(data, "columns", columns),
-            )
+            data = bk.DataFrame.sparse.from_spmatrix(data, index, columns)
         else:
-            # Get attributes from pandas df for modin or vice-versa
-            data = bk.DataFrame(
-                data=data,
-                index=getattr(data, "index", index),
-                columns=getattr(data, "columns", columns),
-            )
+            data = bk.DataFrame(data, index, columns)
 
         if dtype is not None:
             data = data.astype(dtype)
@@ -1693,11 +1643,11 @@ def to_df(
 
 
 def to_series(
-    data: SEQUENCE_TYPES | None,
-    index: SEQUENCE_TYPES | INDEX_TYPES | None = None,
+    data: SEQUENCE | None,
+    index: SEQUENCE | INDEX | None = None,
     name: str = "target",
     dtype: str | np.dtype | None = None,
-) -> SERIES_TYPES | None:
+) -> SERIES | None:
     """Convert a sequence to a series.
 
     Parameters
@@ -1726,24 +1676,23 @@ def to_series(
             data = data.to_pandas()  # Convert cuML to pandas
         else:
             # Flatten for arrays with shape (n_samples, 1), sometimes returned by cuML
-            # Get attributes from pandas series for modin or vice-versa
             data = bk.Series(
                 data=np.array(data, dtype="object").ravel().tolist(),
-                index=getattr(data, "index", index),
-                name=getattr(data, "name", name),
-                dtype=getattr(data, "dtype", dtype),
+                index=index,
+                name=name,
+                dtype=dtype,
             )
 
     return data
 
 
 def to_pandas(
-    data: SEQUENCE_TYPES | None,
-    index: SEQUENCE_TYPES | INDEX_TYPES | None = None,
-    columns: SEQUENCE_TYPES | None = None,
+    data: SEQUENCE | None,
+    index: SEQUENCE | INDEX | None = None,
+    columns: SEQUENCE | None = None,
     name: str = "target",
     dtype: str | dict | np.dtype | None = None,
-) -> PANDAS_TYPES | None:
+) -> PANDAS | None:
     """Convert a sequence or dataset to a dataframe or series object.
 
     If the data is 1-dimensional, convert to series, else to a dataframe.
@@ -1781,7 +1730,7 @@ def to_pandas(
 def check_is_fitted(
     estimator: Estimator,
     exception: bool = True,
-    attributes: str | SEQUENCE_TYPES | None = None,
+    attributes: str | SEQUENCE | None = None,
 ) -> bool:
     """Check whether an estimator is fitted.
 
@@ -1967,7 +1916,7 @@ def get_custom_scorer(metric: str | Callable | Scorer) -> Scorer:
     return scorer
 
 
-def infer_task(y: PANDAS_TYPES, goal: str = "class") -> str:
+def infer_task(y: PANDAS, goal: str = "class") -> str:
     """Infer the task corresponding to a target column.
 
     If goal is provided, only look at number of unique values to
@@ -2010,7 +1959,7 @@ def infer_task(y: PANDAS_TYPES, goal: str = "class") -> str:
 
 def get_feature_importance(
     est: Predictor,
-    attributes: SEQUENCE_TYPES | None = None,
+    attributes: SEQUENCE | None = None,
 ) -> np.ndarray | None:
     """Return the feature importance from an estimator.
 
@@ -2063,7 +2012,7 @@ def get_feature_importance(
 
 def name_cols(
     array: np.ndarray,
-    original_df: DATAFRAME_TYPES,
+    original_df: DATAFRAME,
     col_names: list[str],
 ) -> list[str]:
     """Get the column names after a transformation.
@@ -2116,10 +2065,10 @@ def name_cols(
 
 def reorder_cols(
     transformer: Transformer,
-    df: DATAFRAME_TYPES,
-    original_df: DATAFRAME_TYPES,
+    df: DATAFRAME,
+    original_df: DATAFRAME,
     col_names: list[str],
-) -> DATAFRAME_TYPES:
+) -> DATAFRAME:
     """Reorder th   e columns to their original order.
 
     This function is necessary in case only a subset of the
@@ -2195,8 +2144,8 @@ def reorder_cols(
 
 def fit_one(
     transformer: Transformer,
-    X: X_TYPES | None = None,
-    y: Y_TYPES | None = None,
+    X: FEATURES | None = None,
+    y: TARGET | None = None,
     message: str | None = None,
     **fit_params,
 ):
@@ -2259,10 +2208,10 @@ def fit_one(
 
 def transform_one(
     transformer: Transformer,
-    X: X_TYPES | None = None,
-    y: Y_TYPES | None = None,
+    X: FEATURES | None = None,
+    y: TARGET | None = None,
     method: str = "transform",
-) -> tuple[DATAFRAME_TYPES | None, SERIES_TYPES | None]:
+) -> tuple[DATAFRAME | None, SERIES | None]:
     """Transform the data using one estimator.
 
     Parameters
@@ -2297,7 +2246,7 @@ def transform_one(
 
     """
 
-    def prepare_df(out: X_TYPES) -> DATAFRAME_TYPES:
+    def prepare_df(out: FEATURES) -> DATAFRAME:
         """Convert to df and set correct column names and order.
 
         Parameters
@@ -2381,11 +2330,11 @@ def transform_one(
 
 def fit_transform_one(
     transformer: Transformer,
-    X: X_TYPES | None = None,
-    y: Y_TYPES | None = None,
+    X: FEATURES | None = None,
+    y: TARGET | None = None,
     message: str | None = None,
     **fit_params,
-) -> tuple[DATAFRAME_TYPES | None, SERIES_TYPES | None]:
+) -> tuple[DATAFRAME | None, SERIES | None]:
     """Fit and transform the data using one estimator.
 
     Parameters
@@ -2434,10 +2383,10 @@ def fit_transform_one(
 def custom_transform(
     transformer: Transformer,
     branch: Any,
-    data: tuple[DATAFRAME_TYPES, SERIES_TYPES] | None = None,
+    data: tuple[DATAFRAME, SERIES] | None = None,
     verbose: int | None = None,
     method: str = "transform",
-) -> tuple[DATAFRAME_TYPES, SERIES_TYPES]:
+) -> tuple[DATAFRAME, SERIES]:
     """Applies a transformer on a branch.
 
     This function is generic and should work for all
@@ -2683,37 +2632,37 @@ def plot_from_model(f: callable) -> callable:
 
 # Custom scorers =================================================== >>
 
-def true_negatives(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> INT_TYPES:
+def true_negatives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
     return confusion_matrix(y_true, y_pred).ravel()[0]
 
 
-def false_positives(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> INT_TYPES:
+def false_positives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
     return confusion_matrix(y_true, y_pred).ravel()[1]
 
 
-def false_negatives(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> INT_TYPES:
+def false_negatives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
     return confusion_matrix(y_true, y_pred).ravel()[2]
 
 
-def true_positives(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> INT_TYPES:
+def true_positives(y_true: SEQUENCE, y_pred: SEQUENCE) -> INT:
     return confusion_matrix(y_true, y_pred).ravel()[3]
 
 
-def false_positive_rate(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> FLOAT_TYPES:
+def false_positive_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
     return fp / (fp + tn)
 
 
-def true_positive_rate(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> FLOAT_TYPES:
+def true_positive_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     return tp / (tp + fn)
 
 
-def true_negative_rate(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> FLOAT_TYPES:
+def true_negative_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
     tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
     return tn / (tn + fp)
 
 
-def false_negative_rate(y_true: SEQUENCE_TYPES, y_pred: SEQUENCE_TYPES) -> FLOAT_TYPES:
+def false_negative_rate(y_true: SEQUENCE, y_pred: SEQUENCE) -> FLOAT:
     _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     return fn / (fn + tp)

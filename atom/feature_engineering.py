@@ -38,8 +38,8 @@ from atom.data_cleaning import Scaler, TransformerMixin
 from atom.models import MODELS
 from atom.plots import FeatureSelectorPlot
 from atom.utils import (
-    DATAFRAME_TYPES, FLOAT_TYPES, INT, INT_TYPES, SCALAR_TYPES, SEQUENCE,
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, CustomDict, check_is_fitted,
+    DATAFRAME, FEATURES, FLOAT, INT, INT_TYPES, SCALAR, SEQUENCE,
+    SEQUENCE_TYPES, SERIES_TYPES, TARGET, CustomDict, check_is_fitted,
     check_scaling, composed, crash, get_custom_scorer, get_feature_importance,
     infer_task, is_sparse, lst, merge, method_to_log, sign, to_df,
 )
@@ -196,12 +196,12 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        features: str | SEQUENCE_TYPES = ("day", "month", "year"),
-        fmt: str | SEQUENCE_TYPES | None = None,
+        features: str | SEQUENCE = ("day", "month", "year"),
+        fmt: str | SEQUENCE | None = None,
         *,
         encoding_type: str = "ordinal",
         drop_columns: bool = True,
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -211,7 +211,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_columns = drop_columns
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Extract the new features.
 
         Parameters
@@ -247,10 +247,11 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 col_dt = column
                 self.log(f" --> Extracting features from column {name}.", 1)
             else:
+                fmt = self.fmt[i] if isinstance(self.fmt, SEQUENCE_TYPES) else self.fmt
                 col_dt = pd.to_datetime(
                     arg=column,
                     errors="coerce",  # Converts to NaT if he can't format
-                    format=self.fmt[i] if isinstance(self.fmt, SEQUENCE) else self.fmt,
+                    format=fmt,
                     infer_datetime_format=True,
                 )
 
@@ -275,10 +276,10 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
                 # Skip if the information is not present in the format
-                if not isinstance(values, pd.Series):
+                if not isinstance(values, SERIES_TYPES):
                     self.log(
                         f"   --> Extracting feature {fx} failed. "
-                        "Result is not a pd.Series.dt.", 2
+                        "Result is not a Series.dt.", 2
                     )
                     continue
 
@@ -497,12 +498,12 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "dfs",
         *,
-        n_features: INT_TYPES | None = None,
-        operators: str | SEQUENCE_TYPES | None = None,
-        n_jobs: INT_TYPES = 1,
-        verbose: INT_TYPES = 0,
+        n_features: INT | None = None,
+        operators: str | SEQUENCE | None = None,
+        n_jobs: INT = 1,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -522,7 +523,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES | None = None) -> FeatureGenerator:
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureGenerator:
         """Fit to data.
 
         Parameters
@@ -633,7 +634,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Generate new features.
 
         Parameters
@@ -861,12 +862,12 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
 
     def __init__(
         self,
-        group: str | SEQUENCE_TYPES,
-        name: str | SEQUENCE_TYPES | None = None,
+        group: str | SEQUENCE,
+        name: str | SEQUENCE | None = None,
         *,
-        operators: str | SEQUENCE_TYPES | None = None,
+        operators: str | SEQUENCE | None = None,
         drop_columns: bool = True,
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -877,7 +878,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         self.groups = defaultdict(list)
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Group features.
 
         Parameters
@@ -906,7 +907,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
         for group in lst(self.group):
             groups.append([])
             for col in lst(group):
-                if isinstance(col, INT):
+                if isinstance(col, INT_TYPES):
                     try:
                         groups[-1].append(X.columns[col])
                     except IndexError:
@@ -1282,16 +1283,16 @@ class FeatureSelector(
         strategy: str | None = None,
         *,
         solver: str | Callable | None = None,
-        n_features: SCALAR_TYPES | None = None,
-        min_repeated: SCALAR_TYPES | None = 2,
-        max_repeated: SCALAR_TYPES | None = 1.0,
-        max_correlation: FLOAT_TYPES | None = 1.0,
-        n_jobs: INT_TYPES = 1,
+        n_features: SCALAR | None = None,
+        min_repeated: SCALAR | None = 2,
+        max_repeated: SCALAR | None = 1.0,
+        max_correlation: FLOAT | None = 1.0,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -1327,7 +1328,7 @@ class FeatureSelector(
         return any(task in self.task for task in ("multilabel", "multioutput"))
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES | None = None) -> FeatureSelector:
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureSelector:
         """Fit the feature selector to the data.
 
         The univariate, sfm (when model is not fitted), sfs, rfe and
@@ -1755,7 +1756,7 @@ class FeatureSelector(
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Transform the data.
 
         Parameters

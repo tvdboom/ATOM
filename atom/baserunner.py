@@ -28,9 +28,9 @@ from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DF_ATTRS, FLOAT_TYPES, INT, INT_TYPES, SEQUENCE_TYPES, CustomDict, Model,
-    Predictor, check_is_fitted, composed, crash, divide, flt, get_best_score,
-    get_pl_name, get_versions, lst, method_to_log, pd,
+    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, CustomDict, Model, Predictor,
+    check_is_fitted, composed, crash, divide, flt, get_best_score, get_pl_name,
+    get_versions, lst, method_to_log, pd,
 )
 
 
@@ -113,13 +113,13 @@ class BaseRunner:
         else:
             return item in self.dataset
 
-    def __getitem__(self, item: INT_TYPES | str | list) -> Any:
+    def __getitem__(self, item: INT | str | list) -> Any:
         if self.dataset is None:
             raise RuntimeError(
                 "This instance has no dataset annexed to it. "
                 "Use the run method before calling __getitem__."
             )
-        elif isinstance(item, INT):
+        elif isinstance(item, INT_TYPES):
             return self.dataset[self.columns[item]]
         elif isinstance(item, str):
             if item in self._branches.min("og"):
@@ -343,7 +343,7 @@ class BaseRunner:
 
         """
 
-        def frac(m: Model) -> FLOAT_TYPES:
+        def frac(m: Model) -> FLOAT:
             """Return the fraction of the train set used for the model."""
             if (n_models := len(m.branch.train) / m._train_idx) == int(n_models):
                 return round(1.0 / n_models, 2)
@@ -375,7 +375,7 @@ class BaseRunner:
 
     def _get_rows(
         self,
-        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        index: INT | str | slice | SEQUENCE | None = None,
         return_test: bool = True,
         branch: Branch | None = None,
     ) -> list:
@@ -449,9 +449,9 @@ class BaseRunner:
             inc = indices[index]
         else:
             for idx in lst(index):
-                if isinstance(idx, (*INT, str)) and idx in indices:
+                if isinstance(idx, (*INT_TYPES, str)) and idx in indices:
                     inc.append(idx)
-                elif isinstance(idx, INT):
+                elif isinstance(idx, INT_TYPES):
                     if -len(indices) <= idx <= len(indices):
                         inc.append(indices[idx])
                     else:
@@ -490,7 +490,7 @@ class BaseRunner:
 
     def _get_columns(
         self,
-        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        columns: INT | str | slice | SEQUENCE | None = None,
         include_target: bool = True,
         return_inc_exc: bool = False,
         only_numerical: bool = False,
@@ -583,7 +583,7 @@ class BaseRunner:
             inc = list(df.columns[columns])
         else:
             for col in lst(columns):
-                if isinstance(col, INT):
+                if isinstance(col, INT_TYPES):
                     try:
                         inc.append(df.columns[col])
                     except IndexError:
@@ -624,7 +624,7 @@ class BaseRunner:
 
     def _get_models(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
         ensembles: bool = True,
     ) -> list[str]:
         """Get names of models.
@@ -691,7 +691,7 @@ class BaseRunner:
             inc.extend(options[models])
         else:
             for model in lst(models):
-                if isinstance(model, INT):
+                if isinstance(model, INT_TYPES):
                     try:
                         inc.append(options[model].name)
                     except KeyError:
@@ -732,7 +732,7 @@ class BaseRunner:
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 
-    def _delete_models(self, models: SEQUENCE_TYPES):
+    def _delete_models(self, models: SEQUENCE):
         """Delete models.
 
         Remove models from the instance. All attributes are deleted
@@ -818,7 +818,7 @@ class BaseRunner:
     @composed(crash, method_to_log, typechecked)
     def delete(
         self,
-        models: INT_TYPES | str | slice | Model | SEQUENCE_TYPES | None = None
+        models: INT | str | slice | Model | SEQUENCE | None = None
     ):
         """Delete models.
 
@@ -848,11 +848,11 @@ class BaseRunner:
     @composed(crash, typechecked)
     def evaluate(
         self,
-        metric: str | Callable | SEQUENCE_TYPES | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         dataset: str = "test",
         *,
-        threshold: FLOAT_TYPES = 0.5,
-        sample_weight: SEQUENCE_TYPES | None = None,
+        threshold: FLOAT = 0.5,
+        sample_weight: SEQUENCE | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
 
@@ -885,12 +885,18 @@ class BaseRunner:
         """
         check_is_fitted(self, attributes="_models")
 
-        return pd.DataFrame(
-            [
-                m.evaluate(metric, dataset, threshold, sample_weight)
-                for m in self._models.values()
-            ]
-        )
+        evaluations = []
+        for m in self._models.values():
+            evaluations.append(
+                m.evaluate(
+                    metric=metric,
+                    dataset=dataset,
+                    threshold=threshold,
+                    sample_weight=sample_weight,
+                )
+            )
+
+        return pd.DataFrame(evaluations)
 
     @composed(crash, typechecked)
     def export_pipeline(
@@ -898,7 +904,7 @@ class BaseRunner:
         model: str | Model | None = None,
         *,
         memory: bool | str | Memory | None = None,
-        verbose: INT_TYPES | None = None,
+        verbose: INT | None = None,
     ) -> Pipeline:
         """Export the pipeline to a sklearn-like object.
 
@@ -1094,7 +1100,7 @@ class BaseRunner:
     def stacking(
         self,
         name: str = "Stack",
-        models: slice | SEQUENCE_TYPES | None = None,
+        models: slice | SEQUENCE | None = None,
         **kwargs,
     ):
         """Add a [Stacking][] model to the pipeline.
@@ -1164,7 +1170,7 @@ class BaseRunner:
     def voting(
         self,
         name: str = "Vote",
-        models: slice | SEQUENCE_TYPES | None = None,
+        models: slice | SEQUENCE | None = None,
         **kwargs,
     ):
         """Add a [Voting][] model to the pipeline.

@@ -22,8 +22,8 @@ from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CustomModel
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
-    SEQUENCE, CustomDict, check_dependency, check_scaling, get_best_score,
-    get_custom_scorer, is_sparse, lst, sign, time_to_str,
+    SEQUENCE_TYPES, CustomDict, check_dependency, check_scaling,
+    get_best_score, get_custom_scorer, is_sparse, lst, sign, time_to_str,
 )
 
 
@@ -106,7 +106,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
             Parameter with model names as key.
 
         """
-        if isinstance(value, SEQUENCE):
+        if isinstance(value, SEQUENCE_TYPES):
             if len(value) != len(self._models):
                 raise ValueError(
                     f"Invalid value for the {param} parameter. The length "
@@ -205,9 +205,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
             else:
                 # Regression or multioutput regression
                 self._metric = CustomDict(r2=get_custom_scorer("r2"))
-
-        # Ignore if it's the same scorer as previous call
-        elif not isinstance(self._metric, CustomDict):
+        else:
             metrics = []
             for m in lst(self._metric):
                 if isinstance(m, str):

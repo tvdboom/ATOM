@@ -16,9 +16,7 @@ from typeguard import typechecked
 
 from atom.atom import ATOM
 from atom.basetransformer import BaseTransformer
-from atom.utils import (
-    INT_TYPES, SCALAR_TYPES, SEQUENCE_TYPES, Y_TYPES, Predictor,
-)
+from atom.utils import INT, SCALAR, SEQUENCE, TARGET, Predictor
 
 
 @typechecked
@@ -384,22 +382,22 @@ class ATOMClassifier(BaseTransformer, ATOM):
     def __init__(
         self,
         *arrays,
-        y: Y_TYPES = -1,
-        index: bool | INT_TYPES | str | SEQUENCE_TYPES = False,
+        y: TARGET = -1,
+        index: bool | INT | str | SEQUENCE = False,
         shuffle: bool = True,
-        stratify: bool | INT_TYPES | str | SEQUENCE_TYPES = True,
-        n_rows: SCALAR_TYPES = 1,
-        test_size: SCALAR_TYPES = 0.2,
-        holdout_size: SCALAR_TYPES | None = None,
-        n_jobs: INT_TYPES = 1,
+        stratify: bool | INT | str | SEQUENCE = True,
+        n_rows: SCALAR = 1,
+        test_size: SCALAR = 0.2,
+        holdout_size: SCALAR | None = None,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
         backend: str = "loky",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -672,21 +670,21 @@ class ATOMRegressor(BaseTransformer, ATOM):
     def __init__(
         self,
         *arrays,
-        y: Y_TYPES = -1,
-        index: bool | INT_TYPES | str | SEQUENCE_TYPES = False,
+        y: TARGET = -1,
+        index: bool | INT | str | SEQUENCE = False,
         shuffle: bool = True,
-        n_rows: SCALAR_TYPES = 1,
-        test_size: SCALAR_TYPES = 0.2,
-        holdout_size: SCALAR_TYPES | None = None,
-        n_jobs: INT_TYPES = 1,
+        n_rows: SCALAR = 1,
+        test_size: SCALAR = 0.2,
+        holdout_size: SCALAR | None = None,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
         backend: str = "loky",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         super().__init__(
             n_jobs=n_jobs,

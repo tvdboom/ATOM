@@ -47,10 +47,10 @@ from typeguard import typechecked
 
 from atom.basetransformer import BaseTransformer
 from atom.utils import (
-    DATAFRAME, DATAFRAME_TYPES, FLOAT_TYPES, INT_TYPES, PANDAS_TYPES,
-    SCALAR_TYPES, SEQUENCE, SEQUENCE_TYPES, SERIES, X_TYPES, Y_TYPES,
-    CustomDict, Estimator, bk, check_is_fitted, composed, crash, get_cols, it,
-    lst, merge, method_to_log, n_cols, sign, to_df, to_series, variable_return,
+    DATAFRAME, DATAFRAME_TYPES, FEATURES, FLOAT, INT, PANDAS, SCALAR, SEQUENCE,
+    SEQUENCE_TYPES, SERIES_TYPES, TARGET, CustomDict, Estimator, bk,
+    check_is_fitted, composed, crash, get_cols, it, lst, merge, method_to_log,
+    n_cols, sign, to_df, to_series, variable_return,
 )
 
 
@@ -64,8 +64,8 @@ class TransformerMixin:
 
     def fit(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         **fit_params,
     ):
         """Does nothing.
@@ -110,10 +110,10 @@ class TransformerMixin:
     @composed(crash, method_to_log, typechecked)
     def fit_transform(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         **fit_params,
-    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, PANDAS_TYPES]:
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Fit to data, then transform it.
 
         Parameters
@@ -151,9 +151,9 @@ class TransformerMixin:
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
-    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, PANDAS_TYPES]:
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Does nothing.
 
         Returns the input unchanged. Implemented for continuity of the
@@ -365,10 +365,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str | Estimator = "ADASYN",
         *,
-        n_jobs: INT_TYPES = 1,
-        verbose: INT_TYPES = 0,
+        n_jobs: INT = 1,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -386,9 +386,9 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log, typechecked)
     def transform(
         self,
-        X: X_TYPES,
-        y: Y_TYPES = -1,
-    ) -> tuple[DATAFRAME_TYPES, PANDAS_TYPES]:
+        X: FEATURES,
+        y: TARGET = -1,
+    ) -> tuple[DATAFRAME, PANDAS]:
         """Balance the data.
 
         Parameters
@@ -424,7 +424,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         X, y = self._prepare_input(X, y)
 
-        if isinstance(y, DATAFRAME):
+        if isinstance(y, DATAFRAME_TYPES):
             raise ValueError("The Balancer class does not support multioutput tasks.")
 
         strategies = CustomDict(
@@ -743,7 +743,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         *,
-        drop_types: str | SEQUENCE_TYPES | None = None,
+        drop_types: str | SEQUENCE | None = None,
         drop_chars: str | None = None,
         strip_categorical: bool = True,
         drop_duplicates: bool = False,
@@ -751,7 +751,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         encode_target: bool = True,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -768,7 +768,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES | None = None, y: Y_TYPES | None = None) -> Cleaner:
+    def fit(self, X: FEATURES | None = None, y: TARGET | None = None) -> Cleaner:
         """Fit to data.
 
         Parameters
@@ -803,7 +803,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.mapping = {}  # In case the class is refitted
         if y is not None and self.encode_target:
             if self.drop_chars:
-                if isinstance(y, SERIES):
+                if isinstance(y, SERIES_TYPES):
                     y.name = re.sub(self.drop_chars, "", y.name)
                 else:
                     y = y.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
@@ -812,7 +812,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna(axis=0)
 
             for col in get_cols(y):
-                if isinstance(col.iloc[0], SEQUENCE):  # Multilabel classification
+                if isinstance(col.iloc[0], SEQUENCE_TYPES):  # Multilabel classification
                     self._estimators[col.name] = MultiLabelBinarizer().fit(col)
                 elif list(uq := np.unique(col)) != list(range(col.nunique())):
                     estimator = self._get_est_class("LabelEncoder", "preprocessing")
@@ -830,9 +830,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log, typechecked)
     def transform(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
-    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, PANDAS_TYPES]:
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Apply the data cleaning steps to the data.
 
         Parameters
@@ -897,7 +897,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if y is not None:
             if self.drop_chars:
-                if isinstance(y, SERIES):
+                if isinstance(y, SERIES_TYPES):
                     y.name = re.sub(self.drop_chars, "", y.name)
                 else:
                     y = y.rename(columns=lambda x: re.sub(self.drop_chars, "", str(x)))
@@ -930,7 +930,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                             )
 
                         # Replace target with encoded column(s)
-                        if isinstance(y, SERIES):
+                        if isinstance(y, SERIES_TYPES):
                             y_transformed = out
                         else:
                             y_transformed = merge(y_transformed, out)
@@ -945,9 +945,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
-    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, PANDAS_TYPES]:
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Inversely transform the label encoding.
 
         This method only inversely transforms the target encoding.
@@ -998,7 +998,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                         )
 
                     # Replace encoded columns with target column
-                    if isinstance(y, SERIES):
+                    if isinstance(y, SERIES_TYPES):
                         y_transformed = to_series(out, y.index, col)
                     else:
                         y_transformed = merge(y_transformed, to_series(out, y.index, col))
@@ -1225,13 +1225,13 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "quantile",
         *,
-        bins: INT_TYPES | SEQUENCE_TYPES | dict = 5,
-        labels: SEQUENCE_TYPES | dict | None = None,
+        bins: INT | SEQUENCE | dict = 5,
+        labels: SEQUENCE | dict | None = None,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         super().__init__(
             device=device,
@@ -1251,7 +1251,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES | None = None) -> Discretizer:
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> Discretizer:
         """Fit to data.
 
         Parameters
@@ -1364,7 +1364,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Bin the data into intervals.
 
         Parameters
@@ -1613,11 +1613,11 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str | Estimator = "LeaveOneOut",
         *,
-        max_onehot: INT_TYPES | None = 10,
-        ordinal: dict[str, SEQUENCE_TYPES] | None = None,
-        rare_to_value: SCALAR_TYPES | None = None,
+        max_onehot: INT | None = 10,
+        ordinal: dict[str, SEQUENCE] | None = None,
+        rare_to_value: SCALAR | None = None,
         value: str = "rare",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):
@@ -1639,7 +1639,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES = None) -> Encoder:
+    def fit(self, X: FEATURES, y: TARGET = None) -> Encoder:
         """Fit to data.
 
         Note that leaving y=None can lead to errors if the `strategy`
@@ -1810,7 +1810,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Encode the data.
 
         Parameters
@@ -2063,14 +2063,14 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strat_num: SCALAR_TYPES | str = "drop",
+        strat_num: SCALAR | str = "drop",
         strat_cat: str = "drop",
         *,
-        max_nan_rows: SCALAR_TYPES | None = None,
-        max_nan_cols: FLOAT_TYPES | None = None,
+        max_nan_rows: SCALAR | None = None,
+        max_nan_cols: FLOAT | None = None,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(device=device, engine=engine, verbose=verbose, logger=logger)
@@ -2087,7 +2087,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES | None = None) -> Imputer:
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> Imputer:
         """Fit to data.
 
         Parameters
@@ -2200,9 +2200,9 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log, typechecked)
     def transform(
         self,
-        X: X_TYPES,
-        y: Y_TYPES | None = None,
-    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, PANDAS_TYPES]:
+        X: FEATURES,
+        y: TARGET | None = None,
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Impute the missing values.
 
         Note that leaving y=None can lead to inconsistencies in
@@ -2535,9 +2535,9 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -2555,7 +2555,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES | None = None) -> Normalizer:
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> Normalizer:
         """Fit to data.
 
         Parameters
@@ -2613,7 +2613,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the transformations to the data.
 
         Parameters
@@ -2647,7 +2647,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
     @composed(crash, method_to_log, typechecked)
-    def inverse_transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def inverse_transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the inverse transformation to the data.
 
         Parameters
@@ -2886,14 +2886,14 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strategy: str | SEQUENCE_TYPES = "zscore",
+        strategy: str | SEQUENCE = "zscore",
         *,
-        method: SCALAR_TYPES | str = "drop",
-        max_sigma: SCALAR_TYPES = 3,
+        method: SCALAR | str = "drop",
+        max_sigma: SCALAR = 3,
         include_target: bool = False,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):
@@ -2909,9 +2909,9 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     @composed(crash, method_to_log, typechecked)
     def transform(
         self,
-        X: X_TYPES,
-        y: Y_TYPES | None = None,
-    ) -> PANDAS_TYPES | tuple[DATAFRAME_TYPES, PANDAS_TYPES]:
+        X: FEATURES,
+        y: TARGET | None = None,
+    ) -> PANDAS | tuple[DATAFRAME, PANDAS]:
         """Apply the outlier strategy on the data.
 
         Parameters
@@ -3252,7 +3252,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         *,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):
@@ -3266,7 +3266,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES | None = None) -> Scaler:
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> Scaler:
         """Fit to data.
 
         Parameters
@@ -3319,7 +3319,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Perform standardization by centering and scaling.
 
         Parameters
@@ -3353,7 +3353,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
     @composed(crash, method_to_log, typechecked)
-    def inverse_transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def inverse_transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the inverse transformation to the data.
 
         Parameters

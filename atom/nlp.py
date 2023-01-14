@@ -28,8 +28,8 @@ from typeguard import typechecked
 from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import TransformerMixin
 from atom.utils import (
-    DATAFRAME_TYPES, INT_TYPES, SCALAR_TYPES, SEQUENCE_TYPES, X_TYPES, Y_TYPES,
-    CustomDict, check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
+    DATAFRAME, FEATURES, INT, SCALAR, SEQUENCE, TARGET, CustomDict,
+    check_is_fitted, composed, crash, get_corpus, is_sparse, merge,
     method_to_log, to_df,
 )
 
@@ -260,7 +260,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         drop_number: bool = True,
         regex_number: str | None = None,
         drop_punctuation: bool = True,
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -282,7 +282,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drops = pd.DataFrame()
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Apply the transformations to the data.
 
         Parameters
@@ -593,10 +593,10 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         *,
         stopwords: bool | str = True,
-        custom_stopwords: SEQUENCE_TYPES | None = None,
+        custom_stopwords: SEQUENCE | None = None,
         stem: bool | str = False,
         lemmatize: bool = True,
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -606,7 +606,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.lemmatize = lemmatize
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Normalize the text.
 
         Parameters
@@ -852,11 +852,11 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        bigram_freq: SCALAR_TYPES | None = None,
-        trigram_freq: SCALAR_TYPES | None = None,
-        quadgram_freq: SCALAR_TYPES | None = None,
+        bigram_freq: SCALAR | None = None,
+        trigram_freq: SCALAR | None = None,
+        quadgram_freq: SCALAR | None = None,
         *,
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -869,7 +869,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.quadgrams = None
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Tokenize the text.
 
         Parameters
@@ -1140,7 +1140,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return_sparse: bool = True,
         device: str = "cpu",
         engine: str = "sklearn",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         logger: str | Logger | None = None,
         **kwargs,
     ):
@@ -1153,7 +1153,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES | None = None) -> Vectorizer:
+    def fit(self, X: FEATURES, y: TARGET | None = None) -> Vectorizer:
         """Fit to data.
 
         Parameters
@@ -1209,7 +1209,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         return self
 
     @composed(crash, method_to_log, typechecked)
-    def transform(self, X: X_TYPES, y: Y_TYPES | None = None) -> DATAFRAME_TYPES:
+    def transform(self, X: FEATURES, y: TARGET | None = None) -> DATAFRAME:
         """Vectorize the text.
 
         Parameters

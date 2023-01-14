@@ -17,9 +17,9 @@ from typeguard import typechecked
 
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
-    DATAFRAME_TYPES, PANDAS_TYPES, SEQUENCE_TYPES, SERIES, SERIES_TYPES,
-    X_TYPES, Y_TYPES, CustomDict, bk, composed, crash, custom_transform, flt,
-    merge, method_to_log, to_pandas,
+    DATAFRAME, FEATURES, PANDAS, SEQUENCE, SERIES, SERIES_TYPES, TARGET,
+    CustomDict, bk, composed, crash, custom_transform, flt, merge,
+    method_to_log, to_pandas,
 )
 
 
@@ -134,7 +134,7 @@ class Branch:
 
     # Data properties ============================================== >>
 
-    def _check_setter(self, name: str, value: SEQUENCE_TYPES | X_TYPES) -> PANDAS_TYPES:
+    def _check_setter(self, name: str, value: SEQUENCE | FEATURES) -> PANDAS:
         """Check the property setter.
 
         Convert the property to a pandas object and compare with the
@@ -219,7 +219,7 @@ class Branch:
                 )
 
         if under_name:  # Check for equal columns
-            if isinstance(value, SERIES):
+            if isinstance(value, SERIES_TYPES):
                 if value.name != under.name:
                     raise ValueError(
                         f"{name} and {under_name} must have the "
@@ -272,41 +272,41 @@ class Branch:
         self._mapping = value
 
     @property
-    def dataset(self) -> DATAFRAME_TYPES:
+    def dataset(self) -> DATAFRAME:
         """Complete data set."""
         return self._data
 
     @dataset.setter
     @typechecked
-    def dataset(self, value: X_TYPES):
+    def dataset(self, value: FEATURES):
         self._data = self._check_setter("dataset", value)
 
     @property
-    def train(self) -> DATAFRAME_TYPES:
+    def train(self) -> DATAFRAME:
         """Training set."""
         return self._data.loc[self._idx[1], :]
 
     @train.setter
     @typechecked
-    def train(self, value: X_TYPES):
+    def train(self, value: FEATURES):
         df = self._check_setter("train", value)
         self._data = self.T._set_index(bk.concat([df, self.test]), self.y_test)
         self._idx[1] = self._data.index[:len(df)]
 
     @property
-    def test(self) -> DATAFRAME_TYPES:
+    def test(self) -> DATAFRAME:
         """Test set."""
         return self._data.loc[self._idx[2], :]
 
     @test.setter
     @typechecked
-    def test(self, value: X_TYPES):
+    def test(self, value: FEATURES):
         df = self._check_setter("test", value)
         self._data = self.T._set_index(bk.concat([self.train, df]), self.y_train)
         self._idx[2] = self._data.index[-len(df):]
 
     @cached_property
-    def holdout(self) -> DATAFRAME_TYPES | None:
+    def holdout(self) -> DATAFRAME | None:
         """Holdout set."""
         if self.T.holdout is not None:
             X, y = self.T.holdout.iloc[:, :-self._idx[0]], self.T.holdout[self.target]
@@ -317,68 +317,68 @@ class Branch:
             return merge(X, y)
 
     @property
-    def X(self) -> DATAFRAME_TYPES:
+    def X(self) -> DATAFRAME:
         """Feature set."""
         return self._data.drop(self.target, axis=1)
 
     @X.setter
     @typechecked
-    def X(self, value: X_TYPES):
+    def X(self, value: FEATURES):
         df = self._check_setter("X", value)
         self._data = merge(df, self.y)
 
     @property
-    def y(self) -> PANDAS_TYPES:
+    def y(self) -> PANDAS:
         """Target column(s)."""
         return self._data[self.target]
 
     @y.setter
     @typechecked
-    def y(self, value: Y_TYPES):
+    def y(self, value: TARGET):
         series = self._check_setter("y", value)
         self._data = merge(self._data.drop(self.target, axis=1), series)
 
     @property
-    def X_train(self) -> DATAFRAME_TYPES:
+    def X_train(self) -> DATAFRAME:
         """Features of the training set."""
         return self.train.drop(self.target, axis=1)
 
     @X_train.setter
     @typechecked
-    def X_train(self, value: X_TYPES):
+    def X_train(self, value: FEATURES):
         df = self._check_setter("X_train", value)
         self._data = bk.concat([merge(df, self.train[self.target]), self.test])
 
     @property
-    def y_train(self) -> PANDAS_TYPES:
+    def y_train(self) -> PANDAS:
         """Target column(s) of the training set."""
         return self.train[self.target]
 
     @y_train.setter
     @typechecked
-    def y_train(self, value: Y_TYPES):
+    def y_train(self, value: TARGET):
         series = self._check_setter("y_train", value)
         self._data = bk.concat([merge(self.X_train, series), self.test])
 
     @property
-    def X_test(self) -> DATAFRAME_TYPES:
+    def X_test(self) -> DATAFRAME:
         """Features of the test set."""
         return self.test.drop(self.target, axis=1)
 
     @X_test.setter
     @typechecked
-    def X_test(self, value: X_TYPES):
+    def X_test(self, value: FEATURES):
         df = self._check_setter("X_test", value)
         self._data = bk.concat([self.train, merge(df, self.test[self.target])])
 
     @property
-    def y_test(self) -> PANDAS_TYPES:
+    def y_test(self) -> PANDAS:
         """Target column(s) of the test set."""
         return self.test[self.target]
 
     @y_test.setter
     @typechecked
-    def y_test(self, value: Y_TYPES):
+    def y_test(self, value: TARGET):
         series = self._check_setter("y_test", value)
         self._data = bk.concat([self.train, merge(self.X_test, series)])
 
@@ -388,7 +388,7 @@ class Branch:
         return self._data.shape
 
     @property
-    def columns(self) -> SERIES_TYPES:
+    def columns(self) -> SERIES:
         """Name of all the columns."""
         return self._data.columns
 
@@ -398,7 +398,7 @@ class Branch:
         return len(self.columns)
 
     @property
-    def features(self) -> SERIES_TYPES:
+    def features(self) -> SERIES:
         """Name of the features."""
         return self.columns[:-self._idx[0]]
 

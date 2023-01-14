@@ -19,8 +19,8 @@ from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
 from atom.utils import (
-    INT_TYPES, SEQUENCE_TYPES, CustomDict, composed, crash, get_best_score,
-    infer_task, lst, method_to_log,
+    INT, INT_TYPES, SEQUENCE, CustomDict, Predictor, composed, crash,
+    get_best_score, infer_task, lst, method_to_log,
 )
 
 
@@ -207,7 +207,7 @@ class TrainSizing(BaseEstimator, BaseTrainer):
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         # Convert integer train_sizes to sequence
-        if isinstance(self.train_sizes, int):
+        if isinstance(self.train_sizes, INT_TYPES):
             self.train_sizes = np.linspace(1 / self.train_sizes, 1.0, self.train_sizes)
 
         models = CustomDict()
@@ -442,23 +442,23 @@ class DirectClassifier(Direct):
     @typechecked
     def __init__(
         self,
-        models: str | Callable | SEQUENCE_TYPES | None = None,
-        metric: str | Callable | SEQUENCE_TYPES | None = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        est_params: dict | SEQUENCE_TYPES | None = None,
-        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        n_jobs: INT_TYPES = 1,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
         backend: str = "loky",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "class"
         super().__init__(
@@ -657,23 +657,23 @@ class DirectRegressor(Direct):
     @typechecked
     def __init__(
         self,
-        models: str | Callable | SEQUENCE_TYPES | None = None,
-        metric: str | Callable | SEQUENCE_TYPES | None = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        est_params: dict | SEQUENCE_TYPES | None = None,
-        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        n_jobs: INT_TYPES = 1,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
         backend: str = "loky",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "reg"
         super().__init__(
@@ -902,24 +902,24 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: str | Callable | SEQUENCE_TYPES | None = None,
-        metric: str | Callable | SEQUENCE_TYPES | None = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        skip_runs: INT_TYPES = 0,
-        est_params: dict | SEQUENCE_TYPES | None = None,
-        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        skip_runs: INT = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        n_jobs: INT_TYPES = 1,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
         backend: str = "loky",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "class"
         super().__init__(
@@ -1149,24 +1149,24 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: str | Callable | SEQUENCE_TYPES | None = None,
-        metric: str | Callable | SEQUENCE_TYPES | None = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        skip_runs: INT_TYPES = 0,
-        est_params: dict | SEQUENCE_TYPES | None = None,
-        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        skip_runs: INT = 0,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        n_jobs: INT_TYPES = 1,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
         backend: str = "loky",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "reg"
         super().__init__(
@@ -1456,24 +1456,24 @@ class TrainSizingClassifier(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: str | Callable | SEQUENCE_TYPES | None = None,
-        metric: str | Callable | SEQUENCE_TYPES | None = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        train_sizes: INT_TYPES | SEQUENCE_TYPES = 5,
-        est_params: dict | SEQUENCE_TYPES | None = None,
-        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        train_sizes: INT | SEQUENCE = 5,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        n_jobs: INT_TYPES = 1,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
         backend: str = "loky",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "class"
         super().__init__(
@@ -1763,24 +1763,24 @@ class TrainSizingRegressor(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: str | Callable | SEQUENCE_TYPES | None = None,
-        metric: str | Callable | SEQUENCE_TYPES | None = None,
+        models: str | Predictor | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         *,
-        train_sizes: INT_TYPES | SEQUENCE_TYPES = 5,
-        est_params: dict | SEQUENCE_TYPES | None = None,
-        n_trials: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        train_sizes: INT | SEQUENCE = 5,
+        est_params: dict | SEQUENCE | None = None,
+        n_trials: INT | dict | SEQUENCE = 0,
         ht_params: dict | None = None,
-        n_bootstrap: INT_TYPES | dict | SEQUENCE_TYPES = 0,
+        n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
-        n_jobs: INT_TYPES = 1,
+        n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
         backend: str = "loky",
-        verbose: INT_TYPES = 0,
+        verbose: INT = 0,
         warnings: bool | str = False,
         logger: str | Logger | None = None,
         experiment: str | None = None,
-        random_state: INT_TYPES | None = None,
+        random_state: INT | None = None,
     ):
         self.goal = "reg"
         super().__init__(

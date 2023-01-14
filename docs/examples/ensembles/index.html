@@ -4151,7 +4151,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="example-ensembles">Example: Ensembles<a class="anchor-link" href="#example-ensembles">&#182;</a></h1><hr>
+<h1 id="Example:-Ensembles">Example: Ensembles<a class="anchor-link" href="#Example:-Ensembles">&#182;</a></h1><hr />
 <p>This example shows how to use atom's ensemble techniques to improve predictions on a dataset combining several models.</p>
 <p>Import the breast cancer dataset from <a href="https://scikit-learn.org/stable/datasets/index.html#wine-dataset">sklearn.datasets</a>. This is a small and easy to train dataset whose goal is to predict whether a patient has breast cancer or not.</p>
 
@@ -4165,7 +4165,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="load-the-data">Load the data<a class="anchor-link" href="#load-the-data">&#182;</a></h2>
+<h2 id="Load-the-data">Load the data<a class="anchor-link" href="#Load-the-data">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4246,7 +4246,7 @@ X, y = load_breast_cancer(return_X_y=True, as_frame=True)</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="run-the-pipeline">Run the pipeline<a class="anchor-link" href="#run-the-pipeline">&#182;</a></h2>
+<h2 id="Run-the-pipeline">Run the pipeline<a class="anchor-link" href="#Run-the-pipeline">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4291,9 +4291,7 @@ atom.run(models=["LR", "Tree", "LGB"], metric="accuracy")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4371,7 +4369,7 @@ LightGBM           --&gt; accuracy: 0.9469
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="voting">Voting<a class="anchor-link" href="#voting">&#182;</a></h2>
+<h2 id="Voting">Voting<a class="anchor-link" href="#Voting">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4414,9 +4412,7 @@ atom.voting(voting="soft")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4475,9 +4471,7 @@ atom.models</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 
@@ -4534,9 +4528,7 @@ atom.plot_pipeline()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4598,9 +4590,7 @@ atom.vote</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 
@@ -4659,9 +4649,7 @@ atom.vote.predict_proba_test[:10]</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 
@@ -4790,9 +4778,7 @@ atom.vote.predict_proba_test[:10]</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4801,9 +4787,7 @@ atom.vote.predict_proba_test[:10]</div>
 
 
 </div>
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4857,9 +4841,7 @@ atom.vote.predict_proba_test[:10]</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4913,9 +4895,7 @@ atom.vote.predict_proba_test[:10]</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4938,7 +4918,7 @@ atom.vote.predict_proba_test[:10]</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="stacking">Stacking<a class="anchor-link" href="#stacking">&#182;</a></h2>
+<h2 id="Stacking">Stacking<a class="anchor-link" href="#Stacking">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4981,9 +4961,7 @@ atom.stacking(final_estimator="LDA")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5042,9 +5020,7 @@ atom.stack.head()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
 
@@ -5265,9 +5241,7 @@ atom.stack.predict(X)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
 
@@ -5333,9 +5307,7 @@ Name: predict, Length: 569, dtype: int32</pre>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5345,9 +5317,7 @@ Name: predict, Length: 569, dtype: int32</pre>
 </pre>
 </div>
 </div>
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 

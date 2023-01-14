@@ -21,9 +21,9 @@ from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
 from atom.utils import (
-    DATAFRAME_TYPES, FLOAT_TYPES, SEQUENCE_TYPES, SERIES_TYPES, X_TYPES,
-    Y_TYPES, Estimator, check_is_fitted, fit_one, fit_transform_one,
-    transform_one, variable_return,
+    DATAFRAME, FEATURES, FLOAT, SEQUENCE, SERIES, TARGET, Estimator,
+    check_is_fitted, fit_one, fit_transform_one, transform_one,
+    variable_return,
 )
 
 
@@ -142,8 +142,8 @@ class Pipeline(skPipeline):
 
     def _fit(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         **fit_params_steps,
     ):
         """Get data transformed through the pipeline.
@@ -212,8 +212,8 @@ class Pipeline(skPipeline):
 
     def fit(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         **fit_params,
     ) -> Pipeline:
         """Fit the pipeline.
@@ -254,9 +254,9 @@ class Pipeline(skPipeline):
     @available_if(_can_transform)
     def transform(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
-    ) -> DATAFRAME_TYPES | SERIES_TYPES | tuple[DATAFRAME_TYPES, SERIES_TYPES]:
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Transform the data.
 
         Call `transform` on each transformer in the pipeline. The
@@ -297,10 +297,10 @@ class Pipeline(skPipeline):
 
     def fit_transform(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
         **fit_params,
-    ) -> DATAFRAME_TYPES | SERIES_TYPES | tuple[DATAFRAME_TYPES, SERIES_TYPES]:
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Fit the pipeline and transform the data.
 
         Parameters
@@ -346,9 +346,9 @@ class Pipeline(skPipeline):
     @available_if(_can_inverse_transform)
     def inverse_transform(
         self,
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
-    ) -> DATAFRAME_TYPES | SERIES_TYPES | tuple[DATAFRAME_TYPES, SERIES_TYPES]:
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+    ) -> DATAFRAME | SERIES | tuple[DATAFRAME, SERIES]:
         """Inverse transform for each step in a reverse order.
 
         All estimators in the pipeline must implement the
@@ -384,7 +384,7 @@ class Pipeline(skPipeline):
         return variable_return(X, y)
 
     @available_if(_final_estimator_has("predict"))
-    def predict(self, X: X_TYPES, **predict_params) -> np.ndarray:
+    def predict(self, X: FEATURES, **predict_params) -> np.ndarray:
         """Transform, then predict of the final estimator.
 
         Parameters
@@ -411,7 +411,7 @@ class Pipeline(skPipeline):
         return self.steps[-1][-1].predict(X, **predict_params)
 
     @available_if(_final_estimator_has("predict_proba"))
-    def predict_proba(self, X: X_TYPES) -> np.ndarray:
+    def predict_proba(self, X: FEATURES) -> np.ndarray:
         """Transform, then predict_proba of the final estimator.
 
         Parameters
@@ -431,7 +431,7 @@ class Pipeline(skPipeline):
         return self.steps[-1][-1].predict_proba(X)
 
     @available_if(_final_estimator_has("predict_log_proba"))
-    def predict_log_proba(self, X: X_TYPES) -> np.ndarray:
+    def predict_log_proba(self, X: FEATURES) -> np.ndarray:
         """Transform, then predict_log_proba of the final estimator.
 
         Parameters
@@ -451,7 +451,7 @@ class Pipeline(skPipeline):
         return self.steps[-1][-1].predict_log_proba(X)
 
     @available_if(_final_estimator_has("decision_function"))
-    def decision_function(self, X: X_TYPES) -> np.ndarray:
+    def decision_function(self, X: FEATURES) -> np.ndarray:
         """Transform, then decision_function of the final estimator.
 
         Parameters
@@ -473,10 +473,10 @@ class Pipeline(skPipeline):
     @available_if(_final_estimator_has("score"))
     def score(
         self,
-        X: X_TYPES,
-        y: Y_TYPES,
-        sample_weight: SEQUENCE_TYPES | None = None,
-    ) -> FLOAT_TYPES:
+        X: FEATURES,
+        y: TARGET,
+        sample_weight: SEQUENCE | None = None,
+    ) -> FLOAT:
         """Transform, then score of the final estimator.
 
         Parameters

@@ -81,7 +81,7 @@ def test_engine_parameter_no_cuml():
 
 def test_engine_parameter_invalid():
     """Assert that an error is raised when engine is invalid."""
-    with pytest.raises(ValueError, match=".*Choose from : sklearn.*"):
+    with pytest.raises(ValueError, match=".*Choose from: sklearn.*"):
         BaseTransformer(engine="invalid")
 
 
@@ -349,7 +349,7 @@ def test_index_is_str():
 
 def test_index_is_target():
     """Assert that an error is raised when the index is the target column."""
-    with pytest.raises(ValueError, match=".*same as a target column.*"):
+    with pytest.raises(ValueError, match=".*same as the target column.*"):
         ATOMRegressor(X_bin, index="worst fractal dimension", random_state=1)
 
 

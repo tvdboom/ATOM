@@ -80,8 +80,10 @@ using `pip install atom-ml[dev]`.
 
 **Testing**
 
+* **[nbmake](https://github.com/treebeardtech/nbmake)** (>=1.3.5)
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.1.0)
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=3.0.0)
+* **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.1.0)
 
 **Documentation**
 
@@ -91,4 +93,5 @@ using `pip install atom-ml[dev]`.
 * **[mkdocs-jupyter](https://github.com/danielfrg/mkdocs-jupyter)** (>=0.22.0)
 * **[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)** (>=8.5.3)
 * **[mkdocs-simple-hooks](https://github.com/aklajnert/mkdocs-simple-hooks)** (>=0.1.5)
+* **[pymdown-extensions](https://github.com/facelessuser/pymdown-extensions)** (>=9.9.1)
 * **[pyyaml](https://pyyaml.org/)** (>=6.0)

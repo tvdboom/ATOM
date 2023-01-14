@@ -45,11 +45,10 @@ from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 
 from atom.utils import (
-    FLOAT_TYPES, INT, INT_TYPES, PALETTE, SCALAR_TYPES, SEQUENCE_TYPES, Model,
-    bk, check_canvas, check_dependency, check_is_fitted, check_predict_proba,
-    composed, crash, divide, get_attr, get_best_score, get_corpus,
-    get_custom_scorer, has_attr, has_task, it, lst, plot_from_model, rnd,
-    to_rgb,
+    FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
+    check_dependency, check_is_fitted, check_predict_proba, composed, crash,
+    divide, get_attr, get_best_score, get_corpus, get_custom_scorer, has_attr,
+    has_task, it, lst, plot_from_model, rnd, to_rgb,
 )
 
 
@@ -91,11 +90,11 @@ class BaseFigure:
 
     def __init__(
         self,
-        rows: INT_TYPES = 1,
-        cols: INT_TYPES = 1,
-        horizontal_spacing: FLOAT_TYPES = 0.05,
-        vertical_spacing: FLOAT_TYPES = 0.07,
-        palette: str | SEQUENCE_TYPES = "Prism",
+        rows: INT = 1,
+        cols: INT = 1,
+        horizontal_spacing: FLOAT = 0.05,
+        vertical_spacing: FLOAT = 0.07,
+        palette: str | SEQUENCE = "Prism",
         is_canvas: bool = False,
         backend: str = "plotly",
         create_figure: bool = True,
@@ -145,7 +144,7 @@ class BaseFigure:
             )
 
     @property
-    def grid(self) -> tuple[INT_TYPES, INT_TYPES]:
+    def grid(self) -> tuple[INT, INT]:
         """Position of the current axes on the grid.
 
         Returns
@@ -181,7 +180,7 @@ class BaseFigure:
         if self.create_figure:
             return self.figure
 
-    def get_color(self, elem: SCALAR_TYPES | str | None = None) -> str:
+    def get_color(self, elem: SCALAR | str | None = None) -> str:
         """Get the next color.
 
         This method is used to assign the same color to the same
@@ -205,7 +204,7 @@ class BaseFigure:
         else:
             return self.style["colors"].setdefault(elem, next(self.palette))
 
-    def get_marker(self, elem: SCALAR_TYPES | str | None = None) -> str:
+    def get_marker(self, elem: SCALAR | str | None = None) -> str:
         """Get the next marker.
 
         This method is used to assign the same marker to the same
@@ -229,7 +228,7 @@ class BaseFigure:
         else:
             return self.style["markers"].setdefault(elem, next(self.markers))
 
-    def get_dashes(self, elem: SCALAR_TYPES | str | None = None) -> str:
+    def get_dashes(self, elem: SCALAR | str | None = None) -> str:
         """Get the next dash style.
 
         This method is used to assign the same dash style to the same
@@ -253,7 +252,7 @@ class BaseFigure:
         else:
             return self.style["dashes"].setdefault(elem, next(self.dashes))
 
-    def get_shapes(self, elem: SCALAR_TYPES | str | None = None) -> str:
+    def get_shapes(self, elem: SCALAR | str | None = None) -> str:
         """Get the next shape pattern.
 
         This method is used to assign the same shape pattern to the
@@ -305,8 +304,8 @@ class BaseFigure:
 
     def get_axes(
         self,
-        x: tuple[INT_TYPES, INT_TYPES] = (0, 1),
-        y: tuple[INT_TYPES, INT_TYPES] = (0, 1),
+        x: tuple[INT, INT] = (0, 1),
+        y: tuple[INT, INT] = (0, 1),
         coloraxis: dict | None = None,
     ) -> tuple[str, str]:
         """Create and update the plot's axes.
@@ -423,7 +422,7 @@ class BasePlot:
         self.tick_fontsize = value.get("tick_fontsize", self.tick_fontsize)
 
     @property
-    def palette(self) -> str | SEQUENCE_TYPES:
+    def palette(self) -> str | SEQUENCE:
         """Color palette.
 
         Specify one of plotly's [built-in palettes][palette] or create
@@ -434,7 +433,7 @@ class BasePlot:
 
     @palette.setter
     @typechecked
-    def palette(self, value: str | SEQUENCE_TYPES):
+    def palette(self, value: str | SEQUENCE):
         if isinstance(value, str) and not hasattr(px.colors.qualitative, value):
             raise ValueError(
                 f"Invalid value for the palette parameter, got {value}. Choose "
@@ -445,13 +444,13 @@ class BasePlot:
         self._aesthetics["palette"] = value
 
     @property
-    def title_fontsize(self) -> INT_TYPES:
+    def title_fontsize(self) -> INT:
         """Fontsize for the plot's title."""
         return self._aesthetics["title_fontsize"]
 
     @title_fontsize.setter
     @typechecked
-    def title_fontsize(self, value: INT_TYPES):
+    def title_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the title_fontsize parameter. "
@@ -460,13 +459,13 @@ class BasePlot:
         self._aesthetics["title_fontsize"] = value
 
     @property
-    def label_fontsize(self) -> INT_TYPES:
+    def label_fontsize(self) -> INT:
         """Fontsize for the labels, legend and hover information."""
         return self._aesthetics["label_fontsize"]
 
     @label_fontsize.setter
     @typechecked
-    def label_fontsize(self, value: INT_TYPES):
+    def label_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the label_fontsize parameter. "
@@ -475,13 +474,13 @@ class BasePlot:
         self._aesthetics["label_fontsize"] = value
 
     @property
-    def tick_fontsize(self) -> INT_TYPES:
+    def tick_fontsize(self) -> INT:
         """Fontsize for the ticks along the plot's axes."""
         return self._aesthetics["tick_fontsize"]
 
     @tick_fontsize.setter
     @typechecked
-    def tick_fontsize(self, value: INT_TYPES):
+    def tick_fontsize(self, value: INT):
         if value <= 0:
             raise ValueError(
                 "Invalid value for the tick_fontsize parameter. "
@@ -492,7 +491,7 @@ class BasePlot:
     # Methods ====================================================== >>
 
     @staticmethod
-    def _get_show(show: INT_TYPES | None, model: Model | list[Model]) -> INT_TYPES:
+    def _get_show(show: INT | None, model: Model | list[Model]) -> INT:
         """Check and return the number of features to show.
 
         Parameters
@@ -522,7 +521,7 @@ class BasePlot:
 
     @staticmethod
     def _get_hyperparams(
-        params: str | slice | SEQUENCE_TYPES | None,
+        params: str | slice | SEQUENCE | None,
         model: Model,
     ) -> list[str]:
         """Check and return a model's hyperparameters.
@@ -550,7 +549,7 @@ class BasePlot:
         else:
             hyperparameters = []
             for param in lst(params):
-                if isinstance(param, INT):
+                if isinstance(param, INT_TYPES):
                     hyperparameters.append(list(model._ht["distributions"])[param])
                 elif isinstance(param, str):
                     for p in param.split("+"):
@@ -570,7 +569,7 @@ class BasePlot:
 
     def _get_subclass(
         self,
-        models: str | Model | SEQUENCE_TYPES,
+        models: str | Model | SEQUENCE,
         max_one: bool,
         ensembles: bool = True,
     ) -> Model | list[Model]:
@@ -606,9 +605,9 @@ class BasePlot:
 
     def _get_metric(
         self,
-        metric: INT_TYPES | str | SEQUENCE_TYPES,
+        metric: INT | str | SEQUENCE,
         max_one: bool,
-    ) -> INT_TYPES | str | list[INT_TYPES]:
+    ) -> INT | str | list[INT]:
         """Check and return the provided metric index.
 
         Parameters
@@ -631,7 +630,7 @@ class BasePlot:
         else:
             inc = []
             for met in lst(metric):
-                if isinstance(met, INT):
+                if isinstance(met, INT_TYPES):
                     if 0 <= met < len(self._metric):
                         inc.append(met)
                     else:
@@ -662,7 +661,7 @@ class BasePlot:
 
     def _get_set(
         self,
-        dataset: str | SEQUENCE_TYPES,
+        dataset: str | SEQUENCE,
         max_one: bool,
         allow_holdout: bool = True,
     ) -> str | list[str]:
@@ -713,7 +712,7 @@ class BasePlot:
 
         return dataset[0] if max_one else dataset
 
-    def _get_target(self, target: INT_TYPES | str) -> INT_TYPES:
+    def _get_target(self, target: INT | str) -> INT:
         """Check and return the provided target's index.
 
         Parameters
@@ -823,7 +822,7 @@ class BasePlot:
             **kwargs,
         )
 
-    def _draw_straight_line(self, y: SCALAR_TYPES | str, xaxis: str, yaxis: str):
+    def _draw_straight_line(self, y: SCALAR | str, xaxis: str, yaxis: str):
         """Draw a line across the axis.
 
         The line can be either horizontal or diagonal. The line should
@@ -1068,14 +1067,14 @@ class BasePlot:
     @composed(contextmanager, crash, typechecked)
     def canvas(
         self,
-        rows: INT_TYPES = 1,
-        cols: INT_TYPES = 2,
+        rows: INT = 1,
+        cols: INT = 2,
         *,
-        horizontal_spacing: FLOAT_TYPES = 0.05,
-        vertical_spacing: FLOAT_TYPES = 0.07,
+        horizontal_spacing: FLOAT = 0.05,
+        vertical_spacing: FLOAT = 0.07,
         title: str | dict | None = None,
         legend: str | dict | None = "out",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool = True,
     ):
@@ -1209,11 +1208,11 @@ class FeatureSelectorPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_components(
         self,
-        show: INT_TYPES | None = None,
+        show: INT | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1343,7 +1342,7 @@ class FeatureSelectorPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1465,7 +1464,7 @@ class FeatureSelectorPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1632,12 +1631,12 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_correlation(
         self,
-        columns: slice | SEQUENCE_TYPES | None = None,
+        columns: slice | SEQUENCE | None = None,
         method: str = "pearson",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (800, 700),
+        figsize: tuple[SCALAR, SCALAR] = (800, 700),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1771,13 +1770,13 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_distribution(
         self,
-        columns: INT_TYPES | str | slice | SEQUENCE_TYPES = 0,
-        distributions: str | SEQUENCE_TYPES | None = None,
-        show: INT_TYPES | None = None,
+        columns: INT | str | slice | SEQUENCE = 0,
+        distributions: str | SEQUENCE | None = None,
+        show: INT | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2009,13 +2008,13 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_ngrams(
         self,
-        ngram: INT_TYPES | str = "bigram",
-        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
-        show: INT_TYPES = 10,
+        ngram: INT | str = "bigram",
+        index: INT | str | slice | SEQUENCE | None = None,
+        show: INT = 10,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2195,12 +2194,12 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_qq(
         self,
-        columns: INT_TYPES | str | slice | SEQUENCE_TYPES = 0,
-        distributions: str | SEQUENCE_TYPES = "norm",
+        columns: INT | str | slice | SEQUENCE = 0,
+        distributions: str | SEQUENCE = "norm",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2326,11 +2325,11 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_relationships(
         self,
-        columns: slice | SEQUENCE_TYPES = (0, 1, 2),
+        columns: slice | SEQUENCE = (0, 1, 2),
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 900),
+        figsize: tuple[SCALAR, SCALAR] = (900, 900),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2494,11 +2493,11 @@ class DataPlot(BasePlot):
     @composed(crash, typechecked)
     def plot_wordcloud(
         self,
-        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        index: INT | str | slice | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
         **kwargs,
@@ -2646,12 +2645,12 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_edf(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2807,13 +2806,13 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_hyperparameter_importance(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
         metric: int | str = 0,
-        show: INT_TYPES | None = None,
+        show: INT | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2965,13 +2964,13 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_hyperparameters(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        params: str | slice | SEQUENCE_TYPES = (0, 1),
+        models: INT | str | Model | None = None,
+        params: str | slice | SEQUENCE = (0, 1),
         metric: int | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3170,13 +3169,13 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_parallel_coordinate(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        params: str | slice | SEQUENCE_TYPES | None = None,
-        metric: INT_TYPES | str = 0,
+        models: INT | str | Model | None = None,
+        params: str | slice | SEQUENCE | None = None,
+        metric: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3347,12 +3346,12 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_pareto_front(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        metric: str | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | None = None,
+        metric: str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3501,13 +3500,13 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_slice(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        params: str | slice | SEQUENCE_TYPES | None = None,
-        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | None = None,
+        params: str | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3655,12 +3654,12 @@ class HTPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_trials(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 800),
+        figsize: tuple[SCALAR, SCALAR] = (900, 800),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3837,13 +3836,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        n_bins: INT_TYPES = 10,
-        target: INT_TYPES | str = 0,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        n_bins: INT = 10,
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 900),
+        figsize: tuple[SCALAR, SCALAR] = (900, 900),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4023,12 +4022,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4218,12 +4217,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_det(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        dataset: str | SEQUENCE_TYPES = "test",
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ):
@@ -4346,12 +4345,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4488,12 +4487,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_evals(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        dataset: str | SEQUENCE_TYPES = "test",
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4612,12 +4611,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_feature_importance(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        show: INT_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        show: INT | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4753,12 +4752,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        dataset: str | SEQUENCE_TYPES = "test",
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4881,12 +4880,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_learning_curve(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5041,12 +5040,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        dataset: str | SEQUENCE_TYPES = "test",
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5170,13 +5169,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_parshap(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
-        target: INT_TYPES | str = 1,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        columns: INT | str | slice | SEQUENCE | None = None,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5382,15 +5381,15 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_partial_dependence(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        columns: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        columns: INT | str | slice | SEQUENCE | None = None,
         kind: str = "average",
         pair: int | str | None = None,
-        target: INT_TYPES | str = 1,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5678,13 +5677,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_permutation_importance(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        show: INT_TYPES | None = None,
-        n_repeats: INT_TYPES = 10,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        show: INT | None = None,
+        n_repeats: INT = 10,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5839,13 +5838,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_pipeline(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
         draw_hyperparameter_tuning: bool = True,
         color_branches: bool | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -6167,12 +6166,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        dataset: str | SEQUENCE_TYPES = "test",
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower left",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6297,13 +6296,13 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
-        target: INT_TYPES | str = 1,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6438,12 +6437,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6588,12 +6587,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_results(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6694,7 +6693,7 @@ class PredictionPlot(BasePlot):
 
         """
 
-        def get_std(model: Model, metric: int) -> SCALAR_TYPES:
+        def get_std(model: Model, metric: int) -> SCALAR:
             """Get the standard deviation of the bootstrap scores.
 
             Parameters
@@ -6811,12 +6810,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        dataset: str | SEQUENCE_TYPES = "test",
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6942,12 +6941,12 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        metric: INT_TYPES | str | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        metric: INT | str | SEQUENCE | None = None,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -7104,14 +7103,14 @@ class PredictionPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
-        models: INT_TYPES | str | Model | slice | SEQUENCE_TYPES | None = None,
-        metric: str | Callable | SEQUENCE_TYPES | None = None,
+        models: INT | str | Model | slice | SEQUENCE | None = None,
+        metric: str | Callable | SEQUENCE | None = None,
         dataset: str = "test",
-        steps: INT_TYPES = 100,
+        steps: INT = 100,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower left",
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -7264,14 +7263,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_bar(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
-        show: INT_TYPES | None = None,
-        target: INT_TYPES | str = 1,
+        models: INT | str | Model | None = None,
+        index: INT | str | slice | SEQUENCE | None = None,
+        show: INT | None = None,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7382,14 +7381,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_beeswarm(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        index: slice | SEQUENCE_TYPES | None = None,
-        show: INT_TYPES | None = None,
-        target: INT_TYPES | str = 1,
+        models: INT | str | Model | None = None,
+        index: slice | SEQUENCE | None = None,
+        show: INT | None = None,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7497,14 +7496,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_decision(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
-        show: INT_TYPES | None = None,
-        target: INT_TYPES | str = 1,
+        models: INT | str | Model | None = None,
+        index: INT | str | slice | SEQUENCE | None = None,
+        show: INT | None = None,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7630,13 +7629,13 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_force(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        index: INT_TYPES | str | slice | SEQUENCE_TYPES | None = None,
-        target: INT_TYPES | str = 1,
+        models: INT | str | Model | None = None,
+        index: INT | str | slice | SEQUENCE | None = None,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 300),
+        figsize: tuple[SCALAR, SCALAR] = (900, 300),
         filename: str | None = None,
         display: bool | None = True,
         **kwargs,
@@ -7761,14 +7760,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_heatmap(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        index: slice | SEQUENCE_TYPES | None = None,
-        show: INT_TYPES | None = None,
-        target: INT_TYPES | str = 1,
+        models: INT | str | Model | None = None,
+        index: slice | SEQUENCE | None = None,
+        show: INT | None = None,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7880,14 +7879,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_scatter(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        index: slice | SEQUENCE_TYPES | None = None,
-        columns: INT_TYPES | str = 0,
-        target: INT_TYPES | str = 1,
+        models: INT | str | Model | None = None,
+        index: slice | SEQUENCE | None = None,
+        columns: INT | str = 0,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] = (900, 600),
+        figsize: tuple[SCALAR, SCALAR] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7999,14 +7998,14 @@ class ShapPlot(BasePlot):
     @composed(crash, plot_from_model, typechecked)
     def plot_shap_waterfall(
         self,
-        models: INT_TYPES | str | Model | None = None,
-        index: INT_TYPES | str | None = None,
-        show: INT_TYPES | None = None,
-        target: INT_TYPES | str = 1,
+        models: INT | str | Model | None = None,
+        index: INT | str | None = None,
+        show: INT | None = None,
+        target: INT | str = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR_TYPES, SCALAR_TYPES] | None = None,
+        figsize: tuple[SCALAR, SCALAR] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:

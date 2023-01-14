@@ -1,4 +1,4 @@
-name: ATOM
+name: ATOM -> Linting and tests
 
 on:
   push:
@@ -35,8 +35,7 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install dependencies
-        run: |
-          pip install flake8 flake8-pyproject
+        run: pip install flake8 flake8-pyproject
       - name: Apply linting
         run: flake8 --show-source --statistics atom tests
 
@@ -78,5 +77,5 @@ jobs:
         run: |
           pip install -U pytest pytest-xdist nbmake
           pip install -e .
-      - name: Run notebooks
-        run: pytest --nbmake -n=auto --notebooks=examples/*.ipynb --overwrite=true
+      - name: Run example notebooks
+        run: pytest --nbmake -n=auto --ignore=./examples/webapp/ --ignore=./examples/accelerating_cuml.ipynb ./examples/

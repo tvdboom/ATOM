@@ -853,11 +853,11 @@ def types_conversion(dtype: str) -> str:
     """
     types = {
         "CustomDict": "dict",
-        "INT_TYPES": "int",
-        "FLOAT_TYPES": "float",
-        "SERIES_TYPES": "series",
-        "DATAFRAME_TYPES": "dataframe",
-        "PANDAS_TYPES": "series | dataframe",
+        "INT": "int",
+        "FLOAT": "float",
+        "SERIES": "series",
+        "DATAFRAME": "dataframe",
+        "PANDAS": "series | dataframe",
         "Branch": "[Branch][branches]",
         "Model": "[model][models]",
         "Study | None": "[Study][] | None",

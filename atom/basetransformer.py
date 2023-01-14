@@ -30,10 +30,9 @@ from sklearn.model_selection import train_test_split
 from typeguard import typechecked
 
 from atom.utils import (
-    DATAFRAME, DATAFRAME_TYPES, INDEX_TYPES, INT, INT_TYPES, PANDAS_TYPES,
-    SCALAR_TYPES, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, Predictor, bk,
-    composed, crash, get_cols, lst, merge, method_to_log, n_cols, pd, to_df,
-    to_pandas,
+    DATAFRAME, DATAFRAME_TYPES, FEATURES, INDEX, INT, INT_TYPES, PANDAS,
+    SCALAR, SEQUENCE, SEQUENCE_TYPES, TARGET, Predictor, bk, composed, crash,
+    get_cols, lst, merge, method_to_log, n_cols, pd, to_df, to_pandas,
 )
 
 
@@ -80,13 +79,13 @@ class BaseTransformer:
     # Properties =================================================== >>
 
     @property
-    def n_jobs(self) -> INT_TYPES:
+    def n_jobs(self) -> INT:
         """Number of cores to use for parallel processing."""
         return self._n_jobs
 
     @n_jobs.setter
     @typechecked
-    def n_jobs(self, value: INT_TYPES):
+    def n_jobs(self, value: INT):
         # Check number of cores for multiprocessing
         n_cores = multiprocessing.cpu_count()
         if value > n_cores:
@@ -122,9 +121,9 @@ class BaseTransformer:
     @engine.setter
     @typechecked
     def engine(self, value: str):
-        if value.lower() == "sklearnex":
+        if value == "sklearnex":
             sklearnex.set_config("auto" if "cpu" in self.device else self.device)
-        elif value.lower() == "cuml":
+        elif value == "cuml":
             if "cpu" in self.device:
                 raise ValueError(
                     f"Invalid value for the engine parameter. device="
@@ -135,13 +134,13 @@ class BaseTransformer:
                     "Failed to import cuml. Package is not installed. Refer "
                     "to: https://rapids.ai/start.html#rapids-release-selector."
                 )
-        elif value.lower() != "sklearn":
+        elif value != "sklearn":
             raise ValueError(
                 "Invalid value for the engine parameter, got "
                 f"{value}. Choose from: sklearn, sklearnex, cuml."
             )
 
-        self._engine = value.lower()
+        self._engine = value
 
     @property
     def backend(self) -> str:
@@ -152,7 +151,7 @@ class BaseTransformer:
     @typechecked
     def backend(self, value: str):
         options = ("loky", "multiprocessing", "threading", "ray")
-        if value.lower() == "ray":
+        if value == "ray":
             import modin.pandas as md
 
             # Overwrite utils backend with modin
@@ -167,7 +166,7 @@ class BaseTransformer:
                     log_to_driver=False,
                 )
 
-        elif value.lower() not in options:
+        elif value not in options:
             raise ValueError(
                 f"Invalid value for the backend parameter, got "
                 f"{value}. Choose from: {', '.join(options)}."
@@ -178,16 +177,16 @@ class BaseTransformer:
                 if module.startswith("atom."):
                     setattr(sys.modules[module], "bk", pd)
 
-        self._backend = value.lower()
+        self._backend = value
 
     @property
-    def verbose(self) -> INT_TYPES:
+    def verbose(self) -> INT:
         """Verbosity level of the output."""
         return self._verbose
 
     @verbose.setter
     @typechecked
-    def verbose(self, value: INT_TYPES):
+    def verbose(self, value: INT):
         if value < 0 or value > 2:
             raise ValueError(
                 "Invalid value for the verbose parameter. Value"
@@ -207,12 +206,12 @@ class BaseTransformer:
             self._warnings = "default" if value else "ignore"
         else:
             options = ("default", "error", "ignore", "always", "module", "once")
-            if value.lower() not in options:
+            if value not in options:
                 raise ValueError(
                     "Invalid value for the warnings parameter, got "
                     f"{value}. Choose from: {', '.join(options)}."
                 )
-            self._warnings = value.lower()
+            self._warnings = value
 
         warnings.filterwarnings(self._warnings)  # Change the filter in this process
         warnings.filterwarnings("ignore", category=UserWarning, module=".*modin.*")
@@ -280,13 +279,13 @@ class BaseTransformer:
             mlflow.set_experiment(value)
 
     @property
-    def random_state(self) -> INT_TYPES:
+    def random_state(self) -> INT:
         """Seed used by the random number generator."""
         return self._random_state
 
     @random_state.setter
     @typechecked
-    def random_state(self, value: INT_TYPES | None):
+    def random_state(self, value: INT | None):
         if value and value < 0:
             raise ValueError(
                 "Invalid value for the random_state parameter. "
@@ -341,9 +340,9 @@ class BaseTransformer:
     @staticmethod
     @typechecked
     def _prepare_input(
-        X: X_TYPES | None = None,
-        y: Y_TYPES | None = None,
-    ) -> tuple[DATAFRAME_TYPES | None, PANDAS_TYPES | None]:
+        X: FEATURES | None = None,
+        y: TARGET | None = None,
+    ) -> tuple[DATAFRAME | None, PANDAS | None]:
         """Prepare the input data.
 
         Convert X and y to pandas (if not already) and perform standard
@@ -392,12 +391,12 @@ class BaseTransformer:
                 raise ValueError("Duplicate column names found in X.")
 
         # Prepare target column
-        if isinstance(y, (dict, *SEQUENCE, DATAFRAME)):
+        if isinstance(y, (dict, *SEQUENCE_TYPES, DATAFRAME_TYPES)):
             if isinstance(y, dict):
                 if n_cols(y := to_df(y, index=getattr(X, "index", None))) == 1:
                     y = y.iloc[:, 0]  # If y is one-dimensional, get series
 
-            elif isinstance(y, (SEQUENCE, DATAFRAME)):
+            elif isinstance(y, (SEQUENCE_TYPES, DATAFRAME_TYPES)):
                 # If X and y have different number of rows, try multioutput
                 if X is not None and len(X) != len(y):
                     try:
@@ -436,7 +435,7 @@ class BaseTransformer:
             else:
                 raise ValueError("X can't be None when y is a string.")
 
-        elif isinstance(y, INT):
+        elif isinstance(y, INT_TYPES):
             if X is None:
                 raise ValueError("X can't be None when y is an int.")
 
@@ -444,7 +443,7 @@ class BaseTransformer:
 
         return X, y
 
-    def _set_index(self, df: DATAFRAME_TYPES, y: PANDAS_TYPES | None) -> DATAFRAME_TYPES:
+    def _set_index(self, df: DATAFRAME, y: PANDAS | None) -> DATAFRAME:
         """Assign an index to the dataframe.
 
         Parameters
@@ -465,7 +464,7 @@ class BaseTransformer:
             return df
         elif self.index is False:
             df = df.reset_index(drop=True)
-        elif isinstance(self.index, INT):
+        elif isinstance(self.index, INT_TYPES):
             if -df.shape[1] <= self.index <= df.shape[1]:
                 df = df.set_index(df.columns[self.index], drop=True)
             else:
@@ -485,12 +484,12 @@ class BaseTransformer:
         if y is not None and df.index.name in (c.name for c in get_cols(y)):
             raise ValueError(
                 "Invalid value for the index parameter. The index column "
-                f"can not be the same as a target column, got {df.index.name}."
+                f"can not be the same as the target column, got {df.index.name}."
             )
 
         return df
 
-    def _get_stratify_columns(self, df: DATAFRAME_TYPES) -> DATAFRAME_TYPES | None:
+    def _get_stratify_columns(self, df: DATAFRAME) -> DATAFRAME | None:
         """Get columns to stratify by.
 
         Parameters
@@ -518,7 +517,7 @@ class BaseTransformer:
         else:
             inc = []
             for col in lst(self.stratify):
-                if isinstance(col, INT):
+                if isinstance(col, INT_TYPES):
                     if -df.shape[1] <= col <= df.shape[1]:
                         inc.append(df.columns[col])
                     else:
@@ -539,10 +538,10 @@ class BaseTransformer:
 
     def _get_data(
         self,
-        arrays: SEQUENCE_TYPES,
-        y: Y_TYPES = -1,
+        arrays: SEQUENCE,
+        y: TARGET = -1,
         use_n_rows: bool = True,
-    ) -> tuple[DATAFRAME_TYPES, list[INDEX_TYPES], DATAFRAME_TYPES | None]:
+    ) -> tuple[DATAFRAME, list[INDEX], DATAFRAME | None]:
         """Get data sets from a sequence of indexables.
 
         Also assigns an index, (stratified) shuffles and selects a
@@ -572,7 +571,7 @@ class BaseTransformer:
 
         """
 
-        def _subsample(df: DATAFRAME_TYPES) -> DATAFRAME_TYPES:
+        def _subsample(df: DATAFRAME) -> DATAFRAME:
             """Select a random subset of a dataframe.
 
             If shuffle=True, the subset is shuffled, else row order
@@ -600,9 +599,9 @@ class BaseTransformer:
                 return df.iloc[sorted(random.sample(range(len(df)), k=n_rows))]
 
         def _no_data_sets(
-            X: DATAFRAME_TYPES,
-            y: PANDAS_TYPES,
-        ) -> tuple[DATAFRAME_TYPES, list, DATAFRAME_TYPES | None]:
+            X: DATAFRAME,
+            y: PANDAS,
+        ) -> tuple[DATAFRAME, list, DATAFRAME | None]:
             """Generate data sets from one dataset.
 
             Additionally, assigns an index, shuffles the data, selects
@@ -626,7 +625,7 @@ class BaseTransformer:
             data = merge(X, y)
 
             # If the index is a sequence, assign it before shuffling
-            if isinstance(self.index, SEQUENCE):
+            if isinstance(self.index, SEQUENCE_TYPES):
                 if len(self.index) != len(data):
                     raise ValueError(
                         "Invalid value for the index parameter. Length of "
@@ -701,13 +700,13 @@ class BaseTransformer:
             return data, idx, holdout
 
         def _has_data_sets(
-            X_train: DATAFRAME_TYPES,
-            y_train: PANDAS_TYPES,
-            X_test: DATAFRAME_TYPES,
-            y_test: PANDAS_TYPES,
-            X_holdout: DATAFRAME_TYPES | None = None,
-            y_holdout: PANDAS_TYPES | None = None,
-        ) -> tuple[DATAFRAME_TYPES, list, DATAFRAME_TYPES | None]:
+            X_train: DATAFRAME,
+            y_train: PANDAS,
+            X_test: DATAFRAME,
+            y_test: PANDAS,
+            X_holdout: DATAFRAME | None = None,
+            y_holdout: PANDAS | None = None,
+        ) -> tuple[DATAFRAME, list, DATAFRAME | None]:
             """Generate data sets from provided sets.
 
             Additionally, assigns an index, shuffles the data and
@@ -744,7 +743,7 @@ class BaseTransformer:
             holdout = merge(X_holdout, y_holdout) if X_holdout is not None else None
 
             # If the index is a sequence, assign it before shuffling
-            if isinstance(self.index, SEQUENCE):
+            if isinstance(self.index, SEQUENCE_TYPES):
                 len_data = len(train) + len(test)
                 if holdout is not None:
                     len_data += len(holdout)
@@ -860,7 +859,7 @@ class BaseTransformer:
         return sets
 
     @composed(crash, typechecked)
-    def log(self, msg: SCALAR_TYPES | str, level: INT_TYPES = 0, severity: str = "info"):
+    def log(self, msg: SCALAR | str, level: INT = 0, severity: str = "info"):
         """Print message and save to log file.
 
         Parameters

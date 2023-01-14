@@ -134,8 +134,8 @@ from optuna.trial import Trial
 from atom.basemodel import BaseModel
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DATAFRAME_TYPES, SERIES_TYPES, CatBMetric, CustomDict, LGBMetric,
-    Predictor, XGBMetric, create_acronym,
+    DATAFRAME, SERIES, CatBMetric, CustomDict, LGBMetric, Predictor, XGBMetric,
+    create_acronym,
 )
 
 
@@ -737,9 +737,9 @@ class CatBoost(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DATAFRAME_TYPES, SERIES_TYPES],
+        data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME_TYPES, SERIES_TYPES] | None = None,
+        validation: tuple[DATAFRAME, SERIES] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
@@ -2278,9 +2278,9 @@ class LightGBM(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DATAFRAME_TYPES, SERIES_TYPES],
+        data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME_TYPES, SERIES_TYPES] | None = None,
+        validation: tuple[DATAFRAME, SERIES] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.
@@ -4082,9 +4082,9 @@ class XGBoost(BaseModel):
     def _fit_estimator(
         self,
         estimator: Predictor,
-        data: tuple[DATAFRAME_TYPES, SERIES_TYPES],
+        data: tuple[DATAFRAME, SERIES],
         est_params_fit: dict,
-        validation: tuple[DATAFRAME_TYPES, SERIES_TYPES] | None = None,
+        validation: tuple[DATAFRAME, SERIES] | None = None,
         trial: Trial | None = None,
     ):
         """Fit the estimator and perform in-training validation.

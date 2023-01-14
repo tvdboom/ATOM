@@ -9,14 +9,15 @@ Description: Unit tests for basemodel.py
 
 import glob
 from unittest.mock import patch
-import requests
-from ray import serve
+
 import pandas as pd
 import pytest
+import requests
 from optuna.distributions import IntDistribution
 from optuna.pruners import PatientPruner
 from optuna.samplers import NSGAIISampler
 from optuna.study import Study
+from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import r2_score, recall_score
 from sklearn.tree import DecisionTreeClassifier
