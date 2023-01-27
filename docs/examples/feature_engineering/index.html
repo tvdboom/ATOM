@@ -4165,7 +4165,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Example:-Feature-engineering">Example: Feature engineering<a class="anchor-link" href="#Example:-Feature-engineering">&#182;</a></h1><hr />
+<h1 id="example-feature-engineering">Example: Feature engineering<a class="anchor-link" href="#example-feature-engineering">&#182;</a></h1><hr>
 <p>This example shows how to use automated feature generation to improve a model's performance.</p>
 <p>The data used is a variation on the <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">Australian weather dataset</a> from Kaggle. You can download it from <a href="https://github.com/tvdboom/ATOM/blob/master/examples/datasets/weatherAUS.csv">here</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binary classifier on target <code>RainTomorrow</code>.</p>
 
@@ -4179,7 +4179,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Load-the-data">Load the data<a class="anchor-link" href="#Load-the-data">&#182;</a></h2>
+<h2 id="load-the-data">Load the data<a class="anchor-link" href="#load-the-data">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4264,7 +4264,9 @@ X.head()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 
@@ -4453,7 +4455,7 @@ X.head()</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Run-the-pipeline">Run the pipeline<a class="anchor-link" href="#Run-the-pipeline">&#182;</a></h2>
+<h2 id="run-the-pipeline">Run the pipeline<a class="anchor-link" href="#run-the-pipeline">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4538,7 +4540,9 @@ atom.run('LGB', metric='auc')</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4579,7 +4583,7 @@ LightGBM --&gt; roc_auc: 0.8625
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Deep-Feature-Synthesis">Deep Feature Synthesis<a class="anchor-link" href="#Deep-Feature-Synthesis">&#182;</a></h2>
+<h2 id="deep-feature-synthesis">Deep Feature Synthesis<a class="anchor-link" href="#deep-feature-synthesis">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4624,7 +4628,9 @@ atom.branch = "dfs"</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4679,7 +4685,9 @@ atom.feature_generation("dfs", n_features=50, operators=["add", "sub", "log"])</
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4738,7 +4746,9 @@ atom.nans</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 
@@ -4804,7 +4814,9 @@ atom.impute(strat_num="knn", strat_cat="remove", max_nan_rows=0.8)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4877,7 +4889,9 @@ atom.feature_selection(
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4963,7 +4977,9 @@ atom.collinear</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
 
@@ -5171,7 +5187,9 @@ atom.plot_rfecv()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5180,7 +5198,9 @@ atom.plot_rfecv()</div>
 
 
 </div>
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5238,7 +5258,9 @@ atom.run("LGB_dfs")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5279,7 +5301,7 @@ LightGBM --&gt; roc_auc: 0.8616
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Genetic-Feature-Generation">Genetic Feature Generation<a class="anchor-link" href="#Genetic-Feature-Generation">&#182;</a></h2>
+<h2 id="genetic-feature-generation">Genetic Feature Generation<a class="anchor-link" href="#genetic-feature-generation">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -5324,7 +5346,9 @@ atom.branch = "gfg_from_master"</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5379,7 +5403,9 @@ atom.feature_generation(strategy='gfg', n_features=20)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5459,7 +5485,9 @@ atom.genetic_features</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
 
@@ -5661,7 +5689,9 @@ atom.run("LGB_gfg", metric="auc")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5734,7 +5764,9 @@ atom.plot_pipeline()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5764,7 +5796,7 @@ jp-needs-light-background
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Analyze-the-results">Analyze the results<a class="anchor-link" href="#Analyze-the-results">&#182;</a></h2>
+<h2 id="analyze-the-results">Analyze the results<a class="anchor-link" href="#analyze-the-results">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -5807,7 +5839,9 @@ atom.plot_roc(dataset="test+train")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5867,7 +5901,9 @@ with atom.canvas(1, 3, horizontal_spacing=0.08, figsize=(1800, 800)):
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5923,7 +5959,9 @@ atom.plot_permutation_importance(models=["LGB_dfs", "LGB_gfg"], show=12)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5977,7 +6015,9 @@ atom.plot_permutation_importance(models=["LGB_dfs", "LGB_gfg"], show=12)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 

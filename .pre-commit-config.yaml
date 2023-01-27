@@ -6,7 +6,6 @@ repos:
     rev: 5.11.4
     hooks:
       - id: isort
-        name: isort (python)
         files: atom tests
 
   - repo: https://github.com/pycqa/flake8

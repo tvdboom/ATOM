@@ -4137,7 +4137,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Example:-Automated-feature-scaling">Example: Automated feature scaling<a class="anchor-link" href="#Example:-Automated-feature-scaling">&#182;</a></h1><hr />
+<h1 id="example-automated-feature-scaling">Example: Automated feature scaling<a class="anchor-link" href="#example-automated-feature-scaling">&#182;</a></h1><hr>
 <p>This example shows how ATOM handles models that require automated feature scaling.</p>
 <p>Import the breast cancer dataset from <a href="https://scikit-learn.org/stable/datasets/index.html#wine-dataset">sklearn.datasets</a>. This is a small and easy to train dataset whose goal is to predict whether a patient has breast cancer or not.</p>
 
@@ -4151,7 +4151,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Load-the-data">Load the data<a class="anchor-link" href="#Load-the-data">&#182;</a></h2>
+<h2 id="load-the-data">Load the data<a class="anchor-link" href="#load-the-data">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4232,7 +4232,7 @@ X, y = load_breast_cancer(return_X_y=True)</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Run-the-pipeline">Run the pipeline<a class="anchor-link" href="#Run-the-pipeline">&#182;</a></h2>
+<h2 id="run-the-pipeline">Run the pipeline<a class="anchor-link" href="#run-the-pipeline">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4273,7 +4273,9 @@ X, y = load_breast_cancer(return_X_y=True)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4344,7 +4346,9 @@ atom.available_models()[["acronym", "model", "needs_scaling"]]</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 
@@ -4606,7 +4610,9 @@ atom.run(["LR", "Bag"])</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4687,7 +4693,9 @@ atom.branch = "scaling"</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4740,7 +4748,9 @@ atom.branch = "scaling"</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4794,7 +4804,9 @@ Scaling features...
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4834,7 +4846,7 @@ LogisticRegression --&gt; f1: 0.9861
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Analyze-the-results">Analyze the results<a class="anchor-link" href="#Analyze-the-results">&#182;</a></h2>
+<h2 id="analyze-the-results">Analyze the results<a class="anchor-link" href="#analyze-the-results">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4881,7 +4893,9 @@ print(atom.lr2.scaler)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4946,7 +4960,9 @@ print(atom.lr2.X_train.equals(atom.lr.X_train))</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5023,7 +5039,9 @@ print(atom.lr2.pipeline)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5083,7 +5101,9 @@ dtype: object
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 

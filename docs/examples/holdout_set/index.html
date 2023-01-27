@@ -4137,7 +4137,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Example:-Holdout-set">Example: Holdout set<a class="anchor-link" href="#Example:-Holdout-set">&#182;</a></h1><hr />
+<h1 id="example-holdout-set">Example: Holdout set<a class="anchor-link" href="#example-holdout-set">&#182;</a></h1><hr>
 <p>This example shows when and how to use ATOM's holdout set in an exploration pipeline.</p>
 <p>The data used is a variation on the <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">Australian weather dataset</a> from Kaggle. You can download it from <a href="https://github.com/tvdboom/ATOM/blob/master/examples/datasets/weatherAUS.csv">here</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binary classifier on target <code>RainTomorrow</code>.</p>
 
@@ -4151,7 +4151,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Load-the-data">Load the data<a class="anchor-link" href="#Load-the-data">&#182;</a></h2>
+<h2 id="load-the-data">Load the data<a class="anchor-link" href="#load-the-data">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4236,7 +4236,9 @@ X.head()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 
@@ -4425,7 +4427,7 @@ X.head()</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Run-the-pipeline">Run the pipeline<a class="anchor-link" href="#Run-the-pipeline">&#182;</a></h2>
+<h2 id="run-the-pipeline">Run the pipeline<a class="anchor-link" href="#run-the-pipeline">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4468,7 +4470,9 @@ atom = ATOMClassifier(X, n_rows=0.5, holdout_size=0.2, verbose=2)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4546,7 +4550,9 @@ print("Length dataset + holdout:", len(atom.dataset) + len(atom.holdout))</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4602,7 +4608,9 @@ atom.encode()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4685,7 +4693,9 @@ atom.holdout</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
 
@@ -5048,7 +5058,9 @@ atom.holdout</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5139,7 +5151,9 @@ RandomForest       --&gt; f1: 0.6229 ~ !
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5148,7 +5162,9 @@ RandomForest       --&gt; f1: 0.6229 ~ !
 
 
 </div>
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5204,7 +5220,9 @@ atom.run("lr_tuned", n_trials=10)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5266,7 +5284,7 @@ LogisticRegression --&gt; f1: 0.6099
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Analyze-the-results">Analyze the results<a class="anchor-link" href="#Analyze-the-results">&#182;</a></h2>
+<h2 id="analyze-the-results">Analyze the results<a class="anchor-link" href="#analyze-the-results">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -5321,7 +5339,9 @@ atom.lr_tuned.full_train()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -5379,7 +5399,9 @@ atom.lr_tuned.evaluate(dataset="holdout")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
 
@@ -5443,7 +5465,9 @@ Name: LR_tuned, dtype: float64</pre>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 

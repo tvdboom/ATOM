@@ -14,8 +14,8 @@ import pytest
 from sklearn.metrics import f1_score, get_scorer
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.plots import BaseFigure, BasePlot
-from atom.utils import NotFittedError
+from atom.plots import BaseFigure, BasePlot, Aesthetics
+from atom.utils import NotFittedError, SEQUENCE_TYPES, INT
 
 from .conftest import (
     X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10, y10_str, y_bin,
@@ -71,39 +71,39 @@ def test_get_shapes():
 
 # Test BasePlot ==================================================== >>
 
-def test_aesthetics_property():
-    """Assert that aesthetics returns the classes aesthetics as dict."""
-    assert isinstance(BasePlot().aesthetics, dict)
+def test_aesthetics():
+    """Assert that the aesthetics getter works."""
+    assert isinstance(BasePlot().aesthetics, Aesthetics)
 
 
 def test_aesthetics_setter():
     """Assert that the aesthetics setter works."""
     base = BasePlot()
-    base.aesthetics = {"palette": "Prism"}
-    assert base.palette == "Prism"
+    base.aesthetics = {"line_width": 3}
+    assert base.line_width == 3
 
 
-def test_custom_palette():
-    """Assert that a custom palette can be defined."""
+def test_palette():
+    """Assert that the palette getter works."""
+    assert isinstance(BasePlot().palette, list)
+
+
+def test_palette_setter():
+    """Assert that the palette setter works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.palette = ["red", "green", "blue"]
     atom.plot_distribution(columns=[0, 1], display=False)
 
 
-def test_palette_property():
-    """Assert that palette returns the classes aesthetics as dict."""
-    assert isinstance(BasePlot().palette, dict)
-
-
-def test_palette_setter():
-    """Assert that the palette setter works."""
+def test_palette_setter_invalid_name():
+    """Assert that an error is raised when an invalid palette is used."""
     with pytest.raises(ValueError, match=".*the palette parameter.*"):
         BasePlot().palette = "unknown"
 
 
-def test_title_fontsize_property():
-    """Assert that title_fontsize returns the classes aesthetics as dict."""
-    assert isinstance(BasePlot().title_fontsize, int)
+def test_title_fontsize():
+    """Assert that the title_fontsize getter works."""
+    assert isinstance(BasePlot().title_fontsize, INT)
 
 
 def test_title_fontsize_setter():
@@ -112,9 +112,9 @@ def test_title_fontsize_setter():
         BasePlot().title_fontsize = 0
 
 
-def test_label_fontsize_property():
-    """Assert that label_fontsize returns the classes aesthetics as dict."""
-    assert isinstance(BasePlot().label_fontsize, int)
+def test_label_fontsize():
+    """Assert that the label_fontsize getter works."""
+    assert isinstance(BasePlot().label_fontsize, INT)
 
 
 def test_label_fontsize_setter():
@@ -123,15 +123,37 @@ def test_label_fontsize_setter():
         BasePlot().label_fontsize = 0
 
 
-def test_tick_fontsize_property():
-    """Assert that tick_fontsize returns the classes aesthetics as dict."""
-    assert isinstance(BasePlot().tick_fontsize, int)
+def test_tick_fontsize():
+    """Assert that the tick_fontsize getter works."""
+    assert isinstance(BasePlot().tick_fontsize, INT)
 
 
 def test_tick_fontsize_setter():
     """Assert that the tick_fontsize setter works."""
     with pytest.raises(ValueError, match=".*the tick_fontsize parameter.*"):
         BasePlot().tick_fontsize = 0
+
+
+def test_line_width():
+    """Assert that the line_width getter works."""
+    assert isinstance(BasePlot().tick_fontsize, INT)
+
+
+def test_line_width_setter():
+    """Assert that the line_width setter works."""
+    with pytest.raises(ValueError, match=".*the line_width parameter.*"):
+        BasePlot().line_width = 0
+
+
+def test_marker_size():
+    """Assert that the marker_size getter works."""
+    assert isinstance(BasePlot().marker_size, INT)
+
+
+def test_marker_size_setter():
+    """Assert that the marker_size setter works."""
+    with pytest.raises(ValueError, match=".*the marker_size parameter.*"):
+        BasePlot().marker_size = 0
 
 
 def test_reset_aesthetics():
@@ -190,14 +212,6 @@ def test_get_hyperparams_empty():
     atom.run("Tree", n_trials=3)
     with pytest.raises(ValueError, match=".*Didn't find any hyperparameters.*"):
         atom._get_hyperparams(params=[], model=atom.tree)
-
-
-def test_get_subclass_max_one():
-    """Assert that an error is raised with more than one model."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LGB"])
-    with pytest.raises(ValueError, match=".*only accepts one model.*"):
-        atom._get_subclass(models=["Tree", "LGB"], max_one=True)
 
 
 def test_get_metric():

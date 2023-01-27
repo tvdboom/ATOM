@@ -4137,7 +4137,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Example:-Accelerating-pipelines">Example: Accelerating pipelines<a class="anchor-link" href="#Example:-Accelerating-pipelines">&#182;</a></h1><hr />
+<h1 id="example-accelerating-pipelines">Example: Accelerating pipelines<a class="anchor-link" href="#example-accelerating-pipelines">&#182;</a></h1><hr>
 <p>This example shows how to accelerate your models on cpu using <a href="https://github.com/intel/scikit-learn-intelex">sklearnex</a>.</p>
 <p>The data used is a variation on the <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">Australian weather dataset</a> from Kaggle. You can download it from <a href="https://github.com/tvdboom/ATOM/blob/master/examples/datasets/weatherAUS.csv">here</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binary classifier on target <code>RainTomorrow</code>.</p>
 
@@ -4151,7 +4151,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Load-the-data">Load the data<a class="anchor-link" href="#Load-the-data">&#182;</a></h2>
+<h2 id="load-the-data">Load the data<a class="anchor-link" href="#load-the-data">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4236,7 +4236,9 @@ X.head()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 
@@ -4425,7 +4427,7 @@ X.head()</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Run-the-pipeline">Run the pipeline<a class="anchor-link" href="#Run-the-pipeline">&#182;</a></h2>
+<h2 id="run-the-pipeline">Run the pipeline<a class="anchor-link" href="#run-the-pipeline">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4466,7 +4468,9 @@ X.head()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4477,19 +4481,14 @@ Algorithm task: binary classification.
 
 Dataset stats ==================== &gt;&gt;
 Shape: (142193, 22)
+Train set size: 113755
+Test set size: 28438
+-------------------------------------
 Memory: 61.69 MB
 Scaled: False
 Missing values: 316559 (10.1%)
 Categorical features: 5 (23.8%)
 Duplicate samples: 45 (0.0%)
--------------------------------------
-Train set size: 113755
-Test set size: 28438
--------------------------------------
-|   |        dataset |          train |           test |
-| - | -------------- | -------------- | -------------- |
-| 0 |   110316 (3.5) |    88253 (3.5) |    22063 (3.5) |
-| 1 |    31877 (1.0) |    25502 (1.0) |     6375 (1.0) |
 
 </pre>
 </div>
@@ -4541,7 +4540,9 @@ atom.encode()</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4624,7 +4625,9 @@ atom.run(models="KNN", metric="f1")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4638,17 +4641,17 @@ Metric: f1
 
 Results for KNearestNeighbors:
 Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.7127
-Test evaluation --&gt; f1: 0.5994
-Time elapsed: 1.697s
+Train evaluation --&gt; f1: 0.7176
+Test evaluation --&gt; f1: 0.5924
+Time elapsed: 2.971s
 -------------------------------------------------
-Total time: 1.697s
+Total time: 2.971s
 
 
 Final results ==================== &gt;&gt;
-Total time: 1.699s
+Total time: 2.973s
 -------------------------------------
-KNearestNeighbors --&gt; f1: 0.5994
+KNearestNeighbors --&gt; f1: 0.5924
 </pre>
 </div>
 </div>
@@ -4699,7 +4702,9 @@ atom.run(models="KNN_acc", metric="f1", engine="sklearnex")</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4713,17 +4718,17 @@ Metric: f1
 
 Results for KNearestNeighbors:
 Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.7127
-Test evaluation --&gt; f1: 0.5994
-Time elapsed: 1.119s
+Train evaluation --&gt; f1: 0.7176
+Test evaluation --&gt; f1: 0.5924
+Time elapsed: 1.419s
 -------------------------------------------------
-Total time: 1.119s
+Total time: 1.419s
 
 
 Final results ==================== &gt;&gt;
-Total time: 1.120s
+Total time: 1.420s
 -------------------------------------
-KNearestNeighbors --&gt; f1: 0.5994
+KNearestNeighbors --&gt; f1: 0.5924
 </pre>
 </div>
 </div>
@@ -4740,7 +4745,7 @@ KNearestNeighbors --&gt; f1: 0.5994
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Analyze-the-results">Analyze the results<a class="anchor-link" href="#Analyze-the-results">&#182;</a></h2>
+<h2 id="analyze-the-results">Analyze the results<a class="anchor-link" href="#analyze-the-results">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -4781,7 +4786,9 @@ KNearestNeighbors --&gt; f1: 0.5994
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+
+<div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 
@@ -4815,17 +4822,17 @@ KNearestNeighbors --&gt; f1: 0.5994
   <tbody>
     <tr>
       <th>KNN</th>
-      <td>0.7127</td>
-      <td>0.5994</td>
-      <td>1.697075</td>
-      <td>1.697075</td>
+      <td>0.7176</td>
+      <td>0.5924</td>
+      <td>2.970699</td>
+      <td>2.970699</td>
     </tr>
     <tr>
       <th>KNN_acc</th>
-      <td>0.7127</td>
-      <td>0.5994</td>
-      <td>1.119191</td>
-      <td>1.119191</td>
+      <td>0.7176</td>
+      <td>0.5924</td>
+      <td>1.419290</td>
+      <td>1.419290</td>
     </tr>
   </tbody>
 </table>
@@ -4888,7 +4895,9 @@ print(atom.knn_acc.estimator.__module__)</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4934,8 +4943,7 @@ sklearnex.neighbors.knn_classification
 </pre></div>
 <div id="cell-9" class="clipboard-copy-txt">with atom.canvas(1, 2, title="Timing engines: sklearn vs sklearnex"):
     atom.plot_results(metric="time_fit", title="Training")
-    atom.plot_results(metric="time", title="Total")
-</div>
+    atom.plot_results(metric="time", title="Total")</div>
     
         </div>
     </div>
@@ -4949,7 +4957,9 @@ sklearnex.neighbors.knn_classification
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -4958,14 +4968,16 @@ sklearnex.neighbors.knn_classification
 
 
 </div>
+
 <div class="jp-OutputArea-child">
+
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
 
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
-<div>                            <div id="a5e08f7d-10b5-4713-8648-ed03e091f0e6" class="plotly-graph-div" style="height:600px; width:100%;"></div>            <script type="text/javascript">window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("a5e08f7d-10b5-4713-8648-ed03e091f0e6")) {                    Plotly.newPlot(                        "a5e08f7d-10b5-4713-8648-ed03e091f0e6",                        [{"hovertemplate":"%{x}<extra>time_fit</extra>","legendgroup":"time_fit","marker":{"color":"rgba(0, 98, 98, 0.2)","line":{"color":"rgb(0, 98, 98)","width":2}},"name":"time_fit","orientation":"h","showlegend":true,"x":[1.697075,1.119191],"xaxis":"x","y":["KNN","KNN_acc"],"yaxis":"y","type":"bar"},{"hovertemplate":"%{x}<extra>time</extra>","legendgroup":"time","marker":{"color":"rgba(56, 166, 165, 0.2)","line":{"color":"rgb(56, 166, 165)","width":2}},"name":"time","orientation":"h","showlegend":true,"x":[1.697075,1.119191],"xaxis":"x2","y":["KNN","KNN_acc"],"yaxis":"y2","type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"domain":[0.0,0.45],"anchor":"y","title":{"font":{"size":16},"text":"time (s)"},"automargin":true},"yaxis":{"domain":[0.0,1.0],"anchor":"x","categoryorder":"total ascending","title":{"font":{"size":16}},"automargin":true},"bargroupgap":0.05,"boxmode":"group","annotations":[{"font":{"size":20},"showarrow":false,"text":"Training","x":0.225,"xanchor":"center","xref":"paper","y":1.005,"yanchor":"bottom","yref":"paper"},{"showarrow":false,"text":"Total","x":0.775,"xanchor":"center","xref":"paper","y":1.005,"yanchor":"bottom","yref":"paper","font":{"size":20}}],"xaxis2":{"domain":[0.55,1.0],"anchor":"y2","title":{"font":{"size":16},"text":"time (s)"},"automargin":true},"yaxis2":{"domain":[0.0,1.0],"anchor":"x2","categoryorder":"total ascending","title":{"font":{"size":16}},"automargin":true},"title":{"pad":{"t":15,"b":15},"font":{"size":24},"text":"Timing engines: sklearn vs sklearnex","x":0.5,"y":1,"xanchor":"center","yanchor":"top","xref":"paper"},"legend":{"font":{"size":16},"traceorder":"grouped","groupclick":"togglegroup","bgcolor":"rgba(255, 255, 255, 0.5)"},"hoverlabel":{"font":{"size":16}},"font":{"size":12},"margin":{"l":50,"b":50,"r":0,"t":73,"pad":0},"showlegend":true},                        {"responsive": true}                    )}</script>        </div>
+<div>                            <div id="21e898b0-de53-413f-85e8-11d07fb12c1b" class="plotly-graph-div" style="height:600px; width:100%;"></div>            <script type="text/javascript">window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("21e898b0-de53-413f-85e8-11d07fb12c1b")) {                    Plotly.newPlot(                        "21e898b0-de53-413f-85e8-11d07fb12c1b",                        [{"hovertemplate":"%{x}<extra>time_fit</extra>","legendgroup":"time_fit","marker":{"color":"rgba(0, 98, 98, 0.2)","line":{"color":"rgb(0, 98, 98)","width":2}},"name":"time_fit","orientation":"h","showlegend":true,"x":[2.970699,1.41929],"xaxis":"x","y":["KNN","KNN_acc"],"yaxis":"y","type":"bar"},{"hovertemplate":"%{x}<extra>time</extra>","legendgroup":"time","marker":{"color":"rgba(56, 166, 165, 0.2)","line":{"color":"rgb(56, 166, 165)","width":2}},"name":"time","orientation":"h","showlegend":true,"x":[2.970699,1.41929],"xaxis":"x2","y":["KNN","KNN_acc"],"yaxis":"y2","type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"domain":[0.0,0.45],"anchor":"y","title":{"font":{"size":16},"text":"time (s)"},"automargin":true},"yaxis":{"domain":[0.0,1.0],"anchor":"x","categoryorder":"total ascending","title":{"font":{"size":16}},"automargin":true},"bargroupgap":0.05,"boxmode":"group","annotations":[{"font":{"size":20},"showarrow":false,"text":"Training","x":0.225,"xanchor":"center","xref":"paper","y":1.005,"yanchor":"bottom","yref":"paper"},{"showarrow":false,"text":"Total","x":0.775,"xanchor":"center","xref":"paper","y":1.005,"yanchor":"bottom","yref":"paper","font":{"size":20}}],"xaxis2":{"domain":[0.55,1.0],"anchor":"y2","title":{"font":{"size":16},"text":"time (s)"},"automargin":true},"yaxis2":{"domain":[0.0,1.0],"anchor":"x2","categoryorder":"total ascending","title":{"font":{"size":16}},"automargin":true},"title":{"pad":{"t":15,"b":15},"font":{"size":24},"text":"Timing engines: sklearn vs sklearnex","x":0.5,"y":1,"xanchor":"center","yanchor":"top","xref":"paper"},"legend":{"font":{"size":16},"traceorder":"grouped","groupclick":"togglegroup","bgcolor":"rgba(255, 255, 255, 0.5)"},"hoverlabel":{"font":{"size":16}},"font":{"size":12},"margin":{"l":50,"b":50,"r":0,"t":73,"pad":0},"showlegend":true},                        {"responsive": true}                    )}</script>        </div>
 </div>
 
 </div>

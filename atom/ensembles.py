@@ -282,7 +282,7 @@ class VotingClassifier(BaseVoting, VC):
         check_classification_targets(y)
         if isinstance(y, np.ndarray) and len(y.shape) > 1 and y.shape[1] > 1:
             raise NotImplementedError(
-                "Multilabel and multi-output classification is not supported."
+                "Multilabel and multioutput classification is not supported."
             )
 
         if self.voting not in ("soft", "hard"):

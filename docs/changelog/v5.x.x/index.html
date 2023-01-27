@@ -3123,9 +3123,10 @@
 </ul>
 <p><strong><img alt="🐛" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
 <ul>
-<li>Fixed multiple bugs related to sklearn's 1.2 update.</li>
+<li>Fixed multiple errors that appeared after sklearn's 1.2 update.</li>
 <li>Fixed a bug where hyperparameter tuning could fail for multi-metric runs.</li>
 <li>Fixed a bug where trials would try to report multiple times the same step.</li>
+<li>Fixed a bug where <a class="autorefs autorefs-internal" href="../../user_guide/models/#custom-models">custom models</a> could skip <a class="autorefs autorefs-internal" href="../../user_guide/training/#in-training-validation">in-training validation</a>.</li>
 <li>Fixed an issue where the bootstrapping estimators were trained using
   <code>partial_fit</code>.</li>
 </ul>

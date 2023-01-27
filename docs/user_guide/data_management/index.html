@@ -578,8 +578,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#multilabel" class="md-nav__link">
-    Multilabel
+  <a href="#multilabel-multioutput" class="md-nav__link">
+    Multilabel-multioutput
   </a>
   
 </li>
@@ -3178,8 +3178,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#multilabel" class="md-nav__link">
-    Multilabel
+  <a href="#multilabel-multioutput" class="md-nav__link">
+    Multilabel-multioutput
   </a>
   
 </li>
@@ -3365,8 +3365,8 @@ the <a class="autorefs autorefs-internal" href="#data-sets">data sets</a> sectio
 <p>Combinations of binary and multiclass target columns are treated as
 <a class="autorefs autorefs-internal" href="#multiclass-multioutput">multiclass-multioutput</a> tasks.</p>
 </div>
-<h4 id="multilabel">Multilabel</h4>
-<p>Multilabel multioutput is a classification task, labeling each sample
+<h4 id="multilabel-multioutput">Multilabel-multioutput</h4>
+<p>Multilabel-multioutput is a classification task, labeling each sample
 with <code>m</code> labels from <code>n_classes</code> possible classes, where <code>m</code> can be 0
 to <code>n_classes</code> inclusive. This can be thought of as predicting properties
 of a sample that are not mutually exclusive.</p>
@@ -3438,8 +3438,8 @@ target columns. Examples of such models are <a class="autorefs autorefs-internal
 <p>The majority of the models don't have integrated support for multioutput
 tasks. However, it's possible to still use them for such tasks, wrapping
 them in a meta-estimator capable of handling multiple target columns. For
-non-native multioutput models, ATOM does so automatically. For <a class="autorefs autorefs-internal" href="#multilabel">multilabel</a>
-tasks, the meta-estimator is:</p>
+non-native multioutput models, ATOM does so automatically. For
+<a class="autorefs autorefs-internal" href="#multilabel-multioutput">multilabel-multioutput</a> tasks, the meta-estimator is:</p>
 <ul>
 <li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.ClassifierChain.html">ClassifierChain</a></li>
 <li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.RegressorChain.html">RegressorChain</a></li>
@@ -3484,11 +3484,9 @@ through atom's <code>branch</code> property. A branch contains a specific pipeli
 the dataset transformed through that pipeline, and all data and utility
 attributes that refer to that dataset. Transformers and models called
 from atom use the dataset in the current branch, as well as data
-attributes such as <code>atom.dataset</code>. Use the branch's __repr__ to get an
-overview of the transformers in the branch. It's not allowed to change
-the data in a branch after fitting a model with it. Doing this would
-cause unexpected model behaviour and break down the plotting methods.
-Instead, create a new branch for every unique pipeline.</p>
+attributes such as <code>atom.dataset</code>. It's not allowed to change the data
+in a branch after fitting a model with it. Instead, create a new branch
+for every unique pipeline.</p>
 <p>By default, atom starts with one branch called "master". To start a new
 branch, set a new name to the property, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">branch</span> <span class="o">=</span> <span class="s2">&quot;undersample&quot;</span></code>.
 This creates a new branch from the current one. To create a branch from any
@@ -3498,15 +3496,17 @@ branch "oversample" from branch "master", even if the current branch is
 "undersample". To switch between existing branches, just type the name of
 the desired branch, e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">branch</span> <span class="o">=</span> <span class="s2">&quot;master&quot;</span></code> brings you back
 to the master branch. Note that every branch contains a unique copy of the
-whole dataset! Creating many branches can cause memory issues for large datasets.</p>
+whole dataset! Creating many branches can cause <a href="#memory-considerations">memory issues</a>
+for large datasets.</p>
 <p>See the <a class="autorefs autorefs-internal" href="../../examples/imbalanced_datasets/#example-imbalanced-datasets">Imbalanced datasets</a> or
 <a class="autorefs autorefs-internal" href="../../examples/feature_engineering/#example-feature-engineering">Feature engineering</a> examples for
 branching use cases.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-</div>
 <p>Always create a new branch if you want to change the dataset after fitting
-a model!</p>
+a model! Forcing a data change through the data property's <code>@setter</code> can
+cause unexpected model behaviour and break down the plotting methods.</p>
+</div>
 <p><br></p>
 <div align="center">
 <p><img alt="diagram_branch" src="../../img/diagram_branch.png" />
@@ -3515,16 +3515,16 @@ a model!</p>
 </div>
 <p><br></p>
 <h2 id="memory-considerations">Memory considerations</h2>
-<p>An atom instance stores one copy of the dataframe in each branch, and
-one copy of the initial dataset with which the instance is initialized
-(this copy is necessary to avoid data leakage during hyperparameter
-tuning and for some specific methods like <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-cross_validate">cross_validate</a>
-and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-reset">reset</a>). This initial copy is created as soon
-as there are no branches in the initial state (usually after calling the
-first data transformation) and it's stored in an internal branch called
-<code>og</code> (original). The og branch is not accessible by the user. If the
-dataset is occupying too much memory, consider using the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-shrink">shrink</a> method to convert the dtypes to their smallest
-possible matching dtype.</p>
+<p>An atom instance stores one copy of the dataset for each branch (this
+doesn't include the <a href="#data-sets">hokdout set</a>, which is only stored once),
+and one copy of the initial dataset with which the instance is initialized.
+This copy of the original dataset is necessary to avoid data leakage during
+hyperparameter tuning and for some specific methods like <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-cross_validate">cross_validate</a>
+and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-reset">reset</a>). It's created as soon as there are no
+branches in the initial state (usually after calling the first data
+transformation). If the dataset is occupying too much memory, consider
+using the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-shrink">shrink</a> method to convert the dtypes to
+their smallest possible matching dtype.</p>
 <p>Apart from the dataset itself, a model's <a class="autorefs autorefs-internal" href="../predicting/#prediction-attributes">prediction attributes</a> (e.g.
 <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">lr</span><span class="o">.</span><span class="n">predict_train</span></code>), metric scores and <a class="autorefs autorefs-internal" href="../plots/#shap">shap values</a>
 are also stored as attributes of the model to avoid having to recalculate

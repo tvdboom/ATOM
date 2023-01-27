@@ -604,8 +604,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     encode_target: bool, default=True
         Whether to encode the target column(s). This includes
         converting categorical columns to numerical, and binarizing
-        [multilabel][] columns. This transformation is ignored if `y`
-        is not provided.
+        [multilabel-multioutput][] columns. This transformation is
+        ignored if `y` is not provided.
 
     device: str, default="cpu"
         Device on which to train the estimators. Use any string
@@ -637,9 +637,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     missing: list
         Values that are considered "missing". Default values are: "",
-        "?", "None", "NA", "nan", "NaN" and "inf". Note that `None`,
-        `NaN`, `+inf` and `-inf` are always considered missing since
-        they are incompatible with sklearn estimators.
+        "?", "NA", "nan", "NaN", "none", "None", "inf", "-inf". Note
+        that `None`, `NaN`, `+inf` and `-inf` are always considered
+        missing since they are incompatible with sklearn estimators.
 
     mapping: dict
         Target values mapped to their respective encoded integer. Only
@@ -1943,9 +1943,9 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     ----------
     missing: list
         Values that are considered "missing". Default values are: "",
-        "?", "None", "NA", "nan", "NaN" and "inf". Note that `None`,
-        `NaN`, `+inf` and `-inf` are always considered missing since
-        they are incompatible with sklearn estimators.
+        "?", "NA", "nan", "NaN", "none", "None", "inf", "-inf". Note
+        that `None`, `NaN`, `+inf` and `-inf` are always considered
+        missing since they are incompatible with sklearn estimators.
 
     feature_names_in_: np.array
         Names of features seen during fit.
@@ -2401,8 +2401,6 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     n_features_in_: int
         Number of features seen during fit.
-        `NaN`, `+inf` and `-inf` are always considered missing since
-        they are incompatible with sklearn estimators.
 
     See Also
     --------

@@ -103,26 +103,12 @@ def test_branch_change():
     assert atom.pipeline.empty  # Has no Cleaner
 
 
-def test_branch_empty():
-    """Assert that an error is raised when name is empty."""
-    atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=".*have an empty name.*"):
-        atom.branch = ""
-
-
 def test_branch_existing_name():
     """Assert that an error is raised when the name already exists."""
     atom = ATOMClassifier(X10, y10, random_state=1)
     atom.branch = "b2"
     with pytest.raises(ValueError, match=".*already exists.*"):
         atom.branch = "b2_from_master"
-
-
-def test_branch_model_acronym():
-    """Assert that an error is raised when the name is a models' acronym."""
-    atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=".*model's acronym.*"):
-        atom.branch = "Lda"
 
 
 def test_branch_unknown_parent():
@@ -137,7 +123,7 @@ def test_branch_new():
     atom = ATOMClassifier(X10, y10, random_state=1)
     atom.clean()
     atom.branch = "b2"
-    assert list(atom._branches) == ["og", "master", "b2"]
+    assert len(atom._branches) == 2
 
 
 def test_branch_from_valid():
@@ -341,8 +327,8 @@ def test_load_transform_data_multiple_branches():
     atom2 = ATOMClassifier.load("atom_2", data=(X_bin, y_bin), transform_data=True)
     for branch in atom._branches:
         pd.testing.assert_frame_equal(
-            left=atom2._branches[branch]._data,
-            right=atom._branches[branch]._data,
+            left=atom2._branches[branch.name]._data,
+            right=atom._branches[branch.name]._data,
             check_dtype=False,
         )
 
@@ -481,14 +467,6 @@ def test_custom_params_to_method():
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.scale(verbose=2)
     assert atom.pipeline[0].verbose == 2
-
-
-def test_add_depending_models():
-    """Assert that an error is raised when the branch has dependent models."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    with pytest.raises(PermissionError, match=".*allowed to add transformers.*"):
-        atom.clean()
 
 
 def test_add_no_transformer():
@@ -928,10 +906,3 @@ def test_errors_are_removed():
     atom.run(["BNB", "Tree"], ht_params={"distributions": "max_depth"})  # Fails for BNB
     atom.run("BNB")  # Runs correctly
     assert not atom.errors  # Errors should be empty
-
-
-def test_trainer_becomes_atom():
-    """Assert that the parent trainer is converted to atom."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree")
-    assert atom is atom.tree.T

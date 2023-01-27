@@ -32,7 +32,7 @@ from atom.data_cleaning import (
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
 )
-from atom.models import MODELS, MODELS_ENSEMBLES
+from atom.models import MODELS
 from atom.nlp import TextCleaner, TextNormalizer, Tokenizer, Vectorizer
 from atom.plots import (
     DataPlot, FeatureSelectorPlot, HTPlot, PredictionPlot, ShapPlot,
@@ -43,7 +43,7 @@ from atom.training import (
 )
 from atom.utils import (
     DATAFRAME, FEATURES, INT, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET,
-    CustomDict, Predictor, Runner, Transformer, __version__, bk,
+    ClassMap, CustomDict, Predictor, Runner, Transformer, __version__, bk,
     check_dependency, check_is_fitted, check_scaling, composed, crash,
     custom_transform, fit_one, flt, get_cols, get_custom_scorer, has_task,
     infer_task, is_sparse, lst, method_to_log, sign, variable_return,
@@ -77,9 +77,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         test_size: SCALAR = 0.2,
         holdout_size: SCALAR | None = None,
     ):
-        BaseRunner.__init__(self)
-        DataPlot.__init__(self)
-
         self.index = index
         self.shuffle = shuffle
         self.stratify = stratify
@@ -87,21 +84,24 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.test_size = test_size
         self.holdout_size = holdout_size
 
+        self._multioutput = "auto"
         self._missing = [
-            None, np.nan, np.inf, -np.inf, "", "?", "NA", "nan", "NaN", "None", "inf"
+            None, np.nan, np.inf, -np.inf, "", "?", "NA",
+            "nan", "NaN", "none", "None", "inf", "-inf"
         ]
 
-        self._current = "master"  # Keeps track of the branch the user is in
-        self._branches = CustomDict({self._current: Branch(self, self._current)})
-
-        self._models = CustomDict()
-        self._metric = CustomDict()
+        self._models = ClassMap()
+        self._metric = ClassMap()
         self._errors = CustomDict()
 
         self.log("<< ================== ATOM ================== >>", 1)
 
-        # Prepare the provided data
-        self.branch._data, self.branch._idx, self.holdout = self._get_data(arrays, y=y)
+        self._og = None
+        self._current = Branch("master")
+        self._branches = ClassMap(self._current)
+
+        self.branch._data, self.branch._idx, holdout = self._get_data(arrays, y=y)
+        self.holdout = self.branch._holdout = holdout
 
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
@@ -125,18 +125,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self.log(f"Python build: {python_build()}", 3)
         self.log(f"ATOM version: {__version__}", 3)
 
-        self.log("", 1)  # Add empty rows around stats for cleaner look
+        # Add empty rows around stats for cleaner look
+        self.log("", 1)
         self.stats(1)
         self.log("", 1)
 
     def __repr__(self) -> str:
         out = f"{self.__class__.__name__}"
         out += "\n --> Branches:"
-        if len(self._branches.min("og")) == 1:
-            out += f" {self._current}"
+        if len(branches := self._branches) == 1:
+            out += f" {self._current.name}"
         else:
-            for branch in self._branches.min("og"):
-                out += f"\n   --> {branch}{' !' if branch == self._current else ''}"
+            for branch in branches:
+                out += f"\n   --> {branch.name}{' !' if branch is self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
         if self.errors:
@@ -153,43 +154,36 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     @typechecked
     def branch(self, name: str):
         """Change branch or create a new one."""
-        if name in self._branches and name.lower() != "og":
+        if name in self._branches:
             if self.branch is self._branches[name]:
                 self.log(f"Already on branch {self.branch.name}.", 1)
             else:
-                self._current = self._branches[name].name
-                self.log(f"Switched to branch {self._current}.", 1)
+                self._current = self._branches[name]
+                self.log(f"Switched to branch {self._current.name}.", 1)
         else:
             # Branch can be created from current or another one
             if "_from_" in name:
                 new, parent = name.split("_from_")
+
+                # Check if the parent branch exists
+                if parent not in self._branches:
+                    raise ValueError(
+                        "The selected branch to split from does not exist! Use "
+                        "atom.status() for an overview of the available branches."
+                    )
+                else:
+                    parent = self._branches[parent]
+
             else:
                 new, parent = name, self._current
 
-            # Check if the new name is valid
-            if not new:
-                raise ValueError("A branch can't have an empty name!")
-            elif new in self._branches:  # Can happen when using _from_
+            # Check if the new branch is not in existing
+            if new in self._branches:  # Can happen when using _from_
                 raise ValueError(f"Branch {self._branches[new].name} already exists!")
-            else:
-                for model in MODELS_ENSEMBLES.values():
-                    if new.lower().startswith(model.acronym.lower()):
-                        raise ValueError(
-                            "Invalid name for the branch. The name of a branch may "
-                            f"not begin with a model's acronym, and {model.acronym} "
-                            f"is the acronym of the {model._fullname} model."
-                        )
 
-            # Check if the parent branch exists
-            if parent not in self._branches:
-                raise ValueError(
-                    "The selected branch to split from does not exist! Use "
-                    "atom.status() for an overview of the available branches."
-                )
-
-            self._branches[new] = Branch(self, new, parent=self._branches[parent])
-            self._current = new
-            self.log(f"New branch {self._current} successfully created.", 1)
+            self._current = Branch(name=new, parent=parent)
+            self._branches.append(self._current)
+            self.log(f"New branch {new} successfully created.", 1)
 
     @property
     def missing(self) -> list:
@@ -214,13 +208,11 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         """Whether the feature set is scaled.
 
         A data set is considered scaled when it has mean=0 and std=1,
-        or when atom has a scaler in the pipeline. Returns None for
-        [sparse datasets][].
+        or when there is a scaler in the pipeline. Binary columns (only
+        0s and 1s) are excluded from the calculation.
 
         """
-        if not is_sparse(self.X):
-            est_names = [est.__class__.__name__.lower() for est in self.pipeline]
-            return check_scaling(self.X) or any("scaler" in name for name in est_names)
+        return check_scaling(self.X, pipeline=self.pipeline)
 
     @property
     def duplicates(self) -> SERIES:
@@ -294,7 +286,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             df = pd.DataFrame(data, index=pd.MultiIndex.from_tuples(index))
 
             # Non-multioutput has single level index (for simplicity)
-            if not self._is_multioutput:
+            if "multioutput" not in self.task:
                 df.index = df.index.droplevel(0)
 
             return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
@@ -342,9 +334,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             kwargs["objective"] = self._metric[0].name
         elif kwargs.get("objective"):
             if not self._metric:
-                self._metric = CustomDict(
-                    {(s := get_custom_scorer(kwargs["objective"])).name: s}
-                )
+                self._metric = ClassMap(get_custom_scorer(kwargs["objective"]))
             elif kwargs["objective"] != self._metric[0].name:
                 raise ValueError(
                     "Invalid value for the objective parameter! The metric "
@@ -375,20 +365,29 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 self._add_transformer(est)
                 self.log(f" --> Adding {est.__class__.__name__} to the pipeline...", 2)
             else:
-                for key, value in MODELS.items():
-                    m = value(self)
-                    if m._est_class.__name__ == est._component_obj.__class__.__name__:
-                        m._estimator = est._component_obj
+                est_name = est._component_obj.__class__.__name__
+                for m in MODELS:
+                    if m._estimators.get(self.goal) == est_name:
+                        model = m(
+                            goal=self.goal,
+                            metric=self._metric,
+                            multioutput=self.multioutput,
+                            og=self.og,
+                            branch=self.branch,
+                            **{x: getattr(self, x) for x in BaseTransformer.attrs},
+                        )
+                        model._estimator = est._component_obj
                         break
 
                 # Save metric scores on train and test set
-                for metric in self._metric.values():
-                    m._get_score(metric, "train")
-                    m._get_score(metric, "test")
+                for metric in self._metric:
+                    model._get_score(metric, "train")
+                    model._get_score(metric, "test")
 
-                self._models.update({m.name: m})
+                self._models.append(model)
                 self.log(
-                    f" --> Adding model {m._fullname} ({m.name}) to the pipeline...", 2
+                    f" --> Adding model {model._fullname} "
+                    f"({model.name}) to the pipeline...", 2
                 )
                 break  # Avoid non-linear pipelines
 
@@ -448,7 +447,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         else:
             distributions = lst(distributions)
 
-        columns = self._get_columns(columns, only_numerical=True)
+        columns = self.branch._get_columns(columns, only_numerical=True)
 
         df = pd.DataFrame(
             index=pd.MultiIndex.from_product(
@@ -548,12 +547,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Transformed feature set with shape=(n_samples, n_features).
             If None, X is ignored in the transformers.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, dataframe or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored in the transformers.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers. If None, it uses the
@@ -594,8 +596,13 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
     ):
         """Loads an atom instance from a pickle file.
 
-        If the instance was saved using `save_data=False`, it's possible
-        to load new data into it and apply all data transformations.
+        If the instance was [saved][self-save] using `save_data=False`,
+        it's possible to load new data into it and apply all data
+        transformations.
+
+        !!! note
+            The loaded instance's current branch is the same branch as it
+            was when saved.
 
         Parameters
         ----------
@@ -660,7 +667,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         )
 
         if data is not None:
-            if any(branch._data is not None for branch in atom._branches.values()):
+            if any(branch._data is not None for branch in atom._branches):
                 raise ValueError(
                     f"The loaded {atom.__class__.__name__} "
                     "instance already contains data."
@@ -671,28 +678,35 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
             # Apply transformations per branch
             step = {}  # Current step in the pipeline per branch
-            for b1, v1 in atom._branches.items():
-                branch = atom._branches[b1]
-
+            for b1 in atom._branches:
                 # Provide the input data if not already filled from another branch
-                if branch._data is None:
-                    branch._data, branch._idx = data, idx
+                if b1._data is None:
+                    b1._data, b1._idx = data, idx
 
                 if transform_data:
-                    if len(atom._branches) > 2 and not v1.pipeline.empty:
-                        atom.log(f"Transforming data for branch {b1}:", 1)
+                    if len(atom._branches) > 2 and not b1.pipeline.empty:
+                        atom.log(f"Transforming data for branch {b1.name}:", 1)
 
-                    for i, est1 in enumerate(v1.pipeline):
+                    for i, est1 in enumerate(b1.pipeline):
                         # Skip if the transformation was already applied
-                        if step.get(b1, -1) < i:
-                            custom_transform(est1, branch, verbose=verbose)
+                        if step.get(b1.name, -1) < i:
+                            custom_transform(est1, b1, verbose=verbose)
 
-                            for b2, v2 in atom._branches.items():
-                                if b1 != b2 and v2.pipeline.get(i) is est1:
+                            if atom.index is False:
+                                b1._data = b1.dataset.reset_index(drop=True)
+                                b1._idx = [
+                                    b1._idx[0],
+                                    b1._data.index[:len(b1._idx[1])],
+                                    b1._data.index[-len(b1._idx[2]):],
+                                ]
+
+                            for b2 in atom._branches:
+                                if b1.name != b2.name and b2.pipeline.get(i) is est1:
                                     # Update the data and step for the other branch
-                                    atom._branches[b2]._data = deepcopy(branch._data)
-                                    atom._branches[b2]._idx = deepcopy(branch._idx)
-                                    step[b2] = i
+                                    atom._branches[b2.name]._data = deepcopy(b1._data)
+                                    atom._branches[b2.name]._idx = deepcopy(b1._idx)
+                                    atom._branches[b2.name]._holdout = b1._holdout
+                                    step[b2.name] = i
 
         atom.log(f"{atom.__class__.__name__} successfully loaded.", 1)
 
@@ -710,8 +724,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._delete_models(self._get_models())
 
         # Recreate the master branch from original and drop rest
-        self._current = "master"
-        self._branches = CustomDict({self._current: self._get_og_branches()[0]})
+        self._current = self.og
+        self._current.name = "master"
+        self._branches = ClassMap(self._current)
+        self._og = None  # Reset original branch
 
         self.log(f"{self.__class__.__name__} successfully reset.", 1)
 
@@ -777,7 +793,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         fastai/tabular/core.py
 
         """
-        columns = self._get_columns(columns)
+        columns = self.branch._get_columns(columns)
         exclude_types = ["category", "datetime64[ns]", "bool"]
 
         # Build column filter and types
@@ -937,12 +953,15 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             X is ignored. If None,
             X is ignored in the transformers.
 
-        y: int, str, dict, sequence or None, default=None
+        y: int, str, dict, sequence, dataframe or None, default=None
             Target column corresponding to X.
-                - If None: y is ignored in the transformers.
-                - If int: Position of the target column in X.
-                - If str: Name of the target column in X.
-                - Else: Array with shape=(n_samples,) to use as target.
+
+            - If None: y is ignored.
+            - If int: Position of the target column in X.
+            - If str: Name of the target column in X.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers. If None, it uses the
@@ -1023,7 +1042,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Additional keyword arguments for the transformer's fit method.
 
         """
-        if self.branch._get_depending_models():
+        if any(m.branch is self.branch for m in self._models):
             raise PermissionError(
                 "It's not allowed to add transformers to the branch "
                 "after it has been used to train models. Create a "
@@ -1043,7 +1062,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         if not hasattr(transformer, "_train_only"):
             transformer._train_only = train_only
         if columns is not None:
-            inc, exc = self._get_columns(columns, return_inc_exc=True)
+            inc, exc = self.branch._get_columns(columns, return_inc_exc=True)
             transformer._cols = [[c for c in inc if c != self.target], exc]
 
         if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
@@ -1052,14 +1071,19 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
             fit_one(transformer, self.X_train, self.y_train, **fit_params)
 
-        # Create an og branch before transforming (if it doesn't exist already)
-        if self._get_og_branches() == [self.branch]:
-            self._branches.insert(0, "og", Branch(self, "og", parent=self.branch))
+        # Store data in og branch
+        if not self._og:
+            self._og = Branch(name="og", parent=self.branch)
 
         custom_transform(transformer, self.branch)
 
-        # Clear cached holdout
-        self.branch.__dict__.pop("holdout", None)
+        if self.index is False:
+            self.branch._data = self.branch.dataset.reset_index(drop=True)
+            self.branch._idx = [
+                self.branch._idx[0],
+                self.branch._data.index[:len(self.branch._idx[1])],
+                self.branch._data.index[-len(self.branch._idx[2]):],
+            ]
 
         # Add the estimator to the pipeline
         self.branch.pipeline = pd.concat(
@@ -1225,7 +1249,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             of the target class distribution per data set.
 
         """
-        if self._is_multioutput:
+        if "multioutput" in self.task:
             raise ValueError("The balance method does not support multioutput tasks.")
 
         columns = kwargs.pop("columns", None)
@@ -1818,11 +1842,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             **self._prepare_kwargs(kwargs, sign(FeatureSelector)),
         )
 
+        # Add estimator to support multioutput tasks
+        feature_selector._multioutput = self.multioutput
+
         self._add_transformer(feature_selector, columns=columns)
 
         # Attach used attributes to atom's branch
-        for attr in ("collinear", "feature_importance", str(strategy).lower()):
-            if getattr(feature_selector, attr, None) is not None:
+        for attr in ("collinear", str(strategy).lower()):
+            if getattr(feature_selector, attr) is not None:
                 setattr(self.branch, attr, getattr(feature_selector, attr))
 
     # Training methods ============================================= >>
@@ -1847,10 +1874,10 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         if self._metric:
             # If the metric is empty, assign the existing one
             if metric is None:
-                metric = list(self._metric.values())
+                metric = list(self._metric)
             else:
                 # If there's a metric, it should be the same as previous run
-                new_metric = [get_custom_scorer(m).name for m in lst(metric)]
+                new_metric = ClassMap(get_custom_scorer(m).name for m in lst(metric))
                 if new_metric != list(self._metric):
                     raise ValueError(
                         "Invalid value for the metric parameter! The metric "
@@ -1880,34 +1907,34 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             )
 
         try:
-            trainer._aesthetics = self._aesthetics
-            trainer._tracking_params = self._tracking_params
+            # Transfer attributes
+            trainer.index = self.index
+            trainer._og = self._og
             trainer._current = self._current
             trainer._branches = self._branches
             trainer._multioutput = self._multioutput
-            trainer.scaled = self.scaled
+
             trainer.run()
         finally:
             # Catch errors and pass them to atom's attribute
             for model, error in trainer.errors.items():
                 self._errors[model] = error
-                self._models.pop(model)
+                self._delete_models(model)
 
         # Overwrite models with same name as new ones
         for model in trainer._models:
-            if model in self._models:
-                self._models.pop(model)
+            if model.name in self._models:
+                self._delete_models(model.name)
                 self.log(
-                    f"Consecutive runs of model {model}. The former "
-                    "model has been overwritten.", 1, severity="warning"
+                    f"Consecutive runs of model {model.name}. "
+                    "The former model has been overwritten.", 1
                 )
 
-        self._models.update(trainer._models)
+        self._models.extend(trainer._models)
         self._metric = trainer._metric
 
-        for model in self._models.values():
+        for model in self._models:
             self._errors.pop(model.name)  # Remove model from errors (if there)
-            model.T = self  # Change the model's parent class from trainer to atom
 
     @composed(crash, method_to_log, typechecked)
     def run(

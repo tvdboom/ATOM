@@ -280,12 +280,12 @@ def test_goal_attribute():
     # For classification tasks
     selector = FeatureSelector(strategy="sfm", solver="LGB_class")
     selector.fit(X_bin, y_bin)
-    assert selector.goal == "class"
+    assert selector._estimator.estimator.__class__.__name__.endswith("Classifier")
 
     # For regression tasks
     selector = FeatureSelector(strategy="sfm", solver="LGB_reg")
     selector.fit(X_reg, y_reg)
-    assert selector.goal == "reg"
+    assert selector._estimator.estimator.__class__.__name__.endswith("Regressor")
 
 
 def test_solver_parameter_invalid_value():
@@ -402,7 +402,6 @@ def test_univariate_strategy_custom_solver():
     selector = FeatureSelector("univariate", solver=f_regression, n_features=9)
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 9
-    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_pca_strategy():
@@ -470,7 +469,6 @@ def test_sfm_strategy_fitted_solver():
     )
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 7
-    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_sfm_strategy_not_fitted_solver():
@@ -480,7 +478,6 @@ def test_sfm_strategy_not_fitted_solver():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 5
-    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_sfs_strategy():
@@ -506,7 +503,6 @@ def test_RFE_strategy():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 13
-    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_rfecv_strategy_before_pipeline_classification():
@@ -519,7 +515,6 @@ def test_rfecv_strategy_before_pipeline_classification():
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 4
-    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_rfecv_strategy_before_pipeline_regression():
@@ -527,7 +522,6 @@ def test_rfecv_strategy_before_pipeline_regression():
     selector = FeatureSelector("rfecv", solver="RF_reg", n_features=16, random_state=1)
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
-    assert set(selector.feature_importance.index) == set(X.columns)
 
 
 def test_kwargs_parameter_threshold():
@@ -645,6 +639,19 @@ def test_advanced_regression_scoring():
 
 
 def test_advanced_custom_objective_function():
+    """Assert that a custom objective function can be used."""
+    selector = FeatureSelector(
+        strategy="gwo",
+        solver="tree_class",
+        objective_function=lambda *args: 1,
+        n_iteration=2,
+        population_size=2,
+    )
+    selector = selector.fit(X_bin, y_bin)
+    assert selector.gwo.objective_function.__name__ == "<lambda>"
+
+
+def test_multioutput_tasks():
     """Assert that a custom objective function can be used."""
     selector = FeatureSelector(
         strategy="gwo",

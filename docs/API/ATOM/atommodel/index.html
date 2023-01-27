@@ -3073,7 +3073,7 @@
 
 <h1 id="atommodel">ATOMModel</h1>
 <hr />
-<p><a id='ATOMModel'></a><div class='sign'><em>function</em> atom.api.<strong style='color:#008AB8'>ATOMModel</strong>(estimator, acronym=None, needs_scaling=False, native_multioutput=False, has_validation=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L22>[source]</a></span></div>Convert an estimator to a model that can be ingested by atom.</p>
+<p><a id='ATOMModel'></a><div class='sign'><em>function</em> atom.api.<strong style='color:#008AB8'>ATOMModel</strong>(estimator, name=None, acronym=None, needs_scaling=False, native_multioutput=False, has_validation=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L22>[source]</a></span></div>Convert an estimator to a model that can be ingested by atom.</p>
 <p>This function adds the relevant attributes to the estimator so
 that they can be used by atom. Note that only estimators that follow
 <a href="https://scikit-learn.org/stable/developers/develop.html">sklearn's API</a> are compatible.</p>
@@ -3081,10 +3081,16 @@ that they can be used by atom. Note that only estimators that follow
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='atommodel-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>
 Custom estimator. Should implement a <code>fit</code> and <code>predict</code> method.</p>
+<p></div><a id='atommodel-name'></a><strong>name: str or None, default=None</strong><br><div markdown class='param'>
+Name for the model. This is the value used to call the
+model from atom. The value should start with the model's
+<code>acronym</code> when specified. If None, the capital letters of the
+estimator's name are used (only if two or more, else it uses
+the entire name).</p>
 <p></div><a id='atommodel-acronym'></a><strong>acronym: str or None, default=None</strong><br><div markdown class='param'>
-Model's acronym. Used to call the model from atom. If None, the
-capital letters in the estimator's __name__ are used (only if
-two or more, else it uses the entire __name__).</p>
+Model's acronym. If None, it uses the model's <code>name</code>. Specify
+this parameter when you want to train multiple custom models
+that share the same estimator.</p>
 <p></div><a id='atommodel-needs_scaling'></a><strong>needs_scaling: bool, default=False</strong><br><div markdown class='param'>
 Whether the model should use <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>.</p>
 <p></div><a id='atommodel-native_multioutput'></a><strong>native_multioutput: bool, default=False</strong><br><div markdown class='param'>
@@ -3104,7 +3110,7 @@ Clone of the provided estimator with custom attributes.</p>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ransac</span> <span class="o">=</span>  <span class="n">ATOMModel</span><span class="p">(</span>
 <span class="gp">... </span>     <span class="n">estimator</span><span class="o">=</span><span class="n">RANSACRegressor</span><span class="p">(),</span>
-<span class="gp">... </span>     <span class="n">acronym</span><span class="o">=</span><span class="s2">&quot;RANSAC&quot;</span><span class="p">,</span>
+<span class="gp">... </span>     <span class="n">name</span><span class="o">=</span><span class="s2">&quot;RANSAC&quot;</span><span class="p">,</span>
 <span class="gp">... </span>     <span class="n">needs_scaling</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="gp">... </span> <span class="p">)</span>
 
@@ -3115,6 +3121,7 @@ Clone of the provided estimator with custom attributes.</p>
 <span class="go">Models: RANSAC</span>
 <span class="go">Metric: r2</span>
 
+
 <span class="go">Results for RANSACRegressor:</span>
 <span class="go">Fit ---------------------------------------------</span>
 <span class="go">Train evaluation --&gt; r2: -2.1784</span>
@@ -3122,6 +3129,7 @@ Clone of the provided estimator with custom attributes.</p>
 <span class="go">Time elapsed: 0.072s</span>
 <span class="go">-------------------------------------------------</span>
 <span class="go">Total time: 0.072s</span>
+
 
 <span class="go">Final results ==================== &gt;&gt;</span>
 <span class="go">Total time: 0.072s</span>

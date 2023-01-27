@@ -10,10 +10,12 @@ Description: Module containing the BaseModel class.
 from __future__ import annotations
 
 import os
+import re
 from copy import deepcopy
 from datetime import datetime as dt
 from functools import cached_property, lru_cache
 from importlib import import_module
+from logging import Logger
 from typing import Any, Callable
 from unittest.mock import patch
 
@@ -41,29 +43,107 @@ from sklearn.utils.metaestimators import available_if
 from starlette.requests import Request
 from typeguard import typechecked
 
+from atom.basetracker import BaseTracker
+from atom.basetransformer import BaseTransformer
 from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     DATAFRAME, DF_ATTRS, FEATURES, FLOAT, INT, INT_TYPES, PANDAS, SEQUENCE,
-    SERIES, TARGET, CustomDict, PlotCallback, Predictor, Scorer,
-    ShapExplanation, TrialsCallback, bk, check_dependency, composed, crash,
-    custom_transform, estimator_has_attr, flt, get_cols, get_custom_scorer,
-    get_feature_importance, has_task, it, lst, merge, method_to_log, rnd,
-    score, sign, time_to_str, to_pandas, variable_return,
+    SERIES, TARGET, ClassMap, CustomDict, Estimator, PlotCallback, Predictor,
+    Scorer, ShapExplanation, TrialsCallback, bk, check_dependency,
+    check_scaling, composed, crash, custom_transform, estimator_has_attr,
+    export_pipeline, flt, get_best_score, get_cols, get_custom_scorer,
+    get_feature_importance, has_task, infer_task, it, lst, merge,
+    method_to_log, rnd, score, sign, time_to_str, to_pandas, variable_return,
 )
 
 
-class BaseModel(HTPlot, PredictionPlot, ShapPlot):
+class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     """Base class for all models.
 
     Parameters
     ----------
-    *args
-        Parent class and (optionally) model's name.
+    name: str or None, default=None
+        Name for the model. If None, the name is the same as the
+        model's acronym.
 
-    fast_init: bool, default=False
-        Whether to initialize the model just for the estimator.
+    index: bool, int, str or sequence, default=False
+        Handle the index in the resulting dataframe.
+
+    goal: str, default="class"
+        Model's goal. Choose from "class" for classification or
+        "reg" for regression.
+
+    metric: ClassMap or None, default=None
+        Metric on which to fit the model.
+
+    og: Branch or None, default=None
+        Original branch.
+
+    branch: Branch or None, default=None
+        Current branch.
+
+    multioutput: Estimator or None, default=None
+        Meta-estimator for multioutput tasks.
+
+    n_jobs: int, default=1
+        Number of cores to use for parallel processing.
+
+        - If >0: Number of cores to use.
+        - If -1: Use all available cores.
+        - If <-1: Use number of cores - 1 + `n_jobs`.
+
+    device: str, default="cpu"
+        Device on which to train the estimators. Use any string
+        that follows the [SYCL_DEVICE_FILTER][] filter selector,
+        e.g. `device="gpu"` to use the GPU. Read more in the
+        [user guide][accelerating-pipelines].
+
+    engine: str, default="sklearn"
+        Execution engine to use for the estimators. Refer to the
+        [user guide][accelerating-pipelines] for an explanation
+        regarding every choice. Choose from:
+
+        - "sklearn" (only if device="cpu")
+        - "sklearnex"
+        - "cuml" (only if device="gpu")
+
+    backend: str, default="loky"
+        Parallelization backend. Choose from:
+
+        - "loky"
+        - "multiprocessing"
+        - "threading"
+        - "ray"
+
+    verbose: int, default=0
+        Verbosity level of the class. Choose from:
+
+        - 0 to not print anything.
+        - 1 to print basic information.
+        - 2 to print detailed information.
+
+    warnings: bool or str, default=False
+        - If True: Default warning action (equal to "default").
+        - If False: Suppress all warnings (equal to "ignore").
+        - If str: One of python's [warnings filters][warnings].
+
+        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        ATOM can't manage warnings that go from C/C++ code to stdout.
+
+    logger: str, Logger or None, default=None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic name.
+        - Else: Python `logging.Logger` instance.
+
+    experiment: str or None, default=None
+        Name of the [mlflow experiment][experiment] to use for tracking.
+        If None, no mlflow tracking is performed.
+
+    random_state: int or None, default=None
+        Seed used by the random number generator. If None, the random
+        number generator is the `RandomState` used by `np.random`.
 
     """
 
@@ -82,19 +162,49 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         "predict_proba_holdout",
     )
 
-    def __init__(self, *args, fast_init: bool = False):
-        super().__init__()
+    def __init__(
+        self,
+        name: str | None = None,
+        index: bool | INT | str | SEQUENCE = True,
+        goal: str = "class",
+        metric: ClassMap | None = None,
+        og: Any | None = None,
+        branch: Any | None = None,
+        multioutput: Estimator | None = None,
+        n_jobs: INT = 1,
+        device: str = "cpu",
+        engine: str = "sklearn",
+        backend: str = "loky",
+        verbose: INT = 0,
+        warnings: bool | str = False,
+        logger: str | Logger | None = None,
+        experiment: str | None = None,
+        random_state: INT | None = None,
+    ):
+        super().__init__(
+            n_jobs=n_jobs,
+            device=device,
+            engine=engine,
+            backend=backend,
+            verbose=verbose,
+            warnings=warnings,
+            logger=logger,
+            experiment=experiment,
+            random_state=random_state,
+        )
 
-        self.T = args[0]  # Parent class
+        self._name = name or self.acronym
+        self.index = index
+        self.goal = goal
+        self._metric = metric
+        self.multioutput = multioutput
 
         self.scaler = None
         self.app = None
         self.dashboard = None
 
         self._run = None  # mlflow run (if experiment is active)
-        self._name = self.acronym if len(args) == 1 else args[1]
-        self._group = self.name  # sh and ts models belong to the same group
-
+        self._group = self._name  # sh and ts models belong to the same group
         self._evals = CustomDict()
         self._shap = ShapExplanation(self)
 
@@ -114,18 +224,27 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self._bootstrap = None
         self._time_bootstrap = 0
 
-        # Skip this (slower) part if not called for the estimator
-        if not fast_init:
-            self.branch = self.T.branch
+        # Skip this part if not called for the estimator
+        if branch:
+            self.og = og or branch
+            self.branch = branch
             self._train_idx = len(self.branch._idx[1])  # Can change for sh and ts
-            if getattr(self, "needs_scaling", None) and self.T.scaled is False:
+
+            self.task = infer_task(self.y, goal=self.goal)
+            if self.needs_scaling and not check_scaling(self.X, pipeline=self.pipeline):
                 self.scaler = Scaler().fit(self.X_train)
 
     def __repr__(self) -> str:
-        return self.estimator.__repr__()
+        out_1 = f"{self._fullname}"
+        out_2 = f" --> Estimator: {self._est_class.__name__}"
+        out_3 = [
+            f"{m.name}: {rnd(get_best_score(self, i))}"
+            for i, m in enumerate(self._metric)
+        ]
+        return f"{out_1}\n{out_2}\n --> Evaluation: {'   '.join(out_3)}"
 
     def __getattr__(self, item: str) -> Any:
-        if item in self.__dict__.get("branch")._get_attrs():
+        if item in dir(self.__dict__.get("branch")) and not item.startswith("_"):
             return getattr(self.branch, item)  # Get attr from branch
         elif item in self.__dict__.get("branch").columns:
             return self.branch.dataset[item]  # Get column
@@ -165,23 +284,20 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Estimator's class (not instance).
 
         """
-        # Goal can fail when model initialized with fast_init=True
-        estimator = self._estimators.get(self.T.goal, self._estimators[0])
-
         try:
-            module = import_module(f"{self.T.engine}.{self._module}")
-            return getattr(module, estimator)
+            module = import_module(f"{self.engine}.{self._module}")
+            return getattr(module, self._estimators[self.goal])
         except (ModuleNotFoundError, AttributeError):
             if "sklearn" in self.supports_engines:
                 module = import_module(f"sklearn.{self._module}")
             else:
                 module = import_module(self._module)
-            return getattr(module, estimator)
+            return getattr(module, self._estimators[self.goal])
 
     @property
     def _gpu(self) -> bool:
         """Return whether the model uses a GPU implementation."""
-        return "gpu" in self.T.device.lower()
+        return "gpu" in self.device.lower()
 
     def _check_est_params(self):
         """Check that the parameters are valid for the estimator.
@@ -288,20 +404,21 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         """
         for param in ("n_jobs", "random_state"):
             if param in sign(self._est_class):
-                params[param] = params.pop(param, getattr(self.T, param))
+                params[param] = params.pop(param, getattr(self, param))
 
-        if self.T._is_multioutput and not self.native_multioutput and self.T.multioutput:
-            if callable(self.T.multioutput):
+        if "multioutput" in self.task and not self.native_multioutput and self.multioutput:
+            if callable(self.multioutput):
                 kwargs = {}
                 for param in ("n_jobs", "random_state"):
-                    if param in sign(self.T.multioutput):
-                        kwargs[param] = getattr(self.T, param)
+                    if param in sign(self.multioutput):
+                        kwargs[param] = getattr(self, param)
 
-                return self.T.multioutput(self._est_class(**params), **kwargs)
+                return self.multioutput(self._est_class(**params), **kwargs)
             else:
                 # Assign estimator to first parameter of meta-estimator
-                key = list(sign(self.T.multioutput.__init__))[0]
-                return self.T.multioutput.set_params(**{key: self._est_class(**params)})
+                return self.multioutput.set_params(
+                    **{list(sign(self.multioutput.__init__))[0]: self._est_class(**params)}
+                )
         else:
             return self._est_class(**params)
 
@@ -347,7 +464,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         if self.has_validation and hasattr(estimator, "partial_fit") and validation:
             if not trial:
                 # In-training validation is skipped during hyperparameter tuning
-                m = self.T._metric[0].name
+                m = self._metric[0].name
                 self._evals = CustomDict({f"{m}_train": [], f"{m}_test": []})
 
             # Loop over first parameter in estimator
@@ -359,9 +476,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
             for step in range(steps):
                 kwargs = {}
-                if self.T.goal.startswith("class"):
-                    if self.T._is_multioutput:
-                        if self.T.multioutput is None:
+                if self.goal.startswith("class"):
+                    if "multioutput" in self.task:
+                        if self.multioutput is None:
                             # Native multioutput models (e.g., MLP, Ridge, ...)
                             kwargs["classes"] = list(range(self.y.shape[1]))
                         else:
@@ -369,16 +486,16 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     else:
                         kwargs["classes"] = np.unique(self.y)
 
-                with joblib.parallel_backend(backend=self.T.backend):
+                with joblib.parallel_backend(backend=self.backend):
                     estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
-                val_score = self.T._metric[0](estimator, *validation)
+                val_score = self._metric[0](estimator, *validation)
                 if not trial:
-                    self._evals[0].append(self.T._metric[0](estimator, *data))
+                    self._evals[0].append(self._metric[0](estimator, *data))
                     self._evals[1].append(val_score)
 
                 # Multi-objective optimization doesn't support pruning
-                if trial and len(self.T._metric) == 1:
+                if trial and len(self._metric) == 1:
                     trial.report(val_score, step)
 
                     if trial.should_prune():
@@ -391,7 +508,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                         raise TrialPruned()
 
         else:
-            with joblib.parallel_backend(backend=self.T.backend):
+            with joblib.parallel_backend(backend=self.backend):
                 estimator.fit(*data, **est_params_fit)
 
         return estimator
@@ -411,7 +528,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             out = "   ".join(
                 [
                     f"{name}: {rnd(lst(self.score_test)[i])}"
-                    for i, name in enumerate(self.T._metric)
+                    for i, name in enumerate(self._metric.keys())
                 ]
             )
         else:
@@ -419,7 +536,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 [
                     f"{name}: {rnd(self.bootstrap[name].mean())} "
                     f"\u00B1 {rnd(self.bootstrap[name].std())}"
-                    for name in self.T._metric
+                    for name in self._metric.keys()
                 ]
             )
 
@@ -471,7 +588,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Metric score on the selected data set.
 
         """
-        if dataset == "holdout" and self.T.holdout is None:
+        if dataset == "holdout" and self.holdout is None:
             raise ValueError("No holdout data set available.")
 
         has_pred_proba = hasattr(self.estimator, "predict_proba")
@@ -489,11 +606,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 attr = "predict_proba"
             elif has_dec_func:
                 attr = "decision_function"
-        elif self.T.task.startswith("bin") and has_pred_proba:
+        elif self.task.startswith("bin") and has_pred_proba:
             attr = "predict_proba"  # Needed to use threshold parameter
 
         y_pred = getattr(self, f"{attr}_{dataset}")
-        if self.T.task.startswith("bin") and attr == "predict_proba":
+        if self.task.startswith("bin") and attr == "predict_proba":
             y_pred = y_pred.iloc[:, 1]
 
             # Exclude metrics that use probability estimates (e.g. ap, auc)
@@ -596,10 +713,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 """
                 nonlocal estimator
 
-                X_subtrain = og.dataset.iloc[train_idx, :-1]
-                y_subtrain = og.dataset.iloc[train_idx, -1]
-                X_val = og.dataset.iloc[val_idx, :-1]
-                y_val = og.dataset.iloc[val_idx, -1]
+                X_subtrain = self.og.dataset.iloc[train_idx, :-self.branch._idx[0]]
+                y_subtrain = self.og.dataset.iloc[train_idx, -self.branch._idx[0]:]
+                X_val = self.og.dataset.iloc[val_idx, :-self.branch._idx[0]]
+                y_val = self.og.dataset.iloc[val_idx, -self.branch._idx[0]:]
 
                 # Transform subsets if there is a pipeline
                 if len(pl := self.export_pipeline(verbose=0)[:-1]) > 0:
@@ -623,7 +740,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 )
 
                 # Calculate metrics on the validation set
-                return [m(estimator, X_val, y_val) for m in self.T._metric.values()]
+                return [m(estimator, X_val, y_val) for m in self._metric]
 
             # Start trial ========================================== >>
 
@@ -638,13 +755,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 **{**self._est_params, **self._trial_to_est(params)}
             )
 
-            # Get original branch to define subsets
-            og = self.T._get_og_branches()[0]
-
             # Skip if the eval function has already been evaluated at this point
             if dict(params) not in self.trials["params"].tolist():
                 if self._ht.get("cv", 1) == 1:
-                    if self.T.goal == "class":
+                    if self.goal == "class":
                         split = StratifiedShuffleSplit  # Keep % of samples per class
                     else:
                         split = ShuffleSplit
@@ -652,15 +766,15 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     # Get the ShuffleSplit cross-validator object
                     fold = split(
                         n_splits=1,
-                        test_size=len(og.test) / og.shape[0],
-                        random_state=trial.number + (self.T.random_state or 0),
+                        test_size=len(self.og.test) / self.og.shape[0],
+                        random_state=trial.number + (self.random_state or 0),
                     )
 
                     # Fit model just on the one fold
-                    score = fit_model(*next(fold.split(og.X_train, og.y_train)))
+                    score = fit_model(*next(fold.split(self.og.X_train, get_cols(self.og.y_train)[0])))
 
                 else:  # Use cross validation to get the score
-                    if self.T.goal == "class":
+                    if self.goal == "class":
                         k_fold = StratifiedKFold  # Keep % of samples per class
                     else:
                         k_fold = KFold
@@ -669,12 +783,12 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     fold = k_fold(
                         n_splits=self._ht["cv"],
                         shuffle=True,
-                        random_state=trial.number + (self.T.random_state or 0),
+                        random_state=trial.number + (self.random_state or 0),
                     )
 
                     # Can't parallelize because of shared memory class
                     scores = []
-                    for train_idx, val_idx in fold.split(og.X_train, og.y_train):
+                    for train_idx, val_idx in fold.split(self.og.X_train, get_cols(self.og.y_train)[0]):
                         scores.append(fit_model(train_idx, val_idx, False))
 
                     score = list(np.mean(scores, axis=0))
@@ -690,7 +804,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         # Running hyperparameter tuning ============================ >>
 
-        self.T.log(f"Running hyperparameter tuning for {self._fullname}...", 1)
+        self.log(f"Running hyperparameter tuning for {self._fullname}...", 1)
 
         # Check validity of provided parameters
         self._check_est_params()
@@ -741,17 +855,17 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         # If no hyperparameters to optimize, skip BO
         if not self._ht["distributions"]:
-            self.T.log(" --> Skipping study. No hyperparameters to optimize.", 2)
+            self.log(" --> Skipping study. No hyperparameters to optimize.", 2)
             return
 
         if not self._study or reset:
             kw = {k: v for k, v in self._ht.items() if k in sign(create_study)}
-            if len(self.T._metric) == 1:
+            if len(self._metric) == 1:
                 kw["direction"] = "maximize"
-                kw["sampler"] = kw.pop("sampler", TPESampler(seed=self.T.random_state))
+                kw["sampler"] = kw.pop("sampler", TPESampler(seed=self.random_state))
             else:
-                kw["directions"] = ["maximize"] * len(self.T._metric)
-                kw["sampler"] = kw.pop("sampler", NSGAIISampler(seed=self.T.random_state))
+                kw["directions"] = ["maximize"] * len(self._metric)
+                kw["sampler"] = kw.pop("sampler", NSGAIISampler(seed=self.random_state))
 
             self._trials = pd.DataFrame(
                 columns=[
@@ -771,7 +885,11 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         # Initialize live study plot
         if self._ht.get("plot", False) and n_jobs == 1:
-            plot_callback = PlotCallback(self)
+            plot_callback = PlotCallback(
+                name=self._fullname,
+                metric=self._metric.keys(),
+                aesthetics=self.aesthetics,
+            )
         else:
             plot_callback = None
 
@@ -783,18 +901,18 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             n_trials=n_trials,
             n_jobs=n_jobs,
             callbacks=callbacks,
-            show_progress_bar=kw.pop("show_progress_bar", self.T.verbose == 1),
+            show_progress_bar=kw.pop("show_progress_bar", self.verbose == 1),
             **kw,
         )
 
         if len(self.study.get_trials(states=[TrialState.COMPLETE])) == 0:
-            self.T.log(
+            self.log(
                 "The study didn't complete any trial. "
                 "Skipping hyperparameter tuning.", 1, severity="warning"
             )
             return
 
-        if len(self.T._metric) == 1:
+        if len(self._metric) == 1:
             self._best_trial = self.study.best_trial
         else:
             # Sort trials by best score on main metric
@@ -802,16 +920,16 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 self.study.best_trials, key=lambda x: x.values[0]
             )[0]
 
-        self.T.log(f"Hyperparameter tuning {'-' * 27}", 1)
-        self.T.log(f"Best trial --> {self.best_trial.number}", 1)
-        self.T.log("Best parameters:", 1)
-        self.T.log("\n".join([f" --> {k}: {v}" for k, v in self.best_params.items()]), 1)
+        self.log(f"Hyperparameter tuning {'-' * 27}", 1)
+        self.log(f"Best trial --> {self.best_trial.number}", 1)
+        self.log("Best parameters:", 1)
+        self.log("\n".join([f" --> {k}: {v}" for k, v in self.best_params.items()]), 1)
         out = [
             f"{m.name}: {rnd(lst(self.score_ht)[i])}"
-            for i, m in enumerate(self.T._metric.values())
+            for i, m in enumerate(self._metric)
         ]
-        self.T.log(f"Best evaluation --> {'   '.join(out)}", 1)
-        self.T.log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
+        self.log(f"Best evaluation --> {'   '.join(out)}", 1)
+        self.log(f"Time elapsed: {time_to_str(self.time_ht)}", 1)
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: DATAFRAME | None = None, y: SERIES | None = None):
@@ -843,8 +961,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         self.clear()  # Reset model's state
 
         if self.trials is None:
-            self.T.log(f"Results for {self._fullname}:", 1)
-        self.T.log(f"Fit {'-' * 45}", 1)
+            self.log(f"Results for {self._fullname}:", 1)
+        self.log(f"Fit {'-' * 45}", 1)
 
         # Assign estimator if not done already
         if not self._estimator:
@@ -861,9 +979,9 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         for ds in ("train", "test"):
             out = [
                 f"{metric.name}: {self._get_score(metric, ds)}"
-                for metric in self.T._metric.values()
+                for metric in self._metric
             ]
-            self.T.log(f"T{ds[1:]} evaluation --> {'   '.join(out)}", 1)
+            self.log(f"T{ds[1:]} evaluation --> {'   '.join(out)}", 1)
 
         # Track results to mlflow ================================== >>
 
@@ -890,7 +1008,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             # Rest of metrics are tracked when calling _get_score
             mlflow.log_metric("time_fit", self.time_fit)
 
-            if self.T.log_model:
+            if self.log_model:
                 mlflow.sklearn.log_model(
                     sk_model=self.estimator,
                     artifact_path=self._est_class.__name__,
@@ -898,13 +1016,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     input_example=self.X.iloc[[0], :],
                 )
 
-            if self.T.log_data:
+            if self.log_data:
                 for ds in ("train", "test"):
                     getattr(self, ds).to_csv(f"{ds}.csv")
                     mlflow.log_artifact(f"{ds}.csv")
                     os.remove(f"{ds}.csv")
 
-            if self.T.log_pipeline:
+            if self.log_pipeline:
                 mlflow.sklearn.log_model(
                     sk_model=self.export_pipeline(),
                     artifact_path=f"pl_{self.name}",
@@ -916,7 +1034,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         # Get duration and print to log
         self._time_fit += (dt.now() - t_init).total_seconds()
-        self.T.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
+        self.log(f"Time elapsed: {time_to_str(self.time_fit)}", 1)
 
     @composed(crash, method_to_log, typechecked)
     def bootstrapping(self, n_bootstrap: INT, reset: bool = False):
@@ -937,7 +1055,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         t_init = dt.now()
 
         if self._bootstrap is None or reset:
-            self._bootstrap = pd.DataFrame(columns=self.T._metric)
+            self._bootstrap = pd.DataFrame(columns=self._metric.keys())
             self._bootstrap.index.name = "sample"
 
         for i in range(n_bootstrap):
@@ -946,7 +1064,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 self.X_train,
                 self.y_train,
                 replace=True,
-                random_state=i + (self.T.random_state or 0),
+                random_state=i + (self.random_state or 0),
                 stratify=self.y_train,
             )
 
@@ -961,22 +1079,22 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             scores = pd.DataFrame(
                 {
                     metric.name: [metric(estimator, self.X_test, self.y_test)]
-                    for metric in self.T._metric.values()
+                    for metric in self._metric
                 }
             )
 
             self._bootstrap = pd.concat([self._bootstrap, scores], ignore_index=True)
 
-        self.T.log(f"Bootstrap {'-' * 39}", 1)
+        self.log(f"Bootstrap {'-' * 39}", 1)
         out = [
             f"{m.name}: {rnd(self.bootstrap.mean()[i])}"
             f" \u00B1 {rnd(self.bootstrap.std()[i])}"
-            for i, m in enumerate(self.T._metric.values())
+            for i, m in enumerate(self._metric)
         ]
-        self.T.log(f"Evaluation --> {'   '.join(out)}", 1)
+        self.log(f"Evaluation --> {'   '.join(out)}", 1)
 
         self._time_bootstrap += (dt.now() - t_init).total_seconds()
-        self.T.log(f"Time elapsed: {time_to_str(self.time_bootstrap)}", 1)
+        self.log(f"Time elapsed: {time_to_str(self.time_bootstrap)}", 1)
 
     # Utility properties =========================================== >>
 
@@ -997,23 +1115,16 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def name(self, value: str):
         """Change the model's name."""
         # Drop the acronym if not provided by the user
-        if value.lower().startswith(self.acronym.lower()):
+        if re.match(self.acronym, value, re.I):
             value = value[len(self.acronym):]
 
         # Add the acronym (with right capitalization)
-        value = self.acronym + value
-
-        # Check if the name is available
-        if value in self.T._models:
-            raise ValueError(f"There already exists a model named {value}!")
-
-        # Replace the model in the _models attribute
-        self.T._models.replace_key(self.name, value)
-        self.T.log(f"Model {self.name} successfully renamed to {value}.", 1)
-        self._name = value
+        self._name = self.acronym + value
 
         if self._run:  # Change name in mlflow's run
             MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
+
+        self.log(f"Model {self.name} successfully renamed to {self._name}.", 1)
 
     @property
     def study(self) -> Study | None:
@@ -1099,17 +1210,17 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @property
     def score_train(self) -> FLOAT | list[FLOAT]:
         """Metric score on the training set."""
-        return flt([self._get_score(m, "train") for m in self.T._metric.values()])
+        return flt([self._get_score(m, "train") for m in self._metric])
 
     @property
     def score_test(self) -> FLOAT | list[FLOAT]:
         """Metric score on the test set."""
-        return flt([self._get_score(m, "test") for m in self.T._metric.values()])
+        return flt([self._get_score(m, "test") for m in self._metric])
 
     @property
     def score_holdout(self) -> FLOAT | list[FLOAT]:
         """Metric score on the holdout set."""
-        return flt([self._get_score(m, "holdout") for m in self.T._metric.values()])
+        return flt([self._get_score(m, "holdout") for m in self._metric])
 
     @property
     def time_fit(self) -> INT:
@@ -1243,12 +1354,12 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     @property
     def X(self) -> DATAFRAME:
         """Feature set."""
-        return pd.concat([self.X_train, self.X_test])
+        return bk.concat([self.X_train, self.X_test])
 
     @property
     def y(self) -> PANDAS:
         """Target column."""
-        return pd.concat([self.y_train, self.y_test])
+        return bk.concat([self.y_train, self.y_test])
 
     @property
     def X_train(self) -> DATAFRAME:
@@ -1294,7 +1405,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Names of the columns.
 
         """
-        if self.T._is_multioutput:
+        if "multioutput" in self.task:
             return self.target  # When multioutput, target is list of str
         else:
             return self.mapping.get(self.target, list(np.unique(self.y)))
@@ -1340,7 +1451,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         classification tasks.
 
         """
-        if self.T.holdout is not None:
+        if self.holdout is not None:
             return to_pandas(
                 data=self.estimator.decision_function(self.X_holdout),
                 index=self.X_holdout.index,
@@ -1386,7 +1497,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         for [multioutput tasks][].
 
         """
-        if self.T.holdout is not None:
+        if self.holdout is not None:
             return to_pandas(
                 data=self.estimator.predict(self.X_holdout),
                 index=self.X_holdout.index,
@@ -1398,8 +1509,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def predict_log_proba_train(self) -> DATAFRAME:
         """Class log-probability predictions on the training set.
 
-        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
-        n_classes) with a multiindex format for [multioutput tasks][].
+        Output of shape=(n_samples, n_classes) for binary and multiclass
+        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
+        or (n_targets * n_samples, n_classes) with a multiindex format for
+        [multiclass-multioutput][] tasks.
 
         """
         data = np.array(self.estimator.predict_proba(self.X_train))
@@ -1412,7 +1525,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         else:
             return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
-                index=pd.MultiIndex.from_tuples(
+                index=bk.MultiIndex.from_tuples(
                     [(col, i) for col in self.target for i in self.X_train.index]
                 ),
                 columns=np.unique(self.y),
@@ -1422,8 +1535,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def predict_log_proba_test(self) -> DATAFRAME:
         """Class log-probability predictions on the test set.
 
-        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
-        n_classes) with a multiindex format for [multioutput tasks][].
+        Output of shape=(n_samples, n_classes) for binary and multiclass
+        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
+        or (n_targets * n_samples, n_classes) with a multiindex format for
+        [multiclass-multioutput][] tasks.
 
         """
         data = np.array(self.estimator.predict_log_proba(self.X_test))
@@ -1436,7 +1551,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         else:
             return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
-                index=pd.MultiIndex.from_tuples(
+                index=bk.MultiIndex.from_tuples(
                     [(col, i) for col in self.target for i in self.X_test.index]
                 ),
                 columns=np.unique(self.y),
@@ -1446,11 +1561,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def predict_log_proba_holdout(self) -> DATAFRAME | None:
         """Class log-probability predictions on the holdout set.
 
-        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
-        n_classes) with a multiindex format for [multioutput tasks][].
+        Output of shape=(n_samples, n_classes) for binary and multiclass
+        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
+        or (n_targets * n_samples, n_classes) with a multiindex format for
+        [multiclass-multioutput][] tasks.
 
         """
-        if self.T.holdout is not None:
+        if self.holdout is not None:
             data = np.array(self.estimator.predict_log_proba(self.X_holdout))
             if data.ndim < 3:
                 return bk.DataFrame(
@@ -1461,7 +1578,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             else:
                 return bk.DataFrame(
                     data=data.reshape(-1, data.shape[2]),
-                    index=pd.MultiIndex.from_tuples(
+                    index=bk.MultiIndex.from_tuples(
                         [(col, i) for col in self.target for i in self.X_holdout.index]
                     ),
                     columns=np.unique(self.y),
@@ -1471,8 +1588,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def predict_proba_train(self) -> DATAFRAME:
         """Class probability predictions on the training set.
 
-        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
-        n_classes) with a multiindex format for [multioutput tasks][].
+        Output of shape=(n_samples, n_classes) for binary and multiclass
+        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
+        or (n_targets * n_samples, n_classes) with a multiindex format for
+        [multiclass-multioutput][] tasks.
 
         """
         data = np.array(self.estimator.predict_proba(self.X_train))
@@ -1485,7 +1604,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         else:
             return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
-                index=pd.MultiIndex.from_tuples(
+                index=bk.MultiIndex.from_tuples(
                     [(col, i) for col in self.target for i in self.X_train.index]
                 ),
                 columns=np.unique(self.y),
@@ -1495,8 +1614,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def predict_proba_test(self) -> DATAFRAME:
         """Class probability predictions on the test set.
 
-        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
-        n_classes) with a multiindex format for [multioutput tasks][].
+        Output of shape=(n_samples, n_classes) for binary and multiclass
+        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
+        or (n_targets * n_samples, n_classes) with a multiindex format for
+        [multiclass-multioutput][] tasks.
 
         """
         data = np.array(self.estimator.predict_proba(self.X_test))
@@ -1509,7 +1630,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         else:
             return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
-                index=pd.MultiIndex.from_tuples(
+                index=bk.MultiIndex.from_tuples(
                     [(col, i) for col in self.target for i in self.X_test.index]
                 ),
                 columns=np.unique(self.y),
@@ -1519,11 +1640,13 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
     def predict_proba_holdout(self) -> DATAFRAME | None:
         """Class probability predictions on the holdout set.
 
-        Output of shape=(n_samples, n_classes) or (n_targets * n_samples,
-        n_classes) with a multiindex format for [multioutput tasks][].
+        Output of shape=(n_samples, n_classes) for binary and multiclass
+        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
+        or (n_targets * n_samples, n_classes) with a multiindex format for
+        [multiclass-multioutput][] tasks.
 
         """
-        if self.T.holdout is not None:
+        if self.holdout is not None:
             data = np.array(self.estimator.predict_proba(self.X_holdout))
             if data.ndim < 3:
                 return bk.DataFrame(
@@ -1534,7 +1657,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             else:
                 return bk.DataFrame(
                     data=data.reshape(-1, data.shape[2]),
-                    index=pd.MultiIndex.from_tuples(
+                    index=bk.MultiIndex.from_tuples(
                         [(col, i) for col in self.target for i in self.X_holdout.index]
                     ),
                     columns=np.unique(self.y),
@@ -1600,14 +1723,14 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         # Two options: select from existing predictions (X has to be able
         # to get rows from dataset) or calculate predictions from new data
         try:
-            # Raises ValueError if X can't select indices
-            rows = self.T._get_rows(X, branch=self.branch)
+            # Raises an error if X can't select indices
+            rows = self.branch._get_rows(X, return_test=True)
         except (TypeError, IndexError, KeyError):
             rows = None
 
             # When there is a pipeline, apply transformations first
-            X, y = self.T._prepare_input(X, y)
-            X = self.T._set_index(X, y)
+            X, y = self._prepare_input(X, y)
+            X = self._set_index(X, y)
             if y is not None:
                 y.index = X.index
 
@@ -1643,7 +1766,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     )
         else:
             if metric is None:
-                metric = self.T._metric[0]
+                metric = self._metric[0]
             else:
                 metric = get_custom_scorer(metric)
 
@@ -1651,7 +1774,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 # Define X and y for the score method
                 data = self.dataset
                 if self.holdout is not None:
-                    data = pd.concat([self.dataset, self.holdout], axis=0)
+                    data = bk.concat([self.dataset, self.holdout])
 
                 X, y = data.loc[rows, self.features], data.loc[rows, self.target]
 
@@ -1869,13 +1992,6 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
     # Utility methods ============================================== >>
 
-    def _new_copy(self) -> BaseModel:
-        """Return a new model instance with the same estimator."""
-        obj = self.__class__(self.T, self.name)
-        obj._est_params = self._est_params
-        obj._est_params_fit = self._est_params_fit
-        return obj
-
     @available_if(has_task("class"))
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
@@ -1960,10 +2076,10 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         from gradio import Interface
         from gradio.components import Dropdown, Textbox
 
-        self.T.log("Launching app...", 1)
+        self.log("Launching app...", 1)
 
         inputs = []
-        for name, column in self.T._get_og_branches()[0].X.items():
+        for name, column in self.og.X.items():
             if column.dtype.kind in "ifu":
                 inputs.append(Textbox(label=name))
             else:
@@ -2030,7 +2146,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             ClassifierExplainer, ExplainerDashboard, RegressionExplainer,
         )
 
-        self.T.log("Creating dashboard...", 1)
+        self.log("Creating dashboard...", 1)
 
         dataset = dataset.lower()
         if dataset == "both":
@@ -2050,8 +2166,8 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                 f"{dataset}. Choose from: train, test, both or holdout."
             )
 
-        params = dict(permutation_metric=self.T._metric.values(), n_jobs=self.T.n_jobs)
-        if self.T.goal == "class":
+        params = dict(permutation_metric=self._metric, n_jobs=self.n_jobs)
+        if self.goal == "class":
             explainer = ClassifierExplainer(self.estimator, X, y, **params)
         else:
             explainer = RegressionExplainer(self.estimator, X, y, **params)
@@ -2077,7 +2193,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             if not filename.endswith(".html"):
                 filename += ".html"
             self.dashboard.save_html(filename)
-            self.T.log("Dashboard successfully saved.", 1)
+            self.log("Dashboard successfully saved.", 1)
 
     @composed(crash, method_to_log)
     def cross_validate(self, **kwargs) -> pd.DataFrame:
@@ -2106,21 +2222,20 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             scoring = {scoring.name: scoring}
 
         else:
-            scoring = dict(self.T._metric)
+            scoring = dict(self._metric)
 
-        self.T.log("Applying cross-validation...", 1)
+        self.log("Applying cross-validation...", 1)
 
         # Monkey patch the _score function to allow for
         # pipelines that drop samples during transformation
         with patch("sklearn.model_selection._validation._score", score(_score)):
-            branch = self.T._get_og_branches()[0]
             self.cv = cross_validate(
                 estimator=self.export_pipeline(verbose=0),
-                X=branch.X,
-                y=branch.y,
+                X=self.og.X,
+                y=self.og.y,
                 scoring=scoring,
                 return_train_score=kwargs.pop("return_train_score", True),
-                n_jobs=kwargs.pop("n_jobs", self.T.n_jobs),
+                n_jobs=kwargs.pop("n_jobs", self.n_jobs),
                 verbose=kwargs.pop("verbose", 0),
                 **kwargs,
             )
@@ -2135,18 +2250,6 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         df.loc["std"] = df.std()
 
         return df
-
-    @composed(crash, method_to_log)
-    def delete(self):
-        """Delete the model.
-
-        If it's the last model in atom, the metric is reset. Use this
-        method to drop unwanted models from the pipeline or to free
-        some memory before saving. The model is not removed from any
-        active mlflow experiment.
-
-        """
-        self.T.delete(self.name)
 
     @composed(crash, typechecked)
     def evaluate(
@@ -2200,7 +2303,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
 
         # Predefined metrics to show
         if metric is None:
-            if self.T.task.startswith("bin"):
+            if self.task.startswith("bin"):
                 metric = [
                     "accuracy",
                     "ap",
@@ -2212,7 +2315,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
                     "recall",
                     "auc",
                 ]
-            elif self.T.task.startswith("multi"):
+            elif self.task.startswith("multi"):
                 metric = [
                     "ba",
                     "f1_weighted",
@@ -2283,7 +2386,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Current branch as a sklearn-like Pipeline object.
 
         """
-        return self.T.export_pipeline(self.name, memory=memory, verbose=verbose)
+        return export_pipeline(self.pipeline, self, memory=memory, verbose=verbose)
 
     @composed(crash, method_to_log, typechecked)
     def full_train(self, *, include_holdout: bool = False):
@@ -2311,12 +2414,12 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             on any set.
 
         """
-        if include_holdout and self.T.holdout is None:
+        if include_holdout and self.holdout is None:
             raise ValueError("No holdout data set available.")
 
-        if include_holdout and self.T.holdout is not None:
-            X = pd.concat([self.X, self.X_holdout])
-            y = pd.concat([self.y, self.y_holdout])
+        if include_holdout and self.holdout is not None:
+            X = bk.concat([self.X, self.X_holdout])
+            y = bk.concat([self.y, self.y_holdout])
         else:
             X, y = self.X, self.y
 
@@ -2350,11 +2453,15 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Transformed feature set with shape=(n_samples, n_features).
             If None, X is ignored in the transformers.
 
-        y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored in the transformers.
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column corresponding to X.
+
+            - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers. If None, it uses the
@@ -2369,7 +2476,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Original target column. Only returned if provided.
 
         """
-        X, y = self.T._prepare_input(X, y)
+        X, y = self._prepare_input(X, y)
 
         for transformer in reversed(self.pipeline):
             if not transformer._train_only:
@@ -2418,7 +2525,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             stage=stage,
         )
 
-        self.T.log(
+        self.log(
             f"Model {self.name} with version {model.version} "
             f"successfully registered in stage {stage}.", 1
         )
@@ -2439,7 +2546,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         with open(filename, "wb") as f:
             pickle.dump(self.estimator, f)
 
-        self.T.log(f"{self._fullname} estimator successfully saved.", 1)
+        self.log(f"{self._fullname} estimator successfully saved.", 1)
 
     @composed(crash, method_to_log, typechecked)
     def serve(self, method: str = "predict", host: str = "127.0.0.1", port: INT = 8000):
@@ -2511,7 +2618,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
         server = ServeModel.bind(model=self.export_pipeline(verbose=0), method=method)
         serve.run(server, host=host, port=port)
 
-        self.T.log(f"Serving model {self._fullname} on {host}:{port}...", 1)
+        self.log(f"Serving model {self._fullname} on {host}:{port}...", 1)
 
     @composed(crash, method_to_log, typechecked)
     def transform(
@@ -2537,11 +2644,15 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             X is ignored. If None,
             X is ignored in the transformers.
 
-        y: int, str, dict, sequence or None, default=None
-            - If None: y is ignored in the transformers.
+        y: int, str, dict, sequence, dataframe or None, default=None
+            Target column corresponding to X.
+
+            - If None: y is ignored.
             - If int: Position of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Array with shape=(n_samples,) to use as target.
+            - If sequence: Target array with shape=(n_samples,) or
+              sequence of column names or positions for multioutput tasks.
+            - If dataframe: Target columns for multioutput tasks.
 
         verbose: int or None, default=None
             Verbosity level for the transformers. If None, it uses the
@@ -2556,7 +2667,7 @@ class BaseModel(HTPlot, PredictionPlot, ShapPlot):
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self.T._prepare_input(X, y)
+        X, y = self._prepare_input(X, y)
 
         for transformer in self.pipeline:
             if not transformer._train_only:

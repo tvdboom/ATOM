@@ -121,6 +121,8 @@ Additionally, ATOM implements two ensemble models:
 
 from __future__ import annotations
 
+import re
+
 import numpy as np
 from optuna.distributions import CategoricalDistribution as Categorical
 from optuna.distributions import FloatDistribution as Float
@@ -134,29 +136,40 @@ from optuna.trial import Trial
 from atom.basemodel import BaseModel
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DATAFRAME, SERIES, CatBMetric, CustomDict, LGBMetric, Predictor, XGBMetric,
-    create_acronym,
+    DATAFRAME, SERIES, CatBMetric, ClassMap, CustomDict, LGBMetric, Predictor,
+    XGBMetric, Model, sign
 )
 
 
 class CustomModel(BaseModel):
-    """Custom model. Estimator provided by user."""
+    """Model with estimator provided by user."""
 
-    def __init__(self, *args, **kwargs):
-        if callable(est := kwargs["estimator"]):  # Estimator provided by the user
+    def __init__(self, **kwargs):
+        if callable(est := kwargs.pop("estimator")):  # Estimator provided by the user
             self._est = est
             self._params = {}
         else:
             self._est = est.__class__
             self._params = est.get_params()  # Store the provided parameters
 
-        # If no acronym is provided, use capital letters in the class' name
-        self.acronym = getattr(self._est, "acronym", create_acronym(self._fullname))
+        if hasattr(est, "name"):
+            name = est.name
+        else:
+            # If no name is provided, use capital letters in the class' name
+            name = re.sub("[^A-Z]", "", self._fullname)
+            if len(name) < 2 or name.lower() in MODELS:
+                name = self._fullname
 
-        self.needs_scaling = getattr(self._est, "needs_scaling", False)
-        self.native_multioutput = getattr(self._est, "native_multioutput", False)
-        self.has_validation = getattr(self._est, "has_validation", None)
-        super().__init__(*args)
+        self.acronym = getattr(est, "acronym", name)
+        if not self.acronym.startswith(name):
+            raise ValueError(
+                f"The name and acronym of model {self._fullname} do not match."
+            )
+
+        self.needs_scaling = getattr(est, "needs_scaling", False)
+        self.native_multioutput = getattr(est, "native_multioutput", False)
+        self.has_validation = getattr(est, "has_validation", None)
+        super().__init__(name=name, **kwargs)
 
     @property
     def _fullname(self) -> str:
@@ -261,7 +274,7 @@ class AdaBoost(BaseModel):
             learning_rate=Float(0.01, 10, log=True),
         )
 
-        if self.T.goal == "class":
+        if self.goal == "class":
             dist["algorithm"] = Categorical(["SAMME.R", "SAMME"])
         else:
             dist["loss"] = Categorical(["linear", "square", "exponential"])
@@ -719,18 +732,18 @@ class CatBoost(BaseModel):
 
         """
         eval_metric = None
-        if hasattr(self.T, "_metric") and not self._gpu:
-            eval_metric = CatBMetric(self.T._metric[0], task=self.T.task)
+        if getattr(self, "_metric", None) and not self._gpu:
+            eval_metric = CatBMetric(self._metric[0], task=self.task)
 
         return self._est_class(
             eval_metric=params.pop("eval_metric", eval_metric),
             train_dir=params.pop("train_dir", ""),
             allow_writing_files=params.pop("allow_writing_files", False),
-            thread_count=params.pop("n_jobs", self.T.n_jobs),
+            thread_count=params.pop("n_jobs", self.n_jobs),
             task_type=params.pop("task_type", "GPU" if self._gpu else "CPU"),
-            devices=str(self.T._device_id),
+            devices=str(self._device_id),
             verbose=params.pop("verbose", False),
-            random_state=params.pop("random_state", self.T.random_state),
+            random_state=params.pop("random_state", self.random_state),
             **params,
         )
 
@@ -771,7 +784,7 @@ class CatBoost(BaseModel):
         params = est_params_fit.copy()
 
         callbacks = params.pop("callbacks", [])
-        if trial and len(self.T._metric) == 1 and not self._gpu:
+        if trial and len(self._metric) == 1 and not self._gpu:
             callbacks.append(cb := CatBoostPruningCallback(trial, "CatBMetric"))
 
         # gpu implementation fails if callbacks!=None
@@ -780,12 +793,12 @@ class CatBoost(BaseModel):
         if not self._gpu:
             if validation:
                 # Create evals attribute with train and validation scores
-                m = self.T._metric[0].name
+                m = self._metric[0].name
                 evals = estimator.evals_result_
                 self._evals[f"{m}_train"] = evals["learn"]["CatBMetric"]
                 self._evals[f"{m}_test"] = evals["validation"]["CatBMetric"]
 
-            if trial and len(self.T._metric) == 1 and cb._pruned:
+            if trial and len(self._metric) == 1 and cb._pruned:
                 # Hacky solution to add the pruned step to the output
                 steps = estimator.get_params()[self.has_validation]
                 p = trial.storage.get_trial_user_attrs(trial.number)["params"]
@@ -1053,7 +1066,7 @@ class DecisionTree(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error", "friedman_mse", "poisson"]
@@ -1167,7 +1180,7 @@ class Dummy(BaseModel):
 
         """
         dist = CustomDict()
-        if self.T.goal == "class":
+        if self.goal == "class":
             dist["strategy"] = Categorical(
                 ["most_frequent", "prior", "stratified", "uniform"]
             )
@@ -1357,7 +1370,7 @@ class ExtraTree(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error"]
@@ -1471,7 +1484,7 @@ class ExtraTrees(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
             criterion = ["squared_error", "absolute_error"]
@@ -1752,9 +1765,9 @@ class GradientBoosting(BaseModel):
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.T.task.startswith("multi"):
+        if self.task.startswith("multi"):
             dist.pop("loss")  # Multiclass only supports log_loss
-        elif self.T.task.startswith("reg"):
+        elif self.task.startswith("reg"):
             dist["loss"] = Categorical(
                 ["squared_error", "absolute_error", "huber", "quantile"]
             )
@@ -1937,7 +1950,7 @@ class HistGradientBoosting(BaseModel):
             l2_regularization=Float(0, 1.0, step=0.1),
         )
 
-        if self.T.goal == "class":
+        if self.goal == "class":
             dist.pop("loss")
 
         return dist
@@ -2030,7 +2043,7 @@ class KNearestNeighbors(BaseModel):
 
         if self._gpu:
             dist.pop("algorithm")  # Only 'brute' is supported
-            if self.T.engine == "cuml":
+            if self.engine == "cuml":
                 dist.pop("weights")  # Only 'uniform' is supported
                 dist.pop("leaf_size")
                 dist.pop("p")
@@ -2268,10 +2281,10 @@ class LightGBM(BaseModel):
 
         """
         return self._est_class(
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
             device=params.pop("device", "gpu" if self._gpu else "cpu"),
-            gpu_device_id=params.pop("gpu_device_id", self.T._device_id or -1),
-            random_state=params.pop("random_state", self.T.random_state),
+            gpu_device_id=params.pop("gpu_device_id", self._device_id or -1),
+            random_state=params.pop("random_state", self.random_state),
             **params,
         )
 
@@ -2311,16 +2324,16 @@ class LightGBM(BaseModel):
         """
         from lightgbm.callback import log_evaluation
 
-        m = self.T._metric[0].name
+        m = self._metric[0].name
         params = est_params_fit.copy()
 
         callbacks = params.pop("callbacks", []) + [log_evaluation(-1)]
-        if trial and len(self.T._metric) == 1:
+        if trial and len(self._metric) == 1:
             callbacks.append(LightGBMPruningCallback(trial, m, "valid_1"))
 
         eval_metric = None
-        if hasattr(self.T, "_metric"):
-            eval_metric = LGBMetric(self.T._metric[0], task=self.T.task)
+        if getattr(self, "_metric", None):
+            eval_metric = LGBMetric(self._metric[0], task=self.task)
 
         try:
             estimator.fit(
@@ -2556,7 +2569,7 @@ class LinearSVM(BaseModel):
         """
         params = super()._get_parameters(trial)
 
-        if self.T.goal == "class":
+        if self.goal == "class":
             if self._get_param("loss", params) == "hinge":
                 # l1 regularization can't be combined with hinge
                 params.replace_value("penalty", "l2")
@@ -2585,7 +2598,7 @@ class LinearSVM(BaseModel):
             Estimator instance.
 
         """
-        if self.T.engine == "cuml" and self.T.goal == "class":
+        if self.engine == "cuml" and self.goal == "class":
             return self._est_class(probability=params.pop("probability", True), **params)
         else:
             return super()._get_est(**params)
@@ -2600,7 +2613,7 @@ class LinearSVM(BaseModel):
 
         """
         dist = CustomDict()
-        if self.T.goal == "class":
+        if self.goal == "class":
             dist["penalty"] = Categorical(["l1", "l2"])
             dist["loss"] = Categorical(["hinge", "squared_hinge"])
         else:
@@ -2611,7 +2624,7 @@ class LinearSVM(BaseModel):
         dist["C"] = Float(1e-3, 100, log=True)
         dist["dual"] = Categorical([True, False])
 
-        if self.T.engine == "cuml":
+        if self.engine == "cuml":
             dist.pop("dual")
 
         return dist
@@ -2738,7 +2751,7 @@ class LogisticRegression(BaseModel):
         if self._gpu:
             dist.pop("solver")
             dist.pop("penalty")  # Only 'l2' is supported
-        elif self.T.engine == "sklearnex":
+        elif self.engine == "sklearnex":
             dist["solver"] = Categorical(["lbfgs", "newton-cg"])
 
         return dist
@@ -2762,8 +2775,8 @@ class MultiLayerPerceptron(BaseModel):
     Read more in sklearn's [documentation][mlpdocs].
 
     !!! tip
-        MultiLayerPerceptron does support [multilabel][] tasks
-        natively. Set the `multioutput` attribute to None to avoid
+        MultiLayerPerceptron does support [multilabel-multioutput][]
+        tasks natively. Set the `multioutput` attribute to None to avoid
         the meta-estimator.
 
     See Also
@@ -3186,7 +3199,7 @@ class PassiveAggressive(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             loss = ["hinge", "squared_hinge"]
         else:
             loss = ["epsilon_insensitive", "squared_epsilon_insensitive"]
@@ -3592,10 +3605,10 @@ class RandomForest(BaseModel):
             Hyperparameter distributions.
 
         """
-        if self.T.goal == "class":
+        if self.goal == "class":
             criterion = ["gini", "entropy"]
         else:
-            if self.T.engine == "cuml":
+            if self.engine == "cuml":
                 criterion = ["mse", "poisson", "gamma", "inverse_gaussian"]
             else:
                 criterion = ["squared_error", "absolute_error", "poisson"]
@@ -3612,10 +3625,10 @@ class RandomForest(BaseModel):
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.T.engine == "sklearnex":
+        if self.engine == "sklearnex":
             dist.pop("criterion")
             dist.pop("ccp_alpha")
-        elif self.T.engine == "cuml":
+        elif self.engine == "cuml":
             dist.replace_key("criterion", "split_criterion")
             dist["max_depth"] = Int(1, 17)
             dist["max_features"] = Categorical(["sqrt", "log2", 0.5, 0.6, 0.7, 0.8, 0.9])
@@ -3643,8 +3656,8 @@ class Ridge(BaseModel):
         tasks.
 
     !!! tip
-        Ridge does support [multilabel][] tasks natively. Set the
-        `multioutput` attribute to None to avoid the meta-estimator.
+        Ridge does support [multilabel-multioutput][] tasks natively. Set
+        the `multioutput` attribute to None to avoid the meta-estimator.
 
     See Also
     --------
@@ -3713,9 +3726,9 @@ class Ridge(BaseModel):
             ),
         )
 
-        if self.T.engine == "sklearnex":
+        if self.engine == "sklearnex":
             dist.pop("solver")  # Only supports 'auto'
-        elif self.T.engine == "cuml":
+        elif self.engine == "cuml":
             dist["solver"] = Categorical(["eig", "svd", "cd"])
 
         return dist
@@ -3834,7 +3847,7 @@ class StochasticGradientDescent(BaseModel):
         ]
 
         return CustomDict(
-            loss=Categorical(loss if self.T.goal == "class" else loss[-4:]),
+            loss=Categorical(loss if self.goal == "class" else loss[-4:]),
             penalty=Categorical([None, "l1", "l2", "elasticnet"]),
             alpha=Float(1e-4, 1.0, log=True),
             l1_ratio=Float(0.1, 0.9, step=0.1),
@@ -3930,7 +3943,7 @@ class SupportVectorMachine(BaseModel):
         """
         params = super()._get_parameters(trial)
 
-        if self.T.goal == "class":
+        if self.goal == "class":
             params.pop("epsilon", None)
 
         kernel = self._get_param("kernel", params)
@@ -3956,10 +3969,10 @@ class SupportVectorMachine(BaseModel):
             Estimator instance.
 
         """
-        if self.T.engine == "cuml" and self.T.goal == "class":
+        if self.engine == "cuml" and self.goal == "class":
             return self._est_class(
                 probability=params.pop("probability", True),
-                random_state=params.pop("random_state", self.T.random_state),
+                random_state=params.pop("random_state", self.random_state),
                 **params)
         else:
             return super()._get_est(**params)
@@ -3983,7 +3996,7 @@ class SupportVectorMachine(BaseModel):
             shrinking=Categorical([True, False]),
         )
 
-        if self.T.engine == "cuml":
+        if self.engine == "cuml":
             dist.pop("epsilon")
             dist.pop("shrinking")
 
@@ -4066,16 +4079,16 @@ class XGBoost(BaseModel):
 
         """
         eval_metric = None
-        if hasattr(self.T, "_metric"):
-            eval_metric = XGBMetric(self.T._metric[0], task=self.T.task)
+        if getattr(self, "_metric", None):
+            eval_metric = XGBMetric(self._metric[0], task=self.task)
 
         return self._est_class(
             eval_metric=params.pop("eval_metric", eval_metric),
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
             tree_method=params.pop("tree_method", "gpu_hist" if self._gpu else None),
-            gpu_id=self.T._device_id,
+            gpu_id=self._device_id,
             verbosity=params.pop("verbosity", 0),
-            random_state=params.pop("random_state", self.T.random_state),
+            random_state=params.pop("random_state", self.random_state),
             **params,
         )
 
@@ -4113,11 +4126,11 @@ class XGBoost(BaseModel):
             Fitted instance.
 
         """
-        m = self.T._metric[0].name
+        m = self._metric[0].name
         params = est_params_fit.copy()
 
         callbacks = params.pop("callbacks", [])
-        if trial and len(self.T._metric) == 1:
+        if trial and len(self._metric) == 1:
             callbacks.append(XGBoostPruningCallback(trial, f"validation_1-{m}"))
 
         try:
@@ -4173,7 +4186,17 @@ class XGBoost(BaseModel):
 # Ensembles ======================================================== >>
 
 class Stacking(BaseModel):
-    """Stacking ensemble."""
+    """Stacking ensemble.
+
+    Parameters
+    ----------
+    models: ClassMap
+        Models from which to build the ensemble.
+
+    **kwargs
+        Additional keyword arguments for the estimator.
+
+    """
 
     acronym = "Stack"
     needs_scaling = False
@@ -4184,16 +4207,11 @@ class Stacking(BaseModel):
     _module = "atom.ensembles"
     _estimators = CustomDict({"class": "StackingClassifier", "reg": "StackingRegressor"})
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self._models = kwargs.pop("models")
-        self._est_params = kwargs
-
-        if any(m.branch is not self.branch for m in self._models.values()):
-            raise ValueError(
-                "Invalid value for the models parameter. All "
-                "models must have been fitted on the current branch."
-            )
+    def __init__(self, models: ClassMap, **kwargs):
+        self._models = models
+        kw_model = {k: v for k, v in kwargs.items() if k in sign(BaseModel.__init__)}
+        super().__init__(**kw_model)
+        self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
     def _get_est(self, **params) -> Predictor:
         """Get the model's estimator with unpacked parameters.
@@ -4205,7 +4223,7 @@ class Stacking(BaseModel):
 
         """
         estimators = []
-        for m in self._models.values():
+        for m in self._models:
             if m.scaler:
                 name = f"pipeline_{m.name}"
                 est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
@@ -4217,13 +4235,23 @@ class Stacking(BaseModel):
 
         return self._est_class(
             estimators=estimators,
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,
         )
 
 
 class Voting(BaseModel):
-    """Voting ensemble."""
+    """Voting ensemble.
+
+    Parameters
+    ----------
+    models: ClassMap
+        Models from which to build the ensemble.
+
+    **kwargs
+        Additional keyword arguments for the estimator.
+
+    """
 
     acronym = "Vote"
     needs_scaling = False
@@ -4234,19 +4262,14 @@ class Voting(BaseModel):
     _module = "atom.ensembles"
     _estimators = CustomDict({"class": "VotingClassifier", "reg": "VotingRegressor"})
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
-        self._models = kwargs.pop("models")
-        self._est_params = kwargs
-
-        if any(m.branch is not self.branch for m in self._models.values()):
-            raise ValueError(
-                "Invalid value for the models parameter. All "
-                "models must have been fitted on the current branch."
-            )
+    def __init__(self, models: ClassMap, **kwargs):
+        self._models = models
+        kw_model = {k: v for k, v in kwargs.items() if k in sign(BaseModel.__init__)}
+        super().__init__(**kw_model)
+        self._est_params = {k: v for k, v in kwargs.items() if k not in kw_model}
 
         if self._est_params.get("voting") == "soft":
-            for m in self._models.values():
+            for m in self._models:
                 if not hasattr(m.estimator, "predict_proba"):
                     raise ValueError(
                         "Invalid value for the voting parameter. If "
@@ -4264,7 +4287,7 @@ class Voting(BaseModel):
 
         """
         estimators = []
-        for m in self._models.values():
+        for m in self._models:
             if m.scaler:
                 name = f"pipeline_{m.name}"
                 est = Pipeline([("scaler", m.scaler), (m.name, m.estimator)])
@@ -4276,7 +4299,7 @@ class Voting(BaseModel):
 
         return self._est_class(
             estimators=estimators,
-            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            n_jobs=params.pop("n_jobs", self.n_jobs),
             **params,
         )
 
@@ -4284,49 +4307,50 @@ class Voting(BaseModel):
 # Variables ======================================================== >>
 
 # List of available models
-MODELS = CustomDict(
-    AdaB=AdaBoost,
-    ARD=AutomaticRelevanceDetermination,
-    Bag=Bagging,
-    BR=BayesianRidge,
-    BNB=BernoulliNB,
-    CatB=CatBoost,
-    CatNB=CategoricalNB,
-    CNB=ComplementNB,
-    Tree=DecisionTree,
-    Dummy=Dummy,
-    EN=ElasticNet,
-    ETree=ExtraTree,
-    ET=ExtraTrees,
-    GNB=GaussianNB,
-    GP=GaussianProcess,
-    GBM=GradientBoosting,
-    Huber=HuberRegression,
-    hGBM=HistGradientBoosting,
-    KNN=KNearestNeighbors,
-    Lasso=Lasso,
-    Lars=LeastAngleRegression,
-    LGB=LightGBM,
-    LDA=LinearDiscriminantAnalysis,
-    lSVM=LinearSVM,
-    LR=LogisticRegression,
-    MLP=MultiLayerPerceptron,
-    MNB=MultinomialNB,
-    OLS=OrdinaryLeastSquares,
-    OMP=OrthogonalMatchingPursuit,
-    PA=PassiveAggressive,
-    Perc=Perceptron,
-    QDA=QuadraticDiscriminantAnalysis,
-    RNN=RadiusNearestNeighbors,
-    RF=RandomForest,
-    Ridge=Ridge,
-    SGD=StochasticGradientDescent,
-    SVM=SupportVectorMachine,
-    XGB=XGBoost,
+MODELS = ClassMap(
+    AdaBoost,
+    AutomaticRelevanceDetermination,
+    Bagging,
+    BayesianRidge,
+    BernoulliNB,
+    CatBoost,
+    CategoricalNB,
+    ComplementNB,
+    DecisionTree,
+    Dummy,
+    ElasticNet,
+    ExtraTree,
+    ExtraTrees,
+    GaussianNB,
+    GaussianProcess,
+    GradientBoosting,
+    HuberRegression,
+    HistGradientBoosting,
+    KNearestNeighbors,
+    Lasso,
+    LeastAngleRegression,
+    LightGBM,
+    LinearDiscriminantAnalysis,
+    LinearSVM,
+    LogisticRegression,
+    MultiLayerPerceptron,
+    MultinomialNB,
+    OrdinaryLeastSquares,
+    OrthogonalMatchingPursuit,
+    PassiveAggressive,
+    Perceptron,
+    QuadraticDiscriminantAnalysis,
+    RadiusNearestNeighbors,
+    RandomForest,
+    Ridge,
+    StochasticGradientDescent,
+    SupportVectorMachine,
+    XGBoost,
+    key="acronym",
 )
 
 # List of available ensembles
-ENSEMBLES = CustomDict(Stack=Stacking, Vote=Voting)
+ENSEMBLES = ClassMap(Stacking, Voting, key="acronym")
 
 # List of all models + ensembles
-MODELS_ENSEMBLES = CustomDict(**MODELS, **ENSEMBLES)
+MODELS_ENSEMBLES = ClassMap(*MODELS, *ENSEMBLES, key="acronym")

@@ -118,9 +118,9 @@ ATOM recognizes three multioutput tasks.
     [multiclass-multioutput][] tasks.
 
 
-#### Multilabel
+#### Multilabel-multioutput
 
-Multilabel multioutput is a classification task, labeling each sample
+Multilabel-multioutput is a classification task, labeling each sample
 with `m` labels from `n_classes` possible classes, where `m` can be 0
 to `n_classes` inclusive. This can be thought of as predicting properties
 of a sample that are not mutually exclusive.
@@ -209,8 +209,8 @@ target columns. Examples of such models are [KNearestNeighbors][],
 The majority of the models don't have integrated support for multioutput
 tasks. However, it's possible to still use them for such tasks, wrapping
 them in a meta-estimator capable of handling multiple target columns. For
-non-native multioutput models, ATOM does so automatically. For [multilabel][]
-tasks, the meta-estimator is:
+non-native multioutput models, ATOM does so automatically. For
+[multilabel-multioutput][] tasks, the meta-estimator is:
 
 * [ClassifierChain][]
 * [RegressorChain][]
@@ -255,11 +255,9 @@ through atom's `branch` property. A branch contains a specific pipeline,
 the dataset transformed through that pipeline, and all data and utility
 attributes that refer to that dataset. Transformers and models called
 from atom use the dataset in the current branch, as well as data
-attributes such as `atom.dataset`. Use the branch's \__repr__ to get an
-overview of the transformers in the branch. It's not allowed to change
-the data in a branch after fitting a model with it. Doing this would
-cause unexpected model behaviour and break down the plotting methods.
-Instead, create a new branch for every unique pipeline.
+attributes such as `atom.dataset`. It's not allowed to change the data
+in a branch after fitting a model with it. Instead, create a new branch
+for every unique pipeline.
 
 By default, atom starts with one branch called "master". To start a new
 branch, set a new name to the property, e.g. `#!python atom.branch = "undersample"`.
@@ -270,15 +268,17 @@ branch "oversample" from branch "master", even if the current branch is
 "undersample". To switch between existing branches, just type the name of
 the desired branch, e.g. `#!python atom.branch = "master"` brings you back
 to the master branch. Note that every branch contains a unique copy of the
-whole dataset! Creating many branches can cause memory issues for large datasets.
+whole dataset! Creating many branches can cause [memory issues](#memory-considerations)
+for large datasets.
 
 See the [Imbalanced datasets][example-imbalanced-datasets] or
 [Feature engineering][example-feature-engineering] examples for
 branching use cases.
 
 !!! warning
-Always create a new branch if you want to change the dataset after fitting
-a model!
+    Always create a new branch if you want to change the dataset after fitting
+    a model! Forcing a data change through the data property's `@setter` can
+    cause unexpected model behaviour and break down the plotting methods.
 
 <br>
 
@@ -291,17 +291,16 @@ a model!
 
 ## Memory considerations
 
-An atom instance stores one copy of the dataframe in each branch, and
-one copy of the initial dataset with which the instance is initialized
-(this copy is necessary to avoid data leakage during hyperparameter
-tuning and for some specific methods like [cross_validate][adaboost-cross_validate]
-and [reset][atomclassifier-reset]). This initial copy is created as soon
-as there are no branches in the initial state (usually after calling the
-first data transformation) and it's stored in an internal branch called
-`og` (original). The og branch is not accessible by the user. If the
-dataset is occupying too much memory, consider using the [shrink]
-[atomclassifier-shrink] method to convert the dtypes to their smallest
-possible matching dtype.
+An atom instance stores one copy of the dataset for each branch (this
+doesn't include the [hokdout set](#data-sets), which is only stored once),
+and one copy of the initial dataset with which the instance is initialized.
+This copy of the original dataset is necessary to avoid data leakage during
+hyperparameter tuning and for some specific methods like [cross_validate][adaboost-cross_validate]
+and [reset][atomclassifier-reset]). It's created as soon as there are no
+branches in the initial state (usually after calling the first data
+transformation). If the dataset is occupying too much memory, consider
+using the [shrink][atomclassifier-shrink] method to convert the dtypes to
+their smallest possible matching dtype.
 
 Apart from the dataset itself, a model's [prediction attributes][] (e.g.
 `#!python atom.lr.predict_train`), metric scores and [shap values][shap]

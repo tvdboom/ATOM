@@ -16,6 +16,7 @@ from random import sample
 from typing import Callable
 
 import featuretools as ft
+import joblib
 import numpy as np
 import pandas as pd
 from gplearn.genetic import SymbolicTransformer
@@ -40,8 +41,8 @@ from atom.plots import FeatureSelectorPlot
 from atom.utils import (
     DATAFRAME, FEATURES, FLOAT, INT, INT_TYPES, SCALAR, SEQUENCE,
     SEQUENCE_TYPES, SERIES_TYPES, TARGET, CustomDict, check_is_fitted,
-    check_scaling, composed, crash, get_custom_scorer, get_feature_importance,
-    infer_task, is_sparse, lst, merge, method_to_log, sign, to_df,
+    check_scaling, composed, crash, get_custom_scorer,
+    infer_task, is_sparse, lst, merge, method_to_log, sign, to_df
 )
 
 
@@ -1144,6 +1145,15 @@ class FeatureSelector(
         - "sklearnex"
         - "cuml" (only if device="gpu")
 
+    backend: str, default="loky"
+        Parallelization backend. Choose from:
+
+        - "loky": Single-node, process-based parallelism.
+        - "multiprocessing": Legacy single-node, process-based
+          parallelism. Less robust than 'loky'.
+        - "threading": Single-node, thread-based parallelism.
+        - "ray": Multi-node, process-based parallelism.
+
     verbose: int, default=0
         Verbosity level of the class. Choose from:
 
@@ -1172,12 +1182,6 @@ class FeatureSelector(
         - **drop:** Name of the dropped feature.
         - **corr_feature:** Names of the correlated features.
         - **corr_value:** Corresponding correlation coefficients.
-
-    feature_importance: pd.Series
-        Normalized importance scores calculated by the solver for the
-        features kept by the transformer. The scores are extracted from
-        the coef_ or feature_importances_ attribute, checked in that
-        order. Only if strategy is one of univariate, sfm, rfe or rfecv.
 
     [strategy]: sklearn transformer
         Object used to transform the data, e.g. `fs.pca` for the pca
@@ -1290,6 +1294,7 @@ class FeatureSelector(
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
+        backend: str = "loky",
         verbose: INT = 0,
         logger: str | Logger | None = None,
         random_state: INT | None = None,
@@ -1299,6 +1304,7 @@ class FeatureSelector(
             n_jobs=n_jobs,
             device=device,
             engine=engine,
+            backend=backend,
             verbose=verbose,
             logger=logger,
             random_state=random_state,
@@ -1312,9 +1318,9 @@ class FeatureSelector(
         self.kwargs = kwargs
 
         self.collinear = pd.DataFrame(columns=["drop", "corr_feature", "corr_value"])
-        self.feature_importance = []
         self.scaler = None
 
+        self._multioutput = None
         self._n_features = None
         self._kwargs = kwargs.copy()
         self._high_variance = {}
@@ -1409,28 +1415,30 @@ class FeatureSelector(
                 elif isinstance(self.solver, str):
                     # Assign goal to initialize the predefined model
                     if self.solver[-6:] == "_class":
-                        self.goal = "class"
+                        goal = "class"
                         solver = self.solver[:-6]
                     elif self.solver[-4:] == "_reg":
-                        self.goal = "reg"
+                        goal = "reg"
                         solver = self.solver[:-4]
                     else:
                         solver = self.solver
 
                     # Get estimator from predefined models
-                    if solver not in MODELS:
+                    if solver in MODELS:
+                        model = MODELS[solver](
+                            goal=goal,
+                            multioutput=self._multioutput,
+                            **{x: getattr(self, x, False) for x in BaseTransformer.attrs},
+                        )
+                        model.task = infer_task(y, goal)
+                        solver = model._get_est()
+                    else:
                         raise ValueError(
                             "Invalid value for the solver parameter. Unknown "
-                            f"model: {solver}. Choose from: {', '.join(MODELS)}."
+                            f"model: {solver}. Choose from: {', '.join(MODELS.keys())}."
                         )
-                    else:
-                        self.task = infer_task(y, self.goal)
-                        solver = MODELS[solver](self, fast_init=True)._get_est()
                 else:
                     solver = self.solver
-
-                    # Assign goal to get default scorer for advanced strategies
-                    self.goal = "reg" if is_regressor(solver) else "class"
 
         elif self.kwargs:
             kwargs = ", ".join([f"{str(k)}={str(v)}" for k, v in self.kwargs.items()])
@@ -1596,8 +1604,8 @@ class FeatureSelector(
                 )
             else:
                 if not check_scaling(X):
-                    self.scaler = Scaler().fit(X)
-                    X = self.scaler.transform(X)
+                    self.scaler = Scaler()
+                    X = self.scaler.fit_transform(X)
 
                 estimator = self._get_est_class("PCA", "decomposition")
 
@@ -1643,51 +1651,55 @@ class FeatureSelector(
                 check_y()
                 self._estimator.fit(X, y)
 
-        elif self.strategy.lower() == "sfs":
-            check_y()
+        elif self.strategy.lower() in ("sfs", "rfe", "rfecv"):
+            if self.strategy.lower() == "sfs":
+                check_y()
 
-            if self.kwargs.get("scoring"):
-                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+                if self.kwargs.get("scoring"):
+                    self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
-            self._estimator = SequentialFeatureSelector(
-                estimator=solver,
-                n_features_to_select=self._n_features,
-                n_jobs=self.n_jobs,
-                **self._kwargs,
-            ).fit(X, y)
+                self._estimator = SequentialFeatureSelector(
+                    estimator=solver,
+                    n_features_to_select=self._n_features,
+                    n_jobs=self.n_jobs,
+                    **self._kwargs,
+                )
 
-        elif self.strategy.lower() == "rfe":
-            check_y()
+            elif self.strategy.lower() == "rfe":
+                check_y()
 
-            self._estimator = RFE(
-                estimator=solver,
-                n_features_to_select=self._n_features,
-                **self._kwargs,
-            ).fit(X, y)
+                self._estimator = RFE(
+                    estimator=solver,
+                    n_features_to_select=self._n_features,
+                    **self._kwargs,
+                )
 
-        elif self.strategy.lower() == "rfecv":
-            check_y()
+            elif self.strategy.lower() == "rfecv":
+                check_y()
 
-            if self.kwargs.get("scoring"):
-                self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
+                if self.kwargs.get("scoring"):
+                    self._kwargs["scoring"] = get_custom_scorer(self.kwargs["scoring"])
 
-            # Invert n_features to select them all (default option)
-            if self._n_features == X.shape[1]:
-                self._n_features = 1
+                # Invert n_features to select them all (default option)
+                if self._n_features == X.shape[1]:
+                    self._n_features = 1
 
-            self._estimator = RFECV(
-                estimator=solver,
-                min_features_to_select=self._n_features,
-                n_jobs=self.n_jobs,
-                **self._kwargs,
-            ).fit(X, y)
+                self._estimator = RFECV(
+                    estimator=solver,
+                    min_features_to_select=self._n_features,
+                    n_jobs=self.n_jobs,
+                    **self._kwargs,
+                )
+
+            # Use parallelization backend
+            with joblib.parallel_backend(backend=self.backend):
+                self._estimator.fit(X, y)
 
         else:
             check_y()
 
             # Either use a provided validation set or cross-validation over X
-            kwargs = self.kwargs.copy()
-            if "X_valid" in kwargs:
+            if "X_valid" in (kwargs := self.kwargs.copy()):
                 if "y_valid" in kwargs:
                     X_valid, y_valid = self._prepare_input(
                         kwargs.pop("X_valid"), kwargs.pop("y_valid")
@@ -1705,10 +1717,11 @@ class FeatureSelector(
                 if kwargs.get("scoring"):
                     kwargs["scoring"] = get_custom_scorer(kwargs["scoring"])
                 else:
-                    task = infer_task(y, goal=self.goal)
+                    goal = "reg" if is_regressor(solver) else "class"
+                    task = infer_task(y, goal=goal)
                     if task.startswith("bin"):
                         kwargs["scoring"] = get_custom_scorer("f1")
-                    elif task.startswith("multi") and self.goal.startswith("class"):
+                    elif task.startswith("multi") and goal.startswith("class"):
                         kwargs["scoring"] = get_custom_scorer("f1_weighted")
                     else:
                         kwargs["scoring"] = get_custom_scorer("r2")
@@ -1731,26 +1744,6 @@ class FeatureSelector(
 
         # Add the strategy estimator as attribute to the class
         setattr(self, self.strategy.lower(), self._estimator)
-
-        # Assign feature importance (only for some strategies)
-        if self.strategy.lower() in ("univariate", "sfm", "rfe", "rfecv"):
-            estimator = getattr(self._estimator, "estimator_", self._estimator)
-
-            # Some strategies return scores for all features
-            if len(scores := get_feature_importance(estimator)) == X.shape[1]:
-                self.feature_importance = pd.Series(
-                    data=scores / scores.max(),
-                    index=X.columns,
-                    name="feature_importance",
-                    dtype="float",
-                ).sort_values(ascending=False)[:self._n_features]
-            else:
-                self.feature_importance = pd.Series(
-                    data=scores / scores.max(),
-                    index=X.columns[self._estimator.get_support(indices=True)],
-                    name="feature_importance",
-                    dtype="float",
-                ).sort_values(ascending=False)
 
         self._is_fitted = True
         return self

@@ -305,14 +305,6 @@ def test_name_property():
     assert atom.tree3.name == "Tree3"
 
 
-def test_name_property_already_exists():
-    """Assert that an error is raised when a model with that name already exists."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "Tree2"])
-    with pytest.raises(ValueError, match=".*already exists.*"):
-        atom.tree2.name = "Tree"
-
-
 @patch("mlflow.MlflowClient.set_tag")
 def test_name_property_to_mlflow(mlflow):
     """Assert that the new name is stored in mlflow."""
@@ -564,7 +556,7 @@ def test_y_holdout_property():
 # Test prediction properties ======================================= >>
 
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_all_prediction_properties(dataset):
+def test_all_prediction_attributes(dataset):
     """Assert that all prediction properties can be called."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("LR")
@@ -584,11 +576,14 @@ def test_prediction_decision_function_type(dataset):
 
 
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_prediction_predict_proba_multioutput(dataset):
-    """Assert that the predict_proba predictions change for multioutput."""
+def test_prediction_attributes_multioutput(dataset):
+    """Assert that the prediction attributes change for multioutput."""
     atom = ATOMClassifier(X_class, y=y_multiclass, holdout_size=0.1, random_state=1)
-    atom.run("LR")
-    assert isinstance(getattr(atom.lr, f"predict_proba_{dataset}").index, pd.MultiIndex)
+    atom.run("RF")
+    predict_proba = getattr(atom.rf, f"predict_proba_{dataset}")
+    predict_log_proba = getattr(atom.rf, f"predict_log_proba_{dataset}")
+    assert isinstance(predict_proba.index, pd.MultiIndex)
+    assert isinstance(predict_log_proba.index, pd.MultiIndex)
 
 
 # Test prediction methods ========================================== >>
@@ -625,6 +620,13 @@ def test_predictions_from_new_data():
     atom.run("LR")
     assert isinstance(atom.lr.predict(X_bin), pd.Series)
     assert isinstance(atom.lr.predict_proba(X_bin), pd.DataFrame)
+
+
+def test_prediction_from_multioutput():
+    """Assert that predictions can be made for multioutput datasets."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run("LR")
+    assert isinstance(atom.lr.predict_proba(X_class).index, pd.MultiIndex)
 
 
 def test_score_regression():
@@ -766,15 +768,6 @@ def test_cross_validate():
     atom.run("LR")
     assert isinstance(atom.lr.cross_validate(), pd.DataFrame)
     assert isinstance(atom.lr.cross_validate(scoring="AP"), pd.DataFrame)
-
-
-def test_delete():
-    """Assert that models can be deleted."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("Tree")
-    atom.tree.delete()
-    assert not atom.models
-    assert not atom.metric
 
 
 def test_evaluate_invalid_threshold():

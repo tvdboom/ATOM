@@ -109,7 +109,6 @@ from the model. The remaining utility methods can be found hereunder.
         - create_app
         - create_dashboard
         - cross_validate
-        - delete
         - evaluate
         - export_pipeline
         - fit

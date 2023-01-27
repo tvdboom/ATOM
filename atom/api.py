@@ -22,6 +22,7 @@ from atom.utils import INT, SCALAR, SEQUENCE, TARGET, Predictor
 @typechecked
 def ATOMModel(
     estimator: Predictor,
+    name: str | None = None,
     *,
     acronym: str | None = None,
     needs_scaling: bool = False,
@@ -41,10 +42,17 @@ def ATOMModel(
     estimator: Predictor
         Custom estimator. Should implement a `fit` and `predict` method.
 
+    name: str or None, default=None
+        Name for the model. This is the value used to call the
+        model from atom. The value should start with the model's
+        `acronym` when specified. If None, the capital letters of the
+        estimator's name are used (only if two or more, else it uses
+        the entire name).
+
     acronym: str or None, default=None
-        Model's acronym. Used to call the model from atom. If None, the
-        capital letters in the estimator's \__name__ are used (only if
-        two or more, else it uses the entire \__name__).
+        Model's acronym. If None, it uses the model's `name`. Specify
+        this parameter when you want to train multiple custom models
+        that share the same estimator.
 
     needs_scaling: bool, default=False
         Whether the model should use [automated feature scaling][].
@@ -72,7 +80,7 @@ def ATOMModel(
 
     >>> ransac =  ATOMModel(
     ...      estimator=RANSACRegressor(),
-    ...      acronym="RANSAC",
+    ...      name="RANSAC",
     ...      needs_scaling=False,
     ...  )
 
@@ -83,6 +91,7 @@ def ATOMModel(
     Models: RANSAC
     Metric: r2
 
+
     Results for RANSACRegressor:
     Fit ---------------------------------------------
     Train evaluation --> r2: -2.1784
@@ -90,6 +99,7 @@ def ATOMModel(
     Time elapsed: 0.072s
     -------------------------------------------------
     Total time: 0.072s
+
 
     Final results ==================== >>
     Total time: 0.072s
@@ -99,10 +109,11 @@ def ATOMModel(
     ```
 
     """
-    estimator = clone(estimator)
+    if not callable(estimator):
+        estimator = clone(estimator)
 
-    if acronym:
-        estimator.acronym = acronym
+    estimator.name = name
+    estimator.acronym = acronym
     estimator.needs_scaling = needs_scaling
     estimator.native_multioutput = native_multioutput
     estimator.has_validation = has_validation

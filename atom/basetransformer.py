@@ -226,15 +226,7 @@ class BaseTransformer:
     @typechecked
     def logger(self, value: str | Logger | None):
         # Loggers from external libraries to redirect to the file handler
-        external_loggers = [
-            "mlflow",
-            "optuna",
-            "ray",
-            "modin",
-            "featuretools",
-            "explainerdashboard",
-            "gradio",
-        ]
+        external_loggers = ["mlflow", "optuna", "ray", "modin", "featuretools", "gradio"]
 
         if not value:
             self._logger = None
@@ -451,8 +443,10 @@ class BaseTransformer:
         df: dataframe
             Dataset.
 
-        y: series or dataframe
-            Target column(s).
+        y: series, dataframe or None
+            Target column(s). Used to check that the provided index
+            is not one of the target columns. If None, the check is
+            skipped.
 
         Returns
         -------
@@ -760,7 +754,8 @@ class BaseTransformer:
                     holdout.index = self.index[-len(holdout):]
 
             # Skip the n_rows step if not called from atom
-            if hasattr(self, "n_rows") and use_n_rows:
+            # Don't use hasattr since getattr can fail when _models is not converted
+            if "n_rows" in self.__dict__ and use_n_rows:
                 if self.n_rows <= 1:
                     train = _subsample(train)
                     test = _subsample(test)
@@ -803,7 +798,7 @@ class BaseTransformer:
                     "successfully. See the documentation for the allowed formats."
                 )
             else:
-                return self.branch._data, self.branch._idx, self.holdout
+                return self.branch._data, self.branch._idx, self.branch._holdout
 
         elif len(arrays) == 1:
             # arrays=(X,)
@@ -881,11 +876,11 @@ class BaseTransformer:
                 "from: debug, info, warning, error, critical."
             )
 
-        if severity == "error":
+        if severity in ("error", "critical"):
             raise UserWarning(msg)
         elif severity == "warning":
             warnings.warn(msg)
-        elif self.verbose >= level and (severity == "info" or self.warnings == "ignore"):
+        elif severity == "info" and self.verbose >= level:
             print(msg)
 
         # Store in file
@@ -909,12 +904,15 @@ class BaseTransformer:
 
         """
         if not save_data and hasattr(self, "dataset"):
-            data = {"holdout": deepcopy(self.holdout)}  # Store data to reattach later
-            self.holdout = None
-            for key, value in self._branches.items():
-                data[key] = deepcopy(value._data)
-                value._data = None
-                value.__dict__.pop("holdout", None)  # Clear cached holdout
+            data = {}
+            for branch in self._branches:
+                data[branch.name] = dict(
+                    data=deepcopy(branch._data),
+                    holdout=deepcopy(branch._holdout),
+                )
+                branch._data = None
+                branch._holdout = None
+                branch.__dict__.pop("holdout", None)  # Clear cached holdout
 
         if filename.endswith("auto"):
             filename = filename.replace("auto", self.__class__.__name__)
@@ -925,8 +923,8 @@ class BaseTransformer:
 
         # Restore the data to the attributes
         if not save_data and hasattr(self, "dataset"):
-            self.holdout = data["holdout"]
-            for key, value in self._branches.items():
-                value._data = data[key]
+            for branch in self._branches:
+                branch._data = data[branch.name]["data"]
+                branch._holdout = data[branch.name]["holdout"]
 
         self.log(f"{self.__class__.__name__} successfully saved.", 1)

@@ -33,13 +33,13 @@ packages are necessary for its correct functioning.
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.1.0, <1.2.0)
 * **[matplotlib](https://matplotlib.org/)** (>=3.5.0, <3.6.0)
 * **[mlflow](https://mlflow.org/)** (>=2.0.1)
-* **[modin](https://modin.readthedocs.io/en/stable/)** (>=0.18.0)
+* **[modin[ray]](https://modin.readthedocs.io/en/stable/)** (>=0.18.0)
 * **[nltk](https://www.nltk.org/)** (>=3.7)
 * **[numpy](https://numpy.org/)** (>=1.22)
 * **[optuna](https://optuna.org/)** (>=3.0.0)
 * **[pandas](https://pandas.pydata.org/)** (>=1.3.5)
 * **[plotly](https://plotly.com/python/)** (>=5.10.0)
-* **[ray](https://docs.ray.io/en/latest/)** (>=2.2.0)
+* **[ray[serve]](https://docs.ray.io/en/latest/)** (>=2.2.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.41)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.2.0)
 * **[scikit-learn-intelex](https://github.com/intel/scikit-learn-intelex)** (>=2021.6.3)
@@ -84,6 +84,8 @@ using `pip install atom-ml[dev]`.
 * **[pytest](https://docs.pytest.org/en/latest/)** (>=7.1.0)
 * **[pytest-cov](https://pytest-cov.readthedocs.io/en/latest/)** (>=3.0.0)
 * **[pytest-xdist](https://github.com/pytest-dev/pytest-xdist)** (>=3.1.0)
+* **[scikeras](https://github.com/adriangb/scikeras)** (>=0.10.0)
+* **[tensorflow](https://pypi.org/project/tensorflow/#history)** (>=2.11.0)
 
 **Documentation**
 

@@ -15,7 +15,6 @@ import pytest
 from optuna.distributions import IntDistribution
 from optuna.pruners import PatientPruner
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-
 from atom import ATOMClassifier, ATOMRegressor
 from atom.pipeline import Pipeline
 
@@ -139,56 +138,23 @@ def test_MLP_custom_n_layers():
 def test_stacking():
     """Assert that the Stacking model works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(models=["OLS", "RF"])
+    atom.run(models=["RF", "XGB"])
     atom.stacking()
-    assert isinstance(atom.stack.estimator.estimators_[0], Pipeline)
-    assert isinstance(atom.stack.estimator.estimators_[1], RandomForestRegressor)
-
-
-def test_stacking_multiple_branches():
-    """Assert that an error is raised when branches are different."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    atom.branch = "2"
-    atom.run("LDA")
-    with pytest.raises(ValueError, match=".*on the current branch.*"):
-        atom.stacking(models=["LR", "LDA"])
-
-
-def test_stacking_feature_importance():
-    """Assert that the feature_importance attr can be retrieved."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "RF"])
-    atom.stacking()
+    assert isinstance(atom.stack.estimator.estimators_[0], RandomForestRegressor)
+    assert isinstance(atom.stack.estimator.estimators_[1], Pipeline)
     assert isinstance(atom.stack.feature_importance, pd.Series)
 
 
 def test_voting():
     """Assert that the Voting model works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(models=["SVM", "Tree", "RF"])
+    atom.run(models=["SVM", "RF", "XGB"])
 
     # Not all models have predict_proba
     with pytest.raises(ValueError, match=".*a predict_proba method.*"):
         atom.voting(voting="soft")
 
-    atom.voting(models=["SVM", "RF"])
-    assert isinstance(atom.vote.estimator.estimators_[0], Pipeline)
-    assert isinstance(atom.vote.estimator.estimators_[1], RandomForestClassifier)
-
-
-def test_voting_multiple_branches():
-    """Assert that an error is raised when branches are different."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LDA"])
-    atom.branch = "2"
-    with pytest.raises(ValueError, match=".*on the current branch.*"):
-        atom.voting(models=["LR", "LDA"])
-
-
-def test_voting_feature_importance():
-    """Assert that the feature_importance attr can be retrieved."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LDA", "lSVM"])
-    atom.voting()
+    atom.voting(models=["RF", "XGB"])
+    assert isinstance(atom.vote.estimator.estimators_[0], RandomForestClassifier)
+    assert isinstance(atom.vote.estimator.estimators_[1], Pipeline)
     assert isinstance(atom.vote.feature_importance, pd.Series)

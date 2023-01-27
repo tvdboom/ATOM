@@ -10,8 +10,6 @@ Description: Module containing the BaseRunner class.
 from __future__ import annotations
 
 import re
-import tempfile
-from copy import deepcopy
 from typing import Any, Callable
 
 import mlflow
@@ -24,17 +22,19 @@ from sklearn.multioutput import (
 from typeguard import typechecked
 
 from atom.basemodel import BaseModel
+from atom.basetransformer import BaseTransformer
+from atom.basetracker import BaseTracker
 from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, CustomDict, Model, Predictor,
-    check_is_fitted, composed, crash, divide, flt, get_best_score, get_pl_name,
-    get_versions, lst, method_to_log, pd,
+    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, ClassMap, CustomDict, Model,
+    Predictor, check_is_fitted, composed, crash, divide, export_pipeline, flt,
+    get_best_score, get_versions, lst, method_to_log, pd,
 )
 
 
-class BaseRunner:
+class BaseRunner(BaseTracker):
     """Base class for runners.
 
     Contains shared attributes and methods for the atom and trainer
@@ -42,18 +42,6 @@ class BaseRunner:
     utility properties, prediction methods and utility methods.
 
     """
-
-    # Tracking parameters for mlflow
-    _tracking_params = dict(
-        log_ht=True,
-        log_model=True,
-        log_plots=True,
-        log_data=False,
-        log_pipeline=False,
-    )
-
-    def __init__(self):
-        self._multioutput = "auto"
 
     def __getstate__(self) -> dict:
         # Store an extra attribute with the package versions
@@ -75,12 +63,12 @@ class BaseRunner:
                     )
 
     def __getattr__(self, item: str) -> Any:
-        if item in self.__dict__.get("_branches").min("og"):
+        if item in self.__dict__.get("_branches"):
             return self._branches[item]  # Get branch
-        elif item in self.branch._get_attrs():
+        elif item in dir(self.branch) and not item.startswith("_"):
             return getattr(self.branch, item)  # Get attr from branch
-        elif self.__dict__.get("_models").get(item.lower()):
-            return self._models[item.lower()]  # Get model subclass
+        elif item in self.__dict__.get("_models"):
+            return self._models[item]  # Get model
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column from dataset
         elif item in DF_ATTRS:
@@ -91,15 +79,13 @@ class BaseRunner:
             )
 
     def __setattr__(self, item: str, value: Any):
-        if item != "holdout" and isinstance(getattr(Branch, item, None), property):
+        if isinstance(getattr(Branch, item, None), property):
             setattr(self.branch, item, value)
         else:
             super().__setattr__(item, value)
 
     def __delattr__(self, item: str):
-        if item in self._branches:
-            self.branch.__delete__(self._branches[item])
-        elif item in self._models:
+        if item in self._models:
             self.delete(item)
         else:
             super().__delattr__(item)
@@ -122,7 +108,7 @@ class BaseRunner:
         elif isinstance(item, INT_TYPES):
             return self.dataset[self.columns[item]]
         elif isinstance(item, str):
-            if item in self._branches.min("og"):
+            if item in self._branches:
                 return self._branches[item]  # Get branch
             elif item in self._models:
                 return self._models[item]  # Get model
@@ -141,83 +127,49 @@ class BaseRunner:
                 "subscriptable with types int, str or list."
             )
 
-    # Tracking properties ========================================== >>
-
-    @property
-    def log_ht(self) -> bool:
-        """Whether to track every trial of the hyperparameter tuning."""
-        return self._tracking_params["log_ht"]
-
-    @log_ht.setter
-    @typechecked
-    def log_ht(self, value: bool):
-        self._tracking_params["log_ht"] = value
-
-    @property
-    def log_model(self) -> bool:
-        """Whether to save the model's estimator after fitting."""
-        return self._tracking_params["log_model"]
-
-    @log_model.setter
-    @typechecked
-    def log_model(self, value: bool):
-        self._tracking_params["log_model"] = value
-
-    @property
-    def log_plots(self) -> bool:
-        """Whether to save plots as artifacts."""
-        return self._tracking_params["log_plots"]
-
-    @log_plots.setter
-    @typechecked
-    def log_plots(self, value: bool):
-        self._tracking_params["log_plots"] = value
-
-    @property
-    def log_data(self) -> bool:
-        """Whether to save the train and test sets."""
-        return self._tracking_params["log_data"]
-
-    @log_data.setter
-    @typechecked
-    def log_data(self, value: bool):
-        self._tracking_params["log_data"] = value
-
-    @property
-    def log_pipeline(self) -> bool:
-        """Whether to save the model's pipeline."""
-        return self._tracking_params["log_pipeline"]
-
-    @log_pipeline.setter
-    @typechecked
-    def log_pipeline(self, value: bool):
-        self._tracking_params["log_pipeline"] = value
-
     # Utility properties =========================================== >>
 
     @property
-    def _is_multioutput(self) -> bool:
-        """Return whether the task is multilabel or multioutput."""
-        return any(task in self.task for task in ("multilabel", "multioutput"))
+    def og(self) -> Branch:
+        """Branch containing the original dataset.
+
+        This branch contains the data prior to any transformations.
+        It redirects to the current branch if its pipeline is empty
+        to not have the same data in memory twice.
+
+        """
+        return self._og or self.branch
 
     @property
     def branch(self) -> Branch:
         """Current active branch.
 
-        Use the property's `@setter` to change from current branch or
-        to create a new one. If the value is the name of an existing
-        branch, switch to that one. Else, create a new branch using
-        that name. The new branch is split from the current branch. Use
-        `__from__` to split the new branch from any other existing
-        branch. Read more in the [user guide][branches].
+        Use the property's `@setter` to change the branch or to create
+        a new one. If the value is the name of an existing branch,
+        switch to that one. Else, create a new branch using that name.
+        The new branch is split from the current branch. Use `__from__`
+        to split the new branch from any other existing branch. Read
+        more in the [user guide][branches].
 
         """
-        return self._branches[self._current]
+        return self._current
 
     @branch.deleter
     def branch(self):
         """Delete the current active branch."""
-        self.branch.__delete__(self.branch)
+        if len(self._branches) == 1:
+            raise PermissionError("Can't delete the last branch!")
+
+        # Delete all depending models
+        for model in self._models:
+            if model.branch is self.branch:
+                self._delete_models(model.name)
+
+        self._branches.remove(self._current)
+        self._current = self._branches[-1]
+
+        self.log(f"Branch {self.branch.name} successfully deleted.", 1)
+        self.log(f"Switched to branch {self.branch.name}.", 1)
 
     @property
     def multioutput(self) -> Predictor | None:
@@ -264,20 +216,16 @@ class BaseRunner:
             self._multioutput = clone(value)
 
     @property
-    def models(self) -> str | list[str]:
+    def models(self) -> str | list[str] | None:
         """Name of the model(s)."""
-        if isinstance(self._models, CustomDict):
-            return flt([model.name for model in self._models.values()])
-        else:
-            return self._models
+        if isinstance(self._models, ClassMap):
+            return flt(self._models.keys())
 
     @property
-    def metric(self) -> str | list[str]:
+    def metric(self) -> str | list[str] | None:
         """Name of the metric(s)."""
-        if isinstance(self._metric, CustomDict):
-            return flt([metric.name for metric in self._metric.values()])
-        else:
-            return self._metric
+        if isinstance(self._metric, ClassMap):
+            return flt(self._metric.keys())
 
     @property
     def errors(self) -> CustomDict:
@@ -302,9 +250,7 @@ class BaseRunner:
 
         """
         if self._models:  # Returns None if not fitted
-            return sorted(
-                self._models.values(), key=lambda x: get_best_score(x), reverse=True
-            )
+            return sorted(self._models, key=lambda x: get_best_score(x), reverse=True)
 
     @property
     def winner(self) -> Model:
@@ -351,16 +297,16 @@ class BaseRunner:
                 return round(m._train_idx / len(m.branch.train), 2)
 
         df = pd.DataFrame(
-            data=[m.results for m in self._models.values()],
+            data=[m.results for m in self._models],
             columns=self._models[0].results.index if self._models else [],
             index=lst(self.models),
         ).dropna(axis=1, how="all")
 
         # For sh and ts runs, include the fraction of training set
-        if any(m._train_idx != len(m.branch.train) for m in self._models.values()):
+        if any(m._train_idx != len(m.branch.train) for m in self._models):
             df = df.set_index(
                 pd.MultiIndex.from_arrays(
-                    arrays=[[frac(m) for m in self._models.values()], self.models],
+                    arrays=[[frac(m) for m in self._models], self.models],
                     names=["frac", "model"],
                 )
             ).sort_index(level=0, ascending=True)
@@ -369,265 +315,13 @@ class BaseRunner:
 
     # Utility methods ============================================== >>
 
-    def _get_og_branches(self) -> list[Branch]:
-        """Return branches containing the original dataset."""
-        return [branch for branch in self._branches.values() if branch.pipeline.empty]
-
-    def _get_rows(
-        self,
-        index: INT | str | slice | SEQUENCE | None = None,
-        return_test: bool = True,
-        branch: Branch | None = None,
-    ) -> list:
-        """Get a subset of the rows in the dataset.
-
-        Rows can be selected by name, index or regex pattern. If a
-        string is provided, use `+` to select multiple rows and `!`
-        to exclude them. Rows cannot be included and excluded in the
-        same call.
-
-        Parameters
-        ----------
-        index: int, str, slice, sequence or None, default=None
-            Names or indices of the rows to select. If None, returns
-            the complete dataset or the test set.
-
-        return_test: bool, default=True
-            Whether to return the test or the complete dataset when no
-            index is provided.
-
-        branch: Branch or None, default=None
-            Get columns from specified branch. If None, use the current
-            branch.
-
-        Returns
-        -------
-        list
-            Indices of the included rows.
-
-        """
-
-        def get_match(idx: str, ex: ValueError | None = None):
-            """Try to find a match by regex.
-
-            Parameters
-            ----------
-            idx: str
-                Regex pattern to match with indices.
-
-            ex: ValueError or None
-                Exception to raise if failed (from previous call).
-
-            """
-            nonlocal inc, exc
-
-            array = inc
-            if idx.startswith("!") and idx not in indices:
-                array = exc
-                idx = idx[1:]
-
-            # Find rows using regex matches
-            if matches := [i for i in indices if re.fullmatch(idx, str(i))]:
-                array.extend(matches)
-            else:
-                raise ex or ValueError(
-                    "Invalid value for the index parameter. "
-                    f"Could not find any row that matches {idx}."
-                )
-
-        if not branch:
-            branch = self.branch
-
-        indices = list(branch.dataset.index)
-        if branch.holdout is not None:
-            indices += list(branch.holdout.index)
-
-        inc, exc = [], []
-        if index is None:
-            inc = list(branch._idx[2]) if return_test else list(branch.X.index)
-        elif isinstance(index, slice):
-            inc = indices[index]
-        else:
-            for idx in lst(index):
-                if isinstance(idx, (*INT_TYPES, str)) and idx in indices:
-                    inc.append(idx)
-                elif isinstance(idx, INT_TYPES):
-                    if -len(indices) <= idx <= len(indices):
-                        inc.append(indices[idx])
-                    else:
-                        raise ValueError(
-                            f"Invalid value for the index parameter. Value {index} is "
-                            f"out of range for a dataset with {len(indices)} rows."
-                        )
-                elif isinstance(idx, str):
-                    try:
-                        get_match(idx)
-                    except ValueError as ex:
-                        for i in idx.split("+"):
-                            get_match(i, ex)
-                else:
-                    raise TypeError(
-                        f"Invalid type for the index parameter, got {type(idx)}. "
-                        "Use a row's name or position to select it."
-                    )
-
-        if len(inc) + len(exc) == 0:
-            raise ValueError(
-                "Invalid value for the index parameter, got "
-                f"{index}. At least one row has to be selected."
-            )
-        elif inc and exc:
-            raise ValueError(
-                "Invalid value for the index parameter. You can either "
-                "include or exclude rows, not combinations of these."
-            )
-
-        if exc:
-            # If rows were excluded with `!`, select all but those
-            inc = [idx for idx in indices if idx not in exc]
-
-        return list(dict.fromkeys(inc))  # Avoid duplicates
-
-    def _get_columns(
-        self,
-        columns: INT | str | slice | SEQUENCE | None = None,
-        include_target: bool = True,
-        return_inc_exc: bool = False,
-        only_numerical: bool = False,
-        branch: Branch | None = None,
-    ) -> list[str] | tuple[list[str] | list[str]]:
-        """Get a subset of the columns.
-
-        Columns can be selected by name, index or regex pattern. If a
-        string is provided, use `+` to select multiple columns and `!`
-        to exclude them. Columns cannot be included and excluded in
-        the same call.
-
-        Parameters
-        ----------
-        columns: int, str, slice, sequence or None
-            Names, indices or dtypes of the columns to select. If None,
-            it returns all columns in the dataframe.
-
-        include_target: bool, default=True
-            Whether to include the target column in the dataframe to
-            select from.
-
-        return_inc_exc: bool, default=False
-            Whether to return only included columns or the tuple
-            (included, excluded).
-
-        only_numerical: bool, default=False
-            Whether to return only numerical columns.
-
-        branch: Branch or None, default=None
-            Get columns from specified branch. If None, use the current
-            branch.
-
-        Returns
-        -------
-        list
-            Names of the included columns.
-
-        list
-            Names of the excluded columns. Only returned if
-            return_inc_exc=True.
-
-        """
-
-        def get_match(col: str, ex: ValueError | None = None):
-            """Try to find a match by regex.
-
-            Parameters
-            ----------
-            col: str
-                Regex pattern to match with the column names.
-
-            ex: ValueError or None
-                Exception to raise if failed (from previous call).
-
-            """
-            nonlocal inc, exc
-
-            array = inc
-            if col.startswith("!") and col not in df.columns:
-                array = exc
-                col = col[1:]
-
-            # Find columns using regex matches
-            if matches := [c for c in df.columns if re.fullmatch(col, str(c))]:
-                array.extend(matches)
-            else:
-                # Find columns by type
-                try:
-                    array.extend(list(df.select_dtypes(col).columns))
-                except TypeError:
-                    raise ex or ValueError(
-                        "Invalid value for the columns parameter. "
-                        f"Could not find any column that matches {col}."
-                    )
-
-        if not branch:
-            branch = self.branch
-
-        # Select dataframe from which to get the columns
-        df = branch.dataset if include_target else branch.X
-
-        inc, exc = [], []
-        if columns is None:
-            if only_numerical:
-                return list(df.select_dtypes(include=["number"]).columns)
-            else:
-                return list(df.columns)
-        elif isinstance(columns, slice):
-            inc = list(df.columns[columns])
-        else:
-            for col in lst(columns):
-                if isinstance(col, INT_TYPES):
-                    try:
-                        inc.append(df.columns[col])
-                    except IndexError:
-                        raise ValueError(
-                            f"Invalid value for the columns parameter. Value {col} "
-                            f"is out of range for a dataset with {df.shape[1]} columns."
-                        )
-                elif isinstance(col, str):
-                    try:
-                        get_match(col)
-                    except ValueError as ex:
-                        for c in col.split("+"):
-                            get_match(c, ex)
-                else:
-                    raise TypeError(
-                        f"Invalid type for the columns parameter, got {type(col)}. "
-                        "Use a column's name or position to select it."
-                    )
-
-        if len(inc) + len(exc) == 0:
-            raise ValueError(
-                "Invalid value for the columns parameter, got "
-                f"{columns}. At least one column has to be selected."
-            )
-        elif inc and exc:
-            raise ValueError(
-                "Invalid value for the columns parameter. You can either "
-                "include or exclude columns, not combinations of these."
-            )
-        elif return_inc_exc:
-            return list(dict.fromkeys(inc)), list(dict.fromkeys(exc))
-
-        if exc:
-            # If columns were excluded with `!`, select all but those
-            inc = [col for col in df.columns if col not in exc]
-
-        return list(dict.fromkeys(inc))  # Avoid duplicates
-
     def _get_models(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         ensembles: bool = True,
-    ) -> list[str]:
-        """Get names of models.
+        branch: Branch | None = None,
+    ) -> list[Model]:
+        """Get models.
 
         Models can be selected by name, index or regex pattern. If a
         string is provided, use `+` to select multiple models and `!`
@@ -642,16 +336,20 @@ class BaseRunner:
 
         ensembles: bool, default=True
             Whether to include ensemble models in the output. If False,
-            they are silently ignored.
+            they are silently excluded from any return.
+
+        branch: Branch or None, default=None
+            Force returned models to have been fitted on this branch,
+            else raises an exception. If None, this filter is ignored.
 
         Returns
         -------
         list
-            Model names.
+            Selected models.
 
         """
 
-        def get_match(model: str, ex: ValueError | None = None):
+        def get_match(model: str):
             """Try to find a match by regex.
 
             Parameters
@@ -659,55 +357,50 @@ class BaseRunner:
             model: str
                 Regex pattern to match with model names.
 
-            ex: ValueError or None
-                Exception to raise if failed (from previous call).
-
             """
             nonlocal inc, exc
 
             array = inc
-            if model.startswith("!") and model not in options:
+            if model.startswith("!") and model not in self._models:
                 array = exc
                 model = model[1:]
 
             # Find rows using regex matches
             if model.lower() == "winner":
-                array.append(self.winner.name)
-            elif matches := [m for m in options if re.fullmatch(model, m, re.IGNORECASE)]:
-                array.extend(matches)
+                array.append(self.winner)
+            elif match := [m for m in self._models if re.fullmatch(model, m.name, re.I)]:
+                array.extend(match)
             else:
-                raise ex or ValueError(
+                raise ValueError(
                     "Invalid value for the models parameter. Could "
                     f"not find any model that matches {model}. The "
-                    f"available models are: {', '.join(options)}."
+                    f"available models are: {', '.join(self._models.keys())}."
                 )
-
-        options = self._models.min("og")
 
         inc, exc = [], []
         if models is None:
-            inc.extend(options)
+            inc.extend(self._models)
         elif isinstance(models, slice):
-            inc.extend(options[models])
+            inc.extend(self._models[models])
         else:
             for model in lst(models):
                 if isinstance(model, INT_TYPES):
                     try:
-                        inc.append(options[model].name)
+                        inc.append(self._models[model])
                     except KeyError:
                         raise ValueError(
                             "Invalid value for the models parameter. Value "
                             f"{model} is out of range for a pipeline with "
-                            f"{len(options)} models."
+                            f"{len(self._models)} models."
                         )
                 elif isinstance(model, str):
                     try:
                         get_match(model)
-                    except ValueError as ex:
+                    except ValueError:
                         for m in model.split("+"):
-                            get_match(m, ex)
+                            get_match(m)
                 elif isinstance(model, BaseModel):
-                    inc.append(model.name)
+                    inc.append(model)
                 else:
                     raise TypeError(
                         f"Invalid type for the models parameter, got {type(model)}. "
@@ -722,17 +415,23 @@ class BaseRunner:
 
         if exc:
             # If models were excluded with `!`, select all but those
-            inc = [m for m in options if m not in exc]
+            inc = [m for m in self._models if m not in exc]
 
         if not ensembles:
-            inc = [
-                model for model in inc
-                if not model.startswith("Stack") and not model.startswith("Vote")
-            ]
+            inc = [m for m in inc if all(not m.acronym == x for x in ("Stack", "Vote"))]
+
+        if branch:
+            for m in inc:
+                if m.branch is not branch:
+                    raise ValueError(
+                        "Invalid value for the models parameter. All "
+                        f"models must have been fitted on {branch}, but "
+                        f"model {m.name} is fitted on {m.branch}."
+                    )
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
 
-    def _delete_models(self, models: SEQUENCE):
+    def _delete_models(self, models: str | SEQUENCE):
         """Delete models.
 
         Remove models from the instance. All attributes are deleted
@@ -741,16 +440,17 @@ class BaseRunner:
 
         Parameters
         ----------
-        models: sequence
-            Names of the models to delete.
+        models: str or sequence
+            Model(s) to delete.
 
         """
-        for model in models:
-            self._models.pop(model)
+        for model in lst(models):
+            if model in self._models:
+                self._models.remove(model)
 
         # If no models, reset the metric
         if not self._models:
-            self._metric = CustomDict()
+            self._metric = ClassMap()
 
     @crash
     def available_models(self) -> pd.DataFrame:
@@ -775,8 +475,8 @@ class BaseRunner:
 
         """
         rows = []
-        for model in MODELS.values():
-            m = model(self, fast_init=True)
+        for model in MODELS:
+            m = model(goal=self.goal)
             if self.goal in m._estimators:
                 rows.append(
                     {
@@ -812,7 +512,7 @@ class BaseRunner:
         - Cached [holdout data sets][data-sets]
 
         """
-        for model in self._models.values():
+        for model in self._models:
             model.clear()
 
     @composed(crash, method_to_log, typechecked)
@@ -837,13 +537,10 @@ class BaseRunner:
         if not models:
             self.log("No models to delete.", 1)
         else:
-            self._delete_models(models)
-            if len(models) == 1:
-                self.log(f"Model {models[0]} successfully deleted.", 1)
-            else:
-                self.log(f"Deleting {len(models)} models...", 1)
-                for m in models:
-                    self.log(f" --> Model {m} successfully deleted.", 1)
+            self.log(f"Deleting {len(models)} models...", 1)
+            for m in models:
+                self._delete_models(m.name)
+                self.log(f" --> Model {m.name} successfully deleted.", 1)
 
     @composed(crash, typechecked)
     def evaluate(
@@ -886,7 +583,7 @@ class BaseRunner:
         check_is_fitted(self, attributes="_models")
 
         evaluations = []
-        for m in self._models.values():
+        for m in self._models:
             evaluations.append(
                 m.evaluate(
                     metric=metric,
@@ -947,12 +644,11 @@ class BaseRunner:
         Returns
         -------
         Pipeline
-            Sklearn-like Pipeline object with all transformers in the
-            current branch.
+            Current branch as a sklearn-like Pipeline object.
 
         """
         if model:
-            model = getattr(self, self._get_models(model)[0])
+            model = self._get_models(model)[0]
             pipeline = model.pipeline
         else:
             pipeline = self.pipeline
@@ -960,25 +656,7 @@ class BaseRunner:
         if len(pipeline) == 0 and not model:
             raise RuntimeError("There is no pipeline to export!")
 
-        steps = []
-        for transformer in pipeline:
-            est = deepcopy(transformer)  # Not clone to keep fitted
-
-            # Set the new verbosity (if possible)
-            if verbose is not None and hasattr(est, "verbose"):
-                est.verbose = verbose
-
-            steps.append((get_pl_name(est.__class__.__name__, steps), est))
-
-        if model:
-            steps.append((model.name, deepcopy(model.estimator)))
-
-        if not memory:  # None or False
-            memory = None
-        elif memory is True:
-            memory = tempfile.gettempdir()
-
-        return Pipeline(steps, memory=memory)  # ATOM's pipeline, not sklearn
+        return export_pipeline(pipeline, model, memory, verbose)
 
     @composed(crash, typechecked)
     def get_class_weight(
@@ -1021,7 +699,7 @@ class BaseRunner:
             )
 
         y = self.classes[dataset]
-        if self._is_multioutput:
+        if "multioutput" in self.task:
             y = y.loc[target if isinstance(target, str) else self.y.columns[target]]
 
         return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
@@ -1056,9 +734,7 @@ class BaseRunner:
             )
 
         # Check that both instances have the same original dataset
-        current_og = self._get_og_branches()[0]
-        other_og = other._get_og_branches()[0]
-        if not current_og._data.equals(other_og._data):
+        if not self.og._data.equals(other.og._data):
             raise ValueError(
                 "Invalid value for the other parameter. The provided instance "
                 "was initialized using a different dataset than this one."
@@ -1074,19 +750,17 @@ class BaseRunner:
             )
 
         self.log("Merging instances...", 1)
-        for name, branch in other._branches.min("og").items():
-            self.log(f" --> Merging branch {name}.", 1)
-            if name in self._branches:
-                name = f"{name}{suffix}"
-            branch._name = name
-            self._branches[name] = branch
+        for branch in other._branches:
+            self.log(f" --> Merging branch {branch.name}.", 1)
+            if branch.name in self._branches:
+                branch._name = f"{branch.name}{suffix}"
+            self._branches[branch.name] = branch
 
-        for name, model in other._models.items():
-            self.log(f" --> Merging model {name}.", 1)
-            if name in self._models:
-                name = f"{name}{suffix}"
-            model._name = name
-            self._models[name] = model
+        for model in other._models:
+            self.log(f" --> Merging model {model.name}.", 1)
+            if model.name in self._models:
+                model._name = f"{model.name}{suffix}"
+            self._models[model.name] = model
 
         self.log(" --> Merging attributes.", 1)
         if hasattr(self, "missing"):
@@ -1105,11 +779,15 @@ class BaseRunner:
     ):
         """Add a [Stacking][] model to the pipeline.
 
+        !!! warning
+            Combining models trained on different branches into one
+            ensemble is not allowed and will raise an exception.
+
         Parameters
         ----------
         name: str, default="Stack"
             Name of the model. The name is always presided with the
-            model's acronym: `stack`.
+            model's acronym: `Stack`.
 
         models: slice, sequence or None, default=None
             Models that feed the stacking estimator. If None, it selects
@@ -1122,7 +800,7 @@ class BaseRunner:
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_models(models or self.branch._get_depending_models(), False)
+        models = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
 
         if len(models) < 2:
             raise ValueError(
@@ -1140,14 +818,25 @@ class BaseRunner:
                 "train multiple Stacking models within the same instance."
             )
 
+        kw_model = dict(
+            index=self.index,
+            goal=self.goal,
+            metric=self._metric,
+            multioutput=self.multioutput,
+            og=self.og,
+            branch=self.branch,
+            **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
+        )
+
         if isinstance(kwargs.get("final_estimator"), str):
             if kwargs["final_estimator"] not in MODELS:
                 raise ValueError(
-                    "Invalid value for the final_estimator parameter. Unknown model: "
-                    f"{kwargs['final_estimator']}. Choose from: {', '.join(MODELS)}."
+                    "Invalid value for the final_estimator parameter. "
+                    f"Unknown model: {kwargs['final_estimator']}. Choose "
+                    f"from: {', '.join(MODELS.keys())}."
                 )
             else:
-                model = MODELS[kwargs["final_estimator"]](self)
+                model = MODELS[kwargs["final_estimator"]](**kw_model)
                 if self.goal not in model._estimators:
                     raise ValueError(
                         "Invalid value for the final_estimator parameter. Model "
@@ -1156,7 +845,7 @@ class BaseRunner:
 
                 kwargs["final_estimator"] = model._get_est()
 
-        self._models[name] = Stacking(self, name, models=self._models[models], **kwargs)
+        self._models.append(Stacking(name=name, models=models, **kw_model, **kwargs))
 
         if self.experiment:
             self[name]._run = mlflow.start_run(run_name=self[name].name)
@@ -1175,11 +864,15 @@ class BaseRunner:
     ):
         """Add a [Voting][] model to the pipeline.
 
+        !!! warning
+            Combining models trained on different branches into one
+            ensemble is not allowed and will raise an exception.
+
         Parameters
         ----------
         name: str, default="Vote"
             Name of the model. The name is always presided with the
-            model's acronym: `vote`.
+            model's acronym: `Vote`.
 
         models: slice, sequence or None, default=None
             Models that feed the voting estimator. If None, it selects
@@ -1190,7 +883,7 @@ class BaseRunner:
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_models(models or self.branch._get_depending_models(), False)
+        models = ClassMap(*self._get_models(models, ensembles=False, branch=self.branch))
 
         if len(models) < 2:
             raise ValueError(
@@ -1208,7 +901,20 @@ class BaseRunner:
                 "train multiple Voting models within the same instance."
             )
 
-        self._models[name] = Voting(self, name, models=self._models[models], **kwargs)
+        self._models.append(
+            Voting(
+                name=name,
+                models=models,
+                index=self.index,
+                goal=self.goal,
+                metric=self._metric,
+                multioutput=self.multioutput,
+                og=self.og,
+                branch=self.branch,
+                **{attr: getattr(self, attr) for attr in BaseTransformer.attrs},
+                **kwargs,
+            )
+        )
 
         if self.experiment:
             self[name]._run = mlflow.start_run(run_name=self[name].name)

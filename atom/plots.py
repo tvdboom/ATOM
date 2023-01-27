@@ -15,7 +15,7 @@ from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
 from typing import Callable
-
+from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -45,11 +45,23 @@ from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 
 from atom.utils import (
-    FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
-    check_dependency, check_is_fitted, check_predict_proba, composed, crash,
-    divide, get_attr, get_best_score, get_corpus, get_custom_scorer, has_attr,
-    has_task, it, lst, plot_from_model, rnd, to_rgb,
+    FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, SERIES, Model, bk,
+    check_canvas, check_dependency, check_predict_proba, composed, crash,
+    divide, get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
+    it, lst, plot_from_model, rnd, to_rgb,
 )
+
+
+@dataclass
+class Aesthetics:
+    """Keeps track of plot aesthetics."""
+
+    palette: SEQUENCE  # Sequence of colors
+    title_fontsize: INT  # Fontsize for titles
+    label_fontsize: INT  # Fontsize for labels, legend and hoverinfo
+    tick_fontsize: INT  # Fontsize for ticks
+    line_width: INT  # Width of the line plots
+    marker_size: INT  # Size of the markers
 
 
 class BaseFigure:
@@ -123,7 +135,7 @@ class BaseFigure:
         self.groups = []
         self.style = dict(colors={}, markers={}, dashes={}, shapes={})
         self.markers = cycle(["circle", "x", "diamond", "pentagon", "star", "hexagon"])
-        self.dashes = cycle([None, "dashdot", "dash", "dot"])
+        self.dashes = cycle([None, "dashdot", "dash", "dot", "longdash", "longdashdot"])
         self.shapes = cycle(["", "/", "x", "\\", "-", "|", "+", "."])
 
         self.pos = {}  # Subplot position to use for title
@@ -386,25 +398,23 @@ class BaseFigure:
 
 
 class BasePlot:
-    """Parent class for all plotting methods.
+    """Base class for all plotting methods.
 
-    This base class defines the plot properties that can
-    be changed in order to customize the plot's aesthetics.
+    This base class defines the properties that can be changed
+    to customize the plot's aesthetics.
 
     """
 
-    line_width = 2
-    marker_size = 8
-
-    def __init__(self):
-        self._fig = None
-        self._custom_layout = {}
-        self._aesthetics = dict(
-            palette=PALETTE,  # Sequence of colors
-            title_fontsize=24,  # Fontsize for titles
-            label_fontsize=16,  # Fontsize for labels, legend and hoverinfo
-            tick_fontsize=12,  # Fontsize for ticks
-        )
+    _fig = None
+    _custom_layout = {}
+    _aesthetics = Aesthetics(
+        palette=list(PALETTE),
+        title_fontsize=24,
+        label_fontsize=16,
+        tick_fontsize=12,
+        line_width=2,
+        marker_size=8,
+    )
 
     # Properties =================================================== >>
 
@@ -420,6 +430,8 @@ class BasePlot:
         self.title_fontsize = value.get("title_fontsize", self.title_fontsize)
         self.label_fontsize = value.get("label_fontsize", self.label_fontsize)
         self.tick_fontsize = value.get("tick_fontsize", self.tick_fontsize)
+        self.line_width = value.get("line_width", self.line_width)
+        self.marker_size = value.get("marker_size", self.marker_size)
 
     @property
     def palette(self) -> str | SEQUENCE:
@@ -429,7 +441,7 @@ class BasePlot:
         a custom one, e.g. `atom.palette = ["red", "green", "blue"]`.
 
         """
-        return self._aesthetics["palette"]
+        return self._aesthetics.palette
 
     @palette.setter
     @typechecked
@@ -441,12 +453,12 @@ class BasePlot:
                 f"the px.colors.qualitative module or define your own sequence."
             )
 
-        self._aesthetics["palette"] = value
+        self._aesthetics.palette = value
 
     @property
     def title_fontsize(self) -> INT:
         """Fontsize for the plot's title."""
-        return self._aesthetics["title_fontsize"]
+        return self._aesthetics.title_fontsize
 
     @title_fontsize.setter
     @typechecked
@@ -456,12 +468,13 @@ class BasePlot:
                 "Invalid value for the title_fontsize parameter. "
                 f"Value should be >=0, got {value}."
             )
-        self._aesthetics["title_fontsize"] = value
+
+        self._aesthetics.title_fontsize = value
 
     @property
     def label_fontsize(self) -> INT:
         """Fontsize for the labels, legend and hover information."""
-        return self._aesthetics["label_fontsize"]
+        return self._aesthetics.label_fontsize
 
     @label_fontsize.setter
     @typechecked
@@ -471,12 +484,13 @@ class BasePlot:
                 "Invalid value for the label_fontsize parameter. "
                 f"Value should be >=0, got {value}."
             )
-        self._aesthetics["label_fontsize"] = value
+
+        self._aesthetics.label_fontsize = value
 
     @property
     def tick_fontsize(self) -> INT:
         """Fontsize for the ticks along the plot's axes."""
-        return self._aesthetics["tick_fontsize"]
+        return self._aesthetics.tick_fontsize
 
     @tick_fontsize.setter
     @typechecked
@@ -486,7 +500,40 @@ class BasePlot:
                 "Invalid value for the tick_fontsize parameter. "
                 f"Value should be >=0, got {value}."
             )
-        self._aesthetics["tick_fontsize"] = value
+
+        self._aesthetics.tick_fontsize = value
+
+    @property
+    def line_width(self) -> INT:
+        """Width of the line plots."""
+        return self._aesthetics.line_width
+
+    @line_width.setter
+    @typechecked
+    def line_width(self, value: INT):
+        if value <= 0:
+            raise ValueError(
+                "Invalid value for the line_width parameter. "
+                f"Value should be >=0, got {value}."
+            )
+
+        self._aesthetics.line_width = value
+
+    @property
+    def marker_size(self) -> INT:
+        """Size of the markers."""
+        return self._aesthetics.marker_size
+
+    @marker_size.setter
+    @typechecked
+    def marker_size(self, value: INT):
+        if value <= 0:
+            raise ValueError(
+                "Invalid value for the marker_size parameter. "
+                f"Value should be >=0, got {value}."
+            )
+
+        self._aesthetics.marker_size = value
 
     # Methods ====================================================== >>
 
@@ -566,42 +613,6 @@ class BasePlot:
             raise ValueError(f"Didn't find any hyperparameters for model {model.name}.")
 
         return hyperparameters
-
-    def _get_subclass(
-        self,
-        models: str | Model | SEQUENCE,
-        max_one: bool,
-        ensembles: bool = True,
-    ) -> Model | list[Model]:
-        """Get model subclasses.
-
-        Optionally, restrict the number of models to one and filter
-        out ensembles.
-
-        Parameters
-        ----------
-        models: str, Model or sequence
-            Models provided by the plot's parameter.
-
-        max_one: bool
-            Whether one or multiple models are allowed. If True, return
-            the model instead of a list.
-
-        ensembles: bool, default=True
-            If False, drop ensemble models automatically.
-
-        Returns
-        -------
-        model or list of models
-            Model subclasses retrieved from the names.
-
-        """
-        models = list(self._models[self._get_models(models, ensembles)].values())
-
-        if max_one and len(models) > 1:
-            raise ValueError("This plot only accepts one model!")
-
-        return models[0] if max_one else models
 
     def _get_metric(
         self,
@@ -712,35 +723,119 @@ class BasePlot:
 
         return dataset[0] if max_one else dataset
 
-    def _get_target(self, target: INT | str) -> INT:
-        """Check and return the provided target's index.
+    def _get_target(self, target: INT | str | tuple, only_columns: bool = False) -> str:
+        """Check and return the specified target column's position.
 
         Parameters
         ----------
         target: int or str
-            Target class to retrieve.
+            Target column or class to retrieve.
+
+        only_columns: bool, default=False
+            Whether to only look at target columns or also to target
+            classes (for multilabel and multiclass multioutput tasks).
 
         Returns
         -------
-        int
-            Position index of the selected target.
+        str
+            Name of the selected target column.
 
         """
-        if isinstance(target, str):
-            try:
-                return self.mapping[self.target][target]
-            except (TypeError, KeyError):
-                raise ValueError(
-                    f"Invalid value for the target parameter. Value {target} "
-                    "not found in the mapping of the target column."
-                )
-        elif not 0 <= target < self.y.nunique(dropna=False):
-            raise ValueError(
-                "Invalid value for the target parameter. There are "
-                f"{self.y.nunique(dropna=False)} classes, got {target}."
-            )
+        if only_columns:
+            if isinstance(target, str):
+                if target not in self.target:
+                    raise ValueError(
+                        "Invalid value for the target parameter. Value "
+                        f"{target} is not one of the target columns."
+                    )
+                else:
+                    return target
+            else:
+                if not 0 <= target < len(self.target):
+                    raise ValueError(
+                        "Invalid value for the target parameter. There are "
+                        f"{len(self.target)} target columns, got {target}."
+                    )
+                else:
+                    return list(self.target)[target]
+        # else:
+        #     if isinstance(target, str):
+        #         try:
+        #             targets.append(self.mapping[self.target][t])
+        #         except (TypeError, KeyError):
+        #             raise ValueError(
+        #                 f"Invalid value for the target parameter. Value {target} "
+        #                 "not found in the mapping of the target column."
+        #             )
+        #     elif not 0 <= target < self.y.nunique(dropna=False):
+        #         raise ValueError(
+        #             "Invalid value for the target parameter. There are "
+        #             f"{self.y.nunique(dropna=False)} classes, got {target}."
+        #         )
 
         return target
+
+    def _get_pred(
+        self,
+        model: Model,
+        dataset: str,
+        target: str,
+        method: str = "predict",
+    ) -> tuple[SERIES, SERIES]:
+        """Get the true and predicted values for a column.
+
+        Predictions are made using the `decision_function` or
+        `predict_proba` attributes whenever available, checked in
+        that order.
+
+        Parameters
+        ----------
+        model: Model
+            Model for which to get the predictions.
+
+        dataset: str
+            Name of the data set for which to get the predictions.
+
+        target: str
+            Target column to look at.
+
+        method: str, default="predict"
+            Method to get predictions. Choose from:
+
+            - "predict": Use the `predict` method.
+            - "prob": Convert `decision_function` to probability
+              predictions or use `predict_proba`.
+            - "thresh": Use `decision_function` or `predict_proba`.
+
+        Returns
+        -------
+        series
+            True values.
+
+        series
+            Predicted values.
+
+        """
+        if method == "predict":
+            attribute = "predict"
+        else:
+            for attr in ("decision_function", "predict_proba", "predict"):
+                if hasattr(model.estimator, attr):
+                    attribute = attr
+                    break
+
+        y_true = getattr(model, f"y_{dataset}")
+        y_pred = getattr(model, f"{attribute}_{dataset}")
+        if method == "prob" and attribute == "decision_function":
+            # Get probabilities instead of threshold
+            y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
+
+        if "multioutput" in self.task:
+            return y_true.loc[:, target], y_pred.loc[:, target]
+        elif y_pred.ndim > 1:
+            return y_true, y_pred.iloc[:, 1]
+
+        return y_true, y_pred
 
     def _get_figure(self, **kwargs) -> go.Figure | plt.Figure:
         """Return existing figure if in canvas, else a new figure.
@@ -1074,7 +1169,7 @@ class BasePlot:
         vertical_spacing: FLOAT = 0.07,
         title: str | dict | None = None,
         legend: str | dict | None = "out",
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool = True,
     ):
@@ -1160,11 +1255,13 @@ class BasePlot:
     def reset_aesthetics(self):
         """Reset the plot [aesthetics][] to their default values."""
         self._custom_layout = {}
-        self._aesthetics = dict(
+        self._aesthetics = Aesthetics(
             palette=PALETTE,
             title_fontsize=24,
             label_fontsize=16,
             tick_fontsize=12,
+            line_width=2,
+            marker_size=8,
         )
 
     def update_layout(
@@ -1212,7 +1309,7 @@ class FeatureSelectorPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1342,7 +1439,7 @@ class FeatureSelectorPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1464,7 +1561,7 @@ class FeatureSelectorPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1636,7 +1733,7 @@ class DataPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] = (800, 700),
+        figsize: tuple[INT, INT] = (800, 700),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1707,7 +1804,7 @@ class DataPlot(BasePlot):
             url: /img/plots/plot_correlation.html
 
         """
-        columns = self._get_columns(columns, only_numerical=True)
+        columns = self.branch._get_columns(columns, only_numerical=True)
         if method.lower() not in ("pearson", "kendall", "spearman"):
             raise ValueError(
                 f"Invalid value for the method parameter, got {method}. "
@@ -1776,7 +1873,7 @@ class DataPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -1888,7 +1985,7 @@ class DataPlot(BasePlot):
             url: /img/plots/plot_distribution_3.html
 
         """
-        columns = self._get_columns(columns)
+        columns = self.branch._get_columns(columns)
         cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
 
         fig = self._get_figure()
@@ -2014,7 +2111,7 @@ class DataPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2133,7 +2230,7 @@ class DataPlot(BasePlot):
                 return column
 
         corpus = get_corpus(self.X)
-        rows = self.dataset.loc[self._get_rows(index, return_test=False)]
+        rows = self.dataset.loc[self.branch._get_rows(index, return_test=False)]
 
         if str(ngram).lower() in ("1", "word", "words"):
             ngram = "words"
@@ -2199,7 +2296,7 @@ class DataPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2279,7 +2376,7 @@ class DataPlot(BasePlot):
             url: /img/plots/plot_qq_2.html
 
         """
-        columns = self._get_columns(columns)
+        columns = self.branch._get_columns(columns)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
@@ -2329,7 +2426,7 @@ class DataPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] = (900, 900),
+        figsize: tuple[INT, INT] = (900, 900),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2397,7 +2494,7 @@ class DataPlot(BasePlot):
             url: /img/plots/plot_relationships.html
 
         """
-        columns = self._get_columns(columns, only_numerical=True)
+        columns = self.branch._get_columns(columns, only_numerical=True)
 
         # Use max 250 samples to not clutter the plot
         sample = lambda col: self.dataset[col].sample(
@@ -2497,7 +2594,7 @@ class DataPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
         **kwargs,
@@ -2591,7 +2688,7 @@ class DataPlot(BasePlot):
         from wordcloud import WordCloud
 
         corpus = get_corpus(self.X)
-        rows = self.dataset.loc[self._get_rows(index, return_test=False)]
+        rows = self.dataset.loc[self.branch._get_rows(index, return_test=False)]
 
         wordcloud = WordCloud(
             width=figsize[0],
@@ -2650,7 +2747,7 @@ class HTPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2751,8 +2848,6 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_edf.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         metric = self._get_metric(metric, max_one=False)
 
         # Check there is at least one model that run hyperparameter tuning
@@ -2812,7 +2907,7 @@ class HTPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -2894,8 +2989,6 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_hyperparameter_importance.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         met = self._get_metric(metric, max_one=True)
 
         # Check there is at least one model that run hyperparameter tuning
@@ -2961,7 +3054,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_hyperparameters(
         self,
         models: INT | str | Model | None = None,
@@ -2970,7 +3063,7 @@ class HTPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3049,11 +3142,9 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_hyperparameters.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
         met = self._get_metric(metric, max_one=True)
 
-        if len(params := self._get_hyperparams(params, m)) < 2:
+        if len(params := self._get_hyperparams(params, models)) < 2:
             raise ValueError(
                 "Invalid value for the hyperparameters parameter. A minimum "
                 f"of two parameters is required, got {len(params)}."
@@ -3076,12 +3167,12 @@ class HTPlot(BasePlot):
                     y=(y_pos, rnd(y_pos + size)),
                     coloraxis=dict(
                         axes="99",
-                        colorscale=PALETTE.get(self._fig.get_color(m.name), "Blues"),
+                        colorscale=PALETTE.get(self._fig.get_color(models.name), "Blues"),
                         cmin=np.nanmin(
-                            m.trials.apply(lambda row: lst(row["score"])[met], axis=1)
+                            models.trials.apply(lambda row: lst(row["score"])[met], axis=1)
                         ),
                         cmax=np.nanmax(
-                            m.trials.apply(lambda row: lst(row["score"])[met], axis=1)
+                            models.trials.apply(lambda row: lst(row["score"])[met], axis=1)
                         ),
                         showscale=False,
                     )
@@ -3092,18 +3183,18 @@ class HTPlot(BasePlot):
 
                 fig.add_trace(
                     go.Scatter(
-                        x=m.trials.apply(x_values, axis=1),
-                        y=m.trials.apply(y_values, axis=1),
+                        x=models.trials.apply(x_values, axis=1),
+                        y=models.trials.apply(y_values, axis=1),
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=self._fig.get_color(m.name),
+                            color=self._fig.get_color(models.name),
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
                         customdata=list(
                             zip(
-                                m.trials.index.tolist(),
-                                m.trials.apply(lambda i: lst(i["score"])[met], axis=1),
+                                models.trials.index.tolist(),
+                                models.trials.apply(lambda i: lst(i["score"])[met], axis=1),
                             )
                         ),
                         hovertemplate=(
@@ -3120,9 +3211,9 @@ class HTPlot(BasePlot):
 
                 fig.add_trace(
                     go.Contour(
-                        x=m.trials.apply(x_values, axis=1),
-                        y=m.trials.apply(y_values, axis=1),
-                        z=m.trials.apply(lambda i: lst(i["score"])[met], axis=1),
+                        x=models.trials.apply(x_values, axis=1),
+                        y=models.trials.apply(y_values, axis=1),
+                        z=models.trials.apply(lambda i: lst(i["score"])[met], axis=1),
                         contours=dict(
                             showlabels=True,
                             labelfont=dict(size=self.tick_fontsize, color="white")
@@ -3166,7 +3257,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_parallel_coordinate(
         self,
         models: INT | str | Model | None = None,
@@ -3175,7 +3266,7 @@ class HTPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3279,14 +3370,12 @@ class HTPlot(BasePlot):
 
             return list(map(str, sorted(numbers))) + sorted(categorical)
 
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
-        params = self._get_hyperparams(params, m)
+        params = self._get_hyperparams(params, models)
         met = self._get_metric(metric, max_one=True)
 
         dims = _get_dims_from_info(
             _get_parallel_coordinate_info(
-                study=m.study,
+                study=models.study,
                 params=params,
                 target=None if len(self._metric) == 1 else lambda x: x.values[met],
                 target_name=self._metric[met].name,
@@ -3311,7 +3400,7 @@ class HTPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes(
             coloraxis=dict(
-                colorscale=PALETTE.get(self._fig.get_color(m.name), "Blues"),
+                colorscale=PALETTE.get(self._fig.get_color(models.name), "Blues"),
                 cmin=min(dims[0]["values"]),
                 cmax=max(dims[0]["values"]),
                 title=self._metric[met].name,
@@ -3343,7 +3432,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_pareto_front(
         self,
         models: INT | str | Model | None = None,
@@ -3351,7 +3440,7 @@ class HTPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3428,8 +3517,6 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_pareto_front.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
         metric = self._get_metric(metric, max_one=False)
 
         if len(metric) < 2:
@@ -3460,16 +3547,16 @@ class HTPlot(BasePlot):
 
                 fig.add_trace(
                     go.Scatter(
-                        x=m.trials.apply(lambda row: row["score"][y], axis=1),
-                        y=m.trials.apply(lambda row: row["score"][x + 1], axis=1),
+                        x=models.trials.apply(lambda row: row["score"][y], axis=1),
+                        y=models.trials.apply(lambda row: row["score"][x + 1], axis=1),
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=m.trials.index,
+                            color=models.trials.index,
                             colorscale="Teal",
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
-                        customdata=m.trials.index,
+                        customdata=models.trials.index,
                         hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3497,7 +3584,7 @@ class HTPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_slice(
         self,
         models: INT | str | Model | None = None,
@@ -3506,7 +3593,7 @@ class HTPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3586,8 +3673,6 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_slice.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
         params = self._get_hyperparams(params, m)
         metric = self._get_metric(metric, max_one=False)
 
@@ -3614,16 +3699,16 @@ class HTPlot(BasePlot):
 
             fig.add_trace(
                 go.Scatter(
-                    x=m.trials.apply(lambda r: r["params"].get(params[y], None), axis=1),
-                    y=m.trials.apply(lambda r: lst(r["score"])[x], axis=1),
+                    x=models.trials.apply(lambda r: r["params"].get(params[y], None), axis=1),
+                    y=models.trials.apply(lambda r: lst(r["score"])[x], axis=1),
                     mode="markers",
                     marker=dict(
                         size=self.marker_size,
-                        color=m.trials.index,
+                        color=models.trials.index,
                         colorscale="Teal",
                         line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                     ),
-                    customdata=m.trials.index,
+                    customdata=models.trials.index,
                     hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                     xaxis=xaxis,
                     yaxis=yaxis,
@@ -3659,7 +3744,7 @@ class HTPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR, SCALAR] = (900, 800),
+        figsize: tuple[INT, INT] = (900, 800),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3741,8 +3826,6 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_trials.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         metric = self._get_metric(metric, max_one=False)
 
         # Check there is at least one model that run hyperparameter tuning
@@ -3833,16 +3916,18 @@ class PredictionPlot(BasePlot):
 
     """
 
+    @available_if(has_task(["binary", "multilabel"]))
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
+        dataset: str | SEQUENCE = "test",
         n_bins: INT = 10,
         target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR, SCALAR] = (900, 900),
+        figsize: tuple[INT, INT] = (900, 900),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -3872,11 +3957,17 @@ class PredictionPlot(BasePlot):
         models: int, str, Model, slice, sequence or None, default=None
             Models to plot. If None, all models are selected.
 
+        dataset: str or sequence, default="test"
+            Data set on which to calculate the metric. Use a sequence
+            or add `+` between options to select more than one. Choose
+            from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel-multioutput][]
+            tasks.
+
         n_bins: int, default=10
             Number of bins used for calibration. Minimum of 5 required.
-
-        target: int, str or sequence, default=0
-            Target column(s) to look at. Only for [multilabel][] tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -3936,14 +4027,8 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_calibration.html
 
         """
-        if not any(self.task.startswith(task) for task in ("binary", "multilabel")):
-            raise PermissionError(
-                "The plot_calibration method is only available for binary "
-                f"and multilabel classification tasks, got {self.task}."
-            )
-
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
+        dataset = self._get_set(dataset, max_one=False)
+        target = self._get_target(target, only_columns=True)
 
         if n_bins < 5:
             raise ValueError(
@@ -3955,43 +4040,41 @@ class PredictionPlot(BasePlot):
         xaxis, yaxis = self._fig.get_axes(y=(0.31, 1.0))
         xaxis2, yaxis2 = self._fig.get_axes(y=(0.0, 0.29))
         for m in models:
-            if hasattr(m.estimator, "decision_function"):
-                prob = m.decision_function_test
-                prob = (prob - prob.min()) / (prob.max() - prob.min())
-            elif hasattr(m.estimator, "predict_proba"):
-                prob = m.predict_proba_test.iloc[:, 1]
+            for ds in dataset:
+                y_true, y_pred = self._get_pred(m, ds, target, method="prob")
 
-            # Get calibration (frac of positives and predicted values)
-            frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
+                # Get calibration (frac of positives and predicted values)
+                frac_pos, pred = calibration_curve(y_true, y_pred, n_bins=n_bins)
 
-            fig.add_trace(
-                self._draw_line(
-                    x=pred,
-                    y=frac_pos,
-                    parent=m.name,
-                    mode="lines+markers",
-                    marker_symbol="circle",
-                    legend=legend,
-                    xaxis=xaxis2,
-                    yaxis=yaxis,
+                fig.add_trace(
+                    self._draw_line(
+                        x=pred,
+                        y=frac_pos,
+                        parent=m.name,
+                        child=ds,
+                        mode="lines+markers",
+                        marker_symbol="circle",
+                        legend=legend,
+                        xaxis=xaxis2,
+                        yaxis=yaxis,
+                    )
                 )
-            )
 
-            fig.add_trace(
-                go.Histogram(
-                    x=prob,
-                    xbins=dict(start=0, end=1, size=1. / n_bins),
-                    marker=dict(
-                        color=f"rgba({self._fig.get_color(m.name)[4:-1]}, 0.2)",
-                        line=dict(width=2, color=self._fig.get_color(m.name)),
-                    ),
-                    name=m.name,
-                    legendgroup=m.name,
-                    showlegend=False,
-                    xaxis=xaxis2,
-                    yaxis=yaxis2,
+                fig.add_trace(
+                    go.Histogram(
+                        x=y_pred,
+                        xbins=dict(start=0, end=1, size=1. / n_bins),
+                        marker=dict(
+                            color=f"rgba({self._fig.get_color(m.name)[4:-1]}, 0.2)",
+                            line=dict(width=2, color=self._fig.get_color(m.name)),
+                        ),
+                        name=m.name,
+                        legendgroup=m.name,
+                        showlegend=False,
+                        xaxis=xaxis2,
+                        yaxis=yaxis2,
+                    )
                 )
-            )
 
         self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
 
@@ -4024,10 +4107,11 @@ class PredictionPlot(BasePlot):
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4046,6 +4130,9 @@ class PredictionPlot(BasePlot):
         dataset: str, default="test"
             Data set on which to calculate the confusion matrix. Choose
             from:` "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multioutput tasks][].
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -4113,9 +4200,8 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_confusion_matrix_2.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         ds = self._get_set(dataset, max_one=True)
+        target = self._get_target(target, only_columns=True)
 
         if self.task.startswith("multi") and len(models) > 1:
             raise NotImplementedError(
@@ -4130,7 +4216,8 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         if len(models) == 1:  # Create matrix heatmap
             m = models[0]
-            cm = confusion_matrix(getattr(m, f"y_{ds}"), getattr(m, f"predict_{ds}"))
+            cm = confusion_matrix(*self._get_pred(m, ds, target, method="predict"))
+            ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
 
             xaxis, yaxis = self._fig.get_axes(
                 x=(0, 0.87),
@@ -4145,8 +4232,8 @@ class PredictionPlot(BasePlot):
 
             fig.add_trace(
                 go.Heatmap(
-                    x=m.mapping.get(m.target, m.y.sort_values().unique().astype(str)),
-                    y=m.mapping.get(m.target, m.y.sort_values().unique().astype(str)),
+                    x=ticks,
+                    y=ticks,
                     z=100. * cm / cm.sum(axis=1)[:, np.newaxis],
                     coloraxis=f"coloraxis{xaxis[1:]}",
                     text=cm,
@@ -4175,9 +4262,7 @@ class PredictionPlot(BasePlot):
         else:
             xaxis, yaxis = self._fig.get_axes()
             for m in models:
-                cm = confusion_matrix(
-                    getattr(m, f"y_{dataset}"), getattr(m, f"predict_{dataset}")
-                )
+                cm = confusion_matrix(*self._get_pred(m, ds, target, method="predict"))
 
                 color = self._fig.get_color(m.name)
                 fig.add_trace(
@@ -4213,16 +4298,17 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("binary"))
+    @available_if(has_task(["binary", "multilabel"]))
     @composed(crash, plot_from_model, typechecked)
     def plot_det(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ):
@@ -4240,6 +4326,10 @@ class PredictionPlot(BasePlot):
             Data set on which to calculate the metric. Use a sequence
             or add `+` between options to select more than one. Choose
             from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel-multioutput][]
+            tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -4300,20 +4390,15 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_det.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         dataset = self._get_set(dataset, max_one=False)
+        target = self._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for ds in dataset:
-                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
-                if y_pred.ndim > 1:
-                    y_pred = y_pred.iloc[:, 1]
-
                 # Get fpr-fnr pairs for different thresholds
-                fpr, fnr, _ = det_curve(getattr(m, f"y_{ds}"), y_pred)
+                fpr, fnr, _ = det_curve(*self._get_pred(m, ds, target, method="thresh"))
 
                 fig.add_trace(
                     self._draw_line(
@@ -4347,10 +4432,11 @@ class PredictionPlot(BasePlot):
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4371,6 +4457,9 @@ class PredictionPlot(BasePlot):
         dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multioutput tasks][].
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -4427,17 +4516,18 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_errors.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         ds = self._get_set(dataset, max_one=True)
+        target = self._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
+            y_true, y_pred = self._get_pred(m, ds, target)
+
             fig.add_trace(
                 go.Scatter(
-                    x=(x := getattr(m, f"y_{ds}")),
-                    y=(y := getattr(m, f"predict_{ds}")),
+                    x=y_true,
+                    y=y_pred,
                     mode="markers",
                     line=dict(width=2, color=self._fig.get_color(m.name)),
                     name=m.name,
@@ -4451,12 +4541,17 @@ class PredictionPlot(BasePlot):
             # Fit the points using linear regression
             from atom.models import OrdinaryLeastSquares
 
-            model = OrdinaryLeastSquares(self, fast_init=True)._get_est()
-            model.fit(np.array(x).reshape(-1, 1), y)
+            # TODO: Fix for multioutput models
+            model = OrdinaryLeastSquares(
+                goal=self.goal,
+                branch=m.branch,
+                multioutput=self.multioutput,
+            )._get_est()
+            model.fit(y_true.values.reshape(-1, 1), y_pred)
 
             fig.add_trace(
                 go.Scatter(
-                    x=(x := np.linspace(min(x), max(x), 100)),
+                    x=(x := np.linspace(y_true.min(), y_true.max(), 100)),
                     y=model.predict(x[:, np.newaxis]),
                     mode="lines",
                     line=dict(width=2, color=self._fig.get_color(m.name)),
@@ -4484,7 +4579,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(ensembles=False), typechecked)
     def plot_evals(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4492,7 +4587,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4568,8 +4663,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_evals.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False, ensembles=False)
         dataset = self._get_set(dataset, max_one=False, allow_holdout=False)
 
         fig = self._get_figure()
@@ -4616,7 +4709,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4693,8 +4786,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_feature_importance.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         show = self._get_show(show, models)
 
         fig = self._get_figure()
@@ -4757,7 +4848,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4834,18 +4925,13 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_gains.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         dataset = self._get_set(dataset, max_one=False)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for ds in dataset:
-                y_true = getattr(m, f"y_{ds}")
-                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
-                if y_pred.ndim > 1:
-                    y_pred = y_pred.iloc[:, 1]
+                y_true, y_pred = self._get_pred(m, ds, target, method="thresh")
 
                 fig.add_trace(
                     self._draw_line(
@@ -4877,7 +4963,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(ensembles=False), typechecked)
     def plot_learning_curve(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -4885,7 +4971,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -4960,8 +5046,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_learning_curve.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False, ensembles=False)
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
@@ -5045,7 +5129,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5122,8 +5206,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_lift.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         dataset = self._get_set(dataset, max_one=False)
 
         fig = self._get_figure()
@@ -5175,7 +5257,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5268,8 +5350,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_parshap_2.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         target = self._get_target(target)
 
         fig = self._get_figure()
@@ -5289,7 +5369,7 @@ class PredictionPlot(BasePlot):
 
         for m in models:
             parshap = {}
-            fxs = self._get_columns(columns, include_target=False, branch=m.branch)
+            fxs = self.branch._get_columns(columns, include_target=False, branch=m.branch)
 
             for ds in ("train", "test"):
                 X, y = getattr(m, f"X_{ds}"), getattr(m, f"y_{ds}")
@@ -5301,7 +5381,7 @@ class PredictionPlot(BasePlot):
                     data = data.sample(500, random_state=self.random_state)
 
                 # Replace data with the calculated shap values
-                data.iloc[:, :-1] = m._shap.get_shap_values(data.iloc[:, :-1], target)
+                data.iloc[:, :-1] = models._shap.get_shap_values(data.iloc[:, :-1], target)
 
                 parshap[ds] = pd.Series(index=fxs, dtype=float)
                 for fx in fxs:
@@ -5389,7 +5469,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5504,8 +5584,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_partial_dependence_2.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         target = self._get_target(target) if self.task.startswith("multi") else 0
 
         if kind.lower() not in ("average", "individual", "average+individual"):
@@ -5521,8 +5599,8 @@ class PredictionPlot(BasePlot):
 
             # Since every model can have different fxs, select them
             # every time and make sure the models use the same fxs
-            cols = self._get_columns(
-                columns=columns or (0, 1, 2),
+            cols = self.branch._get_columns(
+                columns=(0, 1, 2) if columns is None else columns,
                 include_target=False,
                 branch=m.branch,
             )
@@ -5542,7 +5620,7 @@ class PredictionPlot(BasePlot):
                         "The value must be None when plotting multiple models"
                     )
                 else:
-                    pair = self._get_columns(pair, include_target=False, branch=m.branch)
+                    pair = self.branch._get_columns(pair, include_target=False, branch=m.branch)
                     cols = [(c, pair[0]) for c in cols]
             else:
                 cols = [(c,) for c in cols]
@@ -5563,10 +5641,10 @@ class PredictionPlot(BasePlot):
                     axes.append((xaxis, yaxis))
 
             # Compute averaged predictions
-            predictions = Parallel(n_jobs=self.n_jobs, prefer=self.backend)(
+            predictions = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
-                    X=m.X_test,
+                    X=models.X_test,
                     features=col,
                     kind="both" if "individual" in kind.lower() else "average",
                 ) for col in cols
@@ -5577,7 +5655,7 @@ class PredictionPlot(BasePlot):
                 deciles = {}
                 for fx in chain.from_iterable(cols):
                     if fx not in deciles:  # Skip if the feature is repeated
-                        X_col = _safe_indexing(m.X_test, fx, axis=1)
+                        X_col = _safe_indexing(models.X_test, fx, axis=1)
                         deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
             for i, (ax, fx, pred) in enumerate(zip(axes, cols, predictions)):
@@ -5683,7 +5761,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -5766,8 +5844,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_permutation_importance.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         show = self._get_show(show, models)
 
         if n_repeats <= 0:
@@ -5789,7 +5865,7 @@ class PredictionPlot(BasePlot):
                 # Permutation importances returns Bunch object
                 m.permutations = permutation_importance(
                     estimator=m.estimator,
-                    X=m.X_test,
+                    X=models.X_test,
                     y=m.y_test,
                     scoring=self._metric[0],
                     n_repeats=n_repeats,
@@ -5844,7 +5920,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -5978,14 +6054,12 @@ class PredictionPlot(BasePlot):
         from schemdraw.flow import Data, RoundBox, Subroutine, Wire
         from schemdraw.util import Point
 
-        models = self._get_subclass(models, max_one=False)
-
         fig = self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_pipeline")
 
         # Define branches to plot
         branches = []
-        for branch in self._branches.min("og").values():
+        for branch in self._branches:
             draw_models, draw_ensembles = [], []
             for m in models:
                 if m.name in branch._get_depending_models():
@@ -6171,7 +6245,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower left",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6249,8 +6323,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_prc.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         dataset = self._get_set(dataset, max_one=False)
 
         fig = self._get_figure()
@@ -6302,7 +6374,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6382,8 +6454,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_probabilities.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         ds = self._get_set(dataset, max_one=True)
         target = self._get_target(target)
         check_predict_proba(models, "plot_probabilities")
@@ -6442,7 +6512,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6522,8 +6592,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_residuals.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         ds = self._get_set(dataset, max_one=True)
 
         fig = self._get_figure()
@@ -6592,7 +6660,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6715,8 +6783,6 @@ class PredictionPlot(BasePlot):
             else:
                 return model.bootstrap.iloc[:, metric].std()
 
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
@@ -6815,7 +6881,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -6893,8 +6959,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_roc.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         dataset = self._get_set(dataset, max_one=False)
 
         fig = self._get_figure()
@@ -6938,7 +7002,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(ensembles=False), typechecked)
     def plot_successive_halving(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -6946,7 +7010,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -7021,8 +7085,6 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_successive_halving.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False, ensembles=False)
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
@@ -7110,7 +7172,7 @@ class PredictionPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower left",
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> go.Figure | None:
@@ -7196,14 +7258,12 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_threshold.html
 
         """
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models, max_one=False)
         ds = self._get_set(dataset, max_one=True)
         check_predict_proba(models, "plot_threshold")
 
         # Get all metric functions from the input
         if metric is None:
-            metrics = [m._score_func for m in self._metric.values()]
+            metrics = [m._score_func for m in self._metric]
         else:
             metrics = []
             for m in lst(metric):
@@ -7260,7 +7320,7 @@ class ShapPlot(BasePlot):
 
     """
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_shap_bar(
         self,
         models: INT | str | Model | None = None,
@@ -7270,7 +7330,7 @@ class ShapPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7354,19 +7414,17 @@ class ShapPlot(BasePlot):
         ![plot_shap_bar](../../img/plots/plot_shap_bar.png)
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
-        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
-        show = self._get_show(show, m)
+        rows = models.X.loc[models.branch._get_rows(index)]
+        show = self._get_show(show, models)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_bar")
 
         shap.plots.bar(explanation, max_display=show, show=False)
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7378,7 +7436,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_shap_beeswarm(
         self,
         models: INT | str | Model | None = None,
@@ -7388,7 +7446,7 @@ class ShapPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7470,19 +7528,17 @@ class ShapPlot(BasePlot):
         ![plot_shap_beeswarm](../../img/plots/plot_shap_beeswarm.png)
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
-        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
-        show = self._get_show(show, m)
+        rows = models.X.loc[models.branch._get_rows(index)]
+        show = self._get_show(show, models)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_beeswarm")
 
         shap.plots.beeswarm(explanation, max_display=show, show=False)
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7493,7 +7549,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_shap_decision(
         self,
         models: INT | str | Model | None = None,
@@ -7503,7 +7559,7 @@ class ShapPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7596,25 +7652,23 @@ class ShapPlot(BasePlot):
         ![plot_shap_decision](../../img/plots/plot_shap_decision_2.png)
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
-        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
-        show = self._get_show(show, m)
+        rows = models.X.loc[models.branch._get_rows(index)]
+        show = self._get_show(show, models)
         target = self._get_target(target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_decision")
 
         shap.decision_plot(
-            base_value=m._shap.get_expected_value(target),
-            shap_values=m._shap.get_shap_values(rows, target),
+            base_value=models._shap.get_expected_value(target),
+            shap_values=models._shap.get_shap_values(rows, target),
             features=rows,
             feature_display_range=slice(-1, -show - 1, -1),
             auto_size_plot=False,
             show=False,
         )
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7626,7 +7680,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_shap_force(
         self,
         models: INT | str | Model | None = None,
@@ -7635,7 +7689,7 @@ class ShapPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] = (900, 300),
+        figsize: tuple[INT, INT] = (900, 300),
         filename: str | None = None,
         display: bool | None = True,
         **kwargs,
@@ -7718,24 +7772,22 @@ class ShapPlot(BasePlot):
         ![plot_shap_force](../../img/plots/plot_shap_force.png)
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
-        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
+        rows = models.X.loc[models.branch._get_rows(index)]
         target = self._get_target(target)
 
         self._get_figure(create_figure=False, backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_force")
 
         plot = shap.force_plot(
-            base_value=m._shap.get_expected_value(target),
-            shap_values=m._shap.get_shap_values(rows, target),
+            base_value=models._shap.get_expected_value(target),
+            shap_values=models._shap.get_shap_values(rows, target),
             features=rows,
             show=False,
             **kwargs,
         )
 
         if kwargs.get("matplotlib"):
-            self._fig.used_models.append(m)
+            self._fig.used_models.append(models)
             return self._plot(
                 fig=plt.gcf(),
                 ax=plt.gca(),
@@ -7757,7 +7809,7 @@ class ShapPlot(BasePlot):
                 shap.initjs()
                 display(plot)
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_shap_heatmap(
         self,
         models: INT | str | Model | None = None,
@@ -7767,7 +7819,7 @@ class ShapPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7852,19 +7904,17 @@ class ShapPlot(BasePlot):
         ![plot_shap_heatmap](../../img/plots/plot_shap_heatmap.png)
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
-        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
-        show = self._get_show(show, m)
+        rows = models.X.loc[models.branch._get_rows(index)]
+        show = self._get_show(show, models)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(rows, target)
+        explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_heatmap")
 
         shap.plots.heatmap(explanation, max_display=show, show=False)
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7876,7 +7926,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_shap_scatter(
         self,
         models: INT | str | Model | None = None,
@@ -7886,7 +7936,7 @@ class ShapPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] = (900, 600),
+        figsize: tuple[INT, INT] = (900, 600),
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -7970,19 +8020,17 @@ class ShapPlot(BasePlot):
         ![plot_shap_scatter](../../img/plots/plot_shap_scatter.png)
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
-        rows = m.X.loc[self._get_rows(index, branch=m.branch)]
-        column = self._get_columns(columns, include_target=False, branch=m.branch)[0]
+        rows = models.X.loc[models.branch._get_rows(index)]
+        column = self.branch._get_columns(columns, include_target=False, branch=models.branch)[0]
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(rows, target, column)
+        explanation = models._shap.get_explanation(rows, target, column)
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_scatter")
 
         shap.plots.scatter(explanation, color=explanation, ax=plt.gca(), show=False)
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             xlabel=plt.gca().get_xlabel(),
@@ -7995,7 +8043,7 @@ class ShapPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(max_one=True), typechecked)
     def plot_shap_waterfall(
         self,
         models: INT | str | Model | None = None,
@@ -8005,7 +8053,7 @@ class ShapPlot(BasePlot):
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
-        figsize: tuple[SCALAR, SCALAR] | None = None,
+        figsize: tuple[INT, INT] | None = None,
         filename: str | None = None,
         display: bool | None = True,
     ) -> plt.Figure | None:
@@ -8096,19 +8144,17 @@ class ShapPlot(BasePlot):
         ![plot_shap_waterfall](../../img/plots/plot_shap_waterfall.png)
 
         """
-        check_is_fitted(self, attributes="_models")
-        m = self._get_subclass(models, max_one=True)
-        rows = m.X.loc[[self._get_rows(index, branch=m.branch)[0]]]
-        show = self._get_show(show, m)
+        rows = models.X.loc[[models.branch._get_rows(index)[0]]]
+        show = self._get_show(show, models)
         target = self._get_target(target)
-        explanation = m._shap.get_explanation(rows, target, only_one=True)
+        explanation = models._shap.get_explanation(rows, target, only_one=True)
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_waterfall")
 
         shap.plots.waterfall(explanation, max_display=show, show=False)
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             ax=plt.gca(),
             title=title,

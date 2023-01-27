@@ -17,8 +17,9 @@ from inspect import (
     Parameter, getdoc, getmembers, getsourcelines, isclass, isfunction,
     isroutine, signature,
 )
+from dataclasses import dataclass
 from typing import Any, Callable, Optional
-
+from atom.basetransformer import BaseTransformer
 import regex as re
 import yaml
 from mkdocs.config.defaults import MkDocsConfig
@@ -223,14 +224,13 @@ CUSTOM_URLS = dict(
 
 # Classes ========================================================== >>
 
+@dataclass
 class DummyTrainer:
     """Dummy trainer class to call model instances."""
 
-    def __init__(self, goal: str, device: str = "cpu", engine: str = "sklearn"):
-        self.goal = goal
-        self.task = "binary" if goal == "class" else "reg"
-        self.device = device
-        self.engine = engine
+    goal: str
+    device: str
+    engine: str
 
 
 def insert(config: dict) -> str:
@@ -657,11 +657,12 @@ class AutoDocs:
                 Table in html format.
 
             """
-            # Create the model instance from the trainer
-            instance = self.obj(trainer, fast_init=True)
+            # Create the model from the trainer
+            model = self.obj(goal=trainer.goal)
+            model.task = "binary" if trainer.goal == "class" else "reg"
 
             text = ""
-            for name, dist in instance._get_distributions().items():
+            for name, dist in model._get_distributions().items():
                 anchor = f"<a id='{self.obj.__name__.lower()}-{name}'></a>"
                 text += f"{anchor}<strong>{name}</strong><br>"
                 text += f"<div markdown class='param'>{dist}</div>"
@@ -787,6 +788,7 @@ def render(markdown: str, **kwargs) -> str:
         Modified markdown/html source text of page.
 
     """
+
     autodocs = None
     while match := re.search("(:: )(\w.*?)(?=::|\n\n|\Z)", markdown, re.S):
         command = yaml.safe_load(match.group(2))

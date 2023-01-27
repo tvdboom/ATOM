@@ -15,8 +15,7 @@ import pytest
 from sklearn.base import BaseEstimator
 
 from atom.utils import (
-    CustomDict, NotFittedError, check_is_fitted, create_acronym, time_to_str,
-    to_df, to_series,
+    CustomDict, NotFittedError, check_is_fitted, time_to_str, to_df, to_series,
 )
 
 
@@ -91,9 +90,3 @@ def test_check_is_fitted_with_pandas():
     assert not check_is_fitted(estimator, exception=False, attributes="attr")
     estimator.attr = pd.Series([0, 1])
     assert check_is_fitted(estimator, attributes="attr")
-
-
-def test_create_acronym():
-    """Assert that the function works as intended."""
-    assert create_acronym("CustomClass") == "CC"
-    assert create_acronym("Customclass") == "Customclass"

@@ -39,6 +39,20 @@ jobs:
       - name: Apply linting
         run: flake8 --show-source --statistics atom tests
 
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v2
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Code quality analysis
+        uses: github/codeql-action/init@v2
+        with:
+            languages: python
+
   unit-tests:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -75,7 +89,7 @@ jobs:
           python-version: "3.10"
       - name: Install dependencies
         run: |
-          pip install -U pytest pytest-xdist nbmake
+          pip install -U pytest pytest-xdist nbmake tensorflow scikeras
           pip install -e .
       - name: Run example notebooks
         run: pytest --nbmake -n=auto --ignore=./examples/webapp/ --ignore=./examples/accelerating_cuml.ipynb ./examples/
