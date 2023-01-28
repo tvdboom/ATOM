@@ -8,6 +8,7 @@ Description: Module containing the BaseTracker class.
 """
 
 from dataclasses import dataclass
+
 from typeguard import typechecked
 
 

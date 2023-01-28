@@ -41,8 +41,8 @@ from atom.plots import FeatureSelectorPlot
 from atom.utils import (
     DATAFRAME, FEATURES, FLOAT, INT, INT_TYPES, SCALAR, SEQUENCE,
     SEQUENCE_TYPES, SERIES_TYPES, TARGET, CustomDict, check_is_fitted,
-    check_scaling, composed, crash, get_custom_scorer,
-    infer_task, is_sparse, lst, merge, method_to_log, sign, to_df
+    check_scaling, composed, crash, get_custom_scorer, infer_task, is_sparse,
+    lst, merge, method_to_log, sign, to_df,
 )
 
 

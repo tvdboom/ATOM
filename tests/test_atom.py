@@ -870,20 +870,6 @@ def test_scaling_is_passed():
     pd.testing.assert_frame_equal(atom.dataset, atom.lgb.dataset)
 
 
-def test_errors_are_updated():
-    """Assert that the found exceptions are updated in the errors attribute."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-
-    # Produce an error on a model
-    atom.run(["Tree", "SVM"], n_trials=1, ht_params={"distributions": {"svm": ["test"]}})
-    assert list(atom.errors) == ["SVM"]
-
-    # Subsequent runs should remove the original model
-    atom.run("SVM", n_trials=1)
-    assert atom.models == ["Tree", "SVM"]
-    assert not atom.errors
-
-
 def test_models_are_replaced():
     """Assert that models with the same name are replaced."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
@@ -898,11 +884,3 @@ def test_models_and_metric_are_updated():
     atom.run(["OLS", "Tree"], metric=get_scorer("max_error"))
     assert atom.models == ["OLS", "Tree"]
     assert atom.metric == "max_error"
-
-
-def test_errors_are_removed():
-    """Assert that the errors are removed if subsequent runs are successful."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["BNB", "Tree"], ht_params={"distributions": "max_depth"})  # Fails for BNB
-    atom.run("BNB")  # Runs correctly
-    assert not atom.errors  # Errors should be empty

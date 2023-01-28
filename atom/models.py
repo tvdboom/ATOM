@@ -137,7 +137,7 @@ from atom.basemodel import BaseModel
 from atom.pipeline import Pipeline
 from atom.utils import (
     DATAFRAME, SERIES, CatBMetric, ClassMap, CustomDict, LGBMetric, Predictor,
-    XGBMetric, Model, sign
+    XGBMetric, sign,
 )
 
 

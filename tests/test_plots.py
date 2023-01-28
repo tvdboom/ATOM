@@ -14,8 +14,8 @@ import pytest
 from sklearn.metrics import f1_score, get_scorer
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.plots import BaseFigure, BasePlot, Aesthetics
-from atom.utils import NotFittedError, SEQUENCE_TYPES, INT
+from atom.plots import Aesthetics, BaseFigure, BasePlot
+from atom.utils import INT, NotFittedError
 
 from .conftest import (
     X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10, y10_str, y_bin,

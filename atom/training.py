@@ -20,7 +20,7 @@ from typeguard import typechecked
 
 from atom.basetrainer import BaseTrainer
 from atom.utils import (
-    INT, INT_TYPES, SEQUENCE, ClassMap, CustomDict, Predictor, composed, crash,
+    INT, INT_TYPES, SEQUENCE, ClassMap, Predictor, composed, crash,
     get_best_score, infer_task, lst, method_to_log,
 )
 
@@ -38,13 +38,13 @@ class Direct(BaseEstimator, BaseTrainer):
 
     def __init__(
         self, models, metric, est_params, n_trials, ht_params, n_bootstrap,
-        parallel, n_jobs, device, engine, backend, verbose, warnings, logger,
-        experiment, random_state,
+        parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
+        logger, experiment, random_state,
     ):
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, n_jobs, device, engine, backend, verbose, warnings,
-            logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, verbose,
+            warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -86,14 +86,14 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
 
     def __init__(
         self, models, metric, skip_runs, est_params, n_trials, ht_params,
-        n_bootstrap, parallel, n_jobs, device, engine, backend, verbose,
-        warnings, logger, experiment, random_state,
+        n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+        verbose, warnings, logger, experiment, random_state,
     ):
         self.skip_runs = skip_runs
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, n_jobs, device, engine, backend, verbose, warnings,
-            logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, verbose,
+            warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -176,14 +176,14 @@ class TrainSizing(BaseEstimator, BaseTrainer):
 
     def __init__(
         self, models, metric, train_sizes, est_params, n_trials, ht_params,
-        n_bootstrap, parallel, n_jobs, device, engine, backend, verbose,
-        warnings, logger, experiment, random_state
+        n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
+        verbose, warnings, logger, experiment, random_state
     ):
         self.train_sizes = train_sizes
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, n_jobs, device, engine, backend, verbose, warnings,
-            logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, verbose,
+            warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -320,7 +320,24 @@ class DirectClassifier(Direct):
         to the n-th model.
 
     parallel: bool, default=False
-        Whether to train the models in parallel.
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -347,10 +364,14 @@ class DirectClassifier(Direct):
     backend: str, default="loky"
         Parallelization backend. Choose from:
 
-        - "loky"
-        - "multiprocessing"
-        - "threading"
-        - "ray"
+        - "loky": Single-node, process-based parallelism.
+        - "multiprocessing": Legacy single-node, process-based
+          parallelism. Less robust than 'loky'.
+        - "threading": Single-node, thread-based parallelism.
+        - "ray": Multi-node, process-based parallelism.
+
+        Selecting the ray backend also parallelizes the data using
+        [modin][].
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -455,6 +476,7 @@ class DirectClassifier(Direct):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
@@ -468,8 +490,8 @@ class DirectClassifier(Direct):
         self.goal = "class"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, n_jobs, device, engine, backend, verbose, warnings,
-            logger, experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, verbose,
+            warnings, logger, experiment, random_state,
         )
 
 
@@ -545,6 +567,26 @@ class DirectRegressor(Direct):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -670,6 +712,7 @@ class DirectRegressor(Direct):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
@@ -683,7 +726,7 @@ class DirectRegressor(Direct):
         self.goal = "reg"
         super().__init__(
             models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, n_jobs, device, engine, backend, verbose, warnings,
+            parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
             logger, experiment, random_state,
         )
 
@@ -763,6 +806,26 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -916,6 +979,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
@@ -929,7 +993,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         self.goal = "class"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
-            n_bootstrap, parallel, n_jobs, device, engine, backend,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
             verbose, warnings, logger, experiment, random_state,
         )
 
@@ -1009,6 +1073,26 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -1163,6 +1247,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
@@ -1176,7 +1261,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         self.goal = "reg"
         super().__init__(
             models, metric, skip_runs, est_params, n_trials, ht_params,
-            n_bootstrap, parallel, n_jobs, device, engine, backend,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
             verbose, warnings, logger, experiment, random_state,
         )
 
@@ -1261,6 +1346,26 @@ class TrainSizingClassifier(TrainSizing):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -1470,6 +1575,7 @@ class TrainSizingClassifier(TrainSizing):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
@@ -1483,7 +1589,7 @@ class TrainSizingClassifier(TrainSizing):
         self.goal = "class"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
-            n_bootstrap, parallel, n_jobs, device, engine, backend,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
             verbose, warnings, logger, experiment, random_state,
         )
 
@@ -1568,6 +1674,26 @@ class TrainSizingRegressor(TrainSizing):
         Number of data sets to use for [bootstrapping][]. If 0, no
         bootstrapping is performed. If sequence, the n-th value applies
         to the n-th model.
+
+    parallel: bool, default=False
+        Whether to train the models in a parallel or sequential
+        fashion. Using `parallel=True` turns off the verbosity of the
+        models during training. Note that many models also have
+        build-in parallelizations (often when the estimator has the
+        `n_jobs` parameter).
+
+    errors: str, default="skip"
+        How to handle exceptions encountered during model [training][].
+        Choose from:
+
+        - "raise": Raise any encountered exception.
+        - "skip": Skip a failed model. This model is not accessible
+          after training.
+        - "keep": Keep the model in its state at failure. Note that
+          this model can break down many other methods after training.
+          This option is useful to be able to rerun hyperparameter
+          optimization after failure without losing previous succesfull
+          trials.
 
     n_jobs: int, default=1
         Number of cores to use for parallel processing.
@@ -1777,6 +1903,7 @@ class TrainSizingRegressor(TrainSizing):
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         n_jobs: INT = 1,
         device: str = "cpu",
         engine: str = "sklearn",
@@ -1790,6 +1917,6 @@ class TrainSizingRegressor(TrainSizing):
         self.goal = "reg"
         super().__init__(
             models, metric, train_sizes, est_params, n_trials, ht_params,
-            n_bootstrap, parallel, n_jobs, device, engine, backend,
+            n_bootstrap, parallel, errors, n_jobs, device, engine, backend,
             verbose, warnings, logger, experiment, random_state,
         )

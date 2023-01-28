@@ -20,11 +20,11 @@ from typing import Any, Callable
 from unittest.mock import patch
 
 import dill as pickle
-import joblib
 import mlflow
 import numpy as np
 import pandas as pd
 import ray
+from joblib import Parallel, delayed
 from joblib.memory import Memory
 from mlflow.models.signature import infer_signature
 from mlflow.tracking import MlflowClient
@@ -235,13 +235,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 self.scaler = Scaler().fit(self.X_train)
 
     def __repr__(self) -> str:
-        out_1 = f"{self._fullname}"
-        out_2 = f" --> Estimator: {self._est_class.__name__}"
-        out_3 = [
-            f"{m.name}: {rnd(get_best_score(self, i))}"
-            for i, m in enumerate(self._metric)
-        ]
-        return f"{out_1}\n{out_2}\n --> Evaluation: {'   '.join(out_3)}"
+        return f"{self.__class__.__name__}()"
 
     def __getattr__(self, item: str) -> Any:
         if item in dir(self.__dict__.get("branch")) and not item.startswith("_"):
@@ -406,7 +400,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             if param in sign(self._est_class):
                 params[param] = params.pop(param, getattr(self, param))
 
-        if "multioutput" in self.task and not self.native_multioutput and self.multioutput:
+        if "multiout" in self.task and not self.native_multioutput and self.multioutput:
             if callable(self.multioutput):
                 kwargs = {}
                 for param in ("n_jobs", "random_state"):
@@ -416,9 +410,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 return self.multioutput(self._est_class(**params), **kwargs)
             else:
                 # Assign estimator to first parameter of meta-estimator
-                return self.multioutput.set_params(
-                    **{list(sign(self.multioutput.__init__))[0]: self._est_class(**params)}
-                )
+                key = list(sign(self.multioutput.__init__))[0]
+                return self.multioutput.set_params(**{key: self._est_class(**params)})
         else:
             return self._est_class(**params)
 
@@ -486,8 +479,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     else:
                         kwargs["classes"] = np.unique(self.y)
 
-                with joblib.parallel_backend(backend=self.backend):
-                    estimator.partial_fit(*data, **est_params_fit, **kwargs)
+                estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
                 val_score = self._metric[0](estimator, *validation)
                 if not trial:
@@ -508,8 +500,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                         raise TrialPruned()
 
         else:
-            with joblib.parallel_backend(backend=self.backend):
-                estimator.fit(*data, **est_params_fit)
+            estimator.fit(*data, **est_params_fit)
 
         return estimator
 
@@ -524,27 +515,31 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Final score representation.
 
         """
-        if self.bootstrap is None:
-            out = "   ".join(
-                [
-                    f"{name}: {rnd(lst(self.score_test)[i])}"
-                    for i, name in enumerate(self._metric.keys())
-                ]
-            )
-        else:
-            out = "   ".join(
-                [
-                    f"{name}: {rnd(self.bootstrap[name].mean())} "
-                    f"\u00B1 {rnd(self.bootstrap[name].std())}"
-                    for name in self._metric.keys()
-                ]
-            )
+        try:
+            if self.bootstrap is None:
+                out = "   ".join(
+                    [
+                        f"{name}: {rnd(lst(self.score_test)[i])}"
+                        for i, name in enumerate(self._metric.keys())
+                    ]
+                )
+            else:
+                out = "   ".join(
+                    [
+                        f"{name}: {rnd(self.bootstrap[name].mean())} "
+                        f"\u00B1 {rnd(self.bootstrap[name].std())}"
+                        for name in self._metric.keys()
+                    ]
+                )
 
-        # Annotate if model overfitted when train 20% > test
-        score_train = lst(self.score_train)[0]
-        score_test = lst(self.score_test)[0]
-        if score_train - 0.2 * score_train > score_test:
-            out += " ~"
+            # Annotate if model overfitted when train 20% > test
+            score_train = lst(self.score_train)[0]
+            score_test = lst(self.score_test)[0]
+            if score_train - 0.2 * score_train > score_test:
+                out += " ~"
+
+        except AttributeError:  # Fails when model failed but errors="keep"
+            out = "FAIL"
 
         return out
 
@@ -713,10 +708,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 """
                 nonlocal estimator
 
-                X_subtrain = self.og.dataset.iloc[train_idx, :-self.branch._idx[0]]
-                y_subtrain = self.og.dataset.iloc[train_idx, -self.branch._idx[0]:]
-                X_val = self.og.dataset.iloc[val_idx, :-self.branch._idx[0]]
-                y_val = self.og.dataset.iloc[val_idx, -self.branch._idx[0]:]
+                X_subtrain = self.og.X_train.iloc[train_idx]
+                y_subtrain = self.og.y_train.iloc[train_idx]
+                X_val = self.og.X_train.iloc[val_idx]
+                y_val = self.og.y_train.iloc[val_idx]
 
                 # Transform subsets if there is a pipeline
                 if len(pl := self.export_pipeline(verbose=0)[:-1]) > 0:
@@ -771,7 +766,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     )
 
                     # Fit model just on the one fold
-                    score = fit_model(*next(fold.split(self.og.X_train, get_cols(self.og.y_train)[0])))
+                    score = fit_model(
+                        *next(fold.split(self.og.X_train, get_cols(self.og.y_train)[0]))
+                    )
 
                 else:  # Use cross validation to get the score
                     if self.goal == "class":
@@ -786,10 +783,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                         random_state=trial.number + (self.random_state or 0),
                     )
 
-                    # Can't parallelize because of shared memory class
-                    scores = []
-                    for train_idx, val_idx in fold.split(self.og.X_train, get_cols(self.og.y_train)[0]):
-                        scores.append(fit_model(train_idx, val_idx, False))
+                    # Parallel loop over fit_model
+                    scores = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+                        delayed(fit_model)(i, j)
+                        for i, j in fold.split(self.og.X_train, self.og.y_train)
+                    )
 
                     score = list(np.mean(scores, axis=0))
             else:

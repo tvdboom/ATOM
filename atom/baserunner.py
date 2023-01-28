@@ -22,14 +22,14 @@ from sklearn.multioutput import (
 from typeguard import typechecked
 
 from atom.basemodel import BaseModel
-from atom.basetransformer import BaseTransformer
 from atom.basetracker import BaseTracker
+from atom.basetransformer import BaseTransformer
 from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, ClassMap, CustomDict, Model,
-    Predictor, check_is_fitted, composed, crash, divide, export_pipeline, flt,
+    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, ClassMap, Model, Predictor,
+    check_is_fitted, composed, crash, divide, export_pipeline, flt,
     get_best_score, get_versions, lst, method_to_log, pd,
 )
 
@@ -226,17 +226,6 @@ class BaseRunner(BaseTracker):
         """Name of the metric(s)."""
         if isinstance(self._metric, ClassMap):
             return flt(self._metric.keys())
-
-    @property
-    def errors(self) -> CustomDict:
-        """Errors encountered during model training.
-
-        The key is the model's name and the value is the exception
-        object that was raised. Use the `__traceback__` attribute to
-        investigate the error.
-
-        """
-        return self._errors
 
     @property
     def winners(self) -> list[Model]:
@@ -765,10 +754,6 @@ class BaseRunner(BaseTracker):
         self.log(" --> Merging attributes.", 1)
         if hasattr(self, "missing"):
             self.missing.extend([x for x in other.missing if x not in self.missing])
-        for name, error in other._errors.items():
-            if name in self._errors:
-                name = f"{name}{suffix}"
-            self._errors[name] = error
 
     @composed(crash, method_to_log, typechecked)
     def stacking(
@@ -852,9 +837,6 @@ class BaseRunner(BaseTracker):
 
         self[name].fit()
 
-        if self.experiment:
-            mlflow.end_run()
-
     @composed(crash, method_to_log, typechecked)
     def voting(
         self,
@@ -920,6 +902,3 @@ class BaseRunner(BaseTracker):
             self[name]._run = mlflow.start_run(run_name=self[name].name)
 
         self[name].fit()
-
-        if self.experiment:
-            mlflow.end_run()

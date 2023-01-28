@@ -125,7 +125,7 @@ def test_logger_creator(cls, logger):
 def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
     atom = ATOMClassifier(X_bin, y_bin, logger="log")
-    pytest.raises(ValueError, atom.run, "LR", est_params={"test": 2})
+    pytest.raises(RuntimeError, atom.run, "LR", est_params={"test": 2})
     cls.return_value.exception.assert_called()
 
 

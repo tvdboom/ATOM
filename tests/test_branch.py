@@ -11,12 +11,11 @@ import pandas as pd
 import pytest
 
 from atom import ATOMClassifier, ATOMRegressor
-from atom.utils import merge
 from atom.branch import Branch
+from atom.utils import merge
 
 from .conftest import (
-    X10_str, X_bin, X_bin_array, X_class, X_idx, y10, y_bin, y_bin_array,
-    y_idx,
+    X10_str, X_bin, X_bin_array, X_idx, y10, y_bin, y_bin_array, y_idx,
 )
 
 
@@ -398,13 +397,13 @@ def test_get_columns_by_int():
 def test_get_columns_by_str():
     """Assert that columns can be retrieved by name or regex."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert len(atom.branch._get_columns(columns="mean radius+mean texture")) == 2
-    assert len(atom.branch._get_columns(columns=["mean radius+mean texture", "mean area"])) == 3
-    assert len(atom.branch._get_columns(columns="mean .*")) == 10
-    assert len(atom.branch._get_columns(columns="!mean radius")) == X_bin.shape[1]
-    assert len(atom.branch._get_columns(columns="!mean .*")) == X_bin.shape[1] - 9
+    assert len(atom.branch._get_columns("mean radius+mean texture")) == 2
+    assert len(atom.branch._get_columns(["mean radius+mean texture", "mean area"])) == 3
+    assert len(atom.branch._get_columns("mean .*")) == 10
+    assert len(atom.branch._get_columns("!mean radius")) == X_bin.shape[1]
+    assert len(atom.branch._get_columns("!mean .*")) == X_bin.shape[1] - 9
     with pytest.raises(ValueError, match=".*any column that matches.*"):
-        atom.branch._get_columns(columns="invalid")
+        atom.branch._get_columns("invalid")
 
 
 def test_get_columns_by_type():
@@ -447,7 +446,7 @@ def test_get_columns_include_or_exclude():
 def test_get_columns_return_inc_exc():
     """Assert that included and excluded columns can be returned."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert isinstance(atom.branch._get_columns(columns="number", return_inc_exc=True), tuple)
+    assert isinstance(atom.branch._get_columns("number", return_inc_exc=True), tuple)
 
 
 def test_get_columns_remove_duplicates():

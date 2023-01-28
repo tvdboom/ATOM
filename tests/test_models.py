@@ -15,6 +15,7 @@ import pytest
 from optuna.distributions import IntDistribution
 from optuna.pruners import PatientPruner
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+
 from atom import ATOMClassifier, ATOMRegressor
 from atom.pipeline import Pipeline
 
@@ -33,7 +34,6 @@ def test_all_models_binary():
     """Assert that all models work with binary classification."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.5, n_jobs=-1, random_state=1)
     atom.run(models=["!CatNB", "!RNN"], n_trials=5)
-    assert not atom.errors
     assert "CatNB" not in atom.models
 
 
@@ -41,7 +41,6 @@ def test_all_models_multiclass():
     """Assert that all models work with multiclass classification."""
     atom = ATOMClassifier(X_class, y_class, n_rows=0.5, n_jobs=-1, random_state=1)
     atom.run(models=["!CatNB", "!RNN"], n_trials=5, ht_params={"catch": (ValueError,)})
-    assert not atom.errors
     assert "CatNB" not in atom.models
 
 
@@ -49,21 +48,18 @@ def test_all_models_regression():
     """Assert that all models work with regression."""
     atom = ATOMRegressor(X_reg, y_reg, n_rows=0.5, n_jobs=-1, random_state=1)
     atom.run(models=None, n_trials=5, ht_params={"catch": (ValueError,)})
-    assert not atom.errors
 
 
 def test_models_sklearnex_classification():
     """Assert the sklearnex engine works for classification tasks."""
     atom = ATOMClassifier(X_bin, y_bin, device="cpu", engine="sklearnex", random_state=1)
     atom.run(models=["knn", "lr", "rf", "svm"], n_trials=2)
-    assert not atom.errors
 
 
 def test_models_sklearnex_regression():
     """Assert the sklearnex engine works for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, device="cpu", engine="sklearnex", random_state=1)
     atom.run(models=["en", "knn", "lasso", "ols", "rf", "ridge", "svm"], n_trials=2)
-    assert not atom.errors
 
 
 @patch.dict("sys.modules", {"cuml": MagicMock(spec=["__spec__"])})
@@ -87,7 +83,6 @@ def test_CatNB():
 
     atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="CatNB", n_trials=1)
-    assert not atom.errors
     assert hasattr(atom, "CatNB")
 
 
@@ -95,8 +90,7 @@ def test_RNN():
     """Assert that the RNN model works. Fails with default parameters."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("RNN", n_trials=1, est_params={"outlier_label": "most_frequent"})
-    assert not atom.errors
-    assert hasattr(atom, "RNN")
+    assert atom.models == "RNN"
 
 
 @pytest.mark.parametrize("model", ["CatB", "LGB", "XGB"])

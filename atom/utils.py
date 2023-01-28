@@ -21,8 +21,9 @@ from importlib import import_module
 from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
-from typing import Any, Callable, Protocol, Union
 from types import GeneratorType
+from typing import Any, Callable, Protocol, Union
+
 import mlflow
 import modin.pandas as md
 import numpy as np
@@ -346,12 +347,7 @@ class Table:
 
     """
 
-    def __init__(
-        self,
-        headers: SEQUENCE,
-        spaces: SEQUENCE,
-        default_pos: str = "right",
-    ):
+    def __init__(self, headers: SEQUENCE, spaces: SEQUENCE, default_pos: str = "right"):
         assert len(headers) == len(spaces)
 
         self.headers = []
@@ -595,7 +591,7 @@ class PlotCallback:
 
     max_len = 15  # Maximum trials to show at once in the plot
 
-    def __init__(self, name: str, metric: list[str], aesthetics: Aesthetics):
+    def __init__(self, name: str, metric: list[str], aesthetics: Any):
         self.y1 = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
         self.y2 = {i: deque(maxlen=self.max_len) for i in range(len(metric))}
 
@@ -722,13 +718,13 @@ class ShapExplanation:
 
     Parameters
     ----------
-    T: Model
+    model: Model
         Model from which the instance is created.
 
     """
 
-    def __init__(self, *args):
-        self.T = args[0]
+    def __init__(self, model: Model):
+        self.T = model
 
         self._explainer = None
         self._explanation = None
@@ -941,9 +937,9 @@ class ShapExplanation:
 class ClassMap:
     """List for classes with mapping from attribute.
 
-    This class works as a list of classes that contain a certain
-    attribute. You can access the class by index or by attribute.
-    The access is case-insensitive.
+    This class works similar to a list, where all elements should
+    have a certain attribute. You can access the class by index or
+    by attribute. The access is case-insensitive.
 
     """
 
@@ -1025,7 +1021,7 @@ class ClassMap:
         yield from reversed(list(self.__data))
 
     def __eq__(self, other):
-        return self.__data == other.__data
+        return self.__data == other
 
     def __add__(self, other):
         self.__data += other

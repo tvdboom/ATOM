@@ -83,7 +83,7 @@ def test_est_params_invalid_param():
     """Assert that invalid parameters in est_params are caught."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LGB"], n_trials=1, est_params={"test": 220})
-    assert list(atom.errors) == ["LR"]  # LGB passes since it accepts kwargs
+    assert atom.models == "LGB"  # LGB passes since it accepts kwargs
 
 
 def test_est_params_unknown_param_fit():
@@ -111,7 +111,12 @@ def test_custom_distributions_name_is_invalid():
     """Assert that an error is raised when an invalid parameter is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*is not a predefined hyperparameter.*"):
-        atom.run("LR", n_trials=1, ht_params={"distributions": "invalid"})
+        atom.run(
+            models="LR",
+            n_trials=1,
+            ht_params={"distributions": "invalid"},
+            errors="raise",
+        )
 
 
 def test_custom_distributions_is_dist():
@@ -129,7 +134,12 @@ def test_custom_distributions_include_and_excluded():
     """Assert that an error is raised when parameters are included and excluded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*either include or exclude.*"):
-        atom.run("LR", n_trials=5, ht_params={"distributions": ["!max_iter", "penalty"]})
+        atom.run(
+            models="LR",
+            n_trials=1,
+            ht_params={"distributions": ["!max_iter", "penalty"]},
+            errors="raise",
+        )
 
 
 def test_est_params_removed_from_ht():
@@ -161,7 +171,6 @@ def test_hyperparameter_tuning_with_plot():
         n_trials=(17, 17, 17, 20),
         ht_params={"plot": True},
     )
-    assert not atom.errors
 
 
 def test_xgb_optimizes_score():
@@ -200,11 +209,9 @@ def test_cv_larger_1():
     """Assert that trials with cv>1 work for both tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("dummy", n_trials=1, ht_params={"cv": 3})
-    assert not atom.errors
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("dummy", n_trials=1, ht_params={"cv": 3})
-    assert not atom.errors
 
 
 def test_skip_duplicate_calls():

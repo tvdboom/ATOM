@@ -223,7 +223,7 @@ def test_multioutput_regression(multioutput):
     atom = ATOMRegressor(X_reg, y=y_multireg, random_state=1)
     atom.multioutput = multioutput
     atom.run("OLS")
-    assert not atom.errors
+    assert atom.models == "OLS"
 
 
 def test_models_property():
@@ -238,17 +238,6 @@ def test_metric_property():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="f1")
     assert atom.metric == "f1"
-
-
-def test_errors_property():
-    """Assert that the errors property returns the model's errors."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(
-        models=["Tree", "LGB"],
-        n_trials=1,
-        ht_params={"distributions": {"LGB": ["invalid"]}},
-    )
-    assert "LGB" in atom.errors
 
 
 def test_winners_property():
@@ -582,7 +571,6 @@ def test_merge_with_suffix():
     atom_1.merge(atom_2)
     assert list(atom_1._branches) == [atom_1.master, atom_1.master2]
     assert atom_1.models == ["Tree", "Tree2"]
-    assert list(atom_1._errors) == ["LDA", "LDA2"]
 
 
 def test_stacking():

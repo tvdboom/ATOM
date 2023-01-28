@@ -11,11 +11,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import reduce
 from importlib.util import find_spec
 from itertools import chain, cycle
 from typing import Callable
-from dataclasses import dataclass
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

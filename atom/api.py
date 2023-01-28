@@ -253,7 +253,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - "ray": Multi-node, process-based parallelism.
 
         Selecting the ray backend also parallelizes the data using
-        [modin][].
+        [modin][], a multi-threading, drop-in replacement for pandas,
+        that uses Ray as backend.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:
@@ -546,6 +547,19 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - "sklearn" (only if device="cpu")
         - "sklearnex"
         - "cuml" (only if device="gpu")
+
+    backend: str, default="loky"
+        Parallelization backend. Choose from:
+
+        - "loky": Single-node, process-based parallelism.
+        - "multiprocessing": Legacy single-node, process-based
+          parallelism. Less robust than 'loky'.
+        - "threading": Single-node, thread-based parallelism.
+        - "ray": Multi-node, process-based parallelism.
+
+        Selecting the ray backend also parallelizes the data using
+        [modin][], a multi-threading, drop-in replacement for pandas,
+        that uses Ray as backend.
 
     verbose: int, default=0
         Verbosity level of the class. Choose from:

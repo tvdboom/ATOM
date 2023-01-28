@@ -43,7 +43,7 @@ from atom.training import (
 )
 from atom.utils import (
     DATAFRAME, FEATURES, INT, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET,
-    ClassMap, CustomDict, Predictor, Runner, Transformer, __version__, bk,
+    ClassMap, Predictor, Runner, Transformer, __version__, bk,
     check_dependency, check_is_fitted, check_scaling, composed, crash,
     custom_transform, fit_one, flt, get_cols, get_custom_scorer, has_task,
     infer_task, is_sparse, lst, method_to_log, sign, variable_return,
@@ -92,7 +92,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         self._models = ClassMap()
         self._metric = ClassMap()
-        self._errors = CustomDict()
 
         self.log("<< ================== ATOM ================== >>", 1)
 
@@ -140,8 +139,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 out += f"\n   --> {branch.name}{' !' if branch is self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
-        if self.errors:
-            out += f"\n --> Errors: {len(self.errors)}"
 
         return out
 
@@ -1906,20 +1903,14 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 "to encode the target column to numerical values."
             )
 
-        try:
-            # Transfer attributes
-            trainer.index = self.index
-            trainer._og = self._og
-            trainer._current = self._current
-            trainer._branches = self._branches
-            trainer._multioutput = self._multioutput
+        # Transfer attributes
+        trainer.index = self.index
+        trainer._og = self._og
+        trainer._current = self._current
+        trainer._branches = self._branches
+        trainer._multioutput = self._multioutput
 
-            trainer.run()
-        finally:
-            # Catch errors and pass them to atom's attribute
-            for model, error in trainer.errors.items():
-                self._errors[model] = error
-                self._delete_models(model)
+        trainer.run()
 
         # Overwrite models with same name as new ones
         for model in trainer._models:
@@ -1933,9 +1924,6 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._models.extend(trainer._models)
         self._metric = trainer._metric
 
-        for model in self._models:
-            self._errors.pop(model.name)  # Remove model from errors (if there)
-
     @composed(crash, method_to_log, typechecked)
     def run(
         self,
@@ -1947,6 +1935,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         ht_params: dict | None = None,
         n_bootstrap: INT | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         **kwargs,
     ):
         """Train and evaluate the models in a direct fashion.
@@ -1983,6 +1972,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
                 parallel=parallel,
+                errors=errors,
                 **self._prepare_kwargs(kwargs),
             )
         )
@@ -1999,6 +1989,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         **kwargs,
     ):
         """Fit the models in a successive halving fashion.
@@ -2042,6 +2033,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
                 parallel=parallel,
+                errors=errors,
                 **self._prepare_kwargs(kwargs),
             )
         )
@@ -2058,6 +2050,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         ht_params: dict | None = None,
         n_bootstrap: INT | dict | SEQUENCE = 0,
         parallel: bool = False,
+        errors: str = "skip",
         **kwargs,
     ):
         """Train and evaluate the models in a train sizing fashion.
@@ -2099,6 +2092,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 ht_params=ht_params,
                 n_bootstrap=n_bootstrap,
                 parallel=parallel,
+                errors=errors,
                 **self._prepare_kwargs(kwargs),
             )
         )

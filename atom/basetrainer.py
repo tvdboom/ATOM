@@ -14,18 +14,21 @@ import traceback
 from datetime import datetime as dt
 from typing import Any
 
+import joblib
 import mlflow
+import numpy as np
 import ray
-from optuna import Study, create_study
 from joblib import Parallel, delayed
-from atom.baserunner import BaseRunner
+from optuna import Study, create_study
+
 from atom.basemodel import BaseModel
+from atom.baserunner import BaseRunner
 from atom.branch import Branch
 from atom.data_cleaning import BaseTransformer
 from atom.models import MODELS, CatBoost, CustomModel, LightGBM, XGBoost
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
-    SEQUENCE_TYPES, ClassMap, CustomDict, check_dependency, get_best_score,
+    SEQUENCE_TYPES, ClassMap, Model, check_dependency, get_best_score,
     get_custom_scorer, lst, sign, time_to_str,
 )
 
@@ -35,7 +38,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
     Implements methods to check the validity of the parameters,
     create models and metrics, run hyperparameter tuning, model
-    training, bootstrap, and display the final output.
+    training, bootstrap, and display the final results.
 
     See training.py for a description of the parameters.
 
@@ -43,8 +46,8 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
     def __init__(
             self, models, metric, est_params, n_trials, ht_params, n_bootstrap,
-            parallel, n_jobs, device, engine, backend, verbose, warnings, logger,
-            experiment, random_state,
+            parallel, errors, n_jobs, device, engine, backend, verbose, warnings,
+            logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
@@ -63,10 +66,10 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         self.ht_params = ht_params
         self.n_bootstrap = n_bootstrap
         self.parallel = parallel
+        self.errors = errors
 
         self._models = lst(models) if models is not None else []
         self._metric = lst(metric) if metric is not None else []
-        self._errors = CustomDict()
 
         self._og = None
         self._current = Branch(name="master")
@@ -272,16 +275,35 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                     f"Invalid value for the ht_params parameter. Key {key} is invalid."
                 )
 
+        # Prepare rest ============================================= >>
+
+        if self.errors.lower() not in ("raise", "skip", "keep"):
+            raise ValueError(
+                "Invalid value for the errors parameter, got "
+                f"{self.errors}. Choose from: raise, skip, keep."
+            )
+
     def _core_iteration(self):
-        """Fit and evaluate the models.
+        """Fit and evaluate all models and displays final results."""
 
-        For every model, runs hyperparameter tuning, fitting and
-        bootstrap wrapped in a try-except block. Also displays final
-        results.
+        def execute_model(m: Model) -> Model | None:
+            """Executes a single model.
 
-        """
+            Runs hyperparameter tuning, training and bootstrap for one
+            model. Function needed for parallelization.
 
-        def execute_model(m):
+            Parameters
+            ----------
+            m: Model
+                Model to train and evaluate.
+
+            Returns
+            -------
+            Model or None
+                Trained model. Returns None when the model raised an
+                exception and error=="skip".
+
+            """
             try:  # If an error occurs, skip the model
                 if self.experiment:
                     m._run = mlflow.start_run(run_name=m.name)
@@ -301,31 +323,26 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
                 self.log("-" * 49 + f"\nTotal time: {time_to_str(m.time)}", 1)
 
+                return m
+
             except Exception as ex:
-                self.log(
-                    f"\nException encountered while running the "
-                    f"{m.name} model. Removing model from pipeline. ", 1
-                )
+                self.log(f"\nException encountered while running the {m.name} model.", 1)
                 self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 3)
                 self.log(f"{ex.__class__.__name__}: {ex}", 1)
-
-                # Append exception to errors dictionary
-                self._errors[m.name] = ex
-
-                # Add model to "garbage collector"
-                # Cannot remove immediately to maintain the iteration order
-                to_remove.append(m.name)
 
                 if self.experiment:
                     mlflow.end_run()
 
-            finally:
-                return m
+                if self.errors.lower() == "raise":
+                    raise ex
+                elif self.errors.lower() == "skip":
+                    return None
+                elif self.errors.lower() == "keep":
+                    return m
 
         t = dt.now()  # Measure the time the whole pipeline takes
 
-        to_remove = []
-        if self.parallel:
+        if self.parallel and len(self._models) > 1:
             # Turn off verbosity
             vb = self.verbose
             self.verbose = 0
@@ -333,15 +350,20 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                 m.verbose = self.verbose
 
             if self.backend == "ray":
-                # This implementation is more efficient than through joblib's ray backend
-                # The difference is that in this one you start ray tasks, and in the
-                # other, you start ray actors and then has them each run the function
-                execute_remote = ray.remote(execute_model)
-                self._models = ClassMap(*ray.get(execute_remote.remote(m) for m in self._models))
+                # This implementation is more efficient than through joblib's
+                # ray backend. The difference is that in this one you start N
+                # tasks, and in the other, you start N actors and then has them
+                # each run the function
+                execute_remote = ray.remote(num_cpus=self.n_jobs)(execute_model)
+                self._models = ClassMap(
+                    *ray.get(
+                        [mdl for m in self._models if (mdl := execute_remote.remote(m))]
+                    )
+                )
             else:
                 self._models = ClassMap(
                     *Parallel(n_jobs=self.n_jobs, backend=self.backend)(
-                        delayed(execute_model)(m) for m in self._models
+                        mdl for m in self._models if (mdl := delayed(execute_model)(m))
                     )
                 )
 
@@ -351,21 +373,15 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                 m.verbose = self.verbose
 
         else:
-            for m in self._models:
-                execute_model(m)
-
-        self._delete_models(to_remove)  # Remove faulty models
-
-        # If there's only one model and it failed, raise that exception
-        # If multiple models and all failed, raise RuntimeError
-        if not self._models:
-            if len(self.errors) == 1:
-                raise self.errors[0]
-            else:
-                raise RuntimeError(
-                    "All models failed to run. Use the errors attribute "
-                    "or the logging file to investigate the exceptions."
+            with joblib.parallel_backend(backend=self.backend):
+                self._models = ClassMap(
+                    mdl for m in self._models if (mdl := execute_model(m))
                 )
+
+        if not self._models:
+            raise RuntimeError(
+                "All models failed to run. Use the logger to investigate the exceptions."
+            )
 
         self.log(f"\n\nFinal results {'=' * 20} >>", 1)
         self.log(f"Total time: {time_to_str((dt.now() - t).total_seconds())}", 1)
@@ -375,12 +391,16 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         names, scores = [], []
         for model in self._models:
             # Add the model name for repeated model classes
-            select = filter(lambda x: x.acronym == model.acronym, self._models)
-            if len(list(select)) > 1:
+            if len(list(filter(lambda x: x.acronym == model.acronym, self._models))) > 1:
                 names.append(f"{model._fullname} ({model.name})")
             else:
                 names.append(model._fullname)
-            scores.append(get_best_score(model))
+
+            try:
+                scores.append(get_best_score(model))
+            except AttributeError:  # Fails when model failed but errors="keep"
+                scores.append(-np.inf)
+
             maxlen = max(maxlen, len(names[-1]))
 
         for i, m in enumerate(self._models):

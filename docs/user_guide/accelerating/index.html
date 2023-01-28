@@ -3322,6 +3322,40 @@ type.</p>
 <li><a class="autorefs autorefs-internal" href="../../API/models/xgb/#xgboost">XGBoost</a></li>
 </ul>
 <h2 id="parallel-execution">Parallel execution</h2>
+<p>Another way to accelerate your pipelines is executing processes in parallel.
+Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-backend"><code>backend</code></a> parameter to select one of several
+parallelization backends.</p>
+<ul>
+<li><strong>loky:</strong> Used by default, can induce some communication and memory overhead
+  when exchanging input and output data with the worker Python processes. On
+  some rare systems (such as Pyiodide), the loky backend may not be available.</li>
+<li><strong>multiprocessing:</strong> Previous process-based backend based on <code>multiprocessing.Pool</code>.
+  Less robust than loky.</li>
+<li><strong>threading:</strong> Very low-overhead backend but it suffers from the Python Global
+  Interpreter Lock if the called function relies a lot on Python objects. It's 
+  mostly useful when the execution bottleneck is a compiled extension that
+  explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
+  block or an expensive call to a library such as numpy).</li>
+<li><strong>ray:</strong> Ray is an open-source unified compute framework that makes it easy to
+  scale AI and Python workloads. Read more about Ray <a href="https://docs.ray.io/en/latest/ray-core/walkthrough.html">here</a>.
+  Selecting the ray backend also parallelizes the data using <a href="https://modin.readthedocs.io/en/stable/">modin</a>, a
+  multi-threading, drop-in replacement for pandas, that uses Ray as backend.</li>
+</ul>
+<p>The parallelization backend is applied in the following cases:</p>
+<ul>
+<li>In every individual estimator that uses parallelization internally.</li>
+<li>To calculate cross-validated results during <a class="autorefs autorefs-internal" href="../training/#hyperparameter-tuning">hyperparameter tuning</a>.</li>
+<li>To train multiple models in parallel (when the trainer's <code>parallel</code> parameter is True`).</li>
+<li>To calculate partial dependencies in <a class="autorefs autorefs-internal" href="../../API/plots/plot_partial_dependence/#plot_partial_dependence">plot_partial_dependence</a>.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-n_jobs"><code>njobs</code></a> parameter sets the number of cores
+for the individual models as well as for parallel training. You won't
+gain much training two models in parallel with 2 cores, when the models
+also parallelize computations internally. Instead, use parallel training
+for models that can't parallelize their training (no <code>n_jobs</code> parameter).</p>
+</div>
 
 
   

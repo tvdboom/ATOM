@@ -57,7 +57,6 @@ in the instance after [training][].
         include:
             - models
             - metric
-            - errors
             - winners
             - winner
             - results

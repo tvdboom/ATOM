@@ -138,7 +138,6 @@ def test_metric_is_custom(metric):
     """Assert that you can use the custom metrics."""
     trainer = DirectClassifier("LR", metric=metric, random_state=1)
     trainer.run(bin_train, bin_test)
-    assert not trainer.errors
 
 
 def test_metric_is_invalid_scorer_name():
@@ -210,7 +209,6 @@ def test_est_params_for_fit():
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
-    assert not trainer.errors
 
 
 def test_custom_tags():
@@ -299,6 +297,13 @@ def test_ht_params_invalid_key():
         trainer.run(bin_train, bin_test)
 
 
+def test_errors_invalid():
+    """Assert that an error is raised when errors is invalid."""
+    trainer = DirectClassifier(models="LR", errors="invalid", random_state=1)
+    with pytest.raises(ValueError, match=".*errors parameter.*"):
+        trainer.run(bin_train, bin_test)
+
+
 # Test _core_iteration ============================================= >>
 
 def test_sequence_parameters():
@@ -321,31 +326,70 @@ def test_mlflow_run_is_started():
     assert isinstance(trainer.ols._run, ActiveRun)
 
 
-def test_error_handling():
-    """Assert that models with errors are removed from the pipeline."""
+def test_errors_raise():
+    """Assert that an error is raised when encountered."""
     trainer = DirectClassifier(
-        models=["LR", "LDA"],
+        models="LDA",
         n_trials=1,
-        ht_params={"plot": True, "distributions": {"LDA": "test"}},
+        ht_params={"distributions": "test"},
+        errors="raise",
         experiment="test",
         random_state=1,
     )
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
+def test_errors_skip():
+    """Assert that models with errors are removed."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        n_trials=1,
+        ht_params={"distributions": {"LDA": "test"}},
+        errors="skip",
+        random_state=1,
+    )
     trainer.run(bin_train, bin_test)
-    assert trainer.errors.get("LDA")
     assert "LDA" not in trainer.models
     assert "LDA" not in trainer.results.index
     assert mlflow.active_run() is None  # Run has been ended
 
 
-def test_one_model_failed():
-    """Assert that the model error is raised when it fails."""
+def test_errors_keep():
+    """Assert that models with errors are kept."""
     trainer = DirectClassifier(
-        models="LR",
+        models="LDA",
         n_trials=1,
         ht_params={"distributions": "test"},
+        errors="keep",
         random_state=1,
     )
-    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+    trainer.run(bin_train, bin_test)
+    assert trainer._models == [trainer.lda]
+
+
+def test_parallel_with_ray():
+    """Assert that parallel runs successfully with ray backend."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        parallel=True,
+        n_jobs=2,
+        backend="ray",
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert trainer._models == [trainer.lr, trainer.lda]
+
+
+def test_parallel():
+    """Assert that parallel runs successfully."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        parallel=True,
+        n_jobs=2,
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert trainer._models == [trainer.lr, trainer.lda]
 
 
 def test_all_models_failed():
