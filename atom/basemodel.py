@@ -50,12 +50,13 @@ from atom.pipeline import Pipeline
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     DATAFRAME, DF_ATTRS, FEATURES, FLOAT, INT, INT_TYPES, PANDAS, SEQUENCE,
-    SERIES, TARGET, ClassMap, CustomDict, Estimator, PlotCallback, Predictor,
-    Scorer, ShapExplanation, TrialsCallback, bk, check_dependency,
-    check_scaling, composed, crash, custom_transform, estimator_has_attr,
-    export_pipeline, flt, get_best_score, get_cols, get_custom_scorer,
-    get_feature_importance, has_task, infer_task, it, lst, merge,
-    method_to_log, rnd, score, sign, time_to_str, to_pandas, variable_return,
+    SERIES, SERIES_TYPES, TARGET, ClassMap, CustomDict, Estimator,
+    PlotCallback, Predictor, Scorer, ShapExplanation, TrialsCallback, bk,
+    check_dependency, check_scaling, composed, crash, custom_transform,
+    estimator_has_attr, export_pipeline, flt, get_cols, get_custom_scorer,
+    get_feature_importance, has_task, infer_task, is_binary, is_multioutput,
+    it, lst, merge, method_to_log, rnd, score, sign, time_to_str, to_pandas,
+    variable_return,
 )
 
 
@@ -400,7 +401,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             if param in sign(self._est_class):
                 params[param] = params.pop(param, getattr(self, param))
 
-        if "multiout" in self.task and not self.native_multioutput and self.multioutput:
+        if is_multioutput(self.task) and not self.native_multioutput and self.multioutput:
             if callable(self.multioutput):
                 kwargs = {}
                 for param in ("n_jobs", "random_state"):
@@ -470,7 +471,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             for step in range(steps):
                 kwargs = {}
                 if self.goal.startswith("class"):
-                    if "multioutput" in self.task:
+                    if is_multioutput(self.task):
                         if self.multioutput is None:
                             # Native multioutput models (e.g., MLP, Ridge, ...)
                             kwargs["classes"] = list(range(self.y.shape[1]))
@@ -605,8 +606,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             attr = "predict_proba"  # Needed to use threshold parameter
 
         y_pred = getattr(self, f"{attr}_{dataset}")
-        if self.task.startswith("bin") and attr == "predict_proba":
-            y_pred = y_pred.iloc[:, 1]
+        if is_binary(self.task) and attr == "predict_proba":
+            if not is_multioutput(self.task):
+                y_pred = y_pred.iloc[:, 1]
 
             # Exclude metrics that use probability estimates (e.g. ap, auc)
             if scorer.__class__.__name__ == "_PredictScorer":
@@ -617,16 +619,31 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             kwargs["sample_weight"] = sample_weight
 
         y_true = getattr(self, f"y_{dataset}")
-        try:  # Can fail for multilabel or multioutput
+        try:
             score = scorer._score_func(y_true, y_pred, **scorer._kwargs, **kwargs)
         except ValueError:
-            # Get mean of scores over targets
-            score = np.mean(
-                [
-                    scorer._score_func(y_true[c.name], c, **scorer._kwargs, **kwargs)
-                    for c in get_cols(y_pred)
-                ]
-            )
+            # Fails for multioutput tasks -> get mean of scores over targets
+            print(self, y_pred)
+            if isinstance(y_pred, SERIES_TYPES):
+                # Multilabel tasks -> select right column from multiindex
+                score = np.mean(
+                    [
+                        scorer._score_func(
+                            y_true[col],
+                            y_pred.loc[col],
+                            **scorer._kwargs,
+                            **kwargs,
+                        )
+                        for col in y_pred.index.levels[0]
+                    ]
+                )
+            else:
+                score = np.mean(
+                    [
+                        scorer._score_func(y_true[c.name], c, **scorer._kwargs, **kwargs)
+                        for c in get_cols(y_pred)
+                    ]
+                )
 
         result = rnd(scorer._sign * float(score))
 
@@ -1403,7 +1420,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Names of the columns.
 
         """
-        if "multioutput" in self.task:
+        if is_multioutput(self.task):
             return self.target  # When multioutput, target is list of str
         else:
             return self.mapping.get(self.target, list(np.unique(self.y)))
@@ -1508,8 +1525,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Class log-probability predictions on the training set.
 
         Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
-        or (n_targets * n_samples, n_classes) with a multiindex format for
+        tasks, (n_samples, n_targets) for [multilabel][] tasks or
+        (n_targets * n_samples, n_classes) with a multiindex format for
         [multiclass-multioutput][] tasks.
 
         """
@@ -1534,8 +1551,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Class log-probability predictions on the test set.
 
         Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
-        or (n_targets * n_samples, n_classes) with a multiindex format for
+        tasks, (n_samples, n_targets) for [multilabel][] tasks or
+        (n_targets * n_samples, n_classes) with a multiindex format for
         [multiclass-multioutput][] tasks.
 
         """
@@ -1560,8 +1577,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Class log-probability predictions on the holdout set.
 
         Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
-        or (n_targets * n_samples, n_classes) with a multiindex format for
+        tasks, (n_samples, n_targets) for [multilabel][] tasks or
+        (n_targets * n_samples, n_classes) with a multiindex format for
         [multiclass-multioutput][] tasks.
 
         """
@@ -1587,8 +1604,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Class probability predictions on the training set.
 
         Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
-        or (n_targets * n_samples, n_classes) with a multiindex format for
+        tasks, (n_samples, n_targets) for [multilabel][] tasks or
+        (n_targets * n_samples, n_classes) with a multiindex format for
         [multiclass-multioutput][] tasks.
 
         """
@@ -1613,8 +1630,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Class probability predictions on the test set.
 
         Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
-        or (n_targets * n_samples, n_classes) with a multiindex format for
+        tasks, (n_samples, n_targets) for [multilabel][] tasks or
+        (n_targets * n_samples, n_classes) with a multiindex format for
         [multiclass-multioutput][] tasks.
 
         """
@@ -1639,8 +1656,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Class probability predictions on the holdout set.
 
         Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel-multioutput][] tasks
-        or (n_targets * n_samples, n_classes) with a multiindex format for
+        tasks, (n_samples, n_targets) for [multilabel][] tasks or
+        (n_targets * n_samples, n_classes) with a multiindex format for
         [multiclass-multioutput][] tasks.
 
         """
@@ -2301,7 +2318,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         # Predefined metrics to show
         if metric is None:
-            if self.task.startswith("bin"):
+            if is_binary(self.task):
                 metric = [
                     "accuracy",
                     "ap",
@@ -2313,7 +2330,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     "recall",
                     "auc",
                 ]
-            elif self.task.startswith("multi"):
+            elif self.task.startswith("multiclass"):
                 metric = [
                     "ba",
                     "f1_weighted",

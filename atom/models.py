@@ -1765,9 +1765,9 @@ class GradientBoosting(BaseModel):
             ccp_alpha=Float(0, 0.035, step=0.005),
         )
 
-        if self.task.startswith("multi"):
+        if self.task.startswith("multiclass"):
             dist.pop("loss")  # Multiclass only supports log_loss
-        elif self.task.startswith("reg"):
+        elif self.goal.startswith("reg"):
             dist["loss"] = Categorical(
                 ["squared_error", "absolute_error", "huber", "quantile"]
             )
@@ -2775,8 +2775,8 @@ class MultiLayerPerceptron(BaseModel):
     Read more in sklearn's [documentation][mlpdocs].
 
     !!! tip
-        MultiLayerPerceptron does support [multilabel-multioutput][]
-        tasks natively. Set the `multioutput` attribute to None to avoid
+        MultiLayerPerceptron does support [multilabel][] tasks
+        natively. Set the `multioutput` attribute to None to avoid
         the meta-estimator.
 
     See Also
@@ -3656,8 +3656,8 @@ class Ridge(BaseModel):
         tasks.
 
     !!! tip
-        Ridge does support [multilabel-multioutput][] tasks natively. Set
-        the `multioutput` attribute to None to avoid the meta-estimator.
+        Ridge does support [multilabel][] tasks natively. Set the
+        `multioutput` attribute to None to avoid the meta-estimator.
 
     See Also
     --------

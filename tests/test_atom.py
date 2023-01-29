@@ -33,7 +33,7 @@ from atom.utils import check_scaling
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
     X_class, X_reg, X_sparse, X_text, merge, y10, y10_label, y10_sn, y10_str,
-    y_bin, y_class, y_multiclass, y_reg,
+    y_bin, y_class, y_multiclass, y_reg, y10_label2, y_label, X_label
 )
 
 
@@ -47,7 +47,13 @@ def test_task_assignment():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     assert atom.task == "multiclass classification"
 
+    atom = ATOMClassifier(X_label, y=y_label, stratify=False, random_state=1)
+    assert atom.task == "multilabel classification"
+
     atom = ATOMClassifier(X10, y=y10_label, stratify=False, random_state=1)
+    assert atom.task == "multilabel classification"
+
+    atom = ATOMClassifier(X10, y=y10_label2, stratify=False, random_state=1)
     assert atom.task == "multilabel classification"
 
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)

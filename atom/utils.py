@@ -211,14 +211,14 @@ class CatBMetric:
             Total weight.
 
         """
-        if self.task.startswith("bin"):
+        if is_binary(self.task):
             # Convert CatBoost predictions to probabilities
             e = np.exp(approxes[0])
             y_pred = e / (1 + e)
             if self.scorer.__class__.__name__ == "_PredictScorer":
                 y_pred = (y_pred > 0.5).astype(int)
 
-        elif self.task.startswith("multi"):
+        elif self.task.startswith("multiclass"):
             y_pred = np.array(approxes).T
             if self.scorer.__class__.__name__ == "_PredictScorer":
                 y_pred = np.argmax(y_pred, axis=1)
@@ -283,9 +283,9 @@ class LGBMetric:
 
         """
         if self.scorer.__class__.__name__ == "_PredictScorer":
-            if self.task.startswith("bin"):
+            if is_binary(self.task):
                 y_pred = (y_pred > 0.5).astype(int)
-            elif self.task.startswith("multi"):
+            elif self.task.startswith("multiclass"):
                 y_pred = y_pred.reshape(len(np.unique(y_true)), len(y_true)).T
                 y_pred = np.argmax(y_pred, axis=1)
 
@@ -320,9 +320,9 @@ class XGBMetric:
 
     def __call__(self, y_true: np.ndarray, y_pred: np.ndarray) -> FLOAT:
         if self.scorer.__class__.__name__ == "_PredictScorer":
-            if self.task.startswith("bin"):
+            if is_binary(self.task):
                 y_pred = (y_pred > 0.5).astype(int)
-            elif self.task.startswith("multi"):
+            elif self.task.startswith("multiclass"):
                 y_pred = np.argmax(y_pred, axis=1)
 
         score = self.scorer._score_func(y_true, y_pred, **self.scorer._kwargs)
@@ -2002,8 +2002,8 @@ def infer_task(y: PANDAS, goal: str = "class") -> str:
             return "multioutput regression"
 
     if y.ndim > 1:
-        if y.isin([0, 1]).all().all():
-            return "multilabel-multioutput classification"
+        if all(y[col].nunique() == 2 for col in y):
+            return "multilabel classification"
         else:
             return "multiclass-multioutput classification"
     elif isinstance(y.iloc[0], SEQUENCE):
@@ -2014,6 +2014,16 @@ def infer_task(y: PANDAS, goal: str = "class") -> str:
         return "binary classification"
     else:
         return "multiclass classification"
+
+
+def is_binary(task) -> bool:
+    """Return whether the task is binary or multilabel."""
+    return task in ("binary classification", "multilabel classification")
+
+
+def is_multioutput(task) -> bool:
+    """Return whether the task is binary or multilabel."""
+    return any(t in task for t in ("multilabel", "multioutput"))
 
 
 def get_feature_importance(
@@ -2764,10 +2774,11 @@ def plot_from_model(
                 check_is_fitted(args[0], attributes="_models")
 
                 models = args[0]._get_models(ensembles=ensembles)
-                if max_one and len(models) > 1:
-                    raise ValueError(f"The {f.__name__} plot only accepts one model!")
-                else:
-                    models = models[0]
+                if max_one:
+                    if len(models) > 1:
+                        raise ValueError(f"The {f.__name__} plot only accepts one model!")
+                    else:
+                        models = models[0]
 
                 return f(args[0], models, *args[1:], **kwargs)
             else:

@@ -50,32 +50,6 @@ X_sparse = pd.DataFrame(
 
 # Multilabel classification data
 X_label, y_label = make_multilabel_classification(n_samples=100, n_classes=3)
-y10_label = [
-    ["politics"],
-    ["finance", "religion"],
-    ["education", "finance", "politics"],
-    [],
-    ["finance"],
-    ["finance", "religion"],
-    ["finance"],
-    ["finance", "religion"],
-    ["education"],
-    ["finance", "politics", "religion"],
-]
-
-# Multiclass-multioutput classification data
-y_multiclass = merge(
-    pd.Series(shuffle(y_class.values, random_state=1), name="a"),
-    pd.Series(shuffle(y_class.values, random_state=2), name="b"),
-    pd.Series(shuffle(y_class.values, random_state=3), name="c"),
-)
-
-# Multioutput regression data
-y_multireg = merge(
-    pd.Series(shuffle(y_reg.values, random_state=1), name="a"),
-    pd.Series(shuffle(y_reg.values, random_state=2), name="b"),
-    pd.Series(shuffle(y_reg.values, random_state=3), name="c"),
-)
 
 # Text data
 X_text = [
@@ -208,6 +182,41 @@ y10 = [0, 1, 0, 1, 1, 0, 1, 0, 1, 1]
 y10_nan = [0, 1, 0, np.NaN, 1, 0, 1, 0, 1, 1]
 y10_str = ["y", "n", "y", "y", "n", "y", "n", "y", "n", "n"]
 y10_sn = ["y", "n", np.NaN, "y", "n", "y", "n", "y", "n", "n"]
+
+y10_label = [
+    ["politics"],
+    ["finance", "religion"],
+    ["education", "finance", "politics"],
+    [],
+    ["finance"],
+    ["finance", "religion"],
+    ["finance"],
+    ["finance", "religion"],
+    ["education"],
+    ["finance", "politics", "religion"],
+]
+
+# Multilabel data with categorical
+y10_label2 = merge(
+    pd.Series(shuffle(y10, random_state=1), name="a"),
+    pd.Series(shuffle(y10_str, random_state=2), name="b"),
+    pd.Series(shuffle(y10_str, random_state=3), name="c"),
+)
+
+
+# Multiclass-multioutput classification data
+y_multiclass = merge(
+    pd.Series(shuffle(y_class.values, random_state=1), name="a"),
+    pd.Series(shuffle(y_class.values, random_state=2), name="b"),
+    pd.Series(shuffle(y_class.values, random_state=3), name="c"),
+)
+
+# Multioutput regression data
+y_multireg = merge(
+    pd.Series(shuffle(y_reg.values, random_state=1), name="a"),
+    pd.Series(shuffle(y_reg.values, random_state=2), name="b"),
+    pd.Series(shuffle(y_reg.values, random_state=3), name="c"),
+)
 
 
 class DummyTransformer:

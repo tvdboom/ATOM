@@ -29,7 +29,7 @@ from atom.models import MODELS, CatBoost, CustomModel, LightGBM, XGBoost
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     SEQUENCE_TYPES, ClassMap, Model, check_dependency, get_best_score,
-    get_custom_scorer, lst, sign, time_to_str,
+    get_custom_scorer, is_binary, lst, sign, time_to_str,
 )
 
 
@@ -139,7 +139,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                 # Multiclass, multilabel, multiclass-multioutput classification
                 self._metric = ClassMap(get_custom_scorer("f1_weighted"))
             else:
-                # Regression or multioutput regression
+                # Regression, multioutput regression
                 self._metric = ClassMap(get_custom_scorer("r2"))
         elif not isinstance(self._metric, ClassMap):
             metrics = []
@@ -183,12 +183,12 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                         if cls in (CatBoost, LightGBM, XGBoost):
                             check_dependency(cls.supports_engines[0])
 
-                        inc.append(cls(name=cls.acronym + m[len(cls.acronym):], **kwargs))
+                        inc.append(x := cls(cls.acronym + m[len(cls.acronym):], **kwargs))
 
                         # Check for regression/classification-only models
                         if self.goal not in inc[-1]._estimators:
                             raise ValueError(
-                                f"The {cls._fullname} model is not "
+                                f"The {x._fullname} model is not "
                                 f"available for {self.task} tasks!"
                             )
             elif isinstance(model, BaseModel):  # For reruns

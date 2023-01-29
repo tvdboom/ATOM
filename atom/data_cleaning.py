@@ -604,8 +604,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     encode_target: bool, default=True
         Whether to encode the target column(s). This includes
         converting categorical columns to numerical, and binarizing
-        [multilabel-multioutput][] columns. This transformation is
-        ignored if `y` is not provided.
+        [multilabel][] columns. This transformation is ignored if `y`
+        is not provided.
 
     device: str, default="cpu"
         Device on which to train the estimators. Use any string

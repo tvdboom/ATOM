@@ -831,7 +831,7 @@ class BasePlot:
             # Get probabilities instead of threshold
             y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
 
-        if "multioutput" in self.task:
+        if is_multioutput(self.task):
             return y_true.loc[:, target], y_pred.loc[:, target]
         elif y_pred.ndim > 1:
             return y_true, y_pred.iloc[:, 1]
@@ -3964,8 +3964,7 @@ class PredictionPlot(BasePlot):
             from: "train", "test" or "holdout".
 
         target: int or str, default=0
-            Target column to look at. Only for [multilabel-multioutput][]
-            tasks.
+            Target column to look at. Only for [multilabel][] tasks.
 
         n_bins: int, default=10
             Number of bins used for calibration. Minimum of 5 required.
@@ -4204,7 +4203,7 @@ class PredictionPlot(BasePlot):
         ds = self._get_set(dataset, max_one=True)
         target = self._get_target(target, only_columns=True)
 
-        if self.task.startswith("multi") and len(models) > 1:
+        if self.task.startswith("multiclass") and len(models) > 1:
             raise NotImplementedError(
                 "The plot_confusion_matrix method does not support the comparison"
                 " of various models for multiclass classification tasks."
@@ -4242,7 +4241,7 @@ class PredictionPlot(BasePlot):
                     texttemplate="%{text}<br>(%{z:.2f}%)",
                     textfont=dict(size=self.label_fontsize),
                     hovertemplate=(
-                        "<b>%{customdata}</b><br>" if self.task.startswith("bin") else ""
+                        "<b>%{customdata}</b><br>" if is_binary(self.task) else ""
                         "x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>"
                     ),
                     showlegend=False,
@@ -4329,8 +4328,7 @@ class PredictionPlot(BasePlot):
             from: "train", "test" or "holdout".
 
         target: int or str, default=0
-            Target column to look at. Only for [multilabel-multioutput][]
-            tasks.
+            Target column to look at. Only for [multilabel][] tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -4541,13 +4539,7 @@ class PredictionPlot(BasePlot):
 
             # Fit the points using linear regression
             from atom.models import OrdinaryLeastSquares
-
-            # TODO: Fix for multioutput models
-            model = OrdinaryLeastSquares(
-                goal=self.goal,
-                branch=m.branch,
-                multioutput=self.multioutput,
-            )._get_est()
+            model = OrdinaryLeastSquares(goal=self.goal, branch=m.branch)._get_est()
             model.fit(y_true.values.reshape(-1, 1), y_pred)
 
             fig.add_trace(
@@ -5585,12 +5577,12 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_partial_dependence_2.html
 
         """
-        target = self._get_target(target) if self.task.startswith("multi") else 0
+        target = self._get_target(target) if self.task.startswith("multiclass") else 0
 
-        if kind.lower() not in ("average", "individual", "average+individual"):
+        if any(k.lower() not in ("average", "individual") for k in kind.split("+")):
             raise ValueError(
                 f"Invalid value for the kind parameter, got {kind}. "
-                "Choose from: average, individual, average+individual."
+                "Choose from: average, individual."
             )
 
         axes, names = [], []

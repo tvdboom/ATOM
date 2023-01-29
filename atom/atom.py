@@ -46,7 +46,8 @@ from atom.utils import (
     ClassMap, Predictor, Runner, Transformer, __version__, bk,
     check_dependency, check_is_fitted, check_scaling, composed, crash,
     custom_transform, fit_one, flt, get_cols, get_custom_scorer, has_task,
-    infer_task, is_sparse, lst, method_to_log, sign, variable_return,
+    infer_task, is_multioutput, is_sparse, lst, method_to_log, sign,
+    variable_return,
 )
 
 
@@ -283,7 +284,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             df = pd.DataFrame(data, index=pd.MultiIndex.from_tuples(index))
 
             # Non-multioutput has single level index (for simplicity)
-            if "multioutput" not in self.task:
+            if not is_multioutput(self.task):
                 df.index = df.index.droplevel(0)
 
             return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
@@ -1246,7 +1247,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             of the target class distribution per data set.
 
         """
-        if "multioutput" in self.task:
+        if is_multioutput(self.task):
             raise ValueError("The balance method does not support multioutput tasks.")
 
         columns = kwargs.pop("columns", None)

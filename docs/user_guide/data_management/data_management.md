@@ -118,7 +118,7 @@ ATOM recognizes three multioutput tasks.
     [multiclass-multioutput][] tasks.
 
 
-#### Multilabel-multioutput
+#### Multilabel
 
 Multilabel-multioutput is a classification task, labeling each sample
 with `m` labels from `n_classes` possible classes, where `m` can be 0
@@ -210,7 +210,7 @@ The majority of the models don't have integrated support for multioutput
 tasks. However, it's possible to still use them for such tasks, wrapping
 them in a meta-estimator capable of handling multiple target columns. For
 non-native multioutput models, ATOM does so automatically. For
-[multilabel-multioutput][] tasks, the meta-estimator is:
+[multilabel][] tasks, the meta-estimator is:
 
 * [ClassifierChain][]
 * [RegressorChain][]

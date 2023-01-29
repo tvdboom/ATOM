@@ -30,7 +30,7 @@ from atom.pipeline import Pipeline
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, ClassMap, Model, Predictor,
     check_is_fitted, composed, crash, divide, export_pipeline, flt,
-    get_best_score, get_versions, lst, method_to_log, pd,
+    get_best_score, get_versions, is_multioutput, lst, method_to_log, pd,
 )
 
 
@@ -688,7 +688,7 @@ class BaseRunner(BaseTracker):
             )
 
         y = self.classes[dataset]
-        if "multioutput" in self.task:
+        if is_multioutput(self.task):
             y = y.loc[target if isinstance(target, str) else self.y.columns[target]]
 
         return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
