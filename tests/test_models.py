@@ -34,14 +34,14 @@ def test_all_models_binary():
     """Assert that all models work with binary classification."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.5, n_jobs=-1, random_state=1)
     atom.run(models=["!CatNB", "!RNN"], n_trials=5)
-    assert "CatNB" not in atom.models
+    assert "CatNB" not in atom.models and "RNN" not in atom.models
 
 
 def test_all_models_multiclass():
     """Assert that all models work with multiclass classification."""
     atom = ATOMClassifier(X_class, y_class, n_rows=0.5, n_jobs=-1, random_state=1)
     atom.run(models=["!CatNB", "!RNN"], n_trials=5, ht_params={"catch": (ValueError,)})
-    assert "CatNB" not in atom.models
+    assert "CatNB" not in atom.models and "RNN" not in atom.models
 
 
 def test_all_models_regression():
