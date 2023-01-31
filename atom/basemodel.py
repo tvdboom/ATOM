@@ -544,7 +544,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         return out
 
-    def _get_predictions(
+    def _get_pred(
         self,
         dataset: str,
         target: str,
@@ -2541,7 +2541,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 "Choose from: train, test, dataset."
             )
 
-        fpr, tpr, thresholds = roc_curve(*self._get_predictions(dataset, target))
+        fpr, tpr, thresholds = roc_curve(*self._get_pred(dataset, target))
 
         return thresholds[np.argmax(tpr - fpr)]
 

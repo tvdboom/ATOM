@@ -4163,7 +4163,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         if len(models) == 1:  # Create matrix heatmap
             m = models[0]
-            cm = confusion_matrix(*m._get_predictions(ds, target, "predict", threshold))
+            cm = confusion_matrix(*m._get_pred(ds, target, "predict", threshold))
             ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
 
             xaxis, yaxis = self._fig.get_axes(
@@ -4209,7 +4209,7 @@ class PredictionPlot(BasePlot):
         else:
             xaxis, yaxis = self._fig.get_axes()
             for m in models:
-                cm = confusion_matrix(*m._get_pred(ds, target, method="predict"))
+                cm = confusion_matrix(*m._get_pred(ds, target, "predict", threshold))
 
                 color = self._fig.get_color(m.name)
                 fig.add_trace(
