@@ -751,7 +751,6 @@ class CatBoost(BaseModel):
         self,
         estimator: Predictor,
         data: tuple[DATAFRAME, SERIES],
-        est_params_fit: dict,
         validation: tuple[DATAFRAME, SERIES] | None = None,
         trial: Trial | None = None,
     ):
@@ -769,9 +768,6 @@ class CatBoost(BaseModel):
             Validation data of the form (X, y). If None, no validation
             is performed.
 
-        est_params_fit: dict
-            Additional parameters for the estimator's fit method.
-
         trial: [Trial][] or None
             Active trial (during hyperparameter tuning).
 
@@ -781,7 +777,7 @@ class CatBoost(BaseModel):
             Fitted instance.
 
         """
-        params = est_params_fit.copy()
+        params = self._est_params_fit.copy()
 
         callbacks = params.pop("callbacks", [])
         if trial and len(self._metric) == 1 and not self._gpu:
@@ -2292,7 +2288,6 @@ class LightGBM(BaseModel):
         self,
         estimator: Predictor,
         data: tuple[DATAFRAME, SERIES],
-        est_params_fit: dict,
         validation: tuple[DATAFRAME, SERIES] | None = None,
         trial: Trial | None = None,
     ):
@@ -2310,9 +2305,6 @@ class LightGBM(BaseModel):
             Validation data of the form (X, y). If None, no validation
             is performed.
 
-        est_params_fit: dict
-            Additional parameters for the estimator's fit method.
-
         trial: [Trial][] or None
             Active trial (during hyperparameter tuning).
 
@@ -2325,7 +2317,7 @@ class LightGBM(BaseModel):
         from lightgbm.callback import log_evaluation
 
         m = self._metric[0].name
-        params = est_params_fit.copy()
+        params = self._est_params_fit.copy()
 
         callbacks = params.pop("callbacks", []) + [log_evaluation(-1)]
         if trial and len(self._metric) == 1:
@@ -4096,7 +4088,6 @@ class XGBoost(BaseModel):
         self,
         estimator: Predictor,
         data: tuple[DATAFRAME, SERIES],
-        est_params_fit: dict,
         validation: tuple[DATAFRAME, SERIES] | None = None,
         trial: Trial | None = None,
     ):
@@ -4114,9 +4105,6 @@ class XGBoost(BaseModel):
             Validation data of the form (X, y). If None, no validation
             is performed.
 
-        est_params_fit: dict
-            Additional parameters for the estimator's fit method.
-
         trial: [Trial][] or None
             Active trial (during hyperparameter tuning).
 
@@ -4127,7 +4115,7 @@ class XGBoost(BaseModel):
 
         """
         m = self._metric[0].name
-        params = est_params_fit.copy()
+        params = self._est_params_fit.copy()
 
         callbacks = params.pop("callbacks", [])
         if trial and len(self._metric) == 1:

@@ -1,4 +1,4 @@
-name: ATOM -> Build and release
+name: Build and release
 
 on:
   release:

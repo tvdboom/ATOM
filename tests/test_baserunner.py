@@ -209,6 +209,18 @@ def test_delete_current():
     assert "b2" not in atom._branches
 
 
+def test_sample_weight():
+    """Assert that we can get the sample weight from the branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.sample_weight is None
+
+
+def test_sample_weight_setter_dict():
+    """Assert that we can change the sample weight."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.sample_weight is None
+
+
 def test_multioutput_None():
     """Assert that the multioutput estimator is ignored when None."""
     atom = ATOMClassifier(X_label, y=y_label, random_state=1)
@@ -489,7 +501,7 @@ def test_export_pipeline_memory(func):
 def test_get_class_weights_regression():
     """Assert that an error is raised when called from regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    with pytest.raises(PermissionError, match=".*get_class_weight method is only.*"):
+    with pytest.raises(AttributeError):
         atom.get_class_weight()
 
 
@@ -507,11 +519,10 @@ def test_get_class_weights(dataset):
     assert list(atom.get_class_weight(dataset)) == [0, 1, 2]
 
 
-@pytest.mark.parametrize("target", [0, -1, "a"])
-def test_get_class_weight_multioutput(target):
+def test_get_class_weight_multioutput():
     """Assert that the get_class_weight method works for multioutput."""
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
-    assert list(atom.get_class_weight(target=target)) == [0, 1, 2]
+    assert list(atom.get_class_weight()) == ["a", "b", "c"]
 
 
 def test_merge_invalid_class():

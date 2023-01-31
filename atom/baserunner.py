@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from typing import Any, Callable
-
+from sklearn.utils.class_weight import compute_sample_weight
 import mlflow
 from joblib.memory import Memory
 from sklearn.base import clone
@@ -20,7 +20,7 @@ from sklearn.multioutput import (
     RegressorChain,
 )
 from typeguard import typechecked
-
+from sklearn.utils.metaestimators import available_if
 from atom.basemodel import BaseModel
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
@@ -30,7 +30,7 @@ from atom.pipeline import Pipeline
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, ClassMap, Model, Predictor,
     check_is_fitted, composed, crash, divide, export_pipeline, flt,
-    get_best_score, get_versions, is_multioutput, lst, method_to_log, pd,
+    get_best_score, get_versions, is_multioutput, lst, method_to_log, pd, has_task, SERIES, SERIES_TYPES, to_series
 )
 
 
@@ -647,6 +647,7 @@ class BaseRunner(BaseTracker):
 
         return export_pipeline(pipeline, model, memory, verbose)
 
+    @available_if(has_task("class"))
     @composed(crash, typechecked)
     def get_class_weight(
         self,
@@ -676,18 +677,13 @@ class BaseRunner(BaseTracker):
             Classes with the corresponding weights.
 
         """
-        if self.goal != "class":
-            raise PermissionError(
-                "The get_class_weight method is only available for classification tasks!"
-            )
-
-        if dataset not in ("train", "test", "dataset"):
+        if dataset.lower() not in ("train", "test", "dataset"):
             raise ValueError(
-                "Invalid value for the dataset parameter. "
-                "Choose from: train, test or dataset."
+                f"Invalid value for the dataset parameter, got {dataset}. "
+                "Choose from: train, test, dataset."
             )
 
-        y = self.classes[dataset]
+        y = self.classes[dataset.lower()]
         if is_multioutput(self.task):
             y = y.loc[target if isinstance(target, str) else self.y.columns[target]]
 

@@ -18,7 +18,7 @@ from importlib import import_module
 from logging import Logger
 from typing import Any, Callable
 from unittest.mock import patch
-
+from sklearn.metrics import roc_curve
 import dill as pickle
 import mlflow
 import numpy as np
@@ -544,6 +544,71 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         return out
 
+    def _get_predictions(
+        self,
+        dataset: str,
+        target: str,
+        attr: str = "predict",
+        threshold: FLOAT = 0.5,
+    ) -> tuple[SERIES, SERIES]:
+        """Get the true and predicted values for a column.
+
+        Predictions are made using the `decision_function` or
+        `predict_proba` attributes whenever available, checked in
+        that order.
+
+        Parameters
+        ----------
+        dataset: str
+            Data set for which to get the predictions.
+
+        target: str
+            Target column to look at. Only for [multioutput tasks][].
+
+        attr: str, default="predict"
+            Attribute used to get predictions. Choose from:
+
+            - "predict": Use the `predict` method.
+            - "predict_proba": Use the `predict_proba` method.
+            - "decision_function": Use the `decision_function` method.
+            - "prob": Use `predict_proba`or convert `decision_function`
+              to probability predictions.
+            - "thresh": Use `decision_function` or `predict_proba`.
+
+        threshold: float, default=0.5
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels.
+
+        Returns
+        -------
+        series
+            True values.
+
+        series
+            Predicted values.
+
+        """
+        if method == "predict":
+            attribute = "predict"
+        else:
+            for attr in ("decision_function", "predict_proba", "predict"):
+                if hasattr(model.estimator, attr):
+                    attribute = attr
+                    break
+
+        y_true = getattr(model, f"y_{dataset}")
+        y_pred = getattr(model, f"{attribute}_{dataset}")
+        if method == "prob" and attribute == "decision_function":
+            # Get probabilities instead of threshold
+            y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
+
+        if is_multioutput(self.task):
+            return y_true.loc[:, target], y_pred.loc[:, target]
+        elif y_pred.ndim > 1:
+            return y_true, y_pred.iloc[:, 1]
+
+        return y_true, y_pred
+
     @lru_cache
     def _get_score(
         self,
@@ -576,7 +641,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             - The metric evaluates predicted target values.
 
         sample_weight: tuple or None, default=None
-            Sample weights corresponding to y in `dataset`.
+            Sample weights corresponding to y in `dataset`. Is tuple to
+            allow hashing.
 
         Returns
         -------
@@ -623,7 +689,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             score = scorer._score_func(y_true, y_pred, **scorer._kwargs, **kwargs)
         except ValueError:
             # Fails for multioutput tasks -> get mean of scores over targets
-            print(self, y_pred)
             if isinstance(y_pred, SERIES_TYPES):
                 # Multilabel tasks -> select right column from multiindex
                 score = np.mean(
@@ -737,8 +802,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
                 # Match the sample_weight with the length of the subtrain set
                 # Make copy of est_params to not alter the mutable variable
-                est_copy = self._est_params_fit.copy()
-                if "sample_weight" in est_copy:
+                if "sample_weight" in (est_copy := self._est_params_fit.copy()):
                     est_copy["sample_weight"] = [
                         self._est_params_fit["sample_weight"][i] for i in train_idx
                     ]
@@ -2277,6 +2341,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     ) -> pd.Series:
         """Get the model's scores for the provided metrics.
 
+        !!! tip
+            Use the [get_best_threshold][] or [plot_threshold][] method
+            to determine a suitable value for the `threshold` parameter.
+
         Parameters
         ----------
         metric: str, func, scorer, sequence or None, default=None
@@ -2291,9 +2359,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
 
-            - The task is binary classification.
+            - The task is binary or [multilabel][] classification.
             - The model has a `predict_proba` method.
-            - The metric evaluates predicted target values.
+            - The metric evaluates predicted probabilities.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.
@@ -2443,6 +2511,39 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             self._run = mlflow.start_run(run_name=f"{self.name}_full_train")
 
         self.fit(X, y)
+
+    @available_if(has_task(["binary", "multilabel"]))
+    @composed(crash, typechecked)
+    def get_best_threshold(self, dataset: str = "train", target: INT | str = 0) -> FLOAT:
+        """Get the threshold that maximizes the [ROC][] curve.
+
+        Only available for binary and [multilabel][] classification
+        tasks.
+
+        Parameters
+        ----------
+        dataset: str, default="train"
+            Data set on which to calculate the threshold. Choose from:
+            train, test, dataset.
+
+        target: str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
+
+        Returns
+        -------
+        float
+            Best threshold.
+
+        """
+        if dataset.lower() not in ("train", "test", "dataset"):
+            raise ValueError(
+                f"Invalid value for the dataset parameter, got {dataset}. "
+                "Choose from: train, test, dataset."
+            )
+
+        fpr, tpr, thresholds = roc_curve(*self._get_predictions(dataset, target))
+
+        return thresholds[np.argmax(tpr - fpr)]
 
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(

@@ -219,11 +219,6 @@ class Branch:
         """
         return self._pipeline
 
-    @pipeline.setter
-    @typechecked
-    def pipeline(self, value: pd.Series):
-        self._pipeline = value
-
     @property
     def mapping(self) -> CustomDict:
         """Encoded values and their respective mapped values.
@@ -234,11 +229,6 @@ class Branch:
 
         """
         return self._mapping
-
-    @mapping.setter
-    @typechecked
-    def mapping(self, value: CustomDict):
-        self._mapping = value
 
     @property
     def dataset(self) -> DATAFRAME:

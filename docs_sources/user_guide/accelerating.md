@@ -153,10 +153,13 @@ parallelization backends.
   mostly useful when the execution bottleneck is a compiled extension that
   explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
   block or an expensive call to a library such as numpy).
-* **ray:** Ray is an open-source unified compute framework that makes it easy to
-  scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html).
+* **ray:** [Ray](https://www.ray.io/) is an open-source unified compute framework
+  that makes it easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html).
   Selecting the ray backend also parallelizes the data using [modin][], a
   multi-threading, drop-in replacement for pandas, that uses Ray as backend.
+
+!!! warning
+    Using [modin][] can be less performant than pandas for small datasets (<1M rows).
 
 The parallelization backend is applied in the following cases:
 

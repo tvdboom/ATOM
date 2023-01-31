@@ -776,68 +776,6 @@ class BasePlot:
 
         return target
 
-    def _get_pred(
-        self,
-        model: Model,
-        dataset: str,
-        target: str,
-        method: str = "predict",
-    ) -> tuple[SERIES, SERIES]:
-        """Get the true and predicted values for a column.
-
-        Predictions are made using the `decision_function` or
-        `predict_proba` attributes whenever available, checked in
-        that order.
-
-        Parameters
-        ----------
-        model: Model
-            Model for which to get the predictions.
-
-        dataset: str
-            Name of the data set for which to get the predictions.
-
-        target: str
-            Target column to look at.
-
-        method: str, default="predict"
-            Method to get predictions. Choose from:
-
-            - "predict": Use the `predict` method.
-            - "prob": Convert `decision_function` to probability
-              predictions or use `predict_proba`.
-            - "thresh": Use `decision_function` or `predict_proba`.
-
-        Returns
-        -------
-        series
-            True values.
-
-        series
-            Predicted values.
-
-        """
-        if method == "predict":
-            attribute = "predict"
-        else:
-            for attr in ("decision_function", "predict_proba", "predict"):
-                if hasattr(model.estimator, attr):
-                    attribute = attr
-                    break
-
-        y_true = getattr(model, f"y_{dataset}")
-        y_pred = getattr(model, f"{attribute}_{dataset}")
-        if method == "prob" and attribute == "decision_function":
-            # Get probabilities instead of threshold
-            y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
-
-        if is_multioutput(self.task):
-            return y_true.loc[:, target], y_pred.loc[:, target]
-        elif y_pred.ndim > 1:
-            return y_true, y_pred.iloc[:, 1]
-
-        return y_true, y_pred
-
     def _get_figure(self, **kwargs) -> go.Figure | plt.Figure:
         """Return existing figure if in canvas, else a new figure.
 
@@ -4041,7 +3979,7 @@ class PredictionPlot(BasePlot):
         xaxis2, yaxis2 = self._fig.get_axes(y=(0.0, 0.29))
         for m in models:
             for ds in dataset:
-                y_true, y_pred = self._get_pred(m, ds, target, method="prob")
+                y_true, y_pred = m._get_pred(ds, target, method="prob")
 
                 # Get calibration (frac of positives and predicted values)
                 frac_pos, pred = calibration_curve(y_true, y_pred, n_bins=n_bins)
@@ -4108,6 +4046,7 @@ class PredictionPlot(BasePlot):
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
         target: INT | str = 0,
+        threshold: FLOAT = 0.5,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
@@ -4122,6 +4061,10 @@ class PredictionPlot(BasePlot):
         for multiclass classification tasks). This plot is available
         only for classification tasks.
 
+        !!! tip
+            Fill the `threshold` parameter with the result from the
+            model's `get_best_threshold` method to optimize the results.
+
         Parameters
         ----------
         models: int, str, Model, slice, sequence or None, default=None
@@ -4133,6 +4076,10 @@ class PredictionPlot(BasePlot):
 
         target: int or str, default=0
             Target column to look at. Only for [multioutput tasks][].
+
+        threshold: float, default=0.5
+            Threshold between 0 and 1 to convert predicted probabilities
+            to class labels. Only for binary classification tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -4216,7 +4163,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         if len(models) == 1:  # Create matrix heatmap
             m = models[0]
-            cm = confusion_matrix(*self._get_pred(m, ds, target, method="predict"))
+            cm = confusion_matrix(*m._get_predictions(ds, target, "predict", threshold))
             ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
 
             xaxis, yaxis = self._fig.get_axes(
@@ -4262,7 +4209,7 @@ class PredictionPlot(BasePlot):
         else:
             xaxis, yaxis = self._fig.get_axes()
             for m in models:
-                cm = confusion_matrix(*self._get_pred(m, ds, target, method="predict"))
+                cm = confusion_matrix(*m._get_pred(ds, target, method="predict"))
 
                 color = self._fig.get_color(m.name)
                 fig.add_trace(
@@ -4397,7 +4344,7 @@ class PredictionPlot(BasePlot):
         for m in models:
             for ds in dataset:
                 # Get fpr-fnr pairs for different thresholds
-                fpr, fnr, _ = det_curve(*self._get_pred(m, ds, target, method="thresh"))
+                fpr, fnr, _ = det_curve(*m._get_pred(ds, target, method="thresh"))
 
                 fig.add_trace(
                     self._draw_line(
@@ -4521,7 +4468,7 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            y_true, y_pred = self._get_pred(m, ds, target)
+            y_true, y_pred = m._get_pred(ds, target)
 
             fig.add_trace(
                 go.Scatter(
@@ -4924,7 +4871,7 @@ class PredictionPlot(BasePlot):
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for ds in dataset:
-                y_true, y_pred = self._get_pred(m, ds, target, method="thresh")
+                y_true, y_pred = m._get_pred(ds, target, method="thresh")
 
                 fig.add_trace(
                     self._draw_line(

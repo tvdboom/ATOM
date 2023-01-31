@@ -1084,7 +1084,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             ]
 
         # Add the estimator to the pipeline
-        self.branch.pipeline = pd.concat(
+        self.branch._pipeline = pd.concat(
             [self.pipeline, pd.Series([transformer], dtype="object")],
             ignore_index=True,
         )
@@ -1390,8 +1390,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         self._add_transformer(encoder, columns=columns)
 
         # Add mapping of the encoded columns and reorder because of target col
-        self.mapping.update(encoder.mapping)
-        self.mapping = self.mapping[[c for c in self.columns if c in self.mapping]]
+        self.branch._mapping.update(encoder.mapping)
+        self.branch._mapping.reorder(self.columns)
 
     @composed(crash, method_to_log, typechecked)
     def impute(

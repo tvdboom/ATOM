@@ -76,6 +76,19 @@ def test_name_setter():
 
 # Test data properties ============================================= >>
 
+def test_pipeline_property():
+    """Assert that the pipeline property returns the current pipeline."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.scale()
+    assert len(atom.branch.pipeline) == 1
+
+
+def test_mapping_property():
+    """Assert that the dataset property returns the target's mapping."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.branch.mapping == {}
+
+
 def test_dataset_property():
     """Assert that the dataset property returns the data in the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

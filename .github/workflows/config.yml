@@ -1,4 +1,4 @@
-name: ATOM -> Linting and tests
+name: Linting and tests
 
 on:
   push:
@@ -52,6 +52,19 @@ jobs:
         uses: github/codeql-action/init@v2
         with:
             languages: python
+
+  codiga:
+      runs-on: ubuntu-latest
+      name: A job to check my code quality
+      steps:
+      - name: Check code with Codiga
+        uses: codiga/github-action@master
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          codiga_api_token: ${{ secrets.CODIGA }}
+          min_quality_grade: "EXCELLENT"
+          project_name: "ATOM"
+          max_timeout_sec: "600"
 
   unit-tests:
     runs-on: ${{ matrix.os }}

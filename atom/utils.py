@@ -1217,6 +1217,10 @@ class CustomDict(MutableMapping):
     def index(self, key):
         return self.__keys.index(self._get_key(key))
 
+    def reorder(self, keys):
+        self.__keys = [k for k in keys if k in self.__keys]
+        self.__data = {k: self[k] for k in self.__keys}
+
     def replace_key(self, key, new_key):
         if key in self:
             self.insert(self.__keys.index(self._get_key(key)), new_key, self[key])
