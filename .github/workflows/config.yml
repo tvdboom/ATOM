@@ -39,7 +39,7 @@ jobs:
       - name: Apply linting
         run: flake8 --show-source --statistics atom tests
 
-  code-quality:
+  code-quality-codeql:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -53,9 +53,8 @@ jobs:
         with:
             languages: python
 
-  codiga:
+  code-quality-codiga:
       runs-on: ubuntu-latest
-      name: A job to check my code quality
       steps:
       - name: Check code with Codiga
         uses: codiga/github-action@master
@@ -64,6 +63,8 @@ jobs:
           codiga_api_token: ${{ secrets.CODIGA }}
           min_quality_grade: "EXCELLENT"
           project_name: "ATOM"
+          max_complex_functions_rate: "0.05"
+          max_long_functions_rate: "0.05"
           max_timeout_sec: "600"
 
   unit-tests:
