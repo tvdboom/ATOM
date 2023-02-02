@@ -56,7 +56,7 @@ from atom.utils import (
     estimator_has_attr, export_pipeline, flt, get_cols, get_custom_scorer,
     get_feature_importance, has_task, infer_task, is_binary, is_multioutput,
     it, lst, merge, method_to_log, rnd, score, sign, time_to_str, to_pandas,
-    variable_return,
+    variable_return, INDEX
 )
 
 
@@ -547,9 +547,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def _get_pred(
         self,
         dataset: str,
-        target: str,
+        target: str | None = None,
         attr: str = "predict",
-        threshold: FLOAT = 0.5,
     ) -> tuple[SERIES, SERIES]:
         """Get the true and predicted values for a column.
 
@@ -562,8 +561,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         dataset: str
             Data set for which to get the predictions.
 
-        target: str
+        target: str or None, default=None
             Target column to look at. Only for [multioutput tasks][].
+            If None, all columns are returned.
 
         attr: str, default="predict"
             Attribute used to get predictions. Choose from:
@@ -571,13 +571,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             - "predict": Use the `predict` method.
             - "predict_proba": Use the `predict_proba` method.
             - "decision_function": Use the `decision_function` method.
-            - "prob": Use `predict_proba`or convert `decision_function`
-              to probability predictions.
             - "thresh": Use `decision_function` or `predict_proba`.
-
-        threshold: float, default=0.5
-            Threshold between 0 and 1 to convert predicted probabilities
-            to class labels.
 
         Returns
         -------
@@ -588,22 +582,19 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Predicted values.
 
         """
-        if method == "predict":
-            attribute = "predict"
-        else:
-            for attr in ("decision_function", "predict_proba", "predict"):
-                if hasattr(model.estimator, attr):
-                    attribute = attr
-                    break
+        # Select method to use for predictions
+        if attr == "thresh":
+            if hasattr(self.estimator, "decision_function"):
+                attr = "decision_function"
+            else:
+                attr = "predict_proba"
 
-        y_true = getattr(model, f"y_{dataset}")
-        y_pred = getattr(model, f"{attribute}_{dataset}")
-        if method == "prob" and attribute == "decision_function":
-            # Get probabilities instead of threshold
-            y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
+        y_true = getattr(self, f"y_{dataset}")
+        y_pred = getattr(self, f"{attr}_{dataset}")
 
         if is_multioutput(self.task):
-            return y_true.loc[:, target], y_pred.loc[:, target]
+            if target is not None:
+                return y_true.loc[:, target], y_pred.loc[:, target]
         elif y_pred.ndim > 1:
             return y_true, y_pred.iloc[:, 1]
 
@@ -653,62 +644,31 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         if dataset == "holdout" and self.holdout is None:
             raise ValueError("No holdout data set available.")
 
-        has_pred_proba = hasattr(self.estimator, "predict_proba")
-        has_dec_func = hasattr(self.estimator, "decision_function")
-
-        # Select method to use for predictions
-        attr = "predict"
         if scorer.__class__.__name__ == "_ThresholdScorer":
-            if has_dec_func:
-                attr = "decision_function"
-            elif has_pred_proba:
-                attr = "predict_proba"
+            y_true, y_pred = self._get_pred(dataset, attr="thresh")
         elif scorer.__class__.__name__ == "_ProbaScorer":
-            if has_pred_proba:
-                attr = "predict_proba"
-            elif has_dec_func:
-                attr = "decision_function"
-        elif self.task.startswith("bin") and has_pred_proba:
-            attr = "predict_proba"  # Needed to use threshold parameter
-
-        y_pred = getattr(self, f"{attr}_{dataset}")
-        if is_binary(self.task) and attr == "predict_proba":
-            if not is_multioutput(self.task):
-                y_pred = y_pred.iloc[:, 1]
-
-            # Exclude metrics that use probability estimates (e.g. ap, auc)
-            if scorer.__class__.__name__ == "_PredictScorer":
+            y_true, y_pred = self._get_pred(dataset, attr="predict_proba")
+        else:
+            if is_binary(self.task) and hasattr(self.estimator, "predict_proba"):
+                y_true, y_pred = self._get_pred(dataset, attr="predict_proba")
                 y_pred = (y_pred > threshold).astype("int")
+            else:
+                y_true, y_pred = self._get_pred(dataset, attr="predict")
 
         kwargs = {}
         if "sample_weight" in sign(scorer._score_func):
             kwargs["sample_weight"] = sample_weight
 
-        y_true = getattr(self, f"y_{dataset}")
-        try:
+        if not is_multioutput(self.task):
             score = scorer._score_func(y_true, y_pred, **scorer._kwargs, **kwargs)
-        except ValueError:
-            # Fails for multioutput tasks -> get mean of scores over targets
-            if isinstance(y_pred, SERIES_TYPES):
-                # Multilabel tasks -> select right column from multiindex
-                score = np.mean(
-                    [
-                        scorer._score_func(
-                            y_true[col],
-                            y_pred.loc[col],
-                            **scorer._kwargs,
-                            **kwargs,
-                        )
-                        for col in y_pred.index.levels[0]
-                    ]
-                )
-            else:
-                score = np.mean(
-                    [
-                        scorer._score_func(y_true[c.name], c, **scorer._kwargs, **kwargs)
-                        for c in get_cols(y_pred)
-                    ]
-                )
+        else:
+            # For multioutput tasks, get mean of scores over targets
+            score = np.mean(
+                [
+                    scorer._score_func(y_true[c], y_pred[c], **scorer._kwargs, **kwargs)
+                    for c in y_pred
+                ]
+            )
 
         result = rnd(scorer._sign * float(score))
 
@@ -1475,13 +1435,35 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
     # Prediction properties ======================================== >>
 
+    def _assign_prediction_indices(self, index: INDEX) -> INDEX:
+        """Assign index names for the prediction methods.
+
+        Create a multi-index object for multioutput tasks, where the
+        first level of the index is the target classes and the second
+        the original row indices from the data set.
+
+        Parameters
+        ----------
+        index: index
+            Original row indices of the data set.
+
+        Returns
+        -------
+        index
+            Indices for the dataframe.
+
+        """
+        return bk.MultiIndex.from_tuples(
+            [(col, idx) for col in np.unique(self.y) for idx in index]
+        )
+
     def _assign_prediction_columns(self) -> list[str]:
         """Assign column names for the prediction methods.
 
         Returns
         -------
         list of str
-            Names of the columns.
+            Columns for the dataframe.
 
         """
         if is_multioutput(self.task):
@@ -1493,9 +1475,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def decision_function_train(self) -> PANDAS:
         """Predicted confidence scores on the training set.
 
-        Output of shape=(n_samples,) for binary classification tasks
-        or shape=(n_samples, n_classes) for multiclass and multilabel
-        classification tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples,) for binary classification.
+        - (n_samples, n_classes) for multiclass classification.
+        - (n_samples, n_targets) for [multilabel][] classification.
 
         """
         return to_pandas(
@@ -1509,9 +1493,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def decision_function_test(self) -> PANDAS:
         """Predicted confidence scores on the test set.
 
-        Output of shape=(n_samples,) for binary classification tasks
-        or shape=(n_samples, n_classes) for multiclass and multilabel
-        classification tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples,) for binary classification.
+        - (n_samples, n_classes) for multiclass classification.
+        - (n_samples, n_targets) for [multilabel][] classification.
 
         """
         return to_pandas(
@@ -1525,9 +1511,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def decision_function_holdout(self) -> PANDAS | None:
         """Predicted confidence scores on the holdout set.
 
-        Output of shape=(n_samples,) for binary classification tasks
-        or shape=(n_samples, n_classes) for multiclass and multilabel
-        classification tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples,) for binary classification.
+        - (n_samples, n_classes) for multiclass classification.
+        - (n_samples, n_targets) for [multilabel][] classification.
 
         """
         if self.holdout is not None:
@@ -1542,8 +1530,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def predict_train(self) -> PANDAS:
         """Class predictions on the training set.
 
-        Output of shape=(n_samples,) or shape=(n_samples, n_targets)
-        for [multioutput tasks][].
+        The shape of the output depends on the task:
+
+        - (n_samples,) for non-multioutput tasks.
+        - (n_samples, n_targets) for [multioutput tasks][].
 
         """
         return to_pandas(
@@ -1557,8 +1547,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def predict_test(self) -> PANDAS:
         """Class predictions on the test set.
 
-        Output of shape=(n_samples,) or shape=(n_samples, n_targets)
-        for [multioutput tasks][].
+        The shape of the output depends on the task:
+
+        - (n_samples,) for non-multioutput tasks.
+        - (n_samples, n_targets) for [multioutput tasks][].
 
         """
         return to_pandas(
@@ -1572,8 +1564,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def predict_holdout(self) -> PANDAS | None:
         """Class predictions on the holdout set.
 
-        Output of shape=(n_samples,) or shape=(n_samples, n_targets)
-        for [multioutput tasks][].
+        The shape of the output depends on the task:
+
+        - (n_samples,) for non-multioutput tasks.
+        - (n_samples, n_targets) for [multioutput tasks][].
 
         """
         if self.holdout is not None:
@@ -1588,36 +1582,43 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     def predict_log_proba_train(self) -> DATAFRAME:
         """Class log-probability predictions on the training set.
 
-        Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel][] tasks or
-        (n_targets * n_samples, n_classes) with a multiindex format for
-        [multiclass-multioutput][] tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
 
         """
-        data = np.array(self.estimator.predict_proba(self.X_train))
+        data = np.array(self.estimator.predict_log_proba(self.X_train))
         if data.ndim < 3:
             return bk.DataFrame(
                 data=data,
                 index=self.X_train.index,
                 columns=self._assign_prediction_columns(),
             )
+        elif self.task.startswith("multilabel"):
+            # Convert to (n_samples, n_targets)
+            return bk.DataFrame(
+                data=np.array([d[:, 1] for d in data]).T,
+                index=self.X_train.index,
+                columns=self._assign_prediction_columns(),
+            )
         else:
             return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
-                index=bk.MultiIndex.from_tuples(
-                    [(col, i) for col in self.target for i in self.X_train.index]
-                ),
-                columns=np.unique(self.y),
+                index=self._assign_prediction_indices(self.X_train.index),
+                columns=self._assign_prediction_columns(),
             )
 
     @cached_property
     def predict_log_proba_test(self) -> DATAFRAME:
         """Class log-probability predictions on the test set.
 
-        Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel][] tasks or
-        (n_targets * n_samples, n_classes) with a multiindex format for
-        [multiclass-multioutput][] tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
 
         """
         data = np.array(self.estimator.predict_log_proba(self.X_test))
@@ -1627,23 +1628,29 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 index=self.X_test.index,
                 columns=self._assign_prediction_columns(),
             )
+        elif self.task.startswith("multilabel"):
+            # Convert to (n_samples, n_targets)
+            return bk.DataFrame(
+                data=np.array([d[:, 1] for d in data]).T,
+                index=self.X_test.index,
+                columns=self._assign_prediction_columns(),
+            )
         else:
             return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
-                index=bk.MultiIndex.from_tuples(
-                    [(col, i) for col in self.target for i in self.X_test.index]
-                ),
-                columns=np.unique(self.y),
+                index=self._assign_prediction_indices(self.X_test.index),
+                columns=self._assign_prediction_columns(),
             )
 
     @cached_property
     def predict_log_proba_holdout(self) -> DATAFRAME | None:
         """Class log-probability predictions on the holdout set.
 
-        Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel][] tasks or
-        (n_targets * n_samples, n_classes) with a multiindex format for
-        [multiclass-multioutput][] tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
 
         """
         if self.holdout is not None:
@@ -1654,23 +1661,29 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     index=self.X_holdout.index,
                     columns=self._assign_prediction_columns(),
                 )
+            elif self.task.startswith("multilabel"):
+                # Convert to (n_samples, n_targets)
+                return bk.DataFrame(
+                    data=np.array([d[:, 1] for d in data]).T,
+                    index=self.X_holdout.index,
+                    columns=self._assign_prediction_columns(),
+                )
             else:
                 return bk.DataFrame(
                     data=data.reshape(-1, data.shape[2]),
-                    index=bk.MultiIndex.from_tuples(
-                        [(col, i) for col in self.target for i in self.X_holdout.index]
-                    ),
-                    columns=np.unique(self.y),
+                    index=self._assign_prediction_indices(self.X_holdout.index),
+                    columns=self._assign_prediction_columns(),
                 )
 
     @cached_property
     def predict_proba_train(self) -> DATAFRAME:
         """Class probability predictions on the training set.
 
-        Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel][] tasks or
-        (n_targets * n_samples, n_classes) with a multiindex format for
-        [multiclass-multioutput][] tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
 
         """
         data = np.array(self.estimator.predict_proba(self.X_train))
@@ -1680,23 +1693,29 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 index=self.X_train.index,
                 columns=self._assign_prediction_columns(),
             )
+        elif self.task.startswith("multilabel"):
+            # Convert to (n_samples, n_targets)
+            return bk.DataFrame(
+                data=np.array([d[:, 1] for d in data]).T,
+                index=self.X_train.index,
+                columns=self._assign_prediction_columns(),
+            )
         else:
             return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
-                index=bk.MultiIndex.from_tuples(
-                    [(col, i) for col in self.target for i in self.X_train.index]
-                ),
-                columns=np.unique(self.y),
+                index=self._assign_prediction_indices(self.X_train.index),
+                columns=self._assign_prediction_columns(),
             )
 
     @cached_property
     def predict_proba_test(self) -> DATAFRAME:
         """Class probability predictions on the test set.
 
-        Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel][] tasks or
-        (n_targets * n_samples, n_classes) with a multiindex format for
-        [multiclass-multioutput][] tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
 
         """
         data = np.array(self.estimator.predict_proba(self.X_test))
@@ -1706,23 +1725,29 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 index=self.X_test.index,
                 columns=self._assign_prediction_columns(),
             )
+        elif self.task.startswith("multilabel"):
+            # Convert to (n_samples, n_targets)
+            return bk.DataFrame(
+                data=np.array([d[:, 1] for d in data]).T,
+                index=self.X_test.index,
+                columns=self._assign_prediction_columns(),
+            )
         else:
             return bk.DataFrame(
                 data=data.reshape(-1, data.shape[2]),
-                index=bk.MultiIndex.from_tuples(
-                    [(col, i) for col in self.target for i in self.X_test.index]
-                ),
-                columns=np.unique(self.y),
+                index=self._assign_prediction_indices(self.X_test.index),
+                columns=self._assign_prediction_columns(),
             )
 
     @cached_property
     def predict_proba_holdout(self) -> DATAFRAME | None:
         """Class probability predictions on the holdout set.
 
-        Output of shape=(n_samples, n_classes) for binary and multiclass
-        tasks, (n_samples, n_targets) for [multilabel][] tasks or
-        (n_targets * n_samples, n_classes) with a multiindex format for
-        [multiclass-multioutput][] tasks.
+        The shape of the output depends on the task:
+
+        - (n_samples, n_classes) for binary and multiclass.
+        - (n_samples, n_targets) for [multilabel][].
+        - (n_samples * n_classes, n_targets) for [multiclass-multioutput][].
 
         """
         if self.holdout is not None:
@@ -1733,13 +1758,18 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     index=self.X_holdout.index,
                     columns=self._assign_prediction_columns(),
                 )
+            elif self.task.startswith("multilabel"):
+                # Convert to (n_samples, n_targets)
+                return bk.DataFrame(
+                    data=np.array([d[:, 1] for d in data]).T,
+                    index=self.X_holdout.index,
+                    columns=self._assign_prediction_columns(),
+                )
             else:
                 return bk.DataFrame(
                     data=data.reshape(-1, data.shape[2]),
-                    index=bk.MultiIndex.from_tuples(
-                        [(col, i) for col in self.target for i in self.X_holdout.index]
-                    ),
-                    columns=np.unique(self.y),
+                    index=self._assign_prediction_indices(self.X_holdout.index),
+                    columns=self._assign_prediction_columns(),
                 )
 
     # Prediction methods =========================================== >>
@@ -2535,13 +2565,20 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Best threshold.
 
         """
+        if not hasattr(self.estimator, "predict_proba"):
+            raise ValueError(
+                "The plot_edf method is only available "
+                "for models with a predict_proba method."
+            )
+
         if dataset.lower() not in ("train", "test", "dataset"):
             raise ValueError(
                 f"Invalid value for the dataset parameter, got {dataset}. "
                 "Choose from: train, test, dataset."
             )
 
-        fpr, tpr, thresholds = roc_curve(*self._get_pred(dataset, target))
+        y_true, y_pred = self._get_pred(dataset, target, attr="predict_proba")
+        fpr, tpr, thresholds = roc_curve(y_true, y_pred)
 
         return thresholds[np.argmax(tpr - fpr)]
 

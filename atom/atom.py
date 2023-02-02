@@ -218,7 +218,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return self.dataset.duplicated().sum()
 
     @property
-    def nans(self) -> SERIES:
+    def nans(self) -> SERIES | None:
         """Columns with the number of missing values in them."""
         if not is_sparse(self.X):
             nans = self.dataset.replace(self.missing, np.NaN)
@@ -226,7 +226,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return nans[nans > 0]
 
     @property
-    def n_nans(self) -> int:
+    def n_nans(self) -> int | None:
         """Number of samples containing missing values."""
         if not is_sparse(self.X):
             nans = self.dataset.replace(self.missing, np.NaN)
@@ -254,22 +254,22 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
         return len(self.categorical)
 
     @property
-    def outliers(self) -> pd.series:
+    def outliers(self) -> pd.series | None:
         """Columns in training set with amount of outlier values."""
         if not is_sparse(self.X):
-            z_scores = stats.zscore(self.train.select_dtypes(include=["number"]))
-            srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=self.columns)
-            return srs[srs > 0]
+            z_scores = self.train.select_dtypes(include=["number"]).apply(stats.zscore)
+            z_scores = (z_scores.abs() > 3).sum(axis=0)
+            return z_scores[z_scores > 0]
 
     @property
-    def n_outliers(self) -> int:
+    def n_outliers(self) -> int | None:
         """Number of samples in the training set containing outliers."""
         if not is_sparse(self.X):
-            z_scores = stats.zscore(self.train.select_dtypes(include=["number"]))
-            return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
+            z_scores = self.train.select_dtypes(include=["number"]).apply(stats.zscore)
+            return (z_scores.abs() > 3).any(axis=1).sum()
 
     @property
-    def classes(self) -> pd.DataFrame:
+    def classes(self) -> pd.DataFrame | None:
         """Distribution of target classes per data set."""
         if self.goal.startswith("class"):
             index = []
@@ -290,7 +290,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             return df.fillna(0).astype(int)  # If no counts, returns a NaN -> fill with 0
 
     @property
-    def n_classes(self) -> int | SERIES:
+    def n_classes(self) -> int | SERIES | None:
         """Number of classes in the target column(s)."""
         if self.goal.startswith("class"):
             return self.y.nunique(dropna=False)

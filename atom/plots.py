@@ -2787,14 +2787,14 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_edf.html
 
         """
-        metric = self._get_metric(metric, max_one=False)
-
-        # Check there is at least one model that run hyperparameter tuning
+        # Check there is at least one model that ran hyperparameter tuning
         if not (models := list(filter(lambda x: x.trials is not None, models))):
             raise ValueError(
                 "The plot_edf method is only available "
                 "for models that ran hyperparameter tuning."
             )
+
+        metric = self._get_metric(metric, max_one=False)
 
         values = []
         for m in models:
@@ -2928,9 +2928,7 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_hyperparameter_importance.html
 
         """
-        met = self._get_metric(metric, max_one=True)
-
-        # Check there is at least one model that run hyperparameter tuning
+        # Check there is at least one model that ran hyperparameter tuning
         if not (models := list(filter(lambda x: x.trials is not None, models))):
             raise ValueError(
                 "The plot_hyperparameter_importance method is only "
@@ -2945,6 +2943,8 @@ class HTPlot(BasePlot):
             raise ValueError(
                 f"Invalid value for the show parameter. Value should be >0, got {show}."
             )
+
+        met = self._get_metric(metric, max_one=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
@@ -3081,13 +3081,20 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_hyperparameters.html
 
         """
-        met = self._get_metric(metric, max_one=True)
+        # Check that the model ran hyperparameter tuning
+        if models.trials is None:
+            raise ValueError(
+                "The plot_hyperparameters method is only "
+                "available for models that ran hyperparameter tuning."
+            )
 
         if len(params := self._get_hyperparams(params, models)) < 2:
             raise ValueError(
                 "Invalid value for the hyperparameters parameter. A minimum "
                 f"of two parameters is required, got {len(params)}."
             )
+
+        met = self._get_metric(metric, max_one=True)
 
         fig = self._get_figure()
         for i in range((length := len(params) - 1) ** 2):
@@ -3309,6 +3316,13 @@ class HTPlot(BasePlot):
 
             return list(map(str, sorted(numbers))) + sorted(categorical)
 
+        # Check that the model ran hyperparameter tuning
+        if models.trials is None:
+            raise ValueError(
+                "The plot_parallel_coordinate method is only "
+                "available for models that ran hyperparameter tuning."
+            )
+
         params = self._get_hyperparams(params, models)
         met = self._get_metric(metric, max_one=True)
 
@@ -3456,9 +3470,14 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_pareto_front.html
 
         """
-        metric = self._get_metric(metric, max_one=False)
+        # Check that the model ran hyperparameter tuning
+        if models.trials is None:
+            raise ValueError(
+                "The plot_pareto_front method is only "
+                "available for models that ran hyperparameter tuning."
+            )
 
-        if len(metric) < 2:
+        if len(metric := self._get_metric(metric, max_one=False)) < 2:
             raise ValueError(
                 "Invalid value for the metric parameter. A minimum "
                 f"of two metrics are required, got {len(metric)}."
@@ -3612,6 +3631,13 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_slice.html
 
         """
+        # Check that the model ran hyperparameter tuning
+        if models.trials is None:
+            raise ValueError(
+                "The plot_slice method is only "
+                "available for models that ran hyperparameter tuning."
+            )
+
         params = self._get_hyperparams(params, m)
         metric = self._get_metric(metric, max_one=False)
 
@@ -3765,14 +3791,14 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_trials.html
 
         """
-        metric = self._get_metric(metric, max_one=False)
-
-        # Check there is at least one model that run hyperparameter tuning
+        # Check there is at least one model that ran hyperparameter tuning
         if not (models := list(filter(lambda x: x.trials is not None, models))):
             raise ValueError(
-                "The plot_edf method is only available "
+                "The plot_trials method is only available "
                 "for models that ran hyperparameter tuning."
             )
+
+        metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes(y=(0.31, 1.0))
@@ -4161,55 +4187,56 @@ class PredictionPlot(BasePlot):
         )
 
         fig = self._get_figure()
-        if len(models) == 1:  # Create matrix heatmap
-            m = models[0]
-            cm = confusion_matrix(*m._get_pred(ds, target, "predict", threshold))
-            ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
+        for m in models:
+            y_true, y_pred = m._get_pred(ds, target, attr="predict")
+            if threshold != 0.5:
+                y_pred = (y_pred > threshold).astype("int")
 
-            xaxis, yaxis = self._fig.get_axes(
-                x=(0, 0.87),
-                coloraxis=dict(
-                    colorscale="Blues",
-                    cmin=0,
-                    cmax=100,
-                    title="Percentage of samples",
-                    font_size=self.label_fontsize,
-                ),
-            )
-
-            fig.add_trace(
-                go.Heatmap(
-                    x=ticks,
-                    y=ticks,
-                    z=100. * cm / cm.sum(axis=1)[:, np.newaxis],
-                    coloraxis=f"coloraxis{xaxis[1:]}",
-                    text=cm,
-                    customdata=labels,
-                    texttemplate="%{text}<br>(%{z:.2f}%)",
-                    textfont=dict(size=self.label_fontsize),
-                    hovertemplate=(
-                        "<b>%{customdata}</b><br>" if is_binary(self.task) else ""
-                        "x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>"
+            cm = confusion_matrix(y_true, y_pred)
+            if len(models) == 1:  # Create matrix heatmap
+                ticks = m.mapping.get(target, np.unique(m.dataset[target]).astype(str))
+                xaxis, yaxis = self._fig.get_axes(
+                    x=(0, 0.87),
+                    coloraxis=dict(
+                        colorscale="Blues",
+                        cmin=0,
+                        cmax=100,
+                        title="Percentage of samples",
+                        font_size=self.label_fontsize,
                     ),
-                    showlegend=False,
-                    xaxis=xaxis,
-                    yaxis=yaxis,
                 )
-            )
 
-            fig.update_layout(
-                {
-                    "template": "plotly_white",
-                    f"yaxis{yaxis[1:]}_autorange": "reversed",
-                    f"xaxis{xaxis[1:]}_showgrid": False,
-                    f"yaxis{yaxis[1:]}_showgrid": False,
-                }
-            )
+                fig.add_trace(
+                    go.Heatmap(
+                        x=ticks,
+                        y=ticks,
+                        z=100. * cm / cm.sum(axis=1)[:, np.newaxis],
+                        coloraxis=f"coloraxis{xaxis[1:]}",
+                        text=cm,
+                        customdata=labels,
+                        texttemplate="%{text}<br>(%{z:.2f}%)",
+                        textfont=dict(size=self.label_fontsize),
+                        hovertemplate=(
+                            "<b>%{customdata}</b><br>" if is_binary(self.task) else ""
+                            "x:%{x}<br>y:%{y}<br>z:%{z}<extra></extra>"
+                        ),
+                        showlegend=False,
+                        xaxis=xaxis,
+                        yaxis=yaxis,
+                    )
+                )
 
-        else:
-            xaxis, yaxis = self._fig.get_axes()
-            for m in models:
-                cm = confusion_matrix(*m._get_pred(ds, target, "predict", threshold))
+                fig.update_layout(
+                    {
+                        "template": "plotly_white",
+                        f"yaxis{yaxis[1:]}_autorange": "reversed",
+                        f"xaxis{xaxis[1:]}_showgrid": False,
+                        f"yaxis{yaxis[1:]}_showgrid": False,
+                    }
+                )
+
+            else:
+                xaxis, yaxis = self._fig.get_axes()
 
                 color = self._fig.get_color(m.name)
                 fig.add_trace(

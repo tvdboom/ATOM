@@ -304,7 +304,10 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                 exception and error=="skip".
 
             """
-            try:  # If an error occurs, skip the model
+            try:
+                # Overwrite the utils backend in all nodes (for ray parallelization)
+                self.backend = self.backend
+
                 if self.experiment:
                     m._run = mlflow.start_run(run_name=m.name)
 

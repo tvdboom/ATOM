@@ -27,7 +27,7 @@ from atom.utils import check_is_fitted, check_scaling, rnd
 
 from .conftest import (
     X10_str, X_bin, X_class, X_idx, X_reg, y10, y10_str, y_bin, y_class, y_idx,
-    y_multiclass, y_reg,
+    y_multiclass, y_reg, X_label, y_label
 )
 
 
@@ -563,8 +563,8 @@ def test_y_holdout_property():
 # Test prediction properties ======================================= >>
 
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_all_prediction_attributes(dataset):
-    """Assert that all prediction properties can be called."""
+def test_prediction_attributes_binary(dataset):
+    """Assert that all prediction properties work for binary tasks."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
     atom.run("LR")
     assert isinstance(getattr(atom.lr, f"predict_{dataset}"), pd.Series)
@@ -575,20 +575,29 @@ def test_all_prediction_attributes(dataset):
 
 
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
-def test_prediction_decision_function_type(dataset):
-    """Assert that the decision_function predictions change type."""
-    atom = ATOMClassifier(X_class, y_class, holdout_size=0.1, random_state=1)
-    atom.run("LR")
-    assert isinstance(getattr(atom.lr, f"decision_function_{dataset}"), pd.DataFrame)
+def test_prediction_attributes_multilabel(dataset):
+    """Assert that the prediction attributes change for multilabel tasks."""
+    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, random_state=1)
+    atom.run(["LR", "RF"])
+    predict = getattr(atom.lr, f"predict_{dataset}")
+    decision_function = getattr(atom.lr, f"decision_function_{dataset}")
+    predict_proba = getattr(atom.rf, f"predict_proba_{dataset}")
+    predict_log_proba = getattr(atom.rf, f"predict_log_proba_{dataset}")
+    assert predict.shape[1] == y_label.shape[1]
+    assert decision_function.shape[1] == y_label.shape[1]
+    assert isinstance(predict_proba.index, pd.Index)
+    assert isinstance(predict_log_proba.index, pd.Index)
 
 
 @pytest.mark.parametrize("dataset", ["train", "test", "holdout"])
 def test_prediction_attributes_multioutput(dataset):
-    """Assert that the prediction attributes change for multioutput."""
+    """Assert that the prediction attributes change for multioutput tasks."""
     atom = ATOMClassifier(X_class, y=y_multiclass, holdout_size=0.1, random_state=1)
     atom.run("RF")
+    predict = getattr(atom.rf, f"predict_{dataset}")
     predict_proba = getattr(atom.rf, f"predict_proba_{dataset}")
     predict_log_proba = getattr(atom.rf, f"predict_log_proba_{dataset}")
+    assert predict.shape[1] == y_multiclass.shape[1]
     assert isinstance(predict_proba.index, pd.MultiIndex)
     assert isinstance(predict_log_proba.index, pd.MultiIndex)
 
@@ -893,6 +902,29 @@ def test_full_train_new_mlflow_run():
     run = atom.gnb._run
     atom.gnb.full_train()
     assert atom.gnb._run is not run
+
+
+def test_get_best_threshold_no_predict_proba():
+    """ Assert that an error is raised when the model has no predict_proba."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("SVM")
+    with pytest.raises(ValueError, match=".*with a predict_proba method.*"):
+        atom.svm.get_best_threshold()
+
+
+def test_get_best_threshold_invalid_dataset():
+    """ Assert that an error is raised when dataset is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Dummy")
+    with pytest.raises(ValueError, match=".*dataset parameter.*"):
+        atom.dummy.get_best_threshold("invalid")
+
+
+def test_get_best_threshold():
+    """ Assert that the get_best_threshold method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert 0 < atom.lr.get_best_threshold() < 1
 
 
 def test_inverse_transform():

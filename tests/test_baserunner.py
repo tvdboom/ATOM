@@ -209,18 +209,6 @@ def test_delete_current():
     assert "b2" not in atom._branches
 
 
-def test_sample_weight():
-    """Assert that we can get the sample weight from the branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.sample_weight is None
-
-
-def test_sample_weight_setter_dict():
-    """Assert that we can change the sample weight."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.sample_weight is None
-
-
 def test_multioutput_None():
     """Assert that the multioutput estimator is ignored when None."""
     atom = ATOMClassifier(X_label, y=y_label, random_state=1)
@@ -498,31 +486,56 @@ def test_export_pipeline_memory(func):
     func.assert_called_once()
 
 
-def test_get_class_weights_regression():
+def test_get_class_weight_regression():
     """Assert that an error is raised when called from regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     with pytest.raises(AttributeError):
         atom.get_class_weight()
 
 
-def test_class_weights_invalid_dataset():
+def test_class_weight_invalid_dataset():
     """Assert that an error is raised if invalid value for dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=".*the dataset parameter.*"):
         atom.get_class_weight("invalid")
 
 
-@pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
-def test_get_class_weights(dataset):
+def test_get_class_weight():
     """Assert that the get_class_weight method returns a dict of the classes."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    assert list(atom.get_class_weight(dataset)) == [0, 1, 2]
+    assert list(atom.get_class_weight()) == [0, 1, 2]
 
 
 def test_get_class_weight_multioutput():
     """Assert that the get_class_weight method works for multioutput."""
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
     assert list(atom.get_class_weight()) == ["a", "b", "c"]
+
+
+def test_get_sample_weights_regression():
+    """Assert that an error is raised when called from regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    with pytest.raises(AttributeError):
+        atom.get_sample_weight()
+
+
+def test_sample_weight_invalid_dataset():
+    """Assert that an error is raised if invalid value for dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=".*the dataset parameter.*"):
+        atom.get_sample_weight("invalid")
+
+
+def test_get_sample_weight():
+    """Assert that the get_sample_weight method returns a series."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert len(atom.get_sample_weight()) == len(atom.train)
+
+
+def test_get_sample_weight_multioutput():
+    """Assert that the get_sample_weight method works for multioutput."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    assert len(atom.get_sample_weight()) == len(atom.train)
 
 
 def test_merge_invalid_class():

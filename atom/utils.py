@@ -2759,7 +2759,7 @@ def plot_from_model(
         optional arguments, the function is passed as the first argument
         and decorate returns the decorated function like.
 
-    max_one: bool
+    max_one: bool, default=False
         Whether one or multiple models are allowed. If True, return
         the model instead of a list of models.
 

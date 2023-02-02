@@ -104,6 +104,7 @@ from the model. The remaining utility methods can be found hereunder.
         - export_pipeline
         - fit
         - full_train
+        - get_best_threshold
         - hyperparameter_tuning
         - inverse_transform
         - save_estimator

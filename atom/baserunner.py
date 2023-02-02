@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import re
 from typing import Any, Callable
-from sklearn.utils.class_weight import compute_sample_weight
 import mlflow
 from joblib.memory import Memory
 from sklearn.base import clone
@@ -19,6 +18,8 @@ from sklearn.multioutput import (
     ClassifierChain, MultiOutputClassifier, MultiOutputRegressor,
     RegressorChain,
 )
+import numpy as np
+from sklearn.utils.class_weight import compute_sample_weight
 from typeguard import typechecked
 from sklearn.utils.metaestimators import available_if
 from atom.basemodel import BaseModel
@@ -30,7 +31,7 @@ from atom.pipeline import Pipeline
 from atom.utils import (
     DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, ClassMap, Model, Predictor,
     check_is_fitted, composed, crash, divide, export_pipeline, flt,
-    get_best_score, get_versions, is_multioutput, lst, method_to_log, pd, has_task, SERIES, SERIES_TYPES, to_series
+    get_best_score, get_versions, is_multioutput, lst, method_to_log, pd, has_task, SERIES, SERIES_TYPES, to_series, CustomDict, bk
 )
 
 
@@ -649,12 +650,8 @@ class BaseRunner(BaseTracker):
 
     @available_if(has_task("class"))
     @composed(crash, typechecked)
-    def get_class_weight(
-        self,
-        dataset: str = "train",
-        target: int | str = 0,
-    ) -> dict:
-        """Return class weights for a balanced dataset.
+    def get_class_weight(self, dataset: str = "train") -> CustomDict:
+        """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so
         that the sampled data set represents the target population
@@ -665,16 +662,13 @@ class BaseRunner(BaseTracker):
         ----------
         dataset: str, default="train"
             Data set from which to get the weights. Choose from:
-            "train", "test" or "dataset".
-
-        target: int or str, default=0
-            Target column to get the class weights from. Only for
-            [multioutput tasks][].
+            "train", "test", "dataset".
 
         Returns
         -------
         dict
-            Classes with the corresponding weights.
+            Classes with the corresponding weights. A dict of dicts is
+            returned for [multioutput tasks][].
 
         """
         if dataset.lower() not in ("train", "test", "dataset"):
@@ -685,9 +679,44 @@ class BaseRunner(BaseTracker):
 
         y = self.classes[dataset.lower()]
         if is_multioutput(self.task):
-            y = y.loc[target if isinstance(target, str) else self.y.columns[target]]
+            weights = {
+                t: {i: round(divide(sum(y.loc[t]), v), 3) for i, v in y.items()}
+                for t in self.target
+            }
+        else:
+            weights = {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
 
-        return {idx: round(divide(sum(y), value), 3) for idx, value in y.items()}
+        return CustomDict(weights)
+
+    @available_if(has_task("class"))
+    @composed(crash, typechecked)
+    def get_sample_weight(self, dataset: str = "train") -> SERIES:
+        """Return sample weights for a balanced data set.
+
+        The returned weights are inversely proportional to the class
+        frequencies in the selected data set. For [multioutput tasks][],
+        the weights of each column of `y` will be multiplied.
+
+        Parameters
+        ----------
+        dataset: str, default="train"
+            Data set from which to get the weights. Choose from:
+            "train", "test", "dataset".
+
+        Returns
+        -------
+        series
+            Sequence of weights with shape=(n_samples,).
+
+        """
+        if dataset.lower() not in ("train", "test", "dataset"):
+            raise ValueError(
+                f"Invalid value for the dataset parameter, got {dataset}. "
+                "Choose from: train, test, dataset."
+            )
+
+        weights = compute_sample_weight("balanced", y=getattr(self, dataset.lower()))
+        return bk.Series(weights, name="sample_weight").round(3)
 
     @composed(crash, method_to_log, typechecked)
     def merge(self, other: Any, /, suffix: str = "2"):

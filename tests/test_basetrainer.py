@@ -372,6 +372,7 @@ def test_parallel_with_ray():
     trainer = DirectClassifier(
         models=["LR", "LDA"],
         parallel=True,
+        errors="raise",
         n_jobs=2,
         backend="ray",
         random_state=1,
