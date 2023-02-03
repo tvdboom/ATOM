@@ -29,7 +29,7 @@ from atom.models import MODELS, CatBoost, CustomModel, LightGBM, XGBoost
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     SEQUENCE_TYPES, ClassMap, Model, check_dependency, get_best_score,
-    get_custom_scorer, is_binary, lst, sign, time_to_str,
+    get_custom_scorer, lst, sign, time_to_str,
 )
 
 
@@ -66,7 +66,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
         self.ht_params = ht_params
         self.n_bootstrap = n_bootstrap
         self.parallel = parallel
-        self.errors = errors
+        self.errors = errors.lower()
 
         self._models = lst(models) if models is not None else []
         self._metric = lst(metric) if metric is not None else []
@@ -132,12 +132,16 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
         # Assign default scorer
         if not self._metric:
-            if self.task.startswith("bin"):
-                # Binary classification
-                self._metric = ClassMap(get_custom_scorer("f1"))
-            elif self.task.startswith("multi") and self.goal.startswith("class"):
-                # Multiclass, multilabel, multiclass-multioutput classification
-                self._metric = ClassMap(get_custom_scorer("f1_weighted"))
+            if self.goal.startswith("class"):
+                if self.task.startswith("bin"):
+                    # Binary classification
+                    self._metric = ClassMap(get_custom_scorer("f1"))
+                elif self.task.startswith("multi"):
+                    # Multiclass, multiclass-multioutput classification
+                    self._metric = ClassMap(get_custom_scorer("f1_weighted"))
+                elif self.task.startswith("multilabel"):
+                    # Multilabel classification
+                    self._metric = ClassMap(get_custom_scorer("ap"))
             else:
                 # Regression, multioutput regression
                 self._metric = ClassMap(get_custom_scorer("r2"))
@@ -277,7 +281,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
         # Prepare rest ============================================= >>
 
-        if self.errors.lower() not in ("raise", "skip", "keep"):
+        if self.errors not in ("raise", "skip", "keep"):
             raise ValueError(
                 "Invalid value for the errors parameter, got "
                 f"{self.errors}. Choose from: raise, skip, keep."
@@ -305,10 +309,15 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
             """
             try:
-                # Overwrite the utils backend in all nodes (for ray parallelization)
+                # Overwrite the utils backend in all nodes
                 self.backend = self.backend
 
+                # Reassign logger's handlers in all nodes
+                self.logger = self.logger
+                m.logger = m.logger
+
                 if self.experiment:
+                    mlflow.set_experiment(self.experiment)
                     m._run = mlflow.start_run(run_name=m.name)
 
                 self.log("\n", 1)  # Separate output from header
@@ -335,12 +344,14 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
                 if self.experiment:
                     mlflow.end_run()
+                    if self.errors != "keep":
+                        mlflow.delete_run(m._run.info.run_id)
 
-                if self.errors.lower() == "raise":
+                if self.errors == "raise":
                     raise ex
-                elif self.errors.lower() == "skip":
+                elif self.errors == "skip":
                     return None
-                elif self.errors.lower() == "keep":
+                elif self.errors == "keep":
                     return m
 
         t = dt.now()  # Measure the time the whole pipeline takes
@@ -358,28 +369,22 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                 # tasks, and in the other, you start N actors and then has them
                 # each run the function
                 execute_remote = ray.remote(num_cpus=self.n_jobs)(execute_model)
-                self._models = ClassMap(
-                    *ray.get(
-                        [mdl for m in self._models if (mdl := execute_remote.remote(m))]
-                    )
-                )
+                models = ray.get([execute_remote.remote(m) for m in self._models])
             else:
-                self._models = ClassMap(
-                    *Parallel(n_jobs=self.n_jobs, backend=self.backend)(
-                        mdl for m in self._models if (mdl := delayed(execute_model)(m))
-                    )
+                models = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+                    delayed(execute_model)(m) for m in self._models
                 )
 
             # Reset verbosity
             self.verbose = vb
             for m in self._models:
-                m.verbose = self.verbose
+                m.verbose = vb
 
         else:
             with joblib.parallel_backend(backend=self.backend):
-                self._models = ClassMap(
-                    mdl for m in self._models if (mdl := execute_model(m))
-                )
+                models = [model for m in self._models if (model := execute_model(m))]
+
+        self._models = ClassMap(m for m in models if m)
 
         if not self._models:
             raise RuntimeError(

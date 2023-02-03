@@ -32,8 +32,8 @@ from atom.utils import check_scaling
 
 from .conftest import (
     X10, DummyTransformer, X10_dt, X10_nan, X10_str, X10_str2, X20_out, X_bin,
-    X_class, X_reg, X_sparse, X_text, merge, y10, y10_label, y10_sn, y10_str,
-    y_bin, y_class, y_multiclass, y_reg, y10_label2, y_label, X_label
+    X_class, X_label, X_reg, X_sparse, X_text, merge, y10, y10_label,
+    y10_label2, y10_sn, y10_str, y_bin, y_class, y_label, y_multiclass, y_reg,
 )
 
 

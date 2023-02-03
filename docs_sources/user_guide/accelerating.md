@@ -159,7 +159,8 @@ parallelization backends.
   multi-threading, drop-in replacement for pandas, that uses Ray as backend.
 
 !!! warning
-    Using [modin][] can be less performant than pandas for small datasets (<1M rows).
+    Using [modin][] can be considerably less performant than pandas for small
+    datasets (<1M rows).
 
 The parallelization backend is applied in the following cases:
 

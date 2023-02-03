@@ -20,7 +20,8 @@ from sklearn.metrics import f1_score, make_scorer
 from atom.training import DirectClassifier, DirectRegressor
 
 from .conftest import (
-    bin_test, bin_train, class_test, class_train, reg_test, reg_train,
+    bin_test, bin_train, class_test, class_train, label_test, label_train,
+    reg_test, reg_train,
 )
 
 
@@ -113,6 +114,10 @@ def test_default_metric():
     trainer = DirectClassifier("LR", random_state=1)
     trainer.run(class_train, class_test)
     assert trainer.metric == "f1_weighted"
+
+    trainer = DirectClassifier("LR", random_state=1)
+    trainer.run(label_train, label_test)
+    assert trainer.metric == "average_precision"
 
     trainer = DirectRegressor("LGB", random_state=1)
     trainer.run(reg_train, reg_test)
@@ -372,7 +377,6 @@ def test_parallel_with_ray():
     trainer = DirectClassifier(
         models=["LR", "LDA"],
         parallel=True,
-        errors="raise",
         n_jobs=2,
         backend="ray",
         random_state=1,

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 from typing import Any, Callable
+
 import mlflow
 from joblib.memory import Memory
 from sklearn.base import clone
@@ -18,10 +19,10 @@ from sklearn.multioutput import (
     ClassifierChain, MultiOutputClassifier, MultiOutputRegressor,
     RegressorChain,
 )
-import numpy as np
 from sklearn.utils.class_weight import compute_sample_weight
-from typeguard import typechecked
 from sklearn.utils.metaestimators import available_if
+from typeguard import typechecked
+
 from atom.basemodel import BaseModel
 from atom.basetracker import BaseTracker
 from atom.basetransformer import BaseTransformer
@@ -29,9 +30,10 @@ from atom.branch import Branch
 from atom.models import MODELS, Stacking, Voting
 from atom.pipeline import Pipeline
 from atom.utils import (
-    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, ClassMap, Model, Predictor,
-    check_is_fitted, composed, crash, divide, export_pipeline, flt,
-    get_best_score, get_versions, is_multioutput, lst, method_to_log, pd, has_task, SERIES, SERIES_TYPES, to_series, CustomDict, bk
+    DF_ATTRS, FLOAT, INT, INT_TYPES, SEQUENCE, SERIES, ClassMap, CustomDict,
+    Model, Predictor, bk, check_is_fitted, composed, crash, divide,
+    export_pipeline, flt, get_best_score, get_versions, has_task,
+    is_multioutput, lst, method_to_log, pd,
 )
 
 

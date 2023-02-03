@@ -3295,55 +3295,85 @@ is called for the first time. This mechanism avoids having to calculate
 attributes that are never used, saving time and memory.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Attributes</strong></td><td class='td_params'><a id='stochasticgradientdescent-decision_function_train'></a><strong>decision_function_train: series | dataframe</strong><br><div markdown class='param'>Predicted confidence scores on the training set.</p>
-<p>Output of shape=(n_samples,) for binary classification tasks
-or shape=(n_samples, n_classes) for multiclass and multilabel
-classification tasks.</div><a id='stochasticgradientdescent-decision_function_test'></a><strong>decision_function_test: series | dataframe</strong><br><div markdown class='param'>Predicted confidence scores on the test set.</p>
-<p>Output of shape=(n_samples,) for binary classification tasks
-or shape=(n_samples, n_classes) for multiclass and multilabel
-classification tasks.</div><a id='stochasticgradientdescent-decision_function_holdout'></a><strong>decision_function_holdout: series | dataframe | None</strong><br><div markdown class='param'>Predicted confidence scores on the holdout set.</p>
-<p>Output of shape=(n_samples,) for binary classification tasks
-or shape=(n_samples, n_classes) for multiclass and multilabel
-classification tasks.</div><a id='stochasticgradientdescent-predict_train'></a><strong>predict_train: series | dataframe</strong><br><div markdown class='param'>Class predictions on the training set.</p>
-<p>Output of shape=(n_samples,) or shape=(n_samples, n_targets)
-for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div><a id='stochasticgradientdescent-predict_test'></a><strong>predict_test: series | dataframe</strong><br><div markdown class='param'>Class predictions on the test set.</p>
-<p>Output of shape=(n_samples,) or shape=(n_samples, n_targets)
-for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div><a id='stochasticgradientdescent-predict_holdout'></a><strong>predict_holdout: series | dataframe | None</strong><br><div markdown class='param'>Class predictions on the holdout set.</p>
-<p>Output of shape=(n_samples,) or shape=(n_samples, n_targets)
-for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div><a id='stochasticgradientdescent-predict_log_proba_train'></a><strong>predict_log_proba_train: dataframe</strong><br><div markdown class='param'>Class log-probability predictions on the training set.</p>
-<p>Output of shape=(n_samples, n_classes) for binary and multiclass
-tasks, (n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel-multioutput">multilabel-multioutput</a> tasks
-or (n_targets * n_samples, n_classes) with a multiindex format for
-<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a> tasks.</div><a id='stochasticgradientdescent-predict_log_proba_test'></a><strong>predict_log_proba_test: dataframe</strong><br><div markdown class='param'>Class log-probability predictions on the test set.</p>
-<p>Output of shape=(n_samples, n_classes) for binary and multiclass
-tasks, (n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel-multioutput">multilabel-multioutput</a> tasks
-or (n_targets * n_samples, n_classes) with a multiindex format for
-<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a> tasks.</div><a id='stochasticgradientdescent-predict_log_proba_holdout'></a><strong>predict_log_proba_holdout: dataframe | None</strong><br><div markdown class='param'>Class log-probability predictions on the holdout set.</p>
-<p>Output of shape=(n_samples, n_classes) for binary and multiclass
-tasks, (n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel-multioutput">multilabel-multioutput</a> tasks
-or (n_targets * n_samples, n_classes) with a multiindex format for
-<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a> tasks.</div><a id='stochasticgradientdescent-predict_proba_train'></a><strong>predict_proba_train: dataframe</strong><br><div markdown class='param'>Class probability predictions on the training set.</p>
-<p>Output of shape=(n_samples, n_classes) for binary and multiclass
-tasks, (n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel-multioutput">multilabel-multioutput</a> tasks
-or (n_targets * n_samples, n_classes) with a multiindex format for
-<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a> tasks.</div><a id='stochasticgradientdescent-predict_proba_test'></a><strong>predict_proba_test: dataframe</strong><br><div markdown class='param'>Class probability predictions on the test set.</p>
-<p>Output of shape=(n_samples, n_classes) for binary and multiclass
-tasks, (n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel-multioutput">multilabel-multioutput</a> tasks
-or (n_targets * n_samples, n_classes) with a multiindex format for
-<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a> tasks.</div><a id='stochasticgradientdescent-predict_proba_holdout'></a><strong>predict_proba_holdout: dataframe | None</strong><br><div markdown class='param'>Class probability predictions on the holdout set.</p>
-<p>Output of shape=(n_samples, n_classes) for binary and multiclass
-tasks, (n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel-multioutput">multilabel-multioutput</a> tasks
-or (n_targets * n_samples, n_classes) with a multiindex format for
-<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a> tasks.</div></td></tr></p>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples,) for binary classification.</li>
+<li>(n_samples, n_classes) for multiclass classification.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification.</div><a id='stochasticgradientdescent-decision_function_test'></a><strong>decision_function_test: series | dataframe</strong><br><div markdown class='param'>Predicted confidence scores on the test set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples,) for binary classification.</li>
+<li>(n_samples, n_classes) for multiclass classification.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification.</div><a id='stochasticgradientdescent-decision_function_holdout'></a><strong>decision_function_holdout: series | dataframe | None</strong><br><div markdown class='param'>Predicted confidence scores on the holdout set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples,) for binary classification.</li>
+<li>(n_samples, n_classes) for multiclass classification.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification.</div><a id='stochasticgradientdescent-predict_train'></a><strong>predict_train: series | dataframe</strong><br><div markdown class='param'>Class predictions on the training set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples,) for non-multioutput tasks.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div><a id='stochasticgradientdescent-predict_test'></a><strong>predict_test: series | dataframe</strong><br><div markdown class='param'>Class predictions on the test set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples,) for non-multioutput tasks.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div><a id='stochasticgradientdescent-predict_holdout'></a><strong>predict_holdout: series | dataframe | None</strong><br><div markdown class='param'>Class predictions on the holdout set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples,) for non-multioutput tasks.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</div><a id='stochasticgradientdescent-predict_log_proba_train'></a><strong>predict_log_proba_train: dataframe</strong><br><div markdown class='param'>Class log-probability predictions on the training set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples, n_classes) for binary and multiclass.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a>.</li>
+<li>(n_samples * n_classes, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a>.</div><a id='stochasticgradientdescent-predict_log_proba_test'></a><strong>predict_log_proba_test: dataframe</strong><br><div markdown class='param'>Class log-probability predictions on the test set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples, n_classes) for binary and multiclass.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a>.</li>
+<li>(n_samples * n_classes, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a>.</div><a id='stochasticgradientdescent-predict_log_proba_holdout'></a><strong>predict_log_proba_holdout: dataframe | None</strong><br><div markdown class='param'>Class log-probability predictions on the holdout set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples, n_classes) for binary and multiclass.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a>.</li>
+<li>(n_samples * n_classes, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a>.</div><a id='stochasticgradientdescent-predict_proba_train'></a><strong>predict_proba_train: dataframe</strong><br><div markdown class='param'>Class probability predictions on the training set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples, n_classes) for binary and multiclass.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a>.</li>
+<li>(n_samples * n_classes, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a>.</div><a id='stochasticgradientdescent-predict_proba_test'></a><strong>predict_proba_test: dataframe</strong><br><div markdown class='param'>Class probability predictions on the test set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples, n_classes) for binary and multiclass.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a>.</li>
+<li>(n_samples * n_classes, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a>.</div><a id='stochasticgradientdescent-predict_proba_holdout'></a><strong>predict_proba_holdout: dataframe | None</strong><br><div markdown class='param'>Class probability predictions on the holdout set.</li>
+</ul>
+<p>The shape of the output depends on the task:</p>
+<ul>
+<li>(n_samples, n_classes) for binary and multiclass.</li>
+<li>(n_samples, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a>.</li>
+<li>(n_samples * n_classes, n_targets) for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multiclass-multioutput">multiclass-multioutput</a>.</div></td></tr></li>
+</ul>
 </table>
 <p><br><br></p>
 <h2 id="methods">Methods</h2>
 <p>The <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#available-plots">plots</a> and <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-methods">prediction methods</a> can be called directly
 from the model. The remaining utility methods can be found hereunder.</p>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr></p>
+<p><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#stochasticgradientdescent-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='stochasticgradientdescent-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1037>[source]</a></span></div>Apply a bootstrap algorithm.</p>
+<p><a id='stochasticgradientdescent-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1099>[source]</a></span></div>Apply a bootstrap algorithm.</p>
 <p>Take bootstrapped samples from the training set and test them
 on the test set to get a distribution of the model's results.</p>
 <table class="table_params">
@@ -3354,7 +3384,7 @@ Whether to start a new run or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1993>[source]</a></span></div>Calibrate the model.</p>
+<p><a id='stochasticgradientdescent-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2125>[source]</a></span></div>Calibrate the model.</p>
 <p>Applies probability calibration on the model. The estimator
 is trained via cross-validation on a subset of the training
 data, using the rest to fit the calibrator. The new classifier
@@ -3371,7 +3401,7 @@ another, independent set for testing.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2027>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
+<p><a id='stochasticgradientdescent-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2159>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
 memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
@@ -3386,7 +3416,7 @@ affected attributes are:</p>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2057>[source]</a></span></div>Create an interactive app to test model predictions.</p>
+<p><a id='stochasticgradientdescent-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2189>[source]</a></span></div>Create an interactive app to test model predictions.</p>
 <p>Demo your machine learning model with a friendly web interface.
 This app launches directly in the notebook or on an external
 browser page. The created <a href="https://gradio.app/docs/#interface">Interface</a> instance can be accessed
@@ -3398,7 +3428,7 @@ or the <a href="https://gradio.app/docs/#launch-header">Interface.launch</a> met
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2100>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
+<p><a id='stochasticgradientdescent-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2232>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
 <p>ATOM uses the <a href="https://github.com/oegedijk/explainerdashboard">explainerdashboard</a>
 package to provide a quick and easy way to analyze and explain
 the predictions and workings of the model. The dashboard allows
@@ -3428,7 +3458,7 @@ instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2196>[source]</a></span></div>Evaluate the model using cross-validation.</p>
+<p><a id='stochasticgradientdescent-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2328>[source]</a></span></div>Evaluate the model using cross-validation.</p>
 <p>This method cross-validates the whole pipeline on the complete
 dataset. Use it to assess the robustness of the solution's
 performance.</p>
@@ -3442,7 +3472,13 @@ Overview of the results.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2252>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
+<p><a id='stochasticgradientdescent-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2384>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a class="autorefs autorefs-internal" href="#stochasticgradientdescent-get_best_threshold">self-get_best_threshold</a> or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
+method to determine a suitable value for the <code>threshold</code>
+parameter.</p>
+</div>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='evaluate-metric'></a><strong>metric: str, func, scorer, sequence or None, default=None</strong><br><div markdown class='param'>
 Metrics to calculate. If None, a selection of the most
@@ -3454,9 +3490,9 @@ Data set on which to calculate the metric. Choose from:
 Threshold between 0 and 1 to convert predicted probabilities
 to class labels. Only used when:</p>
 <ul>
-<li>The task is binary classification.</li>
+<li>The task is binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification.</li>
 <li>The model has a <code>predict_proba</code> method.</li>
-<li>The metric evaluates predicted target values.</li>
+<li>The metric evaluates predicted probabilities.</li>
 </ul>
 <p></div><a id='evaluate-sample_weight'></a><strong>sample_weight: sequence or None, default=None</strong><br><div markdown class='param'>
 Sample weights corresponding to y in <code>dataset</code>.</p>
@@ -3465,7 +3501,7 @@ Scores of the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2341>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
+<p><a id='stochasticgradientdescent-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2489>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
 <p>The returned pipeline is already fitted on the training set.
 Note that, if the model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
 the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to the pipeline.</p>
@@ -3500,7 +3536,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L932>[source]</a></span></div>Fit and validate the model.</p>
+<p><a id='stochasticgradientdescent-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L988>[source]</a></span></div>Fit and validate the model.</p>
 <p>The estimator is fitted using the best hyperparameters found
 during hyperparameter tuning. Afterwards, the estimator is
 evaluated on the test set. Only use this method to re-fit the
@@ -3515,7 +3551,7 @@ is used.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2389>[source]</a></span></div>Train the estimator on the complete dataset.</p>
+<p><a id='stochasticgradientdescent-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2537>[source]</a></span></div>Train the estimator on the complete dataset.</p>
 <p>In some cases it might be desirable to use all available data
 to train a final model. Note that doing this means that the
 estimator can no longer be evaluated on the test set. The newly
@@ -3538,7 +3574,21 @@ on any set.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L642>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
+<p><a id='stochasticgradientdescent-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train", target=0)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2578>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
+<p>Only available for binary and <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification
+tasks.</p>
+<table class="table_params">
+<p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_best_threshold-dataset'></a><strong>dataset: str, default="train"</strong><br><div markdown class='param'>
+Data set on which to calculate the threshold. Choose from:
+train, test, dataset.</p>
+<p></div><a id='get_best_threshold-target'></a><strong>target: str, default=0</strong><br><div markdown class='param'>
+Target column to look at. Only for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> tasks.</p>
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_best_threshold-float'></a><strong>float</strong><br><div markdown class='param'>
+Best threshold.
+</div></td></tr></p>
+</table>
+<p><br><br></p>
+<p><a id='stochasticgradientdescent-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L684>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
 <p>Search for the best combination of hyperparameters. The function
 to optimize is evaluated either with a K-fold cross-validation
 on the training set or using a random train and validation split
@@ -3551,7 +3601,7 @@ Whether to start a new study or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2430>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='stochasticgradientdescent-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2618>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement a <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -3583,14 +3633,14 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2531>[source]</a></span></div>Save the estimator to a pickle file.</p>
+<p><a id='stochasticgradientdescent-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2719>[source]</a></span></div>Save the estimator to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_estimator-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2549>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
+<p><a id='stochasticgradientdescent-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2737>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
 <p>The complete pipeline is served with the model. The inference
 data must be supplied as json to the HTTP request, e.g.
 <code>requests.get("http://127.0.0.1:8000/", json=X.to_json())</code>.
@@ -3612,7 +3662,7 @@ Port for HTTP server.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="Staging")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2491>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
+<p><a id='stochasticgradientdescent-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="Staging")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2679>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
 <p>This method is only available when model <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">tracking</a> is
 enabled using one of the following URI schemes: databricks,
 http, https, postgresql, mysql, sqlite, mssql.</p>
@@ -3625,7 +3675,7 @@ New desired stage for the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='stochasticgradientdescent-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2621>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='stochasticgradientdescent-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2809>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be

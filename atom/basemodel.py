@@ -18,7 +18,7 @@ from importlib import import_module
 from logging import Logger
 from typing import Any, Callable
 from unittest.mock import patch
-from sklearn.metrics import roc_curve
+
 import dill as pickle
 import mlflow
 import numpy as np
@@ -34,6 +34,7 @@ from optuna.study import Study
 from optuna.trial import Trial, TrialState
 from ray import serve
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.metrics import roc_curve
 from sklearn.model_selection import (
     KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
 )
@@ -49,14 +50,13 @@ from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
-    DATAFRAME, DF_ATTRS, FEATURES, FLOAT, INT, INT_TYPES, PANDAS, SEQUENCE,
-    SERIES, SERIES_TYPES, TARGET, ClassMap, CustomDict, Estimator,
-    PlotCallback, Predictor, Scorer, ShapExplanation, TrialsCallback, bk,
-    check_dependency, check_scaling, composed, crash, custom_transform,
-    estimator_has_attr, export_pipeline, flt, get_cols, get_custom_scorer,
-    get_feature_importance, has_task, infer_task, is_binary, is_multioutput,
-    it, lst, merge, method_to_log, rnd, score, sign, time_to_str, to_pandas,
-    variable_return, INDEX
+    DATAFRAME, DF_ATTRS, FEATURES, FLOAT, INDEX, INT, INT_TYPES, PANDAS,
+    SEQUENCE, SERIES, TARGET, ClassMap, CustomDict, Estimator, PlotCallback,
+    Predictor, Scorer, ShapExplanation, TrialsCallback, bk, check_dependency,
+    check_scaling, composed, crash, custom_transform, estimator_has_attr,
+    export_pipeline, flt, get_cols, get_custom_scorer, get_feature_importance,
+    has_task, infer_task, is_binary, is_multioutput, it, lst, merge,
+    method_to_log, rnd, score, sign, time_to_str, to_pandas, variable_return,
 )
 
 
@@ -659,16 +659,16 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         if "sample_weight" in sign(scorer._score_func):
             kwargs["sample_weight"] = sample_weight
 
-        if not is_multioutput(self.task):
-            score = scorer._score_func(y_true, y_pred, **scorer._kwargs, **kwargs)
-        else:
-            # For multioutput tasks, get mean of scores over targets
+        if self.task.startswith("multiclass-multioutput"):
+            # Get mean of scores over target columns
             score = np.mean(
                 [
                     scorer._score_func(y_true[c], y_pred[c], **scorer._kwargs, **kwargs)
                     for c in y_pred
                 ]
             )
+        else:
+            score = scorer._score_func(y_true, y_pred, **scorer._kwargs, **kwargs)
 
         result = rnd(scorer._sign * float(score))
 
@@ -711,15 +711,15 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Returns
             -------
             list of float
-                Scores of the model in this trial.
+                Scores of the estimator in this trial.
 
             """
 
             def fit_model(
+                estimator: Predictor,
                 train_idx: np.ndarray,
                 val_idx: np.ndarray,
-                in_training_validation: bool = True,
-            ) -> FLOAT:
+            ) -> tuple[Predictor, list[FLOAT]]:
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub) train and validation
@@ -731,24 +731,26 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
                 Parameters
                 ----------
+                estimator: Predictor
+                    Model's estimator to fit.
+
                 train_idx: np.array
                     Indices for the subtrain set.
 
                 val_idx: np.array
                     Indices for the validation set.
 
-                in_training_validation: bool, default=True
-                    Whether to apply in training validation. This is
-                    False for cross-validated runs since the trial
-                    can't share intermediate values.
-
                 Returns
                 -------
-                float
-                    Score of the fitted model on the validation set.
+                Predictor
+                    Fitted estimator.
+
+                list of float
+                    Scores of the estimator on the validation set.
 
                 """
-                nonlocal estimator
+                # Overwrite the utils backend in all nodes (for ray parallelization)
+                self.backend = self.backend
 
                 X_subtrain = self.og.X_train.iloc[train_idx]
                 y_subtrain = self.og.y_train.iloc[train_idx]
@@ -771,12 +773,27 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     estimator=estimator,
                     data=(X_subtrain, y_subtrain),
                     est_params_fit=est_copy,
-                    validation=(X_val, y_val) if in_training_validation else None,
+                    validation=(X_val, y_val),
                     trial=trial,
                 )
 
-                # Calculate metrics on the validation set
-                return [m(estimator, X_val, y_val) for m in self._metric]
+                scores = []
+                for m in self._metric:
+                    if self.task.startswith("multiclass-multioutput"):
+                        # Get mean of scores over target columns
+                        pred = estimator.predict(X_val)  # Shape=(n_samples, n_targets)
+                        scores.append(
+                            np.mean(
+                                [
+                                    m._sign * m._score_func(pred[:, i], y, **m._kwargs)
+                                    for i, y in enumerate(get_cols(y_val))
+                                ]
+                            )
+                        )
+                    else:
+                        scores.append(m(estimator, X_val, y_val))
+
+                return estimator, scores
 
             # Start trial ========================================== >>
 
@@ -804,12 +821,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                         n_splits=1,
                         test_size=len(self.og.test) / self.og.shape[0],
                         random_state=trial.number + (self.random_state or 0),
-                    )
+                    ).split(self.og.X_train, get_cols(self.og.y_train)[0])
 
                     # Fit model just on the one fold
-                    score = fit_model(
-                        *next(fold.split(self.og.X_train, get_cols(self.og.y_train)[0]))
-                    )
+                    estimator, score = fit_model(estimator, *next(fold))
 
                 else:  # Use cross validation to get the score
                     if self.goal == "class":
@@ -822,15 +837,15 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                         n_splits=self._ht["cv"],
                         shuffle=True,
                         random_state=trial.number + (self.random_state or 0),
-                    )
+                    ).split(self.og.X_train, get_cols(self.og.y_train)[0])
 
                     # Parallel loop over fit_model
-                    scores = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
-                        delayed(fit_model)(i, j)
-                        for i, j in fold.split(self.og.X_train, self.og.y_train)
+                    results = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
+                        delayed(fit_model)(estimator, i, j) for i, j in fold
                     )
 
-                    score = list(np.mean(scores, axis=0))
+                    estimator = results[0][0]
+                    score = list(np.mean([r[1] for r in results], axis=0))
             else:
                 # Get same estimator and score as previous evaluation
                 idx = self.trials.index[self.trials["params"] == params][0]
@@ -917,7 +932,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 ]
             )
             self._trials.index.name = "trial"
-            self._study = create_study(**kw)
+            self._study = create_study(study_name=self.name, **kw)
 
         kw = {k: v for k, v in self._ht.items() if k in sign(Study.optimize)}
         n_jobs = kw.pop("n_jobs", 1)
@@ -1051,8 +1066,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 mlflow.sklearn.log_model(
                     sk_model=self.estimator,
                     artifact_path=self._est_class.__name__,
-                    signature=infer_signature(self.X, self.predict_test.to_numpy()),
-                    input_example=self.X.iloc[[0], :],
+                    signature=infer_signature(
+                        model_input=pd.DataFrame(self.X),
+                        model_output=self.predict_test.to_numpy(),
+                    ),
+                    input_example=pd.DataFrame(self.X.iloc[[0], :]),
                 )
 
             if self.log_data:
@@ -1065,8 +1083,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 mlflow.sklearn.log_model(
                     sk_model=self.export_pipeline(),
                     artifact_path=f"pl_{self.name}",
-                    signature=infer_signature(self.X, self.predict_test.to_numpy()),
-                    input_example=self.X.iloc[[0], :],
+                    signature=infer_signature(
+                        model_input=pd.DataFrame(self.X),
+                        model_output=self.predict_test.to_numpy(),
+                    ),
+                    input_example=pd.DataFrame(self.X.iloc[[0], :]),
                 )
 
             mlflow.end_run()
@@ -2372,8 +2393,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """Get the model's scores for the provided metrics.
 
         !!! tip
-            Use the [get_best_threshold][] or [plot_threshold][] method
-            to determine a suitable value for the `threshold` parameter.
+            Use the [self-get_best_threshold][] or [plot_threshold][]
+            method to determine a suitable value for the `threshold`
+            parameter.
 
         Parameters
         ----------
@@ -2416,30 +2438,41 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         # Predefined metrics to show
         if metric is None:
-            if is_binary(self.task):
-                metric = [
-                    "accuracy",
-                    "ap",
-                    "ba",
-                    "f1",
-                    "jaccard",
-                    "mcc",
-                    "precision",
-                    "recall",
-                    "auc",
-                ]
-            elif self.task.startswith("multiclass"):
-                metric = [
-                    "ba",
-                    "f1_weighted",
-                    "jaccard_weighted",
-                    "mcc",
-                    "precision_weighted",
-                    "recall_weighted",
-                ]
+            if self.goal.startswith("class"):
+                if self.task.startswith("bin"):
+                    metric = [
+                        "accuracy",
+                        "ap",
+                        "ba",
+                        "f1",
+                        "jaccard",
+                        "mcc",
+                        "precision",
+                        "recall",
+                        "auc",
+                    ]
+                elif self.task.startswith("multiclass"):
+                    metric = [
+                        "ba",
+                        "f1_weighted",
+                        "jaccard_weighted",
+                        "mcc",
+                        "precision_weighted",
+                        "recall_weighted",
+                    ]
+                elif self.task.startswith("multilabel"):
+                    metric = [
+                        "accuracy",
+                        "ap",
+                        "f1_weighted",
+                        "jaccard_weighted",
+                        "precision_weighted",
+                        "recall_weighted",
+                        "auc",
+                    ]
             else:
                 # No msle since it fails for negative values
-                metric = ["mae", "mape", "me", "mse", "r2", "rmse"]
+                metric = ["mae", "mape", "mse", "r2", "rmse"]
 
         scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):

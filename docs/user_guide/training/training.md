@@ -433,9 +433,6 @@ through the [`ht_params`][directclassifier-ht_params] parameter.
 
 !!! warning
     * Pruning is disabled for [multi-metric runs][].
-    * Pruning is disabled during [hyperparameter tuning][] for studies
-      with cross-validation. This is due to the fact that trials can't
-      share intermediate values.
     * Pruning is only available for models that support [in-training validation][].
 
 <br>

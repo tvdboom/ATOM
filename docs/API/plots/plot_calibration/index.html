@@ -3073,7 +3073,7 @@
 
 <h1 id="plot_calibration">plot_calibration</h1>
 <hr />
-<p><a id='plot_calibration'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_calibration</strong>(models=None, dataset="test", n_bins=10, target=0, title=None, legend="upper left", figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3920>[source]</a></span></div>Plot the calibration curve for a binary classifier.</p>
+<p><a id='plot_calibration'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_calibration</strong>(models=None, dataset="test", n_bins=10, target=0, title=None, legend="upper left", figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3884>[source]</a></span></div>Plot the calibration curve for a binary classifier.</p>
 <p>Well calibrated classifiers are probabilistic classifiers for
 which the output of the <code>predict_proba</code> method can be directly
 interpreted as a confidence level. For instance a well
@@ -3100,8 +3100,7 @@ Data set on which to calculate the metric. Use a sequence
 or add <code>+</code> between options to select more than one. Choose
 from: "train", "test" or "holdout".</p>
 <p></div><a id='plot_calibration-target'></a><strong>target: int or str, default=0</strong><br><div markdown class='param'>
-Target column to look at. Only for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel-multioutput">multilabel-multioutput</a>
-tasks.</p>
+Target column to look at. Only for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> tasks.</p>
 <p></div><a id='plot_calibration-n_bins'></a><strong>n_bins: int, default=10</strong><br><div markdown class='param'>
 Number of bins used for calibration. Minimum of 5 required.</p>
 <p></div><a id='plot_calibration-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>

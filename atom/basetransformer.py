@@ -225,15 +225,15 @@ class BaseTransformer:
     @logger.setter
     @typechecked
     def logger(self, value: str | Logger | None):
-        # Loggers from external libraries to redirect to the file handler
         external_loggers = ["mlflow", "optuna", "ray", "modin", "featuretools", "gradio"]
 
-        if not value:
-            self._logger = None
-            for logger in external_loggers:
-                getLogger(logger).handlers.clear()
+        # Clear existing handlers for external loggers
+        for name in external_loggers:
+            for handler in (log := getLogger(name)).handlers:
+                handler.close()
+            log.handlers.clear()
 
-        elif isinstance(value, str):
+        if isinstance(value, str):
             # Prepare the FileHandler
             if not value.endswith(".log"):
                 value += ".log"
@@ -244,18 +244,14 @@ class BaseTransformer:
             handler = FileHandler(value)
             handler.setFormatter(Formatter("%(asctime)s - %(levelname)s: %(message)s"))
 
-            self._logger = getLogger(self.__class__.__name__)
-            self._logger.setLevel(DEBUG)
+            logger = getLogger(self.__class__.__name__)
+            logger.setLevel(DEBUG)
 
             # Redirect loggers to file handler
-            for logger in [self._logger.name] + external_loggers:
-                for h in (log := getLogger(logger)).handlers:
-                    h.close()  # Close existing handlers
-                log.handlers.clear()
-                log.addHandler(handler)
+            for log in [logger.name] + external_loggers:
+                getLogger(log).addHandler(handler)
 
-        else:
-            self._logger = value
+        self._logger = value
 
     @property
     def experiment(self) -> str | None:
@@ -886,7 +882,7 @@ class BaseTransformer:
         # Store in file
         if self.logger is not None:
             for text in str(msg).split("\n"):
-                getattr(self.logger, severity)(str(text))
+                getattr(getLogger(self.__class__.__name__), severity)(str(text))
 
     @composed(crash, method_to_log, typechecked)
     def save(self, filename: str = "auto", *, save_data: bool = True):

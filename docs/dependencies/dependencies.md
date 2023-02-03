@@ -29,6 +29,7 @@ packages are necessary for its correct functioning.
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.5)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.9.0)
+* **[ipython](https://ipython.org/)** (>=8.9.0)
 * **[featuretools](https://www.featuretools.com/)** (>=1.14.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=1.1.0, <1.2.0)
 * **[matplotlib](https://matplotlib.org/)** (>=3.5.0, <3.6.0)

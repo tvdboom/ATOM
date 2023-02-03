@@ -21,6 +21,7 @@ from importlib import import_module
 from importlib.util import find_spec
 from inspect import Parameter, signature
 from itertools import cycle
+from logging import getLogger
 from types import GeneratorType
 from typing import Any, Callable, Protocol, Union
 
@@ -516,16 +517,16 @@ class TrialsCallback:
                         sk_model=estimator,
                         artifact_path=estimator.__class__.__name__,
                         signature=infer_signature(
-                            model_input=self.T.X,
+                            model_input=pd.DataFrame(self.T.X),
                             model_output=estimator.predict(self.T.X.iloc[[0], :]),
                         ),
-                        input_example=self.T.X.iloc[[0], :],
+                        input_example=pd.DataFrame(self.T.X.iloc[[0], :]),
                     )
 
         if self.n_jobs == 1:
             sequence = {"trial": trial.number, **trial.user_attrs["params"]}
             for i, m in enumerate(self.T._metric):
-                best_score = rnd(max([lst(s)[i] for s in self.T.trials["score"]]))
+                best_score = rnd(np.nanmax([lst(s)[i] for s in self.T.trials["score"]]))
                 sequence.update({m.name: rnd(score[i]), f"best_{m.name}": best_score})
             sequence["time_trial"] = time_to_str(time_trial)
             sequence["time_ht"] = time_to_str(time_ht)
@@ -2711,9 +2712,7 @@ def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
 
     @wraps(f)
     def wrapper(*args, **kwargs) -> Any:
-        logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
-
-        if logger is not None:
+        if args[0].logger is not None:
             try:  # Run the function
                 return f(*args, **kwargs)
 
@@ -2721,6 +2720,7 @@ def crash(f: Callable, cache: dict = {"last_exception": None}) -> Callable:
                 # If exception is not same as last, write to log
                 if ex is not cache["last_exception"]:
                     cache["last_exception"] = ex
+                    logger = getLogger(args[0].__class__.__name__)
                     logger.exception("Exception encountered:")
 
                 raise ex
@@ -2735,7 +2735,8 @@ def method_to_log(f: Callable) -> Callable:
 
     @wraps(f)
     def wrapper(*args, **kwargs) -> Any:
-        if (logger := args[0].logger) is not None:
+        if args[0].logger is not None:
+            logger = getLogger(args[0].__class__.__name__)
             if f.__name__ != "__init__":
                 logger.info("")
             logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")

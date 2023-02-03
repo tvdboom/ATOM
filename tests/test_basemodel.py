@@ -26,8 +26,8 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_is_fitted, check_scaling, rnd
 
 from .conftest import (
-    X10_str, X_bin, X_class, X_idx, X_reg, y10, y10_str, y_bin, y_class, y_idx,
-    y_multiclass, y_reg, X_label, y_label
+    X10_str, X_bin, X_class, X_idx, X_label, X_reg, y10, y10_str, y_bin,
+    y_class, y_idx, y_label, y_multiclass, y_reg,
 )
 
 
@@ -826,7 +826,7 @@ def test_evaluate_metric_None(dataset):
     atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("OLS")
     scores = atom.ols.evaluate(dataset=dataset)
-    assert len(scores) == 6
+    assert len(scores) == 5
 
 
 def test_evaluate_custom_metric():

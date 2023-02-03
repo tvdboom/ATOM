@@ -227,10 +227,9 @@ underlying estimator is the first parameter are accepted. Set the attribute to
 `None` to ignore the meta-estimator for multioutput tasks.
 
 !!! note
-    Currently, scikit-learn metrics do not support multiple target variables.
-    If the [prediction method][prediction-methods] needed to calculate a metric
-    returns multiple columns, ATOM calculates the mean of the selected metric
-    over every individual target.
+    Currently, scikit-learn metrics do not support multiclass-multioutput
+    classification tasks. In this case, ATOM calculates the mean of the
+    selected metric over every individual target.
 
 !!! tip
     * Some models like [MultiLayerPerceptron][] have native support for

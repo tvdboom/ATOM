@@ -3073,11 +3073,16 @@
 
 <h1 id="plot_confusion_matrix">plot_confusion_matrix</h1>
 <hr />
-<p><a id='plot_confusion_matrix'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_confusion_matrix</strong>(models=None, dataset="test", target=0, title=None, legend="upper right", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4105>[source]</a></span></div>Plot a model's confusion matrix.</p>
+<p><a id='plot_confusion_matrix'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_confusion_matrix</strong>(models=None, dataset="test", target=0, threshold=0.5, title=None, legend="upper right", figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4068>[source]</a></span></div>Plot a model's confusion matrix.</p>
 <p>For one model, the plot shows a heatmap. For multiple models,
 it compares TP, FP, FN and TN in a barplot (not implemented
 for multiclass classification tasks). This plot is available
 only for classification tasks.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Fill the <code>threshold</code> parameter with the result from the
+model's <code>get_best_threshold</code> method to optimize the results.</p>
+</div>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_confusion_matrix-models'></a><strong>models: int, str, Model, slice, sequence or None, default=None</strong><br><div markdown class='param'>
 Models to plot. If None, all models are selected.</p>
@@ -3086,6 +3091,9 @@ Data set on which to calculate the confusion matrix. Choose
 from:` "train", "test" or "holdout".</p>
 <p></div><a id='plot_confusion_matrix-target'></a><strong>target: int or str, default=0</strong><br><div markdown class='param'>
 Target column to look at. Only for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</p>
+<p></div><a id='plot_confusion_matrix-threshold'></a><strong>threshold: float, default=0.5</strong><br><div markdown class='param'>
+Threshold between 0 and 1 to convert predicted probabilities
+to class labels. Only for binary classification tasks.</p>
 <p></div><a id='plot_confusion_matrix-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>

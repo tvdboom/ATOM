@@ -121,12 +121,12 @@ def test_logger_creator(cls, logger):
     cls.assert_called()
 
 
-@patch("atom.basetransformer.getLogger")
+@patch("atom.utils.getLogger")
 def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
     atom = ATOMClassifier(X_bin, y_bin, logger="log")
     pytest.raises(RuntimeError, atom.run, "LR", est_params={"test": 2})
-    cls.return_value.exception.assert_called()
+    cls.assert_called()
 
 
 @patch("mlflow.set_experiment")

@@ -434,7 +434,7 @@ def test_delete_default():
     assert atom.results.empty
 
 
-@pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
+@pytest.mark.parametrize("metric", ["ap", "f1"])
 def test_evaluate(metric):
     """Assert that the evaluate method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

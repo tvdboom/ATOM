@@ -3107,16 +3107,21 @@
   and multioutput regression tasks. Read more in the <a class="autorefs autorefs-internal" href="../../user_guide/data_management/#multioutput-tasks">user guide</a>.</li>
 <li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-backend">backend</a> parameter to choose a <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#parallel-execution">parallel execution</a>
   backend.</li>
+<li>It's now possible to train models in parallel.</li>
 <li>New <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-serve">serve</a> method to deploy models to a rest API endpoint.</li>
+<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-get_sample_weight">get_sample_weight</a> method to calculate
+  the sample weights for a balanced data set.</li>
 </ul>
 <p><strong><img alt="📝" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
 <li>The <code>report</code> method is renamed to <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-eda">eda</a>.</li>
 <li>The <code>ATOMLoader</code> class is deprecated in favor of the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-load">load</a> method.</li>
+<li>The <code>errors</code> attribute for runners is deprecated.</li>
 </ul>
 <p><strong><img alt="🚀" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f680.svg" title=":rocket:" /> Enhancements</strong></p>
 <ul>
 <li>Added the <code>drop_chars</code> parameter to the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a> class.</li>
+<li>Added the <code>errors</code> parameter to the trainers.</li>
 <li>Rework of the dependencies, making a lightweight base package.</li>
 <li>The logging entries for external libraries are redirected to atom's
   file handler.</li>

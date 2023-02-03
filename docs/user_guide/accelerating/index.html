@@ -3336,11 +3336,16 @@ parallelization backends.</p>
   mostly useful when the execution bottleneck is a compiled extension that
   explicitly releases the GIL (for instance a Cython loop wrapped in a "with nogil"
   block or an expensive call to a library such as numpy).</li>
-<li><strong>ray:</strong> Ray is an open-source unified compute framework that makes it easy to
-  scale AI and Python workloads. Read more about Ray <a href="https://docs.ray.io/en/latest/ray-core/walkthrough.html">here</a>.
+<li><strong>ray:</strong> <a href="https://www.ray.io/">Ray</a> is an open-source unified compute framework
+  that makes it easy to scale AI and Python workloads. Read more about Ray <a href="https://docs.ray.io/en/latest/ray-core/walkthrough.html">here</a>.
   Selecting the ray backend also parallelizes the data using <a href="https://modin.readthedocs.io/en/stable/">modin</a>, a
   multi-threading, drop-in replacement for pandas, that uses Ray as backend.</li>
 </ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Using <a href="https://modin.readthedocs.io/en/stable/">modin</a> can be considerably less performant than pandas for small
+datasets (&lt;1M rows).</p>
+</div>
 <p>The parallelization backend is applied in the following cases:</p>
 <ul>
 <li>In every individual estimator that uses parallelization internally.</li>
