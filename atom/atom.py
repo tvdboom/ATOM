@@ -108,11 +108,16 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
 
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
+        elif self.backend not in ("loky", "ray"):
+            self.log(
+                "Leaving n_jobs=1 ignores all parallelization. Set n_jobs>1 to make use "
+                f"of the {self.backend} parallelization backend.", 1, severity="warning"
+            )
         if "gpu" in self.device.lower():
             self.log("GPU training enabled.", 1)
         if self.engine != "sklearn":
             self.log(f"Execution engine: {self.engine}.", 1)
-        if self.backend != "loky":
+        if self.backend == "ray" or self.n_jobs > 1:
             self.log(f"Parallelization backend: {self.backend}", 1)
         if self.experiment:
             self.log(f"Mlflow experiment: {self.experiment}.", 1)
@@ -1875,8 +1880,8 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
                 metric = list(self._metric)
             else:
                 # If there's a metric, it should be the same as previous run
-                new_metric = ClassMap(get_custom_scorer(m).name for m in lst(metric))
-                if new_metric != list(self._metric):
+                new_metric = [get_custom_scorer(m).name for m in lst(metric)]
+                if new_metric != self._metric.keys():
                     raise ValueError(
                         "Invalid value for the metric parameter! The metric "
                         "should be the same as previous run. Expected "

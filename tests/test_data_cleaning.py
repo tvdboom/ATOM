@@ -214,7 +214,7 @@ def test_cleaner_multilabel():
 
 
 def test_cleaner_multiclass_multioutput():
-    """Assert that multiclass multioutput targets are encoded."""
+    """Assert that multiclass-multioutput targets are encoded."""
     y = merge(
         pd.Series(y10_str, name="a"),
         pd.Series(y10, name="b"),

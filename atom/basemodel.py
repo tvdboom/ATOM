@@ -207,7 +207,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         self._run = None  # mlflow run (if experiment is active)
         self._group = self._name  # sh and ts models belong to the same group
         self._evals = CustomDict()
-        self._shap = ShapExplanation(self)
+        self._shap_explanation = None
 
         # Parameter attributes
         self._est_params = {}
@@ -232,6 +232,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             self._train_idx = len(self.branch._idx[1])  # Can change for sh and ts
 
             self.task = infer_task(self.y, goal=self.goal)
+
             if self.needs_scaling and not check_scaling(self.X, pipeline=self.pipeline):
                 self.scaler = Scaler().fit(self.X_train)
 
@@ -270,15 +271,13 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return self.__class__.__name__
 
     @property
+    def _gpu(self) -> bool:
+        """Return whether the model uses a GPU implementation."""
+        return "gpu" in self.device.lower()
+
+    @property
     def _est_class(self) -> Predictor:
-        """Return the estimator's class.
-
-        Returns
-        -------
-        Predictor
-            Estimator's class (not instance).
-
-        """
+        """Return the estimator's class (not instance)."""
         try:
             module = import_module(f"{self.engine}.{self._module}")
             return getattr(module, self._estimators[self.goal])
@@ -290,9 +289,17 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             return getattr(module, self._estimators[self.goal])
 
     @property
-    def _gpu(self) -> bool:
-        """Return whether the model uses a GPU implementation."""
-        return "gpu" in self.device.lower()
+    def _shap(self) -> ShapExplanation:
+        """Return the ShapExplanation instance for this model."""
+        if not self._shap_explanation:
+            self._shap_explanation = ShapExplanation(
+                estimator=self.estimator,
+                task=self.task,
+                branch=self.branch,
+                random_state=self.random_state,
+            )
+
+        return self._shap_explanation
 
     def _check_est_params(self):
         """Check that the parameters are valid for the estimator.
@@ -627,7 +634,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
 
-            - The task is binary classification.
+            - The task is binary or multilabel classification.
             - The model has a `predict_proba` method.
             - The metric evaluates predicted target values.
 
@@ -665,7 +672,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 [
                     scorer._score_func(y_true[c], y_pred[c], **scorer._kwargs, **kwargs)
                     for c in y_pred
-                ]
+                ],
+                axis=0,
             )
         else:
             score = scorer._score_func(y_true, y_pred, **scorer._kwargs, **kwargs)
@@ -787,7 +795,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                                 [
                                     m._sign * m._score_func(pred[:, i], y, **m._kwargs)
                                     for i, y in enumerate(get_cols(y_val))
-                                ]
+                                ],
+                                axis=0,
                             )
                         )
                     else:
@@ -1331,7 +1340,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 data=data / data.sum(),
                 index=self.features,
                 name="feature_importance",
-                dtype="float",
+                dtype=float,
             ).sort_values(ascending=False)
 
     @property
@@ -1490,7 +1499,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         if is_multioutput(self.task):
             return self.target  # When multioutput, target is list of str
         else:
-            return self.mapping.get(self.target, list(np.unique(self.y)))
+            return self.mapping.get(self.target, np.unique(self.y).astype(str))
 
     @cached_property
     def decision_function_train(self) -> PANDAS:
@@ -2176,7 +2185,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         """
         # Reset attributes
         self._evals = CustomDict()
-        self._shap = ShapExplanation(self)
+        self._shap_explanation = None
         self.app = None
         self.dashboard = None
 
@@ -2229,6 +2238,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             **{k: v for k, v in kwargs.items() if k in sign(Interface.launch)}
         )
 
+    @available_if(has_task("multioutput", inverse=True))
     @composed(crash, typechecked, method_to_log)
     def create_dashboard(
         self,
@@ -2247,10 +2257,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         performance plots, and even individual decision trees.
 
         By default, the dashboard renders in a new tab in your default
-        browser, but if preferable, you can render it inside the notebook
-        using the `mode="inline"` parameter. The created
+        browser, but if preferable, you can render it inside the
+        notebook using the `mode="inline"` parameter. The created
         [ExplainerDashboard][] instance can be accessed through the
-        `dashboard` attribute.
+        `dashboard` attribute. This method is not available for
+        [multioutput tasks][].
 
         !!! note
             Plots displayed by the dashboard are not created by ATOM and
@@ -2296,21 +2307,26 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 f"{dataset}. Choose from: train, test, both or holdout."
             )
 
+        # Get shap values from the internal ShapExplanation object
+        exp = self._shap.get_explanation(X, target=(0,))
+
+        # Explainerdashboard requires all the target classes
+        if self.goal.startswith("class"):
+            if self.task.startswith("bin"):
+                if exp.values.shape[-1] != 2:
+                    exp.base_values = [np.array(1 - exp.base_values), exp.base_values]
+                    exp.values = [np.array(1 - exp.values), exp.values]
+            else:
+                # Explainer expects a list of np.array with shap values for each class
+                exp.values = list(np.moveaxis(exp.values, -1, 0))
+
         params = dict(permutation_metric=self._metric, n_jobs=self.n_jobs)
         if self.goal == "class":
             explainer = ClassifierExplainer(self.estimator, X, y, **params)
         else:
             explainer = RegressionExplainer(self.estimator, X, y, **params)
 
-        # Add shap values from the internal ShapExplanation object
-        explainer.set_shap_values(
-            base_value=self._shap.get_expected_value(return_all_classes=True),
-            shap_values=self._shap.get_shap_values(X, return_all_classes=True),
-        )
-
-        # Some explainers (like Linear) don't have interaction values
-        if hasattr(self._shap.explainer, "shap_interaction_values"):
-            explainer.set_shap_interaction_values(self._shap.get_interaction_values(X))
+        explainer.set_shap_values(exp.base_values, exp.values)
 
         self.dashboard = ExplainerDashboard(
             explainer=explainer,

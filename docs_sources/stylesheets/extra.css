@@ -114,13 +114,13 @@
 }
 
 /* Change table display for small screens */
-@media screen and (max-width: 500px) {
+@media screen and (max-width: 725px) {
   .td_title {
       width: 5%;
       writing-mode: vertical-rl;
       font-size: 0.9em;
       padding-top: 15px;
-      padding-left: 10px;
+      padding-left: 0.9em;
   }
   .td_params {
       width: 95%;

@@ -79,7 +79,7 @@ class TransformerMixin:
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column(s) corresponding to X.
+            Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -123,7 +123,7 @@ class TransformerMixin:
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column(s) corresponding to X.
+            Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -166,7 +166,7 @@ class TransformerMixin:
             X is ignored.
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column(s) corresponding to X.
+            Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.

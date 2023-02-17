@@ -19,8 +19,8 @@ from typeguard import typechecked
 from atom.models import MODELS_ENSEMBLES
 from atom.utils import (
     DATAFRAME, FEATURES, INDEX, INT, INT_TYPES, PANDAS, SEQUENCE, SERIES,
-    SERIES_TYPES, TARGET, CustomDict, bk, custom_transform, flt, lst, merge,
-    to_pandas,
+    SERIES_TYPES, TARGET, CustomDict, bk, custom_transform, flt, get_cols, lst,
+    merge, to_pandas,
 )
 
 
@@ -606,3 +606,116 @@ class Branch:
             inc = [col for col in df.columns if col not in exc]
 
         return list(dict.fromkeys(inc))  # Avoid duplicates
+
+    def _get_target(
+        self,
+        target: INT | str | tuple,
+        only_columns: bool = False,
+    ) -> str | tuple[INT, INT]:
+        """Get a target column and/or class in target column.
+
+        Parameters
+        ----------
+        target: int, str or tuple
+            Target column or class to retrieve. For multioutput tasks,
+            use a tuple of the form (column, class) to select a class
+            in a specific target column.
+
+        only_columns: bool, default=False
+            Whether to only look at target columns or also to target
+            classes (for multilabel and multiclass-multioutput tasks).
+
+        Returns
+        -------
+        str or tuple
+            Name of the selected target column (if only_columns=True)
+            or tuple of the form (column, class).
+
+        """
+
+        def get_column(target: INT | str) -> str:
+            """Get the target column.
+
+            Parameters
+            ----------
+            target: int or str
+                Name or position of the target column.
+
+            Returns
+            -------
+            str
+                Target column.
+
+            """
+            if isinstance(target, str):
+                if target not in self.target:
+                    raise ValueError(
+                        "Invalid value for the target parameter. Value "
+                        f"{target} is not one of the target columns."
+                    )
+                else:
+                    return target
+            else:
+                if not 0 <= target < len(self.target):
+                    raise ValueError(
+                        "Invalid value for the target parameter. There are "
+                        f"{len(self.target)} target columns, got {target}."
+                    )
+                else:
+                    return lst(self.target)[target]
+
+        def get_class(target: INT | str, column: int = 0) -> int:
+            """Get the class in the target column.
+
+            Parameters
+            ----------
+            target: int or str
+                Name or position of the target column.
+
+            column: int, default=0
+                Column to get the class from. For multioutput tasks.
+
+            Returns
+            -------
+            int
+                Class' index.
+
+            """
+            if isinstance(target, str):
+                try:
+                    return self.mapping[lst(self.target)[column]][target]
+                except (TypeError, KeyError):
+                    raise ValueError(
+                        f"Invalid value for the target parameter. Value {target} "
+                        "not found in the mapping of the target column."
+                    )
+            else:
+                n_classes = get_cols(self.y)[column].nunique(dropna=False)
+                if not 0 <= target < n_classes:
+                    raise ValueError(
+                        "Invalid value for the target parameter. "
+                        f"There are {n_classes} classes, got {target}."
+                    )
+                else:
+                    return target
+
+        if only_columns:
+            return get_column(target)
+        elif isinstance(target, tuple):
+            if not isinstance(self.y, DATAFRAME):
+                raise ValueError(
+                    f"Invalid value for the target parameter, got {target}. "
+                    "A tuple is only accepted for multioutput tasks."
+                )
+            elif len(target) == 1:
+                return self.target.index(get_column(target[0])), 0
+            elif len(target) == 2:
+                column = self.target.index(get_column(target[0]))
+                return column, get_class(target[1], column)
+            else:
+                raise ValueError(
+                    "Invalid value for the target parameter. "
+                    f"Expected a tuple of length 2, got len={len(target)}."
+                )
+        else:
+            return 0, get_class(target)

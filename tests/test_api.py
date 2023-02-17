@@ -16,9 +16,18 @@ from .conftest import X_bin, X_reg, y_bin, y_reg
 
 def test_atommodel():
     """Assert that the attributes are attached to the estimator."""
-    model = ATOMModel(HuberRegressor(), acronym="huber", needs_scaling=True)
+    model = ATOMModel(
+        estimator=(huber := HuberRegressor()),
+        name="huber1",
+        acronym="huber",
+        needs_scaling=True,
+    )
+    assert model is not huber  # Is cloned
+    assert model.name == "huber1"
     assert model.acronym == "huber"
     assert model.needs_scaling is True
+    assert model.native_multioutput is False
+    assert model.has_validation is None
 
 
 def test_atomclassifier():

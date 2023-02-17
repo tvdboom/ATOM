@@ -215,6 +215,7 @@ class BaseTransformer:
 
         warnings.filterwarnings(self._warnings)  # Change the filter in this process
         warnings.filterwarnings("ignore", category=UserWarning, module=".*modin.*")
+        warnings.filterwarnings("ignore", category=DeprecationWarning, module=".*shap.*")
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses (joblib)
 
     @property
@@ -237,7 +238,7 @@ class BaseTransformer:
             # Prepare the FileHandler
             if not value.endswith(".log"):
                 value += ".log"
-            if value.endswith("auto.log"):
+            if os.path.basename(value) == "auto.log":
                 current = dt.now().strftime("%d%b%y_%Hh%Mm%Ss")
                 value = value.replace("auto", self.__class__.__name__ + "_" + current)
 
@@ -359,7 +360,7 @@ class BaseTransformer:
             Feature dataset. Only returned if provided.
 
         series, dataframe or None
-            Target column(s) corresponding to X.
+            Target column corresponding to X.
 
         """
         if X is None and y is None:
@@ -604,7 +605,7 @@ class BaseTransformer:
                 Feature set with shape=(n_samples, n_features).
 
             y: series or dataframe
-                Target column(s) corresponding to X.
+                Target column corresponding to X.
 
             Returns
             -------
@@ -875,7 +876,7 @@ class BaseTransformer:
         if severity in ("error", "critical"):
             raise UserWarning(msg)
         elif severity == "warning":
-            warnings.warn(msg)
+            warnings.warn(msg, category=UserWarning)
         elif severity == "info" and self.verbose >= level:
             print(msg)
 

@@ -73,7 +73,6 @@ def ATOMModel(
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor, ATOMModel
     >>> from sklearn.linear_model import RANSACRegressor
@@ -112,8 +111,10 @@ def ATOMModel(
     if not callable(estimator):
         estimator = clone(estimator)
 
-    estimator.name = name
-    estimator.acronym = acronym
+    if name:
+        estimator.name = name
+    if acronym:
+        estimator.acronym = acronym
     estimator.needs_scaling = needs_scaling
     estimator.native_multioutput = native_multioutput
     estimator.has_validation = has_validation
@@ -290,7 +291,6 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -595,7 +595,6 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import load_diabetes

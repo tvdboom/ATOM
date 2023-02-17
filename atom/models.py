@@ -163,7 +163,9 @@ class CustomModel(BaseModel):
         self.acronym = getattr(est, "acronym", name)
         if not self.acronym.startswith(name):
             raise ValueError(
-                f"The name and acronym of model {self._fullname} do not match."
+                f"The name ({name}) and acronym ({self.acronym}) of model "
+                f"{self._fullname} do not match. The name should start with "
+                f"the model's acronym."
             )
 
         self.needs_scaling = getattr(est, "needs_scaling", False)
@@ -217,7 +219,6 @@ class AdaBoost(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -304,7 +305,6 @@ class AutomaticRelevanceDetermination(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -392,7 +392,6 @@ class Bagging(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -475,7 +474,6 @@ class BayesianRidge(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -559,7 +557,6 @@ class BernoulliNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -651,7 +648,6 @@ class CatBoost(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -851,7 +847,6 @@ class CategoricalNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> import numpy as np
@@ -932,7 +927,6 @@ class ComplementNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1012,7 +1006,6 @@ class DecisionTree(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1106,7 +1099,6 @@ class Dummy(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1210,7 +1202,6 @@ class ElasticNet(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -1295,7 +1286,6 @@ class ExtraTree(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1409,7 +1399,6 @@ class ExtraTrees(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1523,7 +1512,6 @@ class GaussianNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1602,7 +1590,6 @@ class GaussianProcess(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1677,7 +1664,6 @@ class GradientBoosting(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1797,7 +1783,6 @@ class HuberRegression(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -1883,7 +1868,6 @@ class HistGradientBoosting(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1979,7 +1963,6 @@ class KNearestNeighbors(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2070,7 +2053,6 @@ class Lasso(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -2153,7 +2135,6 @@ class LeastAngleRegression(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -2228,7 +2209,6 @@ class LightGBM(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2407,7 +2387,6 @@ class LinearDiscriminantAnalysis(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2510,7 +2489,6 @@ class LinearSVM(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2654,7 +2632,6 @@ class LogisticRegression(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2787,7 +2764,6 @@ class MultiLayerPerceptron(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -2932,7 +2908,6 @@ class MultinomialNB(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3014,7 +2989,6 @@ class OrdinaryLeastSquares(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -3080,7 +3054,6 @@ class OrthogonalMatchingPursuit(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -3145,7 +3118,6 @@ class PassiveAggressive(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3239,7 +3211,6 @@ class Perceptron(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3345,7 +3316,6 @@ class QuadraticDiscriminantAnalysis(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3430,7 +3400,6 @@ class RadiusNearestNeighbors(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3530,7 +3499,6 @@ class RandomForest(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3667,7 +3635,6 @@ class Ridge(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMRegressor
     >>> from sklearn.datasets import fetch_california_housing
@@ -3758,7 +3725,6 @@ class StochasticGradientDescent(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -3884,7 +3850,6 @@ class SupportVectorMachine(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -4026,7 +3991,6 @@ class XGBoost(BaseModel):
 
     Examples
     --------
-
     ```pycon
     >>> from atom import ATOMClassifier
     >>> from sklearn.datasets import load_breast_cancer

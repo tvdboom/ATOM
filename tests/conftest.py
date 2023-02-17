@@ -7,6 +7,8 @@ Description: Global fixtures and variables for the tests.
 
 """
 
+from typing import Callable
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -17,12 +19,70 @@ from sklearn.datasets import (
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
-from atom.utils import merge
+from atom.utils import (
+    DATAFRAME, FEATURES, TARGET, merge, n_cols, to_df, to_pandas,
+)
+
+
+class DummyTransformer:
+    """Transformer class for testing name keeping of arrays.
+
+    Parameters
+    ----------
+    strategy: str
+        What to do with the feature set during transformation.
+        Choose from:
+
+        - "equal": Return the dataset unchanged.
+        - "drop" Drop a column from the dataset.
+        - "add": Add a column to the dataset.
+
+    """
+
+    def __init__(self, strategy: str):
+        self.strategy = strategy
+
+    def transform(self, X: DATAFRAME) -> np.ndarray:
+        if self.strategy == "equal":
+            return X.to_numpy()
+        elif self.strategy == "drop":
+            return X.drop(X.columns[1], axis=1).to_numpy()
+        elif self.strategy == "add":
+            X["new_col"] = list(range(len(X)))
+            return X.to_numpy()
 
 
 @pytest.fixture(autouse=True)
-def change_current_dir(tmp_path, monkeypatch):
+def change_current_dir(tmp_path: Callable, monkeypatch: Callable):
+    """Changes the directory of the test to a temporary dir."""
     monkeypatch.chdir(tmp_path)
+
+
+def get_train_test(X: FEATURES, y: TARGET) -> tuple[DATAFRAME, DATAFRAME]:
+    """Get train and test sets from X and y.
+
+    Parameters
+    ----------
+    X: dataframe-like
+        Feature set.
+
+    y: int, str, dict, sequence or dataframe
+        Target column corresponding to X.
+
+    Returns
+    -------
+    dataframe
+        Training set.
+
+    dataframe
+        Test set.
+
+    """
+    return train_test_split(
+        merge(to_df(X), to_pandas(y, columns=[f"y{i}" for i in range(n_cols(y))])),
+        test_size=0.3,
+        random_state=1,
+    )
 
 
 # Sklearn datasets as np.array
@@ -33,11 +93,8 @@ X_bin, y_bin = load_breast_cancer(return_X_y=True, as_frame=True)
 X_class, y_class = load_wine(return_X_y=True, as_frame=True)
 X_reg, y_reg = load_diabetes(return_X_y=True, as_frame=True)
 
-# Train and test sets for all three tasks
-kwargs = dict(test_size=0.3, random_state=1)
-bin_train, bin_test = train_test_split(merge(X_bin, y_bin), **kwargs)
-class_train, class_test = train_test_split(merge(X_class, y_class), **kwargs)
-reg_train, reg_test = train_test_split(merge(X_reg, y_reg), **kwargs)
+# Multilabel classification data
+X_label, y_label = make_multilabel_classification(n_samples=100, n_classes=3)
 
 # Sparse data
 X_sparse = pd.DataFrame(
@@ -47,9 +104,6 @@ X_sparse = pd.DataFrame(
         "feature 3": pd.arrays.SparseArray([1, 1, 1, 0, 0, 0, 1, 0, 0, 0]),
     }
 )
-
-# Multilabel classification data
-X_label, y_label = make_multilabel_classification(n_samples=100, n_classes=3)
 
 # Text data
 X_text = [
@@ -218,18 +272,8 @@ y_multireg = merge(
     pd.Series(shuffle(y_reg.values, random_state=3), name="c"),
 )
 
-
-class DummyTransformer:
-    """Transformer class for testing name keeping of arrays."""
-
-    def __init__(self, strategy):
-        self.strategy = strategy
-
-    def transform(self, X):
-        if self.strategy == "equal":
-            return X.to_numpy()
-        elif self.strategy == "drop":
-            return X.drop(X.columns[1], axis=1).to_numpy()
-        elif self.strategy == "add":
-            X["new_col"] = list(range(len(X)))
-            return X.to_numpy()
+# Train and test sets per task
+bin_train, bin_test = get_train_test(X_bin, y_bin)
+class_train, class_test = get_train_test(X_class, y_class)
+reg_train, reg_test = get_train_test(X_reg, y_reg)
+label_train, label_test = get_train_test(X_label, y_label)

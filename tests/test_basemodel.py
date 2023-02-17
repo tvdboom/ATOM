@@ -195,6 +195,14 @@ def test_ht_with_pipeline():
     assert atom.lr.trials is not None
 
 
+def test_ht_with_multioutput():
+    """Assert that the hyperparameter tuning works with multioutput tasks."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run(["LDA", "RF"], n_trials=2)
+    assert not atom.lda.trials.empty
+    assert not atom.rf.trials.empty
+
+
 def test_sample_weight_fit():
     """Assert that sample weights can be used with the BO."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -453,6 +461,14 @@ def test_feature_importance_property():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     assert len(atom.tree.feature_importance) == X_bin.shape[1]
+
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("LDA")
+    assert len(atom.lda.feature_importance) == X_label.shape[1]
+
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run("LDA")
+    assert len(atom.lda.feature_importance) == X_class.shape[1]
 
 
 def test_results_property():
@@ -743,6 +759,14 @@ def test_create_app(interface):
     interface.assert_called_once()
 
 
+def test_create_dashboard_multioutput():
+    """Assert that the method is unavailable for multioutput tasks."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run("Tree")
+    with pytest.raises(AttributeError, match=".*has no attribute.*"):
+        atom.tree.create_dashboard()
+
+
 def test_create_dashboard_dataset_no_holdout():
     """Assert that an error is raised when there's no holdout set."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
@@ -760,12 +784,20 @@ def test_create_dashboard_invalid_dataset():
 
 
 @patch("explainerdashboard.ExplainerDashboard")
-@pytest.mark.parametrize("dataset", ["train", "both", "holdout"])
-def test_create_dashboard_classification(func, dataset):
+def test_create_dashboard_binary(func):
     """Assert that the create_dashboard method calls the underlying package."""
     atom = ATOMClassifier(X_bin, y_bin, holdout_size=0.1, random_state=1)
+    atom.run("LR")
+    atom.lr.create_dashboard(dataset="holdout", filename="dashboard")
+    func.assert_called_once()
+
+
+@patch("explainerdashboard.ExplainerDashboard")
+def test_create_dashboard_multiclass(func):
+    """Assert that the create_dashboard method calls the underlying package."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("Tree")
-    atom.tree.create_dashboard(dataset=dataset, filename="dashboard")
+    atom.tree.create_dashboard()
     func.assert_called_once()
 
 
@@ -774,7 +806,7 @@ def test_create_dashboard_regression(func):
     """Assert that the create_dashboard method calls the underlying package."""
     atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("Tree")
-    atom.tree.create_dashboard()
+    atom.tree.create_dashboard(dataset="both")
     func.assert_called_once()
 
 
@@ -822,6 +854,11 @@ def test_evaluate_metric_None(dataset):
     atom.run("MNB")
     scores = atom.mnb.evaluate(dataset=dataset)
     assert len(scores) == 6
+
+    atom = ATOMClassifier(X_label, y=y_label, holdout_size=0.1, random_state=1)
+    atom.run("MNB")
+    scores = atom.mnb.evaluate(dataset=dataset)
+    assert len(scores) == 7
 
     atom = ATOMRegressor(X_reg, y_reg, holdout_size=0.1, random_state=1)
     atom.run("OLS")

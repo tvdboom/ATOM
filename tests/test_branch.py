@@ -15,7 +15,8 @@ from atom.branch import Branch
 from atom.utils import merge
 
 from .conftest import (
-    X10_str, X_bin, X_bin_array, X_idx, y10, y_bin, y_bin_array, y_idx,
+    X10, X10_str, X_bin, X_bin_array, X_class, X_idx, y10, y10_str, y_bin,
+    y_bin_array, y_idx, y_multiclass,
 )
 
 
@@ -466,3 +467,67 @@ def test_get_columns_remove_duplicates():
     """Assert that duplicate columns are ignored."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.branch._get_columns(columns=[0, 1, 0]) == ["mean radius", "mean texture"]
+
+
+def test_get_target_column():
+    """Assert that the target column can be retrieved."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    assert atom.branch._get_target(target="c", only_columns=True) == "c"
+    assert atom.branch._get_target(target=1, only_columns=True) == "b"
+
+
+def test_get_target_column_str_invalid():
+    """Assert that an error is raised when the column is invalid."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    with pytest.raises(ValueError, match=".*is not one of the target columns.*"):
+        atom.branch._get_target(target="invalid", only_columns=True)
+
+
+def test_get_target_column_int_invalid():
+    """Assert that an error is raised when the column is invalid."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    with pytest.raises(ValueError, match=".*There are 3 target columns.*"):
+        atom.branch._get_target(target=3, only_columns=True)
+
+
+def test_get_target_class():
+    """Assert that the target class can be retrieved."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    atom.clean()
+    assert atom.branch._get_target(target="y")[1] == 1
+    assert atom.branch._get_target(target=0)[1] == 0
+
+
+def test_get_target_class_str_invalid():
+    """Assert that an error is raised when the target is invalid."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    with pytest.raises(ValueError, match=".*not found in the mapping.*"):
+        atom.branch._get_target(target="invalid")
+
+
+def test_get_target_class_int_invalid():
+    """Assert that an error is raised when the value is invalid."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    with pytest.raises(ValueError, match=".*There are 2 classes.*"):
+        atom.branch._get_target(target=3)
+
+
+def test_get_target_tuple_no_multioutput():
+    """Assert that the target class can be retrieved."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    with pytest.raises(ValueError, match=".*only accepted for multioutput tasks.*"):
+        atom.branch._get_target(target=(2, 1))
+
+
+def test_get_target_tuple():
+    """Assert that the target column and class can be retrieved."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    assert atom.branch._get_target(target=(2,)) == (2, 0)
+    assert atom.branch._get_target(target=("a", 2)) == (0, 2)
+
+
+def test_get_target_tuple_invalid_length():
+    """Assert that the target class can be retrieved."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    with pytest.raises(ValueError, match=".*a tuple of length 2.*"):
+        atom.branch._get_target(target=(2, 1, 2))

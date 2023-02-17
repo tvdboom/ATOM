@@ -69,7 +69,13 @@ def test_task_assignment():
 def test_raise_one_target_value():
     """Assert that error raises when there is only 1 target value."""
     with pytest.raises(ValueError, match=".*1 target value.*"):
-        ATOMClassifier(X_bin, [1 for _ in range(len(y_bin))], random_state=1)
+        ATOMClassifier(X_bin, [1] * len(X_bin), random_state=1)
+
+
+def test_backend_with_n_jobs_1():
+    """Assert that a warning is raised ."""
+    with pytest.warns(UserWarning, match=".*Leaving n_jobs=1 ignores.*"):
+        ATOMClassifier(X_bin, y_bin, warnings=True, backend="threading", random_state=1)
 
 
 # Test magic methods =============================================== >>
@@ -467,6 +473,14 @@ def test_transform_verbose_invalid():
 
 
 # Test base transformers =========================================== >>
+
+def test_add_after_model():
+    """Assert that an error is raised when adding after training a model."""
+    atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
+    atom.run("Dummy")
+    with pytest.raises(PermissionError, match=".*not allowed to add transformers.*"):
+        atom.scale()
+
 
 def test_custom_params_to_method():
     """Assert that a custom parameter is passed to the method."""

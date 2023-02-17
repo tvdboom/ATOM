@@ -46,10 +46,10 @@ from sklearn.utils.metaestimators import available_if
 from typeguard import typechecked
 
 from atom.utils import (
-    FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, SERIES, Model, bk,
-    check_canvas, check_dependency, check_predict_proba, composed, crash,
-    divide, get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
-    it, lst, plot_from_model, rnd, to_rgb,
+    FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
+    check_dependency, check_predict_proba, composed, crash, divide,
+    get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
+    is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
 )
 
 
@@ -724,58 +724,6 @@ class BasePlot:
 
         return dataset[0] if max_one else dataset
 
-    def _get_target(self, target: INT | str | tuple, only_columns: bool = False) -> str:
-        """Check and return the specified target column's position.
-
-        Parameters
-        ----------
-        target: int or str
-            Target column or class to retrieve.
-
-        only_columns: bool, default=False
-            Whether to only look at target columns or also to target
-            classes (for multilabel and multiclass multioutput tasks).
-
-        Returns
-        -------
-        str
-            Name of the selected target column.
-
-        """
-        if only_columns:
-            if isinstance(target, str):
-                if target not in self.target:
-                    raise ValueError(
-                        "Invalid value for the target parameter. Value "
-                        f"{target} is not one of the target columns."
-                    )
-                else:
-                    return target
-            else:
-                if not 0 <= target < len(self.target):
-                    raise ValueError(
-                        "Invalid value for the target parameter. There are "
-                        f"{len(self.target)} target columns, got {target}."
-                    )
-                else:
-                    return list(self.target)[target]
-        # else:
-        #     if isinstance(target, str):
-        #         try:
-        #             targets.append(self.mapping[self.target][t])
-        #         except (TypeError, KeyError):
-        #             raise ValueError(
-        #                 f"Invalid value for the target parameter. Value {target} "
-        #                 "not found in the mapping of the target column."
-        #             )
-        #     elif not 0 <= target < self.y.nunique(dropna=False):
-        #         raise ValueError(
-        #             "Invalid value for the target parameter. There are "
-        #             f"{self.y.nunique(dropna=False)} classes, got {target}."
-        #         )
-
-        return target
-
     def _get_figure(self, **kwargs) -> go.Figure | plt.Figure:
         """Return existing figure if in canvas, else a new figure.
 
@@ -1094,6 +1042,7 @@ class BasePlot:
                         artifact_file=name if "." in name else f"{name}.png",
                     )
 
+            plt.tight_layout()
             plt.show() if kwargs.get("display") else plt.close()
             if kwargs.get("display") is None:
                 return fig
@@ -1303,7 +1252,6 @@ class FeatureSelectorPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -1427,7 +1375,6 @@ class FeatureSelectorPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -1551,7 +1498,6 @@ class FeatureSelectorPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -1727,7 +1673,6 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -1886,7 +1831,6 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import numpy as np
@@ -2120,7 +2064,6 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import fetch_20newsgroups
@@ -2293,7 +2236,6 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -2417,7 +2359,6 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -2587,7 +2528,6 @@ class DataPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import fetch_20newsgroups
@@ -2751,7 +2691,6 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from optuna.distributions import IntDistribution
@@ -2911,7 +2850,6 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -2949,8 +2887,7 @@ class HTPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            evaluator = FanovaImportanceEvaluator(seed=self.random_state)
-            importances = evaluator.evaluate(
+            importances = FanovaImportanceEvaluator(seed=self.random_state).evaluate(
                 study=m.study,
                 target=None if len(self._metric) == 1 else lambda x: x.values[met],
             )
@@ -3064,7 +3001,6 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -3115,10 +3051,10 @@ class HTPlot(BasePlot):
                         axes="99",
                         colorscale=PALETTE.get(self._fig.get_color(models.name), "Blues"),
                         cmin=np.nanmin(
-                            models.trials.apply(lambda row: lst(row["score"])[met], axis=1)
+                            models.trials.apply(lambda x: lst(x["score"])[met], axis=1)
                         ),
                         cmax=np.nanmax(
-                            models.trials.apply(lambda row: lst(row["score"])[met], axis=1)
+                            models.trials.apply(lambda x: lst(x["score"])[met], axis=1)
                         ),
                         showscale=False,
                     )
@@ -3126,6 +3062,11 @@ class HTPlot(BasePlot):
 
                 x_values = lambda row: row["params"].get(params[y], None)
                 y_values = lambda row: row["params"].get(params[x + 1], None)
+
+                customdata = zip(
+                    models.trials.index.tolist(),
+                    models.trials.apply(lambda x: lst(x["score"])[met], axis=1),
+                )
 
                 fig.add_trace(
                     go.Scatter(
@@ -3137,12 +3078,7 @@ class HTPlot(BasePlot):
                             color=self._fig.get_color(models.name),
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
-                        customdata=list(
-                            zip(
-                                models.trials.index.tolist(),
-                                models.trials.apply(lambda i: lst(i["score"])[met], axis=1),
-                            )
-                        ),
+                        customdata=list(customdata),
                         hovertemplate=(
                             f"{params[y]}:%{{x}}<br>"
                             f"{params[x + 1]}:%{{y}}<br>"
@@ -3193,7 +3129,7 @@ class HTPlot(BasePlot):
                     ylabel=params[x + 1] if y == 0 else None,
                 )
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             title=title,
             legend=legend,
@@ -3273,7 +3209,6 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -3374,7 +3309,7 @@ class HTPlot(BasePlot):
             )
         )
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
@@ -3453,7 +3388,6 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -3532,7 +3466,7 @@ class HTPlot(BasePlot):
                     ylabel=self._metric[x + 1].name if y == 0 else None,
                 )
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             title=title,
             legend=legend,
@@ -3614,7 +3548,6 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -3638,7 +3571,7 @@ class HTPlot(BasePlot):
                 "available for models that ran hyperparameter tuning."
             )
 
-        params = self._get_hyperparams(params, m)
+        params = self._get_hyperparams(params, models)
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
@@ -3664,7 +3597,9 @@ class HTPlot(BasePlot):
 
             fig.add_trace(
                 go.Scatter(
-                    x=models.trials.apply(lambda r: r["params"].get(params[y], None), axis=1),
+                    x=models.trials.apply(
+                        lambda r: r["params"].get(params[y], None), axis=1
+                    ),
                     y=models.trials.apply(lambda r: lst(r["score"])[x], axis=1),
                     mode="markers",
                     marker=dict(
@@ -3691,7 +3626,7 @@ class HTPlot(BasePlot):
                 ylabel=self._metric[x].name if y == 0 else None,
             )
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             title=title,
             legend=legend,
@@ -3773,7 +3708,6 @@ class HTPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
 
@@ -3911,7 +3845,8 @@ class PredictionPlot(BasePlot):
         and the y-axis is the fraction of positives, i.e. the proportion
         of samples whose class is the positive class (in each bin); and
         a distribution of all predicted probabilities of the classifier.
-        Only available for binary classification tasks.
+        This plot is available only for models with a `predict_proba`
+        method in a binary or [multilabel][] classification task.
 
         !!! tip
             Use the [calibrate][adaboost-calibrate] method to calibrate
@@ -3973,7 +3908,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
 
@@ -3991,8 +3925,9 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_calibration.html
 
         """
+        check_predict_proba(models, "plot_calibration")
         dataset = self._get_set(dataset, max_one=False)
-        target = self._get_target(target, only_columns=True)
+        target = self.branch._get_target(target, only_columns=True)
 
         if n_bins < 5:
             raise ValueError(
@@ -4005,7 +3940,7 @@ class PredictionPlot(BasePlot):
         xaxis2, yaxis2 = self._fig.get_axes(y=(0.0, 0.29))
         for m in models:
             for ds in dataset:
-                y_true, y_pred = m._get_pred(ds, target, method="prob")
+                y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
 
                 # Get calibration (frac of positives and predicted values)
                 frac_pos, pred = calibration_curve(y_true, y_pred, n_bins=n_bins)
@@ -4147,7 +4082,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
 
@@ -4174,12 +4108,13 @@ class PredictionPlot(BasePlot):
 
         """
         ds = self._get_set(dataset, max_one=True)
-        target = self._get_target(target, only_columns=True)
+        target = self.branch._get_target(target, only_columns=True)
 
         if self.task.startswith("multiclass") and len(models) > 1:
             raise NotImplementedError(
-                "The plot_confusion_matrix method does not support the comparison"
-                " of various models for multiclass classification tasks."
+                "The plot_confusion_matrix method does not support "
+                "the comparison of multiple models for multiclass "
+                "or multiclass-multioutput classification tasks."
             )
 
         labels = np.array(
@@ -4344,7 +4279,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import pandas as pd
@@ -4364,14 +4298,14 @@ class PredictionPlot(BasePlot):
 
         """
         dataset = self._get_set(dataset, max_one=False)
-        target = self._get_target(target, only_columns=True)
+        target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for ds in dataset:
                 # Get fpr-fnr pairs for different thresholds
-                fpr, fnr, _ = det_curve(*m._get_pred(ds, target, method="thresh"))
+                fpr, fnr, _ = det_curve(*m._get_pred(ds, target, attr="thresh"))
 
                 fig.add_trace(
                     self._draw_line(
@@ -4419,8 +4353,8 @@ class PredictionPlot(BasePlot):
         generated by the regressor. A linear fit is made on the data.
         The gray, intersected line shows the identity line. This plot
         can be useful to detect noise or heteroscedasticity along a
-        range of the target domain. It's only available for regression
-        tasks.
+        range of the target domain. This plot is available only for
+        regression tasks.
 
         Parameters
         ----------
@@ -4472,7 +4406,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMRegressor
         >>> from sklearn.datasets import load_diabetes
@@ -4490,7 +4423,7 @@ class PredictionPlot(BasePlot):
 
         """
         ds = self._get_set(dataset, max_one=True)
-        target = self._get_target(target, only_columns=True)
+        target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
@@ -4562,7 +4495,7 @@ class PredictionPlot(BasePlot):
 
         The evaluation curves are the main metric scores achieved by the
         models at every iteration of the training process. This plot is
-        only available for models that allow [in-training validation][].
+        available only for models that allow [in-training validation][].
 
         Parameters
         ----------
@@ -4612,7 +4545,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
 
@@ -4655,7 +4587,7 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        self._fig.used_models.append(m)
+        self._fig.used_models.append(models)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             xlabel="Iterations",
@@ -4683,8 +4615,8 @@ class PredictionPlot(BasePlot):
         """Plot a model's feature importance.
 
         The sum of importances for all features (per model) is 1.
-        Only available for models whose estimator has a `scores_`,
-        `feature_importances_` or `coef` attribute.
+        This plot is available only for models whose estimator has
+        a `scores_`, `feature_importances_` or `coef` attribute.
 
         Parameters
         ----------
@@ -4736,7 +4668,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -4806,12 +4737,13 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("binary"))
+    @available_if(has_task(["binary", "multilabel"]))
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
@@ -4821,7 +4753,8 @@ class PredictionPlot(BasePlot):
     ) -> go.Figure | None:
         """Plot the cumulative gains curve.
 
-        Only available for binary classification tasks.
+        This plot is available only for binary and [multilabel][]
+        classification tasks.
 
         Parameters
         ----------
@@ -4832,6 +4765,9 @@ class PredictionPlot(BasePlot):
             Data set on which to calculate the metric. Use a sequence
             or add `+` between options to select more than one. Choose
             from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -4873,7 +4809,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import pandas as pd
@@ -4893,12 +4828,13 @@ class PredictionPlot(BasePlot):
 
         """
         dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for ds in dataset:
-                y_true, y_pred = m._get_pred(ds, target, method="thresh")
+                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 fig.add_trace(
                     self._draw_line(
@@ -4944,8 +4880,8 @@ class PredictionPlot(BasePlot):
     ) -> go.Figure | None:
         """Plot the learning curve: score vs number of training samples.
 
-        Only use with models fitted using [train sizing][]. [Ensembles][]
-        are ignored.
+        This plot is available only for models fitted using
+        [train sizing][]. [Ensembles][] are ignored.
 
         Parameters
         ----------
@@ -4996,7 +4932,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -5087,12 +5022,13 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("binary"))
+    @available_if(has_task(["binary", "multilabel"]))
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
@@ -5113,6 +5049,9 @@ class PredictionPlot(BasePlot):
             Data set on which to calculate the metric. Use a sequence
             or add `+` between options to select more than one. Choose
             from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -5154,7 +5093,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import pandas as pd
@@ -5174,18 +5112,15 @@ class PredictionPlot(BasePlot):
 
         """
         dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for ds in dataset:
-                y_true = getattr(m, f"y_{ds}")
-                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
-                if y_pred.ndim > 1:
-                    y_pred = y_pred.iloc[:, 1]
+                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 gains = np.cumsum(y_true.iloc[np.argsort(y_pred)[::-1]]) / y_true.sum()
-
                 fig.add_trace(
                     self._draw_line(
                         x=(x := np.arange(start=1, stop=len(y_true) + 1) / len(y_true)),
@@ -5220,7 +5155,7 @@ class PredictionPlot(BasePlot):
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         columns: INT | str | slice | SEQUENCE | None = None,
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper left",
@@ -5248,9 +5183,11 @@ class PredictionPlot(BasePlot):
         columns: int, str, slice, sequence or None, default=None
             Features to plot. If None, it plots all features.
 
-        target: int or str, default=1
-            Class in the target column to look at (only for multi-class
-            classification tasks).
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -5292,7 +5229,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -5317,7 +5253,7 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_parshap_2.html
 
         """
-        target = self._get_target(target)
+        target = self.branch._get_target(target)
 
         fig = self._get_figure()
 
@@ -5336,19 +5272,17 @@ class PredictionPlot(BasePlot):
 
         for m in models:
             parshap = {}
-            fxs = self.branch._get_columns(columns, include_target=False, branch=m.branch)
+            fxs = m.branch._get_columns(columns, include_target=False)
 
             for ds in ("train", "test"):
-                X, y = getattr(m, f"X_{ds}"), getattr(m, f"y_{ds}")
-                data = bk.concat([X, y], axis=1)
-
                 # Calculating shap values is computationally expensive,
                 # therefore select a random subsample for large data sets
-                if len(data) > 500:
+                if len(data := getattr(m, ds)) > 500:
                     data = data.sample(500, random_state=self.random_state)
 
                 # Replace data with the calculated shap values
-                data.iloc[:, :-1] = models._shap.get_shap_values(data.iloc[:, :-1], target)
+                explanation = m._shap.get_explanation(data[m.features], target)
+                data[m.features] = explanation.values
 
                 parshap[ds] = pd.Series(index=fxs, dtype=float)
                 for fx in fxs:
@@ -5430,7 +5364,7 @@ class PredictionPlot(BasePlot):
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         columns: INT | str | slice | SEQUENCE | None = None,
-        kind: str = "average",
+        kind: str | SEQUENCE = "average",
         pair: int | str | None = None,
         target: INT | str = 1,
         *,
@@ -5453,7 +5387,8 @@ class PredictionPlot(BasePlot):
           plotted as contour plots (only allowed for a single model).
 
         Read more about partial dependence on sklearn's
-        [documentation][partial_dependence].
+        [documentation][partial_dependence]. This plot is not available
+        for multilabel nor multiclass-multioutput classification tasks.
 
         Parameters
         ----------
@@ -5464,9 +5399,9 @@ class PredictionPlot(BasePlot):
             Features to get the partial dependence from. If None, it
             uses the first 3 features in the dataset.
 
-        kind: str, default="average"
-            Kind of depedence to plot. Add `+` between options to select
-            more than one. Choose from:
+        kind: str or sequence, default="average"
+            Kind of depedence to plot. Use a sequence or add `+` between
+            options to select more than one. Choose from:
 
             - "average": Partial dependence averaged across all samples
               in the dataset.
@@ -5483,7 +5418,7 @@ class PredictionPlot(BasePlot):
             features.
 
         target: int or str, default=1
-            Class in the target column to look at (only for multi-class
+            Class in the target column to look at (only for multiclass
             classification tasks).
 
         title: str, dict or None, default=None
@@ -5526,7 +5461,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -5551,9 +5485,18 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_partial_dependence_2.html
 
         """
-        target = self._get_target(target) if self.task.startswith("multiclass") else 0
+        if any(self.task.startswith(t) for t in ("multilabel", "multiclass-multioutput")):
+            raise PermissionError(
+                "The plot_partial_dependence method is not available for multilabel "
+                f"nor multiclass-multioutput classification tasks, got {self.task}."
+            )
+        elif self.task.startswith("multiclass"):
+            _, target = self.branch._get_target(target)
+        else:
+            target = 0
 
-        if any(k.lower() not in ("average", "individual") for k in kind.split("+")):
+        kind = "+".join(lst(kind)).lower()
+        if any(k not in ("average", "individual") for k in kind.split("+")):
             raise ValueError(
                 f"Invalid value for the kind parameter, got {kind}. "
                 "Choose from: average, individual."
@@ -5566,10 +5509,9 @@ class PredictionPlot(BasePlot):
 
             # Since every model can have different fxs, select them
             # every time and make sure the models use the same fxs
-            cols = self.branch._get_columns(
+            cols = m.branch._get_columns(
                 columns=(0, 1, 2) if columns is None else columns,
                 include_target=False,
-                branch=m.branch,
             )
 
             if not names:
@@ -5587,7 +5529,7 @@ class PredictionPlot(BasePlot):
                         "The value must be None when plotting multiple models"
                     )
                 else:
-                    pair = self.branch._get_columns(pair, include_target=False, branch=m.branch)
+                    pair = m.branch._get_columns(pair, include_target=False)
                     cols = [(c, pair[0]) for c in cols]
             else:
                 cols = [(c,) for c in cols]
@@ -5611,9 +5553,9 @@ class PredictionPlot(BasePlot):
             predictions = Parallel(n_jobs=self.n_jobs, backend=self.backend)(
                 delayed(partial_dependence)(
                     estimator=m.estimator,
-                    X=models.X_test,
+                    X=m.X_test,
                     features=col,
-                    kind="both" if "individual" in kind.lower() else "average",
+                    kind="both" if "individual" in kind else "average",
                 ) for col in cols
             )
 
@@ -5622,7 +5564,7 @@ class PredictionPlot(BasePlot):
                 deciles = {}
                 for fx in chain.from_iterable(cols):
                     if fx not in deciles:  # Skip if the feature is repeated
-                        X_col = _safe_indexing(models.X_test, fx, axis=1)
+                        X_col = _safe_indexing(m.X_test, fx, axis=1)
                         deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
             for i, (ax, fx, pred) in enumerate(zip(axes, cols, predictions)):
@@ -5644,7 +5586,7 @@ class PredictionPlot(BasePlot):
                         )
 
                     # Draw the mean of the individual lines
-                    if "average" in kind.lower():
+                    if "average" in kind:
                         fig.add_trace(
                             go.Scatter(
                                 x=pred["values"][0],
@@ -5660,7 +5602,7 @@ class PredictionPlot(BasePlot):
                         )
 
                     # Draw all individual (per sample) lines (ICE)
-                    if "individual" in kind.lower():
+                    if "individual" in kind:
                         # Select up to 50 random samples to plot
                         idx = np.random.choice(
                             list(range(len(pred["individual"][target]))),
@@ -5794,7 +5736,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -5832,7 +5773,7 @@ class PredictionPlot(BasePlot):
                 # Permutation importances returns Bunch object
                 m.permutations = permutation_importance(
                     estimator=m.estimator,
-                    X=models.X_test,
+                    X=m.X_test,
                     y=m.y_test,
                     scoring=self._metric[0],
                     n_repeats=n_repeats,
@@ -5878,7 +5819,7 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @composed(crash, plot_from_model, typechecked)
+    @composed(crash, plot_from_model(check_fitted=False), typechecked)
     def plot_pipeline(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
@@ -5945,7 +5886,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
 
@@ -6024,21 +5964,19 @@ class PredictionPlot(BasePlot):
         fig = self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_pipeline")
 
-        # Define branches to plot
+        # Define branches to plot (if called from model, it's only one)
         branches = []
-        for branch in self._branches:
+        for branch in getattr(self, "_branches", [self.branch]):
             draw_models, draw_ensembles = [], []
             for m in models:
-                if m.name in branch._get_depending_models():
+                if m.branch is branch:
                     if m.acronym not in ("Stack", "Vote"):
                         draw_models.append(m)
                     else:
                         draw_ensembles.append(m)
 
                         # Additionally, add all dependent models (if not already there)
-                        draw_models.extend(
-                            [i for i in m._models.values() if i not in draw_models]
-                        )
+                        draw_models.extend([i for i in m._models if i not in draw_models])
 
             if not models or draw_models:
                 branches.append(
@@ -6163,7 +6101,7 @@ class PredictionPlot(BasePlot):
         for branch in branches:
             for model in branch["ensembles"]:
                 # Determine y-position of the ensemble
-                y_pos = [positions[id(m)][1] for m in model._models.values()]
+                y_pos = [positions[id(m)][1] for m in model._models]
                 offset = height / 2 * (len(branch["ensembles"]) - 1)
                 y = min(y_pos) + (max(y_pos) - min(y_pos)) * 0.5 - offset
                 y = check_y((max_pos + length, max(min(y_pos), y)))
@@ -6181,7 +6119,7 @@ class PredictionPlot(BasePlot):
                 positions[id(model)] = d.here
 
                 # Draw a wire from every model to the ensemble
-                for m in model._models.values():
+                for m in model._models:
                     d.here = positions[id(m)]
                     add_wire(max_pos + length, y)
 
@@ -6203,12 +6141,13 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("binary"))
+    @available_if(has_task(["binary", "multilabel"]))
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower left",
@@ -6230,6 +6169,9 @@ class PredictionPlot(BasePlot):
             Data set on which to calculate the metric. Use a sequence
             or add `+` between options to select more than one. Choose
             from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -6271,7 +6213,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import pandas as pd
@@ -6291,17 +6232,16 @@ class PredictionPlot(BasePlot):
 
         """
         dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for ds in dataset:
-                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
-                if y_pred.ndim > 1:
-                    y_pred = y_pred.iloc[:, 1]
+                y_true, y_pred = m._get_pred(ds, target, attr="thresh")
 
                 # Get precision-recall pairs for different thresholds
-                prec, rec, _ = precision_recall_curve(getattr(m, f"y_{ds}"), y_pred)
+                prec, rec, _ = precision_recall_curve(y_true, y_pred)
 
                 fig.add_trace(
                     self._draw_line(
@@ -6337,7 +6277,7 @@ class PredictionPlot(BasePlot):
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str = "test",
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "upper right",
@@ -6347,7 +6287,8 @@ class PredictionPlot(BasePlot):
     ) -> go.Figure | None:
         """Plot the probability distribution of the target classes.
 
-        Only available for classification tasks.
+        This plot is available only for models with a `predict_proba`
+        method in classification tasks.
 
         Parameters
         ----------
@@ -6358,9 +6299,10 @@ class PredictionPlot(BasePlot):
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
 
-        target: int or str, default=1
-            Probability of being that class in the target column (only
-            for multiclass classification tasks).
+        target: int, str or tuple, default=1
+            Probability of being that class in the target column. For
+            multioutput tasks, the value should be a tuple of the form
+            (column, class).
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -6402,7 +6344,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import pandas as pd
@@ -6421,17 +6362,24 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_probabilities.html
 
         """
-        ds = self._get_set(dataset, max_one=True)
-        target = self._get_target(target)
         check_predict_proba(models, "plot_probabilities")
+        ds = self._get_set(dataset, max_one=True)
+        col, cls = self.branch._get_target(target)
+        col = lst(self.target)[col]
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
-            for value in m.y.sort_values().unique():
+            y_true, y_pred = getattr(m, f"y_{ds}"), getattr(m, f"predict_proba_{ds}")
+            for value in np.unique(m.dataset[col]):
                 # Get indices per class
-                idx = np.where(getattr(m, f"y_{ds}") == value)[0]
-                hist = getattr(m, f"predict_proba_{ds}").iloc[idx, target]
+                if is_multioutput(self.task):
+                    if self.task.startswith("multilabel"):
+                        hist = y_pred.loc[y_true[col] == value, col]
+                    else:
+                        hist = y_pred.loc[cls, col].loc[y_true[col] == value]
+                else:
+                    hist = y_pred.loc[y_true == value, str(cls)]
 
                 fig.add_trace(
                     go.Scatter(
@@ -6446,7 +6394,7 @@ class PredictionPlot(BasePlot):
                         fill="tonexty",
                         fillcolor=f"rgba{self._fig.get_color(m.name)[3:-1]}, 0.2)",
                         fillpattern=dict(shape=self._fig.get_shapes(value)),
-                        name=f"{self.target}={value}",
+                        name=f"{col}={value}",
                         legendgroup=m.name,
                         legendgrouptitle=dict(text=m.name, font_size=self.label_fontsize),
                         showlegend=self._fig.showlegend(f"{m.name}-{value}", legend),
@@ -6542,7 +6490,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMRegressor
         >>> from sklearn.datasets import load_diabetes
@@ -6691,7 +6638,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import pandas as pd
@@ -6839,12 +6785,13 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("binary"))
+    @available_if(has_task(["binary", "multilabel"]))
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         dataset: str | SEQUENCE = "test",
+        target: INT | str = 0,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = "lower right",
@@ -6866,6 +6813,9 @@ class PredictionPlot(BasePlot):
             Data set on which to calculate the metric. Use a sequence
             or add `+` between options to select more than one. Choose
             from: "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -6907,7 +6857,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import pandas as pd
@@ -6927,17 +6876,14 @@ class PredictionPlot(BasePlot):
 
         """
         dataset = self._get_set(dataset, max_one=False)
+        target = self.branch._get_target(target, only_columns=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
         for m in models:
             for ds in dataset:
-                y_pred = getattr(m, f"{get_attr(m.estimator)}_{ds}")
-                if y_pred.ndim > 1:
-                    y_pred = y_pred.iloc[:, 1]
-
                 # Get False (True) Positive Rate as arrays
-                fpr, tpr, _ = roc_curve(getattr(m, f"y_{ds}"), y_pred)
+                fpr, tpr, _ = roc_curve(*m._get_pred(ds, target, attr="thresh"))
 
                 fig.add_trace(
                     self._draw_line(
@@ -7035,7 +6981,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -7128,13 +7073,14 @@ class PredictionPlot(BasePlot):
             display=display,
         )
 
-    @available_if(has_task("binary"))
+    @available_if(has_task(["binary", "multilabel"]))
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
         models: INT | str | Model | slice | SEQUENCE | None = None,
         metric: str | Callable | SEQUENCE | None = None,
         dataset: str = "test",
+        target: INT | str = 0,
         steps: INT = 100,
         *,
         title: str | dict | None = None,
@@ -7145,7 +7091,8 @@ class PredictionPlot(BasePlot):
     ) -> go.Figure | None:
         """Plot metric performances against threshold values.
 
-        Only available for binary classification tasks.
+        This plot is available only for models with a `predict_proba`
+        method in a binary or [multilabel][] classification task.
 
         Parameters
         ----------
@@ -7162,6 +7109,9 @@ class PredictionPlot(BasePlot):
         dataset: str, default="test"
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
+
+        target: int or str, default=0
+            Target column to look at. Only for [multilabel][] tasks.
 
         steps: int, default=100
             Number of thresholds measured.
@@ -7206,7 +7156,6 @@ class PredictionPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> import pandas as pd
@@ -7225,8 +7174,9 @@ class PredictionPlot(BasePlot):
             url: /img/plots/plot_threshold.html
 
         """
-        ds = self._get_set(dataset, max_one=True)
         check_predict_proba(models, "plot_threshold")
+        ds = self._get_set(dataset, max_one=True)
+        target = self.branch._get_target(target, only_columns=True)
 
         # Get all metric functions from the input
         if metric is None:
@@ -7245,16 +7195,12 @@ class PredictionPlot(BasePlot):
 
         steps = np.linspace(0, 1, steps)
         for m in models:
+            y_true, y_pred = m._get_pred(ds, target, attr="predict_proba")
             for met in metrics:
-                results = []
-                for step in steps:
-                    pred = getattr(m, f"predict_proba_{ds}").iloc[:, 1] >= step
-                    results.append(met(getattr(m, f"y_{ds}"), pred))
-
                 fig.add_trace(
                     self._draw_line(
                         x=steps,
-                        y=results,
+                        y=[met(y_true, y_pred >= step) for step in steps],
                         parent=m.name,
                         child=met.__name__,
                         legend=legend,
@@ -7293,7 +7239,7 @@ class ShapPlot(BasePlot):
         models: INT | str | Model | None = None,
         index: INT | str | slice | SEQUENCE | None = None,
         show: INT | None = None,
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
@@ -7325,9 +7271,11 @@ class ShapPlot(BasePlot):
             Number of features (ordered by importance) to show. If
             None, it shows all features.
 
-        target: int or str, default=1
-            Class in the target column to look at (only for multi-class
-            classification tasks).
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -7365,7 +7313,6 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -7383,7 +7330,7 @@ class ShapPlot(BasePlot):
         """
         rows = models.X.loc[models.branch._get_rows(index)]
         show = self._get_show(show, models)
-        target = self._get_target(target)
+        target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
@@ -7409,7 +7356,7 @@ class ShapPlot(BasePlot):
         models: INT | str | Model | None = None,
         index: slice | SEQUENCE | None = None,
         show: INT | None = None,
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
@@ -7439,9 +7386,11 @@ class ShapPlot(BasePlot):
             Number of features (ordered by importance) to show. If
             None, it shows all features.
 
-        target: int or str, default=1
-            Class in the target column to look at (only for multi-class
-            classification tasks).
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -7479,7 +7428,6 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -7497,7 +7445,7 @@ class ShapPlot(BasePlot):
         """
         rows = models.X.loc[models.branch._get_rows(index)]
         show = self._get_show(show, models)
-        target = self._get_target(target)
+        target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
@@ -7522,7 +7470,7 @@ class ShapPlot(BasePlot):
         models: INT | str | Model | None = None,
         index: INT | str | slice | SEQUENCE | None = None,
         show: INT | None = None,
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
@@ -7556,9 +7504,11 @@ class ShapPlot(BasePlot):
             Number of features (ordered by importance) to show. If
             None, it shows all features.
 
-        target: int or str, default=1
-            Class in the target column to look at (only for multi-class
-            classification tasks).
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -7596,7 +7546,6 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -7621,14 +7570,15 @@ class ShapPlot(BasePlot):
         """
         rows = models.X.loc[models.branch._get_rows(index)]
         show = self._get_show(show, models)
-        target = self._get_target(target)
+        target = self.branch._get_target(target)
+        explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_decision")
 
         shap.decision_plot(
-            base_value=models._shap.get_expected_value(target),
-            shap_values=models._shap.get_shap_values(rows, target),
+            base_value=explanation.base_values,
+            shap_values=explanation.values,
             features=rows,
             feature_display_range=slice(-1, -show - 1, -1),
             auto_size_plot=False,
@@ -7652,7 +7602,7 @@ class ShapPlot(BasePlot):
         self,
         models: INT | str | Model | None = None,
         index: INT | str | slice | SEQUENCE | None = None,
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
@@ -7681,9 +7631,11 @@ class ShapPlot(BasePlot):
             Rows in the dataset to plot. If None, it selects all rows
             in the test set.
 
-        target: int or str, default=1
-            Class in the target column to look at (only for multi-class
-            classification tasks).
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -7723,7 +7675,6 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -7740,14 +7691,15 @@ class ShapPlot(BasePlot):
 
         """
         rows = models.X.loc[models.branch._get_rows(index)]
-        target = self._get_target(target)
+        target = self.branch._get_target(target)
+        explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(create_figure=False, backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_force")
 
         plot = shap.force_plot(
-            base_value=models._shap.get_expected_value(target),
-            shap_values=models._shap.get_shap_values(rows, target),
+            base_value=explanation.base_values,
+            shap_values=explanation.values,
             features=rows,
             show=False,
             **kwargs,
@@ -7782,7 +7734,7 @@ class ShapPlot(BasePlot):
         models: INT | str | Model | None = None,
         index: slice | SEQUENCE | None = None,
         show: INT | None = None,
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
@@ -7815,9 +7767,11 @@ class ShapPlot(BasePlot):
             Number of features (ordered by importance) to show. If
             None, it shows all features.
 
-        target: int or str, default=1
-            Class in the target column to look at (only for multi-class
-            classification tasks).
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -7855,7 +7809,6 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -7873,7 +7826,7 @@ class ShapPlot(BasePlot):
         """
         rows = models.X.loc[models.branch._get_rows(index)]
         show = self._get_show(show, models)
-        target = self._get_target(target)
+        target = self.branch._get_target(target)
         explanation = models._shap.get_explanation(rows, target)
 
         self._get_figure(backend="matplotlib")
@@ -7899,7 +7852,7 @@ class ShapPlot(BasePlot):
         models: INT | str | Model | None = None,
         index: slice | SEQUENCE | None = None,
         columns: INT | str = 0,
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
@@ -7932,9 +7885,11 @@ class ShapPlot(BasePlot):
         columns: int or str, default=0
             Column to plot.
 
-        target: int or str, default=1
-            Class in the target column to look at (only for multi-class
-            classification tasks).
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -7971,7 +7926,6 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -7988,9 +7942,12 @@ class ShapPlot(BasePlot):
 
         """
         rows = models.X.loc[models.branch._get_rows(index)]
-        column = self.branch._get_columns(columns, include_target=False, branch=models.branch)[0]
-        target = self._get_target(target)
-        explanation = models._shap.get_explanation(rows, target, column)
+        column = models.branch._get_columns(columns, include_target=False)[0]
+        target = self.branch._get_target(target)
+        explanation = models._shap.get_explanation(rows, target)
+
+        # Get explanation for a specific column
+        explanation = explanation[:, models.columns.get_loc(column)]
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_scatter")
@@ -8016,7 +7973,7 @@ class ShapPlot(BasePlot):
         models: INT | str | Model | None = None,
         index: INT | str | None = None,
         show: INT | None = None,
-        target: INT | str = 1,
+        target: INT | str | tuple = 1,
         *,
         title: str | dict | None = None,
         legend: str | dict | None = None,
@@ -8055,9 +8012,11 @@ class ShapPlot(BasePlot):
             Number of features (ordered by importance) to show. If
             None, it shows all features.
 
-        target: int or str, default=1
-            Class in the target column to look at (only for multi-class
-            classification tasks).
+        target: int, str or tuple, default=1
+            Class in the target column to target. For multioutput tasks,
+            the value should be a tuple of the form (column, class).
+            Note that for binary and multilabel tasks, the selected
+            class is always the positive one.
 
         title: str, dict or None, default=None
             Title for the plot.
@@ -8095,7 +8054,6 @@ class ShapPlot(BasePlot):
 
         Examples
         --------
-
         ```pycon
         >>> from atom import ATOMClassifier
         >>> from sklearn.datasets import load_breast_cancer
@@ -8113,8 +8071,16 @@ class ShapPlot(BasePlot):
         """
         rows = models.X.loc[[models.branch._get_rows(index)[0]]]
         show = self._get_show(show, models)
-        target = self._get_target(target)
-        explanation = models._shap.get_explanation(rows, target, only_one=True)
+        target = self.branch._get_target(target)
+        explanation = models._shap.get_explanation(rows, target)
+
+        # Waterfall accepts only one row
+        explanation.values = explanation.values[0]
+        explanation.data = explanation.data[0]
+
+        # For binary classification, it's a scalar already
+        if hasattr(explanation.base_values, "__len__"):
+            explanation.base_values = explanation.base_values[target]
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_waterfall")

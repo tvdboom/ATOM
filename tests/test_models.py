@@ -16,18 +16,25 @@ from optuna.distributions import IntDistribution
 from optuna.pruners import PatientPruner
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
-from atom import ATOMClassifier, ATOMRegressor
+from atom import ATOMClassifier, ATOMRegressor, ATOMModel
 from atom.pipeline import Pipeline
 
 from .conftest import X_bin, X_class, X_reg, y_bin, y_class, y_reg
 
 
-@pytest.mark.parametrize("model", [RandomForestRegressor, RandomForestRegressor()])
-def test_custom_models(model):
-    """Assert that ATOM works with custom models."""
+def test_custom_model_properties():
+    """Assert that name and acronym are assigned correctly."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(models=model, n_trials=1)
+    atom.run(models=ATOMModel(RandomForestRegressor()), n_trials=1)
+    assert atom.rfr.name == "RFR"
     assert atom.rfr._fullname == "RandomForestRegressor"
+
+
+def test_custom_model_invalid_acronym():
+    """Assert that an error is raised when name and acronym don't match."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    with pytest.raises(ValueError, match=".*do not match.*"):
+        atom.run(models=ATOMModel(RandomForestRegressor, acronym="forest"))
 
 
 def test_all_models_binary():

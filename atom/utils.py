@@ -12,6 +12,7 @@ from __future__ import annotations
 import pprint
 import sys
 import tempfile
+import warnings
 from collections import OrderedDict, deque
 from collections.abc import MutableMapping
 from copy import copy, deepcopy
@@ -554,7 +555,7 @@ class TrialsCallback:
             # If the distribution is categorical, take the mean of the widths
             # Else take the max of 7 (minimum width) and the width of the name
             if hasattr(dist, "choices"):
-                options = np.mean([len(str(x)) for x in dist.choices], dtype=int)
+                options = np.mean([len(str(x)) for x in dist.choices], axis=0, dtype=int)
             else:
                 options = 0
 
@@ -713,24 +714,40 @@ class PlotCallback:
 class ShapExplanation:
     """SHAP Explanation wrapper to avoid recalculating shap values.
 
-    Calculating shap values can take much time and computational
-    resources. This class 'remembers' all calculated shap values
-    and reuses them when appropriate.
+    Calculating shap or interaction values is computationally expensive.
+    This class 'remembers' all calculated values and reuses them when
+    needed.
 
     Parameters
     ----------
     model: Model
-        Model from which the instance is created.
+        Estimator to get the shap values from.
+
+    branch: Branch
+        Data to get the shap values from.
+
+    random_state: int or None, default=None
+        Random seed for reproducibility.
 
     """
 
-    def __init__(self, model: Model):
-        self.T = model
+    def __init__(
+        self,
+        estimator: Predictor,
+        task: str,
+        branch: Any,
+        random_state: INT | None = None,
+    ):
+        self.estimator = estimator
+        self.task = task
+        self.branch = branch
+        self.random_state = random_state
 
         self._explainer = None
         self._explanation = None
-        self._shap_values = pd.Series(dtype="object")
         self._expected_value = None
+        self._shap_values = pd.Series(dtype="object")
+        self._interaction_values = pd.Series(dtype="object")
 
     @property
     def attr(self) -> str:
@@ -743,7 +760,7 @@ class ShapExplanation:
 
         """
         for attr in ("predict_proba", "decision_function", "predict"):
-            if hasattr(self.T.estimator, attr):
+            if hasattr(self.estimator, attr):
                 return attr
 
     @property
@@ -757,23 +774,24 @@ class ShapExplanation:
 
         """
         if self._explainer is None:
+            # Pass masker as np.array and feature names separately for modin frames
+            kwargs = dict(
+                masker=self.branch.X_train.to_numpy(),
+                feature_names=list(self.branch.features),
+                seed=self.random_state,
+            )
             try:  # Fails when model does not fit standard explainers (e.g. ensembles)
-                self._explainer = Explainer(self.T.estimator, self.T.X_train)
+                self._explainer = Explainer(self.estimator, **kwargs)
             except TypeError:
                 # If method is provided as first arg, selects always Permutation
-                self._explainer = Explainer(
-                    model=getattr(self.T.estimator, self.attr),
-                    masker=self.T.X_train,
-                )
+                self._explainer = Explainer(getattr(self.estimator, self.attr), **kwargs)
 
         return self._explainer
 
     def get_explanation(
         self,
         df: DATAFRAME,
-        target: INT = 1,
-        column: str | None = None,
-        only_one: bool = False,
+        target: tuple,
     ) -> Explanation:
         """Get an Explanation object.
 
@@ -782,15 +800,9 @@ class ShapExplanation:
         df: dataframe
             Data set to look at (subset of the complete dataset).
 
-        target: int, default=1
-            Index of the class in the target column to look at.
-            Only for multi-class classification tasks.
-
-        column: str or None, default=None
-            Column to look at. If None, look at all features.
-
-        only_one: bool, default=False
-            Whether only one row is accepted.
+        target: tuple
+            Indices of the target column and the class in the target
+            column to look at.
 
         Returns
         -------
@@ -799,140 +811,66 @@ class ShapExplanation:
 
         """
         # Get rows that still need to be calculated
-        calculate = df.loc[[i for i in df.index if i not in self._shap_values.index]]
+        calculate = df.loc[~df.index.isin(self._shap_values.index)]
         if not calculate.empty:
             kwargs = {}
 
             # Minimum of 2 * n_features + 1 evals required (default=500)
             if "max_evals" in sign(self.explainer.__call__):
-                kwargs["max_evals"] = 2 * self.T.n_features + 1
+                kwargs["max_evals"] = "auto"
 
             # Additivity check fails sometimes for no apparent reason
             if "check_additivity" in sign(self.explainer.__call__):
                 kwargs["check_additivity"] = False
 
-            # Calculate the new shap values
-            self._explanation = self.explainer(calculate, **kwargs)
+            with warnings.catch_warnings():
+                # Avoid warning feature names mismatch in sklearn due to passing np.array
+                warnings.filterwarnings("ignore", message="X does not have valid.*")
+
+                # Calculate the new shap values
+                try:
+                    self._explanation = self.explainer(calculate.to_numpy(), **kwargs)
+                except (ValueError, AssertionError):
+                    raise ValueError(
+                        "Failed to get shap's explainer for estimator "
+                        f"{self.estimator} with task {self.task}."
+                    )
 
             # Remember shap values in the _shap_values attribute
-            for i, idx in enumerate(calculate.index):
-                self._shap_values.at[idx] = self._explanation.values[i]
+            values = pd.Series(
+                data=list(self._explanation.values),
+                index=calculate.index,
+                dtype="object",
+            )
+            self._shap_values = pd.concat([self._shap_values, values])
 
         # Don't use attribute to not save plot-specific changes
+        # Shallow copy to not copy the data in the branch
         explanation = copy(self._explanation)
 
         # Update the explanation object
         explanation.values = np.stack(self._shap_values.loc[df.index].values)
-        explanation.base_values = explanation.base_values[0]
-        explanation.data = self.T.X.loc[df.index, :].to_numpy()
+        explanation.base_values = self._explanation.base_values[0]
+        explanation.data = self.branch.X.loc[df.index].to_numpy()
 
-        # Select the target values from the array
-        if explanation.values.ndim > 2:
-            explanation.values = explanation.values[:, :, target]
-        if only_one:  # Attributes should be 1-dimensional
-            explanation.values = explanation.values[0]
-            explanation.data = explanation.data[0]
-
-            # For some models like LGB it's a scalar already
-            if isinstance(explanation.base_values, np.ndarray):
-                explanation.base_values = explanation.base_values[target]
-
-        if column is None:
-            return explanation
-        else:
-            return explanation[:, df.columns.get_loc(column)]
-
-    def get_shap_values(
-        self,
-        df: DATAFRAME,
-        target: INT = 1,
-        return_all_classes: bool = False,
-    ) -> FLOAT | SEQUENCE:
-        """Get shap values from the Explanation object.
-
-        Parameters
-        ----------
-        df: dataframe
-            Data set to look at.
-
-        target: int, default=1
-            Index of the class in the target column to look at.
-            Only for multi-class classification tasks.
-
-        return_all_classes: bool, default=False
-            Whether to return one or all classes.
-
-        Returns
-        -------
-        float or sequence
-            Shap values.
-
-        """
-        values = self.get_explanation(df, target).values
-        if return_all_classes:
-            if self.T.task.startswith("bin") and len(values) != self.T.y.nunique():
-                values = [np.array(1 - values), values]
-
-        return values
-
-    def get_interaction_values(self, df: DATAFRAME) -> np.ndarray:
-        """Get shap interaction values from the Explanation object.
-
-        Parameters
-        ----------
-        df: dataframe
-            Data set to get the interaction values from.
-
-        Returns
-        -------
-        np.ndarray
-            Interaction values.
-
-        """
-        return self.explainer.shap_interaction_values(df)
-
-    def get_expected_value(
-        self,
-        target: INT = 1,
-        return_all_classes: bool = False,
-    ) -> FLOAT | SEQUENCE:
-        """Get the expected value of the training set.
-
-        The expected value is either retrieved from the explainer's
-        `expected_value` attribute or calculated as the mean of all
-        predictions.
-
-        Parameters
-        ----------
-        target: int, default=1
-            Index of the class in the target column to look at.
-            Only for multi-class classification tasks.
-
-        return_all_classes: bool, default=False
-            Whether to return one or all classes.
-
-        Returns
-        -------
-        float or sequence
-            Expected value.
-
-        """
-        if self._expected_value is None:
-            # Some explainers like Permutation don't have expected_value attr
-            if hasattr(self.explainer, "expected_value"):
-                self._expected_value = self.explainer.expected_value
+        if is_multioutput(self.task):
+            if explanation.values.shape[-1] == self.branch.y.shape[1]:
+                # One explanation per column
+                explanation.values = explanation.values[:, :, target[0]]
+                explanation.base_values = explanation.base_values[target[0]]
             else:
-                # The expected value is the average of the model output
-                self._expected_value = np.mean(getattr(self.T, f"{self.attr}_train"))
+                # For native multilabel or multiclass-multioutput, the values
+                # have shape[-1]=n_targets x max(n_cls)
+                n_classes = explanation.values.shape[-1] // self.branch.y.shape[1]
 
-        if not return_all_classes and isinstance(self._expected_value, SEQUENCE):
-            if len(self._expected_value) == self.T.y.nunique():
-                return self._expected_value[target]  # Return target expected value
-        elif return_all_classes and isinstance(self._expected_value, float):
-            # For binary tasks, shap returns the expected value of positive class
-            return [1 - self._expected_value, self._expected_value]
+                select = target[0] * n_classes + target[1]
+                explanation.values = explanation.values[:, :, select]
+                explanation.base_values = explanation.base_values[select]
+        elif explanation.values.ndim > 2 and len(target) == 2:
+            explanation.values = explanation.values[:, :, target[1]]
+            explanation.base_values = explanation.base_values[target[1]]
 
-        return self._expected_value
+        return explanation
 
 
 class ClassMap:
@@ -1514,7 +1452,7 @@ def check_predict_proba(models: SEQUENCE, method: str):
         Name of the method from which the check is called.
 
     """
-    for m in [m for m in models if m.name != "Vote"]:
+    for m in models:
         if not hasattr(m.estimator, "predict_proba"):
             raise AttributeError(
                 f"The {method} method is only available for "
@@ -2056,6 +1994,8 @@ def get_feature_importance(
         Estimator's feature importances.
 
     """
+    norm = lambda x: np.linalg.norm(x, axis=np.argmin(x.shape), ord=1)
+
     data = None
     if not attributes:
         attributes = ("scores_", "coef_", "feature_importances_")
@@ -2066,18 +2006,26 @@ def get_feature_importance(
         # Get the mean value for meta-estimators
         if hasattr(est, "estimators_"):
             if all(hasattr(x, "feature_importances_") for x in est.estimators_):
-                data = np.mean(
-                    [fi.feature_importances_ for fi in est.estimators_],
-                    axis=0,
-                )
+                data = [fi.feature_importances_ for fi in est.estimators_]
             elif all(hasattr(x, "coef_") for x in est.estimators_):
-                data = np.mean([fi.coef_ for fi in est.estimators_], axis=0)
+                data = []
+                for estimator in est.estimators_:
+                    if estimator.coef_.ndim > 1:
+                        # Can have shape (n_cls, n_features)
+                        data.append(norm(estimator.coef_))
+                    else:
+                        data.append(estimator.coef_)
+
+            # Trim each coef to the number of features in the 1st estimator
+            # ClassifierChain adds features to subsequent estimators
+            min_length = min(map(len, data))
+            data = np.mean([c[:min_length] for c in data], axis=0)
 
     if data is not None:
         if data.ndim == 1:
             data = np.abs(data)
         else:
-            data = np.linalg.norm(data, axis=np.argmin(data.shape), ord=1)
+            data = norm(data)
 
         return data
 
@@ -2628,7 +2576,7 @@ def score(f: Callable) -> Callable:
 
 # Decorators ======================================================= >>
 
-def has_task(task: str | list[str]) -> Callable:
+def has_task(task: str | list[str], inverse: bool = False) -> Callable:
     """Check that the instance is from specific task.
 
     Parameters
@@ -2636,13 +2584,16 @@ def has_task(task: str | list[str]) -> Callable:
     task: str or list of str
         Task(s) to check.
 
+    inverse: bool, default=False
+        If True, checks that the parameter is not part of the task.
+
     """
 
     def check(self: Any) -> bool:
-        if hasattr(self, "task"):
-            return any(t in self.task for t in lst(task))
+        if inverse:
+            return not any(t in self.task for t in lst(task))
         else:
-            return any(t in self.T.task for t in lst(task))
+            return any(t in self.task for t in lst(task))
 
     return check
 
@@ -2750,6 +2701,7 @@ def plot_from_model(
     func: Callable | None = None,
     max_one: bool = False,
     ensembles: bool = True,
+    check_fitted: bool = True,
 ) -> Callable:
     """If a plot is called from a model, adapt the `models` parameter.
 
@@ -2767,6 +2719,9 @@ def plot_from_model(
     ensembles: bool, default=True
         If False, drop ensemble models from selection.
 
+    check_fitted: bool, default=True
+        Whether to check if the runner has been fitted (has models).
+
     """
 
     @wraps(func)
@@ -2774,11 +2729,20 @@ def plot_from_model(
 
         @wraps(f)
         def wrapped_f(*args, **kwargs) -> Any:
-            if hasattr(args[0], "_models"):
+            if hasattr(args[0], "_get_models"):
                 # Called from runner, get models for `models` parameter
-                check_is_fitted(args[0], attributes="_models")
+                if check_fitted:
+                    check_is_fitted(args[0], attributes="_models")
 
-                models = args[0]._get_models(ensembles=ensembles)
+                if len(args) > 1:
+                    models = args[1]
+                    args = [args[0]] + list(args[2:])  # Remove models from args
+                elif "models" in kwargs:
+                    models = kwargs.pop("models")
+                else:
+                    models = None
+
+                models = args[0]._get_models(models, ensembles=ensembles)
                 if max_one:
                     if len(models) > 1:
                         raise ValueError(f"The {f.__name__} plot only accepts one model!")

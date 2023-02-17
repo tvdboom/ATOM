@@ -156,7 +156,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer):
             best = pd.Series(
                 data=[get_best_score(m) for m in self._models],
                 index=[m._group for m in self._models],
-                dtype="float",
+                dtype=float,
             ).nlargest(n=len(self._models) // 2, keep="first")
 
             self._models = ClassMap(copy(m) for m in og_models if m.name in best.index)
@@ -409,7 +409,6 @@ class DirectClassifier(Direct):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import DirectClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -646,7 +645,6 @@ class DirectRegressor(Direct):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import DirectRegressor
     >>> from sklearn.datasets import load_digits
@@ -885,7 +883,6 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import SuccessiveHalvingClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1152,7 +1149,6 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import SuccessiveHalvingRegressor
     >>> from sklearn.datasets import load_digits
@@ -1425,7 +1421,6 @@ class TrainSizingClassifier(TrainSizing):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import TrainSizingClassifier
     >>> from sklearn.datasets import load_breast_cancer
@@ -1753,7 +1748,6 @@ class TrainSizingRegressor(TrainSizing):
 
     Examples
     --------
-
     ```pycon
     >>> from atom.training import TrainSizingRegressor
     >>> from sklearn.datasets import load_digits

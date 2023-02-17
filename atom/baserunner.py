@@ -785,8 +785,8 @@ class BaseRunner(BaseTracker):
     @composed(crash, method_to_log, typechecked)
     def stacking(
         self,
-        name: str = "Stack",
         models: slice | SEQUENCE | None = None,
+        name: str = "Stack",
         **kwargs,
     ):
         """Add a [Stacking][] model to the pipeline.
@@ -797,13 +797,13 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
+        models: slice, sequence or None, default=None
+            Models that feed the stacking estimator. The models must have
+            been fitted on the current branch.
+
         name: str, default="Stack"
             Name of the model. The name is always presided with the
             model's acronym: `Stack`.
-
-        models: slice, sequence or None, default=None
-            Models that feed the stacking estimator. If None, it selects
-            all non-ensemble models trained on the current branch.
 
         **kwargs
             Additional keyword arguments for sklearn's stacking instance.
@@ -817,7 +817,7 @@ class BaseRunner(BaseTracker):
         if len(models) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Stacking model should "
-                f"contain at least two underlying estimators, got {models}."
+                f"contain at least two underlying estimators, got only {models[0]}."
             )
 
         if not name.lower().startswith("stack"):
@@ -857,7 +857,7 @@ class BaseRunner(BaseTracker):
 
                 kwargs["final_estimator"] = model._get_est()
 
-        self._models.append(Stacking(name=name, models=models, **kw_model, **kwargs))
+        self._models.append(Stacking(models=models, name=name, **kw_model, **kwargs))
 
         if self.experiment:
             self[name]._run = mlflow.start_run(run_name=self[name].name)
@@ -867,8 +867,8 @@ class BaseRunner(BaseTracker):
     @composed(crash, method_to_log, typechecked)
     def voting(
         self,
-        name: str = "Vote",
         models: slice | SEQUENCE | None = None,
+        name: str = "Vote",
         **kwargs,
     ):
         """Add a [Voting][] model to the pipeline.
@@ -879,13 +879,13 @@ class BaseRunner(BaseTracker):
 
         Parameters
         ----------
+        models: slice, sequence or None, default=None
+            Models that feed the stacking estimator. The models must have
+            been fitted on the current branch.
+
         name: str, default="Vote"
             Name of the model. The name is always presided with the
             model's acronym: `Vote`.
-
-        models: slice, sequence or None, default=None
-            Models that feed the voting estimator. If None, it selects
-            all non-ensemble models trained on the current branch.
 
         **kwargs
             Additional keyword arguments for sklearn's voting instance.
@@ -897,7 +897,7 @@ class BaseRunner(BaseTracker):
         if len(models) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Voting model should "
-                f"contain at least two underlying estimators, got {models}."
+                f"contain at least two underlying estimators, got only {models[0]}."
             )
 
         if not name.lower().startswith("vote"):
@@ -912,8 +912,8 @@ class BaseRunner(BaseTracker):
 
         self._models.append(
             Voting(
-                name=name,
                 models=models,
+                name=name,
                 index=self.index,
                 goal=self.goal,
                 metric=self._metric,

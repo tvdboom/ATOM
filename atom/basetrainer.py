@@ -136,7 +136,7 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
                 if self.task.startswith("bin"):
                     # Binary classification
                     self._metric = ClassMap(get_custom_scorer("f1"))
-                elif self.task.startswith("multi"):
+                elif self.task.startswith("multiclass"):
                     # Multiclass, multiclass-multioutput classification
                     self._metric = ClassMap(get_custom_scorer("f1_weighted"))
                 elif self.task.startswith("multilabel"):

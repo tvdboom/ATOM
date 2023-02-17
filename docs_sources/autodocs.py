@@ -252,7 +252,7 @@ def insert(config: dict) -> str:
     content = ""
     url = os.path.dirname(os.path.realpath(__file__)) + config["url"]
     try:
-        with open(url, "r", encoding="utf-8") as f:
+        with open(url, 'r', encoding="utf-8") as f:
             content = f.read()
 
     except FileNotFoundError:
@@ -922,7 +922,7 @@ def clean_search(config: MkDocsConfig):
         Object containing the search index.
 
     """
-    with open(f"{config.data['site_dir']}/search/search_index.json", "r") as f:
+    with open(f"{config.data['site_dir']}/search/search_index.json", 'r') as f:
         search = json.load(f)
 
     for elem in search["docs"]:
@@ -932,7 +932,7 @@ def clean_search(config: MkDocsConfig):
         # Remove mkdocs-jupyter css
         elem["text"] = re.sub("\(function \(global, factory.*?(?=Example:)", "", elem["text"], flags=re.S)
 
-    with open(f"{config.data['site_dir']}/search/search_index.json", "w") as f:
+    with open(f"{config.data['site_dir']}/search/search_index.json", 'w') as f:
         json.dump(search, f)
 
 

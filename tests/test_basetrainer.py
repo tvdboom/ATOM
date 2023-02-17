@@ -17,6 +17,7 @@ from optuna.pruners import MedianPruner
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, make_scorer
 
+from atom import ATOMClassifier
 from atom.training import DirectClassifier, DirectRegressor
 
 from .conftest import (
@@ -115,9 +116,10 @@ def test_default_metric():
     trainer.run(class_train, class_test)
     assert trainer.metric == "f1_weighted"
 
-    trainer = DirectClassifier("LR", random_state=1)
-    trainer.run(label_train, label_test)
-    assert trainer.metric == "average_precision"
+    # Multioutput can't be initialized directly from the trainer
+    atom = ATOMClassifier(label_train, label_test, y=[-2, -1], random_state=1)
+    atom.run("lr")
+    assert atom.metric == "average_precision"
 
     trainer = DirectRegressor("LGB", random_state=1)
     trainer.run(reg_train, reg_test)

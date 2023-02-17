@@ -533,7 +533,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column(s) corresponding to X.
+            Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -1347,7 +1347,7 @@ class FeatureSelector(
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence, dataframe-like or None, default=None
-            Target column(s) corresponding to X.
+            Target column corresponding to X.
 
             - If None: y is ignored.
             - If int: Position of the target column in X.
@@ -1377,7 +1377,7 @@ class FeatureSelector(
             """Objective function for the advanced optimization strategies."""
             if X_train.equals(X_valid):
                 cv = cross_val_score(model, X_train, y_train, cv=3, scoring=scoring)
-                return np.mean(cv)
+                return np.mean(cv, axis=0)
             else:
                 model.fit(X_train, y_train)
                 return scoring(model, X_valid, y_valid)
