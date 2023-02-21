@@ -229,7 +229,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed feature set.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         self._check_feature_names(X, reset=True)
         self._check_n_features(X, reset=True)
 
@@ -653,7 +653,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
         self.log("Generating new features...", 1)
 
@@ -896,7 +896,7 @@ class FeatureGrouper(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed feature set.
 
         """
-        X, _ = self._prepare_input(X, y)
+        X, _ = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
         self.log("Grouping features...", 1)
 
@@ -1327,11 +1327,6 @@ class FeatureSelector(
         self._low_variance = {}
         self._estimator = None
         self._is_fitted = False
-
-    @property
-    def _is_multioutput(self) -> bool:
-        """Return whether the task is multilabel or multioutput."""
-        return any(task in self.task for task in ("multilabel", "multioutput"))
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: FEATURES, y: TARGET | None = None) -> FeatureSelector:
@@ -1767,7 +1762,7 @@ class FeatureSelector(
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
         self.log("Performing feature selection ...", 1)
 

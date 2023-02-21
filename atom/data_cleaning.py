@@ -422,7 +422,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
                 elif diff < 0:
                     self.log(f" --> Adding {-diff} samples to class {key}.", 2)
 
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
         if isinstance(y, DATAFRAME_TYPES):
             raise ValueError("The Balancer class does not support multioutput tasks.")
@@ -862,7 +862,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
         self.log("Cleaning the data...", 1)
 
@@ -979,7 +979,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             Original target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
         self.log("Inversely cleaning the data...", 1)
 
@@ -1381,7 +1381,7 @@ class Discretizer(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed feature set.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
         self.log("Binning the features...", 1)
 
@@ -1828,7 +1828,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
         self.log("Encoding categorical columns...", 1)
 
@@ -2235,7 +2235,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
         self.log("Imputing missing values...", 1)
 
@@ -2629,7 +2629,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
         self.log("Normalizing features...", 1)
         X_transformed = self._estimator.transform(X[self._num_cols])
@@ -2937,7 +2937,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
 
         strategies = CustomDict(
             iforest=["IsolationForest", "ensemble"],
@@ -3335,7 +3335,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
 
         self.log("Scaling features...", 1)
         X_transformed = self._estimator.transform(X[self._num_cols])

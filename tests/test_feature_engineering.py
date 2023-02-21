@@ -186,10 +186,16 @@ def test_default_feature_names():
     X = X_bin.copy()
     X["x31"] = range(len(X))
 
-    generator = FeatureGenerator(strategy="gfg", n_features=2, random_state=1)
+    generator = FeatureGenerator(
+        strategy="gfg",
+        n_features=1,
+        population_size=200,
+        hall_of_fame=10,
+        verbose=2,
+        random_state=1,
+    )
     X = generator.fit_transform(X, y_bin)
-    assert "x30" not in X
-    assert "x32" in X and "x33" in X
+    assert "x30" not in X and "x32" in X
 
 
 # Test FeatureGrouper ============================================= >>

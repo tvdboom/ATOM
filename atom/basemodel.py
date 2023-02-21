@@ -51,12 +51,13 @@ from atom.pipeline import Pipeline
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
     DATAFRAME, DF_ATTRS, FEATURES, FLOAT, INDEX, INT, INT_TYPES, PANDAS,
-    SEQUENCE, SERIES, TARGET, ClassMap, CustomDict, Estimator, PlotCallback,
-    Predictor, Scorer, ShapExplanation, TrialsCallback, bk, check_dependency,
-    check_scaling, composed, crash, custom_transform, estimator_has_attr,
-    export_pipeline, flt, get_cols, get_custom_scorer, get_feature_importance,
-    has_task, infer_task, is_binary, is_multioutput, it, lst, merge,
-    method_to_log, rnd, score, sign, time_to_str, to_pandas, variable_return,
+    SCALAR, SEQUENCE, SERIES, TARGET, ClassMap, CustomDict, Estimator,
+    PlotCallback, Predictor, Scorer, ShapExplanation, TrialsCallback, bk,
+    check_dependency, check_scaling, composed, crash, custom_transform,
+    estimator_has_attr, export_pipeline, flt, get_cols, get_custom_scorer,
+    get_feature_importance, has_task, infer_task, is_binary, is_multioutput,
+    it, lst, merge, method_to_log, rnd, score, sign, time_to_str, to_df,
+    to_pandas, variable_return,
 )
 
 
@@ -205,6 +206,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         self.dashboard = None
 
         self._run = None  # mlflow run (if experiment is active)
+        if self.experiment:
+            mlflow.end_run()
+            self._run = mlflow.start_run(run_name=self.name)
+            mlflow.end_run()
+
         self._group = self._name  # sh and ts models belong to the same group
         self._evals = CustomDict()
         self._shap_explanation = None
@@ -465,8 +471,12 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         if self.has_validation and hasattr(estimator, "partial_fit") and validation:
             if not trial:
                 # In-training validation is skipped during hyperparameter tuning
-                m = self._metric[0].name
-                self._evals = CustomDict({f"{m}_train": [], f"{m}_test": []})
+                self._evals = CustomDict(
+                    {
+                        f"{self._metric[0].name}_train": [],
+                        f"{self._metric[0].name}_test": [],
+                    }
+                )
 
             # Loop over first parameter in estimator
             try:
@@ -489,14 +499,21 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
                 estimator.partial_fit(*data, **est_params_fit, **kwargs)
 
-                val_score = self._metric[0](estimator, *validation)
                 if not trial:
-                    self._evals[0].append(self._metric[0](estimator, *data))
-                    self._evals[1].append(val_score)
+                    # Store train and validation scores on main metric in evals attribute
+                    self._evals[0].append(
+                        self._score_from_est(self._metric[0], estimator, *data)
+                    )
+                    self._evals[1].append(
+                        self._score_from_est(self._metric[0], estimator, *validation)
+                    )
 
                 # Multi-objective optimization doesn't support pruning
                 if trial and len(self._metric) == 1:
-                    trial.report(val_score, step)
+                    trial.report(
+                        self._score_from_est(self._metric[0], estimator, *validation),
+                        step=step,
+                    )
 
                     if trial.should_prune():
                         # Hacky solution to add the pruned step to the output
@@ -607,6 +624,87 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         return y_true, y_pred
 
+    def _score_from_est(
+        self,
+        scorer: Scorer,
+        estimator: Predictor,
+        X: DATAFRAME,
+        y: SERIES | DATAFRAME,
+        **kwargs,
+    ) -> FLOAT:
+        """Calculate the metric score from an estimator.
+
+        Parameters
+        ----------
+        scorer: Scorer
+            Metric to calculate.
+
+        estimator: Predictor
+            Estimator instance to get the score from.
+
+        X: dataframe
+            Feature set.
+
+        y: series or dataframe
+            Target column corresponding to X.
+
+        **kwargs
+            Additional keyword arguments for the score function.
+
+        Returns
+        -------
+        float
+            Calculated score.
+
+        """
+        if self.task.startswith("multiclass-multioutput"):
+            # Calculate predictions with shape=(n_samples, n_targets)
+            y_pred = to_df(estimator.predict(X), index=y.index, columns=y.columns)
+            return self._score_from_pred(scorer, y, y_pred, **kwargs)
+        else:
+            return scorer(estimator, X, y, **kwargs)
+
+    def _score_from_pred(
+        self,
+        scorer: Scorer,
+        y_true: SERIES | DATAFRAME,
+        y_pred: SERIES | DATAFRAME,
+        **kwargs,
+    ) -> FLOAT:
+        """Calculate the metric score from predicted values.
+
+        Since sklearn metrics don't support multiclass-multioutput
+        tasks, it calculates the mean of the scores over the target
+        columns for such tasks.
+
+        Parameters
+        ----------
+        scorer: Scorer
+            Metric to calculate.
+
+        y_true: series or dataframe
+            True values in the target column(s).
+
+        y_pred: series or dataframe
+            Predicted values corresponding to y_true.
+
+        **kwargs
+            Additional keyword arguments for the score function.
+
+        Returns
+        -------
+        float
+            Calculated score.
+
+        """
+        score = lambda s, x, y: s._sign * s._score_func(x, y, **s._kwargs, **kwargs)
+
+        if self.task.startswith("multiclass-multioutput"):
+            # Get mean of scores over target columns
+            return np.mean([score(scorer, y_true[c], y_pred[c]) for c in y_pred], axis=0)
+        else:
+            return score(scorer, y_true, y_pred)
+
     @lru_cache
     def _get_score(
         self,
@@ -666,19 +764,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         if "sample_weight" in sign(scorer._score_func):
             kwargs["sample_weight"] = sample_weight
 
-        if self.task.startswith("multiclass-multioutput"):
-            # Get mean of scores over target columns
-            score = np.mean(
-                [
-                    scorer._score_func(y_true[c], y_pred[c], **scorer._kwargs, **kwargs)
-                    for c in y_pred
-                ],
-                axis=0,
-            )
-        else:
-            score = scorer._score_func(y_true, y_pred, **scorer._kwargs, **kwargs)
-
-        result = rnd(scorer._sign * float(score))
+        result = rnd(self._score_from_pred(scorer, y_true, y_pred, **kwargs))
 
         if self._run:  # Log metric to mlflow run
             MlflowClient().log_metric(
@@ -785,22 +871,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     trial=trial,
                 )
 
-                scores = []
-                for m in self._metric:
-                    if self.task.startswith("multiclass-multioutput"):
-                        # Get mean of scores over target columns
-                        pred = estimator.predict(X_val)  # Shape=(n_samples, n_targets)
-                        scores.append(
-                            np.mean(
-                                [
-                                    m._sign * m._score_func(pred[:, i], y, **m._kwargs)
-                                    for i, y in enumerate(get_cols(y_val))
-                                ],
-                                axis=0,
-                            )
-                        )
-                    else:
-                        scores.append(m(estimator, X_val, y_val))
+                scores = [
+                    self._score_from_est(metric, estimator, X_val, y_val)
+                    for metric in self._metric
+                ]
 
                 return estimator, scores
 
@@ -1049,57 +1123,56 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         # Track results to mlflow ================================== >>
 
         # Log parameters, metrics, model and data to mlflow
-        if self._run:
-            mlflow.set_tag("name", self.name)
-            mlflow.set_tag("model", self._fullname)
-            mlflow.set_tag("branch", self.branch.name)
-            mlflow.set_tags(self._ht.get("tags", {}))
+        if self.experiment:
+            with mlflow.start_run(run_id=self._run.info.run_id):
+                mlflow.set_tag("name", self.name)
+                mlflow.set_tag("model", self._fullname)
+                mlflow.set_tag("branch", self.branch.name)
+                mlflow.set_tags(self._ht.get("tags", {}))
 
-            # Mlflow only accepts params with char length <250
-            mlflow.log_params(
-                {
-                    k: v for k, v in self.estimator.get_params().items()
-                    if len(str(v)) <= 250}
-            )
-
-            # Save evals for models with in-training validation
-            if self.evals:
-                for key, value in self.evals.items():
-                    for step in range(len(value)):
-                        mlflow.log_metric(f"evals_{key}", value[step], step=step)
-
-            # Rest of metrics are tracked when calling _get_score
-            mlflow.log_metric("time_fit", self.time_fit)
-
-            if self.log_model:
-                mlflow.sklearn.log_model(
-                    sk_model=self.estimator,
-                    artifact_path=self._est_class.__name__,
-                    signature=infer_signature(
-                        model_input=pd.DataFrame(self.X),
-                        model_output=self.predict_test.to_numpy(),
-                    ),
-                    input_example=pd.DataFrame(self.X.iloc[[0], :]),
+                # Mlflow only accepts params with char length <250
+                mlflow.log_params(
+                    {
+                        k: v for k, v in self.estimator.get_params().items()
+                        if len(str(v)) <= 250}
                 )
 
-            if self.log_data:
-                for ds in ("train", "test"):
-                    getattr(self, ds).to_csv(f"{ds}.csv")
-                    mlflow.log_artifact(f"{ds}.csv")
-                    os.remove(f"{ds}.csv")
+                # Save evals for models with in-training validation
+                if self.evals:
+                    for key, value in self.evals.items():
+                        for step in range(len(value)):
+                            mlflow.log_metric(f"evals_{key}", value[step], step=step)
 
-            if self.log_pipeline:
-                mlflow.sklearn.log_model(
-                    sk_model=self.export_pipeline(),
-                    artifact_path=f"pl_{self.name}",
-                    signature=infer_signature(
-                        model_input=pd.DataFrame(self.X),
-                        model_output=self.predict_test.to_numpy(),
-                    ),
-                    input_example=pd.DataFrame(self.X.iloc[[0], :]),
-                )
+                # Rest of metrics are tracked when calling _get_score
+                mlflow.log_metric("time_fit", self.time_fit)
 
-            mlflow.end_run()
+                if self.log_model:
+                    mlflow.sklearn.log_model(
+                        sk_model=self.estimator,
+                        artifact_path=self._est_class.__name__,
+                        signature=infer_signature(
+                            model_input=pd.DataFrame(self.X),
+                            model_output=self.predict_test.to_numpy(),
+                        ),
+                        input_example=pd.DataFrame(self.X.iloc[[0], :]),
+                    )
+
+                if self.log_data:
+                    for ds in ("train", "test"):
+                        getattr(self, ds).to_csv(f"{ds}.csv")
+                        mlflow.log_artifact(f"{ds}.csv")
+                        os.remove(f"{ds}.csv")
+
+                if self.log_pipeline:
+                    mlflow.sklearn.log_model(
+                        sk_model=self.export_pipeline(),
+                        artifact_path=f"pl_{self.name}",
+                        signature=infer_signature(
+                            model_input=pd.DataFrame(self.X),
+                            model_output=self.predict_test.to_numpy(),
+                        ),
+                        input_example=pd.DataFrame(self.X.iloc[[0], :]),
+                    )
 
         # Get duration and print to log
         self._time_fit += (dt.now() - t_init).total_seconds()
@@ -1147,8 +1220,8 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             # Get scores on the test set
             scores = pd.DataFrame(
                 {
-                    metric.name: [metric(estimator, self.X_test, self.y_test)]
-                    for metric in self._metric
+                    m.name: [self._score_from_est(m, estimator, self.X_test, self.y_test)]
+                    for m in self._metric
                 }
             )
 
@@ -1183,7 +1256,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
     @typechecked
     def name(self, value: str):
         """Change the model's name."""
-        # Drop the acronym if not provided by the user
+        # Drop the acronym if provided by the user
         if re.match(self.acronym, value, re.I):
             value = value[len(self.acronym):]
 
@@ -1515,7 +1588,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return to_pandas(
             data=self.estimator.decision_function(self.X_train),
             index=self.X_train.index,
-            name="decision_function_train",
+            name=self.target,
             columns=self._assign_prediction_columns(),
         )
 
@@ -1533,7 +1606,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return to_pandas(
             data=self.estimator.decision_function(self.X_test),
             index=self.X_test.index,
-            name="decision_function_test",
+            name=self.target,
             columns=self._assign_prediction_columns(),
         )
 
@@ -1552,7 +1625,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             return to_pandas(
                 data=self.estimator.decision_function(self.X_holdout),
                 index=self.X_holdout.index,
-                name="decision_function_holdout",
+                name=self.target,
                 columns=self._assign_prediction_columns(),
             )
 
@@ -1569,7 +1642,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return to_pandas(
             data=self.estimator.predict(self.X_train),
             index=self.X_train.index,
-            name="predict_train",
+            name=self.target,
             columns=self._assign_prediction_columns(),
         )
 
@@ -1586,7 +1659,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         return to_pandas(
             data=self.estimator.predict(self.X_test),
             index=self.X_test.index,
-            name="predict_test",
+            name=self.target,
             columns=self._assign_prediction_columns(),
         )
 
@@ -1604,7 +1677,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             return to_pandas(
                 data=self.estimator.predict(self.X_holdout),
                 index=self.X_holdout.index,
-                name="predict_holdout",
+                name=self.target,
                 columns=self._assign_prediction_columns(),
             )
 
@@ -1864,11 +1937,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         try:
             # Raises an error if X can't select indices
             rows = self.branch._get_rows(X, return_test=True)
-        except (TypeError, IndexError, KeyError):
+        except (ValueError, TypeError, IndexError, KeyError):
             rows = None
 
             # When there is a pipeline, apply transformations first
-            X, y = self._prepare_input(X, y)
+            X, y = self._prepare_input(X, y, columns=self.og.features)
             X = self._set_index(X, y)
             if y is not None:
                 y.index = X.index
@@ -1892,7 +1965,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                     return to_pandas(
                         data=data,
                         index=X.index,
-                        name=method,
+                        name=self.target,
                         columns=self._assign_prediction_columns(),
                     )
                 else:
@@ -2211,6 +2284,29 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             or the [Interface.launch][launch] method.
 
         """
+
+        def inference(*X) -> SCALAR | str | list[SCALAR | str]:
+            """Apply inference on the row provided by the app.
+
+            Parameters
+            ----------
+            *X
+                Features provided by the user in the app.
+
+            Returns
+            -------
+            int, float, str or list
+                Original label or list of labels for multioutput tasks.
+
+            """
+            conv = lambda elem: elem.item() if hasattr(elem, "item") else elem
+
+            y_pred = self.inverse_transform(y=self.predict([X], verbose=0), verbose=0)
+            if isinstance(y_pred, DATAFRAME):
+                return [conv(elem) for elem in y_pred.iloc[0, :]]
+            else:
+                return conv(y_pred[0])
+
         check_dependency("gradio")
         from gradio import Interface
         from gradio.components import Dropdown, Textbox
@@ -2225,11 +2321,9 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 inputs.append(Dropdown(list(column.unique()), label=name))
 
         self.app = Interface(
-            fn=lambda *x: self.inverse_transform(
-                y=self.predict(pd.DataFrame([x], columns=self.features))
-            )[0],
+            fn=inference,
             inputs=inputs,
-            outputs="label",
+            outputs=["label"] * self.branch._idx[0],
             allow_flagging=kwargs.pop("allow_flagging", "never"),
             **{k: v for k, v in kwargs.items() if k in sign(Interface)},
         )
@@ -2678,7 +2772,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Original target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.og.features)
 
         for transformer in reversed(self.pipeline):
             if not transformer._train_only:
@@ -2869,7 +2963,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.og.features)
 
         for transformer in self.pipeline:
             if not transformer._train_only:

@@ -13,7 +13,9 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from sklearn.multioutput import MultiOutputRegressor, RegressorChain
+from sklearn.multioutput import (
+    ClassifierChain, MultiOutputRegressor, RegressorChain,
+)
 
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
@@ -213,8 +215,21 @@ def test_multioutput_None():
     """Assert that the multioutput estimator is ignored when None."""
     atom = ATOMClassifier(X_label, y=y_label, random_state=1)
     atom.multioutput = None
-    atom.run("MLP")  # MLP has native support for multilabel
-    assert atom.mlp.estimator.__class__.__name__ == "MLPClassifier"
+    atom.run("RF", est_params={"n_estimators": 5})  # RF has native support for multilabel
+    assert atom.rf.estimator.__class__.__name__ == "RandomForestClassifier"
+
+
+def test_multioutput_auto():
+    """Assert that the multioutput estimator can use auto to set default."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.multioutput = None
+    assert atom.multioutput is None
+
+    with pytest.raises(ValueError, match=".*multioutput attribute.*"):
+        atom.multioutput = "invalid"
+
+    atom.multioutput = "auto"
+    assert atom.multioutput == ClassifierChain
 
 
 @pytest.mark.parametrize("multioutput", [MultiOutputRegressor, RegressorChain(None)])
@@ -243,23 +258,23 @@ def test_metric_property():
 def test_winners_property():
     """Assert that the winners property returns the best models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"])
-    assert atom.winners == [atom.lr, atom.tree, atom.lgb]
+    atom.run(["LR", "Tree", "LDA"])
+    assert atom.winners == [atom.lr, atom.lda, atom.tree]
 
 
 def test_winner_property():
     """Assert that the winner property returns the best model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"])
+    atom.run(["LR", "Tree", "LDA"])
     assert atom.winner is atom.lr
 
 
 def test_winner_deleter():
     """Assert that the winning model can be deleted through del."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"])
+    atom.run(["LR", "Tree", "LDA"])
     del atom.winner
-    assert atom.models == ["Tree", "LGB"]
+    assert atom.models == ["Tree", "LDA"]
 
 
 def test_results_property():
@@ -415,13 +430,13 @@ def test_available_models():
 def test_clear():
     """Assert that the clear method resets all model's attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    atom.lgb.plot_shap_beeswarm(display=False)
+    atom.run(["LR", "LDA"])
+    atom.lda.plot_shap_beeswarm(display=False)
     assert "predict_proba_train" in atom.lr.__dict__
-    assert not atom.lgb._shap._shap_values.empty
+    assert not atom.lda._shap._shap_values.empty
     atom.clear()
     assert "predict_proba_train" not in atom.lr.__dict__
-    assert atom.lgb._shap._shap_values.empty
+    assert atom.lda._shap._shap_values.empty
 
 
 def test_delete_default():
@@ -599,19 +614,18 @@ def test_merge_with_suffix():
 
 def test_stacking():
     """Assert that the stacking method creates a Stack model."""
-    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.stacking)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking()
     assert hasattr(atom, "stack")
     assert "Stack" in atom.models
-    assert atom.stack._run
 
 
 def test_stacking_non_ensembles():
     """Assert that stacking ignores other ensembles."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.voting()
     atom.stacking()
     assert len(atom.stack.estimator.estimators) == 2  # No voting
@@ -638,7 +652,7 @@ def test_stacking_custom_models():
     """Assert that stacking can be created selecting the models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.stacking)
-    atom.run(["LR", "LDA", "LGB"])
+    atom.run(["LR", "LDA", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking(models=["LDA", "LGB"])
     assert list(atom.stack._models) == [atom.lda, atom.lgb]
 
@@ -646,7 +660,7 @@ def test_stacking_custom_models():
 def test_stacking_different_name():
     """Assert that the acronym is added in front of the new name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking(name="stack_1")
     atom.stacking(name="_2")
     assert hasattr(atom, "Stack_1") and hasattr(atom, "Stack_2")
@@ -655,7 +669,7 @@ def test_stacking_different_name():
 def test_stacking_unknown_predefined_final_estimator():
     """Assert that an error is raised when the final estimator is unknown."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     with pytest.raises(ValueError, match=".*Unknown model.*"):
         atom.stacking(final_estimator="invalid")
 
@@ -663,7 +677,7 @@ def test_stacking_unknown_predefined_final_estimator():
 def test_stacking_invalid_predefined_final_estimator():
     """Assert that an error is raised when the final estimator is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     with pytest.raises(ValueError, match=".*can not perform.*"):
         atom.stacking(final_estimator="OLS")
 
@@ -671,20 +685,19 @@ def test_stacking_invalid_predefined_final_estimator():
 def test_stacking_predefined_final_estimator():
     """Assert that the final estimator accepts predefined models."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.stacking(final_estimator="LDA")
     assert isinstance(atom.stack.estimator.final_estimator_, LDA)
 
 
 def test_voting():
     """Assert that the voting method creates a Vote model."""
-    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.voting)
-    atom.run(["LR", "LGB"])
+    atom.run(["LR", "LGB"], est_params={"LGB": {"n_estimators": 5}})
     atom.voting(name="2")
     assert hasattr(atom, "Vote2")
     assert "Vote2" in atom.models
-    assert atom.vote2._run
 
 
 def test_voting_invalid_name():

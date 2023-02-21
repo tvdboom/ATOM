@@ -358,7 +358,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             return counts, docs
 
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(X)
 
         # Create a pd.Series for every type of drop
@@ -649,7 +649,7 @@ class TextNormalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             else:  # "NN", "NNS", "NNP", "NNPS"
                 return wordnet.NOUN
 
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(X)
 
         self.log("Normalizing the corpus...", 1)
@@ -916,7 +916,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
             return row[2:-2].split(sep)
 
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=getattr(self, "feature_names_in_", None))
         corpus = get_corpus(X)
 
         self.log("Tokenizing the corpus...", 1)
@@ -1229,7 +1229,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         check_is_fitted(self)
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.feature_names_in_)
         corpus = get_corpus(X)
 
         self.log("Vectorizing the corpus...", 1)

@@ -15,13 +15,16 @@ from .conftest import X_bin, X_reg, y_bin, y_reg
 
 
 def test_atommodel():
-    """Assert that the attributes are attached to the estimator."""
+    """Assert that it returns an estimator that works with atom."""
     model = ATOMModel(
         estimator=(huber := HuberRegressor()),
         name="huber1",
         acronym="huber",
         needs_scaling=True,
     )
+
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(model)
     assert model is not huber  # Is cloned
     assert model.name == "huber1"
     assert model.acronym == "huber"

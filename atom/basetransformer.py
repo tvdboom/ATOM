@@ -150,8 +150,12 @@ class BaseTransformer:
     @backend.setter
     @typechecked
     def backend(self, value: str):
-        options = ("loky", "multiprocessing", "threading", "ray")
-        if value == "ray":
+        if value not in (opts := ("loky", "multiprocessing", "threading", "ray")):
+            raise ValueError(
+                f"Invalid value for the backend parameter, got "
+                f"{value}. Choose from: {', '.join(opts)}."
+            )
+        elif value == "ray":
             import modin.pandas as md
 
             # Overwrite utils backend with modin
@@ -165,12 +169,6 @@ class BaseTransformer:
                     runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
                     log_to_driver=False,
                 )
-
-        elif value not in options:
-            raise ValueError(
-                f"Invalid value for the backend parameter, got "
-                f"{value}. Choose from: {', '.join(options)}."
-            )
         else:
             # Overwrite utils backend with pandas
             for module in sys.modules:
@@ -331,6 +329,7 @@ class BaseTransformer:
     def _prepare_input(
         X: FEATURES | None = None,
         y: TARGET | None = None,
+        columns: SEQUENCE | None = None,
     ) -> tuple[DATAFRAME | None, PANDAS | None]:
         """Prepare the input data.
 
@@ -354,6 +353,10 @@ class BaseTransformer:
               tasks.
             - If dataframe: Target columns for multioutput tasks.
 
+        columns: sequence or None
+            Names of the features corresponding to X. If None and X is not
+            a dataframe, it gets default feature names.
+
         Returns
         -------
         dataframe or None
@@ -366,7 +369,7 @@ class BaseTransformer:
         if X is None and y is None:
             raise ValueError("X and y can't be both None!")
         elif X is not None:
-            X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
+            X = to_df(deepcopy(X), columns=columns)
 
             # If text dataset, change the name of the column to corpus
             if list(X.columns) == ["x0"] and X[X.columns[0]].dtype == "object":

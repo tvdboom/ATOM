@@ -18,8 +18,8 @@ from atom.plots import Aesthetics, BaseFigure, BasePlot
 from atom.utils import INT, NotFittedError
 
 from .conftest import (
-    X10, X10_str, X_bin, X_class, X_reg, X_sparse, X_text, y10, y_bin, y_class,
-    y_reg, X_label, y_label, y_multiclass
+    X10, X10_str, X_bin, X_class, X_label, X_reg, X_sparse, X_text, y10, y_bin,
+    y_class, y_label, y_multiclass, y_reg,
 )
 
 
@@ -91,7 +91,7 @@ def test_palette():
 def test_palette_setter():
     """Assert that the palette setter works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.palette = ["red", "green", "blue"]
+    atom.palette = ["red", "rgb(255, 34, 20)", "#0044ff"]
     atom.plot_distribution(columns=[0, 1], display=False)
 
 
@@ -421,6 +421,28 @@ def test_update_layout():
     plotter._custom_layout["template"] = "plotly-dark"
 
 
+def test_plot_not_fitted():
+    """Assert that an error is raised when atom is not fitted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_calibration)
+
+
+def test_plot_from_model():
+    """Assert that plots can be called from a model class."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    atom.tree.plot_roc(display=False)
+    atom.plot_roc("Tree", display=False)
+
+
+def test_plot_only_one_model():
+    """Assert that an error is raised when multiple models are provided."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["Tree", "LDA"])
+    with pytest.raises(ValueError, match=".*only accepts one model.*"):
+        atom.plot_shap_beeswarm(display=False)
+
+
 # Test FeatureSelectorPlot ========================================= >>
 
 @pytest.mark.parametrize("show", [10, None])
@@ -517,7 +539,7 @@ def test_plot_wordcloud():
 def test_plot_edf():
     """Assert that the plot_edf method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["lasso", "ridge"], n_trials=(5, 0))
+    atom.run(["lasso", "ridge"], n_trials=(3, 0))
 
     # Model didn't ran hyperparameter tuning
     with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
@@ -529,85 +551,61 @@ def test_plot_edf():
 def test_plot_hyperparameter_importance():
     """Assert that the plot_hyperparameter_importance method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["lasso", "ridge"], n_trials=(5, 0))
+    atom.run("lasso", n_trials=3)
 
     # Invalid show parameter
     with pytest.raises(ValueError, match=".*the show parameter.*"):
-        atom.lasso.plot_hyperparameter_importance(show=-1, display=False)
+        atom.plot_hyperparameter_importance(show=-1, display=False)
 
-    # Model didn't ran hyperparameter tuning
-    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
-        atom.ridge.plot_hyperparameter_importance(display=False)
-
-    atom.lasso.plot_hyperparameter_importance(display=False)
+    atom.plot_hyperparameter_importance(display=False)
 
 
 def test_plot_hyperparameters():
     """Assert that the plot_hyperparameters method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("tree", n_trials=5)
+    atom.run("Tree", n_trials=3)
 
     # Only one hyperparameter
     with pytest.raises(ValueError, match=".*minimum of two parameters.*"):
-        atom.tree.plot_hyperparameters(params=[0], display=False)
+        atom.plot_hyperparameters(params=[0], display=False)
 
-    atom.tree.plot_hyperparameters(params=(0, 1, 2), display=False)
+    atom.plot_hyperparameters(params=(0, 1, 2), display=False)
 
 
 def test_plot_parallel_coordinate():
     """Assert that the plot_parallel_coordinate method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("tree", n_trials=5)
-    atom.tree.plot_parallel_coordinate(display=False)
+    atom.run("tree", n_trials=3)
+    atom.plot_parallel_coordinate(display=False)
 
 
 def test_plot_pareto_front():
     """Assert that the plot_pareto_front method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("tree", metric=["mae", "mse", "rmse"], n_trials=5)
+    atom.run("tree", metric=["mae", "mse", "rmse"], n_trials=3)
 
     # Only one metric
     with pytest.raises(ValueError, match=".*minimum of two metrics.*"):
-        atom.tree.plot_pareto_front(metric=[0], display=False)
+        atom.plot_pareto_front(metric=[0], display=False)
 
-    atom.tree.plot_pareto_front(display=False)
+    atom.plot_pareto_front(display=False)
 
 
 def test_plot_slice():
     """Assert that the plot_slice method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("tree", metric=["mae", "mse"], n_trials=5)
-    atom.tree.plot_slice(display=False)
+    atom.run("tree", metric=["mae", "mse"], n_trials=3)
+    atom.plot_slice(display=False)
 
 
 def test_plot_trials():
     """Assert that the plot_bo method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("lasso", metric="max_error", n_trials=0)
-
-    # Model didn't ran hyperparameter tuning
-    with pytest.raises(ValueError, match=".*ran hyperparameter tuning.*"):
-        atom.plot_trials(display=False)
-
-    atom.run(["lasso", "ridge"], metric="max_error", n_trials=1)
+    atom.run("lasso", n_trials=3)
     atom.plot_trials(display=False)
 
 
 # Test PredictionPlot =================================================== >>
-
-def test_plot_not_fitted():
-    """Assert that an error is raised when atom is not fitted."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_calibration)
-
-
-def test_plot_from_model():
-    """Assert that plots can be called from a model class."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
-    atom.tree.plot_roc(display=False)
-    atom.plot_roc("Tree", display=False)
-
 
 def test_plot_calibration():
     """Assert that the plot_calibration method works."""
@@ -626,7 +624,7 @@ def test_plot_confusion_matrix():
     # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["RF", "LGB"])
-    atom.plot_confusion_matrix(display=False)
+    atom.plot_confusion_matrix(threshold=0.2, display=False)
 
     # For multiclass classification tasks
     atom = ATOMClassifier(X_class, y_class, random_state=1)
@@ -703,14 +701,20 @@ def test_plot_parshap():
     """Assert that the plot_parshap method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance("smote")  # To get samples over 500
-    atom.run("Tree")
-    atom.plot_parshap(display=False)
+    atom.run(["GNB", "LR"])
+    atom.plot_parshap(display=False)  # With colorbar
+    atom.gnb.plot_parshap(display=False)  # Without colorbar
 
 
 def test_plot_partial_dependence():
     """Assert that the plot_partial_dependence method works."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["KNN", "LGB"], metric="f1")
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("Tree")
+    with pytest.raises(PermissionError, match=".*not available for multilabel.*"):
+        atom.plot_partial_dependence(kind="invalid", display=False)
+
+    atom = ATOMClassifier(X_bin, y_bin, n_jobs=-1, random_state=1)
+    atom.run(["KNN", "LGB"])
 
     # Invalid kind parameter
     with pytest.raises(ValueError, match=".*for the kind parameter.*"):
@@ -727,9 +731,10 @@ def test_plot_partial_dependence():
     with pytest.raises(ValueError, match=".*models use the same features.*"):
         atom.plot_partial_dependence(columns=(0, 1), display=False)
 
-    del atom.branch
+    atom = ATOMClassifier(X_class, y_class, n_jobs=-1, random_state=1)
+    atom.run(["Tree", "LDA"])
     atom.plot_partial_dependence(columns=[0, 1], kind="average+individual", display=False)
-    atom.lgb.plot_partial_dependence(columns=[0, 1], pair=2, display=False)
+    atom.tree.plot_partial_dependence(columns=[0, 1], pair=2, display=False)
 
 
 def test_plot_permutation_importance():
@@ -747,7 +752,7 @@ def test_plot_permutation_importance():
 def test_plot_pipeline():
     """Assert that the plot_pipeline method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("Tree")
+    atom.run("KNN")
     atom.plot_pipeline(display=False)  # No transformers
 
     # Called from a canvas
@@ -811,16 +816,11 @@ def test_plot_residuals():
 def test_plot_results_metric(metric):
     """Assert that the plot_results method works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-
-    # Without bootstrap
-    atom.run(["Tree", "LGB"], metric=metric, n_bootstrap=0)
+    atom.run(["OLS", "Tree", "Tree2"], metric=metric, n_bootstrap=(3, 3, 0))
     atom.voting()
-    atom.plot_results(metric="me", display=False)
-
-    # With bootstrap
-    atom.reset()
-    atom.run(["Tree", "LGB"], metric=metric, n_bootstrap=3)
-    atom.plot_results(metric="me", display=False)
+    atom.plot_results(metric="me", display=False)  # Mixed bootstrap
+    atom.plot_results(models=["OLS", "Tree"], metric="me", display=False)  # All bootstrap
+    atom.plot_results(models="Tree2", metric="me", display=False)  # No bootstrap
 
 
 @pytest.mark.parametrize("metric", ["time_ht", "time_fit", "time"])
@@ -861,6 +861,22 @@ def test_plot_threshold_multilabel():
 
 
 # Test ShapPlot ==================================================== >>
+
+def test_plot_shap_fail():
+    """Assert that an error is raised when the explainer can't be created."""
+    atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
+    atom.run("LDA")
+    with pytest.raises(ValueError, match=".*Failed to get shap's explainer.*"):
+        atom.plot_shap_beeswarm(display=False)
+
+
+def test_plot_shap_multioutput():
+    """Assert that the shap plots work with multioutput tasks."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run(["LR", "Tree"])
+    atom.lr.plot_shap_bar(display=False)  # Non-native multioutput
+    atom.tree.plot_shap_bar(display=False)  # Native multioutput
+
 
 def test_plot_shap_bar():
     """Assert that the plot_shap_bar method works."""
@@ -909,12 +925,12 @@ def test_plot_shap_heatmap():
 def test_plot_shap_scatter(feature):
     """Assert that the plot_shap_scatter method works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR", metric="f1")
+    atom.run("LR")
     atom.plot_shap_scatter(display=False)
 
 
 def test_plot_shap_waterfall():
     """Assert that the plot_shap_waterfall method works."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run("Tree", metric="f1_macro")
+    atom.run("Tree")
     atom.plot_shap_waterfall(display=False)

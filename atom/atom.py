@@ -573,7 +573,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Original target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.og.features)
 
         for transformer in reversed(self.pipeline):
             if not transformer._train_only:
@@ -979,7 +979,7 @@ class ATOM(BaseRunner, FeatureSelectorPlot, DataPlot, HTPlot, PredictionPlot, Sh
             Transformed target column. Only returned if provided.
 
         """
-        X, y = self._prepare_input(X, y)
+        X, y = self._prepare_input(X, y, columns=self.og.features)
 
         for transformer in self.pipeline:
             if not transformer._train_only:

@@ -309,16 +309,11 @@ class BaseTrainer(BaseTransformer, BaseRunner, HTPlot, PredictionPlot, ShapPlot)
 
             """
             try:
-                # Overwrite the utils backend in all nodes
-                self.backend = self.backend
-
-                # Reassign logger's handlers in all nodes
-                self.logger = self.logger
+                # Set BaseTransformer params in new nodes
+                self.backend = self.backend  # Overwrite utils backend
+                self.experiment = self.experiment  # Set mlflow experiment
+                self.logger = self.logger  # Reassign logger's handlers
                 m.logger = m.logger
-
-                if self.experiment:
-                    mlflow.set_experiment(self.experiment)
-                    m._run = mlflow.start_run(run_name=m.name)
 
                 self.log("\n", 1)  # Separate output from header
 

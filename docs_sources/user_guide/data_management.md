@@ -213,10 +213,9 @@ non-native multioutput models, ATOM does so automatically. For
 [multilabel][] tasks, the meta-estimator is:
 
 * [ClassifierChain][]
-* [RegressorChain][]
 
 And for [multiclass-multioutput][] and [multioutput regression][], the
-meta-estimator is:
+meta-estimators are respectively:
 
 * [MultioutputClassifier][]
 * [MultioutputRegressor][]

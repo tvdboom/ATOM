@@ -16,6 +16,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+import ray
 import sklearnex
 from sklearn.naive_bayes import GaussianNB
 from sklearnex.svm import SVC
@@ -83,6 +84,25 @@ def test_engine_parameter_invalid():
     """Assert that an error is raised when engine is invalid."""
     with pytest.raises(ValueError, match=".*Choose from: sklearn.*"):
         BaseTransformer(engine="invalid")
+
+
+def test_backend_invalid():
+    """Assert that an error is raised when backend is invalid."""
+    with pytest.raises(ValueError, match=".*the backend parameter.*"):
+        BaseTransformer(backend="invalid")
+
+
+def test_backend_ray():
+    """Assert that ray is initialized when selected."""
+    BaseTransformer(backend="ray")
+    assert ray.is_initialized()
+    ray.shutdown()
+
+
+def test_backend():
+    """Assert that other backends can be specified."""
+    base = BaseTransformer(backend="threading")
+    assert base.backend == "threading"
 
 
 @pytest.mark.parametrize("verbose", [-2, 3])

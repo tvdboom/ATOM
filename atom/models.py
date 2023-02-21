@@ -121,8 +121,6 @@ Additionally, ATOM implements two ensemble models:
 
 from __future__ import annotations
 
-import re
-
 import numpy as np
 from optuna.distributions import CategoricalDistribution as Categorical
 from optuna.distributions import FloatDistribution as Float
@@ -155,13 +153,13 @@ class CustomModel(BaseModel):
         if hasattr(est, "name"):
             name = est.name
         else:
-            # If no name is provided, use capital letters in the class' name
-            name = re.sub("[^A-Z]", "", self._fullname)
-            if len(name) < 2 or name.lower() in MODELS:
-                name = self._fullname
+            # If no name is provided, use the name of the class
+            name = self._fullname
+            if len(n := list(filter(str.isupper, name))) >= 2 and n not in MODELS:
+                name = "".join(n)
 
         self.acronym = getattr(est, "acronym", name)
-        if not self.acronym.startswith(name):
+        if not name.startswith(self.acronym):
             raise ValueError(
                 f"The name ({name}) and acronym ({self.acronym}) of model "
                 f"{self._fullname} do not match. The name should start with "
@@ -2822,6 +2820,13 @@ class MultiLayerPerceptron(BaseModel):
         """
         params = super()._get_parameters(trial)
 
+        # Drop layers when a previous layer has 0 neurons
+        drop = False
+        for param in [p for p in sorted(params) if p.startswith("hidden_layer")]:
+            if params[param] == 0 or drop:
+                drop = True
+                params.pop(param)
+
         if self._get_param("solver", params) != "sgd":
             params.pop("learning_rate", None)
             params.pop("power_t", None)
@@ -2848,10 +2853,7 @@ class MultiLayerPerceptron(BaseModel):
 
         hidden_layer_sizes = []
         for param in [p for p in sorted(params) if p.startswith("hidden_layer")]:
-            if params[param] > 0:
-                hidden_layer_sizes.append(params.pop(param))
-            else:
-                params.pop(param)
+            hidden_layer_sizes.append(params.pop(param))
 
         if hidden_layer_sizes:
             params.insert(0, "hidden_layer_sizes", tuple(hidden_layer_sizes))
@@ -3178,6 +3180,7 @@ class PassiveAggressive(BaseModel):
 
         return CustomDict(
             C=Float(1e-3, 100, log=True),
+            max_iter=Int(500, 1500, step=50),
             loss=Categorical(loss),
             average=Categorical([True, False]),
         )

@@ -60,7 +60,7 @@ INDEX_TYPES = (pd.Index, md.Index, pd.MultiIndex, md.MultiIndex)
 SERIES_TYPES = (pd.Series, md.Series)
 DATAFRAME_TYPES = (pd.DataFrame, md.DataFrame)
 PANDAS_TYPES = (*SERIES_TYPES, *DATAFRAME_TYPES)
-SEQUENCE_TYPES = (list, tuple, np.ndarray, *SERIES_TYPES)
+SEQUENCE_TYPES = (list, tuple, np.ndarray, *INDEX_TYPES, *SERIES_TYPES)
 
 # Groups of variable types for type hinting
 INT = Union[INT_TYPES]
@@ -496,33 +496,36 @@ class TrialsCallback:
         )
 
         # Save trials to experiment as nested runs
-        if self.T._run and self.T.log_ht:
-            run_name = f"{self.T.name} - {trial.number}"
-            with mlflow.start_run(run_name=run_name, nested=True):
-                mlflow.set_tag("name", self.T.name)
-                mlflow.set_tag("model", self.T._fullname)
-                mlflow.set_tag("branch", self.T.branch.name)
-                mlflow.set_tag("trial_state", trial.state.name)
-                mlflow.set_tags(self.T._ht.get("tags", {}))
+        if self.T.experiment and self.T.log_ht:
+            with mlflow.start_run(run_id=self.T._run.info.run_id):
+                run_name = f"{self.T.name} - {trial.number}"
+                with mlflow.start_run(run_name=run_name, nested=True):
+                    mlflow.set_tag("name", self.T.name)
+                    mlflow.set_tag("model", self.T._fullname)
+                    mlflow.set_tag("branch", self.T.branch.name)
+                    mlflow.set_tag("trial_state", trial.state.name)
+                    mlflow.set_tags(self.T._ht.get("tags", {}))
 
-                # Mlflow only accepts params with char length <250
-                pars = estimator.get_params() if estimator else params
-                mlflow.log_params({k: v for k, v in pars.items() if len(str(v)) <= 250})
-
-                mlflow.log_metric("time_trial", time_trial)
-                for i, name in enumerate(self.T._metric.keys()):
-                    mlflow.log_metric(f"{name}_validation", score[i])
-
-                if estimator and self.T.log_model:
-                    mlflow.sklearn.log_model(
-                        sk_model=estimator,
-                        artifact_path=estimator.__class__.__name__,
-                        signature=infer_signature(
-                            model_input=pd.DataFrame(self.T.X),
-                            model_output=estimator.predict(self.T.X.iloc[[0], :]),
-                        ),
-                        input_example=pd.DataFrame(self.T.X.iloc[[0], :]),
+                    # Mlflow only accepts params with char length <=250
+                    pars = estimator.get_params() if estimator else params
+                    mlflow.log_params(
+                        {k: v for k, v in pars.items() if len(str(v)) <= 250}
                     )
+
+                    mlflow.log_metric("time_trial", time_trial)
+                    for i, name in enumerate(self.T._metric.keys()):
+                        mlflow.log_metric(f"{name}_validation", score[i])
+
+                    if estimator and self.T.log_model:
+                        mlflow.sklearn.log_model(
+                            sk_model=estimator,
+                            artifact_path=estimator.__class__.__name__,
+                            signature=infer_signature(
+                                model_input=pd.DataFrame(self.T.X),
+                                model_output=estimator.predict(self.T.X.iloc[[0], :]),
+                            ),
+                            input_example=pd.DataFrame(self.T.X.iloc[[0], :]),
+                        )
 
         if self.n_jobs == 1:
             sequence = {"trial": trial.number, **trial.user_attrs["params"]}
@@ -720,7 +723,7 @@ class ShapExplanation:
 
     Parameters
     ----------
-    model: Model
+    model: Predictor
         Estimator to get the shap values from.
 
     branch: Branch
@@ -923,9 +926,9 @@ class ClassMap:
 
     def __getitem__(self, key):
         if isinstance(key, SEQUENCE_TYPES):
-            return self.__class__(self._get_data(k) for k in key)
+            return self.__class__(*[self._get_data(k) for k in key], key=self.__key)
         elif isinstance(key, slice):
-            return self.__class__(*self.__data[key])
+            return self.__class__(*self.__data[key], key=self.__key)
         else:
             return self._get_data(key)
 
@@ -940,9 +943,7 @@ class ClassMap:
                 self.append(value)
 
     def __delitem__(self, key):
-        key = self._get_key(key)
-        self.keys.remove(key)
-        del self.__data[self._conv(key)]
+        del self.__data[self._get_data(key)]
 
     def __iter__(self):
         yield from self.__data
@@ -954,7 +955,7 @@ class ClassMap:
         return key in self.__data or self._conv(key) in self.keys_lower()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.__data.__repr__()})"
+        return self.__data.__repr__()
 
     def __reversed__(self):
         yield from reversed(list(self.__data))
@@ -1440,6 +1441,34 @@ def check_canvas(is_canvas: bool, method: str):
         )
 
 
+def check_hyperparams(models: Model | SEQUENCE, method: str) -> list[Model]:
+    """Check if the models ran hyperparameter tuning.
+
+    If no models did, raise an exception.
+
+    Parameters
+    ----------
+    models: model or sequence
+        Models to check.
+
+    method: str
+        Name of the method from which the check is called.
+
+    Returns
+    -------
+    list of models
+        Models that ran hyperparameter tuning.
+
+    """
+    if not (models := list(filter(lambda x: x.trials is not None, lst(models)))):
+        raise ValueError(
+            f"The {method} method is only available "
+            "for models that ran hyperparameter tuning."
+        )
+
+    return models
+
+
 def check_predict_proba(models: SEQUENCE, method: str):
     """Raise an error if a model doesn't have a `predict_proba` method.
 
@@ -1623,7 +1652,7 @@ def n_cols(data: FEATURES | TARGET | None) -> int:
 
 def to_df(
     data: FEATURES | None,
-    index: SEQUENCE | INDEX = None,
+    index: SEQUENCE = None,
     columns: SEQUENCE | None = None,
     dtype: str | dict | np.dtype | None = None,
 ) -> DATAFRAME | None:
@@ -1672,7 +1701,7 @@ def to_df(
 
 def to_series(
     data: SEQUENCE | None,
-    index: SEQUENCE | INDEX | None = None,
+    index: SEQUENCE | None = None,
     name: str = "target",
     dtype: str | np.dtype | None = None,
 ) -> SERIES | None:
@@ -1716,7 +1745,7 @@ def to_series(
 
 def to_pandas(
     data: SEQUENCE | None,
-    index: SEQUENCE | INDEX | None = None,
+    index: SEQUENCE | None = None,
     columns: SEQUENCE | None = None,
     name: str = "target",
     dtype: str | dict | np.dtype | None = None,
@@ -2001,33 +2030,31 @@ def get_feature_importance(
         attributes = ("scores_", "coef_", "feature_importances_")
 
     try:
-        data = getattr(est, next(attr for attr in attributes if hasattr(est, attr)))
+        data = getattr(est, next(x for x in attributes if hasattr(est, x)))
     except StopIteration:
         # Get the mean value for meta-estimators
         if hasattr(est, "estimators_"):
             if all(hasattr(x, "feature_importances_") for x in est.estimators_):
                 data = [fi.feature_importances_ for fi in est.estimators_]
             elif all(hasattr(x, "coef_") for x in est.estimators_):
-                data = []
-                for estimator in est.estimators_:
-                    if estimator.coef_.ndim > 1:
-                        # Can have shape (n_cls, n_features)
-                        data.append(norm(estimator.coef_))
-                    else:
-                        data.append(estimator.coef_)
+                data = [norm(fi.coef_) for fi in est.estimators_]
+            else:
+                # For ensembles that mix attributes
+                raise ValueError(
+                    "Failed to calculate the feature importance for meta-estimator "
+                    f"{est.__class__.__name__}. The underlying estimators have a mix "
+                    f"of feature_importances_ and coef_ attributes."
+                )
 
             # Trim each coef to the number of features in the 1st estimator
             # ClassifierChain adds features to subsequent estimators
             min_length = min(map(len, data))
             data = np.mean([c[:min_length] for c in data], axis=0)
 
-    if data is not None:
-        if data.ndim == 1:
-            data = np.abs(data)
-        else:
-            data = norm(data)
-
+    if data is None:
         return data
+    else:
+        return np.abs(data.flatten())
 
 
 def export_pipeline(pipeline: pd.Series, model: Model | None, memory, verbose) -> Any:
@@ -2720,7 +2747,7 @@ def plot_from_model(
         If False, drop ensemble models from selection.
 
     check_fitted: bool, default=True
-        Whether to check if the runner has been fitted (has models).
+        Raise an exception if the runner isn't fitted (has no models).
 
     """
 
@@ -2745,7 +2772,7 @@ def plot_from_model(
                 models = args[0]._get_models(models, ensembles=ensembles)
                 if max_one:
                     if len(models) > 1:
-                        raise ValueError(f"The {f.__name__} plot only accepts one model!")
+                        raise ValueError(f"The {f.__name__} plot only accepts one model.")
                     else:
                         models = models[0]
 

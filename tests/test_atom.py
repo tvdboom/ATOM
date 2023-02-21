@@ -259,11 +259,10 @@ def test_automl_invalid_objective():
 
 
 @pytest.mark.parametrize("distributions", [None, "norm", ["norm", "pearson3"]])
-@pytest.mark.parametrize("columns", ["x0", 1, None])
-def test_distribution(distributions, columns):
+def test_distribution(distributions):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    df = atom.distribution(distributions=distributions, columns=columns)
+    df = atom.distribution(distributions=distributions, columns=(0, 1))
     assert isinstance(df, pd.DataFrame)
 
 
@@ -762,7 +761,7 @@ def test_textclean():
 def test_textnormalize():
     """Assert that the textnormalize method normalizes the corpus."""
     atom = ATOMClassifier(X_text, y10, shuffle=False, random_state=1)
-    atom.textnormalize(stopwords=False, custom_stopwords=["yes"])
+    atom.textnormalize(stopwords=False, custom_stopwords=["yes"], lemmatize=False)
     assert atom["corpus"][0] == ["I", "àm", "in", "ne'w", "york"]
 
 
@@ -809,7 +808,7 @@ def test_feature_grouping():
 def test_feature_generation_attributes():
     """Assert that the attrs from feature_generation are passed to atom."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_generation("gfg", n_features=2)
+    atom.feature_generation("gfg", n_features=2, population_size=30, hall_of_fame=10)
     assert hasattr(atom, "gfg")
     assert hasattr(atom, "genetic_features")
 
@@ -839,13 +838,13 @@ def test_default_solver_from_task():
     """Assert that the solver is inferred from the task when a model is selected."""
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy="rfe", solver="lgb", n_features=8)
-    assert atom.pipeline[0].rfe.estimator_.__class__.__name__ == "LGBMClassifier"
+    atom.feature_selection(strategy="rfe", solver="tree", n_features=8)
+    assert atom.pipeline[0].rfe.estimator_.__class__.__name__ == "DecisionTreeClassifier"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.feature_selection(strategy="rfe", solver="lgb", n_features=25)
-    assert atom.pipeline[0].rfe.estimator_.__class__.__name__ == "LGBMRegressor"
+    atom.feature_selection(strategy="rfe", solver="tree", n_features=25)
+    assert atom.pipeline[0].rfe.estimator_.__class__.__name__ == "DecisionTreeRegressor"
 
 
 @patch("atom.feature_engineering.SequentialFeatureSelector")

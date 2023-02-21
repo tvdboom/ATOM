@@ -47,8 +47,8 @@ from typeguard import typechecked
 
 from atom.utils import (
     FLOAT, INT, INT_TYPES, PALETTE, SCALAR, SEQUENCE, Model, bk, check_canvas,
-    check_dependency, check_predict_proba, composed, crash, divide,
-    get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
+    check_dependency, check_hyperparams, check_predict_proba, composed, crash,
+    divide, get_best_score, get_corpus, get_custom_scorer, has_attr, has_task,
     is_binary, is_multioutput, it, lst, plot_from_model, rnd, to_rgb,
 )
 
@@ -2726,22 +2726,14 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_edf.html
 
         """
-        # Check there is at least one model that ran hyperparameter tuning
-        if not (models := list(filter(lambda x: x.trials is not None, models))):
-            raise ValueError(
-                "The plot_edf method is only available "
-                "for models that ran hyperparameter tuning."
-            )
-
+        models = check_hyperparams(models, "plot_edf")
         metric = self._get_metric(metric, max_one=False)
 
         values = []
         for m in models:
             values.append([])
             for met in metric:
-                values[-1].append(
-                    np.array([lst(row)[met] for row in m.trials["score"]])
-                )
+                values[-1].append(np.array([lst(row)[met] for row in m.trials["score"]]))
 
         x_min = np.nanmin(np.array(values))
         x_max = np.nanmax(np.array(values))
@@ -2866,14 +2858,10 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_hyperparameter_importance.html
 
         """
-        # Check there is at least one model that ran hyperparameter tuning
-        if not (models := list(filter(lambda x: x.trials is not None, models))):
-            raise ValueError(
-                "The plot_hyperparameter_importance method is only "
-                "available for models that ran hyperparameter tuning."
-            )
-
+        models = check_hyperparams(models, "plot_hyperparameter_importance")
         params = len(set([k for m in lst(models) for k in m._ht["distributions"]]))
+        met = self._get_metric(metric, max_one=True)
+
         if show is None or show > params:
             # Limit max features shown to avoid maximum figsize error
             show = min(200, params)
@@ -2881,8 +2869,6 @@ class HTPlot(BasePlot):
             raise ValueError(
                 f"Invalid value for the show parameter. Value should be >0, got {show}."
             )
-
-        met = self._get_metric(metric, max_one=True)
 
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes()
@@ -3017,12 +3003,7 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_hyperparameters.html
 
         """
-        # Check that the model ran hyperparameter tuning
-        if models.trials is None:
-            raise ValueError(
-                "The plot_hyperparameters method is only "
-                "available for models that ran hyperparameter tuning."
-            )
+        m = check_hyperparams(models, "plot_hyperparameters")[0]
 
         if len(params := self._get_hyperparams(params, models)) < 2:
             raise ValueError(
@@ -3049,12 +3030,12 @@ class HTPlot(BasePlot):
                     y=(y_pos, rnd(y_pos + size)),
                     coloraxis=dict(
                         axes="99",
-                        colorscale=PALETTE.get(self._fig.get_color(models.name), "Blues"),
+                        colorscale=PALETTE.get(self._fig.get_color(m.name), "Blues"),
                         cmin=np.nanmin(
-                            models.trials.apply(lambda x: lst(x["score"])[met], axis=1)
+                            m.trials.apply(lambda x: lst(x["score"])[met], axis=1)
                         ),
                         cmax=np.nanmax(
-                            models.trials.apply(lambda x: lst(x["score"])[met], axis=1)
+                            m.trials.apply(lambda x: lst(x["score"])[met], axis=1)
                         ),
                         showscale=False,
                     )
@@ -3063,22 +3044,22 @@ class HTPlot(BasePlot):
                 x_values = lambda row: row["params"].get(params[y], None)
                 y_values = lambda row: row["params"].get(params[x + 1], None)
 
-                customdata = zip(
-                    models.trials.index.tolist(),
-                    models.trials.apply(lambda x: lst(x["score"])[met], axis=1),
-                )
-
                 fig.add_trace(
                     go.Scatter(
-                        x=models.trials.apply(x_values, axis=1),
-                        y=models.trials.apply(y_values, axis=1),
+                        x=m.trials.apply(x_values, axis=1),
+                        y=m.trials.apply(y_values, axis=1),
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=self._fig.get_color(models.name),
+                            color=self._fig.get_color(m.name),
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
-                        customdata=list(customdata),
+                        customdata=list(
+                            zip(
+                                m.trials.index.tolist(),
+                                m.trials.apply(lambda x: lst(x["score"])[met], axis=1),
+                            )
+                        ),
                         hovertemplate=(
                             f"{params[y]}:%{{x}}<br>"
                             f"{params[x + 1]}:%{{y}}<br>"
@@ -3093,9 +3074,9 @@ class HTPlot(BasePlot):
 
                 fig.add_trace(
                     go.Contour(
-                        x=models.trials.apply(x_values, axis=1),
-                        y=models.trials.apply(y_values, axis=1),
-                        z=models.trials.apply(lambda i: lst(i["score"])[met], axis=1),
+                        x=m.trials.apply(x_values, axis=1),
+                        y=m.trials.apply(y_values, axis=1),
+                        z=m.trials.apply(lambda i: lst(i["score"])[met], axis=1),
                         contours=dict(
                             showlabels=True,
                             labelfont=dict(size=self.tick_fontsize, color="white")
@@ -3129,7 +3110,7 @@ class HTPlot(BasePlot):
                     ylabel=params[x + 1] if y == 0 else None,
                 )
 
-        self._fig.used_models.append(models)
+        self._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
@@ -3251,19 +3232,13 @@ class HTPlot(BasePlot):
 
             return list(map(str, sorted(numbers))) + sorted(categorical)
 
-        # Check that the model ran hyperparameter tuning
-        if models.trials is None:
-            raise ValueError(
-                "The plot_parallel_coordinate method is only "
-                "available for models that ran hyperparameter tuning."
-            )
-
+        m = check_hyperparams(models, "plot_parallel_coordinate")[0]
         params = self._get_hyperparams(params, models)
         met = self._get_metric(metric, max_one=True)
 
         dims = _get_dims_from_info(
             _get_parallel_coordinate_info(
-                study=models.study,
+                study=m.study,
                 params=params,
                 target=None if len(self._metric) == 1 else lambda x: x.values[met],
                 target_name=self._metric[met].name,
@@ -3288,7 +3263,7 @@ class HTPlot(BasePlot):
         fig = self._get_figure()
         xaxis, yaxis = self._fig.get_axes(
             coloraxis=dict(
-                colorscale=PALETTE.get(self._fig.get_color(models.name), "Blues"),
+                colorscale=PALETTE.get(self._fig.get_color(m.name), "Blues"),
                 cmin=min(dims[0]["values"]),
                 cmax=max(dims[0]["values"]),
                 title=self._metric[met].name,
@@ -3309,7 +3284,7 @@ class HTPlot(BasePlot):
             )
         )
 
-        self._fig.used_models.append(models)
+        self._fig.used_models.append(m)
         return self._plot(
             ax=(f"xaxis{xaxis[1:]}", f"yaxis{yaxis[1:]}"),
             title=title,
@@ -3404,12 +3379,7 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_pareto_front.html
 
         """
-        # Check that the model ran hyperparameter tuning
-        if models.trials is None:
-            raise ValueError(
-                "The plot_pareto_front method is only "
-                "available for models that ran hyperparameter tuning."
-            )
+        m = check_hyperparams(models, "plot_pareto_front")[0]
 
         if len(metric := self._get_metric(metric, max_one=False)) < 2:
             raise ValueError(
@@ -3439,16 +3409,16 @@ class HTPlot(BasePlot):
 
                 fig.add_trace(
                     go.Scatter(
-                        x=models.trials.apply(lambda row: row["score"][y], axis=1),
-                        y=models.trials.apply(lambda row: row["score"][x + 1], axis=1),
+                        x=m.trials.apply(lambda row: row["score"][y], axis=1),
+                        y=m.trials.apply(lambda row: row["score"][x + 1], axis=1),
                         mode="markers",
                         marker=dict(
                             size=self.marker_size,
-                            color=models.trials.index,
+                            color=m.trials.index,
                             colorscale="Teal",
                             line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                         ),
-                        customdata=models.trials.index,
+                        customdata=m.trials.index,
                         hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                         xaxis=xaxis,
                         yaxis=yaxis,
@@ -3466,7 +3436,7 @@ class HTPlot(BasePlot):
                     ylabel=self._metric[x + 1].name if y == 0 else None,
                 )
 
-        self._fig.used_models.append(models)
+        self._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
@@ -3564,13 +3534,7 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_slice.html
 
         """
-        # Check that the model ran hyperparameter tuning
-        if models.trials is None:
-            raise ValueError(
-                "The plot_slice method is only "
-                "available for models that ran hyperparameter tuning."
-            )
-
+        m = check_hyperparams(models, "plot_slice")[0]
         params = self._get_hyperparams(params, models)
         metric = self._get_metric(metric, max_one=False)
 
@@ -3597,18 +3561,16 @@ class HTPlot(BasePlot):
 
             fig.add_trace(
                 go.Scatter(
-                    x=models.trials.apply(
-                        lambda r: r["params"].get(params[y], None), axis=1
-                    ),
-                    y=models.trials.apply(lambda r: lst(r["score"])[x], axis=1),
+                    x=m.trials.apply(lambda r: r["params"].get(params[y], None), axis=1),
+                    y=m.trials.apply(lambda r: lst(r["score"])[x], axis=1),
                     mode="markers",
                     marker=dict(
                         size=self.marker_size,
-                        color=models.trials.index,
+                        color=m.trials.index,
                         colorscale="Teal",
                         line=dict(width=1, color="rgba(255, 255, 255, 0.9)"),
                     ),
-                    customdata=models.trials.index,
+                    customdata=m.trials.index,
                     hovertemplate="(%{x}, %{y})<extra>Trial %{customdata}</extra>",
                     xaxis=xaxis,
                     yaxis=yaxis,
@@ -3626,7 +3588,7 @@ class HTPlot(BasePlot):
                 ylabel=self._metric[x].name if y == 0 else None,
             )
 
-        self._fig.used_models.append(models)
+        self._fig.used_models.append(m)
         return self._plot(
             title=title,
             legend=legend,
@@ -3725,13 +3687,7 @@ class HTPlot(BasePlot):
             url: /img/plots/plot_trials.html
 
         """
-        # Check there is at least one model that ran hyperparameter tuning
-        if not (models := list(filter(lambda x: x.trials is not None, models))):
-            raise ValueError(
-                "The plot_trials method is only available "
-                "for models that ran hyperparameter tuning."
-            )
-
+        models = check_hyperparams(models, "plot_trials")
         metric = self._get_metric(metric, max_one=False)
 
         fig = self._get_figure()
@@ -8077,10 +8033,6 @@ class ShapPlot(BasePlot):
         # Waterfall accepts only one row
         explanation.values = explanation.values[0]
         explanation.data = explanation.data[0]
-
-        # For binary classification, it's a scalar already
-        if hasattr(explanation.base_values, "__len__"):
-            explanation.base_values = explanation.base_values[target]
 
         self._get_figure(backend="matplotlib")
         check_canvas(self._fig.is_canvas, "plot_shap_waterfall")

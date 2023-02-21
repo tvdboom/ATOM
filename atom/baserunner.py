@@ -17,7 +17,6 @@ from joblib.memory import Memory
 from sklearn.base import clone
 from sklearn.multioutput import (
     ClassifierChain, MultiOutputClassifier, MultiOutputRegressor,
-    RegressorChain,
 )
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.metaestimators import available_if
@@ -187,15 +186,11 @@ class BaseRunner(BaseTracker):
         """
         if self._multioutput == "auto":
             if self.task.startswith("multilabel"):
-                if self.goal.startswith("class"):
-                    return ClassifierChain
-                else:
-                    return RegressorChain
+                return ClassifierChain
+            elif self.goal.startswith("class"):
+                return MultiOutputClassifier
             else:
-                if self.goal.startswith("class"):
-                    return MultiOutputClassifier
-                else:
-                    return MultiOutputRegressor
+                return MultiOutputRegressor
         else:
             return self._multioutput
 
@@ -859,9 +854,6 @@ class BaseRunner(BaseTracker):
 
         self._models.append(Stacking(models=models, name=name, **kw_model, **kwargs))
 
-        if self.experiment:
-            self[name]._run = mlflow.start_run(run_name=self[name].name)
-
         self[name].fit()
 
     @composed(crash, method_to_log, typechecked)
@@ -924,8 +916,5 @@ class BaseRunner(BaseTracker):
                 **kwargs,
             )
         )
-
-        if self.experiment:
-            self[name]._run = mlflow.start_run(run_name=self[name].name)
 
         self[name].fit()

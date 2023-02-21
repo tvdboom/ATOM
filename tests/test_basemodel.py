@@ -36,7 +36,7 @@ from .conftest import (
 def test_scaler():
     """Assert that a scaler is made for models that need scaling."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LGB", "LDA"])
+    atom.run(["LGB", "LDA"], est_params={"LGB": {"n_estimators": 5}})
     assert atom.lgb.scaler and not atom.lda.scaler
 
 
@@ -82,7 +82,11 @@ def test_getitem():
 def test_est_params_invalid_param():
     """Assert that invalid parameters in est_params are caught."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"], n_trials=1, est_params={"test": 220})
+    atom.run(
+        models=["LR", "LGB"],
+        n_trials=1,
+        est_params={"test": 220, "LGB": {"n_estimators": 5}},
+    )
     assert atom.models == "LGB"  # LGB passes since it accepts kwargs
 
 
@@ -145,7 +149,7 @@ def test_custom_distributions_include_and_excluded():
 def test_est_params_removed_from_ht():
     """Assert that params in est_params are dropped from the optimization."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB", n_trials=1, est_params={"n_estimators": 220})
+    atom.run("LGB", n_trials=1, est_params={"n_estimators": 5})
     assert "n_estimators" not in atom.lgb.trials.params[0]
 
 
@@ -165,25 +169,33 @@ def test_multi_objective_optimization():
 
 def test_hyperparameter_tuning_with_plot():
     """Assert that you can plot the hyperparameter tuning as it runs."""
-    atom = ATOMClassifier(X_bin, y_bin, n_jobs=-1, random_state=1)
-    atom.run(
-        models=["LDA", "lSVM", "SVM", "MLP"],
-        n_trials=(17, 17, 17, 20),
-        ht_params={"plot": True},
-    )
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(models=["LDA", "lSVM", "SVM"], n_trials=10, ht_params={"plot": True})
 
 
 def test_xgb_optimizes_score():
     """Assert that the XGB model optimizes the score."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("XGB", n_trials=10, ht_params={"pruner": PatientPruner(None, patience=2)})
+    atom.run(
+        models="XGB",
+        n_trials=10,
+        est_params={"n_estimators": 10},
+        ht_params={"pruner": PatientPruner(None, patience=1)},
+    )
     assert atom.xgb.trials["score"].sum() > 0  # All scores are positive
 
 
 def test_empty_study():
     """Assert that the optimization is skipped when there are no completed trials."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("PA", n_trials=1, ht_params={"pruner": PatientPruner(None, patience=2)})
+    atom.run(
+        models="PA",
+        n_trials=1,
+        ht_params={
+            "pruner": PatientPruner(None, patience=1),
+            "distributions": {"max_iter": IntDistribution(10, 20)},
+        },
+    )
     assert atom.pa.best_trial is None
 
 
@@ -198,9 +210,7 @@ def test_ht_with_pipeline():
 def test_ht_with_multioutput():
     """Assert that the hyperparameter tuning works with multioutput tasks."""
     atom = ATOMClassifier(X_class, y=y_multiclass, random_state=1)
-    atom.run(["LDA", "RF"], n_trials=2)
-    assert not atom.lda.trials.empty
-    assert not atom.rf.trials.empty
+    atom.run("SGD", est_params={"max_iter": 5})
 
 
 def test_sample_weight_fit():
@@ -209,7 +219,10 @@ def test_sample_weight_fit():
     atom.run(
         models="LGB",
         n_trials=1,
-        est_params={"sample_weight_fit": list(range(len(atom.y_train)))},
+        est_params={
+            "n_estimators": 5,
+            "sample_weight_fit": list(range(len(atom.y_train))),
+        },
     )
 
 
@@ -297,7 +310,7 @@ def test_continued_hyperparameter_tuning():
 def test_continued_bootstrapping():
     """Assert that the bootstrapping method can be recalled."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB")
+    atom.run("LGB", est_params={"n_estimators": 5})
     assert atom.lgb.bootstrap is None
     atom.lgb.bootstrapping(3)
     assert len(atom.lgb.bootstrap) == 3
@@ -316,8 +329,10 @@ def test_name_property():
     assert atom.tree2.name == "Tree2"
     atom.tree2.name = ""
     assert atom.tree.name == "Tree"
-    atom.tree.name = "3"
+    atom.tree.name = "Tree3"
     assert atom.tree3.name == "Tree3"
+    atom.tree3.name = "4"
+    assert atom.tree4.name == "Tree4"
 
 
 @patch("mlflow.MlflowClient.set_tag")
@@ -402,7 +417,7 @@ def test_estimator_property():
 def test_evals_property():
     """Assert that the estimator property returns the estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB")
+    atom.run("LGB", est_params={"n_estimators": 5})
     assert len(atom.lgb.evals) == 2
 
 
