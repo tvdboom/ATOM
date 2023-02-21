@@ -191,7 +191,6 @@ def test_default_feature_names():
         n_features=1,
         population_size=200,
         hall_of_fame=10,
-        verbose=2,
         random_state=1,
     )
     X = generator.fit_transform(X, y_bin)
