@@ -7,6 +7,8 @@ Description: Global fixtures and variables for the tests.
 
 """
 
+from __future__ import annotations
+
 from typing import Callable
 
 import numpy as np

@@ -12,7 +12,6 @@ from __future__ import annotations
 import re
 from typing import Any, Callable
 
-import mlflow
 from joblib.memory import Memory
 from sklearn.base import clone
 from sklearn.multioutput import (

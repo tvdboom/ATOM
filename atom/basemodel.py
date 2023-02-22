@@ -207,7 +207,6 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         self._run = None  # mlflow run (if experiment is active)
         if self.experiment:
-            mlflow.end_run()
             self._run = mlflow.start_run(run_name=self.name)
             mlflow.end_run()
 
@@ -2226,15 +2225,21 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             another, independent set for testing.
 
         """
-        calibrator = CalibratedClassifierCV(self.estimator, **kwargs)
+        calibrator = CalibratedClassifierCV(
+            estimator=self.estimator,
+            n_jobs=kwargs.pop("n_jobs", self.n_jobs),
+            **kwargs,
+        )
+
         if kwargs.get("cv") != "prefit":
             self._estimator = calibrator.fit(self.X_train, self.y_train)
         else:
             self._estimator = calibrator.fit(self.X_test, self.y_test)
 
-        # Start a new mlflow run for the new estimator
+        # Assign a mlflow run to the new estimator
         if self._run:
             self._run = mlflow.start_run(run_name=f"{self.name}_calibrate")
+            mlflow.end_run()
 
         self.fit()
 
@@ -2679,9 +2684,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         else:
             X, y = self.X, self.y
 
-        # Start a new mlflow run for the new estimator
+        # Assign a mlflow run to the new estimator
         if self._run:
+            print("sii")
             self._run = mlflow.start_run(run_name=f"{self.name}_full_train")
+            mlflow.end_run()
 
         self.fit(X, y)
 

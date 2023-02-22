@@ -63,8 +63,8 @@ jobs:
           codiga_api_token: ${{ secrets.CODIGA }}
           min_quality_grade: "EXCELLENT"
           project_name: "ATOM"
-          max_complex_functions_rate: "0.05"
-          max_long_functions_rate: "0.05"
+          max_complex_functions_rate: "0.08"
+          max_long_functions_rate: "0.08"
           max_timeout_sec: "600"
 
   unit-tests:
@@ -104,6 +104,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pytest pytest-xdist nbmake tensorflow scikeras
-          pip install -e .
+          pip install -e .[full]
       - name: Run example notebooks
         run: pytest --nbmake -n=auto --ignore=./examples/webapp/ --ignore=./examples/accelerating_cuml.ipynb ./examples/

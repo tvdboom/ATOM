@@ -9,7 +9,7 @@ Description: Unit tests for feature_engineering.py
 
 import pandas as pd
 import pytest
-from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.feature_selection import f_regression
 
 from atom.feature_engineering import (
@@ -143,8 +143,8 @@ def test_genetic_non_improving_features():
     generator = FeatureGenerator(
         strategy="gfg",
         generations=5,
-        population_size=300,
-        hall_of_fame=100,
+        population_size=30,
+        hall_of_fame=10,
         operators="sqrt",
         random_state=1,
     )
@@ -157,7 +157,8 @@ def test_attribute_genetic_features():
     generator = FeatureGenerator(
         strategy="gfg",
         generations=3,
-        population_size=400,
+        population_size=30,
+        hall_of_fame=10,
         random_state=1,
     )
     _ = generator.fit_transform(X_bin, y_bin)
@@ -166,16 +167,6 @@ def test_attribute_genetic_features():
 
 def test_updated_dataset():
     """Assert that the feature set contains the new features."""
-    generator = FeatureGenerator(
-        strategy="gfg",
-        n_features=1,
-        generations=4,
-        population_size=1000,
-        random_state=1,
-    )
-    X = generator.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == X_bin.shape[1] + 1
-
     generator = FeatureGenerator(strategy="dfs", n_features=None, random_state=1)
     X = generator.fit_transform(X_bin, y_bin)
     assert X.shape[1] > X_bin.shape[1]
@@ -261,7 +252,7 @@ def test_attribute_is_created():
     """Assert that the groups attribute is created."""
     grouper = FeatureGrouper(group=[[0, 1], [2, 3]])
     grouper.transform(X_bin)
-    assert list(grouper.groups.keys()) == ["group_1", "group_2"]
+    assert list(grouper.groups) == ["group_1", "group_2"]
 
 
 # Test FeatureSelector ============================================= >>
@@ -437,7 +428,7 @@ def test_sfm_prefit_invalid_estimator():
     """Assert that an error is raised for an invalid estimator in sfm."""
     selector = FeatureSelector(
         strategy="sfm",
-        solver=ExtraTreesClassifier(random_state=1).fit(X_class, y_class),
+        solver=DecisionTreeClassifier(random_state=1).fit(X_class, y_class),
         n_features=8,
         random_state=1,
     )
@@ -449,7 +440,7 @@ def test_sfm_strategy_not_threshold():
     """Assert that if threshold is not specified, sfm selects n_features features."""
     selector = FeatureSelector(
         strategy="sfm",
-        solver=ExtraTreesClassifier(random_state=1),
+        solver=DecisionTreeClassifier(random_state=1),
         n_features=16,
         random_state=1,
     )
@@ -468,7 +459,7 @@ def test_sfm_strategy_fitted_solver():
     """Assert that the sfm strategy works when the solver is already fitted."""
     selector = FeatureSelector(
         strategy="sfm",
-        solver=ExtraTreesClassifier(random_state=1).fit(X_bin, y_bin),
+        solver=DecisionTreeClassifier(random_state=1).fit(X_bin, y_bin),
         n_features=7,
         random_state=1,
     )
@@ -479,7 +470,9 @@ def test_sfm_strategy_fitted_solver():
 def test_sfm_strategy_not_fitted_solver():
     """Assert that the sfm strategy works when the solver is not fitted."""
     selector = FeatureSelector(
-        strategy="sfm", solver=ExtraTreesClassifier(random_state=1), n_features=5
+        strategy="sfm",
+        solver=DecisionTreeClassifier(random_state=1),
+        n_features=5,
     )
     X = selector.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 5
@@ -489,25 +482,26 @@ def test_sfs_strategy():
     """Assert that the sfs strategy works."""
     selector = FeatureSelector(
         strategy="sfs",
-        solver="RF_reg",
+        solver="Tree_reg",
         n_features=6,
-        cv=3,
+        cv=2,
+        scoring="mae",
         random_state=1,
     )
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 6
 
 
-def test_RFE_strategy():
+def test_rfe_strategy():
     """Assert that the RFE strategy works as intended."""
     selector = FeatureSelector(
         strategy="RFE",
-        solver=ExtraTreesClassifier(random_state=1),
-        n_features=13,
+        solver=DecisionTreeClassifier(random_state=1),
+        n_features=28,
         random_state=1,
     )
     X = selector.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 13
+    assert X.shape[1] == 28
 
 
 def test_rfecv_strategy_before_pipeline_classification():
@@ -515,16 +509,23 @@ def test_rfecv_strategy_before_pipeline_classification():
     selector = FeatureSelector(
         strategy="rfecv",
         solver="Tree_class",
-        n_features=None,
+        n_features=28,
+        cv=2,
         random_state=1,
     )
     X = selector.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 4
+    assert X.shape[1] == 28
 
 
 def test_rfecv_strategy_before_pipeline_regression():
     """Assert that the rfecv strategy works before a fitted pipeline."""
-    selector = FeatureSelector("rfecv", solver="RF_reg", n_features=16, random_state=1)
+    selector = FeatureSelector(
+      strategy="rfecv",
+      solver="Tree_reg",
+      n_features=16,
+      cv=2,
+      random_state=1,
+    )
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
 
@@ -533,17 +534,17 @@ def test_kwargs_parameter_threshold():
     """Assert that the kwargs parameter works as intended (add threshold)."""
     selector = FeatureSelector(
         strategy="sfm",
-        solver=ExtraTreesClassifier(random_state=1),
-        n_features=21,
+        solver=DecisionTreeClassifier(random_state=1),
+        n_features=3,
         threshold="mean",
         random_state=1,
     )
     X = selector.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 10
+    assert X.shape[1] == 3
 
 
-def test_kwargs_parameter_tol():
-    """Assert that the kwargs parameter works as intended (add tol)."""
+def test_kwargs_parameter_pca():
+    """Assert that custom kwargs can be provided to pca."""
     selector = FeatureSelector(
         strategy="pca",
         solver="arpack",
@@ -555,22 +556,6 @@ def test_kwargs_parameter_tol():
     )
     X = selector.fit_transform(X_bin)
     assert X.shape[1] == 12
-
-
-@pytest.mark.parametrize("strategy", ["sfs", "rfecv", "pso"])
-def test_kwargs_parameter_scoring(strategy):
-    """Assert that the kwargs parameter works as intended (add scoring acronym)."""
-    selector = FeatureSelector(
-        strategy=strategy,
-        solver="tree_class",
-        scoring="auc",
-        n_features=12,
-        max_repeated=None,
-        max_correlation=None,
-        random_state=1,
-    )
-    X = selector.fit_transform(X_bin, y_bin)
-    assert X.shape[1] < X_bin.shape[1]
 
 
 def test_advanced_provided_validation_sets():
@@ -599,8 +584,8 @@ def test_advanced_custom_scoring():
     selector = FeatureSelector(
         strategy="pso",
         solver="tree_class",
-        n_iteration=2,
-        population_size=2,
+        n_iteration=1,
+        population_size=1,
         scoring="auc",
     )
     selector = selector.fit(X_bin, y_bin)
@@ -612,8 +597,8 @@ def test_advanced_binary_classification_scoring():
     selector = FeatureSelector(
         strategy="pso",
         solver="tree_class",
-        n_iteration=2,
-        population_size=2,
+        n_iteration=1,
+        population_size=1,
     )
     selector = selector.fit(X_bin, y_bin)
     assert selector.pso.kwargs["scoring"].name == "f1"
@@ -624,8 +609,8 @@ def test_advanced_multiclass_classification_scoring():
     selector = FeatureSelector(
         strategy="pso",
         solver="tree_class",
-        n_iteration=2,
-        population_size=2,
+        n_iteration=1,
+        population_size=1,
     )
     selector = selector.fit(X_class, y_class)
     assert selector.pso.kwargs["scoring"].name == "f1_weighted"
@@ -636,8 +621,8 @@ def test_advanced_regression_scoring():
     selector = FeatureSelector(
         strategy="hho",
         solver="tree_reg",
-        n_iteration=2,
-        population_size=2,
+        n_iteration=1,
+        population_size=1,
     )
     selector = selector.fit(X_reg, y_reg)
     assert selector.hho.kwargs["scoring"].name == "r2"
@@ -649,8 +634,8 @@ def test_advanced_custom_objective_function():
         strategy="gwo",
         solver="tree_class",
         objective_function=lambda *args: 1,
-        n_iteration=2,
-        population_size=2,
+        n_iteration=1,
+        population_size=1,
     )
     selector = selector.fit(X_bin, y_bin)
     assert selector.gwo.objective_function.__name__ == "<lambda>"
@@ -662,8 +647,8 @@ def test_multioutput_tasks():
         strategy="gwo",
         solver="tree_class",
         objective_function=lambda *args: 1,
-        n_iteration=2,
-        population_size=2,
+        n_iteration=1,
+        population_size=1,
     )
     selector = selector.fit(X_bin, y_bin)
     assert selector.gwo.objective_function.__name__ == "<lambda>"

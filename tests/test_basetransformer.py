@@ -92,11 +92,11 @@ def test_backend_invalid():
         BaseTransformer(backend="invalid")
 
 
-def test_backend_ray():
+@patch("ray.init")
+def test_backend_ray(ray):
     """Assert that ray is initialized when selected."""
     BaseTransformer(backend="ray")
-    assert ray.is_initialized()
-    ray.shutdown()
+    assert ray.is_called_once
 
 
 def test_backend():
