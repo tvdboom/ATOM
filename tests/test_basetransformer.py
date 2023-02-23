@@ -16,7 +16,6 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-import ray
 import sklearnex
 from sklearn.naive_bayes import GaussianNB
 from sklearnex.svm import SVC

@@ -57,7 +57,7 @@ additional libraries. You can install all the optional dependencies using
 
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=1.0.4)
 * **[explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/)** (>=0.4.0)
-* **[evalml](https://evalml.alteryx.com/en/stable/)** (>=0.62.0)
+* **[evalml](https://evalml.alteryx.com/en/stable/)** (>=0.68.0)
 * **[gradio](https://github.com/gradio-app/gradio)** (>=3.3.1)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=3.3.2)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=3.5.0)

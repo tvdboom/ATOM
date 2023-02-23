@@ -2839,6 +2839,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3300,7 +3314,7 @@ not allowed and will raise an exception.</p>
 different models to make new predictions. Such a technique can be
 useful for a set of equally well performing models in order to balance
 out their individual weaknesses. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier">documentation</a>.</p>
-<p>A voting model is created from a trainer through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-voting">voting</a>
+<p>A voting model is created from a trainer through the [voting][atomclassifier-voting]
 method. The voting model is added automatically to the list of
 models in the trainer, under the <code>Vote</code> acronym. The underlying
 estimator is a custom adaptation of <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html">VotingClassifier</a>
@@ -3328,7 +3342,7 @@ the underlying estimators first.</p>
 More precisely, the predictions of each individual estimator are
 stacked together and used as input to a final estimator to compute the
 prediction. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#stacked-generalization">documentation</a>.</p>
-<p>A stacking model is created from a trainer through the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-stacking">stacking</a>
+<p>A stacking model is created from a trainer through the [stacking][atomclassifier-stacking]
 method. The stacking model is added automatically to the list of
 models in the trainer, under the <code>Stack</code> acronym. The underlying
 estimator is a custom adaptation of <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html">StackingClassifier</a>

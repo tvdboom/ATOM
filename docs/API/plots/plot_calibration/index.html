@@ -2800,6 +2800,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3073,7 +3087,7 @@
 
 <h1 id="plot_calibration">plot_calibration</h1>
 <hr />
-<p><a id='plot_calibration'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_calibration</strong>(models=None, dataset="test", n_bins=10, target=0, title=None, legend="upper left", figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3884>[source]</a></span></div>Plot the calibration curve for a binary classifier.</p>
+<p><a id='plot_calibration'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_calibration</strong>(models=None, dataset="test", n_bins=10, target=0, title=None, legend="upper left", figsize=(900, 900), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3775>[source]</a></span></div>Plot the calibration curve for a binary classifier.</p>
 <p>Well calibrated classifiers are probabilistic classifiers for
 which the output of the <code>predict_proba</code> method can be directly
 interpreted as a confidence level. For instance a well
@@ -3086,10 +3100,11 @@ x-axis represents the average predicted probability in each bin
 and the y-axis is the fraction of positives, i.e. the proportion
 of samples whose class is the positive class (in each bin); and
 a distribution of all predicted probabilities of the classifier.
-Only available for binary classification tasks.</p>
+This plot is available only for models with a <code>predict_proba</code>
+method in a binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification task.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the <a class="autorefs autorefs-internal" href="../../models/adab/#adaboost-calibrate">calibrate</a> method to calibrate
+<p>Use the [calibrate][adaboost-calibrate] method to calibrate
 the winning model.</p>
 </div>
 <table class="table_params">

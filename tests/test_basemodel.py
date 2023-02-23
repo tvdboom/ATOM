@@ -8,7 +8,7 @@ Description: Unit tests for basemodel.py
 """
 
 import glob
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -833,6 +833,14 @@ def test_cross_validate():
     assert isinstance(atom.lr.cross_validate(scoring="AP"), pd.DataFrame)
 
 
+def test_evaluate_invalid_threshold_length():
+    """Assert that an error is raised when the threshold is invalid."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("MNB")
+    with pytest.raises(ValueError, match=".*should be equal to the number of target.*"):
+        atom.mnb.evaluate(threshold=[0.5, 0.6])
+
+
 def test_evaluate_invalid_threshold():
     """Assert that an error is raised when the threshold is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -891,10 +899,17 @@ def test_evaluate_custom_metric():
 def test_evaluate_threshold():
     """Assert that the threshold parameter changes the predictions."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("RF")
+    atom.run("RF", est_params={"n_estimators": 5})
     pred_1 = atom.rf.evaluate(threshold=0.01)
     pred_2 = atom.rf.evaluate(threshold=0.99)
     assert not pred_1.equals(pred_2)
+
+
+def test_evaluate_threshold_multilabel():
+    """Assert that the threshold parameter accepts a list as threshold."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("Tree")
+    assert isinstance(atom.tree.evaluate(threshold=[0.4, 0.6, 0.8]), pd.Series)
 
 
 def test_evaluate_sample_weight():
@@ -957,7 +972,7 @@ def test_full_train_new_mlflow_run():
 
 
 def test_get_best_threshold_no_predict_proba():
-    """ Assert that an error is raised when the model has no predict_proba."""
+    """Assert that an error is raised when the model has no predict_proba."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("SVM")
     with pytest.raises(ValueError, match=".*with a predict_proba method.*"):
@@ -965,22 +980,29 @@ def test_get_best_threshold_no_predict_proba():
 
 
 def test_get_best_threshold_invalid_dataset():
-    """ Assert that an error is raised when dataset is invalid."""
+    """Assert that an error is raised when dataset is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Dummy")
     with pytest.raises(ValueError, match=".*dataset parameter.*"):
         atom.dummy.get_best_threshold("invalid")
 
 
-def test_get_best_threshold():
-    """ Assert that the get_best_threshold method works as intended."""
+def test_get_best_threshold_binary():
+    """Assert that the get_best_threshold method works for binary tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
     assert 0 < atom.lr.get_best_threshold() < 1
 
 
+def test_get_best_threshold_multilabel():
+    """Assert that the get_best_threshold method works for multilabel tasks."""
+    atom = ATOMClassifier(X_label, y=y_label, random_state=1)
+    atom.run("LR")
+    assert len(atom.lr.get_best_threshold()) == len(atom.target)
+
+
 def test_inverse_transform():
-    """ Assert that the inverse_transform method works as intended."""
+    """Assert that the inverse_transform method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.clean()
     atom.run("LR")

@@ -828,9 +828,9 @@ class BasePlot:
             type="line",
             x0=0,
             x1=1,
-            xref=f"{xaxis} domain",
             y0=0 if y == "diagonal" else y,
             y1=1 if y == "diagonal" else y,
+            xref=f"{xaxis} domain",
             yref=f"{yaxis} domain" if y == "diagonal" else yaxis,
             line=dict(width=1, color="black", dash="dash"),
             opacity=0.6,
@@ -3735,6 +3735,7 @@ class HTPlot(BasePlot):
 
         fig.update_layout(
             {
+                f"yaxis{yaxis[1:]}_anchor": f"x{xaxis2[1:]}",
                 f"xaxis{xaxis[1:]}_showticklabels": False,
                 "hovermode": "x unified",
             },
@@ -3931,9 +3932,15 @@ class PredictionPlot(BasePlot):
                     )
                 )
 
-        self._draw_straight_line(y="diagonal", xaxis=xaxis, yaxis=yaxis)
+        self._draw_straight_line(y="diagonal", xaxis=xaxis2, yaxis=yaxis)
 
-        fig.update_layout({f"xaxis{xaxis2[1:]}_showgrid": True, "barmode": "overlay"})
+        fig.update_layout(
+            {
+                f"yaxis{yaxis[1:]}_anchor": f"x{xaxis2[1:]}",
+                f"xaxis{xaxis2[1:]}_showgrid": True,
+                "barmode": "overlay",
+            }
+        )
 
         self._plot(
             ax=(f"xaxis{xaxis2[1:]}", f"yaxis{yaxis2[1:]}"),

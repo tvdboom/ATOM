@@ -345,7 +345,7 @@ def test_load_transform_data_multiple_branches():
 
 
 def test_inverse_transform():
-    """ Assert that the inverse_transform method works as intended."""
+    """Assert that the inverse_transform method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, random_state=1)
     atom.scale()
     atom.impute()  # Does nothing, but doesn't crash either
@@ -451,7 +451,7 @@ def test_status():
 
 
 def test_transform():
-    """ Assert that the transform method works as intended."""
+    """Assert that the transform method works as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
     assert atom.transform(X10_str)["x2"].dtype.kind in "ifu"

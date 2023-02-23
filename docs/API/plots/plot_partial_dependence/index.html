@@ -2800,6 +2800,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3073,7 +3087,7 @@
 
 <h1 id="plot_partial_dependence">plot_partial_dependence</h1>
 <hr />
-<p><a id='plot_partial_dependence'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_partial_dependence</strong>(models=None, columns=None, kind="average", pair=None, target=1, title=None, legend="lower right", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L5428>[source]</a></span></div>Plot the partial dependence of features.</p>
+<p><a id='plot_partial_dependence'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_partial_dependence</strong>(models=None, columns=None, kind="average", pair=None, target=1, title=None, legend="lower right", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L5325>[source]</a></span></div>Plot the partial dependence of features.</p>
 <p>The partial dependence of a feature (or a set of features)
 corresponds to the response of the model for each possible
 value of the feature. The plot can take two forms:</p>
@@ -3085,16 +3099,17 @@ value of the feature. The plot can take two forms:</p>
   plotted as contour plots (only allowed for a single model).</li>
 </ul>
 <p>Read more about partial dependence on sklearn's
-<a href="https://scikit-learn.org/stable/modules/partial_dependence.html#partial-dependence-and-individual-conditional-expectation-plots">documentation</a>.</p>
+<a href="https://scikit-learn.org/stable/modules/partial_dependence.html#partial-dependence-and-individual-conditional-expectation-plots">documentation</a>. This plot is not available
+for multilabel nor multiclass-multioutput classification tasks.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_partial_dependence-models'></a><strong>models: int, str, Model, slice, sequence or None, default=None</strong><br><div markdown class='param'>
 Models to plot. If None, all models are selected.</p>
 <p></div><a id='plot_partial_dependence-columns'></a><strong>columns: int, str, slice, sequence or None, default=None</strong><br><div markdown class='param'>
 Features to get the partial dependence from. If None, it
 uses the first 3 features in the dataset.</p>
-<p></div><a id='plot_partial_dependence-kind'></a><strong>kind: str, default="average"</strong><br><div markdown class='param'>
-Kind of depedence to plot. Add <code>+</code> between options to select
-more than one. Choose from:</p>
+<p></div><a id='plot_partial_dependence-kind'></a><strong>kind: str or sequence, default="average"</strong><br><div markdown class='param'>
+Kind of depedence to plot. Use a sequence or add <code>+</code> between
+options to select more than one. Choose from:</p>
 <ul>
 <li>"average": Partial dependence averaged across all samples
   in the dataset.</li>

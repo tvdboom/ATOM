@@ -2755,6 +2755,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3101,24 +3115,26 @@
 <hr />
 <p><a name="v510"></a></p>
 <h2 id="version-510">Version 5.1.0</h2>
-<p><strong><img alt="⭐" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/2b50.svg" title=":star:" /> New features</strong></p>
+<p><strong><img alt="⭐" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2b50.svg" title=":star:" /> New features</strong></p>
 <ul>
 <li>Support for multilabel classification, multiclass-multilabel classification
   and multioutput regression tasks. Read more in the <a class="autorefs autorefs-internal" href="../../user_guide/data_management/#multioutput-tasks">user guide</a>.</li>
-<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-backend">backend</a> parameter to choose a <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#parallel-execution">parallel execution</a>
+<li>New [backend][atomclassifier-backend] parameter to choose a <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#parallel-execution">parallel execution</a>
   backend.</li>
 <li>It's now possible to train models in parallel.</li>
-<li>New <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-serve">serve</a> method to deploy models to a rest API endpoint.</li>
-<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-get_sample_weight">get_sample_weight</a> method to calculate
+<li>New [serve][adaboost-serve] method to deploy models to a rest API endpoint.</li>
+<li>New [get_best_threshold][adaboost-get_best_threshold] method calculate the optimal
+  threshold for binary and multilabel tasks.</li>
+<li>New [get_sample_weight][atomclassifier-get_sample_weight] method to calculate
   the sample weights for a balanced data set.</li>
 </ul>
-<p><strong><img alt="📝" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
+<p><strong><img alt="📝" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
-<li>The <code>report</code> method is renamed to <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-eda">eda</a>.</li>
-<li>The <code>ATOMLoader</code> class is deprecated in favor of the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-load">load</a> method.</li>
+<li>The <code>report</code> method is renamed to [eda][atomclassifier-eda].</li>
+<li>The <code>ATOMLoader</code> class is deprecated in favor of the [load][atomclassifier-load] method.</li>
 <li>The <code>errors</code> attribute for runners is deprecated.</li>
 </ul>
-<p><strong><img alt="🚀" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f680.svg" title=":rocket:" /> Enhancements</strong></p>
+<p><strong><img alt="🚀" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f680.svg" title=":rocket:" /> Enhancements</strong></p>
 <ul>
 <li>Added the <code>drop_chars</code> parameter to the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a> class.</li>
 <li>Added the <code>errors</code> parameter to the trainers.</li>
@@ -3126,7 +3142,7 @@
 <li>The logging entries for external libraries are redirected to atom's
   file handler.</li>
 </ul>
-<p><strong><img alt="🐛" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
+<p><strong><img alt="🐛" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
 <ul>
 <li>Fixed multiple errors that appeared after sklearn's 1.2 update.</li>
 <li>Fixed a bug where hyperparameter tuning could fail for multi-metric runs.</li>
@@ -3137,35 +3153,35 @@
 </ul>
 <p><a name="v501"></a></p>
 <h2 id="version-501">Version 5.0.1</h2>
-<p><strong><img alt="🐛" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
+<p><strong><img alt="🐛" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
 <ul>
 <li>Fixed installation issue.</li>
 <li>Updated package dependencies.</li>
 </ul>
 <p><a name="v500"></a></p>
 <h2 id="version-500">Version 5.0.0</h2>
-<p><strong><img alt="⭐" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/2b50.svg" title=":star:" /> New features</strong></p>
+<p><strong><img alt="⭐" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2b50.svg" title=":star:" /> New features</strong></p>
 <ul>
 <li>Completely new <a class="autorefs autorefs-internal" href="../../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a> process.</li>
 <li>Completely reworked <a class="autorefs autorefs-internal" href="../../user_guide/plots/#plots">plotting interface</a>.</li>
 <li>Accelerate your pipelines with <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#accelerating-pipelines">sklearnex</a>.</li>
 <li>New <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featuregrouper/#featuregrouper">FeatureGrouper</a> class to extract statistical features from
   similar groups.</li>
-<li>New <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-create_app">create_app</a> method to create a nice front-end
+<li>New [create_app][adaboost-create_app] method to create a nice front-end
   for model predictions.</li>
-<li>New <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-inverse_transform">inverse_transform</a> method for
+<li>New [inverse_transform][atomclassifier-inverse_transform] method for
   atom and models.</li>
 <li>New linear model: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.OrthogonalMatchingPursuit.html">OrthogonalMatchingPursuit</a>.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../API/plots/plot_results/#plot_results">plot_results</a> method now accepts time metrics.</li>
 </ul>
-<p><strong><img alt="📝" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
+<p><strong><img alt="📝" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f4dd.svg" title=":pencil:" /> API changes</strong></p>
 <ul>
-<li>The <code>gpu</code> parameter is deprecated in favor of <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-device"><code>device</code></a>
-  and <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-engine"><code>engine</code></a>.</li>
+<li>The <code>gpu</code> parameter is deprecated in favor of [<code>device</code>][atomclassifier-device]
+  and [<code>engine</code>][atomclassifier-engine].</li>
 <li>Refactor of the <a class="autorefs autorefs-internal" href="../../API/data_cleaning/cleaner/#cleaner">Cleaner</a>, <a class="autorefs autorefs-internal" href="../../API/data_cleaning/discretizer/#discretizer">Discretizer</a>, <a class="autorefs autorefs-internal" href="../../API/data_cleaning/encoder/#encoder">Encoder</a> and <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureselector/#featureselector">FeatureSelector</a>
   classes.</li>
 <li>Refactor of all <a class="autorefs autorefs-internal" href="../../user_guide/plots/#shap">shap plots</a>.</li>
-<li>Refactor of the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-apply">apply</a> method.</li>
+<li>Refactor of the [apply][atomclassifier-apply] method.</li>
 <li>The <code>plot_scatter_matrix</code> method is renamed to <a class="autorefs autorefs-internal" href="../../API/plots/plot_relationships/#plot_relationships">plot_relationships</a>.</li>
 <li>The <code>kSVM</code> model is renamed to <a class="autorefs autorefs-internal" href="../../API/models/svm/#supportvectormachine">SVM</a>.</li>
 <li>Multidimensional datasets are no longer supported. Check the <a class="autorefs autorefs-internal" href="../../user_guide/models/#deep-learning">deep learning</a>
@@ -3173,19 +3189,19 @@
 <li>The <code>greater_is_better</code>, <code>needs_proba</code> and <code>needs_threshold</code> parameters are
   deprecated. Metric functions are now created using <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html">make_scorer</a>'s
   default parameters.</li>
-<li>The <code>drop</code> method is removed from atom. Use the reworked <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-apply">apply</a>
+<li>The <code>drop</code> method is removed from atom. Use the reworked [apply][atomclassifier-apply]
   method instead.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../user_guide/predicting/#prediction-methods">prediction methods</a> can no longer be called from atom.</li>
-<li>The dashboard method for models is now called <a class="autorefs autorefs-internal" href="../../API/models/adab/#adaboost-create_dashboard">create_dashboard</a>.</li>
+<li>The dashboard method for models is now called [create_dashboard][adaboost-create_dashboard].</li>
 </ul>
-<p><strong><img alt="🚀" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f680.svg" title=":rocket:" /> Enhancements</strong></p>
+<p><strong><img alt="🚀" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f680.svg" title=":rocket:" /> Enhancements</strong></p>
 <ul>
 <li>New examples for <a class="autorefs autorefs-internal" href="../../examples/advanced_plotting/#example-advanced-plotting">plotting</a>, <a class="autorefs autorefs-internal" href="../../examples/automated_feature_scaling/#example-automated-feature-scaling">automated feature scaling</a>,
   <a class="autorefs autorefs-internal" href="../../examples/pruning/#example-pruning">pruning</a> and <a class="autorefs autorefs-internal" href="../../examples/hyperparameter_tuning/#example-hyperparameter-tuning">advanced hyperparameter tuning</a>.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/normalizer/#normalizer">Normalizer</a> class can now be accelerated with <a class="autorefs autorefs-internal" href="../../user_guide/accelerating/#gpu-acceleration">GPU</a>.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../API/data_cleaning/scaler/#scaler">Scaler</a> class now ignores binary columns (only 0s and 1s).</li>
 <li>The <code>models</code> parameter in plot and utility methods now accepts model indices.</li>
-<li>The <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-transform">transform</a> method now also transforms
+<li>The [transform][atomclassifier-transform] method now also transforms
   only <code>y</code> when <code>X</code> has a default value.</li>
 <li>The <a class="autorefs autorefs-internal" href="../../user_guide/predicting/#prediction-methods">prediction methods</a> now return pandas objects.</li>
 <li>Dependency versions are checked with originals after unpickling.</li>
@@ -3194,7 +3210,7 @@
 <li>New <code>feature_importance</code> attribute for models.</li>
 <li>Added a visualization for <a class="autorefs autorefs-internal" href="../../user_guide/training/#automated-feature-scaling">automated feature scaling</a> to <a class="autorefs autorefs-internal" href="../../API/plots/plot_pipeline/#plot_pipeline">plot_pipeline</a>.</li>
 </ul>
-<p><strong><img alt="🐛" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
+<p><strong><img alt="🐛" class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f41b.svg" title=":bug:" /> Bug fixes</strong></p>
 <ul>
 <li>The <a class="autorefs autorefs-internal" href="../../API/feature_engineering/featureextractor/#featureextractor">FeatureExtractor</a> class no longer raises a warning for highly
   fragmented dataframes.</li>

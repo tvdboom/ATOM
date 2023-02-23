@@ -2800,6 +2800,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3073,7 +3087,7 @@
 
 <h1 id="plot_shap_waterfall">plot_shap_waterfall</h1>
 <hr />
-<p><a id='plot_shap_waterfall'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_waterfall</strong>(models=None, index=None, show=None, target=1, title=None, legend=None, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L8013>[source]</a></span></div>Plot SHAP's waterfall plot.</p>
+<p><a id='plot_shap_waterfall'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_waterfall</strong>(models=None, index=None, show=None, target=1, title=None, legend=None, figsize=None, filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7933>[source]</a></span></div>Plot SHAP's waterfall plot.</p>
 <p>The SHAP value of a feature represents the impact of the
 evidence provided by that feature on the model’s output. The
 waterfall plot is designed to visually display how the SHAP
@@ -3098,9 +3112,11 @@ support plotting multiple samples.</p>
 <p></div><a id='plot_shap_waterfall-show'></a><strong>show: int or None, default=None</strong><br><div markdown class='param'>
 Number of features (ordered by importance) to show. If
 None, it shows all features.</p>
-<p></div><a id='plot_shap_waterfall-target'></a><strong>target: int or str, default=1</strong><br><div markdown class='param'>
-Class in the target column to look at (only for multiclass
-classification tasks).</p>
+<p></div><a id='plot_shap_waterfall-target'></a><strong>target: int, str or tuple, default=1</strong><br><div markdown class='param'>
+Class in the target column to target. For multioutput tasks,
+the value should be a tuple of the form (column, class).
+Note that for binary and multilabel tasks, the selected
+class is always the positive one.</p>
 <p></div><a id='plot_shap_waterfall-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>

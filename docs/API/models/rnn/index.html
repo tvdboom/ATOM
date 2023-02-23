@@ -2848,6 +2848,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3277,11 +3291,11 @@ the corresponding run also changes.</div><a id='radiusnearestneighbors-study'></
 <p>For <a class="autorefs autorefs-internal" href="../../../user_guide/training/#multi-metric-runs">multi-metric runs</a>, the best trial is the trial that
 performed best on the main metric. Use the property's <code>@setter</code>
 to change the best trial. See <a class="autorefs autorefs-internal" href="../../../examples/hyperparameter_tuning/#example-hyperparameter-tuning">here</a>
-an example.</div><a id='radiusnearestneighbors-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the <a class="autorefs autorefs-internal" href="#radiusnearestneighbors-best_trial">best trial</a>.</div><a id='radiusnearestneighbors-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the <a class="autorefs autorefs-internal" href="#radiusnearestneighbors-best_trial">best trial</a>.</div><a id='radiusnearestneighbors-time_ht'></a><strong>time_ht: int | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='radiusnearestneighbors-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='radiusnearestneighbors-score_train'></a><strong>score_train: float | list[float]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='radiusnearestneighbors-score_test'></a><strong>score_test: float | list[float]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='radiusnearestneighbors-score_holdout'></a><strong>score_holdout: float | list[float]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='radiusnearestneighbors-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='radiusnearestneighbors-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
+an example.</div><a id='radiusnearestneighbors-best_params'></a><strong>best_params: dict</strong><br><div markdown class='param'>Hyperparameters used by the [best trial][radiusnearestneighbors-best_trial].</div><a id='radiusnearestneighbors-score_ht'></a><strong>score_ht: float | list[float] | None</strong><br><div markdown class='param'>Metric score obtained by the [best trial][radiusnearestneighbors-best_trial].</div><a id='radiusnearestneighbors-time_ht'></a><strong>time_ht: int | None</strong><br><div markdown class='param'>Duration of the hyperparameter tuning (in seconds).</div><a id='radiusnearestneighbors-estimator'></a><strong>estimator: Predictor</strong><br><div markdown class='param'>Estimator fitted on the training set.</div><a id='radiusnearestneighbors-score_train'></a><strong>score_train: float | list[float]</strong><br><div markdown class='param'>Metric score on the training set.</div><a id='radiusnearestneighbors-score_test'></a><strong>score_test: float | list[float]</strong><br><div markdown class='param'>Metric score on the test set.</div><a id='radiusnearestneighbors-score_holdout'></a><strong>score_holdout: float | list[float]</strong><br><div markdown class='param'>Metric score on the holdout set.</div><a id='radiusnearestneighbors-time_fit'></a><strong>time_fit: int</strong><br><div markdown class='param'>Duration of the model fitting on the train set (in seconds).</div><a id='radiusnearestneighbors-bootstrap'></a><strong>bootstrap: pd.DataFrame | None</strong><br><div markdown class='param'>Overview of the bootstrapping scores.</p>
 <p>The dataframe has shape=(n_bootstrap, metric) and shows the
 score obtained by every bootstrapped sample for every metric.
 Using <code>atom.bootstrap.mean()</code> yields the same values as
-<a class="autorefs autorefs-internal" href="#radiusnearestneighbors-score_bootstrap">score_bootstrap</a>.</div><a id='radiusnearestneighbors-score_bootstrap'></a><strong>score_bootstrap: float | list[float] | None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='radiusnearestneighbors-time_bootstrap'></a><strong>time_bootstrap: int | None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='radiusnearestneighbors-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='radiusnearestneighbors-feature_importance'></a><strong>feature_importance: pd.Series | None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
+[score_bootstrap][radiusnearestneighbors-score_bootstrap].</div><a id='radiusnearestneighbors-score_bootstrap'></a><strong>score_bootstrap: float | list[float] | None</strong><br><div markdown class='param'>Mean metric score on the bootstrapped samples.</div><a id='radiusnearestneighbors-time_bootstrap'></a><strong>time_bootstrap: int | None</strong><br><div markdown class='param'>Duration of the bootstrapping (in seconds).</div><a id='radiusnearestneighbors-time'></a><strong>time: int</strong><br><div markdown class='param'>Total duration of the run (in seconds).</div><a id='radiusnearestneighbors-feature_importance'></a><strong>feature_importance: pd.Series | None</strong><br><div markdown class='param'>Normalized feature importance scores.</p>
 <p>The sum of importances for all features is 1. The scores are
 extracted from the estimator's <code>scores_</code>, <code>coef_</code> or
 <code>feature_importances_</code> attribute, checked in that order.
@@ -3362,10 +3376,10 @@ attributes that are never used, saving time and memory.</p>
 <p>The <a class="autorefs autorefs-internal" href="../../../user_guide/plots/#available-plots">plots</a> and <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-methods">prediction methods</a> can be called directly
 from the model. The remaining utility methods can be found hereunder.</p>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-bootstrapping">bootstrapping</a></td><td>Apply a bootstrap algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-calibrate">calibrate</a></td><td>Calibrate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-clear">clear</a></td><td>Reset attributes and clear cache from the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-create_app">create_app</a></td><td>Create an interactive app to test model predictions.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-create_dashboard">create_dashboard</a></td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-cross_validate">cross_validate</a></td><td>Evaluate the model using cross-validation.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-evaluate">evaluate</a></td><td>Get the model's scores for the provided metrics.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-export_pipeline">export_pipeline</a></td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-fit">fit</a></td><td>Fit and validate the model.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-full_train">full_train</a></td><td>Train the estimator on the complete dataset.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-get_best_threshold">get_best_threshold</a></td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-hyperparameter_tuning">hyperparameter_tuning</a></td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-inverse_transform">inverse_transform</a></td><td>Inversely transform new data through the pipeline.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-save_estimator">save_estimator</a></td><td>Save the estimator to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-serve">serve</a></td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-register">register</a></td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-transform">transform</a></td><td>Transform new data through the pipeline.</td></tr></p>
+<p><tr><td>[bootstrapping][radiusnearestneighbors-bootstrapping]</td><td>Apply a bootstrap algorithm.</td></tr><tr><td>[calibrate][radiusnearestneighbors-calibrate]</td><td>Calibrate the model.</td></tr><tr><td>[clear][radiusnearestneighbors-clear]</td><td>Reset attributes and clear cache from the model.</td></tr><tr><td>[create_app][radiusnearestneighbors-create_app]</td><td>Create an interactive app to test model predictions.</td></tr><tr><td>[create_dashboard][radiusnearestneighbors-create_dashboard]</td><td>Create an interactive dashboard to analyze the model.</td></tr><tr><td>[cross_validate][radiusnearestneighbors-cross_validate]</td><td>Evaluate the model using cross-validation.</td></tr><tr><td>[evaluate][radiusnearestneighbors-evaluate]</td><td>Get the model's scores for the provided metrics.</td></tr><tr><td>[export_pipeline][radiusnearestneighbors-export_pipeline]</td><td>Export the model's pipeline to a sklearn-like object.</td></tr><tr><td>[fit][radiusnearestneighbors-fit]</td><td>Fit and validate the model.</td></tr><tr><td>[full_train][radiusnearestneighbors-full_train]</td><td>Train the estimator on the complete dataset.</td></tr><tr><td>[get_best_threshold][radiusnearestneighbors-get_best_threshold]</td><td>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</td></tr><tr><td>[hyperparameter_tuning][radiusnearestneighbors-hyperparameter_tuning]</td><td>Run the hyperparameter tuning algorithm.</td></tr><tr><td>[inverse_transform][radiusnearestneighbors-inverse_transform]</td><td>Inversely transform new data through the pipeline.</td></tr><tr><td>[save_estimator][radiusnearestneighbors-save_estimator]</td><td>Save the estimator to a pickle file.</td></tr><tr><td>[serve][radiusnearestneighbors-serve]</td><td>Serve the model as rest API endpoint for inference.</td></tr><tr><td>[register][radiusnearestneighbors-register]</td><td>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</td></tr><tr><td>[transform][radiusnearestneighbors-transform]</td><td>Transform new data through the pipeline.</td></tr></p>
 </table>
 <p><br></p>
-<p><a id='radiusnearestneighbors-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1099>[source]</a></span></div>Apply a bootstrap algorithm.</p>
+<p><a id='radiusnearestneighbors-bootstrapping'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>bootstrapping</strong>(n_bootstrap, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1186>[source]</a></span></div>Apply a bootstrap algorithm.</p>
 <p>Take bootstrapped samples from the training set and test them
 on the test set to get a distribution of the model's results.</p>
 <table class="table_params">
@@ -3376,7 +3390,7 @@ Whether to start a new run or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2125>[source]</a></span></div>Calibrate the model.</p>
+<p><a id='radiusnearestneighbors-calibrate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>calibrate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2212>[source]</a></span></div>Calibrate the model.</p>
 <p>Applies probability calibration on the model. The estimator
 is trained via cross-validation on a subset of the training
 data, using the rest to fit the calibrator. The new classifier
@@ -3393,22 +3407,22 @@ another, independent set for testing.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2159>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
+<p><a id='radiusnearestneighbors-clear'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>clear</strong>()<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2252>[source]</a></span></div>Reset attributes and clear cache from the model.</p>
 <p>Reset certain model attributes to their initial state, deleting
 potentially large data arrays. Use this method to free some
-memory before <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-save">saving</a> the instance. The
+memory before [saving][atomclassifier-save] the instance. The
 affected attributes are:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/training/#in-training-validation">In-training validation</a> scores</li>
 <li><a class="autorefs autorefs-internal" href="../../../user_guide/plots/#shap">Shap values</a></li>
-<li><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-create_app">App instance</a></li>
-<li><a class="autorefs autorefs-internal" href="#radiusnearestneighbors-create_dashboard">Dashboard instance</a></li>
+<li>[App instance][radiusnearestneighbors-create_app]</li>
+<li>[Dashboard instance][radiusnearestneighbors-create_dashboard]</li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/predicting/#prediction-attributes">prediction attributes</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/training/#metric">metric scores</a></li>
 <li>Cached <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#data-sets">holdout data sets</a></li>
 </ul>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2189>[source]</a></span></div>Create an interactive app to test model predictions.</p>
+<p><a id='radiusnearestneighbors-create_app'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_app</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2282>[source]</a></span></div>Create an interactive app to test model predictions.</p>
 <p>Demo your machine learning model with a friendly web interface.
 This app launches directly in the notebook or on an external
 browser page. The created <a href="https://gradio.app/docs/#interface">Interface</a> instance can be accessed
@@ -3420,7 +3434,7 @@ or the <a href="https://gradio.app/docs/#launch-header">Interface.launch</a> met
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2232>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
+<p><a id='radiusnearestneighbors-create_dashboard'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>create_dashboard</strong>(dataset="test", filename=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2346>[source]</a></span></div>Create an interactive dashboard to analyze the model.</p>
 <p>ATOM uses the <a href="https://github.com/oegedijk/explainerdashboard">explainerdashboard</a>
 package to provide a quick and easy way to analyze and explain
 the predictions and workings of the model. The dashboard allows
@@ -3428,10 +3442,11 @@ you to investigate SHAP values, permutation importances,
 interaction effects, partial dependence plots, all kinds of
 performance plots, and even individual decision trees.</p>
 <p>By default, the dashboard renders in a new tab in your default
-browser, but if preferable, you can render it inside the notebook
-using the <code>mode="inline"</code> parameter. The created
+browser, but if preferable, you can render it inside the
+notebook using the <code>mode="inline"</code> parameter. The created
 <a href="https://explainerdashboard.readthedocs.io/en/latest/dashboards.html#explainerdashboard-documentation">ExplainerDashboard</a> instance can be accessed through the
-<code>dashboard</code> attribute.</p>
+<code>dashboard</code> attribute. This method is not available for
+<a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multioutput-tasks">multioutput tasks</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Plots displayed by the dashboard are not created by ATOM and
@@ -3450,7 +3465,7 @@ instance.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2328>[source]</a></span></div>Evaluate the model using cross-validation.</p>
+<p><a id='radiusnearestneighbors-cross_validate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>cross_validate</strong>(**kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2449>[source]</a></span></div>Evaluate the model using cross-validation.</p>
 <p>This method cross-validates the whole pipeline on the complete
 dataset. Use it to assess the robustness of the solution's
 performance.</p>
@@ -3464,10 +3479,10 @@ Overview of the results.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2384>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
+<p><a id='radiusnearestneighbors-evaluate'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>evaluate</strong>(metric=None, dataset="test", threshold=0.5, sample_weight=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2505>[source]</a></span></div>Get the model's scores for the provided metrics.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use the <a class="autorefs autorefs-internal" href="#radiusnearestneighbors-get_best_threshold">self-get_best_threshold</a> or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
+<p>Use the [self-get_best_threshold][radiusnearestneighbors-get_best_threshold] or <a class="autorefs autorefs-internal" href="../../plots/plot_threshold/#plot_threshold">plot_threshold</a>
 method to determine a suitable value for the <code>threshold</code>
 parameter.</p>
 </div>
@@ -3478,7 +3493,7 @@ common metrics per task are used.</p>
 <p></div><a id='evaluate-dataset'></a><strong>dataset: str, default="test"</strong><br><div markdown class='param'>
 Data set on which to calculate the metric. Choose from:
 "train", "test" or "holdout".</p>
-<p></div><a id='evaluate-threshold'></a><strong>threshold: float, default=0.5</strong><br><div markdown class='param'>
+<p></div><a id='evaluate-threshold'></a><strong>threshold: float or sequence, default=0.5</strong><br><div markdown class='param'>
 Threshold between 0 and 1 to convert predicted probabilities
 to class labels. Only used when:</p>
 <ul>
@@ -3486,6 +3501,10 @@ to class labels. Only used when:</p>
 <li>The model has a <code>predict_proba</code> method.</li>
 <li>The metric evaluates predicted probabilities.</li>
 </ul>
+<p>For multilabel classification tasks, it's possible to provide
+a sequence of thresholds (one per target column, as returned
+by the [get_best_threshold][radiusnearestneighbors-get_best_threshold] method).
+If float, the same threshold is applied to all target columns.</p>
 <p></div><a id='evaluate-sample_weight'></a><strong>sample_weight: sequence or None, default=None</strong><br><div markdown class='param'>
 Sample weights corresponding to y in <code>dataset</code>.</p>
 <p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='evaluate-pd.Series'></a><strong>pd.Series</strong><br><div markdown class='param'>
@@ -3493,7 +3512,7 @@ Scores of the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2489>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
+<p><a id='radiusnearestneighbors-export_pipeline'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>export_pipeline</strong>(memory=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2624>[source]</a></span></div>Export the model's pipeline to a sklearn-like object.</p>
 <p>The returned pipeline is already fitted on the training set.
 Note that, if the model used <a class="autorefs autorefs-internal" href="../../../user_guide/training/#automated-feature-scaling">automated feature scaling</a>,
 the <a class="autorefs autorefs-internal" href="../../data_cleaning/scaler/#scaler">Scaler</a> is added to the pipeline.</p>
@@ -3528,7 +3547,7 @@ Current branch as a sklearn-like Pipeline object.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L988>[source]</a></span></div>Fit and validate the model.</p>
+<p><a id='radiusnearestneighbors-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X=None, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L1076>[source]</a></span></div>Fit and validate the model.</p>
 <p>The estimator is fitted using the best hyperparameters found
 during hyperparameter tuning. Afterwards, the estimator is
 evaluated on the test set. Only use this method to re-fit the
@@ -3543,7 +3562,7 @@ is used.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2537>[source]</a></span></div>Train the estimator on the complete dataset.</p>
+<p><a id='radiusnearestneighbors-full_train'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>full_train</strong>(include_holdout=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2672>[source]</a></span></div>Train the estimator on the complete dataset.</p>
 <p>In some cases it might be desirable to use all available data
 to train a final model. Note that doing this means that the
 estimator can no longer be evaluated on the test set. The newly
@@ -3566,21 +3585,19 @@ on any set.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train", target=0)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2578>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
-<p>Only available for binary and <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification
-tasks.</p>
+<p><a id='radiusnearestneighbors-get_best_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>get_best_threshold</strong>(dataset="train")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2715>[source]</a></span></div>Get the threshold that maximizes the <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html">ROC</a> curve.</p>
+<p>Only available for models with a <code>predict_proba</code> method in a
+binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification task.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='get_best_threshold-dataset'></a><strong>dataset: str, default="train"</strong><br><div markdown class='param'>
 Data set on which to calculate the threshold. Choose from:
 train, test, dataset.</p>
-<p></div><a id='get_best_threshold-target'></a><strong>target: str, default=0</strong><br><div markdown class='param'>
-Target column to look at. Only for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> tasks.</p>
-<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_best_threshold-float'></a><strong>float</strong><br><div markdown class='param'>
-Best threshold.
+<p></div></td></tr><tr><td class='td_title'><strong>Returns</strong></td><td class='td_params'><a id='get_best_threshold-float or list'></a><strong>float or list</strong><br><div markdown class='param'>
+Best threshold or list of thresholds for multilabel tasks.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L684>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
+<p><a id='radiusnearestneighbors-hyperparameter_tuning'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>hyperparameter_tuning</strong>(n_trials, reset=False)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L783>[source]</a></span></div>Run the hyperparameter tuning algorithm.</p>
 <p>Search for the best combination of hyperparameters. The function
 to optimize is evaluated either with a K-fold cross-validation
 on the training set or using a random train and validation split
@@ -3593,7 +3610,7 @@ Whether to start a new study or continue the existing one.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2618>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
+<p><a id='radiusnearestneighbors-inverse_transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>inverse_transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2756>[source]</a></span></div>Inversely transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. The rest should all implement a <code>inverse_transform</code>
 method. If only <code>X</code> or only <code>y</code> is provided, it ignores
@@ -3625,14 +3642,14 @@ Original target column. Only returned if provided.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2719>[source]</a></span></div>Save the estimator to a pickle file.</p>
+<p><a id='radiusnearestneighbors-save_estimator'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save_estimator</strong>(filename="auto")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2857>[source]</a></span></div>Save the estimator to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save_estimator-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2737>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
+<p><a id='radiusnearestneighbors-serve'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>serve</strong>(method="predict", host="127.0.0.1", port=8000)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2875>[source]</a></span></div>Serve the model as rest API endpoint for inference.</p>
 <p>The complete pipeline is served with the model. The inference
 data must be supplied as json to the HTTP request, e.g.
 <code>requests.get("http://127.0.0.1:8000/", json=X.to_json())</code>.
@@ -3654,7 +3671,7 @@ Port for HTTP server.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="Staging")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2679>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
+<p><a id='radiusnearestneighbors-register'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>register</strong>(name=None, stage="Staging")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2817>[source]</a></span></div>Register the model in <a href="https://www.mlflow.org/docs/latest/model-registry.html">mlflow's model registry</a>.</p>
 <p>This method is only available when model <a class="autorefs autorefs-internal" href="../../../user_guide/logging/#tracking">tracking</a> is
 enabled using one of the following URI schemes: databricks,
 http, https, postgresql, mysql, sqlite, mssql.</p>
@@ -3667,7 +3684,7 @@ New desired stage for the model.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='radiusnearestneighbors-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2809>[source]</a></span></div>Transform new data through the pipeline.</p>
+<p><a id='radiusnearestneighbors-transform'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>transform</strong>(X=None, y=None, verbose=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L2947>[source]</a></span></div>Transform new data through the pipeline.</p>
 <p>Transformers that are only applied on the training set are
 skipped. If only <code>X</code> or only <code>y</code> is provided, it ignores
 transformers that require the other parameter. This can be

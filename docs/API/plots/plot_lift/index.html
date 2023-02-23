@@ -2800,6 +2800,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3073,7 +3087,7 @@
 
 <h1 id="plot_lift">plot_lift</h1>
 <hr />
-<p><a id='plot_lift'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_lift</strong>(models=None, dataset="test", title=None, legend="upper right", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L5090>[source]</a></span></div>Plot the lift curve.</p>
+<p><a id='plot_lift'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_lift</strong>(models=None, dataset="test", target=0, title=None, legend="upper right", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L4988>[source]</a></span></div>Plot the lift curve.</p>
 <p>Only available for binary classification tasks.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_lift-models'></a><strong>models: int, str, Model, slice, sequence or None, default=None</strong><br><div markdown class='param'>
@@ -3082,6 +3096,8 @@ Models to plot. If None, all models are selected.</p>
 Data set on which to calculate the metric. Use a sequence
 or add <code>+</code> between options to select more than one. Choose
 from: "train", "test" or "holdout".</p>
+<p></div><a id='plot_lift-target'></a><strong>target: int or str, default=0</strong><br><div markdown class='param'>
+Target column to look at. Only for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> tasks.</p>
 <p></div><a id='plot_lift-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>

@@ -174,4 +174,5 @@ The parallelization backend is applied in the following cases:
     for the individual models as well as for parallel training. You won't
     gain much training two models in parallel with 2 cores, when the models
     also parallelize computations internally. Instead, use parallel training
-    for models that can't parallelize their training (no `n_jobs` parameter).
+    for models that can't parallelize their training (their constructor doesn't
+    have the `n_jobs` parameter).

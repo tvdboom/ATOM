@@ -2807,6 +2807,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3089,7 +3103,7 @@
 <hr />
 <p><a id='Scaler'></a><div class='sign'><em>class</em> atom.data_cleaning.<strong style='color:#008AB8'>Scaler</strong>(strategy="standard", include_binary=False, device="cpu", engine="sklearn", verbose=0, logger=None, **kwargs)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3072>[source]</a></span></div>Scale the data.</p>
 <p>Apply one of sklearn's scalers. Categorical columns are ignored.</p>
-<p>This class can be accessed from atom through the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-scale">scale</a> method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#scaling-the-feature-set">user guide</a>.</p>
+<p>This class can be accessed from atom through the [scale][atomclassifier-scale] method. Read more in the <a class="autorefs autorefs-internal" href="../../../user_guide/data_cleaning/#scaling-the-feature-set">user guide</a>.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='scaler-strategy'></a><strong>strategy: str, default="standard"</strong><br><div markdown class='param'>
 Strategy with which to scale the data. Choose from:</p>
@@ -3246,7 +3260,7 @@ Number of features seen during fit.</p>
 <p><br></p>
 <h2 id="methods">Methods</h2>
 <table style="font-size: 0.9em">
-<p><tr><td><a class="autorefs autorefs-internal" href="#scaler-fit">fit</a></td><td>Fit to data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-fit_transform">fit_transform</a></td><td>Fit to data, then transform it.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-get_params">get_params</a></td><td>Get parameters for this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-inverse_transform">inverse_transform</a></td><td>Apply the inverse transformation to the data.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-log">log</a></td><td>Print message and save to log file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-save">save</a></td><td>Save the instance to a pickle file.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-set_params">set_params</a></td><td>Set the parameters of this estimator.</td></tr><tr><td><a class="autorefs autorefs-internal" href="#scaler-transform">transform</a></td><td>Perform standardization by centering and scaling.</td></tr></p>
+<p><tr><td>[fit][scaler-fit]</td><td>Fit to data.</td></tr><tr><td>[fit_transform][scaler-fit_transform]</td><td>Fit to data, then transform it.</td></tr><tr><td>[get_params][scaler-get_params]</td><td>Get parameters for this estimator.</td></tr><tr><td>[inverse_transform][scaler-inverse_transform]</td><td>Apply the inverse transformation to the data.</td></tr><tr><td>[log][scaler-log]</td><td>Print message and save to log file.</td></tr><tr><td>[save][scaler-save]</td><td>Save the instance to a pickle file.</td></tr><tr><td>[set_params][scaler-set_params]</td><td>Set the parameters of this estimator.</td></tr><tr><td>[transform][scaler-transform]</td><td>Perform standardization by centering and scaling.</td></tr></p>
 </table>
 <p><br></p>
 <p><a id='scaler-fit'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>fit</strong>(X, y=None)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L3266>[source]</a></span></div>Fit to data.</p>
@@ -3307,7 +3321,7 @@ Scaled dataframe.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='scaler-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L852>[source]</a></span></div>Print message and save to log file.</p>
+<p><a id='scaler-log'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>log</strong>(msg, level=0, severity="info")<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L856>[source]</a></span></div>Print message and save to log file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='log-msg'></a><strong>msg: int, float or str</strong><br><div markdown class='param'>
 Message to save to the logger and print to stdout.</p>
@@ -3319,14 +3333,14 @@ warning, error, critical.
 </div></td></tr></p>
 </table>
 <p><br><br></p>
-<p><a id='scaler-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L887>[source]</a></span></div>Save the instance to a pickle file.</p>
+<p><a id='scaler-save'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>save</strong>(filename="auto", save_data=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L891>[source]</a></span></div>Save the instance to a pickle file.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='save-filename'></a><strong>filename: str, default="auto"</strong><br><div markdown class='param'>
 Name of the file. Use "auto" for automatic naming.</p>
 <p></div><a id='save-save_data'></a><strong>save_data: bool, default=True</strong><br><div markdown class='param'>
 Whether to save the dataset with the instance. This parameter
 is ignored if the method is not called from atom. If False,
-add the data to the <a class="autorefs autorefs-internal" href="../../ATOM/atomclassifier/#atomclassifier-load">load</a> method.
+add the data to the [load][atomclassifier-load] method.
 </div></td></tr></p>
 </table>
 <p><br><br></p>

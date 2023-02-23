@@ -50,14 +50,14 @@ from atom.data_cleaning import Scaler
 from atom.pipeline import Pipeline
 from atom.plots import HTPlot, PredictionPlot, ShapPlot
 from atom.utils import (
-    DATAFRAME, DF_ATTRS, FEATURES, FLOAT, INDEX, INT, INT_TYPES, PANDAS,
-    SCALAR, SEQUENCE, SERIES, TARGET, ClassMap, CustomDict, Estimator,
-    PlotCallback, Predictor, Scorer, ShapExplanation, TrialsCallback, bk,
-    check_dependency, check_scaling, composed, crash, custom_transform,
-    estimator_has_attr, export_pipeline, flt, get_cols, get_custom_scorer,
-    get_feature_importance, has_task, infer_task, is_binary, is_multioutput,
-    it, lst, merge, method_to_log, rnd, score, sign, time_to_str, to_df,
-    to_pandas, variable_return,
+    DATAFRAME, DATAFRAME_TYPES, DF_ATTRS, FEATURES, FLOAT, FLOAT_TYPES, INDEX,
+    INT, INT_TYPES, PANDAS, SCALAR, SEQUENCE, SERIES, TARGET, ClassMap,
+    CustomDict, Estimator, PlotCallback, Predictor, Scorer, ShapExplanation,
+    TrialsCallback, bk, check_dependency, check_scaling, composed, crash,
+    custom_transform, estimator_has_attr, export_pipeline, flt, get_cols,
+    get_custom_scorer, get_feature_importance, has_task, infer_task, is_binary,
+    is_multioutput, it, lst, merge, method_to_log, rnd, score, sign,
+    time_to_str, to_df, to_pandas, variable_return,
 )
 
 
@@ -572,7 +572,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         dataset: str,
         target: str | None = None,
         attr: str = "predict",
-    ) -> tuple[SERIES, SERIES]:
+    ) -> tuple[SERIES | DATAFRAME, SERIES | DATAFRAME]:
         """Get the true and predicted values for a column.
 
         Predictions are made using the `decision_function` or
@@ -598,10 +598,10 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
         Returns
         -------
-        series
+        series or dataframe
             True values.
 
-        series
+        series or dataframe
             Predicted values.
 
         """
@@ -709,7 +709,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         self,
         scorer: Scorer,
         dataset: str,
-        threshold: FLOAT = 0.5,
+        threshold: tuple[FLOAT] | None = None,
         sample_weight: tuple | None = None,
     ) -> FLOAT:
         """Calculate a metric score using the prediction attributes.
@@ -727,10 +727,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
 
-        threshold: float, default=0.5
-            Threshold between 0 and 1 to convert predicted probabilities
-            to class labels. Only used when:
+        threshold: tuple or None, default=None
+            Thresholds between 0 and 1 to convert predicted probabilities
+            to class labels for every target column. Only used when:
 
+            - The parameter is not None.
             - The task is binary or multilabel classification.
             - The model has a `predict_proba` method.
             - The metric evaluates predicted target values.
@@ -753,9 +754,14 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         elif scorer.__class__.__name__ == "_ProbaScorer":
             y_true, y_pred = self._get_pred(dataset, attr="predict_proba")
         else:
-            if is_binary(self.task) and hasattr(self.estimator, "predict_proba"):
+            if threshold and is_binary(self.task) and hasattr(self, "predict_proba"):
                 y_true, y_pred = self._get_pred(dataset, attr="predict_proba")
-                y_pred = (y_pred > threshold).astype("int")
+                if isinstance(y_pred, DATAFRAME_TYPES):
+                    # Update every target columns with its corresponding threshold
+                    for i, value in enumerate(threshold):
+                        y_pred.iloc[:, i] = (y_pred.iloc[:, i] > value).astype("int")
+                else:
+                    y_pred = (y_pred > threshold[0]).astype("int")
             else:
                 y_true, y_pred = self._get_pred(dataset, attr="predict")
 
@@ -2502,7 +2508,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
         metric: str | Callable | SEQUENCE | None = None,
         dataset: str = "test",
         *,
-        threshold: FLOAT = 0.5,
+        threshold: FLOAT | SEQUENCE = 0.5,
         sample_weight: SEQUENCE | None = None,
     ) -> pd.Series:
         """Get the model's scores for the provided metrics.
@@ -2522,13 +2528,18 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
 
-        threshold: float, default=0.5
+        threshold: float or sequence, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
 
             - The task is binary or [multilabel][] classification.
             - The model has a `predict_proba` method.
             - The metric evaluates predicted probabilities.
+
+            For multilabel classification tasks, it's possible to provide
+            a sequence of thresholds (one per target column, as returned
+            by the [get_best_threshold][self-get_best_threshold] method).
+            If float, the same threshold is applied to all target columns.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.
@@ -2539,7 +2550,16 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Scores of the model.
 
         """
-        if not 0 < threshold < 1:
+        if isinstance(threshold, FLOAT_TYPES):
+            threshold = [threshold] * self.branch._idx[0]  # Length=n_targets
+        elif len(threshold) != self.branch._idx[0]:
+            raise ValueError(
+                "Invalid value for the threshold parameter. The length of the "
+                f"list should be equal to the number of target columns, got "
+                f"len(target)={self.branch._idx[0]} and len(threshold)={len(threshold)}."
+            )
+
+        if any(not 0 < t < 1 for t in threshold):
             raise ValueError(
                 "Invalid value for the threshold parameter. Value "
                 f"should lie between 0 and 1, got {threshold}."
@@ -2595,7 +2615,7 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             scores[scorer.name] = self._get_score(
                 scorer=scorer,
                 dataset=dataset.lower(),
-                threshold=threshold,
+                threshold=tuple(threshold),
                 sample_weight=None if sample_weight is None else tuple(sample_weight),
             )
 
@@ -2694,11 +2714,11 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
 
     @available_if(has_task(["binary", "multilabel"]))
     @composed(crash, typechecked)
-    def get_best_threshold(self, dataset: str = "train", target: INT | str = 0) -> FLOAT:
+    def get_best_threshold(self, dataset: str = "train") -> FLOAT | list[FLOAT]:
         """Get the threshold that maximizes the [ROC][] curve.
 
-        Only available for binary and [multilabel][] classification
-        tasks.
+        Only available for models with a `predict_proba` method in a
+        binary or [multilabel][] classification task.
 
         Parameters
         ----------
@@ -2706,18 +2726,15 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
             Data set on which to calculate the threshold. Choose from:
             train, test, dataset.
 
-        target: str, default=0
-            Target column to look at. Only for [multilabel][] tasks.
-
         Returns
         -------
-        float
-            Best threshold.
+        float or list
+            Best threshold or list of thresholds for multilabel tasks.
 
         """
         if not hasattr(self.estimator, "predict_proba"):
             raise ValueError(
-                "The plot_edf method is only available "
+                "The get_best_threshold method is only available "
                 "for models with a predict_proba method."
             )
 
@@ -2727,10 +2744,14 @@ class BaseModel(BaseTransformer, BaseTracker, HTPlot, PredictionPlot, ShapPlot):
                 "Choose from: train, test, dataset."
             )
 
-        y_true, y_pred = self._get_pred(dataset, target, attr="predict_proba")
-        fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+        results = []
+        for target in lst(self.target):
+            y_true, y_pred = self._get_pred(dataset, target, attr="predict_proba")
+            fpr, tpr, thresholds = roc_curve(y_true, y_pred)
 
-        return thresholds[np.argmax(tpr - fpr)]
+            results.append(thresholds[np.argmax(tpr - fpr)])
+
+        return flt(results)
 
     @composed(crash, method_to_log, typechecked)
     def inverse_transform(

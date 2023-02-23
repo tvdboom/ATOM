@@ -9,8 +9,8 @@ Description: Unit tests for feature_engineering.py
 
 import pandas as pd
 import pytest
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.feature_selection import f_regression
+from sklearn.tree import DecisionTreeClassifier
 
 from atom.feature_engineering import (
     FeatureExtractor, FeatureGenerator, FeatureGrouper, FeatureSelector,
@@ -520,11 +520,11 @@ def test_rfecv_strategy_before_pipeline_classification():
 def test_rfecv_strategy_before_pipeline_regression():
     """Assert that the rfecv strategy works before a fitted pipeline."""
     selector = FeatureSelector(
-      strategy="rfecv",
-      solver="Tree_reg",
-      n_features=16,
-      cv=2,
-      random_state=1,
+        strategy="rfecv",
+        solver="Tree_reg",
+        n_features=16,
+        cv=2,
+        random_state=1,
     )
     X = selector.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
@@ -629,19 +629,6 @@ def test_advanced_regression_scoring():
 
 
 def test_advanced_custom_objective_function():
-    """Assert that a custom objective function can be used."""
-    selector = FeatureSelector(
-        strategy="gwo",
-        solver="tree_class",
-        objective_function=lambda *args: 1,
-        n_iteration=1,
-        population_size=1,
-    )
-    selector = selector.fit(X_bin, y_bin)
-    assert selector.gwo.objective_function.__name__ == "<lambda>"
-
-
-def test_multioutput_tasks():
     """Assert that a custom objective function can be used."""
     selector = FeatureSelector(
         strategy="gwo",

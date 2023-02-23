@@ -2867,6 +2867,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3271,14 +3285,14 @@ in common:</p>
 <li><strong>label_fontsize:</strong> 16</li>
 <li><strong>tick_fontsize:</strong> 12</li>
 </ul>
-<p>Use atom's <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-update_layout">update_layout</a> method to further
+<p>Use atom's [update_layout][atomclassifier-update_layout] method to further
 customize the plot's aesthetics using any of plotly's <a href="https://plotly.com/python/reference/layout/">layout properties</a>,
-e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s2">&quot;plotly_dark&quot;</span><span class="p">)</span></code>. Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-reset_aesthetics">reset_aesthetics</a>
+e.g. <code class="language-python highlight"><span class="n">atom</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s2">&quot;plotly_dark&quot;</span><span class="p">)</span></code>. Use the [reset_aesthetics][atomclassifier-reset_aesthetics]
 method to reset the aesthetics to their default value. See <a class="autorefs autorefs-internal" href="../../examples/advanced_plotting/#example-advanced-plotting">advanced plotting</a>
 for various examples.</p>
 <p><br></p>
 <h2 id="canvas">Canvas</h2>
-<p>Use the <a class="autorefs autorefs-internal" href="../../API/ATOM/atomclassifier/#atomclassifier-canvas">canvas</a> method to draw multiple plots side
+<p>Use the [canvas][atomclassifier-canvas] method to draw multiple plots side
 by side, for example to make it easier to compare similar results. The canvas
 method is a <code>@contextmanager</code>, i.e. it's used through Python's <code>with</code> command.
 Plots in a canvas ignore the legend, figsize, filename and display parameters.

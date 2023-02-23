@@ -534,7 +534,7 @@ class BaseRunner(BaseTracker):
         metric: str | Callable | SEQUENCE | None = None,
         dataset: str = "test",
         *,
-        threshold: FLOAT = 0.5,
+        threshold: FLOAT | SEQUENCE = 0.5,
         sample_weight: SEQUENCE | None = None,
     ) -> pd.DataFrame:
         """Get all models' scores for the provided metrics.
@@ -549,13 +549,18 @@ class BaseRunner(BaseTracker):
             Data set on which to calculate the metric. Choose from:
             "train", "test" or "holdout".
 
-        threshold: float, default=0.5
+        threshold: float or sequence, default=0.5
             Threshold between 0 and 1 to convert predicted probabilities
             to class labels. Only used when:
 
-            - The task is binary classification.
+            - The task is binary or [multilabel][] classification.
             - The model has a `predict_proba` method.
-            - The metric evaluates predicted target values.
+            - The metric evaluates predicted probabilities.
+
+            For multilabel classification tasks, it's possible to
+            provide a sequence of thresholds (one per target column).
+            The same threshold per target column is applied to all
+            models.
 
         sample_weight: sequence or None, default=None
             Sample weights corresponding to y in `dataset`.

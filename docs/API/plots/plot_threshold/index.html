@@ -2800,6 +2800,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3073,8 +3087,9 @@
 
 <h1 id="plot_threshold">plot_threshold</h1>
 <hr />
-<p><a id='plot_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_threshold</strong>(models=None, metric=None, dataset="test", steps=100, title=None, legend="lower left", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7131>[source]</a></span></div>Plot metric performances against threshold values.</p>
-<p>Only available for binary classification tasks.</p>
+<p><a id='plot_threshold'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_threshold</strong>(models=None, metric=None, dataset="test", target=0, steps=100, title=None, legend="lower left", figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7039>[source]</a></span></div>Plot metric performances against threshold values.</p>
+<p>This plot is available only for models with a <code>predict_proba</code>
+method in a binary or <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> classification task.</p>
 <table class="table_params">
 <p><tr><td class='td_title'><strong>Parameters</strong></td><td class='td_params'><a id='plot_threshold-models'></a><strong>models: int, str, Model, slice, sequence or None, default=None</strong><br><div markdown class='param'>
 Models to plot. If None, all models are selected.</p>
@@ -3087,6 +3102,8 @@ metric used to run the pipeline is selected.</p>
 <p></div><a id='plot_threshold-dataset'></a><strong>dataset: str, default="test"</strong><br><div markdown class='param'>
 Data set on which to calculate the metric. Choose from:
 "train", "test" or "holdout".</p>
+<p></div><a id='plot_threshold-target'></a><strong>target: int or str, default=0</strong><br><div markdown class='param'>
+Target column to look at. Only for <a class="autorefs autorefs-internal" href="../../../user_guide/data_management/#multilabel">multilabel</a> tasks.</p>
 <p></div><a id='plot_threshold-steps'></a><strong>steps: int, default=100</strong><br><div markdown class='param'>
 Number of thresholds measured.</p>
 <p></div><a id='plot_threshold-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>

@@ -2803,6 +2803,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3181,7 +3195,7 @@ manipulate.</p>
 <span class="go">| 1 |   225 (1.0) |   180 (1.0) |    45 (1.0) |</span>
 </code></pre></div>
 <p>Data transformations are applied through atom's methods. For example,
-calling the <a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> method will initialize an
+calling the [impute][atomclassifier-impute] method will initialize an
 <a class="autorefs autorefs-internal" href="../API/data_cleaning/imputer/#imputer">Imputer</a> instance, fit it on the training set and transform the whole
 dataset. The transformations are applied immediately after calling the
 method (no fit and transform commands necessary).</p>
@@ -3219,7 +3233,7 @@ method (no fit and transform commands necessary).</p>
 <span class="go"> --&gt; Ordinal-encoding feature RainToday. Contains 2 classes.</span>
 </code></pre></div>
 <p>Similarly, models are <a class="autorefs autorefs-internal" href="../user_guide/training/#training">trained and evaluated</a> using the
-<a class="autorefs autorefs-internal" href="../API/ATOM/atomclassifier/#atomclassifier-run">run</a> method. Here, we fit both a <a class="autorefs autorefs-internal" href="../API/models/lda/#lineardiscriminantanalysis">LinearDiscriminantAnalysis</a>
+[run][atomclassifier-run] method. Here, we fit both a <a class="autorefs autorefs-internal" href="../API/models/lda/#lineardiscriminantanalysis">LinearDiscriminantAnalysis</a>
 and <a class="autorefs autorefs-internal" href="../API/models/adab/#adaboost">AdaBoost</a> model, and apply <a class="autorefs autorefs-internal" href="../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.</p>
 <div class="language-pycon highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LDA&quot;</span><span class="p">,</span> <span class="s2">&quot;AdaB&quot;</span><span class="p">],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;auc&quot;</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 

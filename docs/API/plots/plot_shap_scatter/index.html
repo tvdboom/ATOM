@@ -2800,6 +2800,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../examples/multilabel_classification/" class="md-nav__link">
+        Multilabel classification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../examples/multi_metric/" class="md-nav__link">
         Multi-metric runs
       </a>
@@ -3073,7 +3087,7 @@
 
 <h1 id="plot_shap_scatter">plot_shap_scatter</h1>
 <hr />
-<p><a id='plot_shap_scatter'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_scatter</strong>(models=None, index=None, columns=0, target=1, title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7896>[source]</a></span></div>Plot SHAP's scatter plot.</p>
+<p><a id='plot_shap_scatter'></a><div class='sign'><em>method</em> <strong style='color:#008AB8'>plot_shap_scatter</strong>(models=None, index=None, columns=0, target=1, title=None, legend=None, figsize=(900, 600), filename=None, display=True)<span style='float:right'><a href=https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L7812>[source]</a></span></div>Plot SHAP's scatter plot.</p>
 <p>Plots the value of the feature on the x-axis and the SHAP value
 of the same feature on the y-axis. This shows how the model
 depends on the given feature, and is like a richer extension of
@@ -3092,9 +3106,11 @@ in the test set. The plot_shap_scatter method does not
 support plotting a single sample.</p>
 <p></div><a id='plot_shap_scatter-columns'></a><strong>columns: int or str, default=0</strong><br><div markdown class='param'>
 Column to plot.</p>
-<p></div><a id='plot_shap_scatter-target'></a><strong>target: int or str, default=1</strong><br><div markdown class='param'>
-Class in the target column to look at (only for multiclass
-classification tasks).</p>
+<p></div><a id='plot_shap_scatter-target'></a><strong>target: int, str or tuple, default=1</strong><br><div markdown class='param'>
+Class in the target column to target. For multioutput tasks,
+the value should be a tuple of the form (column, class).
+Note that for binary and multilabel tasks, the selected
+class is always the positive one.</p>
 <p></div><a id='plot_shap_scatter-title'></a><strong>title: str, dict or None, default=None</strong><br><div markdown class='param'>
 Title for the plot.</p>
 <ul>
