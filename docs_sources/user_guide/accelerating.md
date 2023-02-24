@@ -157,6 +157,7 @@ parallelization backends.
   that makes it easy to scale AI and Python workloads. Read more about Ray [here](https://docs.ray.io/en/latest/ray-core/walkthrough.html).
   Selecting the ray backend also parallelizes the data using [modin][], a
   multi-threading, drop-in replacement for pandas, that uses Ray as backend.
+  See [here][example-ray-backend] an example use case.
 
 !!! warning
     Using [modin][] can be considerably less performant than pandas for small

@@ -62,7 +62,9 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           codiga_api_token: ${{ secrets.CODIGA }}
           min_quality_grade: "EXCELLENT"
+          min_quality_score: "0.005"
           project_name: "ATOM"
+          max_defects_rate: "0.08"
           max_complex_functions_rate: "0.08"
           max_long_functions_rate: "0.08"
           max_timeout_sec: "600"
@@ -83,7 +85,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U ipython pytest pytest-cov
-          pip install -e .
+          pip install -e .[full]
       - name: Run tests w/ coverage
         run: pytest --cov=atom --cov-report=xml tests/
       - name: Upload coverage to Codecov

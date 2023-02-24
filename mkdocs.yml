@@ -267,6 +267,7 @@ nav:
         - Multi-metric runs: examples/multi_metric.ipynb
         - NLP: examples/nlp.ipynb
         - Pruning: examples/pruning.ipynb
+        - Ray backend: examples/ray_backend.ipynb
         - Regression: examples/regression.ipynb
         - Successive halving: examples/successive_halving.ipynb
         - Train sizing: examples/train_sizing.ipynb

@@ -2394,7 +2394,11 @@ def transform_one(
         else:
             return out
 
-    X = to_df(X, index=getattr(y, "index", None))
+    X = to_df(
+        data=X,
+        index=getattr(y, "index", None),
+        columns=getattr(transformer, "feature_names_in_", None),
+    )
     y = to_pandas(y, index=getattr(X, "index", None))
 
     args = []

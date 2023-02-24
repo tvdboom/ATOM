@@ -689,7 +689,7 @@ class BaseTransformer:
             data = self._set_index(bk.concat([train, test]), y)
 
             # [number of target columns, train indices, test indices]
-            idx = [len(get_cols(y)), data.index[:-test_size], data.index[-test_size:]]
+            idx = [len(get_cols(y)), data.index[:-len(test)], data.index[-len(test):]]
 
             return data, idx, holdout
 

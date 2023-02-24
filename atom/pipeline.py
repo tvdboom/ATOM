@@ -270,8 +270,7 @@ class Pipeline(skPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None
-            if the pipeline only uses y.
+            X is ignored. None if the pipeline only uses y.
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
@@ -358,8 +357,7 @@ class Pipeline(skPipeline):
         ----------
         X: dataframe-like or None, default=None
             Feature set with shape=(n_samples, n_features). If None,
-            X is ignored. None
-            if the pipeline only uses y.
+            X is ignored. None if the pipeline only uses y.
 
         y: int, str, dict, sequence or None, default=None
             Target column corresponding to X.
